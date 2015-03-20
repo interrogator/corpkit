@@ -46,7 +46,7 @@ To use all the tools, you'll need *Java*, *NLTK*, *matplotlib* and *NumPy*.
 CD into the NYT project and enter Python:
 
 ```shell
-cd projects/nyt
+cd projects/risk
 python
 ```
 

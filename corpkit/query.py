@@ -710,6 +710,8 @@ def multiquery(corpus, query, sort_by = 'total'):
 
     import collections
     from corpkit.query import interrogator
+    from corpkit.edit import resorter
+    from corpkit.edit import merger
     results = []
     for name, pattern in query:
         result = interrogator(corpus, '-C', pattern)
@@ -777,3 +779,8 @@ def query_test(query, have_ipython = False):
         '. Best guess: \n%s\n%s^' % (str(info[1]), str(remove_end[0]), spaces)
         raise ValueError(regex_error_output)
     # if nothing, the query's fine! 
+
+def interroplot(path, query):
+    from corpkit import interrogator, plotter
+    quickstart = interrogator(path, '-t', query)
+    plotter(str(query), quickstart.results, fract_of = quickstart.totals)

@@ -56,3 +56,4 @@ target/
 *.DS_Store
 *.gitignore
 *.pyc
+projects/

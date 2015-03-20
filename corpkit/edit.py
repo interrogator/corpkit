@@ -174,7 +174,6 @@ def datareader(data):
         # assume it's text
     return good
 
-
 def resorter(lst, sort_by = 'total', reverse = True):
     """Re-sort interrogation results alphabetically or by total"""
     from operator import itemgetter # for more complex sorting
@@ -192,8 +191,6 @@ def resorter(lst, sort_by = 'total', reverse = True):
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
     return to_reorder
-
-
 
 
 def combiner(tomerge, newname, printmerge = True):

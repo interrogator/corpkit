@@ -1,0 +1,329 @@
+\documentclass{beamer}       % print frames
+%\documentclass[notes=only]{beamer}   % only notes
+%\documentclass{beamer}              % only frames
+
+\newcounter{savedenum}
+\newcommand*{\saveenum}{\setcounter{savedenum}{\theenumi}}
+\newcommand*{\resume}{\setcounter{enumi}{\thesavedenum}}
+\usepackage{multienum}
+\usepackage[notocbib]{apacite}
+	\renewcommand{\APACrefatitle}[2]{#1}
+	\renewcommand{\APACrefbtitle}[2]{#1}
+	\renewcommand{\APACrefbtitle}[2]{\Bem{#1}}
+	\renewcommand{\APACrefaetitle}[2]{[#2]}
+	\renewcommand{\APACrefbetitle}[2]{[#2]}
+\usepackage{textpos}
+\usefonttheme{serif}
+%\usepackage{graphicx}
+\usetheme{Boadilla}
+\usepackage{hyperref}
+\usepackage[UKenglish]{babel}
+\usepackage{lingmacros}
+\setcounter{tocdepth}{1} 
+\usecolortheme{orchid}
+\title[University of Melbourne]{Exploring the influence of medium and culture on language use in an online support group}
+\author[Daniel McDonald]{~\\Daniel McDonald~\\~\\~\\\footnotesize}
+
+\date{IDL, 20/3/2015}
+
+\begin{document}
+
+\addtobeamertemplate{frametitle}{}{%
+\begin{textblock*}{100mm}(.775\textwidth,-.5cm)
+\includegraphics[scale=.235]{../images/unimelblong}
+\end{textblock*}}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Context}
+\begin{itemize}
+\item Show you all what my PhD research is about
+\item Introduce \emph{Systemic Functional Linguistics} (SFL)
+\item Discuss some of the problems \emph{SFL} might help \emph{us} solve
+\item Discuss some of the problems \emph{you} might help \emph{me} solve
+\end{itemize}
+\end{frame}
+
+  \begin{frame}
+    \frametitle{Case study: my thesis}
+    \begin{itemize}
+    \item I'm researching longitudinal linguistic change in a 12 year old bipolar disorder forum
+    \item 60,000 posts
+    \item 5821 unique usernames
+    \item A few veterans with over 1000 posts, most users have 1--5
+    \item Rules: no asking for diagnosis, stay `anonymous'
+    \item Normative biomedical ideology \cite<c.f.>{vayreda_social_2009}
+    \item People come for information and/or social support
+    \item Veterans answer questions, welcome new members, speak as `we'
+    \end{itemize}
+  \end{frame}
+
+ \begin{frame}
+    \frametitle{The forum}
+    \centering
+    \includegraphics[scale=.5]{../images/forum.png}
+  \end{frame}
+
+\begin{frame}
+ 	\frametitle{Thesis methodology: the easy part}
+ 	
+ 	\begin{itemize}
+ 	\item \emph{Wget} to spider the forum
+ 	\item Extract text from HTML with \emph{Beautiful Soup}
+ 	\item Spelling normalisation via \emph{PyEnchant} 
+ 	\item Parse posts for constituency and dependency grammar with \emph{Stanford CoreNLP}
+ 	\item Create subcorpora based on post count
+ 	\item Build \texttt{corpkit}, some tools for searching parse trees, manipulating and plotting results: \texttt{pip install corpkit} (Alpha!)
+ 	\item Develop an \emph{IPython Notebook} interface for working with the corpus\slash toolkit
+ 	\item \url{https://github.com/interrogator/corpkit}, \url{https://github.com/interrogator/sfl_corpling}
+ 	\end{itemize}
+ \end{frame}
+
+
+ \begin{frame}
+ 	\frametitle{Analysing 8m words: the hard part}
+
+
+ 	How do we actually make sense of this huge collection of data?
+
+
+ \end{frame}
+ 
+ 
+
+ \begin{frame}
+    \frametitle{    \frametitle{An example: \emph{Katlin09}}}
+
+    Katlin09's early posts look like this:
+
+  \centering \includegraphics[width=0.9\textwidth]{../images/kat1.png}
+  \end{frame}
+
+ \begin{frame}
+    \frametitle{Katlin09}
+    	
+    	... and here's one of her later posts...
+
+        \centering \includegraphics[width=0.9\textwidth]{../images/kat2.png}
+  \end{frame}
+
+
+ \begin{frame}
+ 	\frametitle{What's happening with her language use?}
+ 	
+ 	\begin{itemize}
+ 	\item Has her language use changed over time?
+ 	\item Does this same change happen to other members?
+ 	\item What \emph{causes} the change?
+ 	\item If many things cause the change, how can we distinguish what forces are acting and when?
+ 	\end{itemize}
+
+ 	To answer these kinds of questions, we need a \emph{theory of language}
+ \end{frame}
+ 
+\begin{frame}
+    \frametitle{\emph{Systemic Functional Linguistics} (SFL)}
+
+\citeA{halliday_introduction_2004} conceptualise language as:
+\begin{enumerate}
+ \item Systemic: a sign-\emph{system}, from which users select realisations
+ \item Functional: structured to achieve meaningful social goals
+ \item Constitutive of context: context is mapped onto abstractions of grammatical systems (mood, transitivity and theme)
+ \begin{itemize}
+ \item \textbf{Context is in text.}
+ \end{itemize}
+ \end{enumerate} 
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Overview of SFL}
+    \centering
+    \includegraphics[width=0.90\textwidth]{../images/egginsfixed.jpg}
+\end{frame}
+
+\begin{frame}
+\frametitle{SFL: Introduction}
+SFL argues that we can break communication into \emph{strata}
+\begin{itemize}
+\item Context:
+\begin{itemize}
+    	\item Genre
+    	\item Register
+\end{itemize}
+\item Language:
+\begin{itemize}    	
+    	\item Discourse-semantic
+    	\item Lexicogrammatical
+    	\item Phonological/typographical
+    \end{itemize}
+\end{itemize}
+\end{frame}
+ 
+\begin{frame}
+\frametitle{SFL: \emph{Metafunctions}}
+In SFL, language/images are communicating \emph{up to} three different \emph{kinds} of meaning simultaneously:
+\begin{itemize}
+	\item Interpersonal meaning: roles and relationships between people
+	\item Ideational meaning: what happens to whom, under what circumstances?
+	\item Textual meaning: the role that language is playing in the interaction
+\end{itemize}
+    \end{frame}
+
+ \begin{frame}
+    \frametitle{Overview of SFL}
+    \centering
+    \includegraphics[width=0.90\textwidth]{../images/egginsfixed.jpg}
+\end{frame}
+
+ \begin{frame}
+ \frametitle{Metafunctions in the lexicogrammar}
+ Each function is accomplished through different linguistic subsystems at the level of lexicogrammar.
+ \begin{itemize}
+     	\item \textbf{Interpersonal meanings} are made by the \textbf{mood system}: \emph{imperative, interrogative, declarative, modality}
+     	\item \textbf{Ideational meanings} are made by the \textbf{transitivity system}: \emph{predicates and their arguments}
+     	\item \textbf{Textual meanings} are made by the \textbf{thematic system}: \emph{linking texts together with \emph{and}, \emph{but}, \emph{so} ... }
+     \end{itemize}
+     \end{frame}
+ 
+  \begin{frame}
+    \centering
+    \includegraphics[width=0.60\textwidth]{../images/system.png}
+  \end{frame}
+
+\begin{frame}
+\frametitle{Power and mood choice}
+\begin{itemize}
+	\item When there's a power disparity, some interpersonal meanings are less available to the one with less power.
+	\item A good example is the mood system (Questions, statements, commands):
+\begin{itemize}
+	\item Me: Would you tell me the answer? / I think you should tell me the answer. / Tell me the readings!
+	\item You: Can you speak slower? / We're having trouble understanding you / \underline{~~~~~~~~~~~} ?
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{SFL and multimodality}
+\begin{itemize}
+\item Multimodality: the (simultaneous) use of different channels/modes to communicate
+\item Inherent to online communication (page layout, at the very least)
+\item We can look at images as also accomplishing the three metafunctions...
+\end{itemize}
+\end{frame}
+ 
+  \begin{frame}
+    \centering
+    \includegraphics[width=0.50\textwidth]{../images/ikea.jpg}
+  \end{frame}
+
+
+\begin{frame}
+\frametitle{SFL and genre}
+\begin{itemize}
+	\item In SFL, a genre is a staged, goal-oriented social process
+	\item Culturally recognised sets of role relationships, things being spoken about, and modes of communication
+	\item We can actually figure this stuff out from looking at the lexicogrammar
+	\item Example: 
+	\end{itemize}
+	~~~~~~~~~~~~~~\emph{Submissions must contain 8--10 references.}
+\end{frame}
+
+  \begin{frame}
+    \centering
+    \includegraphics[width=0.50\textwidth]{../images/ikea.jpg}
+  \end{frame}
+
+\begin{frame}
+	\frametitle{IPython Notebook ...}
+	
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Summary of findings}
+	
+	\begin{itemize}
+	\item More imperatives
+	\item More \emph{I would}
+	\item More jargon
+	\item More `metadiscourse'
+	\item etc.
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{What's causing the change?}
+	
+	Two contradictory hypotheses:
+
+	\begin{enumerate}
+	\item \textbf{Socialisation:} new members learn from veterans and implement the linguistic repertoire they've learned
+	\item \textbf{Genre awareness:} new members know they are newcomers, and act like it
+	\end{enumerate}
+	... and what role does the technology itself play? 
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Reasons for jargonisation?}
+
+	We can use SFL's idea of metafunctions as an explanation for why a certain kind of language change occurs.
+	
+	\begin{itemize}
+	\item \textbf{Interpersonal change:} jargon demonstrates expertise, belonging
+	\item \textbf{Experiential change:} jargon distinguishes between hypertechnical things
+	\item \textbf{Textual change:} shorter words are easier to type
+	\end{itemize}
+
+	The important thing to remember is that different kinds of meaning are made \emph{simultaneously.}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Brainstorming ...}
+
+	What \emph{interpersonal}, \emph{experiential} and \emph{textual} meanings can we make by:
+	
+	\begin{itemize}
+	\item Using imperatives: \emph{do this}, \emph{go there}
+	\item Vague language: \emph{things will get better}, \emph{things are alright}
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Where to next?}
+	\begin{itemize}
+	\item More awareness of multimodality, hardware influence, site architecture
+	\item Can we predict the influence of the three metafunctions?
+	\item Can we \emph{measure} the influence?
+	\item How does it play out in new technology? \emph{Reddit? iPhones?}
+	\item A framework for doing SFL with mediated communication?
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Help!}
+	
+	~~~~~~~~~~~Thoughts?
+
+\end{frame}
+
+
+
+
+
+
+
+\begin{frame}[t,allowframebreaks]
+\frametitle{References}
+\bibliographystyle{apacite}
+\bibliography{../references/libwin.bib}
+\end{frame}
+
+\end{document}
