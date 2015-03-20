@@ -33,7 +33,7 @@ cd corpkit
 python setup.py install
 ```
 
-or, via pip (coming soon):
+or, via pip:
 
 ```shell
 pip install corpkit

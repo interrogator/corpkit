@@ -31,7 +31,7 @@ def plotter(title, results, fract_of = False, y_label = False,
 
     import matplotlib.pyplot as plt
     import pylab
-    import numpy as np
+    #import numpy as np
     import os
     from time import localtime, strftime
     from IPython.display import display, clear_output

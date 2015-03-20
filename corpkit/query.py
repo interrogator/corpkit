@@ -18,7 +18,7 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
-        from data.dictionaries.word_transforms import wordlist, usa_convert
+        from dictionaries.word_transforms import wordlist, usa_convert
     # check if we are in ipython
     try:
         get_ipython().getoutput()
@@ -87,8 +87,8 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
 
     def titlefilterer(list_of_matches):
         import nltk
-        from data.dictionaries.titlewords import titlewords
-        from data.dictionaries.titlewords import determiners
+        from dictionaries.titlewords import titlewords
+        from dictionaries.titlewords import determiners
 
         tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
         output = []
@@ -103,7 +103,7 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
 
     def usa_english_maker(list_of_matches):
         import nltk
-        from data.dictionaries.word_transforms import usa_convert
+        from dictionaries.word_transforms import usa_convert
         tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
         output = []
         for result in tokenised_list:
@@ -149,10 +149,10 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
     for index, d in enumerate(sorted_dirs):
         p.animate(index)
         if have_ipython:
-            tregex_command = 'sh ./corpkit/tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, os.path.join(path,d))
+            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, os.path.join(path,d))
             result = get_ipython().getoutput(tregex_command)
         else:
-            tregex_command = ["sh", "./corpkit/tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % os.path.join(path,d)]
+            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % os.path.join(path,d)]
             FNULL = open(os.devnull, 'w')
             result = subprocess.check_output(tregex_command, stderr=FNULL)
             result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
@@ -264,7 +264,7 @@ def dependencies(path, options, query, lemmatise = False, test = False,
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
-        from data.dictionaries.manual_lemmatisation import wordlist, deptags, usa_english
+        from dictionaries.manual_lemmatisation import wordlist, deptags, usa_english
     # define option regexes
     time = strftime("%H:%M:%S", localtime())
     try:
@@ -313,7 +313,7 @@ def dependencies(path, options, query, lemmatise = False, test = False,
     def titlefilterer(list_of_matches):
         import re
         import nltk
-        from data.dictionaries.titlewords import titlewords
+        from dictionaries.titlewords import titlewords
         tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
         output = []
         for result in tokenised_list:
@@ -604,15 +604,15 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
         options = '-s'
     else:
         options = '-t'
-    # tregex_command = "sh ./corpkit/tregex.sh -o -w %s '%s' %s 2>/dev/null | grep -vP '^\s*$'" % (options, query, corpus)
+    # tregex_command = "tregex.sh -o -w %s '%s' %s 2>/dev/null | grep -vP '^\s*$'" % (options, query, corpus)
     # replace bracket: '-LRB- ' and ' -RRB- ' ...
     #allresults = !$tregex_command
     #print allresults
     if have_ipython:
-        tregex_command = 'sh ./corpkit/tregex.sh -o -w %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
+        tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
         allresults = get_ipython().getoutput(tregex_command)
     else:
-        tregex_command = ["sh", "./corpkit/tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
+        tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
         allresults = subprocess.check_output(tregex_command, stderr=FNULL)
         allresults = os.linesep.join([s for s in allresults.splitlines() if s]).split('\n')
@@ -620,10 +620,10 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     if csvmake: # this is not optimised at all!
         sentences = list(results)
     if have_ipython:
-        tregex_command = 'sh ./corpkit/tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
+        tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
         alltresults = get_ipython().getoutput(tregex_command)
     else:
-        tregex_command = ["sh", "./corpkit/tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
+        tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
         alltresults = subprocess.check_output(tregex_command, stderr=FNULL)
         alltresults = os.linesep.join([s for s in alltresults.splitlines() if s]).split('\n')
@@ -748,13 +748,13 @@ def query_test(query, have_ipython = False):
     import subprocess
     # define error searches 
     tregex_error = re.compile(r'^Error parsing expression')
-    regex_error = re.compile(r'^Exception in thread')
+    regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
     #define command and run it
     if have_ipython:
-        tregex_command = 'sh ./corpkit/tregex.sh \'%s\' 2>&1' % (query)
+        tregex_command = 'tregex.sh \'%s\' 2>&1' % (query)
         testpattern = get_ipython().getoutput(tregex_command)
     else:
-        tregex_command = ['sh', './corpkit/tregex.sh', '%s' % (query)]
+        tregex_command = ['tregex.sh', '%s' % (query)]
         try:
             testpattern = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).split('\n')
         except Exception, e:

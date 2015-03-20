@@ -48,11 +48,11 @@ def keywords_and_ngrams(input, nKeywords=100, thresholdLL=19, nBigrams=25, thres
     import sys,os
     import math
     import json
-    from data.dictionaries.stopwords import stopwords as my_stopwords
+    from dictionaries.stopwords import stopwords as my_stopwords
     import cPickle as pickle
     # Read BNC word frequency distributions using cpickle
     # Note: bnc.p contains only non stopwords
-    dictfile = os.path.join(os.path.join('data/dictionaries', dictionary))
+    dictfile = os.path.join(os.path.join('dictionaries', dictionary))
     fdist_dictfile = pickle.load( open( dictfile, "rb" ) )
     # Total number of words in Spoken BNC
     dictsum = sum(fdist_dictfile.itervalues())

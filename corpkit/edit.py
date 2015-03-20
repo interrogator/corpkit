@@ -144,14 +144,14 @@ def datareader(data):
         elif os.path.isdir(data):
             # why did root appear as key???
             if have_ipython:
-                tregex_command = 'sh ./corpkit/tregex.sh -o -w -t %s \'__ !> __\' %s 2>/dev/null | grep -vP \'^\s*$\'' % data
+                tregex_command = 'tregex.sh -o -w -t %s \'__ !> __\' %s 2>/dev/null | grep -vP \'^\s*$\'' % data
                 trees = get_ipython().getoutput(tregex_command)
             else:
-                tregex_command = ["sh", "./corpkit/tregex.sh", "-o", "-w", "-t", "__ !> __" % options, '%s' % query, "%s" % data]
+                tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % options, '%s' % query, "%s" % data]
                 FNULL = open(os.devnull, 'w')
                 trees = subprocess.check_output(tregex_command, stderr=FNULL)
                 trees = os.linesep.join([s for s in trees.splitlines() if s]).split()
-            #tregex_command = "sh ./corpkit/tregex.sh -o -w -t '__ !> __' %s 2>/dev/null | grep -vP '^\s*$'" % data
+            #tregex_command = "tregex.sh -o -w -t '__ !> __' %s 2>/dev/null | grep -vP '^\s*$'" % data
             #trees = !$tregex_command
             #remove root!?
             #trees = [tree for tree in trees if tree is not 'root']

@@ -4,7 +4,7 @@
 #def searchtree(tree, query):
     #"Searches a tree with Tregex and returns matching terminals"
     #! echo "$tree" > "tmp.tree"
-    #tregex_command = 'sh ./corpkit/tregex.sh -o -t \'' + query + '\' tmp.tree 2>/dev/null | grep -vP \'^\s*$\''
+    #tregex_command = 'tregex.sh -o -t \'' + query + '\' tmp.tree 2>/dev/null | grep -vP \'^\s*$\''
     #result = !$tregex_command
     #! rm "tmp.tree"
     #return result
