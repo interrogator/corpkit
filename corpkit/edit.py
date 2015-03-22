@@ -73,8 +73,7 @@ def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'totals'
 
 
 def surgeon(lst, criteria, remove = False, **kwargs):
-    """
-    Add or remove from results by regex or index.
+    """Add or remove from results by regex or index.
 
     criteria: if string, it is a regular expression to keep/remove by.
                  if list, a list of indices to keep/remove by
@@ -82,6 +81,7 @@ def surgeon(lst, criteria, remove = False, **kwargs):
     import re
     import collections
     import warnings
+    # should we print info about what was removed and kept?
     if isinstance(lst, tuple) is True:
         warnings.warn('No branch of results selected. Using .results ... ')
         lst = lst.results
@@ -192,15 +192,17 @@ def resorter(lst, sort_by = 'total', reverse = True):
         to_reorder.sort(key=lambda x: x[0].lower())
     return to_reorder
 
-
 def combiner(tomerge, newname, printmerge = True):
     """the main engine for merging entries, making totals"""
-    toprint = []
-    for entry in tomerge:
-        toprint.append(unicode(entry[0]))
-    string_to_print = '\n'.join(toprint)
     if printmerge is True:
-        # add newname to this print
+        toprint = []
+        for index, entry in enumerate(tomerge):
+            if index < 21:
+                toprint.append(unicode(entry[0]))
+            if index == 21:
+                remaining = len(tomerge) - 20
+                toprint.append(unicode('( ... and %d others ...)' % remaining))
+        string_to_print = '\n'.join(toprint)
         print "Merging the following entries as '%s':\n%s" % (newname, string_to_print)
     combined = zip(*[l for l in tomerge])
     merged = [newname]

@@ -12,7 +12,7 @@ wordlist = {u"felt": u"feel",
            u"'ve": u"have",
            u"n't": u"not",
            u"smelt": u"smell",
-           u"others":, u"other"}
+           u"others": u"other"}
 
 
 # this one translates the dependency relationship into a wordnet tag:
