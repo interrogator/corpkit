@@ -42,6 +42,8 @@ from corpkit import interrogator, plotter
 # Next, let's set the path to our corpus. If you were using this interface for your own corpora, you would change this to the path to your data.
 
 # <codecell>
+# to unzip nyt files:
+# gzip -dc data/nyt.tar.gz | tar -xf - -C data
 # corpus with annual subcorpora
 annual_trees = 'data/nyt/years' 
 
@@ -417,9 +419,9 @@ lines = conc('data/nyt/trees/years/2005', r'/JJ.?/ < /(?i).?\brisk.?/ > (NP <<# 
     window = 30, trees = False, csvmake = 'concordances.csv')
 
 # <codecell>
-!cat 'concordances.csv'
+! cat 'concordances.csv'
 # and to delete it:
-# !rm 'concordances.txt'
+# ! rm 'concordances.txt'
 
 # <headingcell level=3>
 # Keywords, ngrams and collocates
@@ -432,7 +434,7 @@ lines = conc('data/nyt/trees/years/2005', r'/JJ.?/ < /(?i).?\brisk.?/ > (NP <<# 
 # 3. a string of text
 # 4. a list of strings (i.e. output from `conc()`) 
 
- `keywords()` produces both keywords and ngrams. It relies on code from the [Spindle](http://openspires.oucs.ox.ac.uk/spindle/) project.
+# `keywords()` produces both keywords and ngrams. It relies on code from the [Spindle](http://openspires.oucs.ox.ac.uk/spindle/) project.
 
 # <codecell>
 keys, ngrams = keywords('concordances.csv')
@@ -442,7 +444,7 @@ for ngram in ngrams:
     print ngram
 
 # <codecell>
-colls = collocates('concordances.csv')
+colls = collocates('data/nyt/years/1989')
 for coll in colls:
     print coll
 

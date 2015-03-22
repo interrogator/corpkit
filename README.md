@@ -16,12 +16,12 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `surgeon()`       | edit `interrogator()` results      | 
 | `merger()`       | merge `interrogator()` results      | 
 | `conc()`          | complex concordancing of subcorpora | 
-| `keywords()`          | get keywords and ngrams from corpus, subcorpus and concordance lines | 
-| `collocates()`          | get collocates from corpus, subcorpus and concordance lines | 
+| `keywords()`          | get keywords and ngrams from corpus/subcorpus/concordance lines | 
+| `collocates()`          | get collocates from corpus/subcorpus/concordance lines | 
 
 Because I mostly use systemic functional grammar, there also some simple dictionaries to distinguish between process types (relational, mental, verbal). These don't have much documentation right now, but they can be seen in action in my research projects:
 
-1. [Thesis project: longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling)
+1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
 2. [Discourse-semantics of risk in the NYT, 1963--2014](https://github.com/interrogator/risk)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
@@ -54,7 +54,7 @@ cd corpkit
 python setup.py install
 ```
 
-#### Via `pip` (though this won't contain the orientation project):
+#### Via `pip`:
 
 ```shell
 # might need sudo:
@@ -89,12 +89,18 @@ python
 import corpkit
 from corpkit import interroplot
 # search nyt for modal auxiliaries:
-interroplot('data/nyt/years', r'MD < __')
+interroplot('data/nyt/years', r'MD')
 ```
+
+Output: 
+
+<br>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md.png" />
+<br>
 
 ### Example
 
-Here's a basic example of `interrogator()` and `plotter()' at work on the NYT corpus:
+Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
 ```python
 # set path to corpus
@@ -115,6 +121,12 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
+### IPython Notebook usability
+
+When running the Notebook locally, a couple of IPython extensions come in very handy:
+
+* First, you can use [this](https://github.com/minrk/ipython_extensions) to generate a floating table of contents that makes the Notebook much easier to navigate.
+* Second, given that some of the code can take a while to process, it can be handy to have [browser-based notifications](https://github.com/sjpfenninger/ipython-extensions) when the kernel is no longer busy.
 
 ### Coming soon:
 
