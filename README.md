@@ -92,6 +92,30 @@ from corpkit import interroplot
 interroplot('data/nyt/years', r'MD < __')
 ```
 
+### Example
+
+Here's a basic example of `interrogator()` and `plotter()' at work on the NYT corpus:
+
+```python
+# set path to corpus
+corpus = 'data/nyt/years'
+# make tregex query
+q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
+# count terminals/leaves of trees only, and do lemmatisation:
+riskofnoun = interrogator(corpus, '-t', q, lemmatise = True)
+# plot top 7 entries as percentage of all entries:
+plotter('Risk of ... ', riskofnoun.results, 
+        fract_of = riskofnoun.totals, num_to_plot = 7, 
+        skip63 = False)
+```
+
+Output: 
+
+<br>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
+<br>
+
+
 ### Coming soon:
 
 * Connecting concordance output to HTML
