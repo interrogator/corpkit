@@ -352,13 +352,15 @@ def plotter(title, results, fract_of = False, y_label = False,
     plt.grid()
     fig1 = plt.gcf()
     plt.show()
-    if save:
-        def urlify(s):
+
+    def urlify(s):
             import re
             s = s.lower()
             s = re.sub(r"[^\w\s]", '', s)
             s = re.sub(r"\s+", '-', s)
             return s     
+    
+    if save:
         if type(save) == str:
             savename = os.path.join(imagefolder, urlify(save) + '.png')
         else:
@@ -366,10 +368,14 @@ def plotter(title, results, fract_of = False, y_label = False,
         if legend:
             fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150) 
         time = strftime("%H:%M:%S", localtime())
-        print time + ": " + savename + " created."
+        if os.path.isfile(savename):
+            print time + ": " + savename + " created."
+        else:
+            raise ValueError("Error making %s." % savename)
     if csvmake:
+        if type(csvmake) == bool:
+            csvmake = urlify(title) + '.csv'    
         csvmaker(csvdata, csvalldata, csvmake)
-        
 
 
 def topix_plot(title, results, fract_of = False, **kwargs):
@@ -496,7 +502,7 @@ def quickview(lst, n = 50, topics = False):
             # if it's interrogator result
             if type(item) == list:
                 word = item[0]
-                index_and_word = [str(index), word]
+                index_and_word = ['% 4d' % index, word]
                 as_string = ': '.join(index_and_word)
                 out.append(as_string)
             else:
@@ -519,4 +525,5 @@ def quickview(lst, n = 50, topics = False):
                 as_string = ': '.join(index_and_word)
                 subout.append(as_string)
             out.append(subout)
+    # should this change to just printing?
     return out

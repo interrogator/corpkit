@@ -1,4 +1,4 @@
-from setuptools import setup,  find_packages
+from setuptools import setup, find_packages
 
 
 setup(name='corpkit',
@@ -7,13 +7,14 @@ setup(name='corpkit',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
       package_data={'corpkit': ['*.jar', 'corpkit/*.jar'],
-                    'corpkit': ['*.sh', 'corpkit/*.sh']},
+                    'corpkit': ['*.sh', 'corpkit/*.sh'],
+                    'dictionaries': ['*.p', 'dictionaries/*.p']},
       author_email='mcdonaldd@unimelb.edu.au',
       license='MIT',
       packages=['corpkit', 'dictionaries'],
       install_requires=[
                         "matplotlib >= 1.4.3",
-                        "nltk >= 3.0.1",
+                        "nltk >= 3.0.0",
                        ],
       #extras_require = {
       #                  'dependencies':  ["ReportLab>=1.2", "RXP"],

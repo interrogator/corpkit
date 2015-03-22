@@ -166,6 +166,8 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
         allwords_list.append(processed_result)
         results_list.append(processed_result)
     p.animate(len(sorted_dirs))
+    if not have_ipython:
+        print '\n'
     if only_count:
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
@@ -469,6 +471,8 @@ def dependencies(path, options, query, lemmatise = False, test = False,
         allwords_list.append(result)
         results_list.append(result)
     p.animate(total_files)
+    if not have_ipython:
+        print '\n'
     if only_count:
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])

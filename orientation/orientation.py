@@ -35,16 +35,15 @@
 # <codecell>
 import corpkit
 from corpkit import interrogator, plotter
+# show visualisations inline:
+%matplotlib inline
 
 # <markdowncell>
 # Next, let's set the path to our corpus. If you were using this interface for your own corpora, you would change this to the path to your data.
 
 # <codecell>
-annual_trees = 'data/trees/years' # corpus of every article, with annual 
-# subcorpora folders
-
-# <codecell>
-# report_display()
+# corpus with annual subcorpora
+annual_trees = 'data/nyt/years' 
 
 # <headingcell level=3>
 # The data
@@ -67,9 +66,9 @@ annual_trees = 'data/trees/years' # corpus of every article, with annual
 # Interrogating the corpus
 
 # <markdowncell>
-# So, let's start by generating some general information about this corpus. First, let's define a query to find every word in the corpus. Run the cell below to define the *allwords_query* variable as the Tregex query to its right.
+# So, let's start by generating some general information about this corpus. First, let's define a query to find every word in the corpus. Run the cell below to define the `allwords_query` variable as the Tregex query to its right.
 
-# > *When writing Tregex queries or Regular Expressions, remember to always use **r'...'** quotes!*
+# > *When writing Tregex queries or Regular Expressions, remember to always use `r'...'` quotes!*
 
 # <codecell>
 # any token containing letters or numbers (i.e. no punctuation):
@@ -88,7 +87,7 @@ allwords_query = r'/[A-Za-z0-9]/ !< __'
 #
 # 3. the **Tregex query**
 
-# We only need to count tokens, so we can use the **-C** option (it's often faster than getting lists of matching tokens). The cell below will run interrogator() over each annual subcorpus and count the number of matches for the query.
+# We only need to count tokens, so we can use the **-C** option (it's often faster than getting lists of matching tokens). The cell below will run `interrogator()` over each annual subcorpus and count the number of matches for the query.
 
 # <codecell>
 allwords = interrogator(annual_trees, '-C', allwords_query) 
@@ -137,7 +136,7 @@ riskwords_query = r'__ < /(?i).?\brisk.?\b/' # any risk word and its word class/
 riskwords = interrogator(annual_trees, '-o', riskwords_query)
 
 # <markdowncell>
-# Even when do not use the -C flag, we can access the total number of matches as before:
+# Even when do not use the `-C` flag, we can access the total number of matches as before:
 
 # <codecell>
 plotter('Risk words', riskwords.totals)
@@ -251,7 +250,7 @@ plotter('Relative frequencies of risk words', [ riskwords.results[i] for i in in
 # table()
 
 # <markdowncell>
-# If you want to quickly table the results of a csv file, you can use `table()`. Its only main argument is the path to the csv file as string. There are two optional arguments. First, you can set *allresults* to *True* to table all results, rather than just the plotted results. When this option is set to true, you may get *way* too many results. To cope with this, there is a *maxresults* argument, whose value by default is 50. You can overwrite this default to table more or fewer results.
+# If you want to quickly table the results of a csv file, you can use `table()`. Its only main argument is the path to the csv file as string. There are two optional arguments. First, you can set `allresults` to `True` to table all results, rather than just the plotted results. When this option is set to true, you may get *way* too many results. To cope with this, there is a `maxresults` argument, whose value by default is 50. You can overwrite this default to table more or fewer results.
 
 # <codecell>
 
