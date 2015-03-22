@@ -3,14 +3,18 @@
 #   dictionaries: process type wordlists
 #   Author: Daniel McDonald
 
-# This list of process types is very simplistic. 
+# Author's note: 
+
+# This list of process types, and entire associated method, is very simplistic. 
 # It comes from what Mick O'Donnell (genius behind UAM Corpus Tool) sent me.
-# Unlike UAM Corpus Tool, there is no disambiguation of senses based on grammatical features.
-# Author's note: this is one of the most obviously evil things I have ever done.
+# Unlike UAM Corpus Tool, there is no disambiguation of senses based on grammatical features. It's best considered a heuristic, at this point.
 # These are useful when the Tregex query is already very precise, 
 # and you just want to cut down the kinds of /VB.?/.
+# In truth, this file represents one of the most obviously evil things I have ever done.
 
-# there is no material process list (yet), because I haven't figured out how to do it yet.
+# Also, there is no material process list, because I haven't figured out how to do it yet. Currently, I just use:
+
+# r'/VB.?/ !< %s !< %s !< %s' % (processes.relational, processes.verbal, processes.mental)
 
 # Also, I'm starting to wonder if I should just use list comprehension *after*
 # Tregex does its search. Perhaps there could be a list of filters to be passed 
@@ -36,9 +40,9 @@ def process_types():
 
     def regex_maker(irregular, regular):
         """makes a regex from the list of words passed to it"""
-        suffixes = ['s', 'ed', 'ing']
+        suffixes = ['s', 'es', 'ed', 'ing']
         # for longest lists, '{1,2}|'.join(regular) accounts for double letter regular
-        return r'/(?i)^((%s){1}(%s){0,1}|(%s){1}){1}$/' % ( '{1,2}|'.join(regular) + '{1,2}', '|'.join(suffixes), '|'.join(irregular))
+        return r'(?i)^((%s){1}(%s){0,1}|(%s){1}){1}$' % ( '{1,2}|'.join(regular) + '{1,2}', '|'.join(suffixes), '|'.join(irregular))
 
     list_of_regexes = []
     for process_type in [[irregular_relational_processes, regular_relational_processes], [irregular_mental_processes, regular_mental_processes], [irregular_verbal_processes, regular_verbal_processes]]:
