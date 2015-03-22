@@ -22,7 +22,7 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 Because I mostly use systemic functional grammar, there also some simple dictionaries to distinguish between process types (relational, mental, verbal). These don't have much documentation right now, but they can be seen in action in my research projects:
 
 1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of risk in the NYT, 1963--2014](https://github.com/interrogator/risk)
+2. [Discourse-semantics of risk in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 Though everything should work alright in Python, it's much easier to use [IPython Notebooks](http://ipython.org/notebook.html). 
@@ -94,7 +94,6 @@ interroplot('data/nyt/years', r'MD')
 
 Output: 
 
-<br>
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md.png" />
 <br>
 
@@ -117,7 +116,6 @@ plotter('Risk of ... ', riskofnoun.results,
 
 Output: 
 
-<br>
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
