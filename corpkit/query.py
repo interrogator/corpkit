@@ -172,7 +172,7 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
-        query_options = [query, options] 
+        query_options = [path, query, options] 
         output = outputnames(query_options, main_totals)
         if have_ipython:
             clear_output()
@@ -477,7 +477,7 @@ def dependencies(path, options, query, lemmatise = False, test = False,
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
-        query_options = [query, options] 
+        query_options = [path, query, options] 
         output = outputnames(query_options, main_totals)
         return output
 
@@ -517,7 +517,7 @@ def dependencies(path, options, query, lemmatise = False, test = False,
 
     #make results into named tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    query_options = [query, options] 
+    query_options = [path, query, options] 
     total = sum([i[1] for i in main_totals[1:]])
     main_totals.append([u'Total', total])
     output = outputnames(query_options, list_words, main_totals)
