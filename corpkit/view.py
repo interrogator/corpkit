@@ -3,10 +3,11 @@
 #   Interrogating parsed corpora and plotting the results: plotter()
 #   Author: Daniel McDonald
 
-def plotter(title, results, fract_of = False, y_label = False, 
+
+def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
     num_to_plot = 7, skip63 = False, proj63 = 4, 
     multiplier = 100, projection = True, yearspan = False,
-     justyears = False, csvmake = False, x_label = False, 
+     justyears = False, csvmake = False, x_label = False, legend_p = False,
      legend_totals = False, log = False, figsize = 15, save = False):
     """
     Takes interrogator output and plots it with matplotlib
@@ -34,7 +35,8 @@ def plotter(title, results, fract_of = False, y_label = False,
     #import numpy as np
     import os
     from time import localtime, strftime
-    from IPython.display import display, clear_output
+    try:
+        from IPython.display import display, clear_output
     from matplotlib.ticker import MaxNLocator
     from matplotlib.ticker import ScalarFormatter
     # %matplotlib inline
@@ -43,16 +45,11 @@ def plotter(title, results, fract_of = False, y_label = False,
     rcParams['figure.figsize'] = figsize, figsize/2
     import pylab as pl
     import warnings
-    from corpkit.edit import mather
+    from corpkit.edit import resorter, mather
     imagefolder = 'images'
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex=True)
-
-    def popper(interrogator_list):
-        """removes totals"""
-
-        return popped
 
     def skipper(interrogator_list):
         """Takes a list and returns a version without 1963"""
@@ -102,26 +99,6 @@ def plotter(title, results, fract_of = False, y_label = False,
             else:
                 projected.append(item)
         return projected
-
-    
-    # made obsolete by mather()
-    # def fraction_maker(first_list, second_list):
-    #     """Takes two lists and returns fraction totals for plotting"""
-    #     fractioned = []
-    #     for entry in first_list:
-    #         fractioned_entry = []
-    #         fractioned_entry.append(entry[0]) # append word
-    #         for part in entry[1:]:
-    #             numerator = part[1]
-    #             denominator_datum = second_list[entry.index(part)]
-    #             if denominator_datum[1] == 0:
-    #                 fraction = 0
-    #             else:
-    #                 fraction = numerator * multiplier / float(denominator_datum[1])
-    #             datum = [part[0], fraction]
-    #             fractioned_entry.append(datum)
-    #         fractioned.append(fractioned_entry)
-    #     return fractioned
 
     def csvmaker(csvdata, csvalldata, csvmake):
         """Takes whatever ended up getting plotted and puts it into a csv file"""
@@ -194,27 +171,21 @@ def plotter(title, results, fract_of = False, y_label = False,
         warnings.warn('No branch of results selected. Using .results ... ')
         results = results.results
         #raise ValueError("Select branch of results to plot (.results or .totals")
-    if csvmake:
+    if csvmake or sort_by != 'total':
         cutoff = len(results)
     else:
         cutoff = num_to_plot
     if type(results[0]) == unicode or type(results[0]) == str:
         legend = False
-        data = [list(results)][:cutoff]
         alldata = [list(results)][:cutoff]
     else:
         legend = True
-        data = list(results[:cutoff])
         alldata = list(results[:cutoff])
-    # cut it short if we're not saving results
-    if not csvmake:
-        alldata = alldata[:num_to_plot]
-
     # find out if we're doing years or not:
     if x_label:
         x_lab = x_label
     else:
-        check_x_axis = data[0] # get first entry
+        check_x_axis = alldata[0] # get first entry
         check_x_axis = check_x_axis[1] # get second entry of first entry (year, count)
         if 1500 < check_x_axis[0] < 2050:
             x_lab = 'Year'
@@ -223,7 +194,6 @@ def plotter(title, results, fract_of = False, y_label = False,
     # copy totals data so as to not edit it
     # select totals if no branch selected
     if fract_of:
-        # inefficient import
         if isinstance(fract_of, tuple) is True:
             warnings.warn('No branch of fract_of selected. Using .totals ... ')
             fract_of = fract_of.totals
@@ -233,11 +203,11 @@ def plotter(title, results, fract_of = False, y_label = False,
         #fractdata = fraction_maker(data, totals)
         #new: use mather:
         fractdata = []
-        for entry in data:
+        for entry in alldata:
             fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
-        data = list(fractdata)
         alldata = list(fractdata)
-
+    if sort_by != 'total':
+        alldata = resorter(alldata, sort_by = sort_by)
     csvdata = []
     csvalldata = []
     final = []
@@ -256,7 +226,11 @@ def plotter(title, results, fract_of = False, y_label = False,
                 entry = projector(entry)
         # get word
         word = entry[0]
-
+        if sort_by != 'total':
+            pval = entry[-1][4]
+            p_short = "%.4f" % pval
+            totalstring = ' (p=%s)' % p_short      
+            entry.pop()
         # get totals ... horrible code
         total = 0
         if fract_of:
@@ -269,6 +243,7 @@ def plotter(title, results, fract_of = False, y_label = False,
             if entry[-1][0] == 'Total':
                 total = entry[-1][1]
             totalstring = ' (n=%d)' % total
+
 
         entry.pop() # get rid of total. good or bad?
         csvalldata.append(entry) 
@@ -309,6 +284,10 @@ def plotter(title, results, fract_of = False, y_label = False,
                 thelabel = word + totalstring
                 plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
+            if legend_p:
+                thelabel = word + p_string
+                plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
             else:
                 plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
