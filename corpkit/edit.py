@@ -174,9 +174,13 @@ def datareader(data):
         # assume it's text
     return good
 
-def resorter(lst, sort_by = 'total', reverse = True):
-    """Re-sort interrogation results alphabetically or by total"""
-    from operator import itemgetter # for more complex sorting
+def resorter(lst, sort_by = 'total'):
+    """Re-sort interrogation results in a number of ways."""
+    # should we output a named tuple?
+    from operator import itemgetter # for more complex sorting ... is it used?
+    options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static']
+    if sort_by not in options:
+        raise ValueError("View parameter error: %s not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
     to_reorder = list(lst)
     if sort_by == 'total':
         #for item in to_reorder:
@@ -184,12 +188,36 @@ def resorter(lst, sort_by = 'total', reverse = True):
             # wait, are totals not already calculated?!
             #total = sum([t[-1] for t in item[1:]])
             #item.append([u'Total', total])
-        to_reorder.sort(key=lambda x: x[-1], reverse = reverse)
+        to_reorder.sort(key=lambda x: x[-1], reverse = True)
         #for item in to_reorder:
             #item.pop()
-    if sort_by == 'name':
+    elif sort_by == 'name':
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
+    else:
+        from scipy.stats import linregress
+        significance_level = 0.05
+        yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
+        for datum in to_reorder:
+            counts = [int(y[1]) for y in datum[1:-1]]
+            stats = linregress(yearlist, counts)
+            # removing insignificant items ... bad idea?
+            #if view != 'static':
+                #if stats[4] <= significance_level:
+                    #datum.append(stats)
+            #else:
+            datum.append(stats)
+        if sort_by == 'infreq':
+            to_reorder.sort(key=lambda x: x[-2][1], reverse = True)
+        elif sort_by == 'increase':
+            to_reorder.sort(key=lambda x: x[-1][0], reverse = True) # largest first
+        elif sort_by == 'decrease':
+            to_reorder.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
+        elif sort_by == 'static':
+            to_reorder.sort(key=lambda x: abs(x[-1][0]), reverse = False)
+        # remove all the stats we just added ...
+        #for datum in to_reorder:
+            #datum.pop()
     return to_reorder
 
 def combiner(tomerge, newname, printmerge = True):

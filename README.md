@@ -22,7 +22,7 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 Because I mostly use systemic functional grammar, there also some simple dictionaries to distinguish between process types (relational, mental, verbal). These don't have much documentation right now, but they can be seen in action in my research projects:
 
 1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of risk in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
+2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 Though everything should work alright in Python, it's much easier to use [IPython Notebooks](http://ipython.org/notebook.html). 
@@ -63,6 +63,13 @@ pip install corpkit
 
 To interrogate corpora and plot results, you need *Java*, *NLTK* and *matplotlib*. Other tools require *Beautiful Soup*, *Pandas*, etc. 
 
+The `pip` installation of NLTK does not come with its various datasets, so you'll also need to install those. Use the Python code below to download everything:
+
+```python
+import nltk
+nltk.download('all')
+```
+
 ### Unpacking the orientation data
 
 If you installed by downloading or cloning this repository, you'll have the orientation project installed. To use it, `cd` into the orientation project and unzip the data files:
@@ -85,11 +92,14 @@ ipython notebook orientation.ipynb
 Or, just use Python (much more difficult, less fun):
 
 ```python
-python
 import corpkit
 from corpkit import interroplot
+
+# set corpus path
+corpus = 'data/nyt/years'
+
 # search nyt for modal auxiliaries:
-interroplot('data/nyt/years', r'MD')
+interroplot(corpus, r'MD')
 ```
 
 Output: 
@@ -102,14 +112,15 @@ Output:
 Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
 ```python
-# set path to corpus
-corpus = 'data/nyt/years'
-# make tregex query
+# make tregex query: head of NP in PP containing 'of'
+# in NP headed by risk word:
 q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
+
 # count terminals/leaves of trees only, and do lemmatisation:
 riskofnoun = interrogator(corpus, '-t', q, lemmatise = True)
+
 # plot top 7 entries as percentage of all entries:
-plotter('Risk of ... ', riskofnoun.results, 
+plotter('Risk of (noun)', riskofnoun.results, 
         fract_of = riskofnoun.totals, num_to_plot = 7, 
         skip63 = False)
 ```

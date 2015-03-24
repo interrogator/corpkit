@@ -12,7 +12,8 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
     from corpkit.query import query_test
     from corpkit.progressbar import ProgressBar
     from time import localtime, strftime
-    from IPython.display import display, clear_output
+    try:
+        from IPython.display import display, clear_output
     if lemmatise:
         import nltk
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -258,7 +259,8 @@ def dependencies(path, options, query, lemmatise = False, test = False,
     from string import digits
     import operator
     import glob
-    from IPython.display import display, clear_output
+    try:
+        from IPython.display import display, clear_output
     from corpkit.progressbar import ProgressBar
     import gc
     if lemmatise:
@@ -538,7 +540,8 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     from time import localtime, strftime
     import re
     from collections import defaultdict
-    from IPython.display import display, clear_output
+    try:
+        from IPython.display import display, clear_output
     import pydoc
     from corpkit.query import query_test
     try:

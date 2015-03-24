@@ -8,7 +8,8 @@ def collocates(data, nbest = 30, window = 5):
     import os
     import time
     from time import localtime, strftime
-    from IPython.display import display, clear_output
+    try:
+        from IPython.display import display, clear_output
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     #if noprint is False:
