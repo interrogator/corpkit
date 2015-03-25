@@ -165,14 +165,14 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
 
     # copy results and embed in list if need be.
     if isinstance(results, tuple) is True:
-        warnings.warn('No branch of results selected. Using .results ... ')
+        warnings.warn('\nNo branch of results selected. Using .results ... ')
         results = results.results
     if only_below_p:
         if sort_by == 'static':
-            warnings.warn('Static trajectories will confirm the null hypothesis, so it might ' +
+            warnings.warn('\nStatic trajectories will confirm the null hypothesis, so it might ' +
                               'not be helpful to use both the static and only_below_p options together.')
         if sort_by == 'total' or sort_by == 'name':
-            warnings.warn("P value has not been calculated. No entries will be excluded") 
+            warnings.warn("\nP value has not been calculated. No entries will be excluded") 
         #raise ValueError("Select branch of results to plot (.results or .totals")
     
     # cut short to save time if later results aren't useful
@@ -203,7 +203,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     # select totals if no branch selected
     if fract_of:
         if isinstance(fract_of, tuple) is True:
-            warnings.warn('No branch of fract_of selected. Using .totals ... ')
+            warnings.warn('\nNo branch of fract_of selected. Using .totals ... ')
             fract_of = fract_of.totals
         # copy this, to be safe!
         totals = copy.deepcopy(fract_of)
@@ -301,7 +301,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
             elif legend_p:
                 if sort_by == 'total' or sort_by == 'name':
-                    warnings.warn("P value has not been calculated, so it can't be printed.")
+                    warnings.warn("\nP value has not been calculated, so it can't be printed.")
                     plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
                     plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt              
                 else:
@@ -492,7 +492,7 @@ def quickview(lst, n = 50, topics = False):
     topics: for investigation of topic subcorpora"""
     import warnings
     if isinstance(lst, tuple) is True:
-        warnings.warn('No branch of results selected. Using .results ... ')
+        warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
     if type(lst[0]) == str or type(lst[0]) == unicode:
         return '0: %s: %d' % (lst[0], lst[-1][1])

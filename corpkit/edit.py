@@ -13,7 +13,7 @@ def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'total')
     import copy
     from corpkit.edit import combiner, combiner
     if isinstance(lst, tuple) is True:
-        warnings.warn('No branch of results selected. Using .results ... ')
+        warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
     tomerge = []
     oldlist_copy = copy.deepcopy(lst)
@@ -89,7 +89,7 @@ def surgeon(lst, criteria, remove = False, **kwargs):
 
     # should we print info about what was removed and kept?
     if isinstance(lst, tuple) is True:
-        warnings.warn('No branch of results selected. Using .results ... ')
+        warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
     if remove:
         remove_string = 'remove = True'
