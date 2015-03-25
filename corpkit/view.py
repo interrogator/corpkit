@@ -170,7 +170,9 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     if only_below_p:
         if sort_by == 'static':
             warnings.warn('Static trajectories will confirm the null hypothesis, so it might ' +
-                              'not be helpful to use both the static and only_below_p options together.') 
+                              'not be helpful to use both the static and only_below_p options together.')
+        if sort_by == 'total' or sort_by == 'name':
+            warnings.warn("P value has not been calculated. No entries will be excluded") 
         #raise ValueError("Select branch of results to plot (.results or .totals")
     
     # cut short to save time if later results aren't useful
@@ -298,9 +300,14 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                 plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
             elif legend_p:
-                thelabel = word + p_string
-                plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
+                if sort_by == 'total' or sort_by == 'name':
+                    warnings.warn("P value has not been calculated, so it can't be printed.")
+                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt              
+                else:
+                    thelabel = word + p_string
+                    plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
             else:
                 plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
