@@ -184,7 +184,6 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
              only_below_p = False, significance_level = 0.05,
              skip63 = False):
     """Re-sort interrogation results in a number of ways."""
-    # should we output a named tuple?
     from operator import itemgetter # for more complex sorting ... is it used?
     import copy
 
@@ -198,43 +197,40 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
             for bit in datum[1:]:
                 if bit[0] == 1963:
                     datum.remove(bit)
+
     if sort_by == 'total':
-        #for item in to_reorder:
-            #print item[0]
-            # wait, are totals not already calculated?!
-            #total = sum([t[-1] for t in item[1:]])
-            #item.append([u'Total', total])
         to_reorder.sort(key=lambda x: x[-1], reverse = True)
-        #for item in to_reorder:
-            #item.pop()
     elif sort_by == 'name':
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
     else:
         from scipy.stats import linregress
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
+        processed_list = []
         for datum in to_reorder:
             counts = [int(y[1]) for y in datum[1:-1]]
             stats = linregress(yearlist, counts)
             if only_below_p:
             # if not significant, discard here
-                if datum[-1][3] > significance_level:
+                if stats[3] >= significance_level:
                     continue
+            datum.append(stats)
+            processed_list.append(datum)
             # removing insignificant items ... bad idea?
             #if view != 'static':
                 #if stats[4] <= significance_level:
                     #datum.append(stats)
             #else:
-            datum.append(stats)
         if sort_by == 'infreq':
-            to_reorder.sort(key=lambda x: x[-2][1], reverse = True)
+            processed_list.sort(key=lambda x: x[-2][1], reverse = True)
         elif sort_by == 'increase':
-            to_reorder.sort(key=lambda x: x[-1][0], reverse = True) # largest first
+            processed_list.sort(key=lambda x: x[-1][0], reverse = True) # largest first
         elif sort_by == 'decrease':
-            to_reorder.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
+            processed_list.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
         elif sort_by == 'static':
-            to_reorder.sort(key=lambda x: abs(x[-1][0]), reverse = False)
+            processed_list.sort(key=lambda x: abs(x[-1][0]), reverse = False)
         # remove all the stats we just added unless coming from plotter
+        to_reorder = processed_list
         if not keep_stats:
             for datum in to_reorder:
                 datum.pop()

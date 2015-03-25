@@ -166,11 +166,11 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     # copy results and embed in list if need be.
     if isinstance(results, tuple) is True:
         warnings.warn('No branch of results selected. Using .results ... ')
+        results = results.results
     if only_below_p:
         if sort_by == 'static':
             warnings.warn('Static trajectories will confirm the null hypothesis, so it might ' +
                               'not be helpful to use both the static and only_below_p options together.') 
-        results = results.results
         #raise ValueError("Select branch of results to plot (.results or .totals")
     
     # cut short to save time if later results aren't useful
@@ -225,6 +225,8 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     final = []
     colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
     c = 0
+    if not csvmake:
+        cutoff = num_to_plot
     for index, entry in enumerate(alldata[:cutoff]):
         # run called processes
         if skip63:
