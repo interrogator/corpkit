@@ -4,7 +4,8 @@
 #   for ResBaz NLTK stream
 #   Author: Daniel McDonald
 
-def interrogator(path, options, query, lemmatise = False, titlefilter = False, lemmatag = False, usa_english = True):
+def interrogator(path, options, query, lemmatise = False, 
+    titlefilter = False, lemmatag = False, usa_english = True):
     import collections
     from collections import Counter
     import os
@@ -14,6 +15,8 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
     from time import localtime, strftime
     try:
         from IPython.display import display, clear_output
+    except ImportError:
+        pass
     if lemmatise:
         import nltk
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -28,7 +31,14 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
     except NameError:
         import subprocess
         have_ipython = False
-
+    
+    # exit on ctrl c
+    import signal
+    def signal_handler(signal, frame):
+        import sys
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+    
     def gettag(query):
         import re
         if lemmatag is False:
@@ -224,7 +234,7 @@ def interrogator(path, options, query, lemmatise = False, titlefilter = False, l
 #   Interrogating parsed corpora and plotting the results: dependencies
 #   Author: Daniel McDonald
 
-def dependencies(path, options, query, lemmatise = False, test = False, 
+def dependencies(path, options, query, lemmatise = False, test = False, usa_english = False,
     titlefilter = False, lemmatag = False, dep_type = 'basic-dependencies', only_count = False):
     """Uses BeautifulSoup to make list of frequency counts in corpora.
     
@@ -261,6 +271,8 @@ def dependencies(path, options, query, lemmatise = False, test = False,
     import glob
     try:
         from IPython.display import display, clear_output
+    except ImportError:
+        pass
     from corpkit.progressbar import ProgressBar
     import gc
     if lemmatise:
@@ -278,7 +290,11 @@ def dependencies(path, options, query, lemmatise = False, test = False,
     except NameError:
         import subprocess
         have_ipython = False
-
+    import signal
+    def signal_handler(signal, frame):
+        import sys
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
     strip_bad = re.compile('[^.a-zA-Z0-9/-:]', re.UNICODE)
     # welcomer
     if options == 'depnum':
@@ -292,6 +308,20 @@ def dependencies(path, options, query, lemmatise = False, test = False,
     time = strftime("%H:%M:%S", localtime())
     print "\n%s: Beginning corpus interrogation: %s\n          Query: %s\
     \n          %s\n          Interrogating corpus ... \n" % (time, path, query, optiontext)
+
+    def usa_english_maker(list_of_matches):
+        import nltk
+        from dictionaries.word_transforms import usa_convert
+        tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
+        output = []
+        for result in tokenised_list:
+            head = result[-1]
+            try:
+                result[-1] = usa_convert[result[-1]]
+            except KeyError:
+                pass
+            output.append(' '.join(result))
+        return output
     
     def processwords(list_of_matches):
         # encoding
@@ -301,18 +331,20 @@ def dependencies(path, options, query, lemmatise = False, test = False,
         #matches = [re.sub(strip_bad, "", match) for match in matches]
         #matches = filter(None, matches)
         #lowercasing
-        lowered = []
+        matches = []
         for match in list_of_matches:
             try:
-                lowered.append(match.lower())
+                matches.append(match.lower())
             except:
-                lowered.append(match)
-        #print lowered[:50]
+                matches.append(match)
+        #print matches[:50]
         #matches = [match.lower() for match in matches if any(c.isalpha() for c in match)]
         #matches.append([match for match in matches if not any(c.isalpha() for c in match)])
         if titlefilter:
-            lowered = titlefilterer(lowered)
-        return lowered
+            matches = titlefilterer(matches)
+        if usa_english:
+            matches = usa_english_maker(matches)
+        return matches
 
     def titlefilterer(list_of_matches):
         import re
@@ -542,6 +574,8 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     from collections import defaultdict
     try:
         from IPython.display import display, clear_output
+    except ImportError:
+        pass
     import pydoc
     from corpkit.query import query_test
     try:
@@ -790,4 +824,4 @@ def query_test(query, have_ipython = False):
 def interroplot(path, query):
     from corpkit import interrogator, plotter
     quickstart = interrogator(path, '-t', query)
-    plotter(str(query), quickstart.results, fract_of = quickstart.totals)
+    plotter('Example plot', quickstart.results, fract_of = quickstart.totals)
