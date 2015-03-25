@@ -5,51 +5,47 @@
 
 
 def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
-    num_to_plot = 7, skip63 = False, proj63 = 4, 
-    multiplier = 100, projection = True, yearspan = False,
-     justyears = False, csvmake = False, x_label = False, legend_p = False,
-     legend_totals = False, log = False, figsize = 15, save = False):
+    num_to_plot = 7, skip63 = False, significance_level = 0.05,
+    multiplier = 100, projection = True, yearspan = False, proj63 = 5,
+    justyears = False, csvmake = False, x_label = False, legend_p = False,
+    legend_totals = False, log = False, figsize = 13, save = False, only_below_p = False):
     """
-    Takes interrogator output and plots it with matplotlib
+    Takes interrogator output and plots it with matplotlib, optionally generating a csv as well.
 
-    title: String for chart title
-    results: results in interrogator() output format.
-        Results created with -C will not generate a legend.
-    fract_of: a list of totals by which results will be divided. 
-        The list should be in interrogator() -C output format. 
-        By default, results will be multiplied by 100. 
-        Absolute frequencies are given if false/omitted.
-    num_to_plot: the top n results to be plotted (default 10)
-    y_label: name for the y-axis (optional)
-    multiplier: result * multiplier / total. 
-        Use 100 for percentage, 1 for ratio.
-    projection: project or do not project 1963 and 2014
-    justyears = a list of years as integers to plot
-    csvmake: enter filename as a string to make a csv file
+    Option documentation forthcoming.
     """
 
-    # new options plan: smooth lines ...
-
-    import matplotlib.pyplot as plt
-    import pylab
-    #import numpy as np
     import os
+    import warnings
+    import copy
     from time import localtime, strftime
+    
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    from matplotlib.ticker import MaxNLocator, ScalarFormatter
+    import pylab
+    from pylab import rcParams
+    
     try:
         from IPython.display import display, clear_output
-    from matplotlib.ticker import MaxNLocator
-    from matplotlib.ticker import ScalarFormatter
-    # %matplotlib inline
-    from pylab import rcParams
-    from matplotlib import rc
-    rcParams['figure.figsize'] = figsize, figsize/2
-    import pylab as pl
-    import warnings
+    except ImportError:
+        pass
+
     from corpkit.edit import resorter, mather
-    imagefolder = 'images'
+
+    # setup:
+
+    # size:
+    rcParams['figure.figsize'] = figsize, figsize/2
+    
+    #font
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex=True)
+
+    #image directory
+    imagefolder = 'images'
+
 
     def skipper(interrogator_list):
         """Takes a list and returns a version without 1963"""
@@ -62,7 +58,6 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
 
     def yearskipper(interrogator_list, justyears):
         """Takes a list and returns only results from the years listed in justyears"""
-        
         skipped = []
         skipped.append(interrogator_list[0]) # append word
         for item in interrogator_list[1:]:
@@ -102,6 +97,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
 
     def csvmaker(csvdata, csvalldata, csvmake):
         """Takes whatever ended up getting plotted and puts it into a csv file"""
+        # now that I know about Pandas, I could probably make this much less painful.
         csv = []
         yearlist = []
         # get list of years
@@ -151,7 +147,8 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         csvall = '\n'.join(csvall)
         # write the csvall file?
         if os.path.isfile(csvmake):
-            raise ValueError("CSV error: %s already exists in current directory. Move it, delete it, or change the name of the new .csv file." % csvmake)
+            raise ValueError("CSV error: %s already exists in current directory. \
+                    Move it, delete it, or change the name of the new .csv file." % csvmake)
         try:
             fo=open(csvmake,"w")
         except IOError:
@@ -169,19 +166,28 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     # copy results and embed in list if need be.
     if isinstance(results, tuple) is True:
         warnings.warn('No branch of results selected. Using .results ... ')
+    if only_below_p:
+        if sort_by == 'static':
+            warnings.warn('Static trajectories will confirm the null hypothesis, so it might ' +
+                              'not be helpful to use both the static and only_below_p options together.') 
         results = results.results
         #raise ValueError("Select branch of results to plot (.results or .totals")
+    
+    # cut short to save time if later results aren't useful
     if csvmake or sort_by != 'total':
         cutoff = len(results)
     else:
         cutoff = num_to_plot
+    
+    # if plotting one entry/a totals list, wrap it in another list
     if type(results[0]) == unicode or type(results[0]) == str:
         legend = False
-        alldata = [list(results)][:cutoff]
+        alldata = [copy.deepcopy(results)][:cutoff]
     else:
         legend = True
-        alldata = list(results[:cutoff])
-    # find out if we're doing years or not:
+        alldata = copy.deepcopy(results[:cutoff])
+
+    # if no x_label, guess 'year' or 'group'
     if x_label:
         x_lab = x_label
     else:
@@ -191,29 +197,35 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             x_lab = 'Year'
         else:
             x_lab = 'Group'
-    # copy totals data so as to not edit it
+
     # select totals if no branch selected
     if fract_of:
         if isinstance(fract_of, tuple) is True:
             warnings.warn('No branch of fract_of selected. Using .totals ... ')
             fract_of = fract_of.totals
-        totals = list(fract_of)
-        # old:
-        #make fractions
-        #fractdata = fraction_maker(data, totals)
-        #new: use mather:
+        # copy this, to be safe!
+        totals = copy.deepcopy(fract_of)
+
+        #use mather to make percentage results
         fractdata = []
         for entry in alldata:
             fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
-        alldata = list(fractdata)
+        alldata = copy.deepcopy(fractdata)
+    
+    # sort_by with resorter
     if sort_by != 'total':
-        alldata = resorter(alldata, sort_by = sort_by)
+        do_stats = True
+        alldata = resorter(alldata, sort_by = sort_by, 
+                           keep_stats = True, only_below_p = only_below_p, 
+                           significance_level = significance_level, skip63 = skip63)
+    else:
+        do_stats = False
     csvdata = []
     csvalldata = []
     final = []
     colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
     c = 0
-    for index, entry in enumerate(alldata):
+    for index, entry in enumerate(alldata[:cutoff]):
         # run called processes
         if skip63:
             entry = skipper(entry)
@@ -226,11 +238,12 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                 entry = projector(entry)
         # get word
         word = entry[0]
-        if sort_by != 'total':
-            pval = entry[-1][4]
+        if do_stats:
+            pval = entry[-1][3]
             p_short = "%.4f" % pval
-            totalstring = ' (p=%s)' % p_short      
-            entry.pop()
+            p_string = ' (p=%s)' % p_short   
+            # remove stats, we're done with them.
+            entry.pop() 
         # get totals ... horrible code
         total = 0
         if fract_of:
@@ -244,13 +257,9 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                 total = entry[-1][1]
             totalstring = ' (n=%d)' % total
 
-
         entry.pop() # get rid of total. good or bad?
         csvalldata.append(entry) 
-        # it takes a bit too long to process huge lists, 
-        # when they aren't being used! Quick fix is to slice the
-        # results passed to plotter, but eh.
-        # for each datum [year, count]:
+
         if index < num_to_plot:
             csvdata.append(entry)
             toplot = []
@@ -277,14 +286,16 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                     xvalsabove.append(nextpart[0])
                     yvalsabove.append(nextpart[1])
                 d += 1
+
             # do actual plotting
+            # do these get written over!?
             plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
             plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
             if legend_totals:
                 thelabel = word + totalstring
                 plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-            if legend_p:
+            elif legend_p:
                 thelabel = word + p_string
                 plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
                 plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
@@ -380,6 +391,7 @@ def table(data_to_table, allresults = False, maxresults = 50):
     import re
     import os
     from StringIO import StringIO
+    import copy
     if type(data_to_table) == str:
         f = open(data_to_table)
         raw = f.read()
@@ -397,9 +409,9 @@ def table(data_to_table, allresults = False, maxresults = 50):
     elif type(data_to_table) == list:
         csv = []
         if type(data_to_table[0]) == str or type(data_to_table[0]) == unicode:
-            wrapped = [list(data_to_table)]
+            wrapped = [copy.deepcopy(data_to_table)]
         else:
-            wrapped = list(data_to_table)
+            wrapped = copy.deepcopy(data_to_table)
         regex = re.compile('(?i)total')
         if re.match(regex, wrapped[-1][0]):
             total_present = True

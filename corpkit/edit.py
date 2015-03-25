@@ -1,5 +1,5 @@
 
-def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'totals'):
+def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'total'):
     """Merges result items by their index
 
     lst: list to work on
@@ -10,11 +10,13 @@ def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'totals'
     import re
     import collections
     import warnings
+    import copy
+    from corpkit.edit import combiner, combiner
     if isinstance(lst, tuple) is True:
         warnings.warn('No branch of results selected. Using .results ... ')
         lst = lst.results
     tomerge = []
-    oldlist_copy = list(lst)
+    oldlist_copy = copy.deepcopy(lst)
     # if regex, get list of indices for mwatches
     if type(criteria) == str:
         forwards_index = []
@@ -25,7 +27,7 @@ def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'totals'
         backward_indices = sorted(forwards_index, reverse = True)
     #if indices, ensure results are sorted
     if type(criteria) == list:
-        forwards_index = list(criteria)
+        forwards_index = copy.deepcopy(criteria)
         backward_indices = sorted(criteria, reverse = True)
     # remove old entries
     for index in backward_indices:
@@ -57,7 +59,7 @@ def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'totals'
     output.append(merged)
     for entry in oldlist_copy[first_index:]:
          output.append(entry)
-    if sort_by is not False:
+    if not sort_by:
         output = resorter(output, sort_by = sort_by)
     # generate totals:
     totals = combiner(output, 'Totals', printmerge = False)
@@ -81,6 +83,10 @@ def surgeon(lst, criteria, remove = False, **kwargs):
     import re
     import collections
     import warnings
+    import copy
+
+    from corpkit.edit import resorter, combiner
+
     # should we print info about what was removed and kept?
     if isinstance(lst, tuple) is True:
         warnings.warn('No branch of results selected. Using .results ... ')
@@ -109,7 +115,7 @@ def surgeon(lst, criteria, remove = False, **kwargs):
                         newlist.append(item)     
     if type(criteria) == list:
         if remove is True:
-            newlist = list(lst)
+            newlist = copy.deepcopy(lst)
             backward_indices = sorted(criteria, reverse = True)
             for index in backward_indices:
                 newlist.remove(newlist[index])
@@ -174,14 +180,24 @@ def datareader(data):
         # assume it's text
     return good
 
-def resorter(lst, sort_by = 'total'):
+def resorter(lst, sort_by = 'total', keep_stats = False, 
+             only_below_p = False, significance_level = 0.05,
+             skip63 = False):
     """Re-sort interrogation results in a number of ways."""
     # should we output a named tuple?
     from operator import itemgetter # for more complex sorting ... is it used?
+    import copy
+
     options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static']
     if sort_by not in options:
-        raise ValueError("View parameter error: %s not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
-    to_reorder = list(lst)
+        raise ValueError("sort_by parameter error: '%s' not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
+    to_reorder = copy.deepcopy(lst)
+
+    if skip63:
+        for datum in to_reorder:
+            for bit in datum[1:]:
+                if bit[0] == 1963:
+                    datum.remove(bit)
     if sort_by == 'total':
         #for item in to_reorder:
             #print item[0]
@@ -196,11 +212,14 @@ def resorter(lst, sort_by = 'total'):
         to_reorder.sort(key=lambda x: x[0].lower())
     else:
         from scipy.stats import linregress
-        significance_level = 0.05
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
         for datum in to_reorder:
             counts = [int(y[1]) for y in datum[1:-1]]
             stats = linregress(yearlist, counts)
+            if only_below_p:
+            # if not significant, discard here
+                if datum[-1][3] > significance_level:
+                    continue
             # removing insignificant items ... bad idea?
             #if view != 'static':
                 #if stats[4] <= significance_level:
@@ -215,9 +234,10 @@ def resorter(lst, sort_by = 'total'):
             to_reorder.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
         elif sort_by == 'static':
             to_reorder.sort(key=lambda x: abs(x[-1][0]), reverse = False)
-        # remove all the stats we just added ...
-        #for datum in to_reorder:
-            #datum.pop()
+        # remove all the stats we just added unless coming from plotter
+        if not keep_stats:
+            for datum in to_reorder:
+                datum.pop()
     return to_reorder
 
 def combiner(tomerge, newname, printmerge = True):
@@ -248,10 +268,11 @@ def combiner(tomerge, newname, printmerge = True):
 
 
 def mather(oldlist, operation, newlist, multiplier = 100):
-    """does simple maths on two lists of results/totals"""
+    """does maths on two lists of results/totals"""
     import operator
-    the_oldlist = list(oldlist)
-    the_newlist = list(newlist)
+    import copy
+    the_oldlist = copy.deepcopy(oldlist)
+    the_newlist = copy.deepcopy(newlist)
     if type(the_oldlist) != type(the_newlist):
         raise ValueError('Different list types: %s and %s' % (type(the_oldlist), type(the_newlist)))
     # implement when everything is definitely in unicode, maybe:

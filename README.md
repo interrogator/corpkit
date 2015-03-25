@@ -63,11 +63,12 @@ pip install corpkit
 
 To interrogate corpora and plot results, you need *Java*, *NLTK* and *matplotlib*. Other tools require *Beautiful Soup*, *Pandas*, etc. 
 
-The `pip` installation of NLTK does not come with its various datasets, so you'll also need to install those. Use the Python code below to download everything:
+The `pip` installation of NLTK does not come with the data needed for NLTK's tokeniser, so we'll also need to install that:
 
 ```python
 import nltk
-nltk.download('all')
+# change 'punkt' to 'all' to get everything
+nltk.download('punkt')
 ```
 
 ### Unpacking the orientation data

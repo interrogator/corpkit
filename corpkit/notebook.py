@@ -29,7 +29,7 @@ def pytoipy(inputfile):
     import IPython.nbformat.current as nbf
     outbasename = os.path.splitext(inputfile)[0]
     output = outbasename + '.ipynb'
-    print 'Converting ' + inputfile + ' ---> ' + output + ' ...'
+    print '\nConverting ' + inputfile + ' ---> ' + output + ' ...'
     nb = nbf.read(open(inputfile, 'r'), 'py')
     nbf.write(nb, open(output, 'w'), 'ipynb')
     print 'Done!\n'
@@ -57,3 +57,25 @@ def ipyconverter(inputfile, outextension):
     shellscript = 'ipython nbconvert ' + outargument + inputfile + ' --stdout > ' + output
     print "Shell command: " + shellscript
     os.system(shellscript)
+
+def conv(inputfile, loadme = True):
+    """A .py to .ipynb converter that relies on old code from IPython.
+
+    You shouldn't use this: I only am while I'm on a deadline.
+    """
+    import os, sys
+    import pycon.current as nbf
+    import IPython
+    outbasename = os.path.splitext(inputfile)[0]
+    output = outbasename + '.ipynb'
+    badname = outbasename + '.nbconvert.ipynb'
+    print '\nConverting ' + inputfile + ' ---> ' + output + ' ...'
+    nb = nbf.read(open(inputfile, 'r'), 'py')
+    nbf.write(nb, open(output, 'w'), 'ipynb')
+    os.system('ipython nbconvert --to=notebook --nbformat=4 %s' % output)
+    os.system('mv %s %s' % (badname, output))
+    if loadme:
+        os.system('ipython notebook %s' % output)
+    #nbnew = open(output, 'r')
+    #IPython.nbformat.v4.convert.upgrade(nbnew, from_version=3, from_minor=0)
+    print 'Done!\n'
