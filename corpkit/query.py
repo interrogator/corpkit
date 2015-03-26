@@ -280,7 +280,7 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
-        from dictionaries.manual_lemmatisation import wordlist, deptags, usa_english
+        from dictionaries.manual_lemmatisation import wordlist, deptags
     # define option regexes
     time = strftime("%H:%M:%S", localtime())
     try:
