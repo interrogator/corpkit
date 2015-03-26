@@ -308,3 +308,42 @@ def mather(oldlist, operation, newlist, multiplier = 100):
         else:
             raise ValueError('Different list labels: %s and %s' % (str(x_axis), str(newtup[0])))
     return mathedlist
+
+
+def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
+    """Save an interrogation as pickle to savedir"""
+    from collections import namedtuple
+    import pickle
+    import os
+    
+    # currently, allow overwrite. if that's not ok:
+    #if os.path.isfile(csvmake):
+        #raise ValueError("Save error: %s already exists in %s. \
+                    #Pick a new name." % (savename, savedir))
+            
+    try:
+        temp_list = [interrogation.query, interrogation.results, interrogation.totals]
+    except AttributeError:
+        temp_list = [interrogation.query, interrogation.totals]
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+    if not savename.endswith('.p'):
+        savename = savename + '.p'
+    f = open('%s/%s' % (savedir, savename), 'w')
+    pickle.dump(temp_list, f)
+    f.close()
+
+def load_result(savename, loaddir = 'data/saved_interrogations'):
+    """Reloads a save_result as namedtuple"""
+    import collections
+    import pickle
+    if not savename.endswith('.p'):
+        savename = savename + '.p'
+    unpickled = pickle.load(open('%s/%s' % (loaddir, savename), 'rb'))
+    if len(unpickled) == 3:
+        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+        output = outputnames(unpickled[0], unpickled[1], unpickled[2])
+    elif len(unpickled) == 2:
+        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
+        output = outputnames(unpickled[0], unpickled[1])
+    return output

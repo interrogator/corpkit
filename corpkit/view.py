@@ -8,7 +8,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     num_to_plot = 7, skip63 = False, significance_level = 0.05,
     multiplier = 100, projection = True, yearspan = False, proj63 = 5,
     justyears = False, csvmake = False, x_label = False, legend_p = False,
-    legend_totals = False, log = False, figsize = 13, save = False, only_below_p = False):
+    legend_totals = False, log = False, figsize = 11, save = False, only_below_p = False):
     """
     Takes interrogator output and plots it with matplotlib, optionally generating a csv as well.
 
