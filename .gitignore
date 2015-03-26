@@ -52,7 +52,6 @@ docs/_build/
 
 # PyBuilder
 target/
-*__init__.py
 *.DS_Store
 *.gitignore
 *.pyc
