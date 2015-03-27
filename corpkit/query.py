@@ -6,13 +6,15 @@
 
 def interrogator(path, options, query, lemmatise = False, 
     titlefilter = False, lemmatag = False, usa_english = True):
-    import collections
-    from collections import Counter
     import os
     import re
+    import signal
+    import collections
+    from collections import Counter
+    from time import localtime, strftime
+
     from corpkit.query import query_test
     from corpkit.progressbar import ProgressBar
-    from time import localtime, strftime
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -33,7 +35,6 @@ def interrogator(path, options, query, lemmatise = False,
         have_ipython = False
     
     # exit on ctrl c
-    import signal
     def signal_handler(signal, frame):
         import sys
         sys.exit(0)
@@ -151,7 +152,9 @@ def interrogator(path, options, query, lemmatise = False,
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
     if len(sorted_dirs) == 0:
-        raise ValueError('No subcorpora found in %s' % path)
+        import warnings
+        warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
+        sorted_dirs = [path]
     allwords_list = []
     results_list = []
     main_totals = [u'Totals']
@@ -159,11 +162,15 @@ def interrogator(path, options, query, lemmatise = False,
     # do interrogation with tregex
     for index, d in enumerate(sorted_dirs):
         p.animate(index)
+        if len(sorted_dirs) == 1:
+            subcorpus = path
+        else:
+            subcorpus = os.path.join(path,d)
         if have_ipython:
-            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, os.path.join(path,d))
+            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
             result = get_ipython().getoutput(tregex_command)
         else:
-            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % os.path.join(path,d)]
+            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % subcorpus]
             FNULL = open(os.devnull, 'w')
             result = subprocess.check_output(tregex_command, stderr=FNULL)
             result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
@@ -448,22 +455,25 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
             return totallist
         
 #########################################################################
-#########################################################################
-#########################################################################
 
     regex = re.compile(query)
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
-    if test:
-        sorted_dirs = sorted_dirs[:test]
-    allwords_list = []
-    results_list = []
+    # if no subcorpora, just treat as one big corpus
+    if len(sorted_dirs) == 0:
+        import warnings
+        warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
+        sorted_dirs = [path]
     main_totals = [u'Totals']
     num_dirs = len(sorted_dirs)
     all_files = []
     for index, d in enumerate(sorted_dirs):
         yearfinder = re.findall(r'[0-9]+', d)
-        files = [f for f in os.listdir(os.path.join(path, d)) if f.endswith('.xml')]
+        if len(sorted_dirs) == 1:
+            subcorpus = path
+        else:
+            subcorpus = os.path.join(path, d)
+        files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
         if test:
             files = files[:2000]
         #read_files = glob.glob(os.path.join(path, d, "*.xml"))
@@ -522,7 +532,6 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
     list_words = []
     for word in unique_words:
         list_words.append([word])
-
 
     # make dictionary of every subcorpus
     dicts = []
