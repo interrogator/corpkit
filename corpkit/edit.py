@@ -347,3 +347,52 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         output = outputnames(unpickled[0], unpickled[1])
     return output
+
+def subcorpus_remover(interrogator_list, just_subcorpora, remove = True, **kwargs):
+    """Takes a list and returns only results from the years listed in just_subcorpora"""
+    import collections
+    import copy
+    import warnings
+
+    from corpkit.edit import combiner, combiner
+    
+    # default to results branch
+    if isinstance(interrogator_list, tuple) is True:
+        warnings.warn('\nNo branch of results selected. Using .results ... ')
+        interrogator_list = interrogator_list.results
+    # copy and wrap list if need be
+    if type(interrogator_list[0]) == unicode or type(interrogator_list[0]) == str:
+        alldata = [copy.deepcopy(interrogator_list)]
+    else:
+        alldata = copy.deepcopy(interrogator_list)
+    output = []
+    if type(just_subcorpora) == int or type(just_subcorpora) == str or type(just_subcorpora) == unicode:
+        just_subcorpora = [just_subcorpora]
+    for entry in alldata:
+        # new list with just word
+        skipped = [entry[0]]
+        for item in entry[1:]:
+            # make sure it's a list ... weird way to do it
+            if type(item) != unicode and type(item) != str:
+                for subcorpus in just_subcorpora:
+                    if remove:
+                        if item[0] != subcorpus and item[0] != u'Total':
+                            skipped.append(item)
+                    elif not remove:
+                        if item[0] == subcorpus and item[0] != u'Total':
+                            skipped.append(item)
+        total = sum([i[1] for i in skipped[1:]])
+        skipped.append([u'Total', total])
+        output.append(skipped)
+    output = resorter(output, **kwargs)
+    # generate totals:
+    totals = combiner(output, 'Totals', printmerge = False)
+    # make into name tuple
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+    try:
+        query_options = interrogator_list.query
+    except AttributeError:
+        query_options = ['subcorpus_remover used to generate this']
+    #main_totals.append([u'Total', total])
+    output = outputnames(query_options, output, totals)
+    return output
