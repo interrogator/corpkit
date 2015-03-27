@@ -198,12 +198,16 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     if x_label:
         x_lab = x_label
     else:
-        check_x_axis = alldata[0] # get first entry
-        check_x_axis = check_x_axis[1] # get second entry of first entry (year, count)
-        if 1500 < check_x_axis[0] < 2050:
-            x_lab = 'Year'
+        if not barchart:
+            check_x_axis = alldata[0] # get first entry
+            check_x_axis = check_x_axis[1] # get second entry of first entry (year, count)
+            if 1500 < check_x_axis[0] < 2050:
+                x_lab = 'Year'
+            else:
+                x_lab = 'Group'
         else:
-            x_lab = 'Group'
+            x_lab = False
+
 
     # select totals if no branch selected
     if fract_of:
@@ -330,10 +334,14 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
     elif barchart:
+        if num_to_plot > len(alldata):
+            warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
+        cutoff = len(alldata)
         import numpy as np
         scores = [entry[1][1] for entry in alldata[:cutoff]]
         ind = np.arange(cutoff)  # the x locations for the groups
         width = 0.35       # the width of the bars
+
         
         fig, ax = plt.subplots()
         rects1 = ax.bar(ind, scores, width, color="#1f78b4")
@@ -352,7 +360,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         longest = len(max(labels, key=len))
         if longest > 7:
             if figsize < 20:
-                if len(labels) > 6:
+                if num_to_plot > 6:
                     ax.set_xticklabels(labels, rotation=45)
         else:
             ax.set_xticklabels(labels)
@@ -374,7 +382,9 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         ax.legend( (rects1[0], rects2[0]), legend_labels )
 
     # make axis labels
-    plt.xlabel(x_lab)
+    if x_lab:
+        plt.xlabel(x_lab)
+
     if not y_label:
         #print "Warning: no name given for y-axis. Using default."
         if fract_of:
