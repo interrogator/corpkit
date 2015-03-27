@@ -236,6 +236,10 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     final = []
     colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
     c = 0
+    
+    if num_to_plot > len(alldata):
+        warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
+    
     if not csvmake:
         cutoff = num_to_plot
     
@@ -334,8 +338,6 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
     elif barchart:
-        if num_to_plot > len(alldata):
-            warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
         cutoff = len(alldata)
         import numpy as np
         scores = [entry[1][1] for entry in alldata[:cutoff]]
