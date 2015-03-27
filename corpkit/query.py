@@ -154,7 +154,7 @@ def interrogator(path, options, query, lemmatise = False,
     if len(sorted_dirs) == 0:
         import warnings
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
-        sorted_dirs = [path]
+        sorted_dirs = [os.path.basename(path)]
     allwords_list = []
     results_list = []
     main_totals = [u'Totals']
