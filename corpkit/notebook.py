@@ -79,3 +79,11 @@ def conv(inputfile, loadme = True):
     #nbnew = open(output, 'r')
     #IPython.nbformat.v4.convert.upgrade(nbnew, from_version=3, from_minor=0)
     print 'Done!\n'
+
+def new_project(name):
+    """make a new project in current directory"""
+    import os
+    datadir = 'data'
+    imagesdir = 'images'
+    dictdir = 'data/dictionaries'
+    print 'Done!'
