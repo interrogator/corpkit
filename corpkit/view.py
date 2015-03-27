@@ -163,7 +163,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
 
     ##################################################################
 
-    # copy results and embed in list if need be.
+    # Use .results branch if branch is unspecified
     if isinstance(results, tuple) is True:
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         results = results.results
@@ -173,7 +173,6 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                               'not be helpful to use both the static and only_below_p options together.')
         if sort_by == 'total' or sort_by == 'name':
             warnings.warn("\nP value has not been calculated. No entries will be excluded") 
-        #raise ValueError("Select branch of results to plot (.results or .totals")
     
     # cut short to save time if later results aren't useful
     if csvmake or sort_by != 'total':
@@ -188,6 +187,12 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     else:
         legend = True
         alldata = copy.deepcopy(results[:cutoff])
+
+    # determine if no subcorpora and thus barchart
+    if len(results[0]) == 3 or len(results[0]) == 4:
+        barchart = True
+    else:
+        barchart = False
 
     # if no x_label, guess 'year' or 'group'
     if x_label:
@@ -229,98 +234,144 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     c = 0
     if not csvmake:
         cutoff = num_to_plot
-    for index, entry in enumerate(alldata[:cutoff]):
-        # run called processes
-        if skip63:
-            entry = skipper(entry)
-        if yearspan:
-            entry = yearspanner(entry, yearspan)
-        if justyears:
-            entry = yearskipper(entry, justyears)
-        if projection:
-            if not fract_of:
-                entry = projector(entry)
-        # get word
-        word = entry[0]
-        if do_stats:
-            pval = entry[-1][3]
-            p_short = "%.4f" % pval
-            p_string = ' (p=%s)' % p_short   
-            # remove stats, we're done with them.
-            entry.pop() 
-        # get totals ... horrible code
-        total = 0
-        if fract_of:
-            if entry[-1][0] == 'Total':
-                num = entry[-1][1]
-                total = "%.2f" % num
-                #total = str(float(entry[-1][1]))[:5]
-            totalstring = ' (' + str(total) + '\%)'     
-        else:
-            if entry[-1][0] == 'Total':
-                total = entry[-1][1]
-            totalstring = ' (n=%d)' % total
-
-        entry.pop() # get rid of total. good or bad?
-        csvalldata.append(entry) 
-
-        if index < num_to_plot:
-            csvdata.append(entry)
-            toplot = []
-            xvalsbelow = []
-            yvalsbelow = []
-            xvalsabove = []
-            yvalsabove = []
-            d = 1 # first tuple, maybe not very stable
-            tups = len(entry) - 2 # all tuples minus 2 (to skip totals tuple)
-            for _ in range(tups):
-                firstpart = entry[d] # first tuple
-                firstyear = firstpart[0]
-                nextpart = entry[d + 1]
-                nextyear = nextpart[0]
-                diff = nextyear - firstyear
-                if nextyear - firstyear > 1:
-                    xvalsbelow.append(firstpart[0])
-                    yvalsbelow.append(firstpart[1])
-                    xvalsbelow.append(nextpart[0])
-                    yvalsbelow.append(nextpart[1])
-                else:
-                    xvalsabove.append(firstpart[0])
-                    yvalsabove.append(firstpart[1])
-                    xvalsabove.append(nextpart[0])
-                    yvalsabove.append(nextpart[1])
-                d += 1
-
-            # do actual plotting
-            # do these get written over!?
-            plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-            plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
-            if legend_totals:
-                thelabel = word + totalstring
-                plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-            elif legend_p:
-                if sort_by == 'total' or sort_by == 'name':
-                    warnings.warn("\nP value has not been calculated, so it can't be printed.")
-                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt              
-                else:
-                    thelabel = word + p_string
-                    plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
-            else:
-                plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-            if c == 8:
-                c = 0 # unpythonic
-            c += 1
-        
-        # old way to plot everything at once
-        #plt.plot(*zip(*toplot), label=word) # this is other projects...
     
-    #make legend
-    if legend:
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    if not barchart:
+        for index, entry in enumerate(alldata[:cutoff]):
+            # run called processes
+            if skip63:
+                entry = skipper(entry)
+            if yearspan:
+                entry = yearspanner(entry, yearspan)
+            if justyears:
+                entry = yearskipper(entry, justyears)
+            if projection:
+                if not fract_of:
+                    entry = projector(entry)
+            # get word
+            word = entry[0]
+            if do_stats:
+                pval = entry[-1][3]
+                p_short = "%.4f" % pval
+                p_string = ' (p=%s)' % p_short   
+                # remove stats, we're done with them.
+                entry.pop() 
+            # get totals ... horrible code
+            total = 0
+            if fract_of:
+                if entry[-1][0] == 'Total':
+                    num = entry[-1][1]
+                    total = "%.2f" % num
+                    #total = str(float(entry[-1][1]))[:5]
+                totalstring = ' (' + str(total) + '\%)'     
+            else:
+                if entry[-1][0] == 'Total':
+                    total = entry[-1][1]
+                totalstring = ' (n=%d)' % total
+    
+            entry.pop() # get rid of total. good or bad?
+            csvalldata.append(entry) 
+    
+            if index < num_to_plot:
+                csvdata.append(entry)
+                toplot = []
+                xvalsbelow = []
+                yvalsbelow = []
+                xvalsabove = []
+                yvalsabove = []
+                d = 1 # first tuple, maybe not very stable
+                tups = len(entry) - 2 # all tuples minus 2 (to skip totals tuple)
+                for _ in range(tups):
+                    firstpart = entry[d] # first tuple
+                    firstyear = firstpart[0]
+                    nextpart = entry[d + 1]
+                    nextyear = nextpart[0]
+                    diff = nextyear - firstyear
+                    if nextyear - firstyear > 1:
+                        xvalsbelow.append(firstpart[0])
+                        yvalsbelow.append(firstpart[1])
+                        xvalsbelow.append(nextpart[0])
+                        yvalsbelow.append(nextpart[1])
+                    else:
+                        xvalsabove.append(firstpart[0])
+                        yvalsabove.append(firstpart[1])
+                        xvalsabove.append(nextpart[0])
+                        yvalsabove.append(nextpart[1])
+                    d += 1
+    
+                # do actual plotting
+                # do these get written over!?
+                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
+                plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
+                if legend_totals:
+                    thelabel = word + totalstring
+                    plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
+                elif legend_p:
+                    if sort_by == 'total' or sort_by == 'name':
+                        warnings.warn("\nP value has not been calculated, so it can't be printed.")
+                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt              
+                    else:
+                        thelabel = word + p_string
+                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
+                else:
+                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
+                if c == 8:
+                    c = 0 # unpythonic
+                c += 1
+            
+            # old way to plot everything at once
+            #plt.plot(*zip(*toplot), label=word) # this is other projects...
+        
+        #make legend
+        if legend:
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+    elif barchart:
+        import numpy as np
+        scores = [entry[1][1] for entry in alldata[:cutoff]]
+        ind = np.arange(cutoff)  # the x locations for the groups
+        width = 0.35       # the width of the bars
+        
+        fig, ax = plt.subplots()
+        rects1 = ax.bar(ind, scores, width, color="#1f78b4")
+        
+        if len(results[0]) == 4:
+            compscores = [entry[2][1] for entry in alldata[:cutoff]]
+            rects2 = ax.bar(ind+width, compscores, width, color="#33a02c")
+        
+        # add some text for labels, title and axes ticks
+        
+        ax.set_xticks(ind+width)
+        
+        # get labels
+        labels = [entry[0] for entry in alldata[:cutoff]]
+        
+        longest = len(max(labels, key=len))
+        if longest > 7:
+            if figsize < 20:
+                if len(labels) > 6:
+                    ax.set_xticklabels(labels, rotation=45)
+        else:
+            ax.set_xticklabels(labels)
+
+        # rotate the labels if they're long:
+
+        
+        def autolabel(rects):
+            # attach some text labels
+            for rect in rects:
+                height = rect.get_height()
+                ax.text(rect.get_x()+rect.get_width()/2., 1.0*height, '%d'%int(height),
+                        ha='center', va='bottom')
+        
+        autolabel(rects1)
+        if len(results[0]) == 4:
+            autolabel(rects2)
+        legend_labels = [alldata[0][1][0], alldata[0][2][0]]
+        ax.legend( (rects1[0], rects2[0]), legend_labels )
 
     # make axis labels
     plt.xlabel(x_lab)
@@ -330,24 +381,25 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             y_label = 'Percentage'
         if not fract_of:
             y_label = 'Total frequency'
-    # no decimals on x axis:
-    # make the chart
-    plt.gca().get_xaxis().set_major_locator(MaxNLocator(integer=True))
     plt.ylabel(y_label)
     pylab.title(title)
-    if log == 'x':
-        plt.xscale('log')
-        plt.gca().get_xaxis().set_major_formatter(ScalarFormatter())
-    elif log == 'y':
-        plt.yscale('log')
-        plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
-    elif log == 'x, y':
-        plt.xscale('log')
-        plt.gca().get_xaxis().set_major_formatter(ScalarFormatter())
-        plt.yscale('log')
-        plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
-    else:
-        plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
+
+    if not barchart:
+        plt.gca().get_xaxis().set_major_locator(MaxNLocator(integer=True))
+        
+        if log == 'x':
+            plt.xscale('log')
+            plt.gca().get_xaxis().set_major_formatter(ScalarFormatter())
+        elif log == 'y':
+            plt.yscale('log')
+            plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
+        elif log == 'x, y':
+            plt.xscale('log')
+            plt.gca().get_xaxis().set_major_formatter(ScalarFormatter())
+            plt.yscale('log')
+            plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
+        else:
+            plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
     plt.grid()
     fig1 = plt.gcf()
     plt.show()
