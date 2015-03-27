@@ -175,11 +175,17 @@ def interrogator(path, options, query, lemmatise = False,
             result = subprocess.check_output(tregex_command, stderr=FNULL)
             result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
         if only_count:
-            tup = [int(d), int(result[0])]
+            try:
+                tup = [int(d), int(result[0])]
+            except ValueError:
+                tup = [d, int(result[0])]
             main_totals.append(tup)
             continue
         result.sort()
-        main_totals.append([int(d), len(result)])
+        try:
+            main_totals.append([int(d), len(result)])
+        except ValueError:
+            main_totals.append([d, len(result)])
         processed_result = processwords(result)
         allwords_list.append(processed_result)
         results_list.append(processed_result)
@@ -215,7 +221,10 @@ def interrogator(path, options, query, lemmatise = False,
         dicts.append(dictionary)
         for word in list_words:
             getval = dictionary[word[0]]
-            word.append([int(subcorpus_name), getval])
+            try:
+                word.append([int(subcorpus_name), getval])
+            except ValueError:
+                word.append([subcorpus_name, getval])
     p.animate(len(results_list))
     # do totals (and keep them), then sort list by total
     for word in list_words:
@@ -507,7 +516,10 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
             data = None
             gc.collect()
         result.sort()
-        main_totals.append([int(d), len(result)]) # should this move down for more accuracy?
+        try:
+            main_totals.append([int(d), len(result)]) # should this move down for more accuracy?
+        except ValueError:
+            main_totals.append([d, len(result)])
         if only_count:
             continue
         if options != 'depnum':
@@ -543,17 +555,18 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
         dicts.append(dictionary)
         for word in list_words:
             getval = dictionary[word[0]]
-            word.append([int(subcorpus_name), getval])
+            try:
+                word.append([int(subcorpus_name), getval])
+            except ValueError:
+                word.append([subcorpus_name, getval])
     p.animate(len(results_list))
     # do totals (and keep them)
     if options == 'depnum':
-        print list_words
         list_words.sort(key=lambda x: int(x[0]))
         main_totals = depnum_reorder(list_words, output = 'totals') 
         list_words = depnum_reorder(list_words, output = 'results') 
     else: 
         list_words.sort(key=lambda x: x[-1], reverse = True)
-    print list_words
     for word in list_words:
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
