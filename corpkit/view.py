@@ -184,6 +184,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     if type(results[0]) == unicode or type(results[0]) == str:
         legend = False
         alldata = [copy.deepcopy(results)][:cutoff]
+        num_to_plot = 1
     else:
         legend = True
         alldata = copy.deepcopy(results[:cutoff])
