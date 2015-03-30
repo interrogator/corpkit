@@ -50,3 +50,4 @@ from notebook import report_display
 from notebook import pytoipy
 from notebook import ipyconverter
 from notebook import conv
+from notebook import new_project
