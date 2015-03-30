@@ -1,15 +1,23 @@
 __all__ = ["colls", "edit", "keys", "notebook", "query", "view", "build"]
 
-# these lines here are to let ipython find tregex
+
 import os
+import sys
+
+# these lines here are to let ipython find tregex and potentially
+# anything in 'dictionaries'
 
 import corpkit
-path_to_module = os.path.dirname(corpkit.__file__)
-os.environ["PATH"] += os.pathsep + path_to_module
-
+path_to_corpkit = os.path.dirname(corpkit.__file__)
+thepath, corpkitname = os.path.split(path_to_corpkit)
 import dictionaries
-path_to_module = os.path.dirname(dictionaries.__file__)
-os.environ["PATH"] += os.pathsep + path_to_module
+os.environ["PATH"] += os.pathsep + path_to_corpkit + os.pathsep + os.path.join(thepath, 'dictionaries')
+
+# these add to pythonpath, mostly so we can find dictionaries
+# doesn't seem to be working at the moment, though.
+sys.path.append(path_to_corpkit)
+sys.path.append(os.path.join(thepath, 'dictionaries'))
+sys.path.append(thepath)
 
 from query import interrogator
 from query import interroplot

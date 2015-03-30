@@ -137,6 +137,13 @@ def datareader(data):
     """Figures out what kind of thing you're parsing
     and returns a big string of text"""
     import os
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        import subprocess
+        have_ipython = False
     if type(data) == str:
         # if it's a file, assume csv and get the big part
         if os.path.isfile(data):
@@ -150,10 +157,10 @@ def datareader(data):
         elif os.path.isdir(data):
             # why did root appear as key???
             if have_ipython:
-                tregex_command = 'tregex.sh -o -w -t %s \'__ !> __\' %s 2>/dev/null | grep -vP \'^\s*$\'' % data
+                tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null | grep -vP \'^\s*$\'' % data
                 trees = get_ipython().getoutput(tregex_command)
             else:
-                tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % options, '%s' % query, "%s" % data]
+                tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
                 FNULL = open(os.devnull, 'w')
                 trees = subprocess.check_output(tregex_command, stderr=FNULL)
                 trees = os.linesep.join([s for s in trees.splitlines() if s]).split()
