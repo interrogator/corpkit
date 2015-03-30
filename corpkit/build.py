@@ -121,3 +121,27 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     time = strftime("%H:%M:%S", localtime())
     print time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
 
+def downloader():
+    """download a bunch of urls and store in a local folder"""
+    return downloaded
+
+def text_extractor():
+    """extract text from html/xml files"""
+    return extracted_text
+
+def structure_corpus():
+    """structure a corpus in some kind of sequence"""
+    print 'Done!'
+
+def stanford_parse(unparsed_texts):
+    """Parse a directory (recursively) with the Stanford parser..."""
+    # 
+    # make file list with os.walk
+    # 
+    # parse every file
+    # 
+    # connect old to new?
+    # 
+    # make metadata?
+    # 
+    print 'Done!'
