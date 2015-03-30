@@ -57,7 +57,7 @@ def keywords_and_ngrams(input, nKeywords=1000, thresholdLL=19, nBigrams=250, thr
         fdist_dictfile = pickle.load( open( dictionary, "rb" ) )
     except IOError:
         try:
-            fdist_dictfile = pickle.load( open( os.path.join('dictionaries', dictionary), "rb" ) )
+            fdist_dictfile = pickle.load( open( os.path.join('data/dictionaries', dictionary), "rb" ) )
         except IOError:
             try:
                 import corpkit
@@ -66,7 +66,7 @@ def keywords_and_ngrams(input, nKeywords=1000, thresholdLL=19, nBigrams=250, thr
                 dictionaries_path = os.path.join(thepath, 'dictionaries')
                 fdist_dictfile = pickle.load( open( os.path.join(dictionaries_path, dictionary), "rb" ) )
             except IOError:
-                raise IOError('Could not find %s in current directory, ./dictionaries or %s' % (dictionary, dictionaries_path))
+                raise IOError('Could not find %s in current directory, data/dictionaries or %s' % (dictionary, dictionaries_path))
     
     # Total number of words in Spoken BNC
     dictsum = sum(fdist_dictfile.itervalues())
