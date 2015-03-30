@@ -1,12 +1,12 @@
 
-def keywords(data, dictionary = 'all.p', **kwargs):
+def keywords(data, dictionary = 'bnc.p', **kwargs):
     """Feed this a csv file generated with conc() and get its keywords"""
     #import sys
     #sys.path.insert(0, 'spindle-code-master/keywords')
     #% run corpling_tools/keywords.ipy
     from corpkit.keys import ngrams, keywords_and_ngrams
+    from corpkit.edit import datareader
     import re
-    import os
     import time
     from time import localtime, strftime
     try:
@@ -43,17 +43,31 @@ def keywords(data, dictionary = 'all.p', **kwargs):
 def ngrams(words, n=2):
     return (tuple(words[i:i+n]) for i in range(0, len(words) - (n - 1)))
 
-def keywords_and_ngrams(input, nKeywords=100, thresholdLL=19, nBigrams=25, thresholdBigrams=2, dictionary = 'bnc.p'):
+def keywords_and_ngrams(input, nKeywords=1000, thresholdLL=19, nBigrams=250, thresholdBigrams=2, dictionary = 'bnc.p'):
     from collections import defaultdict
-    import sys,os
+    import sys
     import math
     import json
+    import os
     from dictionaries.stopwords import stopwords as my_stopwords
     import cPickle as pickle
     # Read BNC word frequency distributions using cpickle
     # Note: bnc.p contains only non stopwords
-    dictfile = os.path.join(os.path.join('dictionaries', dictionary))
-    fdist_dictfile = pickle.load( open( dictfile, "rb" ) )
+    try:
+        fdist_dictfile = pickle.load( open( dictionary, "rb" ) )
+    except IOError:
+        try:
+            fdist_dictfile = pickle.load( open( os.path.join('dictionaries', dictionary), "rb" ) )
+        except IOError:
+            try:
+                import corpkit
+                path_to_corpkit = os.path.dirname(corpkit.__file__)
+                thepath, corpkitname = os.path.split(path_to_corpkit)
+                dictionaries_path = os.path.join(thepath, 'dictionaries')
+                fdist_dictfile = pickle.load( open( os.path.join(dictionaries_path, dictionary), "rb" ) )
+            except IOError:
+                raise IOError('Could not find %s in current directory, ./dictionaries or %s' % (dictionary, dictionaries_path))
+    
     # Total number of words in Spoken BNC
     dictsum = sum(fdist_dictfile.itervalues())
     fdistText = defaultdict(int)
