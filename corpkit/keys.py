@@ -1,19 +1,33 @@
 
 def keywords(data, dictionary = 'bnc.p', **kwargs):
-    """Feed this a csv file generated with conc() and get its keywords"""
-    #import sys
-    #sys.path.insert(0, 'spindle-code-master/keywords')
-    #% run corpling_tools/keywords.ipy
-    from corpkit.keys import ngrams, keywords_and_ngrams
-    from corpkit.edit import datareader
+    """Feed this function some data and get its keywords.
+
+    You can use dictmaker() to build a new dictionary 
+    to serve as reference corpus, or use bnc.p
+
+    A list of what counts as data is available in the 
+    docstring of datareader().
+    """
+    
     import re
     import time
     from time import localtime, strftime
+
     try:
         from IPython.display import display, clear_output
-        have_ipython = True
     except ImportError:
+        pass
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        import subprocess
         have_ipython = False
+
+    from corpkit.keys import ngrams, keywords_and_ngrams
+    from corpkit.edit import datareader
+
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     #if noprint is False:

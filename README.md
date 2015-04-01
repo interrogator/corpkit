@@ -14,10 +14,10 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `dependencies()`  | interrogate parsed corpora for dependency info        | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `surgeon()`       | edit `interrogator()` results      | 
-| `merger()`       | merge `interrogator()` results      | 
+| `merger()`        | merge `interrogator()` results      | 
 | `conc()`          | complex concordancing of subcorpora | 
-| `keywords()`          | get keywords and ngrams from corpus/subcorpus/concordance lines | 
-| `collocates()`          | get collocates from corpus/subcorpus/concordance lines | 
+| `keywords()`      | get keywords and ngrams from corpus/subcorpus/concordance lines | 
+| `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
 
 Because I mostly use systemic functional grammar, there also some simple dictionaries to distinguish between process types (relational, mental, verbal). These don't have much documentation right now, but they can be seen in action in my research projects:
 

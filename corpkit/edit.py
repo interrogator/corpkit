@@ -135,7 +135,18 @@ def surgeon(lst, criteria, remove = False, **kwargs):
 
 def datareader(data):
     """Figures out what kind of thing you're parsing
-    and returns a big string of text"""
+    and returns a big string of text
+
+    The kinds of data accepted are:
+
+    path to corpus
+    path to subcorpus
+    conc() output (list of concordance lines)
+    csv file generated with conc()
+    a string of text
+
+    
+    """
     import os
     try:
         get_ipython().getoutput()

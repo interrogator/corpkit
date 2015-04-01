@@ -199,6 +199,6 @@ def new_project(name):
         # permissions for sh launcher
         st = os.stat(os.path.join(name, 'launcher.sh'))
         os.chmod(os.path.join(name, 'launcher.sh'), st.st_mode | 0111)
-        print '\nNew project made: %s\n\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\nor run launcher.sh.\n\n' % (name, name)
+        print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\nor run launcher.sh.\n\n' % (name, name)
     else:
-        print '\nNew project made: %s\n\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
+        print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
