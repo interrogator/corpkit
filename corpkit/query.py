@@ -21,10 +21,12 @@ def interrogator(path, options, query, lemmatise = False,
         pass
     if lemmatise:
         import nltk
+        import dictionaries
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
         from dictionaries.word_transforms import wordlist, usa_convert
+        from dictionaries.manual_lemmatisation import wordlist, deptags
     # check if we are in ipython
     try:
         get_ipython().getoutput()
@@ -33,7 +35,6 @@ def interrogator(path, options, query, lemmatise = False,
     except NameError:
         import subprocess
         have_ipython = False
-    
     # exit on ctrl c
     def signal_handler(signal, frame):
         import sys
@@ -91,7 +92,9 @@ def interrogator(path, options, query, lemmatise = False,
             entry.pop()
             if word in wordlist:
                 word = wordlist[word]
-            word = lmtzr.lemmatize(word, tag)
+            # only use wordnet lemmatiser for -t
+            if re.match(t_option_regex, options):
+                word = lmtzr.lemmatize(word, tag)
             entry.append(word)
             output.append(' '.join(entry))
         return output
