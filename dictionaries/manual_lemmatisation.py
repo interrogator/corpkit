@@ -2,7 +2,8 @@
 
 # During lemmatisation, words will be corrected via this list.
 
-# insert the word and what you want it to be turned into.
+# insert the word and what you want it to be turned into. 
+# This also includes POS tags.
 
 wordlist = {u"felt": u"feel",
            u"'s": u"is",
@@ -12,7 +13,23 @@ wordlist = {u"felt": u"feel",
            u"'ve": u"have",
            u"n't": u"not",
            u"smelt": u"smell",
-           u"others": u"other"}
+           u"others": u"other",
+           u"vbp": u"vb",
+           u"vbz": u"vb",
+           u"vbn": u"vb",
+           u"vbd": u"vb",
+           u"vbg": u"vb",
+           u"nnp": u"nn",
+           u"nns": u"nn",
+           u"nnps": u"nn",
+           u"prp$": u"prp",
+           u"jjr": u"jj",
+           u"jjs": u"jj",
+           u"prp$": u"prp",
+           u"rbr": u"rb",
+           u"rbs": u"rb",
+           u"wp$": u"wp"}
+
 
 
 # this one translates the dependency relationship into a wordnet tag:

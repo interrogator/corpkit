@@ -1,5 +1,5 @@
 
-def keywords(data, dictionary = 'bnc.p', **kwargs):
+def keywords(data, dictionary = 'bnc.p', clear = True, **kwargs):
     """Feed this function some data and get its keywords.
 
     You can use dictmaker() to build a new dictionary 
@@ -43,7 +43,8 @@ def keywords(data, dictionary = 'bnc.p', **kwargs):
         joined_ngram = ' '.join(item[0])
         aslist = [index, joined_ngram, item[1]]
         ngrams_list_version.append(aslist)
-    clear_output()    
+    if clear:
+        clear_output()    
     return keywords_list_version, ngrams_list_version
 
 
