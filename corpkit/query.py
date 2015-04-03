@@ -80,20 +80,14 @@ def interrogator(path, options, query, lemmatise = False,
         return tag
     
     def processwords(list_of_matches):
-        if not phrases:
-            matches = [unicode(match, 'utf-8', errors = 'ignore') for match in list_of_matches]
-            matches = [w.lower() for w in matches]
-        else:
-            matches = [unicode(item, 'utf-8', errors = 'ignore') for sublist in list_of_matches for item in sublist]
-            matches = [item.lower() for sublist in matches for item in sublist]
         if lemmatise:
             tag = gettag(query)
-            matches = lemmatiser(matches, tag)
+            list_of_matches = lemmatiser(list_of_matches, tag)
         if titlefilter:
-            matches = titlefilterer(matches)
+            list_of_matches = titlefilterer(list_of_matches)
         if usa_english:
-            matches = usa_english_maker(matches)
-        return matches
+            list_of_matches = usa_english_maker(list_of_matches)
+        return list_of_matches
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
@@ -127,11 +121,14 @@ def interrogator(path, options, query, lemmatise = False,
         output = []
         for result in list_of_matches:
             head = result[-1]
-            non_head = result.index(head) # ???
+            non_head = len(result) - 1 # ???
             title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in titlewords and token.rstrip('.') not in determiners]
             title_stripped.append(head)
-            str_result = ' '.join(title_stripped)
-            output.append(str_result)
+            if not usa_english:
+                str_result = ' '.join(title_stripped)
+                output.append(str_result)
+            else:
+                output.append(title_stripped)
         return output
 
     def usa_english_maker(list_of_matches):
@@ -215,11 +212,14 @@ def interrogator(path, options, query, lemmatise = False,
                 tup = [d, int(result[0])]
             main_totals.append(tup)
             continue
+        result = [unicode(match, 'utf-8', errors = 'ignore') for match in result]
+        result = [w.lower() for w in result]
         result.sort()
         try:
             main_totals.append([int(d), len(result)])
         except ValueError:
             main_totals.append([d, len(result)])
+        # encode text and tokenise phrase results
         if phrases:
             result = [nltk.word_tokenize(i) for i in result]
         processed_result = processwords(result)
@@ -376,13 +376,6 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
         return output
     
     def processwords(list_of_matches):
-        # encoding
-        #matches = [unicode(match, 'utf-8', errors = 'ignore') for match in list_of_matches if type(match) != unicode]
-        #matches = [match for match in list_of_matches if type(match) == unicode]
-        # remove bad characters
-        #matches = [re.sub(strip_bad, "", match) for match in matches]
-        #matches = filter(None, matches)
-        #lowercasing
         matches = []
         for match in list_of_matches:
             try:
