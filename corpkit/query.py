@@ -5,7 +5,18 @@
 #   Author: Daniel McDonald
 
 def interrogator(path, options, query, lemmatise = False, 
-    titlefilter = False, lemmatag = False, usa_english = True):
+    titlefilter = False, lemmatag = False, usa_english = True, phrases = False):
+    """Interrogate a corpus using Tregex queries
+
+    path: path to corpus
+    options: Tregex output options: -t, -c, -u, -o
+    query: Tregex query
+    lemmatise: Do lemmatisation on results?
+    titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
+    lemmatag: explicitly pass pos to lemmatiser: 'n', 'v', 'a' or 'r'
+    usa_english: convert all to us english
+    phrases: turn on if your expected results are multiword and thus need tokenising
+    """
     import os
     import re
     import signal
@@ -15,18 +26,18 @@ def interrogator(path, options, query, lemmatise = False,
 
     from corpkit.query import query_test
     from corpkit.progressbar import ProgressBar
+    import nltk
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
+    import dictionaries
     if lemmatise:
-        import nltk
-        import dictionaries
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
         from dictionaries.word_transforms import wordlist, usa_convert
-        from dictionaries.manual_lemmatisation import wordlist, deptags
+        from dictionaries.manual_lemmatisation import wordlist, taglemma
     # check if we are in ipython
     try:
         get_ipython().getoutput()
@@ -69,10 +80,12 @@ def interrogator(path, options, query, lemmatise = False,
         return tag
     
     def processwords(list_of_matches):
-        # encoding
-        matches = [unicode(match, 'utf-8', errors = 'ignore') for match in list_of_matches]
-        #lowercasing
-        matches = [w.lower() for w in matches]
+        if not phrases:
+            matches = [unicode(match, 'utf-8', errors = 'ignore') for match in list_of_matches]
+            matches = [w.lower() for w in matches]
+        else:
+            matches = [unicode(item, 'utf-8', errors = 'ignore') for sublist in list_of_matches for item in sublist]
+            matches = [item.lower() for sublist in matches for item in sublist]
         if lemmatise:
             tag = gettag(query)
             matches = lemmatiser(matches, tag)
@@ -84,31 +97,36 @@ def interrogator(path, options, query, lemmatise = False,
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
-        tokenised_list = [nltk.word_tokenize(i) for i in list_of_words]
         output = []
-        for entry in tokenised_list:
-            # just get the rightmost word
-            word = entry[-1]
-            entry.pop()
-            if word in wordlist:
-                word = wordlist[word]
+        for entry in list_of_words:
+            if phrases:
+                # just get the rightmost word
+                word = entry[-1]
+                entry.pop()
+            else:
+                word = entry
+            if options == '-u':
+                if word in taglemma:
+                    word = taglemma[word]
             # only use wordnet lemmatiser for -t
-            if re.match(t_option_regex, options):
+            if options == '-t':
+                if word in wordlist:
+                    word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
-            entry.append(word)
-            output.append(' '.join(entry))
+            if phrases:
+                entry.append(word)
+                output.append(' '.join(entry))
+            else:
+                output.append(word)
         return output
         # if single words: return [lmtsr.lemmatize(word, tag) for word in list_of_matches]
 
     def titlefilterer(list_of_matches):
-        import nltk
         from dictionaries.titlewords import titlewords
         from dictionaries.titlewords import determiners
-
-        tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
         output = []
-        for result in tokenised_list:
-            head = result[-1] # ???
+        for result in list_of_matches:
+            head = result[-1]
             non_head = result.index(head) # ???
             title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in titlewords and token.rstrip('.') not in determiners]
             title_stripped.append(head)
@@ -117,25 +135,34 @@ def interrogator(path, options, query, lemmatise = False,
         return output
 
     def usa_english_maker(list_of_matches):
-        import nltk
         from dictionaries.word_transforms import usa_convert
-        tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
         output = []
-        for result in tokenised_list:
-            head = result[-1]
-            try:
-                result[-1] = usa_convert[result[-1]]
-            except KeyError:
-                pass
-            output.append(' '.join(result))
+        for result in list_of_matches:
+            if phrases:
+                for w in result:
+                    try:
+                        w = usa_convert[w]
+                    except KeyError:
+                        pass
+                output.append(' '.join(result))
+            else:
+                try:
+                    result = usa_convert[result]
+                except KeyError:
+                    pass
+                output.append(result)
         return output
 
-    # welcome message based on kind of interrogation
+    # titlefiltering only works with phrases, so turn it on
+    if titlefilter:
+        phrases = True
 
+    # welcome message based on kind of interrogation
     u_option_regex = re.compile(r'(?i)-u') # find out if u option enabled
     t_option_regex = re.compile(r'(?i)-t') # find out if t option enabled   
     o_option_regex = re.compile(r'(?i)-o') # find out if t option enabled   
     c_option_regex = re.compile(r'(?i)-c') # find out if c option enabled   
+    
     only_count = False
 
     if re.match(u_option_regex, options):
@@ -148,10 +175,14 @@ def interrogator(path, options, query, lemmatise = False,
         only_count = True
         options = options.upper()
         optiontext = 'Counts only.'
+
+    # begin interrogation
     time = strftime("%H:%M:%S", localtime())
     print "\n%s: Beginning corpus interrogation: %s\n          Query: '%s'\n          %s\n          Interrogating corpus ... \n" % (time, path, query, optiontext)
+    
     # check that query is ok
     query_test(query, have_ipython = have_ipython)
+
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
     if len(sorted_dirs) == 0:
@@ -189,6 +220,8 @@ def interrogator(path, options, query, lemmatise = False,
             main_totals.append([int(d), len(result)])
         except ValueError:
             main_totals.append([d, len(result)])
+        if phrases:
+            result = [nltk.word_tokenize(i) for i in result]
         processed_result = processwords(result)
         allwords_list.append(processed_result)
         results_list.append(processed_result)
