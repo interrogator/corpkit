@@ -339,13 +339,13 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
     elif barchart:
+        rcParams['figure.figsize'] = figsize, figsize/2
         cutoff = len(alldata)
         import numpy as np
         scores = [entry[1][1] for entry in alldata[:cutoff]]
         ind = np.arange(cutoff)  # the x locations for the groups
         width = 0.35       # the width of the bars
 
-        
         fig, ax = plt.subplots()
         rects1 = ax.bar(ind, scores, width, color="#1f78b4")
         
@@ -371,16 +371,16 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         # rotate the labels if they're long:
 
         
-        def autolabel(rects):
+        #def autolabel(rects):
             # attach some text labels
-            for rect in rects:
-                height = rect.get_height()
-                ax.text(rect.get_x()+rect.get_width()/2., 1.0*height, '%d'%int(height),
-                        ha='center', va='bottom')
+            #for rect in rects:
+                #height = rect.get_height()
+                #ax.text(rect.get_x()+rect.get_width()/2., 1.0*height, '%d'%int(height),
+                        #ha='center', va='bottom')
         
-        autolabel(rects1)
-        if len(results[0]) == 4:
-            autolabel(rects2)
+        #autolabel(rects1)
+        #if len(results[0]) == 4:
+            #autolabel(rects2)
         legend_labels = [alldata[0][1][0], alldata[0][2][0]]
         ax.legend( (rects1[0], rects2[0]), legend_labels )
 
