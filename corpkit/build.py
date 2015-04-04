@@ -40,8 +40,8 @@ def correctspelling(path, newpath):
 
                 textdata = textdata.replace(mspellword_withboundaries,picksuggestion_withboundaries)
             try:
-                if not os.path.exists(fraser_corpus_corrected):
-                    os.makedirs(fraser_corpus_corrected)
+                if not os.path.exists(newpath):
+                    os.makedirs(newpath)
                 fo=open(os.path.join(newpath, txtFile), "w")
             except IOError:
                 print "Error"
@@ -121,21 +121,125 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     time = strftime("%H:%M:%S", localtime())
     print time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
 
-def downloader():
+def downloader(url_list, new_path = 'downloaded', wait = 5):
     """download a bunch of urls and store in a local folder"""
-    return downloaded
+    import urllib
+    import time
+    import os
+        if not os.path.exists(new_path):
+            os.makedirs(new_path)
+    for url in url_list:
+        base = os.path.basename(url)
+        urllib.urlretrieve(url, os.path.join(new_path, base))
+        time.sleep(wait)
+    num_downloaded = len(os.listdir(new_path))
+    print 'Done! %d files downloaded.' % num_downloaded
 
-def text_extractor():
+def get_urls(url, criteria = False, remove = True):
+    """Get all urls in the html of url"""
+    configure_ipython_beautifulsoup(show_html=True, show_css=True, show_js=False)
+    
+    # do it as another function, so that it could be recursive...
+    def getter(one_url):
+        soup = p(one_url)
+        urls = []
+        if criteria:
+            import re
+            regex = re.compile(criteria)
+        for link in soup.find_all('a'):
+            a_url = link.get('href')
+            if criteria:
+                if re.match(regex, a_url):
+                    if remove:
+                        pass
+                    elif not remove:
+                        urls.append(a_url)
+                else:
+                    if remove:
+                        urls.append(a_url)
+                    elif not remove:
+                        pass
+            else:
+                urls.append(a_url)
+        urls.sort()
+        filtered_urls = filter(None, urls)
+        return filtered_urls
+    
+    url_list = getter(url)
+    return url_list
+
+def text_extractor(html, stopwords = 'English'):
     """extract text from html/xml files"""
-    return extracted_text
+    import requests
+    import justext
+    import os
+    import copy
+    # if on hard disk:
+    if os.path.isfile(html):
+        f = open(html)
+        html_text = f.read()
+    # if it's a web address
+    elif html.startswith('http'):
+        response = requests.get(html)
+        html_text = response.content
+    # if it's already html text:
+    else:
+        html_text = copy.deepcopy(html)
+    paragraphs = justext.justext(html_text, justext.get_stoplist(stopwords))
+    text = []
+    for paragraph in paragraphs:
+        if not paragraph.is_boilerplate:
+            text.append(paragraph.text)
+    text = '\n'.join(text)
+    return text
 
-def structure_corpus():
+def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
     """structure a corpus in some kind of sequence"""
+    import os
+    import shutil
+    if not os.path.isdir(path_to_files):
+        raise ValueError('Directory not found: %s' % path_to_files)
+    if not os.path.exists(new_corpus_name):
+        os.makedirs(new_corpus_name)
+    files = os.listdir(path_to_files)
+    for f in files:
+        filepath = os.path.join(path_to_files, f)
+        
+        subcorpus_name = 'what goes here?'
+        subcorpus_path = os.path.join(new_corpus_name, subcorpus_name)
+        if not os.path.exists(subcorpus_path):
+            os.makedirs(subcorpus_path)
+        shutil.copy(filepath, subcorpus_path)
     print 'Done!'
 
-def stanford_parse(unparsed_texts):
+def stanford_parse(corpus_path):
     """Parse a directory (recursively) with the Stanford parser..."""
-    # 
+    import os
+    import ast
+    try:
+        from corenlp import *
+    except:
+        raise ValueError("CoreNLP not installed.")
+    path_part, corpus_name = os.path.split(corpus_path)
+    new_corpus_folder = 'parsed_%s' % corpus_name
+    new_corpus_path = os.path.join(path_part, new_corpus_folder)
+    if not os.path.exists(new_corpus_path):
+        os.makedirs(new_corpus_path)
+    corenlp = StanfordCoreNLP()
+    files = os.listdir(corpus_path)
+    for root, dirs, files in os.walk(corpus_path, topdown=True):
+        for name in files:
+            filepath = os.path.join(root, name)
+            f = open(filepath)
+            raw = f.read()
+            parsed_text = ast.literal_eval(corenlp.parse(raw))
+            for index, sent in enumerate(parsed_text['sentences']):
+                syntax_tree = sent['parsetree']
+                plain_text = sent['text']
+            subcorpus_path = os.path.join(new_corpus_path, subcorpus_name)
+            if not os.path.exists(subcorpus_path):
+            os.makedirs(subcorpus_path)
+       
     # make file list with os.walk
     # 
     # parse every file
