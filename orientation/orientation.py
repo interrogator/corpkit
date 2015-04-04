@@ -3,7 +3,7 @@
 # <headingcell level=2>
 
 # <markdowncell>
-# [Daniel McDonald](mailto:mcdonaldd@unimelb.edu.au?Subject=IPython%20NYT%20risk%20project)**
+# [Daniel McDonald](mailto:mcdonaldd@unimelb.edu.au?Subject=corpkit)**
 #---------------------------
 # <markdowncell>
 # <br>
