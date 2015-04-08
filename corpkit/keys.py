@@ -327,8 +327,8 @@ def key_interrogator(path, options, query, lemmatise = False,
         keys, ngrams = keywords(subcorpus, dictionary = dictionary, printstatus = False, clear = False)
         result = []
         for index, key, score in keys:
-            for index, word, score in keys[:5]:
-                for _ in range(int(score) / 10):
+            for index, word, score in keys:
+                for _ in range(int(score) / 100.0):
                     result.append(word)
         if only_count:
             try:
@@ -392,7 +392,10 @@ def key_interrogator(path, options, query, lemmatise = False,
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
     list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
-    
+    # multiply EVERYTHING by 100 because we divided by that earlier, for speed
+    for res in list_words:
+        for datum in res[1:]:
+            datum[1] = datum[1] * 100.0
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
     main_totals.append([u'Total', total])
