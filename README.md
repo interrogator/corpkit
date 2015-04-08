@@ -86,7 +86,6 @@ gzip -dc data/nyt.tar.gz | tar -xf - -C data
 This is the best way to use `corpkit` by opening `orientation.ipynb` with IPython, and executing the first few cells:
 
 ```shell
-# IPython
 ipython notebook orientation.ipynb
 ```
 
