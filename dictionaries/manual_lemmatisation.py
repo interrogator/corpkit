@@ -13,6 +13,7 @@ wordlist = {u"felt": u"feel",
            u"'ve": u"have",
            u"n't": u"not",
            u"smelt": u"smell",
+           u"people": u"person",
            u"others": u"other"}
 
 taglemma = {u"cc": u"Coordinating conjunction",
