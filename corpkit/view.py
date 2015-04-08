@@ -25,7 +25,13 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     from matplotlib.ticker import MaxNLocator, ScalarFormatter
     import pylab
     from pylab import rcParams
-    
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        import subprocess
+        have_ipython = False
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -40,12 +46,25 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     
     #font
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
-    rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    rc('text', usetex=True)
-
-    #image directory
-    imagefolder = 'images'
-
+    
+    
+    def check_for_tex():
+        if have_ipython:
+            checktex_command = 'which latex'
+            o = get_ipython().getoutput(checktex_command)[0]
+            if o.startswith('which: no latex in'):
+                have_tex = False
+            else:
+                have_tex = True
+        else:
+            FNULL = open(os.devnull, 'w')
+            checktex_command = ["which", "latex"]
+            try:
+                o = subprocess.check_output(checktex_command, stderr=FNULL)
+                have_tex = True
+            except subprocess.CalledProcessError:
+                have_tex = False
+        return have_tex
 
     def skipper(interrogator_list):
         """Takes a list and returns a version without 1963"""
@@ -162,6 +181,14 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         print time + ": " + csvmake + " written to currect directory."
 
     ##################################################################
+
+    # check for tex and use it if it's there
+    if check_for_tex():
+        rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+        rc('text', usetex=True)
+
+    #image directory
+    imagefolder = 'images'
 
     # Use .results branch if branch is unspecified
     if isinstance(results, tuple) is True:
