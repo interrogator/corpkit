@@ -115,13 +115,13 @@ def interrogator(path, options, query, lemmatise = False,
         # make everything unicode, lowercase and sorted
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
-        if options != 'depnum':
+        if not depnum:
             list_of_matches = [w.lower() for w in list_of_matches]
         list_of_matches.sort()
         
         # tokenise if multiword:
         if phrases:
-            result = [nltk.word_tokenize(i) for i in result]
+            list_of_matches = [nltk.word_tokenize(i) for i in list_of_matches]
         if lemmatise:
             tag = gettag(query)
             list_of_matches = lemmatiser(list_of_matches, tag)
@@ -233,7 +233,7 @@ def interrogator(path, options, query, lemmatise = False,
                     result.append(dep.attrs.get('type'))
         return result
 
-    def depnum(soup):
+    def depnummer(soup):
         """print dependency number"""
         result = []
         for dep in soup.find_all('dep'):
@@ -454,7 +454,7 @@ def interrogator(path, options, query, lemmatise = False,
                     if options.startswith('f') or options.startswith('F'):
                         result_from_file = funct(soup)
                     if options.startswith('n') or options.startswith('N') or options.startswith('d') or options.startswith('D'):
-                        result_from_file = depnum(soup)
+                        result_from_file = depnummer(soup)
                 if result_from_file is not None:
                     for entry in result_from_file:
                         result.append(entry)
@@ -526,10 +526,11 @@ def interrogator(path, options, query, lemmatise = False,
     p.animate(len(results_list))
 
     # do totals (and keep them), then sort list by total
-    if options != 'depnum':
+    if depnum:
         list_words.sort(key=lambda x: int(x[0]))
         main_totals = depnum_reorder(list_words, output = 'totals') 
         list_words = depnum_reorder(list_words, output = 'results') 
+    
     for word in list_words:
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
