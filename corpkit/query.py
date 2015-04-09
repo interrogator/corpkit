@@ -188,7 +188,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         raise ValueError("Option not recognised. Must be 'u', 'o', 'c' or 't'.")
 
     # parse query
-    if 'keyword' in query:
+    if query.startswith('key'):
         keywording = True
         optiontext = 'Words only.'
     elif 'ngram' in query:
@@ -201,8 +201,8 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
 
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
-    print ("\n%s: Beginning corpus interrogation: %s",
-           "\n          Query: '%s'\n          %s",
+    print ("\n%s: Beginning corpus interrogation: %s" \
+           "\n          Query: '%s'\n          %s" \
            "\n          Interrogating corpus ... \n" % (time, path, query, optiontext) )
     
     # get list of subcorpora and sort them
@@ -239,9 +239,13 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
                                     printstatus = False, clear = False)
             result = []
+
+            # this remains a total hack, and sacrifices a little 
+            # bit of accuracy when doing the division. rewrite, one day.
             if keywording:
                 for index, word, score in keys:
-                    for _ in range(int(score) / 100):
+                    divided_score = score / 10.0
+                    for _ in range(int(divided_score)):
                         result.append(word)
             elif n_gramming:
                 for index, ngram, score in ngrams:
@@ -345,7 +349,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     if keywording:
         for res in list_words:
             for datum in res[1:]:
-                datum[1] = datum[1] * 100.0
+                datum[1] = datum[1] * 10
 
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
