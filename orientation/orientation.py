@@ -181,7 +181,6 @@ plotter('Risk word / all risk words', riskwords.results,
 plotter('Risk word / all words', riskwords.results, 
     fract_of = allwords.totals)
 
-
 # <headingcell level=3>
 # Customising visualisations
 
@@ -194,14 +193,16 @@ plotter('Risk word / all words', riskwords.results,
 #  | :------|:------- |:-------------|:-----|
 #  | *title* | **mandatory**      | A title for your plot | string |
 #  | `results* | **mandatory**      | the results you want to plot | *interrogator()` total |
-#  | *fract_of* | None      | results for plotting relative frequencies/ratios etc. | list (interrogator(-C) form) |
+#  | *fract_of* | None      | results for plotting relative frequencies/ratios etc. | list (interrogator('c') form) |
 #  | *num_to_plot* | 7     | number of top results to display     |   integer |
+#  | *sort_by* | 'increase'/'decrease'/'static'/'total'     | show results increasing or decreasing the most in frequency  |   string |
 #  | *skip63* | False    | do not plot 1963     |    integer |
 #  | *proj63* | 4     | multiplier to project 1963 results and totals | integer |
 #  | *multiplier* | 100     | result * multiplier / total: use 1 for ratios | integer |
 #  | *x_label* | False    | custom label for the x-axis     |  string |
 #  | *y_label* | False    | custom label for the y-axis     |  string |
 #  | *legend_totals* | False    | Print total/rel freq in legend     |  boolean 
+#  | *legend_p* | False    | Print p value of increase/decrease slope in legend   |  boolean 
 #  | *projection* | True    | Project 1963 and 2014 editions     |  boolean |
 #  | *yearspan* | False    | plot a span of years |  a list of two int years |
 #  | *csvmake* | False    | make csvmake the title of csv output file    |  string |
@@ -248,12 +249,12 @@ indices_we_want = [32,30,40]
 plotter('Relative frequencies of risk words', [ riskwords.results[i] for i in indices_we_want], 
         num_to_plot = 5, skip63 = True, projection = True, proj63 = 5)
 
-
 # <markdowncell>
 # Another neat thing you can do is save the results of an interrogation, so they don't have to be run the next time you load this notebook:
 
 # <codecell>
 # specify what to save, and a name for the file.
+from corpkit import save_result, load_result
 save_result(allwords, 'allwords')
 
 # <markdowncell>
@@ -371,7 +372,7 @@ plotter('Low and high risks', low_high_combined.results)
 # To do this, we can take `riskwords.results`, duplicate it, and change every count over 0 into 1.
 
 # <codecell>
-import copy
+import copy # let's not modify our old list
 all_ones = copy.deepcopy(riskwords.results)
 for entry in all_ones:
     for tup in entry[1:]:
@@ -458,13 +459,22 @@ for key in keys[:10]:
 for ngram in ngrams:
     print ngram
 
+# <markdowncell>
+# You can even use `interrogator()` to get keywords or ngrams from each subcorpus. To do this, use 'keywords' or 'ngrams' as the query argument.
+
+# <codecell>
+kwds = interrogator(annual_trees, 't', 'keywords')
+
+# <codecell>
+plotter('Keywords', kwds.results)
+
+# <markdowncell>
+# With the `collocates()` function, you can specify the maximum distance at which two tokens will be considered collocates. The default is 5.
+
 # <codecell>
 colls = collocates('data/nyt/years/1989')
 for coll in colls:
     print coll
-
-# <markdowncell>
-# With the `collocates()` function, you can specify the maximum distance at which two tokens will be considered collocates.
 
 # <codecell>
 colls = collocates('concordances.csv', window = 2)
@@ -475,7 +485,7 @@ for coll in colls:
 # quicktree() and searchtree()
 
 # <markdowncell>
-# The two functions are useful for visualising and searching individual syntax trees. They have proven useful as a way to practice your Tregex queries.
+# The two functions are useful for visualising and searching individual syntax trees. They might be useful if you want to practive your Tregex queries, or make sure you are getting the expected result.
 
 # The easiest place to get a parse tree is from a CSV file generated using `conc()` with *trees* set to *True*. Alternatively, you can open files in the data directory directly.
 
@@ -494,6 +504,10 @@ print searchtree(tree, r'NP')
 
 # <headingcell level=3>
 # Process types
+
+# <markdowncell>
+# Systemic functional linguistics argues that the main verb (the *process*) can be one of a few types.
+
 # <codecell>
 from dictionaries.process_types import processes
 print processes.relational
@@ -508,6 +522,8 @@ relationals = interrogator(annual_trees, '-t', query, lemmatise = True)
 
 # <codecell>
 plotter('Relational processes', relationals.results, fract_of = proc_w_risk_part.totals)
+
+# > You can also use the process types as regexes in `merger()` and `surgeon()` to merge/remove results entries.
 
 # <headingcell level=3>
 # Proper nouns and risk sentences
@@ -583,7 +599,6 @@ plotter('Organisations', organisations, fract_of = propernouns.totals,
 plotter('Medicine', medical, fract_of = propernouns.totals, num_to_plot = 4,
         y_label = 'Percentage of all proper noun groups', skip63 = True, save = True,)
 
-
 # <markdowncell>
 
 # These charts reveal some interesting patterns.
@@ -603,10 +618,15 @@ plotter('Merck and Vioxx', vioxx, fract_of = propernouns.totals, yearspan = [199
 # Vioxx was removed from shelves following the discovery that it increased the risk of heart attack. It's interesting how even though terrorism and war may come to mind when thinking of *risk* in the past 15 years, this health topic is easily more prominent in the data.
 
 # <headingcell level=2>
-# Free play
+# What now?
 
 # <markdowncell>
-# 
+# From here on out, it's up to you. Currently in development are resources for making parsed corpora, but really, that process only involves:
+
+# 1. Getting some plain text
+# 2. Parsing it with Stanford CoreNLP
+# 3. Putting the files in sequential subfolders
+
 # <headingcell level=2>
 # Wrap up
 
