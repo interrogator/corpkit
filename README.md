@@ -1,5 +1,7 @@
 ## *corpkit*: a Python-based toolkit for working with parsed linguistic corpora
 
+[![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### D. McDonald
 
 > Because I kept building new tools and functions for my corpus linguistic work, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
