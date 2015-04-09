@@ -6,17 +6,20 @@
 
 def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     titlefilter = False, lemmatag = False, usa_english = True, phrases = False):
-    """Interrogate a corpus using Tregex queries
+    """
+    Interrogate a corpus using Tregex queries
 
     path: path to corpus
     options: Tregex output options: -t, -c, -u, -o,
-    query: Tregex query, 'keywords' or 'ngrams'
+    query: a Tregex query, 'keywords' or 'ngrams'
     lemmatise: Do lemmatisation on results?
     titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
     lemmatag: explicitly pass pos to lemmatiser: 'n', 'v', 'a' or 'r'
-    usa_english: convert all to us english
+    usa_english: convert all to U.S. English
     phrases: turn on if your expected results are multiword and thus need tokenising
+    dictionary: the name of a dictionary made with dictmaker for use with keyword query
     """
+    
     import os
     import re
     import signal
@@ -24,20 +27,23 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     from collections import Counter
     from time import localtime, strftime
 
-    from corpkit.query import query_test
-    from corpkit.progressbar import ProgressBar
     import nltk
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    from corpkit.query import query_test
+    from corpkit.progressbar import ProgressBar
     import dictionaries
+
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
         # location of words for manual lemmatisation
         from dictionaries.word_transforms import wordlist, usa_convert
         from dictionaries.manual_lemmatisation import wordlist, taglemma
+    
     # check if we are in ipython
     try:
         get_ipython().getoutput()
@@ -46,12 +52,14 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     except NameError:
         import subprocess
         have_ipython = False
-    # exit on ctrl c
+
     def signal_handler(signal, frame):
+        """exit on ctrl+c, rather than just stop loop"""
         import sys
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
     
+
     def gettag(query):
         import re
         if lemmatag is False:
@@ -87,7 +95,16 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             list_of_matches = titlefilterer(list_of_matches)
         if usa_english:
             list_of_matches = usa_english_maker(list_of_matches)
-        return list_of_matches
+        
+        # turn every result into a single string again if need be:
+        if phrases:
+            output = []
+            for res in list_of_matches:
+                joined = ' '.join(res)
+                output.append(joined)
+            return output
+        else:
+            return list_of_matches
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
@@ -99,17 +116,17 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 entry.pop()
             else:
                 word = entry
-            if options == '-u':
+            if 'u' in options:
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser for -t
-            if options == '-t':
+            if 't' in options or 'keyword' in query or 'ngram' in query:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
             if phrases:
                 entry.append(word)
-                output.append(' '.join(entry))
+                output.append(entry)
             else:
                 output.append(word)
         return output
@@ -124,11 +141,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             non_head = len(result) - 1 # ???
             title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in titlewords and token.rstrip('.') not in determiners]
             title_stripped.append(head)
-            if not usa_english:
-                str_result = ' '.join(title_stripped)
-                output.append(str_result)
-            else:
-                output.append(title_stripped)
+            output.append(title_stripped)
         return output
 
     def usa_english_maker(list_of_matches):
@@ -141,7 +154,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                         w = usa_convert[w]
                     except KeyError:
                         pass
-                output.append(' '.join(result))
+                output.append(result)
             else:
                 try:
                     result = usa_convert[result]
@@ -149,9 +162,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                     pass
                 output.append(result)
         return output
-
-    
-
 
     # a few things are off by default:
     only_count = False
@@ -162,7 +172,8 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     if titlefilter:
         phrases = True
 
-    # welcome message based on kind of interrogation
+
+    # parse options
     if 'u' in options or 'U' in options:
         optiontext = 'Tags only.'
     elif 'o' in options or 'O' in options:
@@ -173,32 +184,50 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         only_count = True
         options = options.upper()
         optiontext = 'Counts only.'
+    else:
+        raise ValueError("Option not recognised. Must be 'u', 'o', 'c' or 't'.")
+
+    # parse query
     if 'keyword' in query:
         keywording = True
         optiontext = 'Words only.'
     elif 'ngram' in query:
         n_gramming = True
+        phrases = True
         optiontext = 'Words only.'
+    else:
+        # it's tregex. check if ok
+        query_test(query, have_ipython = have_ipython)
+
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
-    print "\n%s: Beginning corpus interrogation: %s\n          Query: '%s'\n          %s\n          Interrogating corpus ... \n" % (time, path, query, optiontext)
+    print ("\n%s: Beginning corpus interrogation: %s",
+           "\n          Query: '%s'\n          %s",
+           "\n          Interrogating corpus ... \n" % (time, path, query, optiontext) )
     
-    # check that query is ok
-    query_test(query, have_ipython = have_ipython)
-
+    # get list of subcorpora and sort them
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
+    
+    # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
         import warnings
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         sorted_dirs = [os.path.basename(path)]
+    
+    # some empty lists we'll need
     allwords_list = []
     results_list = []
     main_totals = [u'Totals']
+    
+    # make progress bar for each dir
     p = ProgressBar(len(sorted_dirs))
-    # do interrogation with tregex
+
+    # loop through each subcorpus
     for index, d in enumerate(sorted_dirs):
         p.animate(index)
+
+        # get path to corpus/subcorpus
         if len(sorted_dirs) == 1:
             subcorpus = path
         else:
@@ -207,7 +236,8 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         # get keywords and ngrams, rather than tregex:
         if keywording or n_gramming:
             from corpkit import keywords
-            keys, ngrams = keywords(subcorpus, dictionary = dictionary, printstatus = False, clear = False)
+            keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
+                                    printstatus = False, clear = False)
             result = []
             if keywording:
                 for index, word, score in keys:
@@ -228,6 +258,9 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 FNULL = open(os.devnull, 'w')
                 result = subprocess.check_output(tregex_command, stderr=FNULL)
                 result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
+        
+        # if just counting matches, just 
+        # add subcorpus name and count.
         if only_count:
             try:
                 tup = [int(d), int(result[0])]
@@ -235,25 +268,39 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 tup = [d, int(result[0])]
             main_totals.append(tup)
             continue
-        result = [unicode(match, 'utf-8', errors = 'ignore') for match in result]
+
+        # make everything unicode, lowercase and sorted
+        result = [unicode(w, 'utf-8', errors = 'ignore') for w in result]
         result = [w.lower() for w in result]
         result.sort()
+
+        # add subcorpus name and total count to totals
         try:
             main_totals.append([int(d), len(result)])
         except ValueError:
             main_totals.append([d, len(result)])
-        # encode text and tokenise phrase results
+
+        # tokenise if multiword:
         if phrases:
             result = [nltk.word_tokenize(i) for i in result]
+
+        # lemmatisation, titlewords removal, usa_english...
         processed_result = processwords(result)
+
+        # add results master list and to results list
         allwords_list.append(processed_result)
         results_list.append(processed_result)
+
+    # 100%
     p.animate(len(sorted_dirs))
     if not have_ipython:
         print '\n'
+    
+    # if only counting, get total total and finish up:
     if only_count:
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
+        # no results branch:
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         query_options = [path, query, options] 
         output = outputnames(query_options, main_totals)
@@ -269,7 +316,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     for word in unique_words:
         list_words.append([word])
 
-    # make dictionary of every subcorpus
+    # make dictionary of every subcorpus and store in dicts
     dicts = []
     p = ProgressBar(len(results_list))
     for index, subcorpus in enumerate(results_list):
@@ -283,14 +330,18 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 word.append([int(subcorpus_name), getval])
             except ValueError:
                 word.append([subcorpus_name, getval])
+
+    # 100%            
     p.animate(len(results_list))
+
     # do totals (and keep them), then sort list by total
     for word in list_words:
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
     list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
     
-    # reconstitute keyword scores
+    # reconstitute keyword scores, because we earlier
+    # did / 100 to save memory and time
     if keywording:
         for res in list_words:
             for datum in res[1:]:
@@ -299,6 +350,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
     main_totals.append([u'Total', total])
+
     #make results into named tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     query_options = [path, query, options] 
@@ -308,8 +360,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     return output
 
 
-
-#!/usr/bin/python
 
 #   Interrogating parsed corpora and plotting the results: dependencies
 #   Author: Daniel McDonald
@@ -405,6 +455,7 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
     
     def processwords(list_of_matches):
         matches = []
+        #
         for match in list_of_matches:
             try:
                 matches.append(match.lower())
