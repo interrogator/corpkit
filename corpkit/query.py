@@ -1,4 +1,3 @@
-
 #!/usr/local/bin/ipython
 
 #   Interrogating parsed corpora and plotting the results: interrogator
@@ -15,8 +14,13 @@ def interrogator(path, options, query, lemmatise = False,
 
     path: path to corpus
     options: 
-            Tregex output options: -t, -c, -u, -o,
-            dependency options: depnum, govrole, funct
+        Tregex output options: -t, -c, -u, -o,
+        dependency options:
+            depnum: get the index of the governor
+            funct: get the semantic function
+            govrole: get governor role and governor:
+                /good/ might return amod:day
+
     query: 
             a Tregex query
             'keywords'
@@ -51,13 +55,11 @@ def interrogator(path, options, query, lemmatise = False,
     from corpkit.query import query_test
     from corpkit.progressbar import ProgressBar
     import dictionaries
+    from dictionaries.word_transforms import wordlist, usa_convert, deptags, taglemma
 
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
-        # location of words for manual lemmatisation
-        from dictionaries.word_transforms import wordlist, usa_convert
-        from dictionaries.manual_lemmatisation import wordlist, taglemma
     
     # check if we are in ipython
     try:
