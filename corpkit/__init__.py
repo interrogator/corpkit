@@ -21,7 +21,6 @@ sys.path.append(thepath)
 
 from query import interrogator
 from query import interroplot
-from query import dependencies
 from query import multiquery
 from query import conc
 from query import topix_search
