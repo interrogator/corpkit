@@ -114,12 +114,13 @@ Output:
 Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
 ```python
+from corpkit import interrogator, plotter
 # make tregex query: head of NP in PP containing 'of'
 # in NP headed by risk word:
 q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # count terminals/leaves of trees only, and do lemmatisation:
-riskofnoun = interrogator(corpus, '-t', q, lemmatise = True)
+riskofnoun = interrogator(corpus, 't', q, lemmatise = True)
 
 # plot top 7 entries as percentage of all entries:
 plotter('Risk of (noun)', riskofnoun.results, 

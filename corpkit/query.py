@@ -88,11 +88,24 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         return tag
     
     def processwords(list_of_matches):
+        """edit matches from interrogations"""
+
+        # make everything unicode, lowercase and sorted
+        list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
+        list_of_matches = [w.lower() for w in list_of_matches]
+        list_of_matches.sort()
+        
+        # tokenise if multiword:
+        if phrases:
+            result = [nltk.word_tokenize(i) for i in result]
+
         if lemmatise:
             tag = gettag(query)
             list_of_matches = lemmatiser(list_of_matches, tag)
+
         if titlefilter:
             list_of_matches = titlefilterer(list_of_matches)
+
         if usa_english:
             list_of_matches = usa_english_maker(list_of_matches)
         
@@ -133,8 +146,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         # if single words: return [lmtsr.lemmatize(word, tag) for word in list_of_matches]
 
     def titlefilterer(list_of_matches):
-        from dictionaries.titlewords import titlewords
-        from dictionaries.titlewords import determiners
+        from dictionaries.titlewords import titlewords, determiners
         output = []
         for result in list_of_matches:
             head = result[-1]
@@ -172,7 +184,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     if titlefilter:
         phrases = True
 
-
     # parse options
     if 'u' in options or 'U' in options:
         optiontext = 'Tags only.'
@@ -185,7 +196,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         options = options.upper()
         optiontext = 'Counts only.'
     else:
-        raise ValueError("Option not recognised. Must be 'u', 'o', 'c' or 't'.")
+        raise ValueError("'%s' option not recognised. Must be 'u', 'o', 'c' or 't'." % options)
 
     # parse query
     if query.startswith('key'):
@@ -264,7 +275,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
         
         # if just counting matches, just 
-        # add subcorpus name and count.
+        # add subcorpus name and count...
         if only_count:
             try:
                 tup = [int(d), int(result[0])]
@@ -273,10 +284,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             main_totals.append(tup)
             continue
 
-        # make everything unicode, lowercase and sorted
-        result = [unicode(w, 'utf-8', errors = 'ignore') for w in result]
-        result = [w.lower() for w in result]
-        result.sort()
+
 
         # add subcorpus name and total count to totals
         try:
@@ -284,11 +292,8 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         except ValueError:
             main_totals.append([d, len(result)])
 
-        # tokenise if multiword:
-        if phrases:
-            result = [nltk.word_tokenize(i) for i in result]
-
-        # lemmatisation, titlewords removal, usa_english...
+        # lowercaseing, encoding, lemmatisation, 
+        # titlewords removal, usa_english, etc.
         processed_result = processwords(result)
 
         # add results master list and to results list
@@ -312,7 +317,7 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             clear_output()
         return output
 
-    # flatten master list
+    # flatten and sort master list
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
