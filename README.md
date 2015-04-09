@@ -12,8 +12,7 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
-| `interrogator()`  | interrogate parsed corpora         | 
-| `dependencies()`  | interrogate parsed corpora for dependency info        | 
+| `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `surgeon()`       | edit `interrogator()` results      | 
 | `merger()`        | merge `interrogator()` results      | 
