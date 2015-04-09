@@ -1,23 +1,38 @@
+
 #!/usr/local/bin/ipython
 
 #   Interrogating parsed corpora and plotting the results: interrogator
 #   for ResBaz NLTK stream
 #   Author: Daniel McDonald
 
-def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
-    titlefilter = False, lemmatag = False, usa_english = True, phrases = False):
+def interrogator(path, options, query, lemmatise = False, 
+    dictionary = 'bnc.p', titlefilter = False, lemmatag = False, 
+    usa_english = True, phrases = False, dep_type = 'basic-dependencies'):
+    
     """
-    Interrogate a corpus using Tregex queries
+    Interrogate a parsed corpus using Tregex queries, dependencies, or for
+    keywords/ngrams
 
     path: path to corpus
-    options: Tregex output options: -t, -c, -u, -o,
-    query: a Tregex query, 'keywords' or 'ngrams'
+    options: 
+            Tregex output options: -t, -c, -u, -o,
+            dependency options: depnum, govrole, funct
+    query: 
+            a Tregex query
+            'keywords'
+            'ngrams'
+            a regex to match a word for dependencies
+
     lemmatise: Do lemmatisation on results?
     titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
     lemmatag: explicitly pass pos to lemmatiser: 'n', 'v', 'a' or 'r'
     usa_english: convert all to U.S. English
     phrases: turn on if your expected results are multiword and thus need tokenising
     dictionary: the name of a dictionary made with dictmaker for use with keyword query
+    dep_type: the kind of stanford dependency parses you want to use:
+            'basic-dependencies' * best lemmatisation
+            'collapsed-dependencies'
+            'collapsed-ccprocessed-dependencies'
     """
     
     import os
@@ -59,7 +74,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
     
-
     def gettag(query):
         import re
         if lemmatag is False:
@@ -143,7 +157,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
             else:
                 output.append(word)
         return output
-        # if single words: return [lmtsr.lemmatize(word, tag) for word in list_of_matches]
 
     def titlefilterer(list_of_matches):
         from dictionaries.titlewords import titlewords, determiners
@@ -175,326 +188,6 @@ def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
                 output.append(result)
         return output
 
-    # a few things are off by default:
-    only_count = False
-    keywording = False
-    n_gramming = False
-
-    # titlefiltering only works with phrases, so turn it on
-    if titlefilter:
-        phrases = True
-
-    # parse options
-    if 'u' in options or 'U' in options:
-        optiontext = 'Tags only.'
-    elif 'o' in options or 'O' in options:
-        optiontext = 'Tags and words.'
-    elif 't' in options or 'T' in options:
-        optiontext = 'Words only.'
-    elif 'c' in options or 'C' in options:
-        only_count = True
-        options = options.upper()
-        optiontext = 'Counts only.'
-    else:
-        raise ValueError("'%s' option not recognised. Must be 'u', 'o', 'c' or 't'." % options)
-
-    # parse query
-    if query.startswith('key'):
-        keywording = True
-        optiontext = 'Words only.'
-    elif 'ngram' in query:
-        n_gramming = True
-        phrases = True
-        optiontext = 'Words only.'
-    else:
-        # it's tregex. check if ok
-        query_test(query, have_ipython = have_ipython)
-
-    # begin interrogation
-    time = strftime("%H:%M:%S", localtime())
-    print ("\n%s: Beginning corpus interrogation: %s" \
-           "\n          Query: '%s'\n          %s" \
-           "\n          Interrogating corpus ... \n" % (time, path, query, optiontext) )
-    
-    # get list of subcorpora and sort them
-    sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
-    sorted_dirs.sort(key=int)
-    
-    # treat as one large corpus if no subdirs found
-    if len(sorted_dirs) == 0:
-        import warnings
-        warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
-        sorted_dirs = [os.path.basename(path)]
-    
-    # some empty lists we'll need
-    allwords_list = []
-    results_list = []
-    main_totals = [u'Totals']
-    
-    # make progress bar for each dir
-    p = ProgressBar(len(sorted_dirs))
-
-    # loop through each subcorpus
-    for index, d in enumerate(sorted_dirs):
-        p.animate(index)
-
-        # get path to corpus/subcorpus
-        if len(sorted_dirs) == 1:
-            subcorpus = path
-        else:
-            subcorpus = os.path.join(path,d)
-
-        # get keywords and ngrams, rather than tregex:
-        if keywording or n_gramming:
-            from corpkit import keywords
-            keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
-                                    printstatus = False, clear = False)
-            result = []
-
-            # this remains a total hack, and sacrifices a little 
-            # bit of accuracy when doing the division. rewrite, one day.
-            if keywording:
-                for index, word, score in keys:
-                    divided_score = score / 10.0
-                    for _ in range(int(divided_score)):
-                        result.append(word)
-            elif n_gramming:
-                for index, ngram, score in ngrams:
-                    for _ in range(int(score)):
-                        result.append(ngram)
-
-        #if tregex, determine ipython or not and search
-        else:
-            if have_ipython:
-                tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
-                result = get_ipython().getoutput(tregex_command)
-            else:
-                tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
-                FNULL = open(os.devnull, 'w')
-                result = subprocess.check_output(tregex_command, stderr=FNULL)
-                result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
-        
-        # if just counting matches, just 
-        # add subcorpus name and count...
-        if only_count:
-            try:
-                tup = [int(d), int(result[0])]
-            except ValueError:
-                tup = [d, int(result[0])]
-            main_totals.append(tup)
-            continue
-
-
-
-        # add subcorpus name and total count to totals
-        try:
-            main_totals.append([int(d), len(result)])
-        except ValueError:
-            main_totals.append([d, len(result)])
-
-        # lowercaseing, encoding, lemmatisation, 
-        # titlewords removal, usa_english, etc.
-        processed_result = processwords(result)
-
-        # add results master list and to results list
-        allwords_list.append(processed_result)
-        results_list.append(processed_result)
-
-    # 100%
-    p.animate(len(sorted_dirs))
-    if not have_ipython:
-        print '\n'
-    
-    # if only counting, get total total and finish up:
-    if only_count:
-        total = sum([i[1] for i in main_totals[1:]])
-        main_totals.append([u'Total', total])
-        # no results branch:
-        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
-        query_options = [path, query, options] 
-        output = outputnames(query_options, main_totals)
-        if have_ipython:
-            clear_output()
-        return output
-
-    # flatten and sort master list
-    allwords = [item for sublist in allwords_list for item in sublist]
-    allwords.sort()
-    unique_words = set(allwords)
-    list_words = []
-    for word in unique_words:
-        list_words.append([word])
-
-    # make dictionary of every subcorpus and store in dicts
-    dicts = []
-    p = ProgressBar(len(results_list))
-    for index, subcorpus in enumerate(results_list):
-        p.animate(index)
-        subcorpus_name = sorted_dirs[index]
-        dictionary = Counter(subcorpus)
-        dicts.append(dictionary)
-        for word in list_words:
-            getval = dictionary[word[0]]
-            try:
-                word.append([int(subcorpus_name), getval])
-            except ValueError:
-                word.append([subcorpus_name, getval])
-
-    # 100%            
-    p.animate(len(results_list))
-
-    # do totals (and keep them), then sort list by total
-    for word in list_words:
-        total = sum([i[1] for i in word[1:]])
-        word.append([u'Total', total])
-    list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
-    
-    # reconstitute keyword scores, because we earlier
-    # did / 100 to save memory and time
-    if keywording:
-        for res in list_words:
-            for datum in res[1:]:
-                datum[1] = datum[1] * 10
-
-    # add total to main_total
-    total = sum([i[1] for i in main_totals[1:]])
-    main_totals.append([u'Total', total])
-
-    #make results into named tuple
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    query_options = [path, query, options] 
-    output = outputnames(query_options, list_words, main_totals)
-    if have_ipython:
-        clear_output()
-    return output
-
-
-
-#   Interrogating parsed corpora and plotting the results: dependencies
-#   Author: Daniel McDonald
-
-def dependencies(path, options, query, lemmatise = False, test = False, usa_english = False,
-    titlefilter = False, lemmatag = False, dep_type = 'basic-dependencies', only_count = False):
-    """Uses BeautifulSoup to make list of frequency counts in corpora.
-    
-    Interrogator investigates sets of Stanford dependencies for complex frequency information. 
-
-    path: path to corpus as string
-    options: 
-        'funct': get functional label
-        'depnum': get index of item within the clause
-        'govrole': get role and governor, colon-separated
-        query: regex to match
-    Lemmatise: lemmatise results
-    test: for development, go through only three subcorpora
-    titlefilter: strip 'mr, mrs, dr' etc from proper noun strings
-    dep_type: specify type of dependencies to search:
-                    'basic-dependencies' * best lemmatisation
-                    'collapsed-dependencies'
-                    'collapsed-ccprocessed-dependencies'
-
-    Note: subcorpora directory names must be numbers only.
-    """
-    import os
-    from bs4 import BeautifulSoup, SoupStrainer
-    import collections
-    from collections import Counter
-    import time
-    from time import localtime, strftime
-    import re
-    import sys
-    import string
-    import codecs
-    from string import digits
-    import operator
-    import glob
-    try:
-        from IPython.display import display, clear_output
-    except ImportError:
-        pass
-    from corpkit.progressbar import ProgressBar
-    import gc
-    if lemmatise:
-        import nltk
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr=WordNetLemmatizer()
-        # location of words for manual lemmatisation
-        from dictionaries.manual_lemmatisation import wordlist, deptags
-    # define option regexes
-    time = strftime("%H:%M:%S", localtime())
-    try:
-        get_ipython().getoutput()
-    except TypeError:
-        have_ipython = True
-    except NameError:
-        import subprocess
-        have_ipython = False
-    import signal
-    def signal_handler(signal, frame):
-        import sys
-        sys.exit(0)
-    signal.signal(signal.SIGINT, signal_handler)
-    strip_bad = re.compile('[^.a-zA-Z0-9/-:]', re.UNICODE)
-    # welcomer
-    if options == 'depnum':
-        optiontext = 'Number only.'
-    elif options == 'funct':
-        optiontext = 'Functional role only.'
-    elif options == 'govrole':
-        optiontext = 'Role and governor.'
-    else:
-        raise ValueError("Option must be 'depnum', 'funct' or 'govrole'.")
-    time = strftime("%H:%M:%S", localtime())
-    print "\n%s: Beginning corpus interrogation: %s\n          Query: %s\
-    \n          %s\n          Interrogating corpus ... \n" % (time, path, query, optiontext)
-
-    def usa_english_maker(list_of_matches):
-        import nltk
-        from dictionaries.word_transforms import usa_convert
-        tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
-        output = []
-        for result in tokenised_list:
-            head = result[-1]
-            try:
-                result[-1] = usa_convert[result[-1]]
-            except KeyError:
-                pass
-            output.append(' '.join(result))
-        return output
-    
-    def processwords(list_of_matches):
-        matches = []
-        #
-        for match in list_of_matches:
-            try:
-                matches.append(match.lower())
-            except:
-                matches.append(match)
-        #print matches[:50]
-        #matches = [match.lower() for match in matches if any(c.isalpha() for c in match)]
-        #matches.append([match for match in matches if not any(c.isalpha() for c in match)])
-        if titlefilter:
-            matches = titlefilterer(matches)
-        if usa_english:
-            matches = usa_english_maker(matches)
-        return matches
-
-    def titlefilterer(list_of_matches):
-        import re
-        import nltk
-        from dictionaries.titlewords import titlewords
-        tokenised_list = [nltk.word_tokenize(i) for i in list_of_matches]
-        output = []
-        for result in tokenised_list:
-            head = result[-1]
-            non_head = result.index(head) # ???
-            title_stripped = [token for token in result[:non_head] if token not in titlewords]
-            title_stripped.append(head)
-            str_result = ' '.join(title_stripped)
-            output.append(str_result)
-        return output
-
-
     def govrole(soup):
         """print funct:gov"""
         result = []
@@ -522,7 +215,6 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
                     colsep = role + u':' + govword
                     result.append(colsep)
         return result
-
 
     def funct(soup):
         """"print functional role"""
@@ -579,82 +271,215 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
             return yearlist
         if output == 'totals':
             return totallist
-        
-#########################################################################
 
-    regex = re.compile(query)
+    # a few things are off by default:
+    only_count = False
+    keywording = False
+    n_gramming = False
+    dependency = False
+
+    # titlefiltering only works with phrases, so turn it on
+    if titlefilter:
+        phrases = True
+
+    # parse options
+    if options == 'u' or options == 'U':
+        optiontext = 'Tags only.'
+    elif options == 'o' or options == 'O':
+        optiontext = 'Tags and words.'
+    elif options == 't' or options == 'T':
+        optiontext = 'Words only.'
+    elif options == 'c' or options == 'C':
+        only_count = True
+        options = options.upper()
+        optiontext = 'Counts only.'
+    elif 'dep' in options:
+        dependency = True
+        optiontext = 'Number only.'
+    elif 'funct' in options:
+        dependency = True
+        optiontext = 'Functional role only.'
+    elif 'gov' in options:
+        dependency = True
+        optiontext = 'Role and governor.'
+    else:
+        raise ValueError("'%s' option not recognised. Must be:\n\nFor tree searching:\n    'u', 'o', 'c' or 't'\nFor dependencies searching:\n    'depnum', 'funct' or 'govrole'." % options)
+    
+    # dependencies can't be phrases
+    if dependency:
+        import gc
+        from bs4 import BeautifulSoup, SoupStrainer
+        regex = re.compile(query)
+        phrases = False
+
+    # parse query
+    if query.startswith('key'):
+        keywording = True
+        optiontext = 'Words only.'
+    elif 'ngram' in query:
+        n_gramming = True
+        phrases = True
+        optiontext = 'Words only.'
+    else:
+        if not dependency:
+            # it's tregex. check if ok
+            query_test(query, have_ipython = have_ipython)
+        else:
+            try:
+                re.compile(query)
+            except re.error:
+                raise ValueError("Regular expression '%s' contains an error." % query)
+
+    # begin interrogation
+    time = strftime("%H:%M:%S", localtime())
+    print ("\n%s: Beginning corpus interrogation: %s" \
+           "\n          Query: '%s'\n          %s" \
+           "\n          Interrogating corpus ... \n" % (time, path, query, optiontext) )
+    
+    # get list of subcorpora and sort them
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
-    # if no subcorpora, just treat as one big corpus
+    
+    # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
         import warnings
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
-        sorted_dirs = [path]
+        sorted_dirs = [os.path.basename(path)]
+    
+    # some empty lists we'll need
+    allwords_list = []
+    results_list = []
+    all_files = [] # dependencies only
     main_totals = [u'Totals']
-    num_dirs = len(sorted_dirs)
-    all_files = []
-    for index, d in enumerate(sorted_dirs):
-        yearfinder = re.findall(r'[0-9]+', d)
-        if len(sorted_dirs) == 1:
-            subcorpus = path
-        else:
+    
+    # make progress bar for each dir
+    p = ProgressBar(len(sorted_dirs))
+
+    # if doing dependencies, make list of all files
+    if dependency:
+        for d in sorted_dirs:
             subcorpus = os.path.join(path, d)
-        files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
-        if test:
-            files = files[:2000]
-        #read_files = glob.glob(os.path.join(path, d, "*.xml"))
-        all_files.append([d, files])
-    total_files = len([item for sublist in all_files for item in sublist[1]])
-        #for f in read_files:
-    p = ProgressBar(total_files)
-    c = 0
-    for d, fileset in all_files:  
-        result = []
-        if test:
-            fileset = fileset[:test * 2000]
-        for f in fileset:
-            p.animate(c, str(c) + '/' + str(total_files))
-            c += 1
-            with open(os.path.join(path, d, f), "rb") as text:
-                data = text.read()
-                just_good_deps = SoupStrainer('dependencies', type=dep_type)
-                soup = BeautifulSoup(data, "lxml", parse_only=just_good_deps)
-                if options == 'govrole':
-                    result_from_file = govrole(soup)
-                if options == 'funct':
-                   result_from_file = funct(soup)
-                if options == 'depnum':
-                  result_from_file = depnum(soup)
-            if result_from_file is not None:
-                for entry in result_from_file:
-                    result.append(entry)
-            soup.decompose()
-            soup = None
-            data = None
-            gc.collect()
+            files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+            all_files.append([d, files])
+        total_files = len([item for sublist in all_files for item in sublist[1]])
+        sorted_dirs = all_files
+        c = 0
+        p = ProgressBar(total_files)
+
+    # loop through each subcorpus
+    for index, d in enumerate(sorted_dirs):
+        if not dependency:
+            subcorpus_name = d
+            p.animate(index)
+    
+            # get path to corpus/subcorpus
+            if len(sorted_dirs) == 1:
+                subcorpus = path
+            else:
+                subcorpus = os.path.join(path,subcorpus_name)
+    
+            # get keywords and ngrams, rather than tregex:
+            if keywording or n_gramming:
+                from corpkit import keywords
+                keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
+                                        printstatus = False, clear = False)
+                result = []
+    
+                # this remains a total hack, and sacrifices a little 
+                # bit of accuracy when doing the division. rewrite, one day.
+                if keywording:
+                    for index, word, score in keys:
+                        divided_score = score / 10.0
+                        for _ in range(int(divided_score)):
+                            result.append(word)
+                elif n_gramming:
+                    for index, ngram, score in ngrams:
+                        for _ in range(int(score)):
+                            result.append(ngram)
+    
+            #if tregex, determine ipython or not and search
+            else:
+                if have_ipython:
+                    tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
+                    result = get_ipython().getoutput(tregex_command)
+                else:
+                    tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
+                    FNULL = open(os.devnull, 'w')
+                    result = subprocess.check_output(tregex_command, stderr=FNULL)
+                    result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
+            
+                # if just counting matches, just 
+                # add subcorpus name and count...
+                if only_count:
+                    try:
+                        tup = [int(d), int(result[0])]
+                    except ValueError:
+                        tup = [d, int(result[0])]
+                    main_totals.append(tup)
+                    continue
+
+        if dependency:
+            subcorpus_name = d[0]
+            fileset = d[1]
+            #for f in read_files:
+            result = []
+            for f in fileset:
+                p.animate(c, str(c) + '/' + str(total_files))
+                c += 1
+                with open(os.path.join(path, subcorpus_name, f), "rb") as text:
+                    data = text.read()
+                    just_good_deps = SoupStrainer('dependencies', type=dep_type)
+                    soup = BeautifulSoup(data, "lxml", parse_only=just_good_deps)
+                    if options == 'govrole':
+                        result_from_file = govrole(soup)
+                    if options == 'funct':
+                       result_from_file = funct(soup)
+                    if options == 'depnum':
+                      result_from_file = depnum(soup)
+                if result_from_file is not None:
+                    for entry in result_from_file:
+                        result.append(entry)
+
+                # attempt to stop memory issues:
+                soup.decompose()
+                soup = None
+                data = None
+                gc.collect()
+
         result.sort()
+
+        # add subcorpus name and total count to totals
         try:
-            main_totals.append([int(d), len(result)]) # should this move down for more accuracy?
+            main_totals.append([int(subcorpus_name), len(result)])
         except ValueError:
-            main_totals.append([d, len(result)])
-        if only_count:
-            continue
-        if options != 'depnum':
-            result = processwords(result)
-        allwords_list.append(result)
-        results_list.append(result)
-    p.animate(total_files)
+            main_totals.append([subcorpus_name, len(result)])
+
+        # lowercaseing, encoding, lemmatisation, 
+        # titlewords removal, usa_english, etc.
+        processed_result = processwords(result)
+
+        # add results master list and to results list
+        allwords_list.append(processed_result)
+        results_list.append([subcorpus_name, processed_result])
+
+    # 100%
+    p.animate(len(sorted_dirs))
     if not have_ipython:
         print '\n'
+    
+    # if only counting, get total total and finish up:
     if only_count:
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
+        # no results branch:
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         query_options = [path, query, options] 
         output = outputnames(query_options, main_totals)
+        if have_ipython:
+            clear_output()
         return output
 
-    # flatten list
+    # flatten and sort master list
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
@@ -662,13 +487,14 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
     for word in unique_words:
         list_words.append([word])
 
-    # make dictionary of every subcorpus
+    # make dictionary of every subcorpus and store in dicts
     dicts = []
     p = ProgressBar(len(results_list))
     for index, subcorpus in enumerate(results_list):
+        subcorpus_name = subcorpus[0]
+        subcorpus_data = subcorpus[1]
         p.animate(index)
-        subcorpus_name = sorted_dirs[index]
-        dictionary = Counter(subcorpus)
+        dictionary = Counter(subcorpus_data)
         dicts.append(dictionary)
         for word in list_words:
             getval = dictionary[word[0]]
@@ -676,29 +502,34 @@ def dependencies(path, options, query, lemmatise = False, test = False, usa_engl
                 word.append([int(subcorpus_name), getval])
             except ValueError:
                 word.append([subcorpus_name, getval])
+
+    # 100%            
     p.animate(len(results_list))
-    # do totals (and keep them)
-    if options == 'depnum':
-        list_words.sort(key=lambda x: int(x[0]))
-        main_totals = depnum_reorder(list_words, output = 'totals') 
-        list_words = depnum_reorder(list_words, output = 'results') 
-    else: 
-        list_words.sort(key=lambda x: x[-1], reverse = True)
+
+    # do totals (and keep them), then sort list by total
     for word in list_words:
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
+    list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
+    
+    # reconstitute keyword scores, because we earlier
+    # did / 100 to save memory and time
+    if keywording:
+        for res in list_words:
+            for datum in res[1:]:
+                datum[1] = datum[1] * 10
+
+    # add total to main_total
+    total = sum([i[1] for i in main_totals[1:]])
+    main_totals.append([u'Total', total])
 
     #make results into named tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     query_options = [path, query, options] 
-    total = sum([i[1] for i in main_totals[1:]])
-    main_totals.append([u'Total', total])
     output = outputnames(query_options, list_words, main_totals)
     if have_ipython:
         clear_output()
     return output
-
-
 
 
 
@@ -962,5 +793,5 @@ def query_test(query, have_ipython = False):
 
 def interroplot(path, query):
     from corpkit import interrogator, plotter
-    quickstart = interrogator(path, '-t', query)
-    plotter('Example plot', quickstart.results, fract_of = quickstart.totals)
+    quickstart = interrogator(path, 't', query)
+    plotter(str(path), quickstart.results, fract_of = quickstart.totals)
