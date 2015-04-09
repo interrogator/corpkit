@@ -9,8 +9,8 @@ def interrogator(path, options, query, lemmatise = False,
     """Interrogate a corpus using Tregex queries
 
     path: path to corpus
-    options: Tregex output options: -t, -c, -u, -o
-    query: Tregex query
+    options: Tregex output options: -t, -c, -u, -o,
+    query: Tregex query, 'keywords' or 'ngrams'
     lemmatise: Do lemmatisation on results?
     titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
     lemmatag: explicitly pass pos to lemmatiser: 'n', 'v', 'a' or 'r'
@@ -150,29 +150,35 @@ def interrogator(path, options, query, lemmatise = False,
                 output.append(result)
         return output
 
+    
+
+
+    # a few things are off by default:
+    only_count = False
+    keywording = False
+    n_gramming = False
+
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
         phrases = True
 
     # welcome message based on kind of interrogation
-    u_option_regex = re.compile(r'(?i)-u') # find out if u option enabled
-    t_option_regex = re.compile(r'(?i)-t') # find out if t option enabled   
-    o_option_regex = re.compile(r'(?i)-o') # find out if t option enabled   
-    c_option_regex = re.compile(r'(?i)-c') # find out if c option enabled   
-    
-    only_count = False
-
-    if re.match(u_option_regex, options):
+    if 'u' in options or 'U' in options:
         optiontext = 'Tags only.'
-    if re.match(t_option_regex, options):
-        optiontext = 'Terminals only.'
-    if re.match(o_option_regex, options):
-        optiontext = 'Tags and terminals.'
-    if re.match(c_option_regex, options):
+    elif 'o' in options or 'O' in options:
+        optiontext = 'Tags and words.'
+    elif 't' in options or 'T' in options:
+        optiontext = 'Words only.'
+    elif 'c' in options or 'C' in options:
         only_count = True
         options = options.upper()
         optiontext = 'Counts only.'
-
+    if 'keyword' in query:
+        keywording = True
+        optiontext = 'Words only.'
+    elif 'ngram' in query:
+        n_gramming = True
+        optiontext = 'Words only.'
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
     print "\n%s: Beginning corpus interrogation: %s\n          Query: '%s'\n          %s\n          Interrogating corpus ... \n" % (time, path, query, optiontext)
@@ -197,14 +203,31 @@ def interrogator(path, options, query, lemmatise = False,
             subcorpus = path
         else:
             subcorpus = os.path.join(path,d)
-        if have_ipython:
-            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
-            result = get_ipython().getoutput(tregex_command)
+
+        # get keywords and ngrams, rather than tregex:
+        if keywording or ngramming:
+            from corpkit import keywords
+            keys, ngrams = keywords(subcorpus, dictionary = dictionary, printstatus = False, clear = False)
+            result = []
+            if keywording:
+                for index, key, score in keys:
+                    for _ in range(int(score) / 100.0):
+                        result.append(word)
+            elif ngramming:
+                for index, key, score in ngrams:
+                    for _ in range(int(score)):
+                        result.append(word)
+
+        #if tregex, determine ipython or not and search
         else:
-            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % subcorpus]
-            FNULL = open(os.devnull, 'w')
-            result = subprocess.check_output(tregex_command, stderr=FNULL)
-            result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
+            if have_ipython:
+                tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
+                result = get_ipython().getoutput(tregex_command)
+            else:
+                tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
+                FNULL = open(os.devnull, 'w')
+                result = subprocess.check_output(tregex_command, stderr=FNULL)
+                result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
         if only_count:
             try:
                 tup = [int(d), int(result[0])]
@@ -238,14 +261,13 @@ def interrogator(path, options, query, lemmatise = False,
             clear_output()
         return output
 
-    # flatten list
+    # flatten master list
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
     list_words = []
     for word in unique_words:
         list_words.append([word])
-
 
     # make dictionary of every subcorpus
     dicts = []
@@ -268,6 +290,12 @@ def interrogator(path, options, query, lemmatise = False,
         word.append([u'Total', total])
     list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
     
+    # reconstitute keyword scores
+    if keywording:
+        for res in list_words:
+            for datum in res[1:]:
+                datum[1] = datum[1] * 100.0
+
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
     main_totals.append([u'Total', total])
