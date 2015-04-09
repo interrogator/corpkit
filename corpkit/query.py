@@ -14,12 +14,16 @@ def interrogator(path, options, query, lemmatise = False,
 
     path: path to corpus
     
-    options: 
-        Tregex output options: -t, -c, -u, -o,
+    options (can type letter or word): 
+        Tregex output options:
+            c: only *count*
+            w: only *words*
+            p: only *pos* tag
+            b: *both* words and tags
         dependency options:
-            depnum: get the index of the governor
-            funct: get the semantic function
-            govrole: get governor role and governor:
+            n: get the index *number* of the governor
+            f: get the semantic *function*
+            g: get *governor* role and governor:
                 /good/ might return amod:day
         for keywords/ngrams, use 't'
 
@@ -111,21 +115,18 @@ def interrogator(path, options, query, lemmatise = False,
         # make everything unicode, lowercase and sorted
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
-        if 'dep' not in options:
+        if options != 'depnum':
             list_of_matches = [w.lower() for w in list_of_matches]
         list_of_matches.sort()
         
         # tokenise if multiword:
         if phrases:
             result = [nltk.word_tokenize(i) for i in result]
-
         if lemmatise:
             tag = gettag(query)
             list_of_matches = lemmatiser(list_of_matches, tag)
-
         if titlefilter:
             list_of_matches = titlefilterer(list_of_matches)
-
         if usa_english:
             list_of_matches = usa_english_maker(list_of_matches)
         
@@ -153,7 +154,7 @@ def interrogator(path, options, query, lemmatise = False,
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser for -t
-            if 't' in options or 'keyword' in query or 'ngram' in query:
+            if options.startswith('t') or options.startswith('w') or 'keyword' in query or 'ngram' in query:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
@@ -283,33 +284,45 @@ def interrogator(path, options, query, lemmatise = False,
     keywording = False
     n_gramming = False
     dependency = False
+    depnum = False
 
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
         phrases = True
 
     # parse options
-    if options == 'u' or options == 'U':
-        optiontext = 'Tags only.'
-    elif options == 'o' or options == 'O':
+    # handle hyphen at start
+    if options.startswith('-'):
+        options = options[1:]
+    
+    # Tregex options:
+    if options.startswith('p') or options.startswith('P') or options.startswith('u') or options.startswith('U'):
+        optiontext = 'Part-of-speech tags only.'
+        options = 'u'
+    elif options.startswith('b') or options.startswith('B') or options.startswith('o'):
         optiontext = 'Tags and words.'
-    elif options == 't' or options == 'T':
+        options = 'o'
+    elif options.startswith('t') or options.startswith('T') or options.startswith('w') or options.startswith('W'):
         optiontext = 'Words only.'
-    elif options == 'c' or options == 'C':
+        options = 't'
+    elif options.startswith('c') or options.startswith('C'):
         only_count = True
-        options = options.upper()
+        options = 'C'
         optiontext = 'Counts only.'
-    elif 'dep' in options:
+    
+    # dependency options:
+    elif options.startswith('n') or options.startswith('N') or options.startswith('d') or options.startswith('D'):
+        depnum = True
         dependency = True
-        optiontext = 'Number only.'
-    elif 'funct' in options:
+        optiontext = 'Dependency index number only.'
+    elif options.startswith('f') or options.startswith('F'):
         dependency = True
         optiontext = 'Functional role only.'
-    elif 'gov' in options:
+    elif options.startswith('g') or options.startswith('G'):
         dependency = True
         optiontext = 'Role and governor.'
     else:
-        raise ValueError("'%s' option not recognised. Must be:\n\nFor tree searching:\n    'u', 'o', 'c' or 't'\nFor dependencies searching:\n    'depnum', 'funct' or 'govrole'." % options)
+        raise ValueError("'%s' option not recognised. See docstring for possible options." % options)
     
     # dependencies can't be phrases
     if dependency:
@@ -436,12 +449,12 @@ def interrogator(path, options, query, lemmatise = False,
                     data = text.read()
                     just_good_deps = SoupStrainer('dependencies', type=dep_type)
                     soup = BeautifulSoup(data, "lxml", parse_only=just_good_deps)
-                    if options == 'govrole':
+                    if options.startswith('g') or options.startswith('G'):
                         result_from_file = govrole(soup)
-                    if options == 'funct':
-                       result_from_file = funct(soup)
-                    if options == 'depnum':
-                      result_from_file = depnum(soup)
+                    if options.startswith('f') or options.startswith('F'):
+                        result_from_file = funct(soup)
+                    if options.startswith('n') or options.startswith('N') or options.startswith('d') or options.startswith('D'):
+                        result_from_file = depnum(soup)
                 if result_from_file is not None:
                     for entry in result_from_file:
                         result.append(entry)
@@ -513,7 +526,7 @@ def interrogator(path, options, query, lemmatise = False,
     p.animate(len(results_list))
 
     # do totals (and keep them), then sort list by total
-    if 'dep' in options:
+    if options != 'depnum':
         list_words.sort(key=lambda x: int(x[0]))
         main_totals = depnum_reorder(list_words, output = 'totals') 
         list_words = depnum_reorder(list_words, output = 'results') 
@@ -523,7 +536,6 @@ def interrogator(path, options, query, lemmatise = False,
     list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
     
     # reconstitute keyword scores, because we earlier
-    # did / 100 to save memory and time
     if keywording:
         for res in list_words:
             for datum in res[1:]:
@@ -540,7 +552,6 @@ def interrogator(path, options, query, lemmatise = False,
     if have_ipython:
         clear_output()
     return output
-
 
 
 def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csvmake = False): 
