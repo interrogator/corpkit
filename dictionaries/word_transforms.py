@@ -13,7 +13,7 @@ wordlist = {u"felt": u"feel",
             u"n't": u"not",
             u"smelt": u"smell",
             u"saw": u"see",
-            u"hated": u"hate"
+            u"hated": u"hate",
             u"people": u"person",
             u"others": u"other"}
 

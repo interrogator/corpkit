@@ -593,7 +593,7 @@ def quickview(lst, n = 50, topics = False):
         for index, item in enumerate(lst[:n]):
             # if it's interrogator result
             if type(item) == list:
-                word = item[0]
+                word = str(item[0])
                 index_and_word = ['% 4d' % index, word]
                 as_string = ': '.join(index_and_word)
                 out.append(as_string)

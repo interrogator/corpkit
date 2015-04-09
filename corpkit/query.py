@@ -13,6 +13,7 @@ def interrogator(path, options, query, lemmatise = False,
     keywords/ngrams
 
     path: path to corpus
+    
     options: 
         Tregex output options: -t, -c, -u, -o,
         dependency options:
@@ -20,12 +21,13 @@ def interrogator(path, options, query, lemmatise = False,
             funct: get the semantic function
             govrole: get governor role and governor:
                 /good/ might return amod:day
+        for keywords/ngrams, use 't'
 
     query: 
-            a Tregex query
-            'keywords'
-            'ngrams'
-            a regex to match a word for dependencies
+        a Tregex query
+        'keywords'
+        'ngrams'
+        A regex to match a word for dependencies
 
     lemmatise: Do lemmatisation on results?
     titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
@@ -33,10 +35,10 @@ def interrogator(path, options, query, lemmatise = False,
     usa_english: convert all to U.S. English
     phrases: turn on if your expected results are multiword and thus need tokenising
     dictionary: the name of a dictionary made with dictmaker for use with keyword query
-    dep_type: the kind of stanford dependency parses you want to use:
-            'basic-dependencies' * best lemmatisation
-            'collapsed-dependencies'
-            'collapsed-ccprocessed-dependencies'
+    dep_type: the kind of Stanford CoreNLP dependency parses you want to use:
+        'basic-dependencies' (best lemmatisation right now)
+        'collapsed-dependencies'
+        'collapsed-ccprocessed-dependencies'
     """
     
     import os
@@ -107,8 +109,10 @@ def interrogator(path, options, query, lemmatise = False,
         """edit matches from interrogations"""
 
         # make everything unicode, lowercase and sorted
-        list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
-        list_of_matches = [w.lower() for w in list_of_matches]
+        if not dependency:
+            list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
+        if 'dep' not in options:
+            list_of_matches = [w.lower() for w in list_of_matches]
         list_of_matches.sort()
         
         # tokenise if multiword:
@@ -509,6 +513,10 @@ def interrogator(path, options, query, lemmatise = False,
     p.animate(len(results_list))
 
     # do totals (and keep them), then sort list by total
+    if 'dep' in options:
+        list_words.sort(key=lambda x: int(x[0]))
+        main_totals = depnum_reorder(list_words, output = 'totals') 
+        list_words = depnum_reorder(list_words, output = 'results') 
     for word in list_words:
         total = sum([i[1] for i in word[1:]])
         word.append([u'Total', total])
