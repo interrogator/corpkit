@@ -13,7 +13,51 @@ wordlist = {u"felt": u"feel",
             u"n't": u"not",
             u"smelt": u"smell",
             u"saw": u"see",
-            u"hated": u"hate"}
+            u"hated": u"hate"
+            u"people": u"person",
+            u"others": u"other"}
+
+# lemmatisation for treebank tags
+
+taglemma = {u"cc": u"Coordinating conjunction",
+           u"cd": u"Cardinal number",
+           u"dt": u"Determiner",
+           u"ex": u"Ex. there",
+           u"fw": u"Foreign word",
+           u"in": u"Preposition",
+           u"ls": u"List item marker",
+           u"md": u"Modal",
+           u"pdt": u"Predeterminer",
+           u"pos": u"Possessive ending",
+           u"rp": u"Particle",
+           u"sym": u"Symbol",
+           u"to": u"to",
+           u"uh": u"Interjection",
+           u"wdt": u"Wh-determiner",
+           u"wp": u"Wh-pronoun",
+           u"wp$": u"Possessive wh-pronoun",
+           u"wrb": u"Wh-adverb",
+           u"vbp": u"Verb",
+           u"vbz": u"Verb",
+           u"vbn": u"Verb",
+           u"vbd": u"Verb",
+           u"vbg": u"Verb",
+           u"vb": u"Verb",
+           u"nnp": u"Noun",
+           u"nns": u"Noun",
+           u"nnps": u"Noun",
+           u"nn": u"Noun",
+           u"prp": u"Pronoun",
+           u"prp$": u"Pronoun",
+           u"jj": u"Adjective",
+           u"jjr": u"Adjective",
+           u"jjs": u"Adjective",
+           u"rb": u"Adverb",
+           u"rbr": u"Adverb",
+           u"rbs": u"Adverb",
+           u"wp": u"Wh- pronoun",
+           u"wp$": u"Wh- pronoun"}
+
 
 # this one translates the dependency relationship into a wordnet tag as a best guess:
 
