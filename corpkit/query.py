@@ -4,7 +4,7 @@
 #   for ResBaz NLTK stream
 #   Author: Daniel McDonald
 
-def interrogator(path, options, query, lemmatise = False, 
+def interrogator(path, options, query, lemmatise = False, dictionary = 'bnc.p',
     titlefilter = False, lemmatag = False, usa_english = True, phrases = False):
     """Interrogate a corpus using Tregex queries
 
@@ -205,18 +205,18 @@ def interrogator(path, options, query, lemmatise = False,
             subcorpus = os.path.join(path,d)
 
         # get keywords and ngrams, rather than tregex:
-        if keywording or ngramming:
+        if keywording or n_gramming:
             from corpkit import keywords
             keys, ngrams = keywords(subcorpus, dictionary = dictionary, printstatus = False, clear = False)
             result = []
             if keywording:
-                for index, key, score in keys:
-                    for _ in range(int(score) / 100.0):
+                for index, word, score in keys:
+                    for _ in range(int(score) / 100):
                         result.append(word)
-            elif ngramming:
-                for index, key, score in ngrams:
+            elif n_gramming:
+                for index, ngram, score in ngrams:
                     for _ in range(int(score)):
-                        result.append(word)
+                        result.append(ngram)
 
         #if tregex, determine ipython or not and search
         else:
