@@ -5,7 +5,7 @@
 
 
 def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
-    num_to_plot = 7, significance_level = 0.05,
+    num_to_plot = 7, significance_level = 0.05, pythontex = False,
     multiplier = 100, yearspan = False, proj63 = 5,
     justyears = False, csvmake = False, x_label = False, legend_p = False,
     legend_totals = False, log = False, figsize = 11, save = False, 
@@ -252,7 +252,10 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         rc('text', usetex=True)
 
     #image directory
-    imagefolder = 'images'
+    if pythontex:
+        imagefolder = '../images'
+    else:
+        imagefolder = 'images'
 
     # Use .results branch if branch is unspecified
     if isinstance(results, tuple) is True:
@@ -427,7 +430,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         
         #make legend
         if legend:
-            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
 
     elif barchart:
         rcParams['figure.figsize'] = figsize, figsize/2
@@ -506,7 +509,8 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
     plt.grid()
     fig1 = plt.gcf()
-    plt.show()
+    if not pythontex:
+        plt.show()
 
     def urlify(s):
             import re
@@ -521,7 +525,9 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         else:
             savename = os.path.join(imagefolder, urlify(title) + '.png')
         if legend:
-            fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150) 
+            fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150, transparent=True)
+        else:
+            fig1.savefig(savename, dpi=150, transparent=True)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print time + ": " + savename + " created."
