@@ -5,14 +5,78 @@
 
 
 def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
-    num_to_plot = 7, skip63 = False, significance_level = 0.05,
-    multiplier = 100, projection = True, yearspan = False, proj63 = 5,
+    num_to_plot = 7, significance_level = 0.05,
+    multiplier = 100, yearspan = False, proj63 = 5,
     justyears = False, csvmake = False, x_label = False, legend_p = False,
-    legend_totals = False, log = False, figsize = 11, save = False, only_below_p = False):
+    legend_totals = False, log = False, figsize = 11, save = False, 
+    only_below_p = False, skip63 = False, projection = True):
     """
-    Takes interrogator output and plots it with matplotlib, optionally generating a csv as well.
+    Visualise interrogator() results, optionally generating a csv as well.
 
-    Option documentation forthcoming.
+    Parameters
+    ----------
+
+    title : string
+        Chart title
+    results : list
+        interrogator() results or totals (deaults to results)
+    sort_by : string
+        'total': sort by most frequent
+        'increase': calculate linear regression, sort by steepest up slope
+        'decrease': calculate linear regression, sort by steepest down slope 
+        'static': calculate linear regression, sort by least slope
+    fract_of : list
+        measure results as a fraction (default: as a percentage) of this list.
+        usually, use interrogator() totals
+    multiplier : int
+        mutliply results list before dividing by fract_of list
+        Default is 100 (for percentage), can use 1 for ratios
+    y_label : string
+        text for y-axis label (default is 'Absolute frequency'/'Percentage') 
+    X_label : string
+        text for x-axis label (default is 'Group'/'Year')
+    num_to_plot : int
+        How many top entries to show
+    significance_level : float
+        If using sort_by, set the p threshold (default 0.05)
+    only_below_p : Boolean
+        Do not plot any results above p value
+    yearspan : list with two ints
+        Get only results between the specified ints
+    justyears : list of ints
+        Get only results from the listed subcorpora
+    csvmake : True/False/string
+        Generate a CSV of plotted and all results with string as filename
+        If True, 'title' string is used
+    legend_totals : Boolean
+        Show total frequency of each result, or overall percentage if fract_of
+    legend_p : Boolean
+        Show p-value for slope when using sort_by
+    log : False/'x'/'y'/'x, y'
+        Use logarithmic axes
+    figsize = int
+        Size of image
+    save = True/False/string
+        Generate save image with string as filename
+        If True, 'title' string is used for name
+
+    NYT-only parameters
+    -----
+    skip63 : boolean
+        Skip 1963 results (for NYT investigation)
+    projection : boolean
+        Project 1963/2014 results (for NYT investigation)
+    proj63 : int
+        The amount to project 1963 results by
+
+    Example
+    -----
+    from corpkit import interrogator, plotter
+    corpus = 'path/to/corpus'
+    adjectives = interrogator(corpus, 'words', r'/JJ.?/ < __')
+    plotter('Most common adjectives', adjectives.results, fract_of = adjectives.totals,
+            csvmake = True, legend_totals = True)
+
     """
 
     import os

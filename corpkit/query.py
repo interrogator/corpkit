@@ -12,37 +12,81 @@ def interrogator(path, options, query, lemmatise = False,
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
     keywords/ngrams
 
-    path: path to corpus
+    Parameters
+    ----------
+
+    path : str
+        path to a corpus. If it contains subfolders, these will be treated
+        as subcorpora. If not, the corpus will be treated as unstructured.
     
-    options (can type letter or word): 
-        Tregex output options:
-            c: only *count*
-            w: only *words*
-            p: only *pos* tag
-            b: *both* words and tags
-        dependency options:
-            n: get the index *number* of the governor
-            f: get the semantic *function*
-            g: get *governor* role and governor:
+    options : (can type letter or word): 
+        - Tregex output options:
+            c/count: only *count*
+            w/words: only *words*
+            p/pos: only *pos* tag
+            b/both: *both* words and tags
+        - dependency options:
+            n/number: get the index *number* of the governor
+            f/funct: get the semantic *function*
+            g/gov: get *governor* role and governor:
                 /good/ might return amod:day
         for keywords/ngrams, use 't'
+   
+    query : str
+        - a Tregex query (if using a Tregex option)
+        - 'keywords' (use keywords() on each subcorpus)
+        - 'ngrams' (use keywords() on each subcorpus)
+        - A regex to match a token/tokens (if using a dependencies option)
 
-    query: 
-        a Tregex query
-        'keywords'
-        'ngrams'
-        A regex to match a word for dependencies
+    lemmatise : Boolean
+        Do lemmatisation on results?
+    lemmatag : False/'n'/'v'/'a'/'r'
+        explicitly pass a pos to lemmatiser
+    titlefilter : Boolean
+        strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
+    usa_english : Boolean
+        convert all to U.S. English
+    phrases : Boolean
+        Use if your expected results are multiword and thus need tokenising
+    dictionary : string
+        The name of a dictionary made with dictmaker() for keywording.
+        BNC included as default.
+    dep_type : str
+        the kind of Stanford CoreNLP dependency parses you want to use:
+        - 'basic-dependencies' (best lemmatisation right now, default)
+        - 'collapsed-dependencies'
+        - 'collapsed-ccprocessed-dependencies'
 
-    lemmatise: Do lemmatisation on results?
-    titlefilter: strip 'mr, 'the', 'president' etc from results (this turns 'phrases' on)
-    lemmatag: explicitly pass pos to lemmatiser: 'n', 'v', 'a' or 'r'
-    usa_english: convert all to U.S. English
-    phrases: turn on if your expected results are multiword and thus need tokenising
-    dictionary: the name of a dictionary made with dictmaker for use with keyword query
-    dep_type: the kind of Stanford CoreNLP dependency parses you want to use:
-        'basic-dependencies' (best lemmatisation right now)
-        'collapsed-dependencies'
-        'collapsed-ccprocessed-dependencies'
+    Example 1: Tree querying
+    --------
+    from corpkit import interrogator, tally, plotter
+    corpus = 'path/to/corpus'
+    ion_nouns = interrogator(corpus, 'w', r'/NN.?/ < /(?i)ion\b'/)
+    tally(ion_nouns.results, [0, 1, 2, 3, 4])
+    plotter('Common -ion words', ion_nouns.results, fract_of = ion_nouns.totals)
+
+    Output:
+
+    ['0: election: 22 total occurrences.',
+     '1: decision: 14 total occurrences.',
+     '2: question: 10 total occurrences.',
+     '3: nomination: 8 total occurrences.',
+     '4: recession: 8 total occurrences.']
+
+    <matplotlib figure>
+
+    Example 2: Dependencies querying
+    -----------------------
+    risk_functions = interrogator(corpus, 'f', r'(?i)\brisk')
+    print risk_functions.results[0]
+    plotter('Functions of risk words', risk_functions.results, num_to_plot = 15)
+
+    Output:
+
+    ['pobj', [1989, 1], [2005, 52], [2006, 52], [u'Total', 105]]
+
+    <matplotlib figure>
+
     """
     
     import os
@@ -368,14 +412,11 @@ def interrogator(path, options, query, lemmatise = False,
     # some empty lists we'll need
     allwords_list = []
     results_list = []
-    all_files = [] # dependencies only
     main_totals = [u'Totals']
-    
-    # make progress bar for each dir
-    p = ProgressBar(len(sorted_dirs))
 
-    # if doing dependencies, make list of all files
+    # if doing dependencies, make list of all files, and a progress bar
     if dependency:
+        all_files = []
         for d in sorted_dirs:
             subcorpus = os.path.join(path, d)
             files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
@@ -384,6 +425,10 @@ def interrogator(path, options, query, lemmatise = False,
         sorted_dirs = all_files
         c = 0
         p = ProgressBar(total_files)
+    
+    # if tregex, make progress bar for each dir
+    else:
+        p = ProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     for index, d in enumerate(sorted_dirs):
@@ -437,18 +482,22 @@ def interrogator(path, options, query, lemmatise = False,
                     main_totals.append(tup)
                     continue
 
+        # for dependencies, d[0] is the subcorpus name 
+        # and d[1] is its file list ... 
         if dependency:
             subcorpus_name = d[0]
             fileset = d[1]
             #for f in read_files:
             result = []
             for f in fileset:
+                # pass the x/y argument for more updates
                 p.animate(c, str(c) + '/' + str(total_files))
                 c += 1
                 with open(os.path.join(path, subcorpus_name, f), "rb") as text:
                     data = text.read()
                     just_good_deps = SoupStrainer('dependencies', type=dep_type)
-                    soup = BeautifulSoup(data, "lxml", parse_only=just_good_deps)
+
+                    soup = BeautifulSoup(data, parse_only=just_good_deps)
                     if options.startswith('g') or options.startswith('G'):
                         result_from_file = govrole(soup)
                     if options.startswith('f') or options.startswith('F'):
@@ -459,7 +508,8 @@ def interrogator(path, options, query, lemmatise = False,
                     for entry in result_from_file:
                         result.append(entry)
 
-                # attempt to stop memory issues:
+                # attempt to stop memory problems. 
+                # not sure if this helps, though:
                 soup.decompose()
                 soup = None
                 data = None
@@ -468,6 +518,7 @@ def interrogator(path, options, query, lemmatise = False,
         result.sort()
 
         # add subcorpus name and total count to totals
+        # prefer int subcorpus names...
         try:
             main_totals.append([int(subcorpus_name), len(result)])
         except ValueError:
@@ -557,7 +608,6 @@ def interrogator(path, options, query, lemmatise = False,
 
 def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csvmake = False): 
     """A concordancer for Tregex queries"""
-    # add sorting?
     import os
     from random import randint
     import time
@@ -577,12 +627,14 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     except NameError:
         import subprocess
         have_ipython = False
-    if csvmake:
-        if os.path.isfile(csvmake):
-            raise ValueError("CSV error: " + csvmake + " already exists in current directory. Move it, delete it, or change the name of the new .csv file.")
-
+    
     def csvmaker(csvdata, sentences, csvmake):
         """Puts conc() results into tab-separated spreadsheet form"""
+        # I made this before learning about Pandas etc., so there's
+        # probably a much easier way to get the same result ...
+        if os.path.isfile(csvmake):
+            raise ValueError("CSV error: %s already exists in current directory. Move it, delete it, or change the name of the new .csv file." % csvmake)
+
         #make data utf 8
         uc_data = []
         uc_sentences = []
@@ -626,63 +678,56 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
         return ((key,locs) for key,locs in tally.items() 
                         if len(locs)>1)
 
-        ##############################################################
+    # make sure query is valid:
+    query_test(query)
 
+    # welcome message
     time = strftime("%H:%M:%S", localtime())
-    #if noprint is False:
     print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
-    query_test(query)
     if trees:
         options = '-s'
     else:
         options = '-t'
-    # tregex_command = "tregex.sh -o -w %s '%s' %s 2>/dev/null | grep -vP '^\s*$'" % (options, query, corpus)
-    # replace bracket: '-LRB- ' and ' -RRB- ' ...
-    #allresults = !$tregex_command
-    #print allresults
+
+    # get whole sentences:
     if have_ipython:
         tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
-        allresults = get_ipython().getoutput(tregex_command)
+        whole_results = get_ipython().getoutput(tregex_command)
     else:
         tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
-        allresults = subprocess.check_output(tregex_command, stderr=FNULL)
-        allresults = os.linesep.join([s for s in allresults.splitlines() if s]).split('\n')
-    results = list(allresults)
-    if csvmake: # this is not optimised at all!
+        whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
+        whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
+    
+    results = list(whole_results)
+    
+    if csvmake:
         sentences = list(results)
+    
+    # get just the match of the sentence
     if have_ipython:
         tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
-        alltresults = get_ipython().getoutput(tregex_command)
+        middle_column_result = get_ipython().getoutput(tregex_command)
     else:
         tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
-        alltresults = subprocess.check_output(tregex_command, stderr=FNULL)
-        alltresults = os.linesep.join([s for s in alltresults.splitlines() if s]).split('\n')
-    tresults = list(alltresults)
-    zipped = zip(allresults, alltresults)
+        middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
+        middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
+    tresults = list(middle_column_result)
+    zipped = zip(whole_results, middle_column_result)
     all_dupes = []
-    #for dup in sorted(list_duplicates(results)):
-        #index_list = dup[1][1:] # the list of indices for each duplicate, minus the first one, which we still want.
-        #for i in index_list:
-            #all_dupes.append(i)
-    #for i in sorted(all_dupes, reverse = True):
-        #print tresults[i]
-        #print results[i]
-    #n = len(results)
-    #for i in xrange(n):
-        #print tresults[i]
-        #print results[i]
-    totalresults = len(zipped)
-    if totalresults == 0:
+
+    
+    # make sure we have some results
+    if len(zipped) == 0:
         raise ValueError("No matches found, sorry. I wish there was more I could tell you.") 
+
     maximum = len(max(tresults, key=len)) # longest result in characters
     csvdata = []
     unique_results = []
     for result in zipped: 
         tree = result[0]
-
         pattern = result[1]
         if not trees:
             regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + 
@@ -693,6 +738,8 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
         for result in search:
             unique_results.append(result)
     unique_results = set(sorted(unique_results)) # make unique
+    
+    # from here on down needs a major cleanup ...
     for unique_result in unique_results:
         lstversion = list(unique_result)
         if len(lstversion) == 3:
@@ -732,8 +779,6 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
             print '% 4d' % index, " ".join(row)
         return formatted_random_output
 
-
-
 def multiquery(corpus, query, sort_by = 'total'):
     """Creates a named tuple for a list of named queries to count.
 
@@ -747,7 +792,7 @@ def multiquery(corpus, query, sort_by = 'total'):
     from corpkit.edit import merger
     results = []
     for name, pattern in query:
-        result = interrogator(corpus, '-C', pattern)
+        result = interrogator(corpus, 'C', pattern)
         result.totals[0] = name # rename count
         results.append(result.totals)
     if sort_by:
@@ -757,8 +802,6 @@ def multiquery(corpus, query, sort_by = 'total'):
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     output = outputnames(query, results, tot.totals)
     return output
-
-
 
 def topix_search(topic_subcorpora, options, query, **kwargs):
     """Interrogates each topic subcorpus."""
@@ -779,11 +822,15 @@ def topix_search(topic_subcorpora, options, query, **kwargs):
     return output
 
 def query_test(query, have_ipython = False):
+    """make sure a tregex query works, and provide help if it doesn't"""
+
     import re
     import subprocess
+
     # define error searches 
     tregex_error = re.compile(r'^Error parsing expression')
     regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
+
     #define command and run it
     if have_ipython:
         tregex_command = 'tregex.sh \'%s\' 2>&1' % (query)
@@ -791,7 +838,8 @@ def query_test(query, have_ipython = False):
     else:
         tregex_command = ['tregex.sh', '%s' % (query)]
         try:
-            testpattern = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).split('\n')
+            testpattern = subprocess.check_output(tregex_command, 
+                                    stderr=subprocess.STDOUT).split('\n')
         except Exception, e:
             testpattern = str(e.output).split('\n')
             print testpattern
@@ -800,6 +848,7 @@ def query_test(query, have_ipython = False):
     if re.match(tregex_error, testpattern[0]):
         tregex_error_output = "Error parsing Tregex expression. Check for balanced parentheses and boundary delimiters."
         raise ValueError(tregex_error_output) 
+    
     # if regex error, try to help
     if re.match(regex_error, testpattern[0]):
         info = testpattern[0].split(':')
@@ -811,6 +860,7 @@ def query_test(query, have_ipython = False):
         regex_error_output = 'Error parsing regex inside Tregex query:%s'\
         '. Best guess: \n%s\n%s^' % (str(info[1]), str(remove_end[0]), spaces)
         raise ValueError(regex_error_output)
+    
     # if nothing, the query's fine! 
 
 def interroplot(path, query):
