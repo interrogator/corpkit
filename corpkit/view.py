@@ -524,8 +524,8 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             savename = os.path.join(imagefolder, urlify(save) + '.png')
         else:
             savename = os.path.join(imagefolder, urlify(title) + '.png')
-        if legend:
-            fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150, transparent=True)
+        if legend and not barchart:
+                fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150, transparent=True)
         else:
             fig1.savefig(savename, dpi=150, transparent=True)
         time = strftime("%H:%M:%S", localtime())
