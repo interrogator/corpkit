@@ -122,6 +122,7 @@ def interrogator(path, options, query, lemmatise = False,
 
 
     def check_pythontex():
+        """check if pythontex is running the script. not currently used here."""
         import inspect
         thestack = []
         for bit in inspect.stack():
@@ -344,7 +345,7 @@ def interrogator(path, options, query, lemmatise = False,
     depnum = False
 
     # check if pythontex is being used:
-    have_pythontex = check_pythontex()
+    # have_pythontex = check_pythontex()
 
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
