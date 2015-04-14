@@ -5,7 +5,7 @@
 
 
 def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
-    num_to_plot = 7, significance_level = 0.05, pythontex = False,
+    num_to_plot = 7, significance_level = 0.05,
     multiplier = 100, yearspan = False, proj63 = 5,
     justyears = False, csvmake = False, x_label = False, legend_p = False,
     legend_totals = False, log = False, figsize = 11, save = False, 
@@ -111,7 +111,19 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     #font
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
     
-    
+    def check_pythontex():
+        import inspect
+        thestack = []
+        for bit in inspect.stack():
+            for b in bit:
+                thestack.append(str(b))
+        as_string = ' '.join(thestack)
+        if 'pythontex' in as_string:
+            return True
+        else:
+            return False
+    have_pythontex = check_pythontex()
+
     def check_for_tex():
         if have_ipython:
             checktex_command = 'which latex'
@@ -252,7 +264,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         rc('text', usetex=True)
 
     #image directory
-    if pythontex:
+    if have_pythontex:
         imagefolder = '../images'
     else:
         imagefolder = 'images'
@@ -509,7 +521,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
     plt.grid()
     fig1 = plt.gcf()
-    if not pythontex:
+    if not have_pythontex:
         plt.show()
 
     def urlify(s):
