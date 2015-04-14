@@ -15,7 +15,17 @@ wordlist = {u"felt": u"feel",
             u"saw": u"see",
             u"hated": u"hate",
             u"people": u"person",
-            u"others": u"other"}
+            u"will": u"would",
+            u"wo": u"would",
+            u"'ll": u"would",
+            u"ca": u"could",
+            u"can": u"could",
+            u"may": u"might",
+            u"must": u"might",
+            u"mighta": u"might",
+            u"shalt": u"should",            
+            u"shall": u"should",
+            u"shal": u"should"}
 
 # lemmatisation for treebank tags
 
