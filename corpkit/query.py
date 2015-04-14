@@ -120,6 +120,20 @@ def interrogator(path, options, query, lemmatise = False,
         import subprocess
         have_ipython = False
 
+
+    def check_pythontex():
+        import inspect
+        thestack = []
+        for bit in inspect.stack():
+            for b in bit:
+                thestack.append(str(b))
+        as_string = ' '.join(thestack)
+        if 'pythontex' in as_string:
+            return True
+        else:
+            return False
+    
+
     def signal_handler(signal, frame):
         """exit on ctrl+c, rather than just stop loop"""
         import sys
@@ -129,24 +143,22 @@ def interrogator(path, options, query, lemmatise = False,
     def gettag(query):
         import re
         if lemmatag is False:
+            tag = 'n' # same default as wordnet
             # attempt to find tag from tregex query
             # currently this will fail with a query like r'/\bthis/'
-            tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)') 
-            tagchecker = re.compile(r'^[A-Z]{2,4}$')
             tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)')
+            tagchecker = re.compile(r'^[A-Z]{2,4}$')
             treebank_tag = re.findall(tagfinder, query)
             if re.match(tagchecker, treebank_tag[0]):
                 if treebank_tag[0].startswith('J'):
                     tag = 'a'
-                elif treebank_tag[0].startswith('V'):
+                elif treebank_tag[0].startswith('V') or treebank_tag[0].startswith('M'):
                     tag = 'v'
                 elif treebank_tag[0].startswith('N'):
                     tag = 'n'
                 elif treebank_tag[0].startswith('R'):
                     tag = 'r'
-            else:
-                tag = 'n' # default to noun tag---same as lemmatiser does with no tag
-        if lemmatag:
+        elif lemmatag:
             tag = lemmatag
             tagchecker = re.compile(r'^[avrn]$')
             if not re.match(tagchecker, lemmatag):
@@ -157,6 +169,7 @@ def interrogator(path, options, query, lemmatise = False,
         """edit matches from interrogations"""
 
         # make everything unicode, lowercase and sorted
+        # dependency is already unicode because of bs4
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         if not depnum:
@@ -194,10 +207,10 @@ def interrogator(path, options, query, lemmatise = False,
                 entry.pop()
             else:
                 word = entry
-            if 'u' in options:
+            if options.startswith('u'):
                 if word in taglemma:
                     word = taglemma[word]
-            # only use wordnet lemmatiser for -t
+            # only use wordnet lemmatiser when appropriate
             if options.startswith('t') or options.startswith('w') or 'keyword' in query or 'ngram' in query:
                 if word in wordlist:
                     word = wordlist[word]
@@ -329,6 +342,9 @@ def interrogator(path, options, query, lemmatise = False,
     n_gramming = False
     dependency = False
     depnum = False
+
+    # check if pythontex is being used:
+    have_pythontex = check_pythontex()
 
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
@@ -464,8 +480,9 @@ def interrogator(path, options, query, lemmatise = False,
             #if tregex, determine ipython or not and search
             else:
                 if have_ipython:
-                    tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, subcorpus)
-                    result = get_ipython().getoutput(tregex_command)
+                    tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
+                    result_with_blanklines = get_ipython().getoutput(tregex_command)
+                    result = [line for line in result_with_blanklines if line]
                 else:
                     tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
                     FNULL = open(os.devnull, 'w')
@@ -528,9 +545,12 @@ def interrogator(path, options, query, lemmatise = False,
         # titlewords removal, usa_english, etc.
         processed_result = processwords(result)
 
+
         # add results master list and to results list
         allwords_list.append(processed_result)
         results_list.append([subcorpus_name, processed_result])
+
+        # could probably make dictionaries here ... ?
 
     # 100%
     p.animate(len(sorted_dirs))
@@ -553,6 +573,9 @@ def interrogator(path, options, query, lemmatise = False,
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
+    
+    # make a list of lists to which we can add each
+    # subcorpus' result, plus a total ...
     list_words = []
     for word in unique_words:
         list_words.append([word])
@@ -692,8 +715,9 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
 
     # get whole sentences:
     if have_ipython:
-        tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
+        tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         whole_results = get_ipython().getoutput(tregex_command)
+        result = [line for line in whole_results if line]
     else:
         tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
@@ -707,8 +731,9 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     
     # get just the match of the sentence
     if have_ipython:
-        tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null | grep -vP \'^\s*$\'' %(options, query, corpus)
+        tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         middle_column_result = get_ipython().getoutput(tregex_command)
+        result = [line for line in middle_column_result if line]
     else:
         tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
@@ -792,7 +817,7 @@ def multiquery(corpus, query, sort_by = 'total'):
     from corpkit.edit import merger
     results = []
     for name, pattern in query:
-        result = interrogator(corpus, 'C', pattern)
+        result = interrogator(corpus, 'c', pattern)
         result.totals[0] = name # rename count
         results.append(result.totals)
     if sort_by:
