@@ -658,21 +658,26 @@ def tally(lst, indices):
     return output
 
 
-def quickview(lst, n = 50, topics = False):
+def quickview(lst, n = 50, topics = False, sort_by = 'total'):
     """See first n words of an interrogation.
-
     lst: interrogator() list
     n: number of results to view
     topics: for investigation of topic subcorpora"""
-    import warnings
+    if sort_by != 'total':
+        from corpkit.edit import resorter
     if isinstance(lst, tuple) is True:
+        import warnings
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
-    if type(lst[0]) == str or type(lst[0]) == unicode:
-        return '0: %s: %d' % (lst[0], lst[-1][1])
+    import copy
+    safe_copy = copy.deepcopy(lst)
+    if sort_by != 'total':
+        safe_copy = resorter(safe_copy, sort_by = sort_by)
+    if type(safe_copy[0]) == str or type(safe_copy[0]) == unicode:
+        return '0: %s: %d' % (safe_copy[0], safe_copy[-1][1])
     if not topics:
         out = []
-        for index, item in enumerate(lst[:n]):
+        for index, item in enumerate(safe_copy[:n]):
             # if it's interrogator result
             if type(item) == list:
                 word = str(item[0])
@@ -690,7 +695,7 @@ def quickview(lst, n = 50, topics = False):
         for corpus in topics:
             subout = []
             out.append(corpus.upper())
-            sublist = lst[topics.index(corpus)]
+            sublist = safe_copy[topics.index(corpus)]
             subout = []
             for item in sublist[:n]:
                 indexnum = sublist.index(item)
