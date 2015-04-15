@@ -23,7 +23,7 @@ def searchtree(tree, query):
         result = subprocess.check_output(tregex_command, stderr=FNULL)
         result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
     tregex_command = 'sh ./tregex.sh -o -t \'' + query + '\' tmp.tree 2>/dev/null'
-    os.remove("tmp.tree")
+    os.remove("tree.tmp")
     return result
 
 def quicktree(sentence):
