@@ -100,7 +100,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
         from IPython.display import display, clear_output
     except ImportError:
         pass
-
+    from corpkit.query import check_dit, check_pytex, check_tex
     from corpkit.edit import resorter, mather
 
     # setup:
@@ -111,36 +111,11 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     #font
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
     
-    def check_pythontex():
-        import inspect
-        thestack = []
-        for bit in inspect.stack():
-            for b in bit:
-                thestack.append(str(b))
-        as_string = ' '.join(thestack)
-        if 'pythontex' in as_string:
-            return True
-        else:
-            return False
-    have_pythontex = check_pythontex()
+    # check what we're doing here.
+    have_python_tex = check_pytex()
+    on_cloud = check_dit()
+    have_tex = check_tex(have_ipython = have_ipython)
 
-    def check_for_tex():
-        if have_ipython:
-            checktex_command = 'which latex'
-            o = get_ipython().getoutput(checktex_command)[0]
-            if o.startswith('which: no latex in'):
-                have_tex = False
-            else:
-                have_tex = True
-        else:
-            FNULL = open(os.devnull, 'w')
-            checktex_command = ["which", "latex"]
-            try:
-                o = subprocess.check_output(checktex_command, stderr=FNULL)
-                have_tex = True
-            except subprocess.CalledProcessError:
-                have_tex = False
-        return have_tex
 
     def skipper(interrogator_list):
         """Takes a list and returns a version without 1963"""
@@ -259,12 +234,12 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     ##################################################################
 
     # check for tex and use it if it's there
-    if check_for_tex():
+    if have_tex:
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
 
     #image directory
-    if have_pythontex:
+    if have_python_tex:
         imagefolder = '../images'
     else:
         imagefolder = 'images'
@@ -414,25 +389,30 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                     d += 1
     
                 # do actual plotting
-                # do these get written over!?
-                plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-                plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
-                if legend_totals:
-                    thelabel = word + totalstring
-                    plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
-                elif legend_p:
-                    if sort_by == 'total' or sort_by == 'name':
-                        warnings.warn("\nP value has not been calculated, so it can't be printed.")
-                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt              
-                    else:
-                        thelabel = word + p_string
-                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt               
-                else:
+                if on_cloud:
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
                     plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c]) # delete for nyt
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                else:
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
+                    if legend_totals:
+                        thelabel = word + totalstring
+                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                    elif legend_p:
+                        if sort_by == 'total' or sort_by == 'name':
+                            warnings.warn("\nP value has not been calculated, so it can't be printed.")
+                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
+                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])              
+                        else:
+                            thelabel = word + p_string
+                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
+                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])               
+                    else:
+                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+
                 if c == 8:
                     c = 0 # unpythonic
                 c += 1
@@ -521,7 +501,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
     plt.grid()
     fig1 = plt.gcf()
-    if not have_pythontex:
+    if not have_python_tex:
         plt.show()
 
     def urlify(s):

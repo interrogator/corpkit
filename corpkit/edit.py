@@ -133,7 +133,7 @@ def surgeon(lst, criteria, remove = False, **kwargs):
     return output
 
 
-def datareader(data):
+def datareader(data, on_cloud = False):
     """
     Returns a string of plain text from a number of kinds of data.
 
@@ -146,6 +146,7 @@ def datareader(data):
     a string of text
     """
     import os
+    from corpkit.query import query_test, check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -166,11 +167,17 @@ def datareader(data):
         elif os.path.isdir(data):
             # why did root appear as key???
             if have_ipython:
-                tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
+                if on_cloud:
+                    tregex_command = 'sh tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
+                else:
+                    tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
                 trees_with_blank = get_ipython().getoutput(tregex_command)
                 trees = [tree for tree in trees_with_blank if tree]
             else:
-                tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
+                if on_cloud:
+                    tregex_command = ["sh", "tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
+                else:
+                    tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
                 FNULL = open(os.devnull, 'w')
                 trees = subprocess.check_output(tregex_command, stderr=FNULL)
                 trees = os.linesep.join([s for s in trees.splitlines() if s]).split()

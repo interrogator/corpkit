@@ -27,12 +27,15 @@ def keywords(data, dictionary = 'bnc.p', clear = True, printstatus = True, **kwa
 
     from corpkit.keys import ngrams, keywords_and_ngrams
     from corpkit.edit import datareader
+    from corpkit.query import check_dit
+
+    on_cloud = check_dit()
 
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
         print "\n%s: Generating keywords and ngrams... \n" % time
-    good = datareader(data)
+    good = datareader(data, on_cloud = on_cloud)
     keywords, ngrams = keywords_and_ngrams(good, dictionary = dictionary, **kwargs)
     keywords_list_version = []
     for index, item in enumerate(keywords):
