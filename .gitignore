@@ -52,8 +52,11 @@ docs/_build/
 
 # PyBuilder
 target/
-*.DS_Store
+#*.DS_Store
 *.gitignore
 *.pyc
 projects/
 orientation/.ipynb_checkpoints/
+*.DS_Store
+orientation/data/nyt/
+add_tregex.pth
