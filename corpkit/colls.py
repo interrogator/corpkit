@@ -9,15 +9,18 @@ def collocates(data, nbest = 30, window = 5):
     import time
     from time import localtime, strftime
     from corpkit.edit import datareader
+    from corpkit.query import check_dit
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    on_cloud = check_dit()
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     #if noprint is False:
     print "\n%s: Generating %d collocates ... \n" % (time, nbest)
-    good = datareader(data)
+    good = datareader(data, on_cloud = on_cloud)
     good = unicode(good.lower(), 'utf-8', errors = 'ignore')
     sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
     sents = sent_tokenizer.tokenize(good)

@@ -102,7 +102,7 @@ def interrogator(path, options, query, lemmatise = False,
     except ImportError:
         pass
 
-    from corpkit.query import query_test
+    from corpkit.query import query_test, check_dit, check_pytex
     from corpkit.progressbar import ProgressBar
     import dictionaries
     from dictionaries.word_transforms import wordlist, usa_convert, deptags, taglemma
@@ -119,21 +119,9 @@ def interrogator(path, options, query, lemmatise = False,
     except NameError:
         import subprocess
         have_ipython = False
-
-
-    def check_pythontex():
-        """check if pythontex is running the script. not currently used here."""
-        import inspect
-        thestack = []
-        for bit in inspect.stack():
-            for b in bit:
-                thestack.append(str(b))
-        as_string = ' '.join(thestack)
-        if 'pythontex' in as_string:
-            return True
-        else:
-            return False
-    
+           
+    have_python_tex = check_pytex()
+    on_cloud = check_dit()
 
     def signal_handler(signal, frame):
         """exit on ctrl+c, rather than just stop loop"""
@@ -345,7 +333,7 @@ def interrogator(path, options, query, lemmatise = False,
     depnum = False
 
     # check if pythontex is being used:
-    # have_pythontex = check_pythontex()
+    # have_python_tex = check_pythontex()
 
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
@@ -403,7 +391,7 @@ def interrogator(path, options, query, lemmatise = False,
     else:
         if not dependency:
             # it's tregex. check if ok
-            query_test(query, have_ipython = have_ipython)
+            query_test(query, have_ipython = have_ipython, on_cloud = on_cloud)
         else:
             try:
                 re.compile(query)
@@ -481,11 +469,17 @@ def interrogator(path, options, query, lemmatise = False,
             #if tregex, determine ipython or not and search
             else:
                 if have_ipython:
-                    tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
+                    if on_cloud:
+                        tregex_command = 'sh tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
+                    else:
+                        tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
                     result_with_blanklines = get_ipython().getoutput(tregex_command)
                     result = [line for line in result_with_blanklines if line]
                 else:
-                    tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
+                    if on_cloud:
+                        tregex_command = ["sh", "tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
+                    else:
+                        tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
                     FNULL = open(os.devnull, 'w')
                     result = subprocess.check_output(tregex_command, stderr=FNULL)
                     result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
@@ -643,7 +637,7 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     except ImportError:
         pass
     import pydoc
-    from corpkit.query import query_test
+    from corpkit.query import query_test, check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -651,6 +645,8 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     except NameError:
         import subprocess
         have_ipython = False
+
+    on_cloud = check_dit()
     
     def csvmaker(csvdata, sentences, csvmake):
         """Puts conc() results into tab-separated spreadsheet form"""
@@ -716,11 +712,17 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
 
     # get whole sentences:
     if have_ipython:
-        tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        if on_cloud:
+            tregex_command = 'sh tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        else:
+            tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         whole_results = get_ipython().getoutput(tregex_command)
         result = [line for line in whole_results if line]
     else:
-        tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
+        if on_cloud:
+            tregex_command = ["sh", "tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
+        else:
+            tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
         whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
         whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
@@ -732,11 +734,17 @@ def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csv
     
     # get just the match of the sentence
     if have_ipython:
-        tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        if on_cloud:
+            tregex_command = 'sh tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        else:
+            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         middle_column_result = get_ipython().getoutput(tregex_command)
         result = [line for line in middle_column_result if line]
     else:
-        tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
+        if on_cloud:
+            tregex_command = ["sh", "tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
+        else:
+            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
         FNULL = open(os.devnull, 'w')
         middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
         middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
@@ -847,7 +855,7 @@ def topix_search(topic_subcorpora, options, query, **kwargs):
     output = outputnames(fullqueries, results, totals)
     return output
 
-def query_test(query, have_ipython = False):
+def query_test(query, have_ipython = False, on_cloud = False):
     """make sure a tregex query works, and provide help if it doesn't"""
 
     import re
@@ -859,10 +867,16 @@ def query_test(query, have_ipython = False):
 
     #define command and run it
     if have_ipython:
-        tregex_command = 'tregex.sh \'%s\' 2>&1' % (query)
+        if on_cloud:
+            tregex_command = 'sh tregex.sh \'%s\' 2>&1' % (query)
+        else:
+            tregex_command = 'tregex.sh \'%s\' 2>&1' % (query)
         testpattern = get_ipython().getoutput(tregex_command)
     else:
-        tregex_command = ['tregex.sh', '%s' % (query)]
+        if on_cloud:
+            tregex_command = ['sh', 'tregex.sh', '%s' % (query)]
+        else:
+            tregex_command = ['tregex.sh', '%s' % (query)]
         try:
             testpattern = subprocess.check_output(tregex_command, 
                                     stderr=subprocess.STDOUT).split('\n')
@@ -893,3 +907,49 @@ def interroplot(path, query):
     from corpkit import interrogator, plotter
     quickstart = interrogator(path, 't', query)
     plotter(str(path), quickstart.results, fract_of = quickstart.totals)
+
+def check_pytex():
+    """checks for pytex, i hope"""
+    import inspect
+    thestack = []
+    for bit in inspect.stack():
+        for b in bit:
+            thestack.append(str(b))
+    as_string = ' '.join(thestack)
+    if 'pythontex' in as_string:
+        return True
+    else:
+        return False
+
+def check_dit():
+    """checks if we're on the cloud ... bad way to do it..."""
+    import inspect
+    thestack = []
+    for bit in inspect.stack():
+        for b in bit:
+            thestack.append(str(b))
+    as_string = ' '.join(thestack)
+    if '/opt/python/lib' in as_string:
+        return True
+    else:
+        return False
+ 
+def check_tex(have_ipython = True):
+    import os
+    if have_ipython:
+        checktex_command = 'which latex'
+        o = get_ipython().getoutput(checktex_command)[0]
+        if o.startswith('which: no latex in'):
+            have_tex = False
+        else:
+            have_tex = True
+    else:
+        import subprocess
+        FNULL = open(os.devnull, 'w')
+        checktex_command = ["which", "latex"]
+        try:
+            o = subprocess.check_output(checktex_command, stderr=FNULL)
+            have_tex = True
+        except subprocess.CalledProcessError:
+            have_tex = False
+    return have_tex
