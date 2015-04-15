@@ -51,5 +51,8 @@ from notebook import ipyconverter
 from notebook import conv
 from notebook import new_project
 
+from trees import quicktree
+from trees import searchtree
 from dictionaries.process_types import processes
+
 
