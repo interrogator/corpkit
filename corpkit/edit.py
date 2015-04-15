@@ -134,18 +134,16 @@ def surgeon(lst, criteria, remove = False, **kwargs):
 
 
 def datareader(data):
-    """Figures out what kind of thing you're parsing
-    and returns a big string of text
+    """
+    Returns a string of plain text from a number of kinds of data.
 
-    The kinds of data accepted are:
+    The kinds of data currently accepted are:
 
-    path to corpus
-    path to subcorpus
+    path to corpus : all trees are flattened
+    path to subcorpus : all trees are flattened
     conc() output (list of concordance lines)
     csv file generated with conc()
     a string of text
-
-    
     """
     import os
     try:
@@ -168,17 +166,14 @@ def datareader(data):
         elif os.path.isdir(data):
             # why did root appear as key???
             if have_ipython:
-                tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null | grep -vP \'^\s*$\'' % data
-                trees = get_ipython().getoutput(tregex_command)
+                tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
+                trees_with_blank = get_ipython().getoutput(tregex_command)
+                trees = [tree for tree in trees_with_blank if tree]
             else:
                 tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
                 FNULL = open(os.devnull, 'w')
                 trees = subprocess.check_output(tregex_command, stderr=FNULL)
                 trees = os.linesep.join([s for s in trees.splitlines() if s]).split()
-            #tregex_command = "tregex.sh -o -w -t '__ !> __' %s 2>/dev/null | grep -vP '^\s*$'" % data
-            #trees = !$tregex_command
-            #remove root!?
-            #trees = [tree for tree in trees if tree is not 'root']
             good = '\n'.join(trees)
             if len(trees) == 0:
                 # assuming data isn't trees, so 
@@ -278,7 +273,6 @@ def combiner(tomerge, newname, printmerge = True):
         goodtup = [year, total]
         merged.append(goodtup)
     return merged
-
 
 
 def mather(oldlist, operation, newlist, multiplier = 100):
