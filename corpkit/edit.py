@@ -154,6 +154,7 @@ def datareader(data, on_cloud = False):
     except NameError:
         import subprocess
         have_ipython = False
+    
     if type(data) == str:
         # if it's a file, assume csv and get the big part
         if os.path.isfile(data):
@@ -192,12 +193,10 @@ def datareader(data, on_cloud = False):
                 good = '\n'.join(list_of_texts)
         # if a string of text, just keyword that
         else:
-            good = str(data)
+            good = data
     # if conc results, turn into string...
     if type(data) == list:
         good = '\n'.join(data)
-        #type(data) == str:
-        # assume it's text
     return good
 
 def resorter(lst, sort_by = 'total', keep_stats = False, 
@@ -207,7 +206,7 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
     from operator import itemgetter # for more complex sorting ... is it used?
     import copy
 
-    options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static']
+    options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static', 'none']
     if sort_by not in options:
         raise ValueError("sort_by parameter error: '%s' not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
     to_reorder = copy.deepcopy(lst)
@@ -223,6 +222,8 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
     elif sort_by == 'name':
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
+    elif sort_by == 'none':
+        return to_reorder
     else:
         from scipy.stats import linregress
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
