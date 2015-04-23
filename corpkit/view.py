@@ -512,6 +512,8 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             return s     
     
     if save:
+        if not os.isdir(imagefolder):
+            os.makedirs(imagefolder)
         if type(save) == str:
             savename = os.path.join(imagefolder, urlify(save) + '.png')
         else:
