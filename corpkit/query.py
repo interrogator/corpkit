@@ -882,7 +882,6 @@ def query_test(query, have_ipython = False, on_cloud = False):
                                     stderr=subprocess.STDOUT).split('\n')
         except Exception, e:
             testpattern = str(e.output).split('\n')
-            print testpattern
 
     # if tregex error, give general error message
     if re.match(tregex_error, testpattern[0]):
