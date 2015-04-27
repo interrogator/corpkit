@@ -294,9 +294,11 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     # select totals if no branch selected
     if fract_of:
         if isinstance(fract_of, tuple) is True:
-            warnings.warn('\nNo branch of fract_of selected. Using .totals ... ')
             fract_of = fract_of.totals
+            warnings.warn('\nNo branch of fract_of selected. Using .totals ... ')
         # copy this, to be safe!
+        if fract_of[0] != u'Totals':
+            raise ValueError('Results branch selected for fract_of. Change to .totals and try again.')
         totals = copy.deepcopy(fract_of)
 
         #use mather to make percentage results

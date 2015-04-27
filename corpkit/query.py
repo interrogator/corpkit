@@ -1,8 +1,8 @@
 #!/usr/local/bin/ipython
 
 #   Interrogating parsed corpora and plotting the results: interrogator
-#   for ResBaz NLTK stream
 #   Author: Daniel McDonald
+#   MIT LICENSE
 
 def interrogator(path, options, query, lemmatise = False, 
     dictionary = 'bnc.p', titlefilter = False, lemmatag = False, 
@@ -348,7 +348,7 @@ def interrogator(path, options, query, lemmatise = False,
     if options.startswith('p') or options.startswith('P') or options.startswith('u') or options.startswith('U'):
         optiontext = 'Part-of-speech tags only.'
         options = 'u'
-    elif options.startswith('b') or options.startswith('B') or options.startswith('o'):
+    elif options.startswith('b') or options.startswith('B') or options.startswith('o') or options.startswith('O'):
         optiontext = 'Tags and words.'
         options = 'o'
     elif options.startswith('t') or options.startswith('T') or options.startswith('w') or options.startswith('W'):
