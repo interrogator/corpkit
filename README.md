@@ -4,9 +4,25 @@
 
 ### D. McDonald
 
+<!-- MarkdownTOC -->
+
+- [What's in here?](#whats-in-here)
+- [Installation](#installation)
+    - [By downloading the repository](#by-downloading-the-repository)
+    - [By cloning the repository](#by-cloning-the-repository)
+    - [Via `pip`](#via-pip)
+- [Unpacking the orientation data](#unpacking-the-orientation-data)
+- [Quickstart](#quickstart)
+- [Example](#example)
+- [IPython Notebook usability](#ipython-notebook-usability)
+- [Coming soon](#coming-soon)
+
+<!-- /MarkdownTOC -->
+
 > Because I kept building new tools and functions for my corpus linguistic work, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 
-### What's in here?
+
+## What's in here?
 
 Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. Thee most important of them are:
 
@@ -30,11 +46,11 @@ Though everything should work alright in Python, it's much easier to use [IPytho
 
 Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. This project isn't included in the pip package.
 
-### Installation
+## Installation
 
 You can get `corpkit` running by downloading or cloning this repository, or via `pip`.
 
-#### By downloading the repository
+### By downloading the repository
 
 Hit 'Download ZIP' and unzip the file. Then `cd` into the newly created directory and install:
 
@@ -55,7 +71,7 @@ cd corpkit
 python setup.py install
 ```
 
-#### Via `pip`:
+### Via `pip`
 
 ```shell
 # might need sudo:
@@ -72,7 +88,7 @@ import nltk
 nltk.download('punkt')
 ```
 
-### Unpacking the orientation data
+## Unpacking the orientation data
 
 If you installed by downloading or cloning this repository, you'll have the orientation project installed. To use it, `cd` into the orientation project and unzip the data files:
 
@@ -82,7 +98,7 @@ cd orientation
 gzip -dc data/nyt.tar.gz | tar -xf - -C data
 ```
 
-### Quickstart
+## Quickstart
 
 This is the best way to use `corpkit` by opening `orientation.ipynb` with IPython, and executing the first few cells:
 
@@ -108,7 +124,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md.png" />
 <br>
 
-### Example
+## Example
 
 Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
@@ -132,14 +148,14 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
-### IPython Notebook usability
+## IPython Notebook usability
 
 When running the Notebook locally, a couple of IPython extensions come in very handy:
 
 * First, you can use [this](https://github.com/minrk/ipython_extensions) to generate a floating table of contents that makes the Notebook much easier to navigate.
 * Second, given that some of the code can take a while to process, it can be handy to have [browser-based notifications](https://github.com/sjpfenninger/ipython-extensions) when the kernel is no longer busy.
 
-### Coming soon:
+## Coming soon
 
 * Connecting concordance output to HTML
 * Corpus building resources
