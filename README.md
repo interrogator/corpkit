@@ -4,6 +4,8 @@
 
 ### D. McDonald
 
+> Because I kept building new tools and functions for my corpus linguistic work, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
+
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
@@ -18,9 +20,6 @@
 - [Coming soon](#coming-soon)
 
 <!-- /MarkdownTOC -->
-
-> Because I kept building new tools and functions for my corpus linguistic work, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
-
 
 ## What's in here?
 
@@ -100,7 +99,7 @@ gzip -dc data/nyt.tar.gz | tar -xf - -C data
 
 ## Quickstart
 
-This is the best way to use `corpkit` by opening `orientation.ipynb` with IPython, and executing the first few cells:
+The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, and executing the first few cells:
 
 ```shell
 ipython notebook orientation.ipynb
@@ -135,7 +134,7 @@ from corpkit import interrogator, plotter
 q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # count terminals/leaves of trees only, and do lemmatisation:
-riskofnoun = interrogator(corpus, 't', q, lemmatise = True)
+riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
 
 # plot top 7 entries as percentage of all entries:
 plotter('Risk of (noun)', riskofnoun.results, 
