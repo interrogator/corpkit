@@ -155,7 +155,13 @@ def datareader(data, on_cloud = False):
         import subprocess
         have_ipython = False
     
-    if type(data) == str:
+    # if unicode, make it a string
+    if type(data) == unicode:
+        if not os.path.isdir(data):
+            if not os.path.isfile(data):
+                good = data.encode('utf-8', errors = 'ignore')
+
+    elif type(data) == str:
         # if it's a file, assume csv and get the big part
         if os.path.isfile(data):
             f = open(data)
