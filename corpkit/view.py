@@ -11,7 +11,7 @@ def plotter(title,
             y_label = False, 
             num_to_plot = 7, 
             significance_level = 0.05, 
-            revert_year = False,
+            revert_year = True,
             multiplier = 100, 
             yearspan = False, 
             proj63 = 5,
@@ -375,12 +375,13 @@ def plotter(title,
                                significance_level = significance_level)
         else:
             do_stats = False
+            alldata = processed_data
 
         # if not barchart, format data for plotting and plot
         for index, entry in enumerate(alldata[:cutoff]):
             # get word
             word = entry[0]
-            
+
             if do_stats:
                 pval = Decimal(entry[-1][3])
                 p_short = "%.4f" % pval
