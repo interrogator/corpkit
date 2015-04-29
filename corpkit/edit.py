@@ -1,5 +1,8 @@
 
-def merger(lst, criteria, newname = False, printmerge = True, sort_by = 'total'):
+def merger(lst, criteria, 
+           newname = False, 
+           printmerge = True, 
+           sort_by = 'total'):
     """Merges result items by their index
 
     lst: list to work on

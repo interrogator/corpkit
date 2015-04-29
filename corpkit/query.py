@@ -4,9 +4,14 @@
 #   Author: Daniel McDonald
 #   MIT LICENSE
 
-def interrogator(path, options, query, lemmatise = False, 
-    dictionary = 'bnc.p', titlefilter = False, lemmatag = False, 
-    usa_english = True, phrases = False, dep_type = 'basic-dependencies'):
+def interrogator(path, options, query, 
+                lemmatise = False, 
+                dictionary = 'bnc.p', 
+                titlefilter = False, 
+                lemmatag = False, 
+                usa_english = True, 
+                phrases = False, 
+                dep_type = 'basic-dependencies'):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -624,7 +629,12 @@ def interrogator(path, options, query, lemmatise = False,
     return output
 
 
-def conc(corpus, query, n = 100, random = False, window = 50, trees = False, csvmake = False): 
+def conc(corpus, query, 
+         n = 100, 
+         random = False, 
+         window = 50, 
+         trees = False, 
+         csvmake = False): 
     """A concordancer for Tregex queries"""
     import os
     from random import randint

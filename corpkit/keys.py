@@ -1,5 +1,9 @@
 
-def keywords(data, dictionary = 'bnc.p', clear = True, printstatus = True, **kwargs):
+def keywords(data, 
+             dictionary = 'bnc.p', 
+             clear = True, 
+             printstatus = True, 
+             **kwargs):
     """Feed this function some data and get its keywords.
 
     You can use dictmaker() to build a new dictionary 
