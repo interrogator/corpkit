@@ -4,12 +4,28 @@
 #   Author: Daniel McDonald
 
 
-def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False, 
-    num_to_plot = 7, significance_level = 0.05,
-    multiplier = 100, yearspan = False, proj63 = 5,
-    justyears = False, csvmake = False, x_label = False, legend_p = False,
-    legend_totals = False, log = False, figsize = 11, save = False, 
-    only_below_p = False, skip63 = False, projection = True):
+def plotter(title, 
+            results, 
+            sort_by = 'total', 
+            fract_of = False, 
+            y_label = False, 
+            num_to_plot = 7, 
+            significance_level = 0.05, 
+            revert_year = False,
+            multiplier = 100, 
+            yearspan = False, 
+            proj63 = 5,
+            justyears = False, 
+            csvmake = False, 
+            x_label = False, 
+            legend_p = False,
+            legend_totals = False, 
+            log = False, 
+            figsize = 11, 
+            save = False, 
+            only_below_p = False, 
+            skip63 = False, 
+            projection = True):
     """
     Visualise interrogator() results, optionally generating a csv as well.
 
@@ -308,19 +324,10 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
         alldata = copy.deepcopy(fractdata)
     
-    # sort_by with resorter
-    if sort_by != 'total':
-        do_stats = True
-        alldata = resorter(alldata, sort_by = sort_by, 
-                           keep_stats = True, only_below_p = only_below_p, 
-                           significance_level = significance_level, skip63 = skip63)
-    else:
-        do_stats = False
+
     csvdata = []
     csvalldata = []
     final = []
-    
-
     
     if num_to_plot > len(alldata):
         warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
@@ -337,9 +344,12 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     else:
         colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
 
-        
+
+    # process all the data according to options
+
+    processed_data = []
     if not barchart:
-        for index, entry in enumerate(alldata[:cutoff]):
+        for index, entry in enumerate(alldata):
             # run called processes
             if skip63:
                 entry = skipper(entry)
@@ -350,10 +360,27 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             if projection:
                 if not fract_of:
                     entry = projector(entry)
+            processed_data.append(entry)
+
+        # do stats if needed
+        if sort_by != 'total':
+            do_stats = True
+            alldata = resorter(processed_data,
+                               sort_by = sort_by, 
+                               revert_year = revert_year,
+                               keep_stats = True,
+                               only_below_p = only_below_p, 
+                               significance_level = significance_level)
+        else:
+            do_stats = False
+
+        # if not barchart, format data for plotting and plot
+        for index, entry in enumerate(alldata[:cutoff]):
             # get word
             word = entry[0]
             if do_stats:
                 pval = entry[-1][3]
+                # this will screw up really small p values!, won't it?
                 p_short = "%.4f" % pval
                 p_string = ' (p=%s)' % p_short   
                 # remove stats, we're done with them.
@@ -374,6 +401,9 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
             entry.pop() # get rid of total. good or bad?
             csvalldata.append(entry) 
     
+            # this bad code attempts to draw dotted lines when bits are missing. 
+            # it's no good.
+
             if index < num_to_plot:
                 csvdata.append(entry)
                 toplot = []
