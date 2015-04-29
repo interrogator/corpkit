@@ -205,9 +205,12 @@ def datareader(data, on_cloud = False):
         good = '\n'.join(data)
     return good
 
-def resorter(lst, sort_by = 'total', keep_stats = False, 
-             only_below_p = False, significance_level = 0.05,
-             skip63 = False):
+def resorter(lst, 
+             sort_by = 'total', 
+             keep_stats = False, 
+             only_below_p = False, 
+             significance_level = 0.05, 
+             revert_year = False):
     """Re-sort interrogation results in a number of ways."""
     from operator import itemgetter # for more complex sorting ... is it used?
     import copy
@@ -217,11 +220,6 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
         raise ValueError("sort_by parameter error: '%s' not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
     to_reorder = copy.deepcopy(lst)
 
-    if skip63:
-        for datum in to_reorder:
-            for bit in datum[1:]:
-                if bit[0] == 1963:
-                    datum.remove(bit)
 
     if sort_by == 'total':
         to_reorder.sort(key=lambda x: x[-1], reverse = True)
@@ -233,6 +231,9 @@ def resorter(lst, sort_by = 'total', keep_stats = False,
     else:
         from scipy.stats import linregress
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
+        if revert_year:
+            first_year = yearlist[0]
+            yearlist = [y - first_year for y in yearlist]
         processed_list = []
         for datum in to_reorder:
             counts = [int(y[1]) for y in datum[1:-1]]
