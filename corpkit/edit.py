@@ -426,3 +426,50 @@ def subcorpus_remover(interrogator_list, just_subcorpora, remove = True, **kwarg
     #main_totals.append([u'Total', total])
     output = outputnames(query_options, output, totals)
     return output
+
+def percenter(small_list, big_list, 
+              threshold = 'relative', 
+              sort_by = 'most', 
+              multiplier = 100):
+    """Figure out the percentage of times the word in big_list is in small_list
+
+    small_list : interrogator results
+    big_list: superordinate interrogator results list
+    sort_by : show most or least frequent first
+    multiplier : 100 for percentages, 1 for ratio
+
+    """
+    
+    # 'relative' will divide the total of all words in big list by 10,000
+    # it seems to give sensible results. maybe there should be 'strict', etc. too
+    if threshold == 'relative':
+        totals = []
+        for each_entry in big_list:
+            totals.append(each_entry[-1][1])
+        tot = sum(totals)
+        threshold = tot / float(10000)
+        print 'Using %d as threshold ... ' % threshold
+    
+    dictionary = {}
+    for entry in small_list:
+        # get word
+        word = entry[0]
+        # get total for word
+        subj_total = entry[-1][1]
+        # get entry in big_list
+        matching_entry = next(e for e in big_list if e[0] == word)
+        # get total from this entry
+        matching_total = matching_entry[-1][1]
+        # this if allows threshold to be zero with 'threshold = None/False'
+        if threshold:
+            if matching_total > threshold:
+                perc = float(subj_total) * float(multiplier) / float(matching_total)
+                dictionary[word] = perc
+        else:
+            perc = float(subj_total) * float(multiplier) / float(matching_total)
+            dictionary[word] = perc
+    # sort by most or leat percent
+    if sort_by == 'most':
+        return [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get, reverse=True)]
+    elif sort_by == 'least':
+        return [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get)]

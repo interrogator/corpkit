@@ -55,4 +55,6 @@ from trees import quicktree
 from trees import searchtree
 from dictionaries.process_types import processes
 
+from multiprocess import multitest
+
 
