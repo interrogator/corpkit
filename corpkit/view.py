@@ -319,20 +319,27 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     csvdata = []
     csvalldata = []
     final = []
-    colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
-    c = 0
+    
+
     
     if num_to_plot > len(alldata):
         warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
     
     if not csvmake:
         cutoff = num_to_plot
-
-    color_idx = np.linspace(0, 1, cutoff)
     
+    
+    # if more than 10 plots, use colormap
+    if cutoff > 10:
+        the_range = np.linspace(0, 1, cutoff)
+        colours = [plt.cm.Dark2(n) for n in the_range]
+    # if 10 or less plots, use custom color palette
+    else:
+        colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
+
+        
     if not barchart:
         for index, entry in enumerate(alldata[:cutoff]):
-            i = color_idx[index] # BAD!
             # run called processes
             if skip63:
                 entry = skipper(entry)
@@ -396,32 +403,28 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
 
                 # do actual plotting
                 if on_cloud:
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=plt.cm.Dark2(i))
-                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
-                    plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[index])
+                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
                 else:
-                    plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=plt.cm.Dark2(i))
+                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[index])
                     if legend_totals:
                         thelabel = word + totalstring
-                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=plt.cm.Dark2(i))
-                        plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
+                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[index])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
                     elif legend_p:
                         if sort_by == 'total' or sort_by == 'name':
-                            warnings.warn("\nP value has not been calculated, so it can't be printed.", color=plt.cm.Dark2(i))
-                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
-                            plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))              
+                            warnings.warn("\nP value has not been calculated, so it can't be printed.", color=colours[index])
+                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
+                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])              
                         else:
                             thelabel = word + p_string
-                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=plt.cm.Dark2(i))
-                            plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))               
+                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[index])
+                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])               
                     else:
-                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
-                        plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
-
-                if c == 8:
-                    c = 0 # unpythonic
-                c += 1
+                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
+                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
             
             # old way to plot everything at once
             #plt.plot(*zip(*toplot), label=word) # this is other projects...
