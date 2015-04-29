@@ -626,6 +626,19 @@ def interrogator(path, options, query,
     output = outputnames(query_options, list_words, main_totals)
     if have_ipython:
         clear_output()
+    
+    # warnings if nothing generated
+    # should these 'break'?
+    if not only_count:
+        if len(list_words) == 0:
+            warnings.warn('No results produced. Maybe your query needs work.')
+            return
+    if len(main_totals) == 0:
+        warnings.warn('No totals produced. Maybe your query needs work.')
+        return
+    if main_totals[-1][1] == 0:
+        warnings.warn('Total total of zero. Maybe your query needs work.')
+        return
     return output
 
 
