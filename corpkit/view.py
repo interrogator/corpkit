@@ -83,6 +83,7 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     import warnings
     import copy
     from time import localtime, strftime
+    import numpy as np
     
     import matplotlib.pyplot as plt
     from matplotlib import rc
@@ -326,9 +327,12 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
     
     if not csvmake:
         cutoff = num_to_plot
+
+    color_idx = np.linspace(0, 1, cutoff)
     
     if not barchart:
         for index, entry in enumerate(alldata[:cutoff]):
+            i = color_idx[index] # BAD!
             # run called processes
             if skip63:
                 entry = skipper(entry)
@@ -389,31 +393,31 @@ def plotter(title, results, sort_by = 'total', fract_of = False, y_label = False
                         xvalsabove.append(nextpart[0])
                         yvalsabove.append(nextpart[1])
                     d += 1
-    
+
                 # do actual plotting
                 if on_cloud:
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=plt.cm.Dark2(i))
+                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
+                    plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
                 else:
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[c])
+                    plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
+                    plt.plot(xvalsbelow, yvalsbelow, '--', color=plt.cm.Dark2(i))
                     if legend_totals:
                         thelabel = word + totalstring
-                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=plt.cm.Dark2(i))
+                        plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
                     elif legend_p:
                         if sort_by == 'total' or sort_by == 'name':
-                            warnings.warn("\nP value has not been calculated, so it can't be printed.")
-                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])              
+                            warnings.warn("\nP value has not been calculated, so it can't be printed.", color=plt.cm.Dark2(i))
+                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
+                            plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))              
                         else:
                             thelabel = word + p_string
-                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[c])
-                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])               
+                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=plt.cm.Dark2(i))
+                            plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))               
                     else:
-                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[c])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[c])
+                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=plt.cm.Dark2(i))
+                        plt.plot(xvalsabove, yvalsabove, '.', color=plt.cm.Dark2(i))
 
                 if c == 8:
                     c = 0 # unpythonic
