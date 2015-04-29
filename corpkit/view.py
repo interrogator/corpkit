@@ -365,6 +365,8 @@ def plotter(title,
         # do stats if needed
         if sort_by != 'total':
             do_stats = True
+            from decimal import Decimal
+            getcontext().prec = 6
             alldata = resorter(processed_data,
                                sort_by = sort_by, 
                                revert_year = revert_year,
@@ -378,9 +380,9 @@ def plotter(title,
         for index, entry in enumerate(alldata[:cutoff]):
             # get word
             word = entry[0]
+            
             if do_stats:
-                pval = entry[-1][3]
-                # this will screw up really small p values!, won't it?
+                pval = Decimal(entry[-1][3])
                 p_short = "%.4f" % pval
                 p_string = ' (p=%s)' % p_short   
                 # remove stats, we're done with them.
