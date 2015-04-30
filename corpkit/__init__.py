@@ -1,6 +1,5 @@
 __all__ = ["colls", "edit", "keys", "notebook", "query", "view", "build"]
 
-
 import os
 import sys
 
@@ -40,6 +39,7 @@ from edit import resorter
 from edit import mather
 from edit import save_result
 from edit import load_result
+from edit import percenter
 
 
 from build import dictmaker
@@ -54,7 +54,5 @@ from notebook import new_project
 from trees import quicktree
 from trees import searchtree
 from dictionaries.process_types import processes
-
-from multiprocess import multitest
 
 
