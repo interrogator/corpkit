@@ -226,6 +226,8 @@ def resorter(lst,
 
     if sort_by == 'total':
         to_reorder.sort(key=lambda x: x[-1], reverse = True)
+    elif sort_by == 'infreq':
+        to_reorder.sort(key=lambda x: x[-1])
     elif sort_by == 'name':
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
@@ -233,6 +235,9 @@ def resorter(lst,
         return to_reorder
     else:
         from scipy.stats import linregress
+        
+        # you can't do linear regression if your x axis is a string.
+
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
         if revert_year:
             first_year = yearlist[0]
@@ -252,9 +257,7 @@ def resorter(lst,
                 #if stats[4] <= significance_level:
                     #datum.append(stats)
             #else:
-        if sort_by == 'infreq':
-            processed_list.sort(key=lambda x: x[-2][1], reverse = True)
-        elif sort_by == 'increase':
+        if sort_by == 'increase':
             processed_list.sort(key=lambda x: x[-1][0], reverse = True) # largest first
         elif sort_by == 'decrease':
             processed_list.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
