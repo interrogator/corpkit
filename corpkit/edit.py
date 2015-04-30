@@ -430,46 +430,133 @@ def subcorpus_remover(interrogator_list, just_subcorpora, remove = True, **kwarg
 def percenter(small_list, big_list, 
               threshold = 'relative', 
               sort_by = 'most', 
-              multiplier = 100):
+              multiplier = 100,
+              just_totals = False,
+              print_threshold = True):
     """Figure out the percentage of times the word in big_list is in small_list
 
     small_list : interrogator results
-    big_list: superordinate interrogator results list
+    big_list : superordinate interrogator results list
+    threshold : an integer or float, being minimum number of times the word must appear
+              : a string: relative (total/10000), low (/20000), high (/5000)
     sort_by : show most or least frequent first
     multiplier : 100 for percentages, 1 for ratio
 
     """
+    try:
+        from IPython.display import display, clear_output
+    except ImportError:
+        pass
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        have_ipython = False
     
-    # 'relative' will divide the total of all words in big list by 10,000
-    # it seems to give sensible results. maybe there should be 'strict', etc. too
-    if threshold == 'relative':
+    # translate threshold to denominator
+    if type(threshold) == str:
+        if threshold == 'low':
+            denominator = 20000
+        if threshold == 'relative':
+            denominator = 10000
+        if threshold == 'high':
+            denominator = 5000
+        
+        # tally all totals in big_list
         totals = []
         for each_entry in big_list:
             totals.append(each_entry[-1][1])
         tot = sum(totals)
-        threshold = tot / float(10000)
-        print 'Using %d as threshold ... ' % threshold
+
+        # generate a threshold
+        threshold = tot / float(denominator)
     
-    dictionary = {}
-    for entry in small_list:
-        # get word
-        word = entry[0]
-        # get total for word
-        subj_total = entry[-1][1]
-        # get entry in big_list
-        matching_entry = next(e for e in big_list if e[0] == word)
-        # get total from this entry
-        matching_total = matching_entry[-1][1]
-        # this if allows threshold to be zero with 'threshold = None/False'
-        if threshold:
-            if matching_total > threshold:
-                perc = float(subj_total) * float(multiplier) / float(matching_total)
+    # some info for the user
+    if threshold:
+        if print_threshold:
+            print 'Using %d as threshold ... ' % threshold
+        
+    # if big_list is .totals, just do totalling
+    if just_totals:
+        dictionary = {}
+        for entry in small_list:
+            # get word
+            word = entry[0]
+            # get total for word
+            subj_total = entry[-1][1]
+            # get entry in big_list
+            matching_entry = next(e for e in big_list if e[0] == word)
+            # get total from this entry
+            matching_total = matching_entry[-1][1]
+            # this if allows threshold to be zero with 'threshold = None/False'
+            if threshold:
+                if matching_total >= threshold:
+                    try:
+                        perc = float(subj_total) * float(multiplier) / float(matching_total)
+                    except ZeroDivisionError:
+                        perc = 0
+                    dictionary[word] = perc
+            else:
+                try:
+                    perc = float(subj_total) * float(multiplier) / float(matching_total)
+                except ZeroDivisionError:
+                    perc = 0
                 dictionary[word] = perc
+        # sort by most or leat percent
+        if sort_by == 'most':
+            list_of_tups = [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get, reverse=True)]
+        elif sort_by == 'least':
+            list_of_tups = [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get)]
+        output = []
+        if multiplier == 100:
+            subcorpus_name = u'Percentage'
+        elif multiplier == 1:
+            subcorpus_name = u'Ratio'
         else:
-            perc = float(subj_total) * float(multiplier) / float(matching_total)
-            dictionary[word] = perc
-    # sort by most or leat percent
-    if sort_by == 'most':
-        return [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get, reverse=True)]
-    elif sort_by == 'least':
-        return [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get)]
+            subcorpus_name = u'Score'
+        # rather than a dict, i should go straight to list, and
+        # i should print total frequency, so that plotter can use a threshold
+        for word, score in list_of_tups:
+            new_entry = [word]
+            new_entry.append([subcorpus_name, score])
+            new_entry.append([u'Total', score])
+            output.append(new_entry)
+            if have_ipython:
+                clear_output()
+        return output
+    
+    # if big_list is .results, 
+    else:
+        fixed_list = []
+        for entry in small_list:
+            word = entry[0]
+            years_counts = [e for e in entry[1:]]
+            #years = [e[0] for e in years_counts]
+            #counts = [e[1] for e in years_counts]
+            matching_entry = next(e for e in big_list if e[0] == word)[1:]
+            #matching_entry = matching_entry[1:]
+            matching_total = matching_entry[-1][1]
+            if threshold:
+                if matching_total >= threshold:
+                    mathed = [word]
+                    for year_count, matching_year_count in zip(years_counts, matching_entry):
+                        year = year_count[0]
+                        count = year_count[1]
+                        matching_count = matching_year_count[1]
+                        try:
+                            perc = float(count) * float(multiplier) / float(matching_count)
+                        except ZeroDivisionError:
+                            perc = 0
+                        mathed.append([year, perc])
+                    fixed_list.append(mathed)
+            if sort_by != 'most' and sort_by != 'least':
+                fixed_list = resorter(fixed_list, sort_by = sort_by, revert_year = True)
+            elif sort_by == 'most':
+                fixed_list = resorter(fixed_list, sort_by = 'total', revert_year = True)
+            elif sort_by == 'least':
+                fixed_list = resorter(fixed_list, sort_by = 'total', revert_year = True)
+                fixed_list = sorted(fixed_list, reverse = True)
+        if have_ipython:
+            clear_output()
+        return fixed_list
