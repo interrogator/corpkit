@@ -486,7 +486,10 @@ def percenter(small_list, big_list,
             # get total for word
             subj_total = entry[-1][1]
             # get entry in big_list
-            matching_entry = next(e for e in big_list if e[0] == word)
+            try:
+                matching_entry = next(e for e in big_list if e[0] == word)
+            except StopIteration:
+                continue
             # get total from this entry
             matching_total = matching_entry[-1][1]
             # this if allows threshold to be zero with 'threshold = None/False'
@@ -534,7 +537,10 @@ def percenter(small_list, big_list,
             years_counts = [e for e in entry[1:]]
             #years = [e[0] for e in years_counts]
             #counts = [e[1] for e in years_counts]
-            matching_entry = next(e for e in big_list if e[0] == word)[1:]
+            try:
+                matching_entry = next(e for e in big_list if e[0] == word)[1:]
+            except StopIteration:
+                continue
             #matching_entry = matching_entry[1:]
             matching_total = matching_entry[-1][1]
             if threshold:
