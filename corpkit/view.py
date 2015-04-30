@@ -383,8 +383,9 @@ def plotter(title,
         # do stats if needed
         if sort_by != 'total':
             do_stats = True
+            import decimal
             from decimal import Decimal
-            getcontext().prec = 6
+            decimal.getcontext().prec = 6
             alldata = resorter(processed_data,
                                sort_by = sort_by, 
                                revert_year = revert_year,
