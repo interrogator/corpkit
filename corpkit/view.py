@@ -25,7 +25,10 @@ def plotter(title,
             save = False, 
             only_below_p = False, 
             skip63 = False, 
-            projection = True):
+            projection = True,
+            use_percenter = False,
+            percenter_just_totals = False,
+            threshold = 'relative'):
     """
     Visualise interrogator() results, optionally generating a csv as well.
 
@@ -70,11 +73,15 @@ def plotter(title,
         Show p-value for slope when using sort_by
     log : False/'x'/'y'/'x, y'
         Use logarithmic axes
-    figsize = int
+    figsize : int
         Size of image
-    save = True/False/string
+    save : True/False/string
         Generate save image with string as filename
         If True, 'title' string is used for name
+    use_percenter = Boolean
+        percenter() figures out the percentage of fract_of entries that are results entries
+        therefore, use_percenter() needs fract_of list to be results, not totals.
+
 
     NYT-only parameters
     -----
@@ -118,7 +125,7 @@ def plotter(title,
     except ImportError:
         pass
     from corpkit.query import check_dit, check_pytex, check_tex
-    from corpkit.edit import resorter, mather
+    from corpkit.edit import resorter, mather, percenter
 
     # setup:
 
@@ -313,18 +320,29 @@ def plotter(title,
         if isinstance(fract_of, tuple) is True:
             fract_of = fract_of.totals
             warnings.warn('\nNo branch of fract_of selected. Using .totals ... ')
-        # copy this, to be safe!
-        if fract_of[0] != u'Totals':
-            raise ValueError('Results branch selected for fract_of. Change to .totals and try again.')
+
+        if not use_percenter:
+            if fract_of[0] != u'Totals':
+                raise ValueError('Results branch selected for fract_of, without use_percenter set to True\nChange to .totals and try again.')
+
         totals = copy.deepcopy(fract_of)
 
-        #use mather to make percentage results
-        fractdata = []
-        for entry in alldata:
-            fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
-        alldata = copy.deepcopy(fractdata)
+        # if not using use_percenter, use mather to make percentage results
+        # i don't know why i'm using fractdata, seems like a waste
+        if not use_percenter:
+            fractdata = []
+            for entry in alldata:
+                fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
+            alldata = copy.deepcopy(fractdata)
+        # if using use_percenter
+        else:
+            from corpkit.edit import percenter
+            alldata = percenter(alldata, totals, 
+                         threshold = threshold, 
+                         sort_by = 'most', 
+                         print_threshold = False,
+                         just_totals = percenter_just_totals)
     
-
     csvdata = []
     csvalldata = []
     final = []
@@ -509,9 +527,11 @@ def plotter(title,
         #autolabel(rects1)
         #if len(results[0]) == 4:
             #autolabel(rects2)
-        legend_labels = [alldata[0][1][0], alldata[0][2][0]]
-        ax.legend( (rects1[0], rects2[0]), legend_labels )
-
+        if len(results[0]) == 4:
+            legend_labels = [alldata[0][1][0], alldata[0][2][0]]
+            ax.legend( (rects1[0], rects2[0]), legend_labels )
+        else:
+            ax.legend()          
     # make axis labels
     if x_lab:
         plt.xlabel(x_lab)
