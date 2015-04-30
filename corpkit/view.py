@@ -41,6 +41,8 @@ def plotter(title,
         interrogator() results or totals (deaults to results)
     sort_by : string
         'total': sort by most frequent
+        'infreq': sort by least frequent
+        'name': sort alphabetically
         'increase': calculate linear regression, sort by steepest up slope
         'decrease': calculate linear regression, sort by steepest down slope 
         'static': calculate linear regression, sort by least slope
@@ -297,6 +299,8 @@ def plotter(title,
     # determine if no subcorpora and thus barchart
     if len(results[0]) == 3 or len(results[0]) == 4:
         barchart = True
+    if percenter_just_totals:
+        barchart = True
     else:
         barchart = False
 
@@ -386,12 +390,20 @@ def plotter(title,
             import decimal
             from decimal import Decimal
             decimal.getcontext().prec = 6
-            alldata = resorter(processed_data,
-                               sort_by = sort_by, 
-                               revert_year = revert_year,
-                               keep_stats = True,
-                               only_below_p = only_below_p, 
-                               significance_level = significance_level)
+            if not percenter_just_totals:
+                alldata = resorter(processed_data,
+                                   sort_by = sort_by, 
+                                   revert_year = revert_year,
+                                   keep_stats = True,
+                                   only_below_p = only_below_p, 
+                                   significance_level = significance_level)
+            elif percenter_just_totals:
+                raise ValueError('percenter_just_totals cannot be used with sort_by = increase/decrease/static,\n'
+                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
+            elif len(results[0]) == 3:
+                raise ValueError('sort_by = increase/decrease/static cannot be used when there is only one subcorpus\n'
+                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
+
         else:
             do_stats = False
             alldata = processed_data
@@ -467,7 +479,7 @@ def plotter(title,
                         plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
                     elif legend_p:
                         if sort_by == 'total' or sort_by == 'name':
-                            warnings.warn("\nP value has not been calculated, so it can't be printed.", color=colours[index])
+                            warnings.warn("\nP value has not been calculated, so it can't be printed.")
                             plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
                             plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])              
                         else:
@@ -486,6 +498,20 @@ def plotter(title,
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
 
     elif barchart:
+        if sort_by != 'total':
+            if len(alldata[0]) == 3:
+                if sort_by != 'infreq':
+                    raise ValueError('sort_by = increase/decrease/static cannot be used when there is only one subcorpus\n'
+                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
+            if len(results[0]) == 4:
+                if type(results[0][1][0]) != int:
+                    raise ValueError('Subcorpora must have int names in order to undergo linear regression.')
+            alldata = resorter(alldata,
+                           sort_by = sort_by, 
+                           revert_year = revert_year,
+                           keep_stats = False,
+                           only_below_p = only_below_p, 
+                           significance_level = significance_level)
         rcParams['figure.figsize'] = figsize, figsize/2
         cutoff = len(alldata)
         import numpy as np
