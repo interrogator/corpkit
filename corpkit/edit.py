@@ -175,7 +175,7 @@ def datareader(data, on_cloud = False):
                 good = raw
         # if it's a dir, conc()
         elif os.path.isdir(data):
-            # why did root appear as key???
+            # these four versions of the same shell command will be the death of me.
             if have_ipython:
                 if on_cloud:
                     tregex_command = 'sh tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
@@ -202,10 +202,12 @@ def datareader(data, on_cloud = False):
                 good = '\n'.join(list_of_texts)
         # if a string of text, just keyword that
         else:
-            good = data
+            good = data.encode('utf-8', errors = 'ignore')
     # if conc results, turn into string...
     if type(data) == list:
         good = '\n'.join(data)
+    # if list of tokens...?
+    
     return good
 
 def resorter(lst, 
