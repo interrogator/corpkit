@@ -329,19 +329,14 @@ def plotter(title,
             if fract_of[0] != u'Totals':
                 raise ValueError('Results branch selected for fract_of, without use_percenter set to True\nChange to .totals and try again.')
 
-        totals = copy.deepcopy(fract_of)
-
-        # if not using use_percenter, use mather to make percentage results
-        # i don't know why i'm using fractdata, seems like a waste
         if not use_percenter:
-            fractdata = []
+            alldata = []
             for entry in alldata:
-                fractdata.append(mather(entry, '%', totals, multiplier = multiplier))
-            alldata = copy.deepcopy(fractdata)
+                alldata.append(mather(entry, '%', fract_of, multiplier = multiplier))
         # if using use_percenter
         else:
             from corpkit.edit import percenter
-            alldata = percenter(alldata, totals, 
+            alldata = percenter(alldata, fract_of, 
                          threshold = threshold, 
                          sort_by = 'most', 
                          print_threshold = False,
