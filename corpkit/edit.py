@@ -77,7 +77,7 @@ def merger(lst, criteria,
 
 
 
-def surgeon(lst, criteria, remove = False, **kwargs):
+def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
     """Add or remove from results by regex or index.
 
     criteria: if string, it is a regular expression to keep/remove by.
@@ -125,6 +125,15 @@ def surgeon(lst, criteria, remove = False, **kwargs):
         if remove is False:
             for index in criteria:
                 newlist.append(lst[index])
+    if printsurgery:
+        if remove:
+            print 'Removing the following %d entries:' % len(newlist)
+        else:
+            print 'Making a new results list with following %d entries:' % len(newlist)
+        for entry in newlist[:25]:
+            print '%s: (total = %d)' % ( entry[0], entry[-1][1])
+        if len(newlist) > 25:
+            print '... and %d more ... ' % len(newlist) - 25
     if 'sort_by' in kwargs:
         newlist = resorter(newlist, **kwargs)        
     totals = combiner(newlist, 'Totals', printmerge = False)
