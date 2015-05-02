@@ -26,11 +26,22 @@ def plotter(title,
             only_below_p = False, 
             skip63 = False, 
             projection = True,
-            use_percenter = False,
             percenter_just_totals = False,
             threshold = 'relative'):
     """
     Visualise interrogator() results, optionally generating a csv as well.
+
+    Basically, give your figure a title an a list of results and they will be plotted. 
+    Results can also be plotted as fractions of another list, using the fract_of argument.
+
+    If fract_of is simply a list of totals, every plotted entry will be plotted as a fraction of the total.
+    If the fract_of list is another results list, it should probably be a superordinate one. 
+    plotter() will plot the main entry as a fraction of the same word in the fract_of list.
+
+    Another key feature is the ability to sort results by total, or by trajectory: increasing, decreasing or static. 
+    When using the trajectory options, p values are also calculated, and can be printed in the legend.
+
+    Most of the other options are for easy customisation of the look of the image, saving it, etc.
 
     Parameters
     ----------
@@ -80,10 +91,6 @@ def plotter(title,
     save : True/False/string
         Generate save image with string as filename
         If True, 'title' string is used for name
-    use_percenter = Boolean
-        percenter() figures out the percentage of fract_of entries that are results entries
-        therefore, use_percenter() needs fract_of list to be results, not totals.
-
 
     NYT-only parameters
     -----
@@ -94,13 +101,31 @@ def plotter(title,
     proj63 : int
         The amount to project 1963 results by
 
-    Example
+    Examples
     -----
     from corpkit import interrogator, plotter
     corpus = 'path/to/corpus'
-    adjectives = interrogator(corpus, 'words', r'/JJ.?/ < __')
-    plotter('Most common adjectives', adjectives.results, fract_of = adjectives.totals,
-            csvmake = True, legend_totals = True)
+    adjectives = interrogator(corpus, 'words', r'/JJ.?/ < __', lemmatise = True)
+    adjectives_as_subject_head = interrogator(corpus, 'words', r'/JJ.?/ >># @NP < __', lemmatise = True)
+    allwords = interrogator(corpus, 'count', 'any_word')
+    
+    # absolute frequency of adjectives
+    plotter('Most common adjectives', adjectives.results)
+
+    # plot common adjectives as a percentage of all adjectives
+    plotter('Most common adjectives', adjectives.results, fract_of = adjectives.totals)
+
+    # plot adjectives as percentage of all words in the corpus
+    plotter('Most common adjectives', adjectives.results, fract_of = allwords.totals)
+
+    # plot common adjectives in subject position as percentage of all subject adjectives:
+    plotter('Most common adjectives in subject position', 
+             adjectives_as_subject_head.results, fract_of = adjectives_as_subject_head.totals)
+
+    # determine the percentage of the time each adjective is used in subject position:
+    plotter('Most common adjectives in subject position',
+             adjectives_as_subject_head.results, fract_of = adjectives.results, 
+             y_label = 'Percentage of the time each word is the subject')
 
     """
 
@@ -325,9 +350,11 @@ def plotter(title,
             fract_of = fract_of.totals
             warnings.warn('\nNo branch of fract_of selected. Using .totals ... ')
 
-        if not use_percenter:
-            if fract_of[0] != u'Totals':
-                raise ValueError('Results branch selected for fract_of, without use_percenter set to True\nChange to .totals and try again.')
+        if type(fract_of[0]) == list:
+            use_percenter = True
+            warnings.warn('\nfract_of is a .resuts branch. Every entry in results being plotted will divided by the entry with the same name in the fract_of list. This takes longer.')
+        else:
+            use_percenter = False
 
         if not use_percenter:
             alldata = []
