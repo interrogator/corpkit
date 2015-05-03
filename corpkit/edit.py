@@ -77,11 +77,27 @@ def merger(lst, criteria,
 
 
 
-def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
-    """Add or remove from results by regex or index.
+def surgeon(lst, criteria, 
+            remove = False, 
+            printsurgery = True, 
+            sort_by = False):
 
+    """Make a new interrogation tuple by keeping/removing certain items from another list.
+
+    a .totals branch will be generated.
+    a .query branch will contain the criteria and remove boolean
+    The .results branchcan be sorted with sort_by.
+
+    Parameters
+    ----------
+    lst: an interrogator() results list
     criteria: if string, it is a regular expression to keep/remove by.
-                 if list, a list of indices to keep/remove by
+              if list of ints, a list of indices to keep/remove by.
+              if list of strings, a list of entries to keep/remove
+    remove: keep or remove the items matched by criteria
+    printsurgery: print info for the user. Can be turned off if used in other functions.
+    sort_by: 'total', 'name', 'increase', 'decrease', 'static' (see edit.resorter() for info)
+
     """
     import re
     import collections
@@ -97,39 +113,33 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
         remove_string = 'remove = True'
     else:
         remove_string = 'remove = False'
-    newlist = []
-    removed = []
+
+    # if keep/remove by regex
     if type(criteria) == str:
         regexp = re.compile(criteria)
-        for item in lst:
-            if remove is True:
-                if type(item) == str:
-                    if not re.search(regexp, item):
-                        newlist.append(item)
-                    else:
-                        removed.append(item)     
-                else:
-                    if not re.search(regexp, item[0]):
-                        newlist.append(item) 
-                    else:
-                        removed.append(item)                       
-            if remove is False:
-                if type(item) == str:
-                    if re.search(regexp, item):
-                        newlist.append(item)
-                else:
-                    if re.search(regexp, item[0]):
-                        newlist.append(item)     
+        if remove:
+            newlist = [e for e in lst if not re.search(regexp, e[0])]
+            removed = [e for e in lst if re.search(regexp, e[0])]
+        else:
+            newlist = [e for e in lst if re.search(regexp, e[0])]
+    # criteria can also be a list
     if type(criteria) == list:
-        if remove is True:
-            newlist = copy.deepcopy(lst)
-            backward_indices = sorted(criteria, reverse = True)
-            for index in backward_indices:
-                removed.append(newlist[index])
-                newlist.remove(newlist[index])
-        if remove is False:
-            for index in criteria:
-                newlist.append(lst[index])
+        # if it's a list of indices
+        if type(criteria[0]) == int:
+            if remove:
+                newlist = [e for index, e in enumerate(lst) if index not in criteria]
+                removed = [e for index, e in enumerate(lst) if index in criteria]
+            else:
+                newlist = [e for index, e in enumerate(lst) if index in criteria]
+        # if list of words
+        else:
+            if remove:
+                newlist = [e for e in lst if e[0] not in criteria]
+                removed = [e for e in lst if e[0] in criteria]
+            else:
+                newlist = [e for e in lst if e[0] in criteria]
+
+    # print helpful info
     if printsurgery:
         if remove:
             print 'Removing the following %d entries:' % len(removed)
@@ -145,16 +155,18 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
             if len(newlist) > 25:
                 num_more = len(newlist) - 25
                 print '... and %d more ... ' % num_more
-    if 'sort_by' in kwargs:
-        newlist = resorter(newlist, **kwargs)        
+    
+    # sort if we want
+    if sort_by:
+        newlist = resorter(newlist, sort_by = sort_by)        
+    # generate totals info
     totals = combiner(newlist, 'Totals', printmerge = False)
+    
     # make into name tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    query_options = [str(criteria), remove_string]
-    #main_totals.append([u'Total', total])
+    query_options = [criteria, remove_string]
     output = outputnames(query_options, newlist, totals)
     return output
-
 
 def datareader(data, on_cloud = False):
     """
