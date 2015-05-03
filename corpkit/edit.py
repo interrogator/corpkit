@@ -90,7 +90,6 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
 
     from corpkit.edit import resorter, combiner
 
-    # should we print info about what was removed and kept?
     if isinstance(lst, tuple) is True:
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
@@ -99,6 +98,7 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
     else:
         remove_string = 'remove = False'
     newlist = []
+    removed = []
     if type(criteria) == str:
         regexp = re.compile(criteria)
         for item in lst:
@@ -106,9 +106,13 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
                 if type(item) == str:
                     if not re.search(regexp, item):
                         newlist.append(item)
+                    else:
+                        removed.append(item)     
                 else:
                     if not re.search(regexp, item[0]):
-                        newlist.append(item)                        
+                        newlist.append(item) 
+                    else:
+                        removed.append(item)                       
             if remove is False:
                 if type(item) == str:
                     if re.search(regexp, item):
@@ -121,19 +125,26 @@ def surgeon(lst, criteria, remove = False, printsurgery = True, **kwargs):
             newlist = copy.deepcopy(lst)
             backward_indices = sorted(criteria, reverse = True)
             for index in backward_indices:
+                removed.append(newlist[index])
                 newlist.remove(newlist[index])
         if remove is False:
             for index in criteria:
                 newlist.append(lst[index])
     if printsurgery:
         if remove:
-            print 'Removing the following %d entries:' % len(newlist)
-        else:
+            print 'Removing the following %d entries:' % len(removed)
+            for entry in removed[:25]:
+                print '%s (total = %d)' % ( entry[0], entry[-1][1])
+            if len(removed) > 25:
+                num_more = len(removed) - 25
+                print '... and %d more ... ' % num_more
+        if not remove:
             print 'Making a new results list with following %d entries:' % len(newlist)
-        for entry in newlist[:25]:
-            print '%s: (total = %d)' % ( entry[0], entry[-1][1])
-        if len(newlist) > 25:
-            print '... and %d more ... ' % len(newlist) - 25
+            for entry in newlist[:25]:
+                print '%s (total = %d)' % ( entry[0], entry[-1][1])
+            if len(newlist) > 25:
+                num_more = len(newlist) - 25
+                print '... and %d more ... ' % num_more
     if 'sort_by' in kwargs:
         newlist = resorter(newlist, **kwargs)        
     totals = combiner(newlist, 'Totals', printmerge = False)
