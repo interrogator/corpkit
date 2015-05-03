@@ -340,20 +340,18 @@ def interrogator(path, options, query,
     # check if pythontex is being used:
     # have_python_tex = check_pythontex()
 
-
-
     # if query is a special query, convert it:
-    if query == 'any_word' or u'any_word' or r'any_word':
+    if 'any_word' in query:
         query = r'/.?[A-Za-z0-9].?/ !< __'
-    if query == 'subjects':
+    if 'subjects' in query:
         query = r'__ >># @NP'
-    if query == 'processes':
+    if 'processes' in query:
         query = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
-    if query == 'modals':
+    if 'modals' in query:
         query = r'MD'
-    if query == 'participants':
+    if 'participants' in query:
         query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP) $ VP | > VP)'
-    if query == 'entities':
+    if 'entities' in query:
         query = r'NP <# NNP'
         titlefilter = True
 
