@@ -6,7 +6,7 @@ def merger(lst, criteria,
     """Merges result items by their index
 
     lst: list to work on
-    criteria: list of result indexes
+    criteria: list of result indexes, list of words, or a regular expression
     newname = if str, this becomes the new name
                         if int, the item indexed with that int becomes newname
                         if False, most common item becomes newname"""
@@ -18,58 +18,60 @@ def merger(lst, criteria,
     if isinstance(lst, tuple) is True:
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
-    tomerge = []
-    oldlist_copy = copy.deepcopy(lst)
-    # if regex, get list of indices for mwatches
+    
+    to_merge = []
+    not_merging = []
+
+    # if regex, get list of indices for matches
     if type(criteria) == str:
-        forwards_index = []
         regex = re.compile(criteria, re.UNICODE)
-        for entry in oldlist_copy:
-            if re.search(regex, unicode(entry[0])):
-                forwards_index.append(oldlist_copy.index(entry))
-        backward_indices = sorted(forwards_index, reverse = True)
-    #if indices, ensure results are sorted
+        for e in lst:
+            if re.search(regex, e[0]):
+                to_merge.append(e)
+            else:
+                not_merging.append(e)
+
+    #if indices or list of words
     if type(criteria) == list:
-        forwards_index = copy.deepcopy(criteria)
-        backward_indices = sorted(criteria, reverse = True)
-    # remove old entries
-    for index in backward_indices:
-        oldlist_copy.remove(oldlist_copy[index])
-    # add matching entries to tomerge
-    for index in forwards_index:
-        tomerge.append(lst[index])
-    # get the new word or use the first entry
+        if type(criteria[0]) == int:
+            for index, e in enumerate(lst):
+                if index in criteria:
+                    to_merge.append(e)
+                else:
+                    not_merging.append(e)
+        else:
+            for e in lst:
+                if e[0] in criteria:
+                    to_merge.append(e)
+                else:
+                    not_merging.append(e)
+
+    # figure out the newname for the merged item
     if type(newname) == int:
-        getnewname= lst[newname]
-        the_newname = getnewname[0]
+        the_newname = lst[newname][0]
     elif type(newname) == str:
         the_newname = unicode(newname)
     elif type(newname) == unicode:
         the_newname = newname
+    # if false, make the_newname the top result
     else:
-        the_newname = tomerge[0][0]
-
-    merged = combiner(tomerge, the_newname, printmerge = printmerge)
+        the_newname = to_merge[0][0]
     
-    # put the merged entry back in the list
-    # this is a bit redundant now that there's sorting
-    output = []
-    if type(criteria) == list:
-        forwards_index = sorted(criteria)
-    first_index = forwards_index[0]
-    for entry in oldlist_copy[:first_index]:
-        output.append(entry)
-    output.append(merged)
-    for entry in oldlist_copy[first_index:]:
-         output.append(entry)
-    if not sort_by:
-        output = resorter(output, sort_by = sort_by)
+    # create the merged entry
+    merged = combiner(to_merge, the_newname, printmerge = printmerge)
+    
+    # add it to the main list
+    not_merging.append(merged)
+
+    # sort this list
+    output = resorter(output, sort_by = sort_by)
+
     # generate totals:
     totals = combiner(output, 'Totals', printmerge = False)
-    # make into name tuple
+
+    # make into named tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    query_options = [str(criteria), the_newname]
-    #main_totals.append([u'Total', total])
+    query_options = [criteria, the_newname]
     output = outputnames(query_options, output, totals)
     return output
 
@@ -265,7 +267,7 @@ def resorter(lst,
     elif sort_by == 'name':
         # case insensitive!
         to_reorder.sort(key=lambda x: x[0].lower())
-    elif sort_by == 'none':
+    elif sort_by == 'none' or sort_by is False:
         return to_reorder
     else:
         from scipy.stats import linregress
@@ -305,7 +307,10 @@ def resorter(lst,
     return to_reorder
 
 def combiner(tomerge, newname, printmerge = True):
-    """the main engine for merging entries, making totals"""
+    """the main engine for merging entries, making totals.
+
+    tomerge: a list of interrogator results
+    """
     if printmerge is True:
         toprint = []
         for index, entry in enumerate(tomerge):
