@@ -762,15 +762,14 @@ def quickview(lst, n = 50, topics = False, sort_by = 'total'):
         import warnings
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
-    import copy
-    safe_copy = copy.deepcopy(lst)
+    
     if sort_by != 'total':
-        safe_copy = resorter(safe_copy, sort_by = sort_by)
-    if type(safe_copy[0]) == str or type(safe_copy[0]) == unicode:
-        return '0: %s: %d' % (safe_copy[0], safe_copy[-1][1])
+        lst = resorter(lst, sort_by = sort_by)
+    if type(lst[0]) == str or type(lst[0]) == unicode:
+        return '0: %s: %d' % (lst[0], lst[-1][1])
     if not topics:
         out = []
-        for index, item in enumerate(safe_copy[:n]):
+        for index, item in enumerate(lst[:n]):
             # if it's interrogator result
             if type(item) == list:
                 word = str(item[0])
@@ -788,7 +787,7 @@ def quickview(lst, n = 50, topics = False, sort_by = 'total'):
         for corpus in topics:
             subout = []
             out.append(corpus.upper())
-            sublist = safe_copy[topics.index(corpus)]
+            sublist = lst[topics.index(corpus)]
             subout = []
             for item in sublist[:n]:
                 indexnum = sublist.index(item)
