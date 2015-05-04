@@ -64,7 +64,7 @@ def merger(lst, criteria,
     not_merging.append(merged)
 
     # sort this list
-    output = resorter(output, sort_by = sort_by)
+    output = resorter(not_merging, sort_by = sort_by)
 
     # generate totals:
     totals = combiner(output, 'Totals', printmerge = False)
@@ -140,20 +140,26 @@ def surgeon(lst, criteria,
     # print helpful info
     if printsurgery:
         if remove:
-            print 'Removing the following %d entries:' % len(removed)
-            for entry in removed[:25]:
-                print '%s (total = %d)' % ( entry[0], entry[-1][1])
-            if len(removed) > 25:
-                num_more = len(removed) - 25
-                print '... and %d more ... ' % num_more
+            if len(removed) > 0:
+                print 'Removing the following %d entries:' % len(removed)
+                for entry in removed[:25]:
+                    print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                if len(removed) > 25:
+                    num_more = len(removed) - 25
+                    print '... and %d more ... ' % num_more
+            else:
+                print 'No entries removed. Bad regex, maybe?'
         if not remove:
             print 'Making a new results list with following %d entries:' % len(newlist)
-            for entry in newlist[:25]:
-                print '%s (total = %d)' % ( entry[0], entry[-1][1])
-            if len(newlist) > 25:
-                num_more = len(newlist) - 25
-                print '... and %d more ... ' % num_more
-    
+            if len(newlist) > 0:
+                for entry in newlist[:25]:
+                    print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                if len(newlist) > 25:
+                    num_more = len(newlist) - 25
+                    print '... and %d more ... ' % num_more
+            else:
+                print 'No entries kept. Bad regex, maybe?'
+
     # sort if we want
     if sort_by:
         newlist = resorter(newlist, sort_by = sort_by)        
@@ -251,8 +257,11 @@ def resorter(lst,
     import copy
 
     options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static', 'none']
-    if sort_by not in options:
-        raise ValueError("sort_by parameter error: '%s' not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
+    if sort_by is True:
+        sort_by = 'total'
+    if sort_by:
+        if sort_by not in options:
+            raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
 
     if sort_by == 'total':
         reordered = sorted(lst, key=lambda x: x[-1], reverse = True)
@@ -268,14 +277,14 @@ def resorter(lst,
         
         # you can't do linear regression if your x axis is a string.
         # so, this thing here starts the x-axis at zero and counts up.
-        yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
+        yearlist = [int(y[0]) for y in lst[0][1:-1]]
         if revert_year:
             first_year = yearlist[0]
             yearlist = [y - first_year for y in yearlist]
         
         # do the maths, put in processed_list
         processed_list = []
-        for datum in to_reorder:
+        for datum in lst:
             counts = [int(y[1]) for y in datum[1:-1]]
             stats = linregress(yearlist, counts)
             if only_below_p:
