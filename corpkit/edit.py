@@ -75,10 +75,6 @@ def merger(lst, criteria,
     output = outputnames(query_options, output, totals)
     return output
 
-# depreciated searchtree and quicktree because not .py compatible
-
-
-
 def surgeon(lst, criteria, 
             remove = False, 
             printsurgery = True, 
@@ -257,27 +253,27 @@ def resorter(lst,
     options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static', 'none']
     if sort_by not in options:
         raise ValueError("sort_by parameter error: '%s' not recognised. Must be 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
-    to_reorder = copy.deepcopy(lst)
-
 
     if sort_by == 'total':
-        to_reorder.sort(key=lambda x: x[-1], reverse = True)
+        reordered = sorted(lst, key=lambda x: x[-1], reverse = True)
     elif sort_by == 'infreq':
-        to_reorder.sort(key=lambda x: x[-1])
+        reordered = sorted(lst, key=lambda x: x[-1])
     elif sort_by == 'name':
         # case insensitive!
-        to_reorder.sort(key=lambda x: x[0].lower())
+        reordered = sorted(lst, key=lambda x: x[0].lower())
     elif sort_by == 'none' or sort_by is False:
-        return to_reorder
+        return lst
     else:
         from scipy.stats import linregress
         
         # you can't do linear regression if your x axis is a string.
-
+        # so, this thing here starts the x-axis at zero and counts up.
         yearlist = [int(y[0]) for y in to_reorder[0][1:-1]]
         if revert_year:
             first_year = yearlist[0]
             yearlist = [y - first_year for y in yearlist]
+        
+        # do the maths, put in processed_list
         processed_list = []
         for datum in to_reorder:
             counts = [int(y[1]) for y in datum[1:-1]]
@@ -288,23 +284,20 @@ def resorter(lst,
                     continue
             datum.append(stats)
             processed_list.append(datum)
-            # removing insignificant items ... bad idea?
-            #if view != 'static':
-                #if stats[4] <= significance_level:
-                    #datum.append(stats)
-            #else:
+
         if sort_by == 'increase':
-            processed_list.sort(key=lambda x: x[-1][0], reverse = True) # largest first
+            reordered = sorted(processed_list, key=lambda x: x[-1][0], reverse = True) # largest first
         elif sort_by == 'decrease':
-            processed_list.sort(key=lambda x: x[-1][0], reverse = False) # smallest first
+            reordered = sorted(processed_list, key=lambda x: x[-1][0], reverse = False) # smallest first
         elif sort_by == 'static':
-            processed_list.sort(key=lambda x: abs(x[-1][0]), reverse = False)
+            reordered = sorted(processed_list, key=lambda x: abs(x[-1][0]), reverse = False)
+        
         # remove all the stats we just added unless coming from plotter
-        to_reorder = processed_list
         if not keep_stats:
-            for datum in to_reorder:
+            for datum in reordered:
                 datum.pop()
-    return to_reorder
+                
+    return reordered
 
 def combiner(tomerge, newname, printmerge = True):
     """the main engine for merging entries, making totals.
@@ -335,21 +328,32 @@ def combiner(tomerge, newname, printmerge = True):
     return merged
 
 
-def mather(oldlist, operation, newlist, multiplier = 100):
-    """does maths on two lists of results/totals"""
+def mather(first_list, operation, second_list, multiplier = 100):
+    """Do maths on two lists of results/totals.
+
+    operation: a string that is "+", "-". "*", "/" or "%"
+
+    Example:
+
+    a = ['word', [1988, 11], [1989, 12], [1990, 3], ['Total', 26]]
+    b = ['word_two', [1988, 9], [1989, 7], [1990, 4], ['Total', 20]]
+    print mather(a, '+', b)
+
+    output:
+    ['word', [1988, 20.0], [1989, 19.0], [1990, 7.0], ['Total', 46.0]]
+
+    """
     import operator
     import copy
-    the_oldlist = copy.deepcopy(oldlist)
-    the_newlist = copy.deepcopy(newlist)
-    if type(the_oldlist) != type(the_newlist):
-        raise ValueError('Different list types: %s and %s' % (type(the_oldlist), type(the_newlist)))
+    if type(first_list) != type(second_list):
+        raise ValueError('Different list types: %s and %s' % (type(first_list), type(second_list)))
     # implement when everything is definitely in unicode, maybe:
-    #if type(the_oldlist[0]) != type(the_newlist[0]):
+    #if type(first_list[0]) != type(second_list[0]):
         #raise ValueError('Different list depths.' 
-    if len(the_oldlist) != len(the_newlist):
-        print the_oldlist
-        print the_newlist
-        raise ValueError('Different list lengths: %d and %d' % (len(the_oldlist), len(the_newlist)))
+    if len(first_list) != len(second_list):
+        print first_list
+        print second_list
+        raise ValueError('Different list lengths: %d and %d' % (len(first_list), len(second_list)))
     ops = {"+": operator.add,
            "-": operator.sub,
            "*": operator.mul,
@@ -359,28 +363,29 @@ def mather(oldlist, operation, newlist, multiplier = 100):
     except KeyError:
         if operation != '%':
             raise ValueError("Operator not recognised. Must be '+', '-', '*', '/' or '%'.")
+    
     # put word into a newly declared list
-    mathedlist = [the_oldlist[0]]
-    for index, entry in enumerate(the_oldlist[1:]):
+    mathedlist = [first_list[0]]
+
+    # do the maths on every tuple in the lists
+    for index, entry in enumerate(first_list[1:]):
         x_axis = entry[0]
         oldnum = entry[1]
-        newtup = the_newlist[index + 1]
+        
+        newtup = second_list[index + 1]
         if newtup[0] == x_axis:
-            newnum = the_newlist[index + 1][1]
+            newnum = second_list[index + 1][1]
             if operation != '%':
                 result = op_func(oldnum, float(newnum))
-                # one day there will probably be a divide by zero error here. sorry!
             else:
                 if newnum == 0:
                     result = 0
                 else:
                     result = oldnum * multiplier / float(newnum)
-
             mathedlist.append([x_axis, result])
         else:
             raise ValueError('Different list labels: %s and %s' % (str(x_axis), str(newtup[0])))
     return mathedlist
-
 
 def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     """Save an interrogation as pickle to savedir"""
@@ -420,53 +425,52 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         output = outputnames(unpickled[0], unpickled[1])
     return output
 
-def subcorpus_remover(interrogator_list, just_subcorpora, remove = True, **kwargs):
-    """Takes a list and returns only results from the years listed in just_subcorpora"""
+def subcorpus_remover(interrogator_list, subcorpora, remove = False, sort_by = 'total'):
+    """Takes an interrogator list and returns a version with or without the subcorpora listed in subcorpora."""
     import collections
     import copy
     import warnings
-
     from corpkit.edit import combiner, combiner
     
     # default to results branch
     if isinstance(interrogator_list, tuple) is True:
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         interrogator_list = interrogator_list.results
+    
     # copy and wrap list if need be
     if type(interrogator_list[0]) == unicode or type(interrogator_list[0]) == str:
-        alldata = [copy.deepcopy(interrogator_list)]
-    else:
-        alldata = copy.deepcopy(interrogator_list)
-    output = []
-    if type(just_subcorpora) == int or type(just_subcorpora) == str or type(just_subcorpora) == unicode:
-        just_subcorpora = [just_subcorpora]
-    for entry in alldata:
+        interrogator_list = [interrogator_list]
+
+    cleaned_list = []
+    
+    # if subcorpora not a list, make it into one
+    if type(subcorpora) == int or type(subcorpora) == str or type(subcorpora) == unicode:
+        subcorpora = [subcorpora]
+    for entry in interrogator_list:
         # new list with just word
-        skipped = [entry[0]]
-        for item in entry[1:]:
-            # make sure it's a list ... weird way to do it
-            if type(item) != unicode and type(item) != str:
-                for subcorpus in just_subcorpora:
-                    if remove:
-                        if item[0] != subcorpus and item[0] != u'Total':
-                            skipped.append(item)
-                    elif not remove:
-                        if item[0] == subcorpus and item[0] != u'Total':
-                            skipped.append(item)
-        total = sum([i[1] for i in skipped[1:]])
-        skipped.append([u'Total', total])
-        output.append(skipped)
-    output = resorter(output, **kwargs)
+        new_entry = [entry[0]]
+        if remove:
+            rest = [e for e in entry[1:] if e[0] not in subcorpora]
+        else:
+            rest = [e for e in entry[1:] if e[0] in subcorpora]
+            rest.append(entry[-1])
+        new_entry.append(rest)
+        cleaned_list.append(new_entry)
+    cleaned_list = resorter(cleaned_list, sort_by = sort_by)
+    
     # generate totals:
-    totals = combiner(output, 'Totals', printmerge = False)
-    # make into name tuple
+    totals = combiner(cleaned_list, 'Totals', printmerge = False)
+    # make into named tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    try:
-        query_options = interrogator_list.query
-    except AttributeError:
-        query_options = ['subcorpus_remover used to generate this']
+    
+    # query info
+    if remove:
+        remove_string = 'removed'
+    else:
+        remove_string = 'kept'
+    query_options = [subcorpora, remove_string]
     #main_totals.append([u'Total', total])
-    output = outputnames(query_options, output, totals)
+    output = outputnames(query_options, cleaned_list, totals)
     return output
 
 def percenter(small_list, big_list, 
