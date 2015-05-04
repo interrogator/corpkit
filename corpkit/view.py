@@ -6,7 +6,7 @@
 
 def plotter(title, 
             results, 
-            sort_by = 'total', 
+            sort_by = False, 
             fract_of = False, 
             y_label = False, 
             num_to_plot = 7, 
@@ -50,13 +50,15 @@ def plotter(title,
         Chart title
     results : list
         interrogator() results or totals (deaults to results)
-    sort_by : string
+    sort_by : string / Boolean
         'total': sort by most frequent
         'infreq': sort by least frequent
         'name': sort alphabetically
         'increase': calculate linear regression, sort by steepest up slope
         'decrease': calculate linear regression, sort by steepest down slope 
         'static': calculate linear regression, sort by least slope
+        False: do no sorting
+        True: do 'total'
     fract_of : list
         measure results as a fraction (default: as a percentage) of this list.
         usually, use interrogator() totals
@@ -307,7 +309,7 @@ def plotter(title,
             warnings.warn("\nP value has not been calculated. No entries will be excluded") 
     
     # cut short to save time if later results aren't useful
-    if csvmake or sort_by != 'total':
+    if csvmake or sort_by:
         cutoff = len(results)
     else:
         cutoff = num_to_plot
@@ -317,6 +319,8 @@ def plotter(title,
         legend = False
         alldata = [results]
         num_to_plot = 1
+    
+    # if not, shorten list if possible
     else:
         legend = True
         alldata = []
@@ -345,7 +349,6 @@ def plotter(title,
         else:
             x_lab = False
 
-
     # select totals if no branch selected
     if fract_of:
         if isinstance(fract_of, tuple) is True:
@@ -354,14 +357,15 @@ def plotter(title,
 
         if type(fract_of[0]) == list:
             use_percenter = True
-            warnings.warn('\nfract_of is a .resuts branch. Every entry in results being plotted will divided by the entry with the same name in the fract_of list. This takes longer.')
+            warnings.warn('\nfract_of is a .results branch. Every entry in results being plotted will divided by the entry with the same name in the fract_of list. This takes longer.')
         else:
             use_percenter = False
 
         if not use_percenter:
-            alldata = []
+            mathed_data = []
             for entry in alldata:
-                alldata.append(mather(entry, '%', fract_of, multiplier = multiplier))
+                mathed_data.append(mather(entry, '%', fract_of, multiplier = multiplier))
+            alldata = mathed_data
         # if using use_percenter
         else:
             from corpkit.edit import percenter
@@ -370,7 +374,7 @@ def plotter(title,
                          sort_by = 'most', 
                          print_threshold = False,
                          just_totals = percenter_just_totals)
-    
+
     csvdata = []
     csvalldata = []
     final = []
@@ -378,9 +382,9 @@ def plotter(title,
     if num_to_plot > len(alldata):
         warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
     
+    # cut again now if possible
     if not csvmake:
         cutoff = num_to_plot
-    
     
     # if more than 10 plots, use colormap
     if cutoff > 10:
@@ -409,7 +413,7 @@ def plotter(title,
             processed_data.append(entry)
 
         # do stats if needed
-        if sort_by != 'total':
+        if sort_by != 'total' and sort_by != 'name' and type(sort_by) != bool:
             do_stats = True
             import decimal
             from decimal import Decimal
@@ -712,7 +716,6 @@ def table(data_to_table, allresults = False, maxresults = 50):
     df = DataFrame(pandas.read_csv(StringIO(data), index_col = 0, engine='python'))
     pandas.options.display.float_format = '{:,.2f}'.format
     return df
-
 
 def tally(lst, indices):
     """Display total occurrences of a result"""
