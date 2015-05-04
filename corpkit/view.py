@@ -315,11 +315,13 @@ def plotter(title,
     # if plotting one entry/a totals list, wrap it in another list
     if type(results[0]) == unicode or type(results[0]) == str:
         legend = False
-        alldata = [copy.deepcopy(results)][:cutoff]
+        alldata = [results]
         num_to_plot = 1
     else:
         legend = True
-        alldata = copy.deepcopy(results[:cutoff])
+        alldata = []
+        for entry in results[:cutoff]:
+            alldata.append(entry)
 
     # determine if no subcorpora and thus barchart
     if len(results[0]) == 3 or len(results[0]) == 4:
