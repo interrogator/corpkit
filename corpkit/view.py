@@ -286,6 +286,10 @@ def plotter(title,
 
     ##################################################################
 
+    # True sort default to total
+    if sort_by is True:
+        sort_by = 'total'
+
     # check for tex and use it if it's there
     if have_tex:
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -413,8 +417,11 @@ def plotter(title,
             processed_data.append(entry)
 
         # do stats if needed
-        if sort_by != 'total' and sort_by != 'name' and type(sort_by) != bool:
-            do_stats = True
+        if sort_by:
+            if sort_by != 'total' and sort_by != 'name':
+                do_stats = True
+            else:
+                do_stats = False
             import decimal
             from decimal import Decimal
             decimal.getcontext().prec = 6
