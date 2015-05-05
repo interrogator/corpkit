@@ -56,7 +56,7 @@ class ProgressBar:
         num_hashes = int(round((percent_done / 100.0) * all_full))
         time = strftime("%H:%M:%S", localtime())
         self.prog_bar = time + ': [' + self.fill_char * num_hashes + ' ' * (all_full - num_hashes) + ']'
-        pct_place = (len(self.prog_bar) // 2) + (len(str(percent_done)))
+        pct_place = (len(self.prog_bar) // 2) + (3)
         if dirname:
             pct_string = '%d%% ' % percent_done + '(' + dirname + ')'
         else:
