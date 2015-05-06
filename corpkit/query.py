@@ -9,9 +9,10 @@ def interrogator(path, options, query,
                 dictionary = 'bnc.p', 
                 titlefilter = False, 
                 lemmatag = False, 
-                usa_english = True, 
+                spelling = False, 
                 phrases = False, 
-                dep_type = 'basic-dependencies'):
+                dep_type = 'basic-dependencies',
+                function_filter = False):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -35,6 +36,8 @@ def interrogator(path, options, query,
             f/funct: get the semantic *function*
             g/gov: get *governor* role and governor:
                 /good/ might return amod:day
+            d/dep: get dependent and its role:
+                /day/ might return amod:sunny
         for keywords/ngrams, use 't'
    
     query : str
@@ -49,7 +52,7 @@ def interrogator(path, options, query,
         explicitly pass a pos to lemmatiser
     titlefilter : Boolean
         strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
-    usa_english : Boolean
+    spelling : False/'US'/UK
         convert all to U.S. English
     phrases : Boolean
         Use if your expected results are multiword and thus need tokenising
@@ -61,6 +64,9 @@ def interrogator(path, options, query,
         - 'basic-dependencies' (best lemmatisation right now, default)
         - 'collapsed-dependencies'
         - 'collapsed-ccprocessed-dependencies'
+    function_filter : Bool/regex
+        If you set this to a regex, for the 'g' and 'd' options, only words 
+        whose function matches the regex will be kept, and the tag will not be printed
 
     Example 1: Tree querying
     --------
@@ -167,7 +173,7 @@ def interrogator(path, options, query,
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         if not depnum:
-            list_of_matches = [w.lower() for w in list_of_matches]
+            list_of_matches = [str(w).lower() for w in list_of_matches]
         list_of_matches.sort()
         
         # tokenise if multiword:
@@ -178,8 +184,8 @@ def interrogator(path, options, query,
             list_of_matches = lemmatiser(list_of_matches, tag)
         if titlefilter:
             list_of_matches = titlefilterer(list_of_matches)
-        if usa_english:
-            list_of_matches = usa_english_maker(list_of_matches)
+        if spelling:
+            list_of_matches = convert_spelling(list_of_matches)
         
         # turn every result into a single string again if need be:
         if phrases:
@@ -227,8 +233,10 @@ def interrogator(path, options, query,
             output.append(title_stripped)
         return output
 
-    def usa_english_maker(list_of_matches):
+    def convert_spelling(list_of_matches):
         from dictionaries.word_transforms import usa_convert
+        if spelling == 'UK':
+            usa_convert = {v: k for k, v in usa_convert.items()}
         output = []
         for result in list_of_matches:
             if phrases:
@@ -255,7 +263,7 @@ def interrogator(path, options, query,
                 if re.match(regex, word):
                     role = dep.attrs.get('type')
                     gov = dep.find_all('governor')
-                    govword = gov[0].get_text()
+                    result_word = gov[0].get_text()
                     # very messy here, sorry
                     if lemmatise is True:
                         if role in deptags:
@@ -269,9 +277,45 @@ def interrogator(path, options, query,
                                 thetag = 'v'
                         if word in wordlist:
                             word = wordlist[word]
-                        govword = lmtzr.lemmatize(govword, thetag)
-                    colsep = role + u':' + govword
-                    result.append(colsep)
+                        result_word = lmtzr.lemmatize(result_word, thetag)
+                    if function_filter:
+                        if re.search(funfil_regex, role):
+                            result.append(result_word)
+                    else:
+                        colsep = role + u':' + result_word
+                        result.append(colsep)
+        return result
+
+    def deprole(soup):
+        """print funct:dep"""
+        result = []
+        for dep in soup.find_all('dep'):
+            for governor in dep.find_all('governor'):
+                word = governor.get_text()
+                if re.match(regex, word):
+                    role = dep.attrs.get('type')
+                    deppy = dep.find_all('dependent')
+                    result_word = deppy[0].get_text()
+                    # very messy here, sorry
+                    if lemmatise is True:
+                        if role in deptags:
+                            thetag = deptags[role]
+                        else:
+                            thetag = None
+                        if not thetag:
+                            if lemmatag:
+                                thetag = lemmatag
+                            else:
+                                thetag = 'v'
+                        if word in wordlist:
+                            word = wordlist[word]
+                        result_word = lmtzr.lemmatize(result_word, thetag)
+                    if function_filter:
+                        if re.search(funfil_regex, role):
+                            result.append(result_word)
+                    else:
+                        colsep = role + u':' + result_word
+                        result.append(colsep)
         return result
 
     def funct(soup):
@@ -380,7 +424,7 @@ def interrogator(path, options, query,
         optiontext = 'Counts only.'
     
     # dependency options:
-    elif options.startswith('n') or options.startswith('N') or options.startswith('d') or options.startswith('D'):
+    elif options.startswith('n') or options.startswith('N'):
         depnum = True
         dependency = True
         optiontext = 'Dependency index number only.'
@@ -390,6 +434,9 @@ def interrogator(path, options, query,
     elif options.startswith('g') or options.startswith('G'):
         dependency = True
         optiontext = 'Role and governor.'
+    elif options.startswith('d') or options.startswith('D'):
+        dependency = True
+        optiontext = 'Dependent and its role.'
     else:
         raise ValueError("'%s' option not recognised. See docstring for possible options." % options)
     
@@ -399,6 +446,8 @@ def interrogator(path, options, query,
         from bs4 import BeautifulSoup, SoupStrainer
         regex = re.compile(query)
         phrases = False
+        if function_filter:
+            funfil_regex = re.compile(function_filter)
 
     # parse query
     if query.startswith('key'):
@@ -532,9 +581,11 @@ def interrogator(path, options, query,
                     soup = BeautifulSoup(data, parse_only=just_good_deps)
                     if options.startswith('g') or options.startswith('G'):
                         result_from_file = govrole(soup)
+                    if options.startswith('d') or options.startswith('D'):
+                        result_from_file = deprole(soup)
                     if options.startswith('f') or options.startswith('F'):
                         result_from_file = funct(soup)
-                    if options.startswith('n') or options.startswith('N') or options.startswith('d') or options.startswith('D'):
+                    if options.startswith('n') or options.startswith('N'):
                         result_from_file = depnummer(soup)
                 if result_from_file is not None:
                     for entry in result_from_file:
