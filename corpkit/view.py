@@ -8,7 +8,6 @@ def plotter(title,
             results, 
             sort_by = False, 
             fract_of = False, 
-            y_label = False, 
             num_to_plot = 7, 
             significance_level = 0.05, 
             revert_year = True,
@@ -18,6 +17,7 @@ def plotter(title,
             justyears = False, 
             csvmake = False, 
             x_label = False, 
+            y_label = False, 
             legend_p = False,
             legend_totals = False, 
             log = False, 
@@ -69,7 +69,7 @@ def plotter(title,
         text for y-axis label (default is 'Absolute frequency'/'Percentage') 
     X_label : string
         text for x-axis label (default is 'Group'/'Year')
-    num_to_plot : int
+    num_to_plot : int/'all'
         How many top entries to show
     significance_level : float
         If using sort_by, set the p threshold (default 0.05)
@@ -317,6 +317,9 @@ def plotter(title,
         cutoff = len(results)
     else:
         cutoff = num_to_plot
+
+    if num_to_plot == 'all':
+        num_to_plot = len(results)
     
     # if plotting one entry/a totals list, wrap it in another list
     if type(results[0]) == unicode or type(results[0]) == str:
