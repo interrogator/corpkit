@@ -9,13 +9,15 @@
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
+    - [Key features](#key-features)
+    - [Using `corpkit`](#using-corpkit)
 - [Installation](#installation)
     - [By downloading the repository](#by-downloading-the-repository)
     - [By cloning the repository](#by-cloning-the-repository)
     - [Via `pip`](#via-pip)
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
-- [Example](#example)
+- [Examples](#examples)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
 
@@ -35,7 +37,64 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `keywords()`      | get keywords and ngrams from corpus/subcorpus/concordance lines | 
 | `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
 
-Because I mostly use systemic functional grammar, there also some simple dictionaries to distinguish between process types (relational, mental, verbal). These don't have much documentation right now, but they can be seen in action in my research projects:
+While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can generally also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
+
+The idea is to run the tools from an [IPython Notebook](http://ipython.org/notebook.html), but you could also operate the toolkit from the command line.
+
+### Key features
+
+#### `interrogator()`
+
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) to search parse trees for complex lexicogrammatical phenomena
+* Search Stanford dependencies (whichever variety you like) for information about the role, governor or index of a token matching a regular expression
+* Return words or phrases, POS/group/phrase tags, raw counts, or all three.
+* Return lemmatised or unlemmatised results
+* Look for keywords in each subcorpus, and chart their keyness
+* Look for ngrams in each subcorpus, and chart their frequency
+* Customisable wordlists for lemmatisation (augmenting use of `WordNet`), determiner/stopword stripping, UK-US spelling conversion (though is pains us all), etc.
+
+#### `plotter()` 
+
+* Plot any number of results onto line charts (see below)
+* For corpora with no subcorpora, or only two contrastive subcorpora, make bar charts instead
+* Though there are sensible defaults, you can easily customise figure titles, axes labels, legends, image size, etc.
+* Figures will use `TeX` if you have it
+* Plot by absolute frequency, or as a ratio/percentage of another list: 
+    * plot the total number of verbs, or total number of verbs that are *be*
+    * plot the percentage of verbs that are *be*
+    * plot the percentage of *be* verbs that are *was*
+    * plot the ratio of *was/were* ...
+    * etc.
+* Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus
+* Plot only specific subcorpora, or spans of subcorpora
+* For ordered subcorpora (e.g. chronological data), use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values.
+* Show the p-value for linear regression slopes
+* Use log scales if you really want
+* Save output to file and/or generate CSV with results
+
+#### Other stuff
+
+* View results as a table with `Pandas`
+* Quickly edit and merge interrogation results with `surgeon()` and `merger()`, using regular expressions, result indices or lists of words
+* Tools for resorting or doing maths on interrogation results
+* Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
+* Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
+* Randomise concordance results, determine window size, etc.
+* Quickly save interrogations and figures to file, and reload results in for new sessions
+* Build dictionaries for corpora and subcorpora, that can then be used as reference corpora for keyword generation
+* Start a new blank project with `new_project()`
+
+One of the main reasons for these tools was to make it quicker and easier to explore corpora in complex ways. Input and output from the various tools in the kit can be used in tandem:
+
+* n-gramming and keywording can be done via `interrogator()`
+* keywording can easily be done on your concordance lines
+* you can use `surgeon()` to edit concordance line output
+* You can build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
+* and so on ...
+
+### Using `corpkit`
+
+Some things are likely lacking documentation. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
 
 1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
 2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
@@ -123,7 +182,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md.png" />
 <br>
 
-## Example
+## Examples
 
 Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
@@ -147,6 +206,21 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
+#### Systemic functional stuff
+
+Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building regular expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus.
+
+```python
+from dictionaries.process_types import processes
+# print processes.verbal
+
+# find the dependent of verbal processes, and its functional role
+# keep only results matching function_filter
+sayers = interrogator(corpus, 'deprole', processes.verbal, function_filter = r'^nsubj$')
+
+plotter('People who say stuff', sayers.results, fract_of = sayers.totals)
+```
+
 ## IPython Notebook usability
 
 When running the Notebook locally, a couple of IPython extensions come in very handy:
@@ -157,7 +231,8 @@ When running the Notebook locally, a couple of IPython extensions come in very h
 ## Coming soon
 
 * Connecting concordance output to HTML
-* Corpus building resources
+* More corpus building resources and documentation
+* More complex examples in this file
 * More `.tex`!
 
 
