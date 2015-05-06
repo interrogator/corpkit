@@ -173,7 +173,7 @@ def interrogator(path, options, query,
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         if not depnum:
-            list_of_matches = [str(w).lower() for w in list_of_matches]
+            list_of_matches = [w.lower() for w in list_of_matches]
         list_of_matches.sort()
         
         # tokenise if multiword:
@@ -448,6 +448,13 @@ def interrogator(path, options, query,
         phrases = False
         if function_filter:
             funfil_regex = re.compile(function_filter)
+
+    # make sure dep_type is valid:
+
+    if dependency:
+        allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
+        if dep_type not in allowed_dep_types:
+            raise ValueError('dep_type %s not recognised. Must be one of: %s' % (dep_type, ', '.join(allowed_dep_types))
 
     # parse query
     if query.startswith('key'):
