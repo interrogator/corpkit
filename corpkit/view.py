@@ -26,7 +26,7 @@ def plotter(title,
             only_below_p = False, 
             skip63 = False, 
             projection = True,
-            percenter_just_totals = False,
+            just_totals = False,
             threshold = 'relative'):
     """
     Visualise interrogator() results, optionally generating a csv as well.
@@ -169,6 +169,8 @@ def plotter(title,
     on_cloud = check_dit()
     have_tex = check_tex(have_ipython = have_ipython)
 
+    def keep_only_totaller(interrogator_list):
+        return [interrogator_list[0], interrogator_list[-1]]
 
     def skipper(interrogator_list):
         """Takes a list and returns a version without 1963"""
@@ -334,10 +336,12 @@ def plotter(title,
         for entry in results[:cutoff]:
             alldata.append(entry)
 
-    # determine if no subcorpora and thus barchart
-    if len(results[0]) == 3 or len(results[0]) == 4:
-        barchart = True
-    if percenter_just_totals:
+    # if just_totals, remove everything else from each entry
+    for entry in alldata:
+        entry = keep_only_totaller(entry)
+
+    # determine if no subcorpora, two subcorpora or just_totals, for barchart
+    if len(results[0]) == 3 or len(results[0]) == 4 or just_totals is True:
         barchart = True
     else:
         barchart = False
@@ -380,7 +384,7 @@ def plotter(title,
                          threshold = threshold, 
                          sort_by = 'most', 
                          print_threshold = False,
-                         just_totals = percenter_just_totals)
+                         just_totals = just_totals)
 
     csvdata = []
     csvalldata = []
@@ -536,6 +540,7 @@ def plotter(title,
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
 
     elif barchart:
+
         if sort_by != 'total':
             if len(alldata[0]) == 3:
                 if sort_by != 'infreq':
