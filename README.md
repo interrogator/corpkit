@@ -46,12 +46,12 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 #### `interrogator()`
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) to search parse trees for complex lexicogrammatical phenomena
-* Search Stanford dependencies (whichever variety you like) for information about the role, governor or index of a token matching a regular expression
+* Search Stanford dependencies (whichever variety you like) for information about the role, governor dependent or index of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
 * Return lemmatised or unlemmatised results
 * Look for keywords in each subcorpus, and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
-* Customisable wordlists for lemmatisation (augmenting use of `WordNet`), determiner/stopword stripping, UK-US spelling conversion (though is pains us all), etc.
+* Customisable wordlists for lemmatisation (augmenting use of `WordNet`), determiner/stopword stripping, UK-US spelling conversion (though it pains us all), etc.
 
 #### `plotter()` 
 
@@ -74,7 +74,7 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 
 #### Other stuff
 
-* View results as a table with `Pandas`
+* View results as a table via `Pandas`
 * Quickly edit and merge interrogation results with `surgeon()` and `merger()`, using regular expressions, result indices or lists of words
 * Tools for resorting or doing maths on interrogation results
 * Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
@@ -201,6 +201,7 @@ Output:
 Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building regular expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus.
 
 ```python
+from corpkit import quickview, surgeon
 from dictionaries.process_types import processes
 # print processes.verbal
 
@@ -208,7 +209,12 @@ from dictionaries.process_types import processes
 # keep only results matching function_filter
 sayers = interrogator(corpus, 'deprole', processes.verbal, function_filter = r'^nsubj$')
 
-plotter('People who say stuff', sayers.results, fract_of = sayers.totals)
+# have a look at the top results
+quickview(sayers.results, n = 30)
+
+# plot with a bunch of options
+plotter('People who say stuff', specific_sayers.results, fract_of = sayers.totals, num_to_plot = 9, sort_by = 'total', legend_totals = True)
+
 ```
 
 ## More information
