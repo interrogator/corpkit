@@ -120,6 +120,9 @@ def surgeon(lst, criteria,
             removed = [e for e in lst if re.search(regexp, e[0])]
         else:
             newlist = [e for e in lst if re.search(regexp, e[0])]
+    # if criteria is just an index, wrap it for the next part
+    if type(criteria) == 'int':
+        criteria = [criteria]
     # criteria can also be a list
     if type(criteria) == list:
         # if it's a list of indices
@@ -136,7 +139,6 @@ def surgeon(lst, criteria,
                 removed = [e for e in lst if e[0] in criteria]
             else:
                 newlist = [e for e in lst if e[0] in criteria]
-
     # print helpful info
     if printsurgery:
         if remove:
