@@ -121,8 +121,6 @@ def interrogator(path, options, query,
     import dictionaries
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
-                                              deptags_for_govrole, 
-                                              deptags_for_deprole, 
                                               taglemma)
 
     if lemmatise:
@@ -222,6 +220,10 @@ def interrogator(path, options, query,
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
+            # do the manual_lemmatisation
+            if dependency:
+                if word in wordlist:
+                    word = wordlist[word]
             if phrases:
                 entry.append(word)
                 output.append(entry)
@@ -245,21 +247,34 @@ def interrogator(path, options, query,
         if spelling == 'UK':
             usa_convert = {v: k for k, v in usa_convert.items()}
         output = []
-        for result in list_of_matches:
-            if phrases:
-                for w in result:
-                    try:
-                        w = usa_convert[w]
-                    except KeyError:
-                        pass
-                output.append(result)
-            else:
+        # if we have funct:word, spellfix the word only
+        if dependency and not function_filter:
+            for result in list_of_matches:
+                funct, word = result.split(':', 1)
                 try:
-                    result = usa_convert[result]
+                    word = usa_convert[word]
+                    result = u'%s:%s' % (funct, word)
                 except KeyError:
                     pass
                 output.append(result)
-        return output
+            return output            
+        # in any other case, do it normally
+        else:
+            for result in list_of_matches:
+                if phrases:
+                    for w in result:
+                        try:
+                            w = usa_convert[w]
+                        except KeyError:
+                            pass
+                    output.append(result)
+                else:
+                    try:
+                        result = usa_convert[result]
+                    except KeyError:
+                        pass
+                    output.append(result)
+            return output
 
     def govrole(xmldata):
         """print funct:gov, using good lemmatisation"""
@@ -283,6 +298,7 @@ def interrogator(path, options, query,
                             if role != u'root':
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
                                 result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                                # could just correct spelling here ...
                                 if function_filter:
                                     if re.search(funfil_regex, role):
                                         result.append(result_word)
@@ -383,8 +399,6 @@ def interrogator(path, options, query,
                     # can do automatic categorisation of functions here, 
                     # i.e. convert to more basic type
                     #if lemmatise:
-                        #if role in deptags:
-                            #role = deptags[role]
                     result.append(role)
         
         # attempt to stop memory problems. 
