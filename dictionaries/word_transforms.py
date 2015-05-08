@@ -19,6 +19,8 @@ wordlist = {u"felt": u"feel",
             u"men": u"man",
             u"teen-ager": u"teenager",
             u"teen-agers": u"teenager",
+            u"republicans": u"republican",
+            u"democrats": u"democrat",
             u"will": u"would",
             u"wo": u"would",
             u"'ll": u"would",
@@ -72,23 +74,8 @@ taglemma = {u"cc": u"Coordinating conjunction",
            u"wp": u"Wh- pronoun",
            u"wp$": u"Wh- pronoun"}
 
-
-# this one translates the dependency relationship into a wordnet tag as a best guess:
-
-deptags = {u'amod': 'n',
-           u'nn': 'n',
-           u'rcmod': 'n',
-           u'dobj': 'v',
-           u'nsubj': 'v',
-           u'nsubjpass': 'v',
-           u'advmod': 'v',
-           u'iobj': 'v',
-           u'acomp': 'v',
-           u'cop': 'v',
-           u'advmod': 'v',
-           u'iobj': 'v',
-           u'xcomp': 'v',
-           u'ccomp': 'v'}
+# Note: in this space were deptags, deptags_for_govrole and deptags_for_deprole
+# they were removed because they were a terrible idea.
 
 # and this one converts to american english (ONLY because of WordNnet, Stanford, etc.)
 # the current word list is nice and long, but has fairly redundant pluralising.
