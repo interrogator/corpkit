@@ -10,7 +10,6 @@
 
 - [What's in here?](#whats-in-here)
     - [Key features](#key-features)
-    - [Using `corpkit`](#using-corpkit)
 - [Installation](#installation)
     - [By downloading the repository](#by-downloading-the-repository)
     - [By cloning the repository](#by-cloning-the-repository)
@@ -18,6 +17,7 @@
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [Examples](#examples)
+- [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
 
@@ -39,7 +39,7 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 
 While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can generally also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
-The idea is to run the tools from an [IPython Notebook](http://ipython.org/notebook.html), but you could also operate the toolkit from the command line.
+The idea is to run the tools from an [IPython Notebook](http://ipython.org/notebook.html), but you could also operate the toolkit from the command line if you wanted to have less fun.
 
 ### Key features
 
@@ -92,17 +92,7 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 * You can build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
 * and so on ...
 
-### Using `corpkit`
-
-Some things are likely lacking documentation. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
-
-1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
-3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
-
-Though everything should work alright in Python, it's much easier to use [IPython Notebooks](http://ipython.org/notebook.html). 
-
-Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. This project isn't included in the pip package.
+Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. This data only includes parse trees, due to size restrictions, and isn't included in the pip package.
 
 ## Installation
 
@@ -220,6 +210,14 @@ sayers = interrogator(corpus, 'deprole', processes.verbal, function_filter = r'^
 
 plotter('People who say stuff', sayers.results, fract_of = sayers.totals)
 ```
+
+## More information
+
+Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
+
+1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
+2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
+3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 ## IPython Notebook usability
 
