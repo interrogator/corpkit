@@ -114,10 +114,16 @@ def interrogator(path, options, query,
     except ImportError:
         pass
 
-    from corpkit.query import query_test, check_dit, check_pytex
+    from corpkit.query import (query_test, 
+                               check_dit, 
+                               check_pytex)
     from corpkit.progressbar import ProgressBar
     import dictionaries
-    from dictionaries.word_transforms import wordlist, usa_convert, deptags, taglemma
+    from dictionaries.word_transforms import (wordlist, 
+                                              usa_convert, 
+                                              deptags_for_govrole, 
+                                              deptags_for_deprole, 
+                                              taglemma)
 
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -255,75 +261,122 @@ def interrogator(path, options, query,
                 output.append(result)
         return output
 
-    def govrole(soup):
-        """print funct:gov"""
+    def govrole(xmldata):
+        """print funct:gov, using good lemmatisation"""
+        # for each sentence
         result = []
-        for dep in soup.find_all('dep'):
-            for dependent in dep.find_all('dependent'):
-                word = dependent.get_text()
-                if re.match(regex, word):
-                    role = dep.attrs.get('type')
-                    gov = dep.find_all('governor')
-                    result_word = gov[0].get_text()
-                    # very messy here, sorry
-                    if lemmatise:
-                        if role in deptags:
-                            thetag = deptags[role]
-                        else:
-                            thetag = None
-                        if not thetag:
-                            if lemmatag:
-                                thetag = lemmatag
+        if lemmatise:
+            # if lemmatise, we have to do something tricky.
+            just_good_deps = SoupStrainer('sentences')
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+            #print soup
+            for s in soup.find_all('sentence'):
+                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                for dep in right_dependency_grammar[0].find_all('dep'):                    
+                    for dependent in dep.find_all('dependent', limit = 1):
+                        word = dependent.get_text()
+                        if re.match(regex, word):
+                            role = dep.attrs.get('type')
+                            gov = dep.find_all('governor', limit = 1)
+                            result_word = gov[0].get_text()
+                            result_word_id = gov[0].attrs.get('idx')
+                            if role != u'root':
+                                token_info = s.find_all('token', id=result_word_id, limit = 1)
+                                result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                                if function_filter:
+                                    if re.search(funfil_regex, role):
+                                        result.append(result_word)
+                                else:
+                                    colsep = role + u':' + result_word
+                                    result.append(colsep)
                             else:
-                                thetag = 'v'
-                        if word in wordlist:
-                            word = wordlist[word]
-                        result_word = lmtzr.lemmatize(result_word, thetag)
-                    if function_filter:
-                        if re.search(funfil_regex, role):
-                            result.append(result_word)
-                    else:
-                        colsep = role + u':' + result_word
-                        result.append(colsep)
+                                result.append(u'root:root')
+
+        else:
+            just_good_deps = SoupStrainer('dependencies', type=dep_type)
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
+            for dep in soup.find_all('dep'):
+                for dependent in dep.find_all('dependent', limit = 1):
+                    word = dependent.get_text()
+                    if re.match(regex, word):
+                        role = dep.attrs.get('type')
+                        gov = dep.find_all('governor', limit = 1)
+                        result_word = gov[0].get_text()
+                        if function_filter:
+                            if re.search(funfil_regex, role):
+                                result.append(result_word)
+                            else:
+                                colsep = role + u':' + result_word
+                                result.append(colsep)
+
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
         return result
 
-    def deprole(soup):
-        """print funct:dep"""
+    def deprole(xmldata):
+        """print funct:dep, using good lemmatisation"""
+        # for each sentence
         result = []
-        for dep in soup.find_all('dep'):
-            for governor in dep.find_all('governor'):
-                word = governor.get_text()
-                if re.match(regex, word):
-                    role = dep.attrs.get('type')
-                    deppy = dep.find_all('dependent')
-                    result_word = deppy[0].get_text()
-                    # very messy here, sorry
-                    if lemmatise is True:
-                        if role in deptags:
-                            thetag = deptags[role]
-                        else:
-                            thetag = None
-                        if not thetag:
-                            if lemmatag:
-                                thetag = lemmatag
+        if lemmatise:
+            # if lemmatise, we have to do something tricky.
+            just_good_deps = SoupStrainer('sentences')
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+            #print soup
+            for s in soup.find_all('sentence'):
+                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                for dep in right_dependency_grammar[0].find_all('dep'):
+                    for governor in dep.find_all('governor', limit = 1):
+                        word = governor.get_text()
+                        if re.match(regex, word) or word == u'ROOT':
+                            role = dep.attrs.get('type')
+                            deppy = dep.find_all('dependent', limit = 1)
+                            result_word = deppy[0].get_text()
+                            result_word_id = deppy[0].attrs.get('idx')
+                            # find this idea
+                            token_info = s.find_all('token', id=result_word_id, limit = 1)
+                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                            if function_filter:
+                                if re.search(funfil_regex, role):
+                                    result.append(result_word)
                             else:
-                                thetag = 'v'
-                        if word in wordlist:
-                            word = wordlist[word]
-                        result_word = lmtzr.lemmatize(result_word, thetag)
-                    if function_filter:
-                        if re.search(funfil_regex, role):
-                            result.append(result_word)
-                    else:
-                        colsep = role + u':' + result_word
-                        result.append(colsep)
+                                colsep = role + u':' + result_word
+                                result.append(colsep)
+        else:
+            just_good_deps = SoupStrainer('dependencies', type=dep_type)
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
+            for dep in soup.find_all('dep'):
+                for governor in dep.find_all('governor', limit = 1):
+                    word = governor.get_text()
+                    if re.match(regex, word):
+                        role = dep.attrs.get('type')
+                        deppy = dep.find_all('dependent', limit = 1)
+                        result_word = deppy[0].get_text()
+                        if function_filter:
+                            if re.search(funfil_regex, role):
+                                result.append(result_word)
+                        else:
+                            colsep = role + u':' + result_word
+                            result.append(colsep)
+        
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
         return result
 
-    def funct(soup):
+    def funct(xmldata):
         """"print functional role"""
+        just_good_deps = SoupStrainer('dependencies', type=dep_type)
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
         result = []
         for dep in soup.find_all('dep'):
-            for dependent in dep.find_all('dependent'):
+            for dependent in dep.find_all('dependent', limit = 1):
                 word = dependent.get_text()
                 if re.match(regex, word):
                     role = dep.attrs.get('type')
@@ -333,17 +386,33 @@ def interrogator(path, options, query,
                         #if role in deptags:
                             #role = deptags[role]
                     result.append(role)
+        
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
         return result
 
-    def depnummer(soup):
+    def depnummer(xmldata):
         """print dependency number"""
+        just_good_deps = SoupStrainer('dependencies', type=dep_type)
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
         result = []
         for dep in soup.find_all('dep'):
-            for dependent in dep.find_all('dependent'):
+            for dependent in dep.find_all('dependent', limit = 1):
                 word = dependent.get_text()
                 if re.match(regex, word):
                     # get just the number
                     result.append(int(dependent.attrs.get('idx')))
+        
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
         return result
 
     def depnum_reorder(results_list, output = 'results'):
@@ -588,27 +657,18 @@ def interrogator(path, options, query,
                 c += 1
                 with open(os.path.join(path, subcorpus_name, f), "rb") as text:
                     data = text.read()
-                    just_good_deps = SoupStrainer('dependencies', type=dep_type)
 
-                    soup = BeautifulSoup(data, parse_only=just_good_deps)
                     if options.startswith('g') or options.startswith('G'):
-                        result_from_file = govrole(soup)
+                        result_from_file = govrole(data)
                     if options.startswith('d') or options.startswith('D'):
-                        result_from_file = deprole(soup)
+                        result_from_file = deprole(data)
                     if options.startswith('f') or options.startswith('F'):
-                        result_from_file = funct(soup)
+                        result_from_file = funct(data)
                     if options.startswith('n') or options.startswith('N'):
-                        result_from_file = depnummer(soup)
+                        result_from_file = depnummer(data)
                 if result_from_file is not None:
                     for entry in result_from_file:
                         result.append(entry)
-
-                # attempt to stop memory problems. 
-                # not sure if this helps, though:
-                soup.decompose()
-                soup = None
-                data = None
-                gc.collect()
 
         result.sort()
 
