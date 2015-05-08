@@ -104,6 +104,7 @@ def interrogator(path, options, query,
     import re
     import signal
     import collections
+    import warnings
     from collections import Counter
     from time import localtime, strftime
 
@@ -265,7 +266,7 @@ def interrogator(path, options, query,
                     gov = dep.find_all('governor')
                     result_word = gov[0].get_text()
                     # very messy here, sorry
-                    if lemmatise is True:
+                    if lemmatise:
                         if role in deptags:
                             thetag = deptags[role]
                         else:
@@ -325,7 +326,13 @@ def interrogator(path, options, query,
             for dependent in dep.find_all('dependent'):
                 word = dependent.get_text()
                 if re.match(regex, word):
-                    result.append(dep.attrs.get('type'))
+                    role = dep.attrs.get('type')
+                    # can do automatic categorisation of functions here, 
+                    # i.e. convert to more basic type
+                    #if lemmatise:
+                        #if role in deptags:
+                            #role = deptags[role]
+                    result.append(role)
         return result
 
     def depnummer(soup):
@@ -450,11 +457,10 @@ def interrogator(path, options, query,
             funfil_regex = re.compile(function_filter)
 
     # make sure dep_type is valid:
-
     if dependency:
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         if dep_type not in allowed_dep_types:
-            raise ValueError('dep_type %s not recognised. Must be one of: %s' % (dep_type, ', '.join(allowed_dep_types))
+            raise ValueError('dep_type %s not recognised. Must be one of: %s' % (dep_type, ', '.join(allowed_dep_types)))
 
     # parse query
     if query.startswith('key'):
@@ -486,7 +492,6 @@ def interrogator(path, options, query,
     
     # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
-        import warnings
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         sorted_dirs = [os.path.basename(path)]
     
@@ -697,15 +702,19 @@ def interrogator(path, options, query,
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     query_options = [path, query, options] 
     output = outputnames(query_options, list_words, main_totals)
+    time = strftime("%H:%M:%S", localtime())
     if have_ipython:
         clear_output()
     
     # warnings if nothing generated
     # should these 'break'?
     if not only_count:
+        print '%s: Finished! %d unique results, %d total.' % (time, len(list_words), main_totals[-1][-1])
         if len(list_words) == 0:
             warnings.warn('No results produced. Maybe your query needs work.')
             return
+    else:
+        print '%s: Finished! %d total.' % (time, main_totals[-1][-1])
     if len(main_totals) == 0:
         warnings.warn('No totals produced. Maybe your query needs work.')
         return
