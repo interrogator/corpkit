@@ -92,6 +92,8 @@ deptags = {u'amod': 'n',
 
 # and this one converts to american english (ONLY because of WordNnet, Stanford, etc.)
 # the current word list is nice and long, but has fairly redundant pluralising.
+# when using interrogator(), use spelling = 'US' to convert to US, or 'UK' to convert to
+# the superior spelling.
 
 usa_convert = {u"accessorise": u"accessorize",
         u"accessorised": u"accessorized",
