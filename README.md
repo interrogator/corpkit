@@ -254,11 +254,11 @@ Let's remove the pronouns, etc., and plot something:
 
 ```python
 # give surgeon indices to keep or remove
-specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 27], 
+specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 15, 27], 
         remove = True)
 
 # plot with a bunch of options
-plotter('People who say stuff', specific_sayers.results, fract_of = sayers.totals, 
+plotter('People who say stuff', specific_sayers.results, 
         num_to_plot = 9, sort_by = 'total', skip63 = True)
 ```
 
@@ -291,7 +291,7 @@ Output:
  '   7: woman',
  '   8: official',
  '   9: player',
- '  10: manager',
+ '  10: manager']
 ```
 
 We can use `merger()` to make some thematic categories:
@@ -322,7 +322,8 @@ interesting_riskers = surgeon(noun_riskers.results, ['politician', 'candidate', 
 
 plotter('Risk and power', interesting_riskers.results, 
         fract_of = noun_lemmata.results, sort_by = 'most', 
-        just_totals = True, y_label = 'Risker percentage')
+        just_totals = True, y_label = 'Risker percentage',
+        num_to_plot = 8)
 ```
 
 Output:
