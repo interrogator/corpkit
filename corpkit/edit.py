@@ -253,7 +253,7 @@ def resorter(lst,
              keep_stats = False, 
              only_below_p = False, 
              significance_level = 0.05, 
-             revert_year = False):
+             revert_year = True):
     """Re-sort interrogation results in a number of ways."""
     from operator import itemgetter # for more complex sorting ... is it used?
     import copy
@@ -302,8 +302,9 @@ def resorter(lst,
             # if not significant, discard here
                 if stats[3] >= significance_level:
                     continue
-            datum.append(stats)
-            processed_list.append(datum)
+            new_datum = datum[:]
+            new_datum.append(stats)
+            processed_list.append(new_datum)
 
         if sort_by == 'increase':
             reordered = sorted(processed_list, key=lambda x: x[-1][0], reverse = True) # largest first
@@ -314,9 +315,11 @@ def resorter(lst,
         
         # remove all the stats we just added unless coming from plotter
         if not keep_stats:
+            not_keeping_stats = []
             for datum in reordered:
-                datum.pop()
-                
+                nostats = datum[:-1]
+                not_keeping_stats.append(nostats)
+            reordered = not_keeping_stats
     return reordered
 
 def combiner(tomerge, newname, printmerge = True):
@@ -524,6 +527,12 @@ def percenter(small_list, big_list,
     except NameError:
         have_ipython = False
     
+    # translate sort_by
+    if sort_by == 'total':
+        sort_by = 'most'
+    if sort_by == 'infreq':
+        sort_by = 'least'
+
     # translate threshold to denominator
     if type(threshold) == str:
         if threshold == 'low':
@@ -547,7 +556,6 @@ def percenter(small_list, big_list,
         if print_threshold:
             print 'Using %d as threshold ... ' % threshold
         
-    # if big_list is .totals, just do totalling
     if just_totals:
         dictionary = {}
         for entry in small_list:
@@ -576,7 +584,7 @@ def percenter(small_list, big_list,
                 except ZeroDivisionError:
                     perc = 0
                 dictionary[word] = perc
-        # sort by most or leat percent
+        # sort by most or least percent
         if sort_by == 'most':
             list_of_tups = [(k, dictionary[k]) for k in sorted(dictionary, key=dictionary.get, reverse=True)]
         elif sort_by == 'least':
