@@ -197,7 +197,7 @@ def plotter(title,
         for item in interrogator_list[1:]:
             if type(item) != unicode and type(item) != str:
                 if item[0] >= yearspan[0]:
-                    if item [0] <= yearspan[-1] + 1:
+                    if item [0] <= yearspan[-1]:
                         skipped.append(item)
         return skipped
 
@@ -355,14 +355,17 @@ def plotter(title,
     if just_totals:
         barchart = True
         barchart_one_datapoint = True
+        legend = False
 
     if len(results[0]) == 3:
         barchart = True
         barchart_one_datapoint = True
+        legend = False
 
     if len(results[0]) == 4:
         barchart = True
         barchart_one_datapoint = False
+        legend = True
     
     if justyears: 
         if type(justyears) == list:
@@ -378,23 +381,6 @@ def plotter(title,
             barchart = True            
         elif type(justyears) == int:
             justyears = [justyears]
-            barchart_one_datapoint = True
-            barchart = True
-
-    if yearspan: 
-        if type(yearspan) == list:
-            if len(yearspan) == 2:
-                barchart_one_datapoint = False
-                barchart = True
-            elif len(yearspan) == 1:
-                barchart_one_datapoint = True
-                barchart = True
-        elif type(yearspan) == str or type(yearspan) == unicode:
-            yearspan = [yearspan]
-            barchart_one_datapoint = True
-            barchart = True            
-        elif type(yearspan) == int:
-            yearspan = [yearspan]
             barchart_one_datapoint = True
             barchart = True
 
@@ -473,41 +459,50 @@ def plotter(title,
         # add total
         entry.append([u'Totals', sum([w[1] for w in entry[1:]])])
         processed_data.append(entry)
-    
+
+    # check if the above processes turned it into barchart length
+    if len(processed_data[0]) == 3:
+        barchart_one_datapoint = True
+        barchart = True
+    if len(processed_data[0]) == 4:
+        barchart_one_datapoint = False
+        barchart = True    
 
     # if just_totals, remove everything else from each entry
-    
     if just_totals:
         fixed_entries = []
-        for entry in alldata:
+        for entry in processed_data:
             fixed_entries.append(keep_only_totaller(entry))
-        alldata = fixed_entries
-
-
-
+        processed_data = fixed_entries
 
     # sort processed results
     if sort_by:
-        import decimal
-        from decimal import Decimal
-        decimal.getcontext().prec = 6
         if not just_totals:
             alldata = resorter(processed_data,
-                                   sort_by = sort_by, 
-                                   revert_year = revert_year,
-                                   keep_stats = True,
-                                   only_below_p = only_below_p, 
-                                   significance_level = significance_level)
+                               sort_by = sort_by, 
+                               revert_year = revert_year,
+                               keep_stats = True,
+                               only_below_p = only_below_p, 
+                               significance_level = significance_level)
         elif just_totals:
             if do_stats:
                 raise ValueError('just_totals cannot be used with sort_by = %s,\n'
                                  'because the linear regression needed to sort relies on multiple integer x-axes.' % sort_by)
-        elif barchart_one_datapoint:
-            raise ValueError('sort_by = %s cannot be used when there is only one subcorpus\n'
-                                 'because the linear regression needed to sort relies on multiple integer x-axes.' % sort_by)
+            else:
+                alldata = resorter(processed_data,
+                               sort_by = sort_by, 
+                               revert_year = revert_year,
+                               keep_stats = True,
+                               only_below_p = only_below_p, 
+                               significance_level = significance_level)
+        #elif barchart_one_datapoint:
+            #raise ValueError('sort_by = %s cannot be used when there is only one subcorpus\n'
+                                 #'because the linear regression needed to sort relies on multiple integer x-axes.' % sort_by)
 
     else:
         alldata = processed_data[:cutoff]
+
+    rotate = False
 
     # make line chart
     if not barchart:
@@ -515,6 +510,9 @@ def plotter(title,
             # get word
             word = entry[0]
             if do_stats:
+                import decimal
+                from decimal import Decimal
+                decimal.getcontext().prec = 6
                 pval = Decimal(entry[-1][3])
                 p_short = "%.4f" % pval
                 p_string = ' (p=%s)' % p_short   
@@ -579,7 +577,7 @@ def plotter(title,
                         plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[index])
                         plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
                     elif legend_p:
-                        if sort_by == 'total' or sort_by == 'name':
+                        if not do_stats:
                             warnings.warn("\np-value has not been calculated, so it can't be printed.")
                             plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
                             plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])              
@@ -597,9 +595,9 @@ def plotter(title,
         #make legend
         if legend:
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
-
+    
     elif barchart:
-
+        labels = [entry[0] for entry in alldata[:cutoff]]
         # make barchart
         rcParams['figure.figsize'] = figsize, figsize/2
         import numpy as np
@@ -609,8 +607,24 @@ def plotter(title,
 
         fig, ax = plt.subplots()
 
+        if legend:
+            plt.subplots_adjust(right=0.8)
+            plt.subplots_adjust(left=0.08)
+        if rotate:
+            plt.subplots_adjust(bottom=0.15)
+
         rects1 = ax.bar(ind, scores, width, color="#1f78b4")
-        
+        ax.set_xticks(ind)
+
+        longest = len(max(labels, key=len))
+        if longest > 7:
+            if figsize < 20:
+                if num_to_plot > 6:
+                    rotate = True
+                    ax.set_xticklabels(labels, rotation=45)
+        if not rotate:
+            ax.set_xticklabels(labels)
+
         if not barchart_one_datapoint:
             ax.set_xlim(-width,len(ind))
             compscores = [entry[2][1] for entry in alldata[:cutoff]]
@@ -619,20 +633,10 @@ def plotter(title,
             ax.set_xticks(ind+width)
         else:
             ax.set_xlim(-width,len(ind)-width)
-            ax.set_xticks(ind)
-        
-        # get labels
-        labels = [entry[0] for entry in alldata[:cutoff]]
+            #ax.set_xticks(ind)
 
-        # rotate the labels if they're long:        
-        longest = len(max(labels, key=len))
-        if longest > 7:
-            if figsize < 20:
-                if num_to_plot > 6:
-                    ax.set_xticklabels(labels, rotation=45)
-        else:
-            ax.set_xticklabels(labels)
-
+        #else:
+            #ax.set_xticklabels(labels)
 
         #def autolabel(rects):
             # attach some text labels
@@ -647,8 +651,9 @@ def plotter(title,
         if not barchart_one_datapoint:
             legend_labels = [alldata[0][1][0], alldata[0][2][0]]
             ax.legend( (rects1[0], rects2[0]), legend_labels )
-        else:
-            ax.legend()          
+        #else:
+            #ax.legend()          
+    
     # make axis labels
     if x_lab:
         plt.xlabel(x_lab)
@@ -663,7 +668,6 @@ def plotter(title,
 
     if not barchart:
         plt.gca().get_xaxis().set_major_locator(MaxNLocator(integer=True))
-        
         if log == 'x':
             plt.xscale('log')
             plt.gca().get_xaxis().set_major_formatter(ScalarFormatter())
@@ -677,6 +681,11 @@ def plotter(title,
             plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
         else:
             plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
+    if legend:
+        plt.subplots_adjust(right=0.8)
+        plt.subplots_adjust(left=0.08)
+    if rotate:
+        plt.subplots_adjust(bottom=0.15)
     plt.grid()
     fig1 = plt.gcf()
     if not have_python_tex:
