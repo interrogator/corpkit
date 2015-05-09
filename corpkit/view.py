@@ -185,16 +185,14 @@ def plotter(title,
         """Takes a list and returns only results from the years listed in justyears"""
         skipped = []
         skipped.append(interrogator_list[0]) # append word
-        for item in interrogator_list[1:]:
-            if type(item) != unicode and type(item) != str:
-                for year in justyears:
-                    if item[0] == year:
-                        skipped.append(item)
+        for item in interrogator_list[1:-1]:
+            for year in justyears:
+                if item[0] == year:
+                    skipped.append(item)
         return skipped
 
     def yearspanner(interrogator_list, yearspan):
         """Takes a list and returns results from between the first and last year in yearspan"""
-        
         skipped = [interrogator_list[0]] # append word
         for item in interrogator_list[1:]:
             if type(item) != unicode and type(item) != str:
@@ -287,10 +285,20 @@ def plotter(title,
         print time + ": " + csvmake + " written to currect directory."
 
     ##################################################################
-
+    
     # True sort default to total
     if sort_by is True:
         sort_by = 'total'
+    
+    # are we doing stats?
+    lin_reg = ['static', 'increase', 'decrease']
+    if sort_by:
+        if sort_by in lin_reg:
+            do_stats = True
+        else:
+            do_stats = False
+    else:
+        do_stats = False
 
     # check for tex and use it if it's there
     if have_tex:
@@ -311,17 +319,22 @@ def plotter(title,
         if sort_by == 'static':
             warnings.warn('\nStatic trajectories will confirm the null hypothesis, so it might ' +
                               'not be helpful to use both the static and only_below_p options together.')
-        if sort_by == 'total' or sort_by == 'name':
+        if not do_stats:
             warnings.warn("\nP value has not been calculated. No entries will be excluded") 
     
+    # convert plot all to length of results list
+    if num_to_plot == 'all':
+        num_to_plot = len(results)
+
     # cut short to save time if later results aren't useful
-    if csvmake or sort_by:
+    if sort_by != 'total' and sort_by is not False:
         cutoff = len(results)
     else:
         cutoff = num_to_plot
-
-    if num_to_plot == 'all':
-        num_to_plot = len(results)
+    if csvmake:
+        cutoff = len(results)
+    csvdata = []
+    csvalldata = []
     
     # if plotting one entry/a totals list, wrap it in another list
     if type(results[0]) == unicode or type(results[0]) == str:
@@ -336,15 +349,54 @@ def plotter(title,
         for entry in results[:cutoff]:
             alldata.append(entry)
 
-    # if just_totals, remove everything else from each entry
-    for entry in alldata:
-        entry = keep_only_totaller(entry)
+    # determing if barchart
+    barchart = False
 
-    # determine if no subcorpora, two subcorpora or just_totals, for barchart
-    if len(results[0]) == 3 or len(results[0]) == 4 or just_totals is True:
+    if just_totals:
         barchart = True
-    else:
-        barchart = False
+        barchart_one_datapoint = True
+
+    if len(results[0]) == 3:
+        barchart = True
+        barchart_one_datapoint = True
+
+    if len(results[0]) == 4:
+        barchart = True
+        barchart_one_datapoint = False
+    
+    if justyears: 
+        if type(justyears) == list:
+            if len(justyears) == 2:
+                barchart_one_datapoint = False
+                barchart = True
+            elif len(justyears) == 1:
+                barchart_one_datapoint = True
+                barchart = True
+        elif type(justyears) == str or type(justyears) == unicode:
+            justyears = [justyears]
+            barchart_one_datapoint = True
+            barchart = True            
+        elif type(justyears) == int:
+            justyears = [justyears]
+            barchart_one_datapoint = True
+            barchart = True
+
+    if yearspan: 
+        if type(yearspan) == list:
+            if len(yearspan) == 2:
+                barchart_one_datapoint = False
+                barchart = True
+            elif len(yearspan) == 1:
+                barchart_one_datapoint = True
+                barchart = True
+        elif type(yearspan) == str or type(yearspan) == unicode:
+            yearspan = [yearspan]
+            barchart_one_datapoint = True
+            barchart = True            
+        elif type(yearspan) == int:
+            yearspan = [yearspan]
+            barchart_one_datapoint = True
+            barchart = True
 
     # if no x_label, guess 'year' or 'group'
     if x_label:
@@ -360,7 +412,7 @@ def plotter(title,
         else:
             x_lab = False
 
-    # select totals if no branch selected
+    # select totals if no branch of fract_of selected
     if fract_of:
         if isinstance(fract_of, tuple) is True:
             fract_of = fract_of.totals
@@ -368,15 +420,17 @@ def plotter(title,
 
         if type(fract_of[0]) == list:
             use_percenter = True
-            warnings.warn('\nfract_of is a .results branch. Every entry in results being plotted will divided by the entry with the same name in the fract_of list. This takes longer.')
+            #warnings.warn('\nfract_of is a .results branch. Every entry in results being plotted will divided by the entry with the same name in the fract_of list. This takes longer.')
         else:
             use_percenter = False
 
+        # do fraction maths
         if not use_percenter:
             mathed_data = []
             for entry in alldata:
                 mathed_data.append(mather(entry, '%', fract_of, multiplier = multiplier))
             alldata = mathed_data
+        
         # if using use_percenter
         else:
             from corpkit.edit import percenter
@@ -386,10 +440,6 @@ def plotter(title,
                          print_threshold = False,
                          just_totals = just_totals)
 
-    csvdata = []
-    csvalldata = []
-    final = []
-    
     if num_to_plot > len(alldata):
         warnings.warn("There are not %d entries to show.\nPlotting all %d results..." % (num_to_plot, len(alldata)))
     
@@ -401,60 +451,69 @@ def plotter(title,
     if cutoff > 10:
         the_range = np.linspace(0, 1, cutoff)
         colours = [plt.cm.Dark2(n) for n in the_range]
+    
     # if 10 or less plots, use custom color palette
     else:
         colours = ["#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6"]
 
-
-    # process all the data according to options
-
+    # skip subcorpora, project totals, etc
     processed_data = []
-    if not barchart:
-        for index, entry in enumerate(alldata):
-            # run called processes
-            if skip63:
-                entry = skipper(entry)
-            if yearspan:
-                entry = yearspanner(entry, yearspan)
-            if justyears:
-                entry = yearskipper(entry, justyears)
-            if projection:
-                if not fract_of:
-                    entry = projector(entry)
-            processed_data.append(entry)
+    for index, full_entry in enumerate(alldata):
+        # remove totals
+        entry = full_entry[:-1]
+        if skip63:
+            entry = skipper(entry)
+        if yearspan:
+            entry = yearspanner(entry, yearspan)
+        if justyears:
+            entry = yearskipper(entry, justyears)
+        if projection:
+            if not fract_of:
+                entry = projector(entry)
+        # add total
+        entry.append([u'Totals', sum([w[1] for w in entry[1:]])])
+        processed_data.append(entry)
+    
 
-        # do stats if needed
-        if sort_by:
-            if sort_by != 'total' and sort_by != 'name':
-                do_stats = True
-            else:
-                do_stats = False
-            import decimal
-            from decimal import Decimal
-            decimal.getcontext().prec = 6
-            if not percenter_just_totals:
-                alldata = resorter(processed_data,
+    # if just_totals, remove everything else from each entry
+    
+    if just_totals:
+        fixed_entries = []
+        for entry in alldata:
+            fixed_entries.append(keep_only_totaller(entry))
+        alldata = fixed_entries
+
+
+
+
+    # sort processed results
+    if sort_by:
+        import decimal
+        from decimal import Decimal
+        decimal.getcontext().prec = 6
+        if not just_totals:
+            alldata = resorter(processed_data,
                                    sort_by = sort_by, 
                                    revert_year = revert_year,
                                    keep_stats = True,
                                    only_below_p = only_below_p, 
                                    significance_level = significance_level)
-            elif percenter_just_totals:
-                raise ValueError('percenter_just_totals cannot be used with sort_by = increase/decrease/static,\n'
-                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
-            elif len(results[0]) == 3:
-                raise ValueError('sort_by = increase/decrease/static cannot be used when there is only one subcorpus\n'
-                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
+        elif just_totals:
+            if do_stats:
+                raise ValueError('just_totals cannot be used with sort_by = %s,\n'
+                                 'because the linear regression needed to sort relies on multiple integer x-axes.' % sort_by)
+        elif barchart_one_datapoint:
+            raise ValueError('sort_by = %s cannot be used when there is only one subcorpus\n'
+                                 'because the linear regression needed to sort relies on multiple integer x-axes.' % sort_by)
 
-        else:
-            do_stats = False
-            alldata = processed_data
+    else:
+        alldata = processed_data[:cutoff]
 
-        # if not barchart, format data for plotting and plot
-        for index, entry in enumerate(alldata[:cutoff]):
+    # make line chart
+    if not barchart:
+        for index, entry in enumerate(alldata):
             # get word
             word = entry[0]
-
             if do_stats:
                 pval = Decimal(entry[-1][3])
                 p_short = "%.4f" % pval
@@ -521,7 +580,7 @@ def plotter(title,
                         plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
                     elif legend_p:
                         if sort_by == 'total' or sort_by == 'name':
-                            warnings.warn("\nP value has not been calculated, so it can't be printed.")
+                            warnings.warn("\np-value has not been calculated, so it can't be printed.")
                             plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
                             plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])              
                         else:
@@ -541,41 +600,31 @@ def plotter(title,
 
     elif barchart:
 
-        if sort_by != 'total':
-            if len(alldata[0]) == 3:
-                if sort_by != 'infreq':
-                    raise ValueError('sort_by = increase/decrease/static cannot be used when there is only one subcorpus\n'
-                                 'because the linear regression needed to sort relies on multiple integer x-axes.')
-            if len(results[0]) == 4:
-                if type(results[0][1][0]) != int:
-                    raise ValueError('Subcorpora must have int names in order to undergo linear regression.')
-            alldata = resorter(alldata,
-                           sort_by = sort_by, 
-                           revert_year = revert_year,
-                           keep_stats = False,
-                           only_below_p = only_below_p, 
-                           significance_level = significance_level)
+        # make barchart
         rcParams['figure.figsize'] = figsize, figsize/2
-        cutoff = len(alldata)
         import numpy as np
         scores = [entry[1][1] for entry in alldata[:cutoff]]
         ind = np.arange(cutoff)  # the x locations for the groups
         width = 0.35       # the width of the bars
 
         fig, ax = plt.subplots()
+
         rects1 = ax.bar(ind, scores, width, color="#1f78b4")
         
-        if len(results[0]) == 4:
+        if not barchart_one_datapoint:
+            ax.set_xlim(-width,len(ind))
             compscores = [entry[2][1] for entry in alldata[:cutoff]]
             rects2 = ax.bar(ind+width, compscores, width, color="#33a02c")
-        
-        # add some text for labels, title and axes ticks
-        
-        ax.set_xticks(ind+width)
+            # position of x labels
+            ax.set_xticks(ind+width)
+        else:
+            ax.set_xlim(-width,len(ind)-width)
+            ax.set_xticks(ind)
         
         # get labels
         labels = [entry[0] for entry in alldata[:cutoff]]
-        
+
+        # rotate the labels if they're long:        
         longest = len(max(labels, key=len))
         if longest > 7:
             if figsize < 20:
@@ -584,9 +633,7 @@ def plotter(title,
         else:
             ax.set_xticklabels(labels)
 
-        # rotate the labels if they're long:
 
-        
         #def autolabel(rects):
             # attach some text labels
             #for rect in rects:
@@ -597,7 +644,7 @@ def plotter(title,
         #autolabel(rects1)
         #if len(results[0]) == 4:
             #autolabel(rects2)
-        if len(results[0]) == 4:
+        if not barchart_one_datapoint:
             legend_labels = [alldata[0][1][0], alldata[0][2][0]]
             ax.legend( (rects1[0], rects2[0]), legend_labels )
         else:
@@ -607,7 +654,6 @@ def plotter(title,
         plt.xlabel(x_lab)
 
     if not y_label:
-        #print "Warning: no name given for y-axis. Using default."
         if fract_of:
             y_label = 'Percentage'
         if not fract_of:
