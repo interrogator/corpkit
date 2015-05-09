@@ -258,12 +258,17 @@ def resorter(lst,
     from operator import itemgetter # for more complex sorting ... is it used?
     import copy
 
-    options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static', 'none']
+    # translate options and make sure they are parseable
+    options = ['total', 'name', 'infreq', 'increase', 'decrease', 'static', 'most', 'least', 'none']
     if sort_by is True:
         sort_by = 'total'
+    if sort_by == 'most':
+        sort_by = 'total'
+    if sort_by == 'least':
+        sort_by = 'infreq'
     if sort_by:
         if sort_by not in options:
-            raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, 'total', 'name', 'infreq', 'increase', 'decrease' or 'static'." % sort_by)
+            raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
 
     if sort_by == 'total':
         reordered = sorted(lst, key=lambda x: x[-1], reverse = True)
@@ -278,8 +283,12 @@ def resorter(lst,
         from scipy.stats import linregress
         
         # you can't do linear regression if your x axis is a string.
-        # so, this thing here starts the x-axis at zero and counts up.
-        yearlist = [int(y[0]) for y in lst[0][1:-1]]
+        # so, if it's a string, it just does 1-n
+        if type(lst[0][1][0]) == str or type(lst[0][1][0]) == unicode:
+            yearlist = range(len(lst[0][1:-1]))
+        else:
+            yearlist = [int(y[0]) for y in lst[0][1:-1]]
+        # if you've got years, start x-axis at zero and count up.
         if revert_year:
             first_year = yearlist[0]
             yearlist = [y - first_year for y in yearlist]
@@ -441,7 +450,7 @@ def subcorpus_remover(interrogator_list, subcorpora, remove = False, sort_by = '
     import collections
     import copy
     import warnings
-    from corpkit.edit import combiner, combiner
+    from corpkit.edit import combiner, resorter
     
     # default to results branch
     if isinstance(interrogator_list, tuple) is True:
@@ -465,9 +474,13 @@ def subcorpus_remover(interrogator_list, subcorpora, remove = False, sort_by = '
         else:
             rest = [e for e in entry[1:] if e[0] in subcorpora]
             rest.append(entry[-1])
-        new_entry.append(rest)
+
+        for datum in rest:
+            new_entry.append(datum)
+
         cleaned_list.append(new_entry)
-    cleaned_list = resorter(cleaned_list, sort_by = sort_by)
+    if sort_by:
+        cleaned_list = resorter(cleaned_list, sort_by = sort_by)
     
     # generate totals:
     totals = combiner(cleaned_list, 'Totals', printmerge = False)
@@ -514,11 +527,11 @@ def percenter(small_list, big_list,
     # translate threshold to denominator
     if type(threshold) == str:
         if threshold == 'low':
-            denominator = 20000
-        if threshold == 'relative':
             denominator = 10000
-        if threshold == 'high':
+        if threshold == 'relative':
             denominator = 5000
+        if threshold == 'high':
+            denominator = 2500
         
         # tally all totals in big_list
         totals = []
