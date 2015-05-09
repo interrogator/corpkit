@@ -4,7 +4,7 @@
 
 ### D. McDonald
 
-> Because I kept building new tools and functions for my corpus linguistic work, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 
 <!-- MarkdownTOC -->
 
@@ -17,6 +17,8 @@
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [Examples](#examples)
+    - [Systemic functional stuff](#systemic-functional-stuff)
+    - [More complex stuff](#more-complex-stuff)
 - [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
@@ -196,26 +198,108 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
-#### Systemic functional stuff
+### Systemic functional stuff
 
-Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building regular expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus.
+Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building Regular Expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus. If you add words to `dictionaries/process_types.py`, they will be added to the regex.
 
 ```python
 from corpkit import quickview, surgeon
 from dictionaries.process_types import processes
-# print processes.verbal
 
 # find the dependent of verbal processes, and its functional role
 # keep only results matching function_filter
-sayers = interrogator(corpus, 'deprole', processes.verbal, function_filter = r'^nsubj$')
+sayers = interrogator(corpus, 'deprole', processes.verbal, 
+        function_filter = r'^nsubj$')
 
 # have a look at the top results
 quickview(sayers.results, n = 30)
+```
+
+Output:
+
+```python
+['   0: he',
+ '   1: she',
+ '   2: they',
+ '   3: official',
+ '   4: it',
+ '   5: who',
+ '   6: that',
+ '   7: expert',
+ '   8: i',
+ '   9: analyst',
+ '  10: we',
+ '  11: report',
+ '  12: company',
+ '  13: researcher',
+ '  14: you',
+ '  15: which',
+ '  16: critic',
+ '  17: study',
+ '  18: executive',
+ '  19: doctor',
+ '  20: agency',
+ '  21: person',
+ '  22: lawyer',
+ '  23: some',
+ '  24: bank',
+ '  25: group',
+ '  26: spokesman',
+ '  27: one',
+ '  28: scientist',
+ '  29: government']
+```
+
+Let's remove the pronouns, etc., and plot something:
+
+```python
+# give surgeon indices to keep or remove
+specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 27], 
+        remove = True)
 
 # plot with a bunch of options
-plotter('People who say stuff', specific_sayers.results, fract_of = sayers.totals, num_to_plot = 9, sort_by = 'total', legend_totals = True)
-
+plotter('People who say stuff', specific_sayers.results, fract_of = sayers.totals, 
+        num_to_plot = 9, sort_by = 'total', 
+        skip63 = True)
 ```
+
+Output:
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/people-who-say-stuff.png" />
+<br>
+
+### More complex stuff
+
+Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*).
+
+```python
+# a query to find heads of nps that are subjects of risk processes
+query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
+noun_riskers = interrogator(c, 'words', query, lemmatise = True)
+
+# plot riskers increasing in relative frequency over time:
+plotter('Common riskers, increasing in relative frequency', noun_riskers.results, fract_of = noun_riskers.totals, 
+    num_to_plot = 8, y_label = 'Percentage of all riskers', sort_by = 'increase')
+```
+Output:
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/people-who-say-things.png" />
+<br>
+
+The problem is that *person* is a very common word. So, let's find out what percentage of the time some nouns appear as riskers:
+
+```python
+# find any head of an np not containing risk
+query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
+noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
+# get some key terms
+interesting_riskers = surgeon(noun_lemmata.results, ['politician', 'candidate', 'lawmaker', 'governor', 'man', 'woman', 'child', 'person'], remove = False)
+
+plotter('Risk and power', interesting_riskers.results, fract_of = noun_lemmata.results, 
+    sort_by = 'most', just_totals = True, y_label = 'Risker percentage')
+```
+
+Output:
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power.png" />
+<br>
 
 ## More information
 
