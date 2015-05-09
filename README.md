@@ -259,8 +259,7 @@ specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 27],
 
 # plot with a bunch of options
 plotter('People who say stuff', specific_sayers.results, fract_of = sayers.totals, 
-        num_to_plot = 9, sort_by = 'total', 
-        skip63 = True)
+        num_to_plot = 9, sort_by = 'total', skip63 = True)
 ```
 
 Output:
@@ -276,25 +275,54 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 noun_riskers = interrogator(c, 'words', query, lemmatise = True)
 
-# plot riskers increasing in relative frequency over time:
-plotter('Common riskers, increasing in relative frequency', noun_riskers.results, fract_of = noun_riskers.totals, 
-    num_to_plot = 8, y_label = 'Percentage of all riskers', sort_by = 'increase')
+quickview(riskers.results, n = 10)
 ```
+
 Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/people-who-say-things.png" />
+
+```python
+['   0: person',
+ '   1: company',
+ '   2: bank',
+ '   3: investor',
+ '   4: government',
+ '   5: man',
+ '   6: leader',
+ '   7: woman',
+ '   8: official',
+ '   9: player',
+ '  10: manager',
+```
+
+We can use `merger()` to make some thematic categories:
+
+```python
+them_cat = merger(noun_riskers.results, ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient'], newname = 'Everyday people')
+them_cat = merger(them_cat.results, ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 'politician', 'institution', 'agency', 'candidate', 'firm'], newname = 'Institutions')
+
+# plot riskers:
+plotter('Types of riskers', them_cat.results, 
+        fract_of = noun_riskers.totals, num_to_plot = 2)
+```
+
+Output:
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/types-of-riskers.png" />
 <br>
 
-The problem is that *person* is a very common word. So, let's find out what percentage of the time some nouns appear as riskers:
+Let's also find out what percentage of the time some nouns appear as riskers:
 
 ```python
 # find any head of an np not containing risk
 query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
 noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
-# get some key terms
-interesting_riskers = surgeon(noun_lemmata.results, ['politician', 'candidate', 'lawmaker', 'governor', 'man', 'woman', 'child', 'person'], remove = False)
 
-plotter('Risk and power', interesting_riskers.results, fract_of = noun_lemmata.results, 
-    sort_by = 'most', just_totals = True, y_label = 'Risker percentage')
+# get some key terms
+interesting_riskers = surgeon(noun_riskers.results, ['politician', 'candidate', 'lawmaker', 'governor', 'man', 'woman', 'child', 'person'], remove = False)
+
+plotter('Risk and power', interesting_riskers.results, 
+        fract_of = noun_lemmata.results, sort_by = 'most', 
+        just_totals = True, y_label = 'Risker percentage')
 ```
 
 Output:
