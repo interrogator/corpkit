@@ -324,6 +324,8 @@ Output:
 We can use `merger()` to make some thematic categories:
 
 ```python
+>>> from corpkit import merger
+
 >>> them_cat = merger(noun_riskers.results, ['person', 'man', 'woman', 
 ...    'child', 'consumer', 'baby', 'student', 'patient'], 
 ...    newname = 'Everyday people')
@@ -345,6 +347,8 @@ Output:
 Let's also find out what percentage of the time some nouns appear as riskers:
 
 ```python
+>>> from corpkit import surgeon
+
 # find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
 >>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
