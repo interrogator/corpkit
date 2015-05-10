@@ -826,19 +826,19 @@ def tally(lst, indices):
     return output
 
 
-def quickview(lst, n = 50, topics = False, sort_by = 'total'):
+def quickview(lst, n = 50, topics = False, sort_by = False, showtotals = True):
     """See first n words of an interrogation.
     lst: interrogator() list
     n: number of results to view
     topics: for investigation of topic subcorpora"""
-    if sort_by != 'total':
+    if sort_by is not False:
         from corpkit.edit import resorter
     if isinstance(lst, tuple) is True:
         import warnings
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
     
-    if sort_by != 'total':
+    if sort_by:
         lst = resorter(lst, sort_by = sort_by)
     if type(lst[0]) == str or type(lst[0]) == unicode:
         return '0: %s: %d' % (lst[0], lst[-1][1])
@@ -848,12 +848,19 @@ def quickview(lst, n = 50, topics = False, sort_by = 'total'):
             # if it's interrogator result
             if type(item) == list:
                 word = str(item[0])
-                index_and_word = ['% 4d' % index, word]
-                as_string = ': '.join(index_and_word)
+                total = ' (%d)' % item[-1][1]
+                if not showtotals:
+                    index_and_word = ['% 4d' % index, word]
+                    as_string = ': '.join(index_and_word)
+                else:
+                    index_and_word = ['% 4d' % index, word]
+                    as_string = ': '.join(index_and_word)
+                    as_string = as_string + total
                 out.append(as_string)
             else:
                 out.append(item)
         return out
+    # below is unmaintained
     if topics:
         topics = [d for d in os.listdir(path)
         if os.path.isdir(os.path.join(path,d))
