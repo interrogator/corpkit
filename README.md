@@ -161,7 +161,7 @@ The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, an
 ipython notebook orientation.ipynb
 ```
 
-Or, just use (I)Python (more difficult, less fun):
+Or, just use *(I)Python* (more difficult, less fun):
 
 ```python
 >>> import corpkit
@@ -194,8 +194,8 @@ Here's another basic example of `interrogator()` and `plotter()` at work on the 
 
 # plot top 7 entries as percentage of all entries:
 >>> plotter('Risk of (noun)', riskofnoun.results, 
-...        fract_of = riskofnoun.totals, num_to_plot = 7, 
-...        skip63 = False)
+...    fract_of = riskofnoun.totals, num_to_plot = 7, 
+...    skip63 = False)
 ```
 
 Output: 
@@ -250,11 +250,11 @@ Let's remove the pronouns using `surgeon()`, and plot something:
 ```python
 # give surgeon indices to keep or remove
 >>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 15, 27], 
->>>        remove = True)
+...    remove = True)
 
 # plot with a bunch of options
 >>> plotter('People who say stuff', specific_sayers.results, 
-...        num_to_plot = 9, sort_by = 'total', skip63 = True)
+...    num_to_plot = 9, sort_by = 'total', skip63 = True)
 ```
 
 Output:
