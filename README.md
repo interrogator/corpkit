@@ -277,7 +277,7 @@ Output:
  '  19: doctor (726)']
 ```
 
-Let's plot he/she:
+Let's plot *he* and *she*:
 
 ```python
 >>> plotter('Gender of sayers in the NYT', sayers.results, 
