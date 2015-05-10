@@ -88,7 +88,7 @@ def surgeon(lst, criteria,
 
     Parameters
     ----------
-    lst: an interrogator() results list
+    lst: an interrogator() results list or conc lines
     criteria: if string, it is a regular expression to keep/remove by.
               if list of ints, a list of indices to keep/remove by.
               if list of strings, a list of entries to keep/remove
@@ -107,26 +107,48 @@ def surgeon(lst, criteria,
     if isinstance(lst, tuple) is True:
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
+
+    if type(lst[0]) != list:
+        conclines = True
+    else:
+        conclines = False
+
     if remove:
         remove_string = 'remove = True'
     else:
         remove_string = 'remove = False'
 
+    regexing = False
+    ints = False
+    strs = False
     # if keep/remove by regex
+
     if type(criteria) == str:
+        regexing = True
         regexp = re.compile(criteria)
-        if remove:
-            newlist = [e for e in lst if not re.search(regexp, e[0])]
-            removed = [e for e in lst if re.search(regexp, e[0])]
+        if not conclines:
+            if remove:
+                newlist = [e for e in lst if not re.search(regexp, e[0])]
+                removed = [e for e in lst if re.search(regexp, e[0])]
+            else:
+                newlist = [e for e in lst if re.search(regexp, e[0])]
         else:
-            newlist = [e for e in lst if re.search(regexp, e[0])]
+            if remove:
+                newlist = [e for e in lst if not re.search(regexp, e)]
+                removed = [e for e in lst if re.search(regexp, e)]
+            else:
+                newlist = [e for e in lst if re.search(regexp, e)]
+
+    
     # if criteria is just an index, wrap it for the next part
-    if type(criteria) == 'int':
+    if type(criteria) == int:
         criteria = [criteria]
+    
     # criteria can also be a list
     if type(criteria) == list:
         # if it's a list of indices
         if type(criteria[0]) == int:
+            ints = True
             if remove:
                 newlist = [e for index, e in enumerate(lst) if index not in criteria]
                 removed = [e for index, e in enumerate(lst) if index in criteria]
@@ -134,6 +156,7 @@ def surgeon(lst, criteria,
                 newlist = [e for index, e in enumerate(lst) if index in criteria]
         # if list of words
         else:
+            strs = True
             if remove:
                 newlist = [e for e in lst if e[0] not in criteria]
                 removed = [e for e in lst if e[0] in criteria]
@@ -143,30 +166,57 @@ def surgeon(lst, criteria,
     if printsurgery:
         if remove:
             if len(removed) > 0:
-                print 'Removing the following %d entries:' % len(removed)
+                print 'Removing the following %d entries:\n' % len(removed)
                 for entry in removed[:25]:
-                    print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                    try:
+                        print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                    except IndexError:
+                        print entry
                 if len(removed) > 25:
                     num_more = len(removed) - 25
                     print '... and %d more ... ' % num_more
             else:
-                print 'No entries removed. Bad regex, maybe?'
+                if regexing:
+                    print 'No entries removed. Bad regex, maybe?'
+                if strs:
+                    if conclines:
+                        print 'Use a list of integers, rather than strings, when working with concordance lines.'
+                    else:
+                        print 'Nothing matching any strings in criteria found to remove, sorry.'
+                if ints:
+                    print 'No entries removed. Bad indices, maybe?'
         if not remove:
-            print 'Making a new results list with following %d entries:' % len(newlist)
             if len(newlist) > 0:
+                print 'Making a new results list with following %d entries:\n' % len(newlist)
                 for entry in newlist[:25]:
-                    print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                    try:
+                        print '%s (total = %d)' % ( entry[0], entry[-1][1])
+                    except IndexError:
+                        print entry
                 if len(newlist) > 25:
                     num_more = len(newlist) - 25
                     print '... and %d more ... ' % num_more
             else:
-                print 'No entries kept. Bad regex, maybe?'
+                if regexing:
+                    print 'No entries kept. Bad regex, maybe?'
+                if strs:
+                    if conclines:
+                        print 'Use a list of integers, rather than strings, when working with concordance lines.'
+                    else:
+                        print 'Nothing matching any strings in criteria found to keep, sorry.'
+                if ints:
+                    print 'No entries kept. Bad indices, maybe?'
 
     # sort if we want
     if sort_by:
         newlist = resorter(newlist, sort_by = sort_by)        
     # generate totals info
-    totals = combiner(newlist, 'Totals', printmerge = False)
+    try:
+        totals = combiner(newlist, 'Totals', printmerge = False)
+    
+    # if doing conclines, we don't need to make a named tuple
+    except IndexError:
+        return newlist
     
     # make into name tuple
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
