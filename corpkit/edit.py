@@ -82,9 +82,12 @@ def surgeon(lst, criteria,
 
     """Make a new interrogation tuple by keeping/removing certain items from another list.
 
-    a .totals branch will be generated.
-    a .query branch will contain the criteria and remove boolean
-    The .results branchcan be sorted with sort_by.
+    Also handles conc() results.
+
+    If using interrogator results:
+        a .totals branch will be generated.
+        a .query branch will contain the criteria and remove boolean
+        The .results branchcan be sorted with sort_by.
 
     Parameters
     ----------
