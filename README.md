@@ -239,7 +239,7 @@ You can use this output as a dictionary, or extract keywords and ngrams from it,
 Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building Regular Expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus. If you add words to `dictionaries/process_types.py`, they will be added to the regex.
 
 ```python
->>> from corpkit import quickview, surgeon
+>>> from corpkit import quickview
 >>> from dictionaries.process_types import processes
 
 # use verbal process regex as the query
@@ -280,6 +280,8 @@ Output:
 Let's remove the pronouns using `surgeon()`, and plot something:
 
 ```python
+>>> from corpkit import surgeon
+
 # give surgeon indices to keep or remove
 >>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 
 ...    8, 10, 14, 15, 27], remove = True)
@@ -347,8 +349,6 @@ Output:
 Let's also find out what percentage of the time some nouns appear as riskers:
 
 ```python
->>> from corpkit import surgeon
-
 # find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
 >>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
