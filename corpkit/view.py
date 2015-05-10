@@ -787,46 +787,11 @@ def table(data_to_table, allresults = False, maxresults = 50):
     pandas.options.display.float_format = '{:,.2f}'.format
     return df
 
-def tally(lst, indices):
-    """Display total occurrences of a result"""
-
-    # this tool doesn't do a whole lot, now that totals are found during interrogation.
-    output = []
-    if type(indices) == int:
-        item_of_interest = lst[indices]
-        word = item_of_interest[0]
-        total = item_of_interest[-1][-1]
-        string = str(indices) + ': ' + str(word) + ': ' + str(total) + ' total occurrences.'
-        output.append(string)
-    if type(indices) == list:
-        for index in indices:
-            item_of_interest = lst[index]
-            word = item_of_interest[0]
-            total = item_of_interest[-1][-1]
-            string = str(index) + ': ' + str(word) + ': ' + str(total) + ' total occurrences.'
-            output.append(string)
-    if type(indices) == str:
-        if indices == 'all':
-            for item in lst:
-                word = item[0]
-                total = item[-1][-1]
-                string = str(lst.index(item)) + ': ' + str(word) + ': ' + str(total) + ' total occurrences.'
-                output.append(string)
-        else: # if regex
-            import re
-            regex = re.compile(indices)    
-            for item in lst:
-                if re.search(regex, item[0]):
-                    word = item[0]
-                    total = item[-1][-1]
-                    string = str(lst.index(item)) + ': ' + str(word) + ': ' + str(total) + ' total occurrences.'
-                    output.append(string)
-                #else:
-                    #raise ValueError("No matches found. Sorry")
-    return output
-
-
-def quickview(lst, n = 50, topics = False, sort_by = False, showtotals = True):
+def quickview(lst, n = 50, 
+              topics = False, 
+              sort_by = False, 
+              showtotals = True,
+              selection = False):
     """See first n words of an interrogation.
     lst: interrogator() list
     n: number of results to view
@@ -837,14 +802,43 @@ def quickview(lst, n = 50, topics = False, sort_by = False, showtotals = True):
         import warnings
         warnings.warn('\nNo branch of results selected. Using .results ... ')
         lst = lst.results
-    
-    if sort_by:
-        lst = resorter(lst, sort_by = sort_by)
+
+    # if quickview totals, do it very simply:
     if type(lst[0]) == str or type(lst[0]) == unicode:
-        return '0: %s: %d' % (lst[0], lst[-1][1])
+        return '0: %s (%d)' % (lst[0], lst[-1][1])
+    
+    output = []
+    to_show = []
+
+    if selection == 'all':
+        selection = range(len(lst))
+
+    # if selection is int, wrap
+    if type(selection) == int:
+        selection = [selection]
+
+    if selection:
+        if type(selection) == list:
+            if type(selection[0]) == int:
+                to_show = [i for index, i in enumerate(lst) if index in selection]
+            elif type(selection[0]) == str:
+                to_show = [e for e in lst if e[0] in selection]
+        else:
+            # if regex
+            import re
+            regex = re.compile(selection)
+            to_show = [e for e in lst if re.search(regex, e[0])]
+    else:
+        to_show = [i for i in lst]
+
+    if sort_by:
+        sorted_lst = resorter(to_show, sort_by = sort_by)
+    else:
+        sorted_lst = [i for i in to_show]
+
     if not topics:
         out = []
-        for index, item in enumerate(lst[:n]):
+        for index, item in enumerate(sorted_lst[:n]):
             # if it's interrogator result
             if type(item) == list:
                 word = str(item[0])
@@ -869,7 +863,7 @@ def quickview(lst, n = 50, topics = False, sort_by = False, showtotals = True):
         for corpus in topics:
             subout = []
             out.append(corpus.upper())
-            sublist = lst[topics.index(corpus)]
+            sublist = sorted_lst[topics.index(corpus)]
             subout = []
             for item in sublist[:n]:
                 indexnum = sublist.index(item)
