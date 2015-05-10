@@ -27,7 +27,6 @@ from query import topix_search
 from view import plotter
 from view import table
 from view import topix_plot
-from view import tally
 from view import quickview
 
 from keys import keywords
