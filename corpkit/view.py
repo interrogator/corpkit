@@ -787,15 +787,28 @@ def table(data_to_table, allresults = False, maxresults = 50):
     pandas.options.display.float_format = '{:,.2f}'.format
     return df
 
-def quickview(lst, n = 50, 
-              topics = False, 
+def quickview(lst, 
+              n = 50, 
               sort_by = False, 
               showtotals = True,
-              selection = False):
-    """See first n words of an interrogation.
-    lst: interrogator() list
-    n: number of results to view
-    topics: for investigation of topic subcorpora"""
+              selection = False,
+              topics = False):
+    """
+    View interrogator() or conc() output
+
+    lst: the interrogator() or conc() output
+    n = max to show
+    sort_by = temporarily resort
+    showtotals = toggle totals for each result
+    selection = show only things matching this. it can be:
+        int: index of item to show
+        list of ints: indices to show
+        str: regex, show matches
+        list of strs: 
+            for interrogator results, keep entries matching anything in list
+            for concordance lines, keep lines containing anything in list
+        topics: obsolete, unmaintained option for quickviewing a number of corpora
+        """
     if sort_by is not False:
         from corpkit.edit import resorter
     if isinstance(lst, tuple) is True:
@@ -804,9 +817,13 @@ def quickview(lst, n = 50,
         lst = lst.results
 
     # if quickview totals, do it very simply:
-    if type(lst[0]) == str or type(lst[0]) == unicode:
+    if lst[0] == u'Totals':
         return '0: %s (%d)' % (lst[0], lst[-1][1])
-    
+
+    conclines = True
+    if type(lst[0]) == list:
+        conclines = False
+
     output = []
     to_show = []
 
@@ -822,12 +839,23 @@ def quickview(lst, n = 50,
             if type(selection[0]) == int:
                 to_show = [i for index, i in enumerate(lst) if index in selection]
             elif type(selection[0]) == str:
-                to_show = [e for e in lst if e[0] in selection]
+                if conclines:
+                    to_show = []
+                    for w in selection:
+                        for e in lst:
+                            if w in e:
+                                to_show.append(e)
+                else:
+                    to_show = [e for e in lst if e[0] in selection]
         else:
             # if regex
             import re
             regex = re.compile(selection)
-            to_show = [e for e in lst if re.search(regex, e[0])]
+            if conclines:
+                to_show = [e for e in lst if re.search(regex, e)]
+            else:
+                to_show = [e for e in lst if re.search(regex, e[0])]
+                
     else:
         to_show = [i for i in lst]
 
@@ -852,7 +880,7 @@ def quickview(lst, n = 50,
                     as_string = as_string + total
                 out.append(as_string)
             else:
-                out.append(item)
+                out.append(': '.join(['% 4d' % index, item]))
         return out
     # below is unmaintained
     if topics:
