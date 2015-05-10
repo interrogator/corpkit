@@ -17,8 +17,9 @@
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [Examples](#examples)
+    - [Concordancing](#concordancing)
     - [Systemic functional stuff](#systemic-functional-stuff)
-    - [More complex stuff](#more-complex-stuff)
+    - [More complex queries and plots](#more-complex-queries-and-plots)
 - [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
@@ -203,6 +204,36 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
 <br>
 
+### Concordancing
+
+You can use Tregex queries to concordance things, too:
+
+```python
+>>> from corpkit import conc
+
+>>> corpus = 'data/nyt/years/2005'
+>>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
+>>> lines = conc(corpus, query, window = 50, 
+...    n = 10, random = True)
+```
+
+Output:
+
+```
+   0    , you would think NASA 's mission team has taken  careless             risks with the lives of the seven astronauts who
+   1             But when the outrage begins rising , at  great                personal risk , from dissident voices trapped
+   2      shown that Americans worry that gene tests and  genetic              profiling could be used to keep people deemed at
+   3      that the surge in exports from China was an ''  immediate            risk '' to European manufacturers
+   4    any aggressive investigation could pose enormous  political            risks
+   5  their best deals at auction , but they are also at  highest              risk : Bidders can not see the interior of the
+   6                                           It 's the  ultimate             credit-default risk , '' said one commodities
+   7       the possibility of directly studying Vioxx 's  cardiovascular       risks in 2000 , but they apparently soon altered
+   8                The publishers have to shoulder that  financial            risk , so it 's not unusual for a distributor to
+   9        They argue that the United States is full of  energetic            risk-takers because it 's full of immigrants , who
+```
+
+You can use this output as a dictionary, or extract keywords and ngrams from it, or edit results with `surgeon()`.
+
 ### Systemic functional stuff
 
 Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building Regular Expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus. If you add words to `dictionaries/process_types.py`, they will be added to the regex.
@@ -211,8 +242,9 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 >>> from corpkit import quickview, surgeon
 >>> from dictionaries.process_types import processes
 
-# find the dependent of verbal processes, and its functional role
-# keep only results matching function_filter
+# use verbal process regex as the query
+# deprole finds the dependent of verbal processes, and its functional role
+# keep only results matching function_filter regex
 >>> sayers = interrogator(corpus, 'deprole', processes.verbal, 
 ...    function_filter = r'^nsubj$')
 
@@ -249,8 +281,8 @@ Let's remove the pronouns using `surgeon()`, and plot something:
 
 ```python
 # give surgeon indices to keep or remove
->>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 15, 27], 
-...    remove = True)
+>>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 
+...    8, 10, 14, 15, 27], remove = True)
 
 # plot with a bunch of options
 >>> plotter('People who say stuff', specific_sayers.results, 
@@ -261,7 +293,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/people-who-say-stuff.png" />
 <br>
 
-### More complex stuff
+### More complex queries and plots
 
 Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*).
 
@@ -269,7 +301,7 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 # a query to find heads of nps that are subjects of risk processes
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
-
+ 
 >>> quickview(riskers.results, n = 10)
 ```
 
@@ -322,10 +354,11 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ...    ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
 ...    'woman', 'child', 'person'], remove = False)
 
+# use `just_totals` to make a barchart of totals
 >>> plotter('Risk and power', interesting_riskers.results, 
 ...    fract_of = noun_lemmata.results, sort_by = 'most', 
 ...    just_totals = True, y_label = 'Risker percentage',
-...    num_to_plot = 8)
+...    num_to_plot = 'all')
 ```
 
 Output:
@@ -351,7 +384,4 @@ When running the Notebook locally, a couple of IPython extensions come in very h
 
 * Connecting concordance output to HTML
 * More corpus building resources and documentation
-* More complex examples in this file
 * More `.tex`!
-
-
