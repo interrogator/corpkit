@@ -54,7 +54,7 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 * Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
 * Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code), and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
-* Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually.
+* Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually
 
 #### `plotter()` 
 
@@ -70,7 +70,7 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 * Plot only specific subcorpora in your collection, or spans of subcorpora
-* Use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values.
+* Use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values
 * Show the *p*-value for linear regression slopes, or exclude results above *p*
 * Use log scales if you really want
 * Save output to file and/or generate CSV
@@ -211,9 +211,9 @@ You can use Tregex queries to concordance things, too:
 ```python
 >>> from corpkit import conc
 
->>> corpus = 'data/nyt/years/2005'
+>>> subcorpus = 'data/nyt/years/2005'
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
->>> lines = conc(corpus, query, window = 50, 
+>>> lines = conc(subcorpus, query, window = 50, 
 ...    n = 10, random = True)
 ```
 
@@ -255,29 +255,41 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 Output:
 
 ```python
-['   0: he',
- '   1: she',
- '   2: they',
- '   3: official',
- '   4: it',
- '   5: who',
- '   6: that',
- '   7: expert',
- '   8: i',
- '   9: analyst',
- '  10: we',
- '  11: report',
- '  12: company',
- '  13: researcher',
- '  14: you',
- '  15: which',
- '  16: critic',
- '  17: study',
- '  18: executive',
- '  19: doctor']
+['   0: he (23507)',
+ '   1: she (5383)',
+ '   2: they (4952)',
+ '   3: official (4160)',
+ '   4: it (2732)',
+ '   5: who (2572)',
+ '   6: that (2265)',
+ '   7: expert (2011)',
+ '   8: i (1926)',
+ '   9: analyst (1342)',
+ '  10: we (1027)',
+ '  11: report (1012)',
+ '  12: company (945)',
+ '  13: researcher (930)',
+ '  14: you (889)',
+ '  15: which (870)',
+ '  16: critic (796)',
+ '  17: study (743)',
+ '  18: executive (731)',
+ '  19: doctor (726)']
 ```
 
-Let's remove the pronouns using `surgeon()`, and plot something:
+Let's plot he/she:
+
+```python
+>>> plotter('Gender of sayers in the NYT', sayers.results, 
+...    fract_of = sayers.totals, y_label = 'Percentage of all sayers',
+...    num_to_plot = 2)
+```
+
+Output:
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/gender-of-sayers-in-the-nyt.png" />
+<br>
+
+Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `surgeon()`, and plot something:
 
 ```python
 >>> from corpkit import surgeon
@@ -310,17 +322,16 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 Output:
 
 ```python
-['   0: person',
- '   1: company',
- '   2: bank',
- '   3: investor',
- '   4: government',
- '   5: man',
- '   6: leader',
- '   7: woman',
- '   8: official',
- '   9: player',
- '  10: manager']
+['   0: person (195)',
+ '   1: company (139)',
+ '   2: bank (80)',
+ '   3: investor (66)',
+ '   4: government (63)',
+ '   5: man (51)',
+ '   6: leader (48)',
+ '   7: woman (43)',
+ '   8: official (40)',
+ '   9: player (39)']
 ```
 
 We can use `merger()` to make some thematic categories:
@@ -387,5 +398,6 @@ When running the Notebook locally, a couple of IPython extensions come in very h
 ## Coming soon
 
 * Connecting concordance output to HTML
+* Concordance lines using dependencies
 * More corpus building resources and documentation
 * More `.tex`!
