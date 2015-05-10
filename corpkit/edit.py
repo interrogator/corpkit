@@ -157,11 +157,29 @@ def surgeon(lst, criteria,
         # if list of words
         else:
             strs = True
-            if remove:
-                newlist = [e for e in lst if e[0] not in criteria]
-                removed = [e for e in lst if e[0] in criteria]
+            if conclines:
+                if remove:
+                    newlist = []
+                    removed = []
+                    for w in criteria:
+                        for e in lst:
+                            if w in e:
+                                newlist.append(e)
+                            else:
+                                removed.append(e)
+                else:
+                    newlist = []
+                    removed = []
+                    for w in criteria:
+                        for e in lst:
+                            if w not in e:
+                                newlist.append(e)             
             else:
-                newlist = [e for e in lst if e[0] in criteria]
+                if remove:
+                    newlist = [e for e in lst if e[0] not in criteria]
+                    removed = [e for e in lst if e[0] in criteria]
+                else:
+                    newlist = [e for e in lst if e[0] in criteria]
     # print helpful info
     if printsurgery:
         if remove:
