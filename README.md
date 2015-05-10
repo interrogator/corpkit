@@ -48,45 +48,45 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 #### `interrogator()`
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) to search parse trees for complex lexicogrammatical phenomena
-* Search Stanford dependencies (whichever variety you like) for information about the role, governor dependent or index of a token matching a regular expression
+* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
-* Return lemmatised or unlemmatised results
-* Look for keywords in each subcorpus, and chart their keyness
+* Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
+* Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code), and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
-* Customisable wordlists for lemmatisation (augmenting use of `WordNet`), determiner/stopword stripping, UK-US spelling conversion (though it pains us all), etc.
+* Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually.
 
 #### `plotter()` 
 
 * Plot any number of results onto line charts (see below)
-* For corpora with no subcorpora, or only two contrastive subcorpora, make bar charts instead
-* Though there are sensible defaults, you can easily customise figure titles, axes labels, legends, image size, etc.
-* Figures will use `TeX` if you have it
+* Plot anything you like: words, tags, counts for grammatical features ...
+* Customisable figure titles, axes labels, legends, image size, etc.
+* Uses `TeX` if you have it
 * Plot by absolute frequency, or as a ratio/percentage of another list: 
     * plot the total number of verbs, or total number of verbs that are *be*
     * plot the percentage of verbs that are *be*
     * plot the percentage of *be* verbs that are *was*
     * plot the ratio of *was/were* ...
     * etc.
-* Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus
-* Plot only specific subcorpora, or spans of subcorpora
-* For ordered subcorpora (e.g. chronological data), use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values.
-* Show the p-value for linear regression slopes
+* Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
+* Plot only specific subcorpora in your collection, or spans of subcorpora
+* Use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values.
+* Show the *p*-value for linear regression slopes, or exclude results above *p*
 * Use log scales if you really want
-* Save output to file and/or generate CSV with results
+* Save output to file and/or generate CSV
 
 #### Other stuff
 
 * View results as a table via `Pandas`
-* Quickly edit and merge interrogation results with `surgeon()` and `merger()`, using regular expressions, result indices or lists of words
+* Quickly edit and merge interrogation results with `surgeon()` and `merger()`, using regular expressions, result indices or lists of words (see below)
 * Tools for resorting or doing maths on interrogation results
 * Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
-* Randomise concordance results, determine window size, etc.
-* Quickly save interrogations and figures to file, and reload results in for new sessions
-* Build dictionaries for corpora and subcorpora, that can then be used as reference corpora for keyword generation
+* Randomise concordance results, determine window size, save to CSV, etc.
+* Quickly save interrogations and figures to file, and reload results in new sessions
+* Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
 * Start a new blank project with `new_project()`
 
-One of the main reasons for these tools was to make it quicker and easier to explore corpora in complex ways. Input and output from the various tools in the kit can be used in tandem:
+One of the main reasons for these tools was to make it quicker and easier to explore corpora in complex ways, using output from one tool as input for the next.
 
 * n-gramming and keywording can be done via `interrogator()`
 * keywording can easily be done on your concordance lines
@@ -94,7 +94,7 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 * You can build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
 * and so on ...
 
-Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. This data only includes parse trees, due to size restrictions, and isn't included in the pip package.
+Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.
 
 ## Installation
 
@@ -128,14 +128,19 @@ python setup.py install
 pip install corpkit
 ```
 
-To interrogate corpora and plot results, you need *Java*, *NLTK* and *matplotlib*. Other tools require *Beautiful Soup*, *Pandas*, etc. 
+To interrogate corpora and plot results, you need *Java*, *NLTK* and *matplotlib*. Dependency searching needs *Beautiful Soup*. Tabling results needs *Pandas*, etc. For NLTK, you can also use pip:
 
-The `pip` installation of NLTK does not come with the data needed for NLTK's tokeniser, so we'll also need to install that:
+```shell
+# might need sudo
+pip install -U nltk
+```
+
+The `pip` installation of NLTK does not come with the data needed for NLTK's tokeniser, so you'll also need to install that from Python:
 
 ```python
-import nltk
+>>> import nltk
 # change 'punkt' to 'all' to get everything
-nltk.download('punkt')
+>>> nltk.download('punkt')
 ```
 
 ## Unpacking the orientation data
@@ -156,17 +161,17 @@ The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, an
 ipython notebook orientation.ipynb
 ```
 
-Or, just use Python (much more difficult, less fun):
+Or, just use (I)Python (more difficult, less fun):
 
 ```python
-import corpkit
-from corpkit import interroplot
+>>> import corpkit
+>>> from corpkit import interroplot
 
 # set corpus path
-corpus = 'data/nyt/years'
+>>> corpus = 'data/nyt/years'
 
 # search nyt for modal auxiliaries:
-interroplot(corpus, r'MD')
+>>> interroplot(corpus, r'MD')
 ```
 
 Output: 
@@ -179,18 +184,18 @@ Output:
 Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
 
 ```python
-from corpkit import interrogator, plotter
+>>> from corpkit import interrogator, plotter
 # make tregex query: head of NP in PP containing 'of'
 # in NP headed by risk word:
-q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
+>>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # count terminals/leaves of trees only, and do lemmatisation:
-riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
+>>> riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
 
 # plot top 7 entries as percentage of all entries:
-plotter('Risk of (noun)', riskofnoun.results, 
-        fract_of = riskofnoun.totals, num_to_plot = 7, 
-        skip63 = False)
+>>> plotter('Risk of (noun)', riskofnoun.results, 
+...        fract_of = riskofnoun.totals, num_to_plot = 7, 
+...        skip63 = False)
 ```
 
 Output: 
@@ -203,16 +208,16 @@ Output:
 Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building Regular Expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus. If you add words to `dictionaries/process_types.py`, they will be added to the regex.
 
 ```python
-from corpkit import quickview, surgeon
-from dictionaries.process_types import processes
+>>> from corpkit import quickview, surgeon
+>>> from dictionaries.process_types import processes
 
 # find the dependent of verbal processes, and its functional role
 # keep only results matching function_filter
-sayers = interrogator(corpus, 'deprole', processes.verbal, 
-        function_filter = r'^nsubj$')
+>>> sayers = interrogator(corpus, 'deprole', processes.verbal, 
+...    function_filter = r'^nsubj$')
 
 # have a look at the top results
-quickview(sayers.results, n = 30)
+>>> quickview(sayers.results, n = 20)
 ```
 
 Output:
@@ -237,29 +242,19 @@ Output:
  '  16: critic',
  '  17: study',
  '  18: executive',
- '  19: doctor',
- '  20: agency',
- '  21: person',
- '  22: lawyer',
- '  23: some',
- '  24: bank',
- '  25: group',
- '  26: spokesman',
- '  27: one',
- '  28: scientist',
- '  29: government']
+ '  19: doctor']
 ```
 
-Let's remove the pronouns, etc., and plot something:
+Let's remove the pronouns using `surgeon()`, and plot something:
 
 ```python
 # give surgeon indices to keep or remove
-specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 15, 27], 
-        remove = True)
+>>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 8, 10, 14, 15, 27], 
+>>>        remove = True)
 
 # plot with a bunch of options
-plotter('People who say stuff', specific_sayers.results, 
-        num_to_plot = 9, sort_by = 'total', skip63 = True)
+>>> plotter('People who say stuff', specific_sayers.results, 
+...        num_to_plot = 9, sort_by = 'total', skip63 = True)
 ```
 
 Output:
@@ -272,10 +267,10 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 
 ```python
 # a query to find heads of nps that are subjects of risk processes
-query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
-noun_riskers = interrogator(c, 'words', query, lemmatise = True)
+>>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
+>>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
 
-quickview(riskers.results, n = 10)
+>>> quickview(riskers.results, n = 10)
 ```
 
 Output:
@@ -297,12 +292,17 @@ Output:
 We can use `merger()` to make some thematic categories:
 
 ```python
-them_cat = merger(noun_riskers.results, ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient'], newname = 'Everyday people')
-them_cat = merger(them_cat.results, ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 'politician', 'institution', 'agency', 'candidate', 'firm'], newname = 'Institutions')
+>>> them_cat = merger(noun_riskers.results, ['person', 'man', 'woman', 
+...    'child', 'consumer', 'baby', 'student', 'patient'], 
+...    newname = 'Everyday people')
+>>> them_cat = merger(them_cat.results, ['company', 'bank', 'investor', 
+...    'government', 'leader', 'president', 'officer', 'politician', 
+...    'institution', 'agency', 'candidate', 'firm'], 
+...    newname = 'Institutions')
 
 # plot riskers:
-plotter('Types of riskers', them_cat.results, 
-        fract_of = noun_riskers.totals, num_to_plot = 2)
+>>> plotter('Types of riskers', them_cat.results, 
+...    fract_of = noun_riskers.totals, num_to_plot = 2)
 ```
 
 Output:
@@ -314,16 +314,18 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 
 ```python
 # find any head of an np not containing risk
-query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
-noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
+>>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
+>>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
 
 # get some key terms
-interesting_riskers = surgeon(noun_riskers.results, ['politician', 'candidate', 'lawmaker', 'governor', 'man', 'woman', 'child', 'person'], remove = False)
+>>> interesting_riskers = surgeon(noun_riskers.results, 
+...    ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
+...    'woman', 'child', 'person'], remove = False)
 
-plotter('Risk and power', interesting_riskers.results, 
-        fract_of = noun_lemmata.results, sort_by = 'most', 
-        just_totals = True, y_label = 'Risker percentage',
-        num_to_plot = 8)
+>>> plotter('Risk and power', interesting_riskers.results, 
+...    fract_of = noun_lemmata.results, sort_by = 'most', 
+...    just_totals = True, y_label = 'Risker percentage',
+...    num_to_plot = 8)
 ```
 
 Output:
