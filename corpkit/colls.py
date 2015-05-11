@@ -23,6 +23,7 @@ def collocates(data, nbest = 30, window = 5):
         good = unicode(good.lower(), 'utf-8', errors = 'ignore')
     else:
         good = good.lower()
+    # sent and word tokenise
     sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
     sents = sent_tokenizer.tokenize(good)
     tokenized_sents = [nltk.word_tokenize(i) for i in sents]
