@@ -507,10 +507,10 @@ def plotter(title,
     # make line chart
     if not barchart:
 
+        # line types
         dotted = '--'
         undotted = '-'
         dot = '.'
-
 
         for index, entry in enumerate(alldata):
             # get word
@@ -530,7 +530,6 @@ def plotter(title,
                 if entry[-1][0] == 'Total':
                     num = entry[-1][1]
                     total = "%.2f" % num
-                    #total = str(float(entry[-1][1]))[:5]
                 totalstring = ' (' + str(total) + '\%)'     
             else:
                 if entry[-1][0] == 'Total':
@@ -550,13 +549,14 @@ def plotter(title,
 
                 tot = [e[1] for e in entry[1:]]
 
-                # good_diff = corpus_names[1] - corpus_names[0]
-
+                #expected difference between subcorpus name ints
                 good_diff = 1
 
                 for i in range(1, len(corpus_names)):
+                    # only plot the word the first time around
                     if i != 1:
                         word = None
+                    # add totals to word if need be
                     if legend_totals:
                         word = word + totalstring
                     if legend_p:
@@ -564,6 +564,8 @@ def plotter(title,
                             word = word + p_string
                         else:
                             warnings.warn("\np-value has not been calculated, so it can't be printed.")
+
+                    # determine dotted or undotted line
                     if corpus_names[i] - corpus_names[i-1] != good_diff:
                         linetype = dotted
                     else:
