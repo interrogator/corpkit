@@ -13,6 +13,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     from StringIO import StringIO
     import shutil
     from collections import Counter
+    from corpkit.progressbar import ProgressBar
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -37,6 +38,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     query = r'ROOT < __'
+    options = '-t'
     for d in sorted_dirs:
         if len(sorted_dirs) == 1:
             subcorp = d
@@ -44,11 +46,11 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
             subcorp = os.path.join(path, d)
 
         if have_ipython:
-            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, subcorp)
+            tregex_command = 'tregex.sh -o -t -w \'%s\' %s 2>/dev/null' %(options, query, subcorp)
             results_with_blank = get_ipython().getoutput(tregex_command)
             results = [result for result in results_with_blank if result]
         else:
-            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % subcorp]
+            tregex_command = ["tregex.sh", "-o", "-t", "-w", '%s' % query, "%s" % subcorp]
             FNULL = open(os.devnull, 'w')
             results = subprocess.check_output(tregex_command, stderr=FNULL)
             results = os.linesep.join([s for s in results.splitlines() if s]).split('\n')
