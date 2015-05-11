@@ -506,6 +506,12 @@ def plotter(title,
 
     # make line chart
     if not barchart:
+
+        dotted = '--'
+        undotted = '-'
+        dot = '.'
+
+
         for index, entry in enumerate(alldata):
             # get word
             word = entry[0]
@@ -533,65 +539,39 @@ def plotter(title,
     
             entry.pop() # get rid of total. good or bad?
             csvalldata.append(entry) 
-    
-            # this bad code attempts to draw dotted lines when bits are missing. 
-            # it's no good.
 
             if index < num_to_plot:
                 csvdata.append(entry)
-                toplot = []
-                xvalsbelow = []
-                yvalsbelow = []
-                xvalsabove = []
-                yvalsabove = []
-                d = 1 # first tuple, maybe not very stable
-                tups = len(entry) - 2 # all tuples minus 2 (to skip totals tuple)
-                for _ in range(tups):
-                    firstpart = entry[d] # first tuple
-                    firstyear = firstpart[0]
-                    nextpart = entry[d + 1]
-                    nextyear = nextpart[0]
-                    diff = nextyear - firstyear
-                    if nextyear - firstyear > 1:
-                        xvalsbelow.append(firstpart[0])
-                        yvalsbelow.append(firstpart[1])
-                        xvalsbelow.append(nextpart[0])
-                        yvalsbelow.append(nextpart[1])
-                    else:
-                        xvalsabove.append(firstpart[0])
-                        yvalsabove.append(firstpart[1])
-                        xvalsabove.append(nextpart[0])
-                        yvalsabove.append(nextpart[1])
-                    d += 1
+                corpus_names = [e[0] for e in entry[1:]]
+                
+                # for now, convert non int corpus names to range ints
+                if type(corpus_names[0]) != int:
+                    corpus_names = range(len(corpus_names))
 
-                # do actual plotting
-                if on_cloud:
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[index])
-                    plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
-                else:
-                    plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
-                    plt.plot(xvalsbelow, yvalsbelow, '--', color=colours[index])
+                tot = [e[1] for e in entry[1:]]
+
+                # good_diff = corpus_names[1] - corpus_names[0]
+
+                good_diff = 1
+
+                for i in range(1, len(corpus_names)):
+                    if i != 1:
+                        word = None
                     if legend_totals:
-                        thelabel = word + totalstring
-                        plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[index])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
-                    elif legend_p:
-                        if not do_stats:
-                            warnings.warn("\np-value has not been calculated, so it can't be printed.")
-                            plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
-                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])              
+                        word = word + totalstring
+                    if legend_p:
+                        if do_stats:
+                            word = word + p_string
                         else:
-                            thelabel = word + p_string
-                            plt.plot(xvalsabove, yvalsabove, '-', label=thelabel, color=colours[index])
-                            plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])               
+                            warnings.warn("\np-value has not been calculated, so it can't be printed.")
+                    if corpus_names[i] - corpus_names[i-1] != good_diff:
+                        linetype = dotted
                     else:
-                        plt.plot(xvalsabove, yvalsabove, '-', label=word, color=colours[index])
-                        plt.plot(xvalsabove, yvalsabove, '.', color=colours[index])
-            
-            # old way to plot everything at once
-            #plt.plot(*zip(*toplot), label=word) # this is other projects...
-        
+                        linetype = undotted
+
+                    plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], linetype, label=word, color=colours[index])
+                    plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], dot, color=colours[index]) 
+
         #make legend
         if legend:
             lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
