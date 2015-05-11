@@ -61,7 +61,7 @@ def interrogator(path, options, query,
         BNC included as default.
     dep_type : str
         the kind of Stanford CoreNLP dependency parses you want to use:
-        - 'basic-dependencies' (best lemmatisation right now, default)
+        - 'basic-dependencies'
         - 'collapsed-dependencies'
         - 'collapsed-ccprocessed-dependencies'
     function_filter : Bool/regex
