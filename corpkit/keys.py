@@ -3,6 +3,8 @@ def keywords(data,
              dictionary = 'bnc.p', 
              clear = True, 
              printstatus = True, 
+             nkey = 'all', 
+             nngram = 'all',
              **kwargs):
     """Feed this function some data and get its keywords.
 
@@ -35,6 +37,14 @@ def keywords(data,
 
     on_cloud = check_dit()
 
+    if nngram == 'all':
+        nngram = 99999
+    if nkey  == 'all':
+        nkey = 99999
+
+    if not dictionary.endswith('.p'):
+        dictionary = dictionary + '.p'
+
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
@@ -52,15 +62,15 @@ def keywords(data,
         ngrams_list_version.append(aslist)
     if clear:
         clear_output()    
-    return keywords_list_version, ngrams_list_version
+    return keywords_list_version[:nkey], ngrams_list_version[:nngram]
 
 
 # from Spindle: just altered dictionary stuff and number to show
-def ngrams(words, n=2):
+def ngrams(words, n=2, nngram = 'all'):
     return (tuple(words[i:i+n]) for i in range(0, len(words) - (n - 1)))
 
 # from Spindle
-def keywords_and_ngrams(input, thresholdLL=19, thresholdBigrams=2, dictionary = 'bnc.p'):
+def keywords_and_ngrams(input, thresholdLL=19, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 'all', nngram = 'all'):
     from collections import defaultdict
     import math
     import json
@@ -135,4 +145,5 @@ def keywords_and_ngrams(input, thresholdLL=19, thresholdBigrams=2, dictionary = 
         w1 = ng[1]
         if w0 in keywords and w1 in keywords and c>thresholdBigrams:
             listBigrams.append((ng, c))
+
     return (listKeywords, listBigrams)
