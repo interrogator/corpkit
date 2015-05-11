@@ -21,6 +21,10 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     except NameError:
         import subprocess
         have_ipython = False
+    
+    if not dictname.endswith('.p'):
+        dictname = dictname + '.p'
+
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     # if no subcorpora, just do the dir passed in
     if len(sorted_dirs) == 0:
@@ -38,7 +42,6 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     query = r'ROOT < __'
-    options = '-t'
     for d in sorted_dirs:
         if len(sorted_dirs) == 1:
             subcorp = d
@@ -71,6 +74,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     print time + ': Counting ' + str(len(allwords)) + ' words ... \n'
     # make a dict
     dictionary = Counter(allwords)
+
     with open(os.path.join(dictpath, dictname), 'wb') as handle:
         pickle.dump(dictionary, handle)
     time = strftime("%H:%M:%S", localtime())
