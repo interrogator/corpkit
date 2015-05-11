@@ -23,6 +23,7 @@ from query import interroplot
 from query import multiquery
 from query import conc
 from query import topix_search
+from query import word_table
 
 from view import plotter
 from view import table
