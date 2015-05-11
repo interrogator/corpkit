@@ -46,7 +46,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
             subcorp = os.path.join(path, d)
 
         if have_ipython:
-            tregex_command = 'tregex.sh -o -t -w \'%s\' %s 2>/dev/null' %(options, query, subcorp)
+            tregex_command = 'tregex.sh -o -t -w \'%s\' %s 2>/dev/null' %(query, subcorp)
             results_with_blank = get_ipython().getoutput(tregex_command)
             results = [result for result in results_with_blank if result]
         else:
