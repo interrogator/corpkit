@@ -511,6 +511,7 @@ def plotter(title,
         dotted = '--'
         undotted = '-'
         dot = '.'
+        markertype = '_'
 
         for index, entry in enumerate(alldata):
             # get word
@@ -556,6 +557,7 @@ def plotter(title,
                     # only plot the word the first time around
                     if i != 1:
                         word = None
+                        markertype = None
                     # add totals to word if need be
                     if legend_totals:
                         word = word + totalstring
