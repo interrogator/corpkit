@@ -1131,3 +1131,75 @@ def check_tex(have_ipython = True):
         except subprocess.CalledProcessError:
             have_tex = False
     return have_tex
+
+
+def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_csv = False):
+    """Make a Pandas table with keywords or ngrams"""
+    import os
+    from pandas import read_csv
+    from StringIO import StringIO
+    import corpkit
+    from corpkit import keywords
+    from corpkit.progressbar import ProgressBar
+    try:
+        from IPython.display import display, clear_output
+    except ImportError:
+        pass
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        import subprocess
+        have_ipython = False
+
+    from time import localtime, strftime
+
+    
+    # get list of corpora
+    sorted_dirs = [os.path.join(corpus, d) for d in os.listdir(corpus)]
+
+    
+    if show.startswith('key'):
+        what_to_get = 0
+        showing = 'keywords'
+    elif 'gram' in show:
+        what_to_get = 1
+        showing = 'ngrams'
+    else:
+        raise ValueError("show = %s not recognised. Must be 'keywords' or 'ngrams'")
+
+    time = strftime("%H:%M:%S", localtime())
+    print ("\n%s: Making table of %s: %s\n" % (time, showing, corpus) )
+
+    keys = []
+    p = ProgressBar(len(sorted_dirs))
+    for index, dir in enumerate(sorted_dirs):
+        p.animate(index)
+        keys.append([os.path.basename(dir), keywords(dir, dictionary = dictionary, nkey = n, nngram = n, printstatus = False)[what_to_get]])
+    p.animate(len(sorted_dirs)) 
+    
+    csvdata = [','.join([os.path.basename(d[0]) for d in keys])]
+    for i in range(n):
+        line = []
+        for k in keys:
+            list_of_keywords = k[1]
+            try:
+                the_key = list_of_keywords[i][1]
+            except:
+                the_key = ' '
+            line.append(the_key)
+        csvdata.append(','.join(line))
+    csv = '\n'.join(csvdata)
+    if return_csv:
+        if have_ipython:
+            clear_output()
+        return csv
+    df = read_csv(StringIO(csv))
+    pandas.set_option('display.max_columns', len(keys))
+    pandas.set_option('display.max_rows', len(keys[0][1]))
+
+    #time = strftime("%H:%M:%S", localtime())
+    #print '%s: Finished!' % (time, len(list_words), main_totals[-1][-1])
+    print df
+    return df
