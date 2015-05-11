@@ -35,7 +35,7 @@ def process_types():
     def regex_maker(irregular, regular):
         """makes a regex from the list of words passed to it"""
         suffixes = ['s', 'es', 'ed', 'ing', '']    
-        return r'(?i)^((%s)(%s)|(%s))$' % ( '{1,2}|'.join(regular) + '{1,2}', '|'.join(suffixes), '|'.join(irregular))
+        return r'(?i)\b((%s)(%s)|(%s))\b' % ( '{0,2}|'.join(regular) + '{0,2}', '|'.join(suffixes), '|'.join(irregular))
     
     list_of_regexes = []
     for process_type in [[irregular_relational_processes, regular_relational_processes], [irregular_mental_processes, regular_mental_processes], [irregular_verbal_processes, regular_verbal_processes]]:
