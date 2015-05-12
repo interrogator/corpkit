@@ -12,7 +12,10 @@ def interrogator(path, options, query,
                 spelling = False, 
                 phrases = False, 
                 dep_type = 'basic-dependencies',
-                function_filter = False):
+                function_filter = False,
+                return_table = False,
+                return_csv_table = False,
+                **kwargs):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -67,6 +70,12 @@ def interrogator(path, options, query,
     function_filter : Bool/regex
         If you set this to a regex, for the 'g' and 'd' options, only words 
         whose function matches the regex will be kept, and the tag will not be printed
+    return_table : True/False/int
+        Returns a Pandas table of the top n results in every subcorpus (requires Pandas).
+        you can use .to_latex() afterward to make a TeX booktabs version.
+        Change it to an integer to get that many rows of results. True defaults to 10.
+    return_csv_table : bool
+        return CSV, instead of Pandas---suitable for Excel etc.
 
     Example 1: Tree querying
     --------
@@ -107,6 +116,10 @@ def interrogator(path, options, query,
     import warnings
     from collections import Counter
     from time import localtime, strftime
+    if return_table:
+        import pandas
+        from pandas import read_csv
+        from StringIO import StringIO
 
     import nltk
     try:
@@ -138,6 +151,8 @@ def interrogator(path, options, query,
            
     have_python_tex = check_pytex()
     on_cloud = check_dit()
+
+    regex_nonword_filter = re.compile("^[A-Za-z0-9-\']+$")
 
     def signal_handler(signal, frame):
         """exit on ctrl+c, rather than just stop loop"""
@@ -179,6 +194,9 @@ def interrogator(path, options, query,
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         if not depnum:
             list_of_matches = [w.lower() for w in list_of_matches]
+        # remove punct etc.
+        list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
+        
         list_of_matches.sort()
         
         # tokenise if multiword:
@@ -572,6 +590,7 @@ def interrogator(path, options, query,
     # get list of subcorpora and sort them
     sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     sorted_dirs.sort(key=int)
+    num_zeroes = len(str(sorted_dirs[-1]))
     
     # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
@@ -721,7 +740,7 @@ def interrogator(path, options, query,
             clear_output()
         return output
 
-    # flatten and sort master list
+    # flatten and sort master list, in order to make a list of unique words
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
@@ -739,8 +758,14 @@ def interrogator(path, options, query,
         subcorpus_name = subcorpus[0]
         subcorpus_data = subcorpus[1]
         p.animate(index)
-        dictionary = Counter(subcorpus_data)
+        dictionary = Counter(subcorpus_data)       
         dicts.append(dictionary)
+        
+        # skip next steps if making word table
+        if return_table:
+            continue
+        
+        # make each result
         for word in list_words:
             getval = dictionary[word[0]]
             try:
@@ -751,7 +776,54 @@ def interrogator(path, options, query,
     # 100%            
     p.animate(len(results_list))
 
+    # return pandas/csv table of most common results in each subcorpus
+    if return_table:
+        # first line
+        try:
+            csvdata = [','.join([int(subcorpus_name).zfill(num_zeroes) for subcorpus_name, subcorpus_data in results_list])]
+        except:
+            csvdata = [','.join([subcorpus_name for subcorpus_name, subcorpus_data in results_list])]
+
+        # set n
+        if type(return_table) == int:
+            n = return_table
+        else:
+            n = 10
+        # for number of rows of data in table
+        for i in range(n):
+            line = []
+            for dictionary in dicts:
+                # check there are sufficient entries in the dictionary
+                if not len(dictionary) <= i:
+                    the_key = dictionary.most_common(i + 1)[-1][0]
+                else:
+                    the_key = ' '
+                line.append(the_key)
+            csvdata.append(','.join(line))
+        csv = '\n'.join(csvdata)
+        
+        if return_csv_table:
+            if have_ipython:
+                clear_output()
+            else:
+                print '\n'
+            return csv
+
+        df = read_csv(StringIO(csv))
+        pandas.set_option('display.max_columns', len(sorted_dirs))
+        pandas.set_option('display.max_rows', n + 1)
+        if have_ipython:
+            clear_output()
+        else:
+            print '\n'
+        #time = strftime("%H:%M:%S", localtime())
+        #print '%s: Finished!' % (time, len(list_words), main_totals[-1][-1])
+        print df
+        return df
+
+
     # do totals (and keep them), then sort list by total
+    # depnum is a little different, though
     if depnum:
         list_words.sort(key=lambda x: int(x[0]))
         main_totals = depnum_reorder(list_words, output = 'totals') 
@@ -763,6 +835,7 @@ def interrogator(path, options, query,
     list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
     
     # reconstitute keyword scores, because we earlier
+    # this means that keyness scores are a bit off. not good.
     if keywording:
         for res in list_words:
             for datum in res[1:]:
@@ -799,11 +872,11 @@ def interrogator(path, options, query,
 
 
 def conc(corpus, query, 
-         n = 100, 
-         random = False, 
-         window = 50, 
-         trees = False, 
-         csvmake = False): 
+        n = 100, 
+        random = False, 
+        window = 50, 
+        trees = False, 
+        csvmake = False): 
     """A concordancer for Tregex queries"""
     import os
     from random import randint
@@ -943,8 +1016,7 @@ def conc(corpus, query,
         tree = result[0]
         pattern = result[1]
         if not trees:
-            regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + 
-            re.escape(pattern) + r"\b)(.{," + re.escape(str(window)) + r"}[^\s]\b)")
+            regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + re.escape(pattern) + r"\b)(.{," + re.escape(str(window)) + r"}[^\s]\b)")
         else:
             regex = re.compile(r"(.{,%s})(%s)(.{,%s})" % (window, re.escape(pattern), window ))
         search = re.findall(regex, tree)
@@ -1136,6 +1208,7 @@ def check_tex(have_ipython = True):
 def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_csv = False):
     """Make a Pandas table with keywords or ngrams"""
     import os
+    import pandas
     from pandas import read_csv
     from StringIO import StringIO
     import corpkit
@@ -1157,7 +1230,10 @@ def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_c
 
     
     # get list of corpora
-    sorted_dirs = [os.path.join(corpus, d) for d in os.listdir(corpus)]
+    dirs = [d for d in os.listdir(corpus) if os.path.isdir(os.path.join(corpus, d))]
+    dirs.sort(key=int)
+    num_zeroes = len(str(dirs[-1]))
+    sorted_dirs = [os.path.join(corpus, d) for d in dirs]
 
     
     if show.startswith('key'):
@@ -1178,8 +1254,10 @@ def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_c
         p.animate(index)
         keys.append([os.path.basename(dir), keywords(dir, dictionary = dictionary, nkey = n, nngram = n, printstatus = False)[what_to_get]])
     p.animate(len(sorted_dirs)) 
-    
-    csvdata = [','.join([os.path.basename(d[0]) for d in keys])]
+    try:
+        csvdata = [','.join([os.path.basename(int(d[0]).zfill(num_zeroes)) for d in keys])]
+    except:
+        csvdata = [','.join([os.path.basename(d[0]) for d in keys])]
     for i in range(n):
         line = []
         for k in keys:
@@ -1194,12 +1272,21 @@ def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_c
     if return_csv:
         if have_ipython:
             clear_output()
+        else:
+            print '\n'
         return csv
+
     df = read_csv(StringIO(csv))
     pandas.set_option('display.max_columns', len(keys))
     pandas.set_option('display.max_rows', len(keys[0][1]))
-
+    if have_ipython:
+        clear_output()
+    else:
+        print '\n'
     #time = strftime("%H:%M:%S", localtime())
     #print '%s: Finished!' % (time, len(list_words), main_totals[-1][-1])
     print df
     return df
+
+
+
