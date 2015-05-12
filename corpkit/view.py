@@ -169,12 +169,11 @@ def plotter(title,
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
 
     # nicer looks for plots
-
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight']
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
     
-    matplotlib.style.use(style)
+    #matplotlib.style.use(style)
     
     # check what we're doing here.
     have_python_tex = check_pytex()
@@ -469,7 +468,7 @@ def plotter(title,
             if not fract_of:
                 entry = projector(entry)
         # add total
-        entry.append([u'Totals', sum([w[1] for w in entry[1:]])])
+        entry.append([u'Total', sum([w[1] for w in entry[1:]])])
         processed_data.append(entry)
 
     # check if the above processes turned it into barchart length
@@ -540,12 +539,12 @@ def plotter(title,
             # get totals ... horrible code
             total = 0
             if fract_of:
-                if entry[-1][0] == 'Total':
+                if entry[-1][0].startswith('Total'):
                     num = entry[-1][1]
                     total = "%.2f" % num
-                totalstring = ' (' + str(total) + '\%)'     
+                totalstring = ' (' + str(total) + '\%)'
             else:
-                if entry[-1][0] == 'Total':
+                if entry[-1][0].startswith('Total'):
                     total = entry[-1][1]
                 totalstring = ' (n=%d)' % total
     
@@ -566,18 +565,26 @@ def plotter(title,
                 good_diff = 1
 
                 for i in range(1, len(corpus_names)):
-                    # only plot the word the first time around
-                    if i != len(corpus_names) - 1:
-                        word = None
-                        markertype = None
                     # add totals to word if need be
                     if legend_totals:
-                        word = word + totalstring
+                        # these wacky try statements are because word is soon turned to none
+                        try:
+                            word = word + totalstring
+                        except:
+                            pass
                     if legend_p:
                         if do_stats:
-                            word = word + p_string
+                            # these wacky try statements are because word is soon turned to none
+                            try:
+                                word = word + p_string
+                            except:
+                                pass
                         else:
                             warnings.warn("\np-value has not been calculated, so it can't be printed.")
+                    # only plot the word the first time around
+                    if i != 1:
+                        word = None
+                        markertype = None
 
                     # determine dotted or undotted line
                     if corpus_names[i] - corpus_names[i-1] != good_diff:
@@ -585,12 +592,14 @@ def plotter(title,
                     else:
                         linetype = undotted
 
-                    plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], linetype, label=word, color=colours[index])
-                    plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], dot, color=colours[index]) 
+                    with plt.style.context((style)):
+                        plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], linetype, label=word, color=colours[index])
+                        plt.plot([corpus_names[i-1], corpus_names[i]], [tot[i-1], tot[i]], dot, color=colours[index]) 
 
         #make legend
         if legend:
-            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True, framealpha=0.5)
+            with plt.style.context((style)):
+                lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., framealpha=0.5)
     
     elif barchart:
         labels = [entry[0] for entry in alldata[:cutoff]]
@@ -603,11 +612,18 @@ def plotter(title,
 
         fig, ax = plt.subplots()
 
+        #adjusting dimensions ...
         if legend:
-            plt.subplots_adjust(right=0.8)
-            plt.subplots_adjust(left=0.08)
-        if rotate:
-            plt.subplots_adjust(bottom=0.15)
+            plt.subplots_adjust(right=0.75)
+            if legend_p or legend_totals:
+                plt.subplots_adjust(right=0.65)
+
+        fig.patch.set_alpha(0.0)
+        
+        plt.subplots_adjust(left=0.08)
+        
+        # more room for x label
+        plt.subplots_adjust(bottom=0.18)
 
         rects1 = ax.bar(ind, scores, width, color="#1f78b4")
         ax.set_xticks(ind)
@@ -677,15 +693,23 @@ def plotter(title,
             plt.gca().get_yaxis().set_major_formatter(ScalarFormatter())
         else:
             plt.ticklabel_format(useOffset=False, axis='x', style = 'plain')
+    
     if legend:
-        plt.subplots_adjust(right=0.8)
-        plt.subplots_adjust(left=0.08)
-    if rotate:
-        plt.subplots_adjust(bottom=0.15)
+        plt.subplots_adjust(right=0.80)
+        if legend_p or legend_totals:
+            plt.subplots_adjust(right=0.75)
+    
+    plt.subplots_adjust(left=0.08)
+        
+    # more room for x label
+    plt.subplots_adjust(bottom=0.15)
+
+
     #plt.grid()
     fig1 = plt.gcf()
     if not have_python_tex:
-        plt.show()
+        with plt.style.context((style)):
+            plt.show()
 
     def urlify(s):
             import re
@@ -702,9 +726,9 @@ def plotter(title,
         else:
             savename = os.path.join(imagefolder, urlify(title) + '.png')
         if legend and not barchart:
-                fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150, transparent=True)
+                fig1.savefig(savename, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=150)
         else:
-            fig1.savefig(savename, dpi=150, transparent=True)
+            fig1.savefig(savename, dpi=150)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print time + ": " + savename + " created."
