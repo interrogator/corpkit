@@ -27,7 +27,8 @@ def plotter(title,
             skip63 = False, 
             projection = True,
             just_totals = False,
-            threshold = 'relative'):
+            threshold = 'relative',
+            style = 'ggplot'):
     """
     Visualise interrogator() results, optionally generating a csv as well.
 
@@ -93,6 +94,9 @@ def plotter(title,
     save : True/False/string
         Generate save image with string as filename
         If True, 'title' string is used for name
+    style : str
+        visualisation style sheets. pick from:
+        'dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight'
 
     NYT-only parameters
     -----
@@ -136,7 +140,7 @@ def plotter(title,
     import copy
     from time import localtime, strftime
     import numpy as np
-    
+    import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib import rc
     from matplotlib.ticker import MaxNLocator, ScalarFormatter
@@ -163,6 +167,14 @@ def plotter(title,
     
     #font
     rcParams.update({'font.size': (figsize / 2) + 7}) # half your size plus seven
+
+    # nicer looks for plots
+
+    styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight']
+    if style not in styles:
+        raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
+    
+    matplotlib.style.use(style)
     
     # check what we're doing here.
     have_python_tex = check_pytex()
@@ -555,7 +567,7 @@ def plotter(title,
 
                 for i in range(1, len(corpus_names)):
                     # only plot the word the first time around
-                    if i != 1:
+                    if i != len(corpus_names) - 1:
                         word = None
                         markertype = None
                     # add totals to word if need be
@@ -670,7 +682,7 @@ def plotter(title,
         plt.subplots_adjust(left=0.08)
     if rotate:
         plt.subplots_adjust(bottom=0.15)
-    plt.grid()
+    #plt.grid()
     fig1 = plt.gcf()
     if not have_python_tex:
         plt.show()
