@@ -13,13 +13,18 @@ def interrogator(path, options, query,
                 phrases = False, 
                 dep_type = 'basic-dependencies',
                 function_filter = False,
-                return_table = False,
-                return_csv_table = False,
-                **kwargs):
+                table_size = 50):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
     keywords/ngrams
+
+    Output: a named tuple, with 'branches':
+        variable_name.query = a record of what query generated th
+        variable_name.results = a list of all results
+        variable_name.totals = a list of just totals
+        variable_name.table = a Pandas (or CSV if Pandas not found) table
+        of top <table_size> results
 
     Parameters
     ----------
@@ -70,12 +75,6 @@ def interrogator(path, options, query,
     function_filter : Bool/regex
         If you set this to a regex, for the 'g' and 'd' options, only words 
         whose function matches the regex will be kept, and the tag will not be printed
-    return_table : True/False/int
-        Returns a Pandas table of the top n results in every subcorpus (requires Pandas).
-        you can use .to_latex() afterward to make a TeX booktabs version.
-        Change it to an integer to get that many rows of results. True defaults to 10.
-    return_csv_table : bool
-        return CSV, instead of Pandas---suitable for Excel etc.
 
     Example 1: Tree querying
     --------
@@ -116,10 +115,13 @@ def interrogator(path, options, query,
     import warnings
     from collections import Counter
     from time import localtime, strftime
-    if return_table:
+    try:
         import pandas
         from pandas import read_csv
         from StringIO import StringIO
+        have_pandas = True
+    except:
+        have_pandas = False
 
     import nltk
     try:
@@ -451,7 +453,7 @@ def interrogator(path, options, query,
         """reorder depnum results and/or generate totals list"""
         yearlist = [[unicode(i[0])] for i in results_list[0][1:]]
         #print yearlist
-        totallist = [u'Totals']
+        totallist = [u'Total']
         counts = []
         for entry in results_list: # for each depnum:
             depnum = entry[0]
@@ -481,6 +483,28 @@ def interrogator(path, options, query,
             return yearlist
         if output == 'totals':
             return totallist
+
+    def tabler(subcorpus_names, list_of_dicts, num_rows):
+        csvdata = [','.join(subcorpus_names)]
+        # for number of rows of data in table
+        for i in range(num_rows):
+            line = []
+            for dictionary in list_of_dicts:
+                # check there are sufficient entries in the dictionary
+                if not len(dictionary) <= i:
+                    the_key = dictionary.most_common(i + 1)[-1][0]
+                else:
+                    the_key = ' '
+                line.append(the_key)
+            csvdata.append(','.join(line))
+        csv = '\n'.join(csvdata)
+        if not have_pandas:
+            df = csv
+        else:
+            df = read_csv(StringIO(csv))
+            pandas.set_option('display.max_columns', len(subcorpus_names))
+            pandas.set_option('display.max_rows', num_rows + 1)
+        return df
 
     # a few things are off by default:
     only_count = False
@@ -600,7 +624,7 @@ def interrogator(path, options, query,
     # some empty lists we'll need
     allwords_list = []
     results_list = []
-    main_totals = [u'Totals']
+    main_totals = [u'Total']
 
     # if doing dependencies, make list of all files, and a progress bar
     if dependency:
@@ -761,10 +785,6 @@ def interrogator(path, options, query,
         dictionary = Counter(subcorpus_data)       
         dicts.append(dictionary)
         
-        # skip next steps if making word table
-        if return_table:
-            continue
-        
         # make each result
         for word in list_words:
             getval = dictionary[word[0]]
@@ -777,50 +797,9 @@ def interrogator(path, options, query,
     p.animate(len(results_list))
 
     # return pandas/csv table of most common results in each subcorpus
-    if return_table:
-        # first line
-        try:
-            csvdata = [','.join([int(subcorpus_name).zfill(num_zeroes) for subcorpus_name, subcorpus_data in results_list])]
-        except:
-            csvdata = [','.join([subcorpus_name for subcorpus_name, subcorpus_data in results_list])]
-
-        # set n
-        if type(return_table) == int:
-            n = return_table
-        else:
-            n = 10
-        # for number of rows of data in table
-        for i in range(n):
-            line = []
-            for dictionary in dicts:
-                # check there are sufficient entries in the dictionary
-                if not len(dictionary) <= i:
-                    the_key = dictionary.most_common(i + 1)[-1][0]
-                else:
-                    the_key = ' '
-                line.append(the_key)
-            csvdata.append(','.join(line))
-        csv = '\n'.join(csvdata)
-        
-        if return_csv_table:
-            if have_ipython:
-                clear_output()
-            else:
-                print '\n'
-            return csv
-
-        df = read_csv(StringIO(csv))
-        pandas.set_option('display.max_columns', len(sorted_dirs))
-        pandas.set_option('display.max_rows', n + 1)
-        if have_ipython:
-            clear_output()
-        else:
-            print '\n'
-        #time = strftime("%H:%M:%S", localtime())
-        #print '%s: Finished!' % (time, len(list_words), main_totals[-1][-1])
-        print df
-        return df
-
+    if table_size > max([len(d) for d in dicts]):
+        table_size = max([len(d) for d in dicts])
+    df = tabler(sorted_dirs, dicts, table_size)
 
     # do totals (and keep them), then sort list by total
     # depnum is a little different, though
@@ -846,9 +825,11 @@ def interrogator(path, options, query,
     main_totals.append([u'Total', total])
 
     #make results into named tuple
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     query_options = [path, query, options] 
-    output = outputnames(query_options, list_words, main_totals)
+
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
+    output = outputnames(query_options, list_words, main_totals, df)
+
     time = strftime("%H:%M:%S", localtime())
     if have_ipython:
         clear_output()
@@ -1203,90 +1184,3 @@ def check_tex(have_ipython = True):
         except subprocess.CalledProcessError:
             have_tex = False
     return have_tex
-
-
-def word_table(corpus, show = 'keywords', n = 10, dictionary = 'bnc.p', return_csv = False):
-    """Make a Pandas table with keywords or ngrams"""
-    import os
-    import pandas
-    from pandas import read_csv
-    from StringIO import StringIO
-    import corpkit
-    from corpkit import keywords
-    from corpkit.progressbar import ProgressBar
-    try:
-        from IPython.display import display, clear_output
-    except ImportError:
-        pass
-    try:
-        get_ipython().getoutput()
-    except TypeError:
-        have_ipython = True
-    except NameError:
-        import subprocess
-        have_ipython = False
-
-    from time import localtime, strftime
-
-    
-    # get list of corpora
-    dirs = [d for d in os.listdir(corpus) if os.path.isdir(os.path.join(corpus, d))]
-    dirs.sort(key=int)
-    num_zeroes = len(str(dirs[-1]))
-    sorted_dirs = [os.path.join(corpus, d) for d in dirs]
-
-    
-    if show.startswith('key'):
-        what_to_get = 0
-        showing = 'keywords'
-    elif 'gram' in show:
-        what_to_get = 1
-        showing = 'ngrams'
-    else:
-        raise ValueError("show = %s not recognised. Must be 'keywords' or 'ngrams'")
-
-    time = strftime("%H:%M:%S", localtime())
-    print ("\n%s: Making table of %s: %s\n" % (time, showing, corpus) )
-
-    keys = []
-    p = ProgressBar(len(sorted_dirs))
-    for index, dir in enumerate(sorted_dirs):
-        p.animate(index)
-        keys.append([os.path.basename(dir), keywords(dir, dictionary = dictionary, nkey = n, nngram = n, printstatus = False)[what_to_get]])
-    p.animate(len(sorted_dirs)) 
-    try:
-        csvdata = [','.join([os.path.basename(int(d[0]).zfill(num_zeroes)) for d in keys])]
-    except:
-        csvdata = [','.join([os.path.basename(d[0]) for d in keys])]
-    for i in range(n):
-        line = []
-        for k in keys:
-            list_of_keywords = k[1]
-            try:
-                the_key = list_of_keywords[i][1]
-            except:
-                the_key = ' '
-            line.append(the_key)
-        csvdata.append(','.join(line))
-    csv = '\n'.join(csvdata)
-    if return_csv:
-        if have_ipython:
-            clear_output()
-        else:
-            print '\n'
-        return csv
-
-    df = read_csv(StringIO(csv))
-    pandas.set_option('display.max_columns', len(keys))
-    pandas.set_option('display.max_rows', len(keys[0][1]))
-    if have_ipython:
-        clear_output()
-    else:
-        print '\n'
-    #time = strftime("%H:%M:%S", localtime())
-    #print '%s: Finished!' % (time, len(list_words), main_totals[-1][-1])
-    print df
-    return df
-
-
-
