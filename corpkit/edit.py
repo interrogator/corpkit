@@ -493,9 +493,13 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
                     #Pick a new name." % (savename, savedir))
             
     try:
-        temp_list = [interrogation.query, interrogation.results, interrogation.totals]
+        temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
     except AttributeError:
-        temp_list = [interrogation.query, interrogation.totals]
+        try:
+            temp_list = [interrogation.query, interrogation.results, interrogation.totals]
+        except:
+            temp_list = [interrogation.query, interrogation.totals]
+
     if not os.path.exists(savedir):
         os.makedirs(savedir)
     if not savename.endswith('.p'):
@@ -511,7 +515,10 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     if not savename.endswith('.p'):
         savename = savename + '.p'
     unpickled = pickle.load(open('%s/%s' % (loaddir, savename), 'rb'))
-    if len(unpickled) == 3:
+    if len(unpickled) == 4:
+        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
+        output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])        
+    elif len(unpickled) == 3:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2])
     elif len(unpickled) == 2:
