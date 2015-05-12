@@ -9,17 +9,17 @@
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
-    - [Key features](#key-features)
+  - [Key features](#key-features)
 - [Installation](#installation)
-    - [By downloading the repository](#by-downloading-the-repository)
-    - [By cloning the repository](#by-cloning-the-repository)
-    - [Via `pip`](#via-pip)
+  - [By downloading the repository](#by-downloading-the-repository)
+  - [By cloning the repository](#by-cloning-the-repository)
+  - [Via `pip`](#via-pip)
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [Examples](#examples)
-    - [Concordancing](#concordancing)
-    - [Systemic functional stuff](#systemic-functional-stuff)
-    - [More complex queries and plots](#more-complex-queries-and-plots)
+  - [Concordancing](#concordancing)
+  - [Systemic functional stuff](#systemic-functional-stuff)
+  - [More complex queries and plots](#more-complex-queries-and-plots)
 - [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
@@ -246,7 +246,7 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 # deprole finds the dependent of verbal processes, and its functional role
 # keep only results matching function_filter regex
 >>> sayers = interrogator(corpus, 'deprole', processes.verbal, 
-...    function_filter = r'^nsubj$')
+...    function_filter = r'^nsubj$', lemmatise = True)
 
 # have a look at the top results
 >>> quickview(sayers.results, n = 20)
