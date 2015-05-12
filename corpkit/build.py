@@ -15,6 +15,10 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     from collections import Counter
     from corpkit.progressbar import ProgressBar
     try:
+        from IPython.display import display, clear_output
+    except ImportError:
+        pass
+    try:
         get_ipython().getoutput()
     except TypeError:
         have_ipython = True
@@ -38,11 +42,12 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     if os.path.isfile(os.path.join(dictpath, dictname)):
         raise ValueError(os.path.join(dictpath, dictname) + " already exists. Delete it or use a new filename.")
     time = strftime("%H:%M:%S", localtime())
-    print time + ': Concordancing ... \n'
+    print '\n%s: Flattening trees ... \n' % time
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     query = r'ROOT < __'
     for d in sorted_dirs:
+        p.animate(index)
         if len(sorted_dirs) == 1:
             subcorp = d
         else:
@@ -59,8 +64,11 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
             results = os.linesep.join([s for s in results.splitlines() if s]).split('\n')
         for line in results:
             all_results.append(line)
+    p.animate(len(sorted_dirs))
+    if have_ipython:
+        clear_output()
     time = strftime("%H:%M:%S", localtime())
-    print '\n\n' + time + ': Tokenising ' + str(len(all_results)) + ' lines ... \n'
+    print '\n%s: Tokenising %d lines ... \n' % ( time, len(all_results))
     all_results = '\n'.join(all_results)
     text = unicode(all_results.lower(), 'utf-8', errors = 'ignore')
     sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
