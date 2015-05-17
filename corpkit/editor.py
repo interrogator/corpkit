@@ -20,7 +20,7 @@ def editor(dataframe1,
 
             only_totals = False,
             remove_above_p = False,
-            P = 0.05, 
+            p = 0.05, 
             revert_year = True
             ):
     """Edit results of corpus interrogation"""
@@ -299,6 +299,10 @@ def editor(dataframe1,
             elif sort_by == 'decrease':
                 df = df[slopes.argsort()]
             
+            # untested
+            if remove_above_p:
+                df = df.T.loc[:, (df.T.p < p)].T
+            
             # list of all columns
             move_totals = list(df.columns)
             
@@ -407,8 +411,6 @@ def editor(dataframe1,
     except AttributeError:
         pass
 
-
-
     # combine lists
     use_combiney = False
     try:
@@ -417,6 +419,8 @@ def editor(dataframe1,
             # set a threshold if just_totals
             if just_totals:
                 the_threshold = set_threshold(df2, threshold)
+            else:
+                the_threshold = None
             df = combiney(df, df2, operation = operation, threshold = the_threshold)
     except AttributeError:
         pass
