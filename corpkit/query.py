@@ -756,10 +756,16 @@ def interrogator(path, options, query,
     if only_count:
         total = sum([i[1] for i in main_totals[1:]])
         main_totals.append([u'Total', total])
+        years = []
+        counts = []
+        for year, count in main_totals[1:]:
+            years.append(year)
+            counts.append(count)
+        stotals = pd.Series(counts, index = years, name = 'Total')
         # no results branch:
-        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
+        outputnames = collections.namedtuple('interrogation', ['query', 'totals', 'stotal'])
         query_options = [path, query, options] 
-        output = outputnames(query_options, main_totals)
+        output = outputnames(query_options, main_totals, stotals)
         if have_ipython:
             clear_output()
         return output
@@ -778,6 +784,7 @@ def interrogator(path, options, query,
     # make dictionary of every subcorpus and store in dicts
     dicts = []
     p = ProgressBar(len(results_list))
+    the_big_dict = {}
     for index, subcorpus in enumerate(results_list):
         subcorpus_name = subcorpus[0]
         subcorpus_data = subcorpus[1]
@@ -792,7 +799,16 @@ def interrogator(path, options, query,
                 word.append([int(subcorpus_name), getval])
             except ValueError:
                 word.append([subcorpus_name, getval])
-
+    
+    #make pandas table, then flip it
+    for word in unique_words:
+        the_big_dict[word] = [each_dict[word] for each_dict in dicts]
+    pandas_frame = pandas.DataFrame(the_big_dict, index = sorted_dirs)
+    #pandas[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
+    pandas_frame['Total'] = pandas_frame.sum(axis=1)
+    pandas_frame = pandas_frame.T
+    pandas_frame['Total'] = pandas_frame.sum(axis=1)
+    pandas_frame = pandas_frame.T
     # 100%            
     p.animate(len(results_list))
 
@@ -800,6 +816,8 @@ def interrogator(path, options, query,
     if table_size > max([len(d) for d in dicts]):
         table_size = max([len(d) for d in dicts])
     df = tabler(sorted_dirs, dicts, table_size)
+    
+
 
     # do totals (and keep them), then sort list by total
     # depnum is a little different, though
@@ -823,12 +841,18 @@ def interrogator(path, options, query,
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
     main_totals.append([u'Total', total])
+    years = []
+    counts = []
+    for year, count in main_totals[1:]:
+        years.append(year)
+        counts.append(count)
+    stotals = pd.Series(counts, index = years)
 
     #make results into named tuple
     query_options = [path, query, options] 
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
-    output = outputnames(query_options, list_words, main_totals, df)
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table', 'df', 'stotal'])
+    output = outputnames(query_options, list_words, main_totals, df, pandas_frame, stotals)
 
     time = strftime("%H:%M:%S", localtime())
     if have_ipython:
