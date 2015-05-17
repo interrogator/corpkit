@@ -800,7 +800,7 @@ def interrogator(path, options, query,
             except ValueError:
                 word.append([subcorpus_name, getval])
     
-    #make pandas table, then flip it
+    #make pandas table
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
     pandas_frame = pandas.DataFrame(the_big_dict, index = sorted_dirs)
@@ -809,6 +809,15 @@ def interrogator(path, options, query,
     pandas_frame = pandas_frame.T
     pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
+    tot = pandas_frame.ix['Total']
+    pandas_frame = pandas_frame[tot.argsort()[::-1]]
+    #pandas_frame = pandas_frame.drop('Total', axis = 0)
+    move_totals = list(pandas_frame.columns)
+    move_totals.remove('Total')
+    move_totals.append('Total')
+    pandas_frame = pandas_frame[move_totals]
+
+
     # 100%            
     p.animate(len(results_list))
 
