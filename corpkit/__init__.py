@@ -18,27 +18,27 @@ sys.path.append(path_to_corpkit)
 sys.path.append(os.path.join(thepath, 'dictionaries'))
 sys.path.append(thepath)
 
-from query import interrogator
+from interrogator import interrogator
+from editor import editor
+from plotter import plotter
+from other import quickview
+#from conc import conc
+
+from saveload import save_result
+from saveload import load_result
+
 from query import interroplot
 from query import multiquery
 from query import conc
-from query import topix_search
 
 from view import old_plotter
-from view import table
-from view import topix_plot
-from view import quickview
+from view import old_quickview
 
 from keys import keywords
 from colls import collocates
 
-from edit import merger
-from edit import surgeon
-from edit import resorter
-from edit import mather
 from edit import save_result
 from edit import load_result
-from edit import percenter
 
 from build import dictmaker
 from build import correctspelling
@@ -49,8 +49,7 @@ from notebook import ipyconverter
 from notebook import conv
 from notebook import new_project
 
-from editor import editor
-from editor import plotter
+
 
 from trees import quicktree
 from trees import searchtree

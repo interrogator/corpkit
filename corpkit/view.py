@@ -3,7 +3,6 @@
 #   Interrogating parsed corpora and plotting the results: plotter()
 #   Author: Daniel McDonald
 
-
 def old_plotter(title, 
             results, 
             sort_by = False, 
@@ -739,75 +738,7 @@ def old_plotter(title,
             csvmake = urlify(title) + '.csv'    
         csvmaker(csvdata, csvalldata, csvmake)
 
-
-def topix_plot(title, results, fract_of = False, **kwargs):
-    """Plots results from subcorpus interrogation."""
-    topic_subcorpora = ['economics', 'health', 'politics']
-    for index, topic in enumerate(topic_subcorpora):
-        newtitle = title + ' in ' + str(topic) + ' articles' # semi-automatic titles (!)
-        if not fract_of: # if counting ratios/percentages, 
-            plotter(newtitle, results[index], **kwargs)
-        else:
-            plotter(newtitle, results[index], 
-                fract_of = fract_of[index], **kwargs)
-
-
-
-
-def table(data_to_table, allresults = False, maxresults = 50):
-    """Outputs a table from interrogator or CSV results.
-
-    if allresults, show all results table, rather than just plotted results"""
-    import pandas
-    from pandas import DataFrame
-    import re
-    import os
-    from StringIO import StringIO
-    import copy
-    if type(data_to_table) == str:
-        f = open(data_to_table)
-        raw = f.read()
-        #raw = os.linesep.join([s for s in raw.splitlines() if s])
-        plotted_results, all_results =  raw.split('All results:')
-        if not allresults:
-            lines = plotted_results.split('\n')
-            print str(lines[1])
-            data = '\n'.join([line for line in lines if line.strip()][2:])
-        if allresults:
-            lines = all_results.split('\n')
-            print str(lines[1])
-            lines = lines[:maxresults + 3]
-            data = '\n'.join([line for line in lines if line.strip()][1:])
-    elif type(data_to_table) == list:
-        csv = []
-        if type(data_to_table[0]) == str or type(data_to_table[0]) == unicode:
-            wrapped = [copy.deepcopy(data_to_table)]
-        else:
-            wrapped = copy.deepcopy(data_to_table)
-        regex = re.compile('(?i)total')
-        if re.match(regex, wrapped[-1][0]):
-            total_present = True
-        else:
-            total_present = False
-        years = [str(year) for year, count in wrapped[0][1:]]
-        # uncomment below to make total column
-        topline = ',' + ','.join(years) # + ',total'
-        csv.append(topline)
-        data = []
-        for entry in wrapped[:maxresults]:
-            word = entry[0]
-            total = sum([count for year, count in entry[1:]])
-            counts = [str(count) for year, count in entry[1:]]
-            # uncomment below to make total column
-            dataline = str(word) + ',' + ','.join(counts) # + ',' + str(total)
-            csv.append(dataline)
-        # table it with pandas
-        data = '\n'.join(csv)
-    df = DataFrame(pandas.read_csv(StringIO(data), index_col = 0, engine='python'))
-    pandas.options.display.float_format = '{:,.2f}'.format
-    return df
-
-def quickview(lst, 
+def old_quickview(lst, 
               n = 50, 
               sort_by = False, 
               showtotals = True,
