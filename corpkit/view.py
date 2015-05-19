@@ -4,7 +4,7 @@
 #   Author: Daniel McDonald
 
 
-def plotter(title, 
+def old_plotter(title, 
             results, 
             sort_by = False, 
             fract_of = False, 

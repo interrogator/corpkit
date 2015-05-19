@@ -24,7 +24,7 @@ from query import multiquery
 from query import conc
 from query import topix_search
 
-from view import plotter
+from view import old_plotter
 from view import table
 from view import topix_plot
 from view import quickview
@@ -40,7 +40,6 @@ from edit import save_result
 from edit import load_result
 from edit import percenter
 
-
 from build import dictmaker
 from build import correctspelling
 
@@ -49,6 +48,9 @@ from notebook import pytoipy
 from notebook import ipyconverter
 from notebook import conv
 from notebook import new_project
+
+from editor import editor
+from editor import plotter
 
 from trees import quicktree
 from trees import searchtree
