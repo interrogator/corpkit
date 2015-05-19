@@ -116,8 +116,8 @@ def interrogator(path, options, query,
     from collections import Counter
     from time import localtime, strftime
     try:
-        import pandas
-        from pandas import read_csv
+        import pandas as pd
+        from pandas import read_csv, DataFrame, Series
         from StringIO import StringIO
         have_pandas = True
     except:
@@ -502,8 +502,8 @@ def interrogator(path, options, query,
             df = csv
         else:
             df = read_csv(StringIO(csv))
-            pandas.set_option('display.max_columns', len(subcorpus_names))
-            pandas.set_option('display.max_rows', num_rows + 1)
+            pd.set_option('display.max_columns', len(subcorpus_names))
+            pd.set_option('display.max_rows', num_rows + 1)
         return df
 
     # a few things are off by default:
@@ -763,9 +763,9 @@ def interrogator(path, options, query,
             counts.append(count)
         stotals = pd.Series(counts, index = years, name = 'Total')
         # no results branch:
-        outputnames = collections.namedtuple('interrogation', ['query', 'totals', 'stotal'])
+        outputnames = collections.namedtuple('interrogation', ['query', 'stotal', 'old_totals'])
         query_options = [path, query, options] 
-        output = outputnames(query_options, main_totals, stotals)
+        output = outputnames(query_options, stotals, main_totals)
         if have_ipython:
             clear_output()
         return output
@@ -803,7 +803,7 @@ def interrogator(path, options, query,
     #make pandas table
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
-    pandas_frame = pandas.DataFrame(the_big_dict, index = sorted_dirs)
+    pandas_frame = DataFrame(the_big_dict, index = sorted_dirs)
     #pandas[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
     pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
@@ -860,8 +860,8 @@ def interrogator(path, options, query,
     #make results into named tuple
     query_options = [path, query, options] 
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table', 'df', 'stotal'])
-    output = outputnames(query_options, list_words, main_totals, df, pandas_frame, stotals)
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table', 'old_results', 'old_totals'])
+    output = outputnames(query_options, pandas_frame, stotals, df, list_words, main_totals)
 
     time = strftime("%H:%M:%S", localtime())
     if have_ipython:
