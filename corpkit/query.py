@@ -817,7 +817,6 @@ def interrogator(path, options, query,
     move_totals.append('Total')
     pandas_frame = pandas_frame[move_totals]
 
-
     # 100%            
     p.animate(len(results_list))
 
@@ -1089,17 +1088,21 @@ def multiquery(corpus, query, sort_by = 'total'):
     from corpkit.query import interrogator
     from corpkit.edit import resorter
     from corpkit.edit import merger
+    import pandas
     results = []
     for name, pattern in query:
         result = interrogator(corpus, 'c', pattern)
-        result.totals[0] = name # rename count
+
+        result.totals.name = name # rename count
         results.append(result.totals)
+    results = pd.concat(results, axis = 1)
+
     if sort_by:
-        results = resorter(results, sort_by = sort_by)
-    tot = merger(results, r'.*', newname = 'Totals', printmerge = False)
-    #print tot
+        results = editor(results, sort_by = sort_by)
+
+    tot = results.sum(axis = 1)
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    output = outputnames(query, results, tot.totals)
+    output = outputnames(query, results, tot)
     return output
 
 def topix_search(topic_subcorpora, options, query, **kwargs):
