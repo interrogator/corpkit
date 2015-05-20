@@ -1,9 +1,9 @@
-def quickview(lst, n = 50):
-    """view top n results of lst"""
+def quickview(results, n = 50):
+    """view top n results of results"""
     import pandas
-    for index, w in enumerate(list(lst.columns)[:n]):
+    for index, w in enumerate(list(results.columns)[:n]):
         fildex = '% 3d' % index
-        print '%s: %s (n=%d)' %(fildex, w, lst[w]['Total'])
+        print '%s: %s (n=%d)' %(fildex, w, results[w]['Total'])
 
 def concprinter(df, kind = 'string', n = 100):
     """print conc lines nicely, to string, latex or csv"""
