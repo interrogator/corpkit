@@ -6,6 +6,8 @@ def conc(corpus, query,
         trees = False, 
         csvmake = False): 
     """A concordancer for Tregex queries"""
+    import pandas as pd
+    from pandas import DataFrame
     import os
     from random import randint
     import time
@@ -25,58 +27,9 @@ def conc(corpus, query,
     except NameError:
         import subprocess
         have_ipython = False
-
-    on_cloud = check_dit()
     
-    def csvmaker(csvdata, sentences, csvmake):
-        """Puts conc() results into tab-separated spreadsheet form"""
-        # I made this before learning about Pandas etc., so there's
-        # probably a much easier way to get the same result ...
-        if os.path.isfile(csvmake):
-            raise ValueError("CSV error: %s already exists in current directory. Move it, delete it, or change the name of the new .csv file." % csvmake)
-
-        #make data utf 8
-        uc_data = []
-        uc_sentences = []
-        for line in csvdata:
-            newline = []
-            for part in line:
-                newpart = unicode(part, 'utf-8')
-                newline.append(newpart)
-            uc_data.append(newline)
-        for sentence in sentences:
-            newsentence = unicode(sentence, 'utf-8')
-            uc_sentences.append(newsentence)
-        csv = []
-        # make first line
-        topline = query + '\nTab separated, with window (n=' + str(len(csvdata)) + '):\n'
-        midline = '\n\n' + query + '\nEntire sentences (n=' + str(len(sentences)) + '):\n'
-        # title then years for top row
-        csv.append(topline)
-        # for each word
-        for entry in uc_data:
-            sentence = '\t'.join(entry)
-            csv.append(sentence)
-        csv.append(midline)
-        for entry in uc_sentences:
-            csv.append(entry)
-        csv = '\n'.join(csv)
-        # write the csv file?
-        try:
-            fo=open(csvmake,"w")
-        except IOError:
-            print "Error writing CSV file."
-        fo.write(csv.encode("UTF-8"))
-        fo.close()
-        time = strftime("%H:%M:%S", localtime())
-        print time + ": " + csvmake + " written to currect directory."
-                
-    def list_duplicates(seq):
-        tally = defaultdict(list)
-        for i,item in enumerate(seq):
-            tally[item].append(i)
-        return ((key,locs) for key,locs in tally.items() 
-                        if len(locs)>1)
+    # check if on the cloud, as this changes how we do tregex queries
+    on_cloud = check_dit()
 
     # make sure query is valid:
     query_test(query)
@@ -89,7 +42,6 @@ def conc(corpus, query,
         options = '-s'
     else:
         options = '-t'
-
     # get whole sentences:
     if have_ipython:
         if on_cloud:
@@ -109,9 +61,6 @@ def conc(corpus, query,
     
     results = list(whole_results)
     
-    if csvmake:
-        sentences = list(results)
-    
     # get just the match of the sentence
     if have_ipython:
         if on_cloud:
@@ -119,7 +68,7 @@ def conc(corpus, query,
         else:
             tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         middle_column_result = get_ipython().getoutput(tregex_command)
-        result = [line for line in middle_column_result if line]
+        middle_column_result = [line for line in middle_column_result if line]
     else:
         if on_cloud:
             tregex_command = ["sh", "tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
@@ -128,66 +77,46 @@ def conc(corpus, query,
         FNULL = open(os.devnull, 'w')
         middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
         middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
-    tresults = list(middle_column_result)
+    maximum = len(max(middle_column_result, key=len))
     zipped = zip(whole_results, middle_column_result)
-    all_dupes = []
-
-    
+    unique_results = []
     # make sure we have some results
     if len(zipped) == 0:
         raise ValueError("No matches found, sorry. I wish there was more I could tell you.") 
 
-    maximum = len(max(tresults, key=len)) # longest result in characters
-    csvdata = []
-    unique_results = []
-    for result in zipped: 
-        tree = result[0]
-        pattern = result[1]
+    for whole_result, middle_part in zipped:
         if not trees:
-            regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + re.escape(pattern) + r"\b)(.{," + re.escape(str(window)) + r"}[^\s]\b)")
+            regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + re.escape(middle_part) + r"\b)(.{," + re.escape(str(window)) + r"}[^\s]\b)")
         else:
-            regex = re.compile(r"(.{,%s})(%s)(.{,%s})" % (window, re.escape(pattern), window ))
-        search = re.findall(regex, tree)
+            regex = re.compile(r"(.{,%s})(%s)(.{,%s})" % (window, re.escape(middle_part), window ))
+        search = re.findall(regex, whole_result)
         for result in search:
             unique_results.append(result)
     unique_results = set(sorted(unique_results)) # make unique
     
-    # from here on down needs a major cleanup ...
-    for unique_result in unique_results:
-        lstversion = list(unique_result)
-        if len(lstversion) == 3:
-            # make match red!
-            # lstversion[1] = "\x1b[31m%s\x1b[0m" % lstversion[1]
-            if csvmake:
-                csvdata.append(lstversion)
-            whitespace_first = window + 2 - len(lstversion[0])
-            whitespace_second = maximum - len(lstversion[1])
-            lstversion[0] = ' ' * whitespace_first + lstversion[0]
-            lstversion[1] = lstversion[1] + ' ' * whitespace_second
-            output.append(lstversion)
-    formatted_output = []
-    for index, row in enumerate(output):
-        formatted_output.append(" ".join(row))
-        #if noprint is False:
-        if not random:
-            if index < n:
-                print '% 4d' % index, " ".join(row)
-    if csvmake:
-        csvmaker(csvdata, sentences, csvmake)
-    if not random:
-        return formatted_output
+    #make into series
+    series = []
+
+    lname = ' ' * (window/2-1) + 'l'
+    mname = ' ' * (maximum/2) + 'm'
+    rname = ' ' * (window/2-1) + 'r'
+    for result in unique_results:
+        series.append(pd.Series(result, index = [lname, '  m', rname]))
+
     if random:
-        outnum = len(output)
-        if n > outnum:
-            n = outnum
-        rand_out = []
-        while len(rand_out) < n:
-            randomnum = randint(0,outnum - 1)
-            possible = output[randomnum]
-            if possible not in rand_out:
-                rand_out.append(possible)
-        formatted_random_output = []
-        for index, row in enumerate(rand_out):
-            formatted_random_output.append(" ".join(row))
-            print '% 4d' % index, " ".join(row)
-        return formatted_random_output
+        import random
+        random_indices = random.sample(range(len(series)), n)
+        series = [s for index, s in enumerate(series) if index in random_indices]
+    else:
+        series = series[:n]
+
+    df = pd.concat(series, axis = 1).T
+    import pandas as pd
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('max_colwidth',window)
+    pd.set_option('display.width', 1000)
+    pd.set_option('expand_frame_repr', False)
+    pd.set_option('colheader_justify', 'left')
+
+    print df.to_string(formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format}, index=False)
+    return df
