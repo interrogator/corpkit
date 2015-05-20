@@ -189,10 +189,10 @@ Output:
 
 ## Examples
 
-Here's another basic example of `interrogator()` and `plotter()` at work on the NYT corpus:
+Here's another basic example of `interrogator()`, `editor()` and `plotter()` at work on the NYT corpus:
 
 ```python
->>> from corpkit import interrogator, plotter
+>>> from corpkit import interrogator, editor, plotter
 # make tregex query: head of NP in PP containing 'of'
 # in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
@@ -200,11 +200,12 @@ Here's another basic example of `interrogator()` and `plotter()` at work on the 
 # count terminals/leaves of trees only, and do lemmatisation:
 >>> riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
 
+# use editor to turn absolute into relative frequencies
 >>> to_plot = editor(riskofnoun.results, '%', riskofnoun.totals, 
 ...                  skip_subcorpora = [1963], sort_by = 'total')
 
->>> plotter('Risk of (noun)', riskofnoun
-...    num_to_plot = 7)
+# plot the results
+>>> plotter(riskofnoun, title = 'Risk of (noun)', num_to_plot = 7)
 ```
 
 Output: 
