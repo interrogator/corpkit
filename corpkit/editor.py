@@ -41,6 +41,13 @@ def editor(dataframe1,
     except ImportError:
         pass
 
+    # check if we're in concordance mode
+    if list(dataframe1.columns) == ['l', 'm', 'r']:
+        conc_lines = True
+    else:
+        conc_lines = False
+
+
     def combiney(df, df2, operation = '%', threshold = 'medium'):
         """mash df and df2 together in appropriate way"""
         if single_totals:
@@ -359,8 +366,29 @@ def editor(dataframe1,
 
 #####################################################
 
-    # start
-    print '\nProcessing\n' + ('=' * 80) + '\n'
+    # deal with conc line input
+    if conc_lines:
+        df = dataframe1.copy()
+        if just_entries:
+            if type(just_entries) == int:
+                just_entries = [just_entries]
+            if type(just_entries) == list:
+                if type(just_entries[0]) != int:
+                    raise ValueError('just_entries must be int or list of ints when working with concordance lines.')
+                else:
+                    df = df.ix[just_entries].reset_index(drop = True)
+
+        if skip_entries:
+            if type(skip_entries) == int:
+                skip_entries = [skip_entries]
+            if type(skip_entries) == list:
+                if type(skip_entries[0]) != int:
+                    raise ValueError('skip_entries must be int or list of ints when working with concordance lines.')
+                else:
+                    df = df.ix[[e for e in list(df.index) if e not in skip_entries]].reset_index(drop = True)
+
+        return df
+
 
     # copy, remove totals
     df = dataframe1.copy()
