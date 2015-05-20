@@ -32,7 +32,7 @@ def keywords(data,
         have_ipython = False
 
     from corpkit.keys import ngrams, keywords_and_ngrams
-    from corpkit.edit import datareader
+     from corpkit.other import datareader
     from corpkit.query import check_dit
 
     on_cloud = check_dit()

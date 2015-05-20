@@ -49,7 +49,7 @@ def conc(corpus, query,
         else:
             tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         whole_results = get_ipython().getoutput(tregex_command)
-        result = [line for line in whole_results if line]
+        whole_results = [line for line in whole_results if line]
     else:
         if on_cloud:
             tregex_command = ["sh", "tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
@@ -98,10 +98,14 @@ def conc(corpus, query,
     series = []
 
     lname = ' ' * (window/2-1) + 'l'
-    mname = ' ' * (maximum/2) + 'm'
+    # centering middle column
+    #mname = ' ' * (maximum/2+1) + 'm'
+    mname = ' ' * (maximum/2-1) + 'm'
     rname = ' ' * (window/2-1) + 'r'
-    for result in unique_results:
-        series.append(pd.Series(result, index = [lname, '  m', rname]))
+    for start, word, end in unique_results:
+        #spaces = ' ' * (maximum / 2 - (len(word) / 2))
+        #new_word = spaces + word + spaces
+        series.append(pd.Series([start, word, end], index = [lname, mname, rname]))
 
     if random:
         import random
@@ -111,12 +115,12 @@ def conc(corpus, query,
         series = series[:n]
 
     df = pd.concat(series, axis = 1).T
-    import pandas as pd
     pd.set_option('display.max_columns', 500)
-    pd.set_option('max_colwidth',window)
+    pd.set_option('max_colwidth',window * 2)
     pd.set_option('display.width', 1000)
     pd.set_option('expand_frame_repr', False)
     pd.set_option('colheader_justify', 'left')
-
-    print df.to_string(formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format}, index=False)
+    print df.to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+    df.columns = ['l', 'm', 'r']
     return df
+

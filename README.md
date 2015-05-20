@@ -36,9 +36,8 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | ----------------- | ---------------------------------- | 
 | `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
-| `surgeon()`       | edit `interrogator()` results      | 
-| `merger()`        | merge `interrogator()` results      | 
 | `conc()`          | complex concordancing of subcorpora | 
+| `editor()`       | edit `interrogator()` or `conc()` results      | 
 | `keywords()`      | get keywords and ngrams from corpus/subcorpus/concordance lines | 
 | `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
 
@@ -57,35 +56,41 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 * Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code), and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
 * Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually
+* Output Pandas DataFrames that can be easily edited and visualised
+
+#### `editor()`
+
+* Remove, keep or merge interrogation results or subcorpora using indices, words or Regular Expressions (see below)
+* Sort results by name or total frequency
+* Use linear regression to figure out the trajectories of results, and sort by the most increasing, decreasing or static values
+* Show the *p*-value for linear regression slopes, or exclude results above *p*
+* Work with absolute frequency, or determine ratios/percentage of another list: 
+    * determine the total number of verbs, or total number of verbs that are *be*
+    * determine the percentage of verbs that are *be*
+    * determine the percentage of *be* verbs that are *was*
+    * determine the ratio of *was/were* ...
+    * etc.
+* Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
 #### `plotter()` 
 
-* Plot any number of results onto line charts (see below)
+* Plot using Pandas/Matplotlib
 * Plot anything you like: words, tags, counts for grammatical features ...
+* Create line charts, bar charts, pie charts, etc with the `kind` argument
+* Use `subplots = True` to produce individual charts for each result
 * Customisable figure titles, axes labels, legends, image size, etc.
 * Uses `TeX` if you have it
-* Plot by absolute frequency, or as a ratio/percentage of another list: 
-    * plot the total number of verbs, or total number of verbs that are *be*
-    * plot the percentage of verbs that are *be*
-    * plot the percentage of *be* verbs that are *was*
-    * plot the ratio of *was/were* ...
-    * etc.
-* Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
-* Plot only specific subcorpora in your collection, or spans of subcorpora
-* Use linear regression to figure out the trajectories of results, sort by the most increasing, decreasing or static values
-* Show the *p*-value for linear regression slopes, or exclude results above *p*
 * Use log scales if you really want
-* Save output to file and/or generate CSV
+* Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
+* Save images to file
 
 #### Other stuff
 
-* View results as a table via `Pandas`
-* Quickly edit and merge interrogation results with `surgeon()` and `merger()`, using regular expressions, result indices or lists of words (see below)
-* Tools for resorting or doing maths on interrogation results
+* View top results as a table via `Pandas`
 * Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
 * Randomise concordance results, determine window size, save to CSV, etc.
-* Quickly save interrogations and figures to file, and reload results in new sessions
+* Quickly save interrogations and figures to file, and reload results in new sessions with `save_result()` and `load_result()`
 * Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
 * Start a new blank project with `new_project()`
 
@@ -93,7 +98,7 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 
 * n-gramming and keywording can be done via `interrogator()`
 * keywording can easily be done on your concordance lines
-* you can use `surgeon()` to edit concordance line output
+* you can use `editor()` to edit concordance line output
 * You can build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
 * and so on ...
 
@@ -195,10 +200,11 @@ Here's another basic example of `interrogator()` and `plotter()` at work on the 
 # count terminals/leaves of trees only, and do lemmatisation:
 >>> riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
 
-# plot top 7 entries as percentage of all entries:
->>> plotter('Risk of (noun)', riskofnoun.results, 
-...    fract_of = riskofnoun.totals, num_to_plot = 7, 
-...    skip63 = False)
+>>> to_plot = editor(riskofnoun.results, '%', riskofnoun.totals, 
+...                  skip_subcorpora = [1963], sort_by = 'total')
+
+>>> plotter('Risk of (noun)', riskofnoun
+...    num_to_plot = 7)
 ```
 
 Output: 
@@ -219,22 +225,22 @@ You can use Tregex queries to concordance things, too:
 ...    n = 10, random = True)
 ```
 
-Output:
+Output (a Pandas DataFrame):
 
 ```
-   0    , you would think NASA 's mission team has taken  careless             risks with the lives of the seven astronauts who
-   1             But when the outrage begins rising , at  great                personal risk , from dissident voices trapped
-   2      shown that Americans worry that gene tests and  genetic              profiling could be used to keep people deemed at
-   3      that the surge in exports from China was an ''  immediate            risk '' to European manufacturers
-   4    any aggressive investigation could pose enormous  political            risks
-   5  their best deals at auction , but they are also at  highest              risk : Bidders can not see the interior of the
-   6                                           It 's the  ultimate             credit-default risk , '' said one commodities
-   7       the possibility of directly studying Vioxx 's  cardiovascular       risks in 2000 , but they apparently soon altered
-   8                The publishers have to shoulder that  financial            risk , so it 's not unusual for a distributor to
-   9        They argue that the United States is full of  energetic            risk-takers because it 's full of immigrants , who
+0    hedge funds or high-risk stocks obviously poses a         greater   risk to the pension program than a portfolio of   
+1           contaminated water pose serious health and   environmental   risks                                             
+2   a cash break-even pace '' was intended to minimize       financial   risk to the parent company                        
+3                                                Other           major   risks identified within days of the attack        
+4                           One seeks out stocks ; the           other   monitors risks                                    
+5        men and women in Colorado Springs who were at            high   risk for H.I.V. infection , because of            
+6   by the marketing consultant Seth Godin , to taking      calculated   risks , in the opinion of two longtime business   
+7        to happen '' in premises '' where there was a            high   risk of fire                                      
+8       As this was match points , some of them took a          slight   risk at the second trick by finessing the heart   
+9     said that the agency 's continuing review of how         Guidant   treated patient risks posed by devices like the 
 ```
 
-You can use this output as a dictionary, or extract keywords and ngrams from it, or edit results with `surgeon()`.
+You can use this output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`.
 
 ### Systemic functional stuff
 
@@ -282,8 +288,7 @@ Output:
 Let's plot *he* and *she*:
 
 ```python
->>> plotter('Gender of sayers in the NYT', sayers.results, 
-...    fract_of = sayers.totals, y_label = 'Percentage of all sayers',
+>>> plotter(sayers.results, title = 'Gender of sayers in the NYT',
 ...    num_to_plot = 2)
 ```
 
@@ -291,18 +296,18 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/gender-of-sayers-in-the-nyt.png" />
 <br>
 
-Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `surgeon()`, and plot something:
+Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `editor()`, and plot something:
 
 ```python
->>> from corpkit import surgeon
+>>> from corpkit import editor
 
-# give surgeon indices to keep or remove
->>> specific_sayers = surgeon(sayers.results, [0, 1, 2, 4, 5, 6, 
-...    8, 10, 14, 15, 27], remove = True)
+# give editor() indices to keep or remove
+>>> specific_sayers = editor(sayers.results, skip_entries = [0, 1, 2, 4, 5, 6, 
+...    8, 10, 14, 15, 27], skip_subcorpora = [1963], sort_by = 'total')
 
 # plot with a bunch of options
->>> plotter('People who say stuff', specific_sayers.results, 
-...    num_to_plot = 9, sort_by = 'total', skip63 = True)
+>>> plotter(specific_sayers, title = 'People who say stuff',
+...    num_to_plot = 9)
 ```
 
 Output:
@@ -336,22 +341,21 @@ Output:
  '   9: player (39)']
 ```
 
-We can use `merger()` to make some thematic categories:
+We can use `editor()` to make some thematic categories:
 
 ```python
->>> from corpkit import merger
+>>> them_cat = editor(noun_riskers.results, '%', noun_riskers.totals,
+...            merge_entries = ['person', 'man', 'woman', 
+...            'child', 'consumer', 'baby', 'student', 'patient'], 
+...            newname = 'Everyday people')
 
->>> them_cat = merger(noun_riskers.results, ['person', 'man', 'woman', 
-...    'child', 'consumer', 'baby', 'student', 'patient'], 
-...    newname = 'Everyday people')
->>> them_cat = merger(them_cat.results, ['company', 'bank', 'investor', 
+>>> them_cat = editor, them_cat, merge_entries = ['company', 'bank', 'investor', 
 ...    'government', 'leader', 'president', 'officer', 'politician', 
 ...    'institution', 'agency', 'candidate', 'firm'], 
 ...    newname = 'Institutions')
 
 # plot riskers:
->>> plotter('Types of riskers', them_cat.results, 
-...    fract_of = noun_riskers.totals, num_to_plot = 2)
+>>> plotter(them_cat, title = 'Types of riskers', num_to_plot = 2)
 ```
 
 Output:
@@ -367,13 +371,12 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 >>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
 
 # get some key terms
->>> interesting_riskers = surgeon(noun_riskers.results, 
+>>> interesting_riskers = editor(noun_riskers.results, keep_entries = 
 ...    ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
-...    'woman', 'child', 'person'], remove = False)
+...    'woman', 'child', 'person'])
 
 # use `just_totals` to make a barchart of totals
->>> plotter('Risk and power', interesting_riskers.results, 
-...    fract_of = noun_lemmata.results, sort_by = 'most', 
+>>> plotter(interesting_riskers, title = 'Risk and power', sort_by = 'most', 
 ...    just_totals = True, y_label = 'Risker percentage',
 ...    num_to_plot = 'all')
 ```

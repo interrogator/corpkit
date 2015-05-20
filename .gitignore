@@ -60,3 +60,4 @@ orientation/.ipynb_checkpoints/
 *.DS_Store
 orientation/data/nyt/
 add_tregex.pth
+sigrid_sfl.py
