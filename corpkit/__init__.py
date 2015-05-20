@@ -1,4 +1,4 @@
-__all__ = ["colls", "edit", "keys", "notebook", "query", "view", "build"]
+__all__ = ["interrogator", "editor", "plotter", "conc", "keys", "colls", "other", "build"]
 
 import os
 import sys
@@ -21,38 +21,28 @@ sys.path.append(thepath)
 from interrogator import interrogator
 from editor import editor
 from plotter import plotter
-from other import quickview
-#from conc import conc
-
-from saveload import save_result
-from saveload import load_result
-
-from query import interroplot
-from query import multiquery
-from query import conc
-
-from view import old_plotter
-from view import old_quickview
-
+from conc import conc
 from keys import keywords
 from colls import collocates
 
-from edit import save_result
-from edit import load_result
+from other import quickview
+from other import concprinter
+from other import save_result
+from other import load_result
+from other import report_display
+from other import ipyconverter
+from other import conv
+from other import pytoipy
+from other import new_project
+from other import multiquery
+from other import interroplot
+from other import quicktree
+from other import searchtree
+from other import datareader
 
 from build import dictmaker
 from build import correctspelling
 
-from notebook import report_display
-from notebook import pytoipy
-from notebook import ipyconverter
-from notebook import conv
-from notebook import new_project
-
-
-
-from trees import quicktree
-from trees import searchtree
 from dictionaries.process_types import processes
 
 

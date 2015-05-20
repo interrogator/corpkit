@@ -156,7 +156,7 @@ def old_plotter(title,
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    from corpkit.query import check_dit, check_pytex, check_tex
+    from corpkit.tests import check_dit, check_pytex, check_tex
     from corpkit.edit import resorter, mather, percenter
 
     # setup:
