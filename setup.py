@@ -16,6 +16,7 @@ setup(name='corpkit',
       install_requires=[
                         "matplotlib >= 1.4.3",
                         "nltk >= 3.0.0",
+                        "pandas >= 0.16.1",
                        ],
       #extras_require = {
       #                  'dependencies':  ["ReportLab>=1.2", "RXP"],
@@ -32,4 +33,3 @@ setup(name='corpkit',
 #beautifulsoup4>=4.3.2
 #lxml>=3.4.2
 #numpy>=1.9.2
-#pandas>=0.15.2
