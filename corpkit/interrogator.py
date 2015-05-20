@@ -124,7 +124,7 @@ def interrogator(path, options, query,
     except ImportError:
         pass
 
-    from corpkit.query import (query_test, 
+    from corpkit.tests import (query_test, 
                                check_dit, 
                                check_pytex)
     from corpkit.progressbar import ProgressBar

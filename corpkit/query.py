@@ -4,7 +4,7 @@
 #   Author: Daniel McDonald
 #   MIT LICENSE
 
-def interrogator(path, options, query, 
+def old_interrogator(path, options, query, 
                 lemmatise = False, 
                 dictionary = 'bnc.p', 
                 titlefilter = False, 
