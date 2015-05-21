@@ -5,8 +5,9 @@ def eugener(path,
             top = 20, 
             lemmatise = False,
             remove_closed_class = False,
-            remove_regex_from_table = False,
-            remove_zero_depth = False):
+            remove_query_from_output = False,
+            remove_zero_depth = False,
+            return_tags = False):
     """ 
     get most frequent words in corpus path to left and right of query regex
 
@@ -97,6 +98,7 @@ def eugener(path,
             tag, word = result.split(' ', 1)
             # get wordnet tag from stanford tag
             wordnet_tag = find_wordnet_tag(tag)
+            short_tag = tag[:2]
             if lemmatise:
                 # do manual lemmatisation first
                 if word in wordlist:
@@ -104,24 +106,24 @@ def eugener(path,
                 # do wordnet lemmatisation
                 if wordnet_tag:
                     word = lmtzr.lemmatize(word, wordnet_tag)
-                    processed.append(word)
+                    processed.append((word, short_tag))
                 # what to do with closed class words?
                 else:
                     if not remove_closed_class:
-                        processed.append(word)
+                        processed.append((word, short_tag))
             # without lemmatisation, what to do with closed class words
             else:
                 if not remove_closed_class:
-                    processed.append(word)
+                    processed.append((word, short_tag))
                 else:
                     if wordnet_tag:
-                        processed.append(word)
+                        processed.append((word, short_tag))
 
         # lowercase
-        processed = [r.lower() for r in processed]
+        processed = [(r.lower(), tag) for r, tag in processed]
 
         # remove punct
-        processed = [w for w in processed if re.search(wordregex, w)]
+        processed = [w for w in processed if re.search(wordregex, w[0])]
 
         # a place for info about each corpus
         # word list to use later
@@ -133,7 +135,7 @@ def eugener(path,
             newdict = Counter()
             matching = []
             # go through each token
-            for index, token in enumerate(processed):
+            for index, (token, tag) in enumerate(processed):
                 # if token matches risk expression
                 if re.search(regex, token):
                     # get the word at depth index
@@ -141,9 +143,15 @@ def eugener(path,
                     try:
                         if i < 0:
                             num = index - abs(i)
-                            matching.append(processed[num])
+                            if return_tags:
+                                matching.append(processed[num][1])
+                            else:
+                                matching.append(processed[num][0])
                         else:
-                            matching.append(processed[index + i])
+                            if return_tags:
+                                matching.append(processed[index + i][1])
+                            else:
+                                matching.append(processed[index + i][0])
                     except:
                         pass
             # tally results
@@ -188,7 +196,7 @@ def eugener(path,
         df = df[tot.argsort()[::-1]]
 
         # remove words matching the regex if need be
-        if remove_regex_from_table:
+        if remove_query_from_output:
             cols = [c for c in list(df.columns) if not re.search(regex, c)]
             df = pd.DataFrame(df[cols])
         # remove zero depth if need be
@@ -214,6 +222,6 @@ def eugener(path,
 
     # print the start of each frame, then return them all
     for item in sorted(dfs):
-        print item, '\n', item[item].head(), '\n'
+        print item, '\n', dfs[item].head(), '\n'
     return dfs
 

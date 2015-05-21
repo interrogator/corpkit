@@ -45,13 +45,6 @@ def editor(dataframe1,
     except ImportError:
         pass
 
-    # check if we're in concordance mode
-    if list(dataframe1.columns) == ['l', 'm', 'r']:
-        conc_lines = True
-    else:
-        conc_lines = False
-
-
     def combiney(df, df2, operation = '%', threshold = 'medium', just_totals = False):
         """mash df and df2 together in appropriate way"""
         if single_totals:
@@ -305,11 +298,15 @@ def editor(dataframe1,
             raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
 
         if sort_by == 'total':
+            if df1_istotals:
+                df = df.T
             df = recalc(df, operation = operation)
             tot = df.ix['Total']
             df = df[tot.argsort()[::-1]]
             df = df.drop('Total', axis = 0)
             df = df.drop('Total', axis = 1)
+            if df1_istotals:
+                df = df.T
             #df = recalc(df, operation = operation)
         elif sort_by == 'infreq':
             df = recalc(df, operation = operation)
@@ -379,9 +376,6 @@ def editor(dataframe1,
 
             if type(big_list) == pandas.core.series.Series:
                 tot = big_list.sum()
-
-            print tot
-            print denominator
             the_threshold = float(tot) / float(denominator)
 
         else:
@@ -392,7 +386,19 @@ def editor(dataframe1,
 
 #####################################################
 
-    # deal with conc line input
+
+    # check if we're in concordance mode
+    try:
+        if list(dataframe1.columns) == ['l', 'm', 'r']:
+            conc_lines = True
+        else:
+            conc_lines = False
+    except:
+        conc_lines = False
+
+    # copy dataframe to be very safe
+    df = dataframe1.copy()
+
     if conc_lines:
         df = dataframe1.copy()
 
@@ -417,9 +423,14 @@ def editor(dataframe1,
         return df
 
 
-    # copy, remove totals
-    df = dataframe1.copy()
-
+    df1_istotals = False
+    if type(df) == pandas.core.series.Series:
+        if df.name == 'Totals':
+            df1_istotals = True
+            df = pandas.DataFrame(df)
+        # if just a single result
+        else:
+            df = pandas.DataFrame(df) # set it the correct name?
     if just_totals:
         df = df.sum()
 
@@ -477,11 +488,11 @@ def editor(dataframe1,
     if merge_subcorpora:
         df = merge_these_subcorpora(df, merge_subcorpora)
 
-    #if using_totals:
-        #if merge_entries:
-            #df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname)
-        #if merge_subcorpora:
-            #df2 = merge_these_subcorpora(df2, merge_subcorpora)        
+    if using_totals:
+        if merge_entries:
+            df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname)
+        if merge_subcorpora:
+            df2 = merge_these_subcorpora(df2, merge_subcorpora)        
 
     # combine lists
     use_combiney = False
@@ -527,18 +538,21 @@ def editor(dataframe1,
             warnings.warn("keep_top has no effect if just_totals is True.")
 
     # generate totals branch:
-    if operation != '%':
-        total = df.T.sum()
+    if df1_istotals:
+        total = df.copy()
     else:
-        if using_totals:
-            tot1 = dataframe1.T.sum()
-            if single_totals:
-                tot2 = dataframe2
-            else:
-                tot2 = dataframe2.T.sum()
-            total = tot1 * 100.0 / tot2
+        if operation != '%':
+            total = df.T.sum()
         else:
-            total = dataframe1.T.sum()
+            if using_totals:
+                tot1 = dataframe1.T.sum()
+                if single_totals:
+                    tot2 = dataframe2
+                else:
+                    tot2 = dataframe2.T.sum()
+                total = tot1 * 100.0 / tot2
+            else:
+                total = dataframe1.T.sum()
 
 
     #make named_tuple
