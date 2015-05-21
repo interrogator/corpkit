@@ -850,6 +850,7 @@ def interrogator(path, options, query,
         years.append(str(year))
         counts.append(count)
     stotals = pd.Series(counts, index = years)
+    stotals.name = 'Totals'
 
     #make results into named tuple
     query_options = [path, query, options] 
