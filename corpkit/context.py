@@ -8,12 +8,12 @@ def eugener(path,
             remove_regex_from_table = False,
             remove_zero_depth = False):
     """ 
-    get most frequent words in corpus path to left and right
+    get most frequent words in corpus path to left and right of query regex
 
     path: path to corpus containing subcorpora
-    query: word to be zero depth
+    query: regex to match word to be zero depth
     depth: number of places left and right to look
-    top: number of entries to return
+    top: number of most frequent entries to return
     """
     import os
     import nltk
@@ -214,6 +214,6 @@ def eugener(path,
 
     # print the start of each frame, then return them all
     for item in sorted(dfs):
-        print item, '\n', data[item].head(), '\n'
+        print item, '\n', item[item].head(), '\n'
     return dfs
 

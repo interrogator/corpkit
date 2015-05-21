@@ -1,6 +1,6 @@
 
-def plotter(dataframe,
-            title = False,
+def plotter(title,
+            dataframe,
             x_label = False,
             y_label = False,
             style = 'ggplot',
@@ -11,7 +11,14 @@ def plotter(dataframe,
             num_to_plot = 7,
             subplots = False,
             **kwargs):
-    """plot interrogator() or editor() output."""
+    """plot interrogator() or editor() output.
+
+    **kwargs are for pandas first, which can then send them through to matpltlib.plot():
+    
+    http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.plot.html
+    http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.plot
+
+    """
 
     import os
     import matplotlib.pyplot as plt

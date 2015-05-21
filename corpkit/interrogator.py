@@ -754,7 +754,7 @@ def interrogator(path, options, query,
         years = []
         counts = []
         for year, count in main_totals[1:]:
-            years.append(year)
+            years.append(str(year))
             counts.append(count)
         stotals = pd.Series(counts, index = years, name = 'Total')
         # no results branch:
@@ -799,18 +799,18 @@ def interrogator(path, options, query,
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
     pandas_frame = DataFrame(the_big_dict, index = sorted_dirs)
-    #pandas[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
-    pandas_frame['Total'] = pandas_frame.sum(axis=1)
+    #pandas_frame[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
+    #pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
     pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
     tot = pandas_frame.ix['Total']
     pandas_frame = pandas_frame[tot.argsort()[::-1]]
-    #pandas_frame = pandas_frame.drop('Total', axis = 0)
-    move_totals = list(pandas_frame.columns)
-    move_totals.remove('Total')
-    move_totals.append('Total')
-    pandas_frame = pandas_frame[move_totals]
+    pandas_frame = pandas_frame.drop('Total', axis = 0)
+    #move_totals = list(pandas_frame.columns)
+    #move_totals.remove('Total')
+    #move_totals.append('Total')
+    #pandas_frame = pandas_frame[move_totals]
 
     # 100%            
     p.animate(len(results_list))
@@ -843,11 +843,11 @@ def interrogator(path, options, query,
 
     # add total to main_total
     total = sum([i[1] for i in main_totals[1:]])
-    main_totals.append([u'Total', total])
+    #main_totals.append([u'Total', total])
     years = []
     counts = []
     for year, count in main_totals[1:]:
-        years.append(year)
+        years.append(str(year))
         counts.append(count)
     stotals = pd.Series(counts, index = years)
 
@@ -862,7 +862,7 @@ def interrogator(path, options, query,
         clear_output()
     
     # warnings if nothing generated
-    # should these 'break'?
+    # should these 'break'
     if not only_count:
         print '%s: Finished! %d unique results, %d total.' % (time, len(list_words), main_totals[-1][-1])
         if len(list_words) == 0:
