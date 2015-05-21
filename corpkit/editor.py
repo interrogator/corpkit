@@ -17,6 +17,9 @@ def editor(dataframe1,
             just_subcorpora = False,
             skip_subcorpora = False,
             span_subcorpora = False,
+            merge_subcorpora = False,
+
+            projection = False,
 
             only_totals = False,
             remove_above_p = False,
@@ -28,6 +31,7 @@ def editor(dataframe1,
     import pandas
     import pandas as pd
     import numpy as np
+    import collections
     from pandas import DataFrame, Series
     from corpkit.progressbar import ProgressBar
     try:
@@ -48,13 +52,15 @@ def editor(dataframe1,
         conc_lines = False
 
 
-    def combiney(df, df2, operation = '%', threshold = 'medium'):
+    def combiney(df, df2, operation = '%', threshold = 'medium', just_totals = False):
         """mash df and df2 together in appropriate way"""
         if single_totals:
             if operation == '%':
-                df = df * 100.0
-                # can i make it possible to handle
-                df = df.div(list(df2), axis = 0)
+                if just_totals:
+                    df = df * 100.0 / df2.sum()
+                else:
+                    df = df * 100.0
+                    df = df.div(list(df2), axis = 0)
             elif operation == '+':
                 df = df.add(list(df2), axis = 0)
             elif operation == '-':
@@ -66,50 +72,45 @@ def editor(dataframe1,
             return df
 
         elif not single_totals:
-            if just_totals and threshold:
-                df = df.T.loc[:, (df.T.sum(axis=0) > threshold)].T
-
-            p = ProgressBar(len(list(df.columns)))
-            for index, entry in enumerate(list(df.columns)):
-                p.animate(index)
+            if just_totals:
                 if operation == '%':
-                    try:
-                        maths_done = df[entry] * 100.0 / df2[entry]
-                    except:
-                        continue
-                    df.drop(entry, axis = 1, inplace = True)
-                    df[entry] = maths_done
-                elif operation == '+':
-                    try:
-                        maths_done = df[entry] + df2[entry]
-                    except:
-                        continue
-                    df.drop(entry, axis = 1, inplace = True)
-                    df[entry] = maths_done
-                elif operation == '-':
-                    try:
-                        maths_done = df[entry] - df2[entry]
-                    except:
-                        continue
-                    df.drop(entry, axis = 1, inplace = True)
-                    df[entry] = maths_done
-                elif operation == '*':
-                    try:
-                        maths_done = df[entry] * df2[entry]
-                    except:
-                        continue
-                    df.drop(entry, axis = 1, inplace = True)
-                    df[entry] = maths_done
-                elif operation == '/':
-                    try:
-                        maths_done = df[entry] / df2[entry]
-                    except:
-                        continue
-                    df.drop(entry, axis = 1, inplace = True)
-                    df[entry] = maths_done
-            p.animate(len(list(df.columns)))
-            if have_ipython:
-                clear_output()
+                    # leaves 0.0 if not found ...
+                    df = df * 100.0 / df2.sum()
+
+            else:
+                p = ProgressBar(len(list(df.columns)))
+                for index, entry in enumerate(list(df.columns)):
+                    p.animate(index)
+                    if operation == '%':
+                        try:
+                            df[entry] = df[entry] * 100.0 / df2[entry]
+                        except:
+                            continue
+                        #df.drop(entry, axis = 1, inplace = True)
+                        #df[entry] = maths_done
+                    elif operation == '+':
+                        try:
+                            df[entry] = df[entry] + df2[entry]
+                        except:
+                            continue
+                    elif operation == '-':
+                        try:
+                            df[entry] = df[entry] - df2[entry]
+                        except:
+                            continue
+                    elif operation == '*':
+                        try:
+                            df[entry] = df[entry] * df2[entry]
+                        except:
+                            continue
+                    elif operation == '/':
+                        try:
+                            df[entry] = df[entry] / df2[entry]
+                        except:
+                            continue
+                p.animate(len(list(df.columns)))
+                if have_ipython:
+                    clear_output()
         return df
 
     def parse_input(input):
@@ -203,11 +204,33 @@ def editor(dataframe1,
         return df
 
     def span_these_subcorpora(df, lst_of_subcorpora):
-        non_totals = [subcorpus for subcorpus in list(df.index) if subcorpus != 'Total']
+        non_totals = [subcorpus for subcorpus in list(df.index)]
         good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
         print 'Keeping subcorpora:\n    %d--%d' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         # retotal needed here
+        return df
+
+    def projector(df, list_of_tuples):
+        for subcorpus, projection_value in list_of_tuples:
+            if type(subcorpus) == int:
+                subcorpus = str(subcorpus)
+            df.ix[subcorpus] = df.ix[subcorpus] * projection_value
+        return df
+    
+    def merge_these_subcorpora(df, lst_of_subcorpora):
+        # handles subcorpus names, not indices, right now
+        if type(lst_of_subcorpora) == int:
+            lst_of_subcorpora = [lst_of_subcorpora]
+        if type(lst_of_subcorpora[0]) == int:
+            lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
+        the_newname = '/'.join(sorted(lst_of_subcorpora))
+        if type(df) == pandas.core.frame.DataFrame:
+            df.ix[the_newname] = sum([df.ix[i] for i in lst_of_subcorpora])
+            df = df.drop(lst_of_subcorpora, axis = 0)
+        if type(df) == pandas.core.series.Series:
+            df[the_newname] = sum([df[i] for i in lst_of_subcorpora])
+            df = df.drop(lst_of_subcorpora)
         return df
 
     def do_stats(df):
@@ -351,14 +374,17 @@ def editor(dataframe1,
             if threshold.startswith('h'):
                 denominator = 2500
 
-            totals = []
-            for each_entry in list(big_list.columns):
-                totals.append(sum(list(big_list[each_entry])))
-            tot = sum(totals)
-            # generate a threshold
-            the_threshold = tot / float(denominator)
+            if type(big_list) == pandas.core.frame.DataFrame:
+                tot = big_list.sum().sum()
 
-        elif type(threshold) == int:
+            if type(big_list) == pandas.core.series.Series:
+                tot = big_list.sum()
+
+            print tot
+            print denominator
+            the_threshold = float(tot) / float(denominator)
+
+        else:
             the_threshold = threshold
         
         print 'Threshold: %d' % the_threshold
@@ -369,6 +395,7 @@ def editor(dataframe1,
     # deal with conc line input
     if conc_lines:
         df = dataframe1.copy()
+
         if just_entries:
             if type(just_entries) == int:
                 just_entries = [just_entries]
@@ -392,54 +419,69 @@ def editor(dataframe1,
 
     # copy, remove totals
     df = dataframe1.copy()
-    #df = df.T
-    if just_totals:
-        df = DataFrame(df.ix['Total'])
-    else:
-        try:
-            df = df.drop('Total', axis = 0)
-        except:
-            pass
-        try:
-            df = df.drop('Total', axis = 1)
-        except:
-            pass
-    
-    # make df into just totals if need be
-    #if just_totals:
-        #df = df.ix['Total']
 
+    if just_totals:
+        df = df.sum()
+
+    #df = df.T
+    #if just_totals:
+        #df = pd.DataFrame([sum(df[i]) for i in list(df.columns)], index = list(df.columns))
+    #else:
+        #try:
+            #df = df.drop('Total', axis = 0)
+        #except:
+            #pass
+        #try:
+            #df = df.drop('Total', axis = 1)
+        #except:
+            #pass
+    
     # figure out if there's a second list
     # copy and remove totals if there is
-    single_totals = False
+    single_totals = True
+    using_totals = False
+
     try:
         if dataframe2.empty is False:
             df2 = dataframe2.copy()
+            using_totals = True
             #df2 = df2
             if type(df2) == pandas.core.frame.DataFrame:
-                single_totals = False
-                #if operation != '%':
-                if just_totals:
-                    df2 = DataFrame(df2.ix['Total'])
+                if len(df2.columns) > 1:
+                    single_totals = False
                 else:
-                    try:
-                        df2 = df2.drop('Total', axis = 0)
-                    except:
-                        pass
-                    try:
-                        df2 = df2.drop('Total', axis = 1)
-                    except:
-                        pass
+                    df2 = pd.Series(df2)
+                #if operation != '%':
             elif type(df2) == pandas.core.series.Series:
                 single_totals = True
-                if just_totals:
-                    df2 = DataFrame(df2)
-                else:
-                    df2 = df2.drop('Total', axis = 0)
+                #if just_totals:
+                    # it should already be just_totals
+                    #df2 = pd.Series([sum(df2[i]) for i in list(df2.columns)])
             else:
                 raise ValueError('dataframe2 not recognised.')   
     except AttributeError:
         pass
+
+
+    if projection:
+        # projection shouldn't do anythign when working with '%'
+        # so let's not run df2 through it yet.
+        df = projector(df, projection)
+
+    # do all merging before combining anything
+
+    if merge_entries:
+        the_newname = newname_getter(df, parse_input(merge_entries), newname = newname)
+    if merge_entries:
+        df = merge_these_entries(df, parse_input(merge_entries), the_newname)
+    if merge_subcorpora:
+        df = merge_these_subcorpora(df, merge_subcorpora)
+
+    #if using_totals:
+        #if merge_entries:
+            #df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname)
+        #if merge_subcorpora:
+            #df2 = merge_these_subcorpora(df2, merge_subcorpora)        
 
     # combine lists
     use_combiney = False
@@ -450,20 +492,18 @@ def editor(dataframe1,
             if just_totals:
                 the_threshold = set_threshold(df2, threshold)
             else:
-                the_threshold = None
-            df = combiney(df, df2, operation = operation, threshold = the_threshold)
+                the_threshold = 0
+            df = combiney(df, df2, operation = operation, threshold = the_threshold, just_totals = just_totals)
     except AttributeError:
         pass
 
     # chop up data as required
-    if merge_entries:
-        the_newname = newname_getter(df, parse_input(merge_entries), newname = newname)
+
     if just_entries:
         df = just_these_entries(df, parse_input(just_entries))
     if skip_entries:
         df = skip_these_entries(df, parse_input(skip_entries))
-    if merge_entries:
-        df = merge_these_entries(df, parse_input(merge_entries), the_newname)
+
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora)
     if skip_subcorpora:
@@ -480,9 +520,33 @@ def editor(dataframe1,
         df = resort(df, keep_stats = keep_stats, sort_by = sort_by)
     
     if keep_top:
-        df = df[list(df.columns)[:keep_top]]
+        if not just_totals:
+            df = df[list(df.columns)[:keep_top]]
+        else:
+            import warnings
+            warnings.warn("keep_top has no effect if just_totals is True.")
 
-    print '\nResult (sample)'
-    print '=' * 80
+    # generate totals branch:
+    if operation != '%':
+        total = df.T.sum()
+    else:
+        if using_totals:
+            tot1 = dataframe1.T.sum()
+            if single_totals:
+                tot2 = dataframe2
+            else:
+                tot2 = dataframe2.T.sum()
+            total = tot1 * 100.0 / tot2
+        else:
+            total = dataframe1.T.sum()
+
+
+    #make named_tuple
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+    output = outputnames(['coming soon.'], df, total)
+
+    print '\nResult (sample)\n'
+    print '=' * 80 + '\n'
     print df.head()
-    return df
+
+    return output
