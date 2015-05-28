@@ -19,7 +19,7 @@ def conc(corpus, query,
     except ImportError:
         pass
     import pydoc
-    from corpkit.query import query_test, check_pytex, check_dit
+    from corpkit.tests import query_test, check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:

@@ -149,7 +149,7 @@ def interrogator(path, options, query,
     have_python_tex = check_pytex()
     on_cloud = check_dit()
 
-    regex_nonword_filter = re.compile("^[A-Za-z0-9-\']+$")
+    regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
 
     def signal_handler(signal, frame):
         """exit on ctrl+c, rather than just stop loop"""
@@ -192,7 +192,8 @@ def interrogator(path, options, query,
         if not depnum:
             list_of_matches = [w.lower() for w in list_of_matches]
         # remove punct etc.
-        list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
+        if options != 'o' and options != 'u':
+            list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
         
         list_of_matches.sort()
         
@@ -507,6 +508,7 @@ def interrogator(path, options, query,
     n_gramming = False
     dependency = False
     depnum = False
+    dicts = []
 
     # check if pythontex is being used:
     # have_python_tex = check_pythontex()
@@ -618,8 +620,7 @@ def interrogator(path, options, query,
     
     # some empty lists we'll need
     allwords_list = []
-    results_list = []
-    main_totals = [u'Total']
+    main_totals = []
 
     # if doing dependencies, make list of all files, and a progress bar
     if dependency:
@@ -638,9 +639,11 @@ def interrogator(path, options, query,
         p = ProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
+    subcorpus_names = []
     for index, d in enumerate(sorted_dirs):
         if not dependency:
             subcorpus_name = d
+            subcorpus_names.append(subcorpus_name)
             p.animate(index)
     
             # get path to corpus/subcorpus
@@ -700,6 +703,7 @@ def interrogator(path, options, query,
         # and d[1] is its file list ... 
         if dependency:
             subcorpus_name = d[0]
+            subcorpus_names.append(subcorpus_name)
             fileset = d[1]
             #for f in read_files:
             result = []
@@ -726,6 +730,7 @@ def interrogator(path, options, query,
 
         # add subcorpus name and total count to totals
         # prefer int subcorpus names...
+        # could remove this silliness really
         try:
             main_totals.append([int(subcorpus_name), len(result)])
         except ValueError:
@@ -735,32 +740,23 @@ def interrogator(path, options, query,
         # titlewords removal, usa_english, etc.
         processed_result = processwords(result)
 
-
         # add results master list and to results list
         allwords_list.append(processed_result)
-        results_list.append([subcorpus_name, processed_result])
-
-        # could probably make dictionaries here ... ?
+        dicts.append(Counter(processed_result))
 
     # 100%
     p.animate(len(sorted_dirs))
+    
     if not have_ipython:
         print '\n'
     
     # if only counting, get total total and finish up:
     if only_count:
-        total = sum([i[1] for i in main_totals[1:]])
-        main_totals.append([u'Total', total])
-        years = []
-        counts = []
-        for year, count in main_totals[1:]:
-            years.append(str(year))
-            counts.append(count)
-        stotals = pd.Series(counts, index = years, name = 'Total')
-        # no results branch:
-        outputnames = collections.namedtuple('interrogation', ['query', 'stotal', 'old_totals'])
+        stotals = pd.Series([c for name, c in main_totals], index = [name for name, c in main_totals])
+        stotals.name = 'Total' 
+        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         query_options = [path, query, options] 
-        output = outputnames(query_options, stotals, main_totals)
+        output = outputnames(query_options, stotals)
         if have_ipython:
             clear_output()
         return output
@@ -769,36 +765,16 @@ def interrogator(path, options, query,
     allwords = [item for sublist in allwords_list for item in sublist]
     allwords.sort()
     unique_words = set(allwords)
-    
-    # make a list of lists to which we can add each
-    # subcorpus' result, plus a total ...
-    list_words = []
-    for word in unique_words:
-        list_words.append([word])
 
-    # make dictionary of every subcorpus and store in dicts
-    dicts = []
-    p = ProgressBar(len(results_list))
+    #make master dictionary
     the_big_dict = {}
-    for index, subcorpus in enumerate(results_list):
-        subcorpus_name = subcorpus[0]
-        subcorpus_data = subcorpus[1]
-        p.animate(index)
-        dictionary = Counter(subcorpus_data)       
-        dicts.append(dictionary)
-        
-        # make each result
-        for word in list_words:
-            getval = dictionary[word[0]]
-            try:
-                word.append([int(subcorpus_name), getval])
-            except ValueError:
-                word.append([subcorpus_name, getval])
-    
-    #make pandas table
+
+    #calculate results
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
-    pandas_frame = DataFrame(the_big_dict, index = sorted_dirs)
+
+    # turn master dict into dataframe, sorted
+    pandas_frame = DataFrame(the_big_dict, index = subcorpus_names)
     #pandas_frame[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
     #pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
@@ -812,51 +788,31 @@ def interrogator(path, options, query,
     #move_totals.append('Total')
     #pandas_frame = pandas_frame[move_totals]
 
-    # 100%            
-    p.animate(len(results_list))
+    # totals --- could just use the frame above ...
+    stotals = pd.Series([c for name, c in main_totals], index = [name for name, c in main_totals])
+    stotals.name = 'Total'     
 
     # return pandas/csv table of most common results in each subcorpus
     if table_size > max([len(d) for d in dicts]):
         table_size = max([len(d) for d in dicts])
-    df = tabler(sorted_dirs, dicts, table_size)
+    df = tabler(subcorpus_names, dicts, table_size)
     
-
-
-    # do totals (and keep them), then sort list by total
     # depnum is a little different, though
+    # still needs to be done
     if depnum:
-        list_words.sort(key=lambda x: int(x[0]))
-        main_totals = depnum_reorder(list_words, output = 'totals') 
-        list_words = depnum_reorder(list_words, output = 'results') 
-    
-    for word in list_words:
-        total = sum([i[1] for i in word[1:]])
-        word.append([u'Total', total])
-    list_words = sorted(list_words, key=lambda x: x[-1], reverse = True) # does this need to be int!?
+        pass
     
     # reconstitute keyword scores, because we earlier
     # this means that keyness scores are a bit off. not good.
+    # still needs to be done
     if keywording:
-        for res in list_words:
-            for datum in res[1:]:
-                datum[1] = datum[1] * 10
-
-    # add total to main_total
-    total = sum([i[1] for i in main_totals[1:]])
-    #main_totals.append([u'Total', total])
-    years = []
-    counts = []
-    for year, count in main_totals[1:]:
-        years.append(str(year))
-        counts.append(count)
-    stotals = pd.Series(counts, index = years)
-    stotals.name = 'Totals'
-
+        pass
+        
     #make results into named tuple
     query_options = [path, query, options] 
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table', 'old_results', 'old_totals'])
-    output = outputnames(query_options, pandas_frame, stotals, df, list_words, main_totals)
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
+    output = outputnames(query_options, pandas_frame, stotals, df)
 
     time = strftime("%H:%M:%S", localtime())
     if have_ipython:
@@ -865,17 +821,14 @@ def interrogator(path, options, query,
     # warnings if nothing generated
     # should these 'break'
     if not only_count:
-        print '%s: Finished! %d unique results, %d total.' % (time, len(list_words), main_totals[-1][-1])
-        if len(list_words) == 0:
+        print '%s: Finished! %d unique results, %d total.' % (time, len(pandas_frame.columns), stotals.sum())
+        if len(pandas_frame.columns) == 0:
             warnings.warn('No results produced. Maybe your query needs work.')
-            return
     else:
-        print '%s: Finished! %d total.' % (time, main_totals[-1][-1])
+        print '%s: Finished! %d total.' % (time, stotals.sum())
     if len(main_totals) == 0:
         warnings.warn('No totals produced. Maybe your query needs work.')
-        return
-    if main_totals[-1][1] == 0:
+    if stotals.sum() == 0:
         warnings.warn('Total total of zero. Maybe your query needs work.')
-        return
     return output
     

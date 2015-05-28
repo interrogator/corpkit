@@ -1,10 +1,10 @@
 
 def plotter(title,
-            dataframe,
+            df,
             x_label = False,
             y_label = False,
             style = 'ggplot',
-            figsize = (10, 4),
+            figsize = (15, 6),
             save = False,
             legend = 'default',
             returns = False,
@@ -14,7 +14,7 @@ def plotter(title,
     """plot interrogator() or editor() output.
 
     **kwargs are for pandas first, which can then send them through to matpltlib.plot():
-    
+
     http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.plot.html
     http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.plot
 
@@ -22,11 +22,12 @@ def plotter(title,
 
     import os
     import matplotlib.pyplot as plt
+    import pandas
     import pandas as pd
     from pandas import DataFrame
     import numpy
     from time import localtime, strftime
-    from corpkit.query import check_pytex
+    from corpkit.tests import check_pytex
 
     have_python_tex = check_pytex()
 
@@ -34,8 +35,19 @@ def plotter(title,
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
 
+    dataframe = df.copy()
 
-    
+    if type(dataframe) == pandas.core.series.Series:
+        dataframe = DataFrame(dataframe)
+
+    try:
+        dataframe = dataframe.drop('Total', axis = 0)
+    except:
+        pass
+    #try:
+        #dataframe = dataframe.drop('Total', axis = 1)
+    #except:
+        #pass
     #plt.figure()
     if num_to_plot == 'all':
         num_to_plot = len(list(dataframe.columns))
