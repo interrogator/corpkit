@@ -15,6 +15,9 @@ def eugener(path,
     query: regex to match word to be zero depth
     depth: number of places left and right to look
     top: number of most frequent entries to return
+    lemmatise: wordnet lemmatisation
+    remove_closed_class: keep only n, v, a, r tagged words
+    remove_query_from_output: remove o
     """
     import os
     import nltk

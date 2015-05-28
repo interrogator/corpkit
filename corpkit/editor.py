@@ -559,8 +559,13 @@ def editor(dataframe1,
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     output = outputnames(['coming soon.'], df, total)
 
+    # pandas options
+    pd.set_option('display.max_columns', 4)
+    pd.set_option('display.max_rows', 5)
+    pd.set_option('expand_frame_repr', False)
+
     print '\nResult (sample)\n'
     print '=' * 80 + '\n'
-    print df.head()
+    print df.head().T
 
     return output
