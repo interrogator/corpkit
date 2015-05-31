@@ -146,7 +146,7 @@ def editor(dataframe1,
     def newname_getter(df, parsed_input, newname = 'combine'):
         """makes appropriate name for merged entries"""
         if type(newname) == int:
-            the_newname = list(df.columns)[i]
+            the_newname = list(df.columns)[newname]
         elif type(newname) == str:
             if newname == 'combine':
                 the_newname = '/'.join(parsed_input)
@@ -169,9 +169,10 @@ def editor(dataframe1,
         print 'Merging %d entries as "%s":\n    %s\n' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:20]))
         if len(parsed_input) > 20:
             print '... and %d more ... \n' % (len(parsed_input) - 20)
-        df[the_newname] = sum([df[i] for i in parsed_input])
         # remove old entries
+        temp = sum([df[i] for i in parsed_input])
         df = df.drop(parsed_input, axis = 1)
+        df[the_newname] = temp
         return df
 
     def just_these_subcorpora(df, lst_of_subcorpora):
@@ -190,7 +191,7 @@ def editor(dataframe1,
         if type(lst_of_subcorpora[0]) == int:
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         bad_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        print 'Skipping %d subcorpora:\n    %s\n' % (len(bad_years), '\n    '.join(bad_years[:20]))
+        print 'Skipping %d subcorpora:\n    %s\n' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:20]]))
         if len(bad_years) > 20:
             print '... and %d more ... \n' % len(bad_years) - 20
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
@@ -425,14 +426,15 @@ def editor(dataframe1,
 
     df1_istotals = False
     if type(df) == pandas.core.series.Series:
-        if df.name == 'Totals':
-            df1_istotals = True
-            df = pandas.DataFrame(df)
+        df1_istotals = True
+        df = pandas.DataFrame(df)
         # if just a single result
-        else:
-            df = pandas.DataFrame(df) # set it the correct name?
+    else:
+        df = pandas.DataFrame(df) # set it the correct name?
     if just_totals:
+        # does this need to be made into a dataframe!?
         df = df.sum()
+        # df = pd.DataFrame(df, index = list(df.index))
 
     #df = df.T
     #if just_totals:
@@ -475,9 +477,11 @@ def editor(dataframe1,
 
 
     if projection:
-        # projection shouldn't do anythign when working with '%'
-        # so let's not run df2 through it yet.
+        # projection shouldn't do anythign when working with '%', remember.
         df = projector(df, projection)
+        if using_totals:
+            df2 = projector(df2, projection)
+
 
     # do all merging before combining anything
 
@@ -539,7 +543,8 @@ def editor(dataframe1,
 
     # generate totals branch:
     if df1_istotals:
-        total = df.copy()
+        total = pd.Series(df['Total'], name = 'Total')
+        #total = df.copy()
     else:
         if operation != '%':
             total = df.T.sum()
@@ -564,8 +569,9 @@ def editor(dataframe1,
     pd.set_option('display.max_rows', 5)
     pd.set_option('expand_frame_repr', False)
 
-    print '\nResult (sample)\n'
-    print '=' * 80 + '\n'
-    print df.head().T
+    #print '\nResult (sample)\n'
+    #print '=' * 80 + '\n'
+    #print df.head().T
+    print ''
 
     return output

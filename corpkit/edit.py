@@ -258,7 +258,8 @@ def datareader(data, on_cloud = False):
     a string of text
     """
     import os
-    from corpkit.query import query_test, check_pytex, check_dit
+    import pandas as pd
+    from corpkit.tests import query_test, check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -313,8 +314,19 @@ def datareader(data, on_cloud = False):
         else:
             good = data.encode('utf-8', errors = 'ignore')
     # if conc results, turn into string...
-    if type(data) == list:
-        good = '\n'.join(data)
+    if type(data) == pandas.core.frame.DataFrame:
+        # if conc lines:
+        try:
+            if list(dataframe1.columns) == ['l', 'm', 'r']:
+                conc_lines = True
+            else:
+                conc_lines = False
+        except:
+            conc_lines = False
+        if conclines:
+            good '\n'.join([' '.join(lines.ix[l]) for l in list(lines.index)])
+        else:
+            raise ValueError('Input not recognised...')
     # if list of tokens...?
     
     return good

@@ -46,7 +46,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     query = r'ROOT < __'
-    for d in sorted_dirs:
+    for index, d in enumerate(sorted_dirs):
         p.animate(index)
         if len(sorted_dirs) == 1:
             subcorp = d
@@ -65,10 +65,10 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
         for line in results:
             all_results.append(line)
     p.animate(len(sorted_dirs))
-    if have_ipython:
-        clear_output()
+    #if have_ipython:
+        #clear_output()
     time = strftime("%H:%M:%S", localtime())
-    print '\n%s: Tokenising %d lines ... \n' % ( time, len(all_results))
+    print '\n\n%s: Tokenising %d lines ... \n' % ( time, len(all_results))
     all_results = '\n'.join(all_results)
     text = unicode(all_results.lower(), 'utf-8', errors = 'ignore')
     sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
