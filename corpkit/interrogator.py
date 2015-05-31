@@ -602,6 +602,20 @@ def interrogator(path, options, query,
             except re.error:
                 raise ValueError("Regular expression '%s' contains an error." % query)
 
+    # if keywording and self is the dictionary, make the dict if need be:
+    if keywording:
+        if dictionary.startswith('self') or dictionary == os.path.basename(path):
+            dictionary = os.path.basename(path) + '.p'
+            dictpath = 'data/dictionaries'
+            import pickle
+            try:
+                dic = pickle.load( open( os.path.join(dictpath, dictionary), "rb" ) )
+            except:
+                from corpkit.build import dictmaker
+                time = strftime("%H:%M:%S", localtime())
+                print '\n%s: Making reference corpus ...' % time
+                dictmaker(path, dictionary)
+
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
     print ("\n%s: Beginning corpus interrogation: %s" \
@@ -692,10 +706,7 @@ def interrogator(path, options, query,
                 # if just counting matches, just 
                 # add subcorpus name and count...
                 if only_count:
-                    try:
-                        tup = [int(d), int(result[0])]
-                    except ValueError:
-                        tup = [d, int(result[0])]
+                    tup = [d, int(result[0])]
                     main_totals.append(tup)
                     continue
 
@@ -731,10 +742,7 @@ def interrogator(path, options, query,
         # add subcorpus name and total count to totals
         # prefer int subcorpus names...
         # could remove this silliness really
-        try:
-            main_totals.append([int(subcorpus_name), len(result)])
-        except ValueError:
-            main_totals.append([subcorpus_name, len(result)])
+        main_totals.append([subcorpus_name, len(result)])
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
@@ -752,7 +760,7 @@ def interrogator(path, options, query,
     
     # if only counting, get total total and finish up:
     if only_count:
-        stotals = pd.Series([c for name, c in main_totals], index = [name for name, c in main_totals])
+        stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
         stotals.name = 'Total' 
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         query_options = [path, query, options] 
@@ -789,8 +797,8 @@ def interrogator(path, options, query,
     #pandas_frame = pandas_frame[move_totals]
 
     # totals --- could just use the frame above ...
-    stotals = pd.Series([c for name, c in main_totals], index = [name for name, c in main_totals])
-    stotals.name = 'Total'     
+    stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
+    stotals.name = 'Total'
 
     # return pandas/csv table of most common results in each subcorpus
     if table_size > max([len(d) for d in dicts]):
@@ -806,7 +814,7 @@ def interrogator(path, options, query,
     # this means that keyness scores are a bit off. not good.
     # still needs to be done
     if keywording:
-        pass
+        pandas_frame = pandas_frame * 10
         
     #make results into named tuple
     query_options = [path, query, options] 

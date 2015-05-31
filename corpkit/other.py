@@ -3,10 +3,12 @@ def quickview(results, n = 50):
     import pandas
     for index, w in enumerate(list(results.columns)[:n]):
         fildex = '% 3d' % index
-        print '%s: %s (n=%d)' %(fildex, w, results[w]['Total'])
+        print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results[w])))
 
 def concprinter(df, kind = 'string', n = 100):
     """print conc lines nicely, to string, latex or csv"""
+    if n > len(df):
+        n = len(df)
     if not kind.startswith('l') and kind.startswith('c') and kind.startswith('s'):
         raise ValueError('kind argument must start with "l" (latex), "c" (csv) or "s" (string).')
     import pandas as pd
@@ -44,6 +46,8 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         temp_list = [interrogation]
     elif len(interrogation) == 2:
         temp_list = [interrogation.query, interrogation.totals]
+    elif len(interrogation) == 3:
+        temp_list = [interrogation.query, interrogation.results, interrogation.totals]
     elif len(interrogation) == 4:
         temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
     else:
@@ -64,10 +68,11 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     """Reloads a save_result as namedtuple"""
     import collections
     import pickle
+    import os
     import pandas
     if not savename.endswith('.p'):
         savename = savename + '.p'
-    unpickled = pickle.load(open('data/eugene_data.p', 'rb'))
+    unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
     
     if type(unpickled) == pandas.core.frame.DataFrame or type(unpickled) == pandas.core.series.Series:
         output = unpickled
@@ -208,7 +213,7 @@ def new_project(name):
 def searchtree(tree, query):
     "Searches a tree with Tregex and returns matching terminals"
     import os
-    from corpkit.query import query_test, check_dit, check_pytex
+    from corpkit.tests import query_test, check_dit, check_pytex
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -328,7 +333,7 @@ def datareader(data, on_cloud = False):
     a string of text
     """
     import os
-    from corpkit.query import query_test, check_pytex, check_dit
+    from corpkit.tests import query_test, check_pytex, check_dit
     import pandas
     try:
         get_ipython().getoutput()
