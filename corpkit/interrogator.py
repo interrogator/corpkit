@@ -513,25 +513,6 @@ def interrogator(path, options, query,
     # check if pythontex is being used:
     # have_python_tex = check_pythontex()
 
-    # if query is a special query, convert it:
-    if 'any_word' in query:
-        query = r'/.?[A-Za-z0-9].?/ !< __'
-    if 'subjects' in query:
-        query = r'__ >># @NP'
-    if 'processes' in query:
-        query = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
-    if 'modals' in query:
-        query = r'MD'
-    if 'participants' in query:
-        query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP) $ VP | > VP)'
-    if 'entities' in query:
-        query = r'NP <# NNP'
-        titlefilter = True
-
-    # titlefiltering only works with phrases, so turn it on
-    if titlefilter:
-        phrases = True
-
     # parse options
     # handle hyphen at start
     if options.startswith('-'):
@@ -569,6 +550,28 @@ def interrogator(path, options, query,
     else:
         raise ValueError("'%s' option not recognised. See docstring for possible options." % options)
     
+    # if query is a special query, convert it:
+    if query == 'any':
+        if options == 't' or options == 'C':
+            query = r'/.?[A-Za-z0-9].?/ !< __'
+        if options == 'u' or options == 'o':
+            query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+    if 'subjects' in query:
+        query = r'__ >># @NP'
+    if 'processes' in query:
+        query = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
+    if 'modals' in query:
+        query = r'MD < __'
+    if 'participants' in query:
+        query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP) $ VP | > VP)'
+    if 'entities' in query:
+        query = r'NP <# NNP'
+        titlefilter = True
+
+    # titlefiltering only works with phrases, so turn it on
+    if titlefilter:
+        phrases = True
+
     # dependencies can't be phrases
     if dependency:
         import gc

@@ -4,9 +4,9 @@ def plotter(title,
             x_label = False,
             y_label = False,
             style = 'ggplot',
-            figsize = (15, 6),
+            figsize = (13, 6),
             save = False,
-            legend = 'default',
+            legend = 'best',
             num_to_plot = 7,
             tex = 'try',
             subplots = False,
@@ -130,8 +130,40 @@ def plotter(title,
             f.legend_.remove()
             f.set_title(titletext)
 
-    if legend == 'right':
-        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # legend values
+    possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
+                'right': 5, 'center left': 6, 'center right': 7, 'lower center': 8, 
+                'upper center': 9, 'center': 10}
+
+    if not legend.startswith('outside'):
+        
+        if type(legend) == int:
+            the_loc = legend
+        elif type(legend) == str:
+            try:
+                the_loc = possible[legend]
+            except KeyError:
+                raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+        else:
+            raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
+        plt.legend(loc=the_loc)
+    if legend.startswith('outside'):
+        os, plc = legend.split(' ', 1)
+        try:
+            if plc == 'upper right':
+            #the_loc = possible[plc]
+                plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=1)
+            if plc == 'center right':
+                plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', borderaxespad=1)
+            if plc == 'lower right':
+                plt.legend(bbox_to_anchor=(1, 0), loc='lower left', borderaxespad=1)
+            #if plc == 'upper left':
+                #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
+        except KeyError:
+            raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+    else:
+        raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))        
+        
     #if legend == 'upper center':
         #ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=True, shadow=True)
 
