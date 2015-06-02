@@ -50,7 +50,7 @@ def concprinter(df, kind = 'string', n = 100):
     if kind.startswith('l'):
         print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     if kind.startswith('c'):
-        print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}) #.expandtabs(50)
+        print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
 
 
@@ -127,7 +127,9 @@ def report_display():
 def ipyconverter(inputfile, outextension):
     """ipyconverter converts ipynb files to various formats.
 
-    This function calls a shell script, rather than using an API. The first argument is the ipynb file. The second argument is the file extension of the output format, which may be 'py', 'html', 'tex' or 'md'.
+    This function calls a shell script, rather than using an API. 
+    The first argument is the ipynb file. 
+    The second argument is the file extension of the output format, which may be 'py', 'html', 'tex' or 'md'.
 
     Example usage: ipyconverter('infile.ipynb', 'tex')
 
@@ -173,7 +175,8 @@ def conv(inputfile, loadme = True):
 def pytoipy(inputfile):
     """A .py to .ipynb converter.
 
-    This function converts .py files to ipynb, relying on the IPython API. Comments in the .py file can be used to delimit cells, headings, etc. For example:
+    This function converts .py files to ipynb, relying on the IPython API. 
+    Comments in the .py file can be used to delimit cells, headings, etc. For example:
 
     # <headingcell level=1>
     # A heading 
@@ -379,12 +382,14 @@ def datareader(data, on_cloud = False):
         if os.path.isfile(data):
             f = open(data)
             raw = f.read()
+            # obsolete
             if data.endswith('csv'):
                 bad, good = re.compile(r'Entire sentences \(n=[0-9]+\):').split(raw)
             else:
                 good = raw
-        # if it's a dir, conc()
+        # if it's a dir, flatten all trees
         elif os.path.isdir(data):
+            # if trees
             # these four versions of the same shell command will be the death of me.
             if have_ipython:
                 if on_cloud:
@@ -407,9 +412,13 @@ def datareader(data, on_cloud = False):
                 # read plain text out of files ...
                 list_of_texts = []
                 for f in os.listdir(data):
-                    raw = open(os.path.join(data, f))
+                    raw = open(os.path.join(data, f)).read()
                     list_of_texts.append(raw)
                 good = '\n'.join(list_of_texts)
+                try:
+                    good = good.encode('utf-8', errors = 'ignore')
+                except:
+                    pass
         # if a string of text, just keyword that
         else:
             good = data.encode('utf-8', errors = 'ignore')
