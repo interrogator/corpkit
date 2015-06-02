@@ -2,7 +2,7 @@
 def conc(corpus, query, 
         n = 100, 
         random = False, 
-        window = 50, 
+        window = 40, 
         trees = False, 
         csvmake = False): 
     """A concordancer for Tregex queries"""
