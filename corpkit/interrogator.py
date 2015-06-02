@@ -832,7 +832,10 @@ def interrogator(path, options, query,
     # warnings if nothing generated
     # should these 'break'
     if not only_count:
-        print '%s: Finished! %d unique results, %d total.' % (time, len(pandas_frame.columns), stotals.sum())
+        if not keywording:
+            print '%s: Finished! %d unique results, %d total.' % (time, len(pandas_frame.columns), stotals.sum())
+        else:
+            print '%s: Finished! %d unique results.' % (time, len(pandas_frame.columns))
         if len(pandas_frame.columns) == 0:
             warnings.warn('No results produced. Maybe your query needs work.')
     else:
