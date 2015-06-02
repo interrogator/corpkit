@@ -42,7 +42,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     if os.path.isfile(os.path.join(dictpath, dictname)):
         raise ValueError(os.path.join(dictpath, dictname) + " already exists. Delete it or use a new filename.")
     time = strftime("%H:%M:%S", localtime())
-    print '\n%s: Flattening trees ... \n' % time
+    print '\n%s: Extracting words from files ... \n' % time
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     query = r'ROOT < __'
@@ -62,8 +62,24 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
             FNULL = open(os.devnull, 'w')
             results = subprocess.check_output(tregex_command, stderr=FNULL)
             results = os.linesep.join([s for s in results.splitlines() if s]).split('\n')
+
+        # work with plain text too
+        if len(results) == 0:
+            # assuming data isn't trees, so 
+            # read plain text out of files ...
+            list_of_texts = []
+            for f in os.listdir(subcorp):
+                raw = open(os.path.join(subcorp, f)).read()
+                list_of_texts.append(raw)
+            results = '\n'.join(list_of_texts)
+            try:
+                results = results.encode('utf-8', errors = 'ignore')
+            except:
+                pass
+
         for line in results:
             all_results.append(line)
+
     p.animate(len(sorted_dirs))
     #if have_ipython:
         #clear_output()
