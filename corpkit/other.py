@@ -1,9 +1,33 @@
-def quickview(results, n = 50):
+def quickview(results, n = 25):
     """view top n results of results"""
+    import corpkit
     import pandas
-    for index, w in enumerate(list(results.columns)[:n]):
-        fildex = '% 3d' % index
-        print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results[w])))
+    # bad hack to find out type of results
+    if '.interrogation' in str(type(results)):
+        option = results.query[1]
+        try:
+            results_branch = results.results
+            resbranch = True
+        except AttributeError:
+            resbranch = False
+    elif type(results) == pandas.core.frame.DataFrame:
+        results_branch = results
+        resbranch = True
+        option = 'total' # not really used, just prevents error and prints n=
+    elif type(results) == pandas.core.series.Series:
+        resbranch = False
+    if resbranch:
+        for index, w in enumerate(list(results_branch)[:n]):
+            fildex = '% 3d' % index
+            if option == 'keywords':
+                print '%s: %s (k=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+            elif option == '%':
+                print '%s: %s (%d%%)' % (fildex, w, sum(i for i in list(results_branch[w])))
+            else:
+                print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+    else:
+        print 'Totals:'
+        print results
 
 def concprinter(df, kind = 'string', n = 100):
     """print conc lines nicely, to string, latex or csv"""
@@ -320,6 +344,7 @@ def interroplot(path, query):
     edited = editor(quickstart.results, '%', quickstart.totals)
     plotter(quickstart.results, title = str(path))
 
+
 def datareader(data, on_cloud = False):
     """
     Returns a string of plain text from a number of kinds of data.
@@ -333,8 +358,8 @@ def datareader(data, on_cloud = False):
     a string of text
     """
     import os
-    from corpkit.tests import query_test, check_pytex, check_dit
     import pandas
+    from corpkit.tests import query_test, check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -344,10 +369,6 @@ def datareader(data, on_cloud = False):
         have_ipython = False
     
     # if unicode, make it a string
-    if type(data) == pandas.core.frame.DataFrame:
-        pass
-    if type(data) == pandas.core.series.Series:
-        pass
     if type(data) == unicode:
         if not os.path.isdir(data):
             if not os.path.isfile(data):
@@ -393,8 +414,19 @@ def datareader(data, on_cloud = False):
         else:
             good = data.encode('utf-8', errors = 'ignore')
     # if conc results, turn into string...
-    if type(data) == list:
-        good = '\n'.join(data)
+    elif type(data) == pandas.core.frame.DataFrame:
+        # if conc lines:
+        try:
+            if list(data.columns) == ['l', 'm', 'r']:
+                conc_lines = True
+            else:
+                conc_lines = False
+        except:
+            conc_lines = False
+        if conc_lines:
+            good = '\n'.join([' '.join(list(data.ix[l])) for l in list(data.index)])
+    else:
+        raise ValueError('Input not recognised...')
     # if list of tokens...?
     
     return good
