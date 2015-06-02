@@ -12,7 +12,7 @@ def editor(dataframe1,
             just_entries = False,
             skip_entries = False,
             merge_entries = False,
-            newname = False,
+            newname = 'combine',
 
             just_subcorpora = False,
             skip_subcorpora = False,
@@ -564,8 +564,22 @@ def editor(dataframe1,
 
 
     #make named_tuple
+    the_option = 'totals'
+    if using_totals:
+        the_option = operation
+        query_bit = ['coming soon', the_option, 'coming soon']
+    else:
+        try:
+            if type(df[list(df.columns)[0]][list(df.index)[0]]) == numpy.float64:
+                the_option = '%'
+            else:
+                the_option = 'totals' # fake name, interpreted as abs freq result
+        except:
+            pass
+    query_bit = ['coming soon', the_option, 'coming soon']
+
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    output = outputnames(['coming soon.'], df, total)
+    output = outputnames(query_bit, df, total)
 
     # pandas options
     pd.set_option('display.max_columns', 4)
