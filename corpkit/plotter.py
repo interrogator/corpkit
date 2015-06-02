@@ -38,17 +38,17 @@ def plotter(title,
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
 
 
+    # try to use tex
     if tex == 'try' or tex is True:
         try:
             rc('text', usetex=True)
-            rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         except:
             rc('text', usetex=False)
     else:
         rc('text', usetex=False)   
 
+    # copy data, make series into df
     dataframe = df.copy()
-
     if type(dataframe) == pandas.core.series.Series:
         dataframe = DataFrame(dataframe)
 
@@ -58,15 +58,18 @@ def plotter(title,
     except:
         pass
 
+    # remove totals if there ... maybe redundant
     try:
         dataframe = dataframe.drop('Total', axis = 0)
     except:
         pass
+    
     #try:
         #dataframe = dataframe.drop('Total', axis = 1)
     #except:
         #pass
     #plt.figure()
+
     if num_to_plot == 'all':
         num_to_plot = len(list(dataframe.columns))
     
@@ -77,6 +80,8 @@ def plotter(title,
     else:
         title_to_show = title
 
+
+    # try to use styles
     if style != 'matplotlib' and style is not False:
         with plt.style.context((style)):
 
@@ -84,6 +89,7 @@ def plotter(title,
                 a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, legend = legend, **kwargs)
             else:
                 a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, **kwargs)
+    # plot without style
     else:    
         if type(legend) == bool:
             a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, legend = legend, **kwargs)
@@ -135,8 +141,10 @@ def plotter(title,
                 'right': 5, 'center left': 6, 'center right': 7, 'lower center': 8, 
                 'upper center': 9, 'center': 10}
 
-    if not legend.startswith('outside'):
-        
+    if not legend.startswith('o'):
+        if legend == 'outside right':
+            legend = 'outside upper right'
+
         if type(legend) == int:
             the_loc = legend
         elif type(legend) == str:
@@ -146,23 +154,27 @@ def plotter(title,
                 raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
         else:
             raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
-        plt.legend(loc=the_loc)
-    if legend.startswith('outside'):
-        os, plc = legend.split(' ', 1)
-        try:
-            if plc == 'upper right':
-            #the_loc = possible[plc]
-                plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=1)
-            if plc == 'center right':
-                plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', borderaxespad=1)
-            if plc == 'lower right':
-                plt.legend(bbox_to_anchor=(1, 0), loc='lower left', borderaxespad=1)
+        if not subplots:
+            plt.legend(loc=the_loc)
+    elif legend.startswith('o'):
+        if legend.startswith('outside r') or legend.startswith('o r'):
+            legend = 'outside upper right'
+        if not subplots:
+            os, plc = legend.split(' ', 1)
+            try:
+                if plc == 'upper right':
+                #the_loc = possible[plc]
+                    plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
+                if plc == 'center right':
+                    plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
+                if plc == 'lower right':
+                    plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
             #if plc == 'upper left':
                 #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
-        except KeyError:
-            raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+            except KeyError:
+                raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
     else:
-        raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))        
+        raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
         
     #if legend == 'upper center':
         #ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=True, shadow=True)
