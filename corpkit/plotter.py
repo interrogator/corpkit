@@ -42,6 +42,7 @@ def plotter(title,
     if tex == 'try' or tex is True:
         try:
             rc('text', usetex=True)
+            rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         except:
             rc('text', usetex=False)
     else:
