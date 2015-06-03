@@ -22,7 +22,7 @@ def quickview(results, n = 25):
             if option == 'keywords':
                 print '%s: %s (k=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
             elif option == '%':
-                print '%s: %s (%d%%)' % (fildex, w, sum(i for i in list(results_branch[w])))
+                print '%s: %s' % (fildex, w)
             else:
                 print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
     else:
