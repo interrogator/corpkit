@@ -140,7 +140,7 @@ def editor(dataframe1,
     def skip_these_entries(df, parsed_input):
         print 'Skipping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
         if len(parsed_input) > 20:
-            print '... and %d more ... \n' % len(parsed_input) - 20
+            print '... and %d more ... \n' % (len(parsed_input) - 20)
         df = df.drop(parsed_input, axis = 1)
         return df
 
