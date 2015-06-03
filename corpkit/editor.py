@@ -507,6 +507,19 @@ def editor(dataframe1,
         if merge_subcorpora:
             df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name)        
 
+
+    # todo: figure out just_totals, when and where and how ...
+    # make just_totals here?
+    if just_totals:
+        if not using_totals:
+            df = pd.DataFrame(df.sum(), columns = ['Total'])
+        else:
+            if not single_totals:
+                df2 = pd.DataFrame(df2.sum(), columns = ['Total'])
+
+
+
+
     # combine lists
     use_combiney = False
     try:
