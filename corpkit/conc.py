@@ -3,8 +3,8 @@ def conc(corpus, query,
         n = 100, 
         random = False, 
         window = 40, 
-        trees = False, 
-        csvmake = False): 
+        trees = False,
+        plaintext = False): 
     """A concordancer for Tregex queries"""
     import pandas as pd
     from pandas import DataFrame
@@ -32,7 +32,12 @@ def conc(corpus, query,
     on_cloud = check_dit()
 
     # make sure query is valid:
-    query_test(query)
+    if not plaintext:
+        query_test(query)
+
+    # make sure there's a corpus
+    if not os.path.exists(corpus):
+        raise ValueError('Corpus file or folder not found: %s' % corpus)
 
     # welcome message
     time = strftime("%H:%M:%S", localtime())
@@ -59,8 +64,6 @@ def conc(corpus, query,
         whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
         whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
     
-    results = list(whole_results)
-    
     # get just the match of the sentence
     if have_ipython:
         if on_cloud:
@@ -77,9 +80,39 @@ def conc(corpus, query,
         FNULL = open(os.devnull, 'w')
         middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
         middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
-    maximum = len(max(middle_column_result, key=len))
+    
+    # if no trees, do it with plain text
+    # so ugly, sorry
+
+    if len(whole_results) == 0:
+        import nltk
+        sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+        whole_results = []
+        middle_column_result = []
+        small_regex = re.compile(query)
+        big_regex = re.compile(r'.*' + query + r'.*')
+        fs = [os.path.join(corpus, f) for f in os.listdir(corpus)]
+        for f in fs:
+            raw = open(f).read().replace('\n', ' ')
+            # encoding ... ?
+            sents = sent_tokenizer.tokenize(raw)
+            for sent in sents:
+                try:
+                    for match in re.findall(small_regex, raw):
+                        middle_column_result.append(match)
+                        whole_results.append(sent)
+                except:
+                    continue
+
+    try:
+        # get longest middle column result, or discover no results and raise error
+        maximum = len(max(middle_column_result, key=len))
+    except ValueError:
+        raise ValueError("No matches found, sorry. I wish there was more I could tell you.")
+
     zipped = zip(whole_results, middle_column_result)
     unique_results = []
+
     # make sure we have some results
     if len(zipped) == 0:
         raise ValueError("No matches found, sorry. I wish there was more I could tell you.") 
