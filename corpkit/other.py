@@ -318,25 +318,20 @@ def multiquery(corpus, query, sort_by = 'total'):
     [[u'NPs in corpus', r'NP'], [u'VPs in corpus', r'VP']]"""
 
     import collections
-    from corpkit.query import interrogator
-    from corpkit.edit import resorter
-    from corpkit.edit import merger
     import pandas
+    from corpkit.interrogator import interrogator
+    from corpkit.editor import editor
+
     results = []
     for name, pattern in query:
-        result = interrogator(corpus, 'c', pattern)
-
+        result = interrogator(corpus, 'count', pattern)
         result.totals.name = name # rename count
         results.append(result.totals)
     results = pd.concat(results, axis = 1)
 
-    if sort_by:
-        results = editor(results, sort_by = sort_by)
-
-    tot = results.sum(axis = 1)
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    output = outputnames(query, results, tot)
-    return output
+    results = editor(results, sort_by = sort_by)
+    
+    return results
 
 
     # if nothing, the query's fine! 
