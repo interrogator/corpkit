@@ -18,6 +18,7 @@ def editor(dataframe1,
             skip_subcorpora = False,
             span_subcorpora = False,
             merge_subcorpora = False,
+            new_subcorpus_name = False,
 
             projection = False,
 
@@ -215,13 +216,17 @@ def editor(dataframe1,
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value
         return df
     
-    def merge_these_subcorpora(df, lst_of_subcorpora):
+    def merge_these_subcorpora(df, lst_of_subcorpora, new_subcorpus_name = False):
         # handles subcorpus names, not indices, right now
         if type(lst_of_subcorpora) == int:
             lst_of_subcorpora = [lst_of_subcorpora]
         if type(lst_of_subcorpora[0]) == int:
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
-        the_newname = '/'.join(sorted(lst_of_subcorpora))
+        if new_subcorpus_name is False:
+            the_newname = '/'.join(sorted(lst_of_subcorpora))
+        elif type(new_subcorpus_name) == str:
+            the_newname = new_subcorpus_name
+
         if type(df) == pandas.core.frame.DataFrame:
             df.ix[the_newname] = sum([df.ix[i] for i in lst_of_subcorpora])
             df = df.drop(lst_of_subcorpora, axis = 0)
@@ -493,13 +498,14 @@ def editor(dataframe1,
     if merge_entries:
         df = merge_these_entries(df, parse_input(merge_entries), the_newname)
     if merge_subcorpora:
-        df = merge_these_subcorpora(df, merge_subcorpora)
+        df = merge_these_subcorpora(df, merge_subcorpora, new_subcorpus_name = new_subcorpus_name)
 
-    if using_totals:
+    if not single_totals:
         if merge_entries:
             df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname)
+    if using_totals:    
         if merge_subcorpora:
-            df2 = merge_these_subcorpora(df2, merge_subcorpora)        
+            df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name)        
 
     # combine lists
     use_combiney = False
