@@ -144,6 +144,8 @@ def conc(corpus, query,
 
     if random:
         import random
+        if len(series) < n:
+            n = len(series)
         random_indices = random.sample(range(len(series)), n)
         series = [s for index, s in enumerate(series) if index in random_indices]
     else:
