@@ -3,8 +3,7 @@ def conc(corpus, query,
         n = 100, 
         random = False, 
         window = 40, 
-        trees = False,
-        plaintext = False): 
+        trees = False): 
     """A concordancer for Tregex queries"""
     import pandas as pd
     from pandas import DataFrame
@@ -39,53 +38,51 @@ def conc(corpus, query,
     time = strftime("%H:%M:%S", localtime())
     print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
+
+        
+    if trees:
+        options = '-s'
+    else:
+        options = '-t'
+    # get whole sentences:
+    if have_ipython:
+        if on_cloud:
+            tregex_command = 'sh tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        else:
+            tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        whole_results = get_ipython().getoutput(tregex_command)
+        whole_results = [line for line in whole_results if line]
+    else:
+        if on_cloud:
+            tregex_command = ["sh", "tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
+        else:
+            tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
+        FNULL = open(os.devnull, 'w')
+        whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
+        whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
     
-    if not plaintext:
-        # make sure query is valid:
-        query_test(query)
-        
-        if trees:
-            options = '-s'
+    # get just the match of the sentence
+    if have_ipython:
+        if on_cloud:
+            tregex_command = 'sh tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
         else:
-            options = '-t'
-        # get whole sentences:
-        if have_ipython:
-            if on_cloud:
-                tregex_command = 'sh tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-            else:
-                tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-            whole_results = get_ipython().getoutput(tregex_command)
-            whole_results = [line for line in whole_results if line]
+            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
+        middle_column_result = get_ipython().getoutput(tregex_command)
+        middle_column_result = [line for line in middle_column_result if line]
+    else:
+        if on_cloud:
+            tregex_command = ["sh", "tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
         else:
-            if on_cloud:
-                tregex_command = ["sh", "tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
-            else:
-                tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
-            FNULL = open(os.devnull, 'w')
-            whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
-            whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
-        
-        # get just the match of the sentence
-        if have_ipython:
-            if on_cloud:
-                tregex_command = 'sh tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-            else:
-                tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-            middle_column_result = get_ipython().getoutput(tregex_command)
-            middle_column_result = [line for line in middle_column_result if line]
-        else:
-            if on_cloud:
-                tregex_command = ["sh", "tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
-            else:
-                tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
-            FNULL = open(os.devnull, 'w')
-            middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
-            middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
+            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
+        FNULL = open(os.devnull, 'w')
+        middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
+        middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
         
     # if no trees, do it with plain text
     # so ugly, sorry
 
-    if plaintext:
+    if len(whole_results) == 0:
+
         import nltk
         sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
         whole_results = []
@@ -104,6 +101,10 @@ def conc(corpus, query,
                         whole_results.append(sent)
                 except:
                     continue
+
+    if len(whole_results) == 0:
+        # make sure query is valid:
+        query_test(query)
 
     try:
         # get longest middle column result, or discover no results and raise error
