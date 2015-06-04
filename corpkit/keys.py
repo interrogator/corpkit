@@ -70,7 +70,7 @@ def ngrams(words, n=2, nngram = 'all'):
     return (tuple(words[i:i+n]) for i in range(0, len(words) - (n - 1)))
 
 # from Spindle
-def keywords_and_ngrams(input, thresholdLL=19, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 'all', nngram = 'all'):
+def keywords_and_ngrams(input, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 'all', nngram = 'all'):
     from collections import defaultdict
     import math
     import json
@@ -132,7 +132,7 @@ def keywords_and_ngrams(input, thresholdLL=19, thresholdBigrams=2, dictionary = 
         dicLL[k] = float(2* ((a*logaE1)+(b*math.log(b/E2))))
 
     sortedLL = sorted(dicLL, key=dicLL.__getitem__, reverse=True)
-    listKeywords = [(k, dicLL[k]) for k in sortedLL if k.isalpha() and dicLL[k] > thresholdLL]
+    listKeywords = [(k, dicLL[k]) for k in sortedLL if k.isalpha()]
 
     keywords = [keyw[0] for keyw in listKeywords]
     counts = defaultdict(int)
