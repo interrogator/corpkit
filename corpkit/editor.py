@@ -54,7 +54,7 @@ def editor(dataframe1,
         if just_totals:
             if using_totals:
                 if not single_totals:
-                    to_drop = list(df2[df2['Total'] < threshold].index)
+                    to_drop = list(df2[df2['Combined total'] < threshold].index)
                     df = df.drop([e for e in to_drop if e in list(df.index)])
                     if prinf:
                         to_show = []
@@ -62,7 +62,8 @@ def editor(dataframe1,
                         if len(to_drop) > 10:
                             to_show.append('...')
                             [to_show.append(w) for w in to_drop[-5:]]
-                        print 'Removing %d entries below threshold:\n    %s\n' % (len(to_drop), '\n    '.join(to_show))
+                        if len(to_drop) > 0:
+                            print 'Removing %d entries below threshold:\n    %s\n' % (len(to_drop), '\n    '.join(to_show))
                         if len(to_drop) > 10:
                             print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
         if single_totals:
@@ -218,16 +219,20 @@ def editor(dataframe1,
         non_totals = [subcorpus for subcorpus in list(df.index)]
         good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
         if prinf:        
-            print 'Keeping subcorpora:\n    %d--%d' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
+            print 'Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         # retotal needed here
         return df
 
-    def projector(df, list_of_tuples):
+    def projector(df, list_of_tuples, prinf = True):
         for subcorpus, projection_value in list_of_tuples:
             if type(subcorpus) == int:
                 subcorpus = str(subcorpus)
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value
+            if prinf:
+                print 'Projection: %s * %d' % (subcorpus, projection_value)
+        if prinf:
+            print ''
         return df
     
     def merge_these_subcorpora(df, lst_of_subcorpora, new_subcorpus_name = False, prinf = True):
@@ -335,7 +340,7 @@ def editor(dataframe1,
             #df = recalc(df, operation = operation)
         elif sort_by == 'infreq':
             df = recalc(df, operation = operation)
-            tot = df.ix['Total']
+            tot = df.ix['temp-Total']
             df = df[tot.argsort()]
             df = df.drop('temp-Total', axis = 0)
             df = df.drop('temp-Total', axis = 1)
@@ -502,6 +507,19 @@ def editor(dataframe1,
         if using_totals:
             df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name, prinf = False)        
 
+    if just_subcorpora:
+        df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
+        if using_totals:
+            df2 = just_these_subcorpora(df2, just_subcorpora, prinf = False)
+    if skip_subcorpora:
+        df = skip_these_subcorpora(df, skip_subcorpora, prinf = print_info)
+        if using_totals:
+            df2 = skip_these_subcorpora(df2, skip_subcorpora, prinf = False)
+    if span_subcorpora:
+        df = span_these_subcorpora(df, span_subcorpora, prinf = print_info)
+        if using_totals:
+            df2 = span_these_subcorpora(df2, span_subcorpora, prinf = False)
+
     if just_entries:
         df = just_these_entries(df, parse_input(just_entries), prinf = print_info)
         if not single_totals:
@@ -511,31 +529,18 @@ def editor(dataframe1,
         if not single_totals:
             df2 = skip_these_entries(df2, parse_input(skip_entries), prinf = False)
 
-    if just_subcorpora:
-        df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
-        if not single_totals:
-            df2 = just_these_subcorpora(df2, just_subcorpora, prinf = False)
-    if skip_subcorpora:
-        df = skip_these_subcorpora(df, skip_subcorpora, prinf = print_info)
-        if not single_totals:
-            df2 = skip_these_subcorpora(df2, skip_subcorpora, prinf = False)
-    if span_subcorpora:
-        df = span_these_subcorpora(df, span_subcorpora, prinf = print_info)
-        if not single_totals:
-            df2 = span_these_subcorpora(df2, span_subcorpora, prinf = False)
-
     # drop infinites and nans
     df = df.replace([np.inf, -np.inf], np.nan)
     df = df.fillna(0.0)
 
     # make just_totals as dataframe
     if just_totals:
-        df = pd.DataFrame(df.sum(), columns = ['Total'])
+        df = pd.DataFrame(df.sum(), columns = ['Combined total'])
         if using_totals:
             if not single_totals:
-                df2 = pd.DataFrame(df2.sum(), columns = ['Total'])
+                df2 = pd.DataFrame(df2.sum(), columns = ['Combined total'])
             else:
-                df2 = pd.DataFrame(df2.sum, columns = ['Total'])
+                df2 = pd.DataFrame(df2.sum, columns = ['Combined total'])
 
     # generate '%' totals here ...
     if using_totals:
@@ -553,7 +558,10 @@ def editor(dataframe1,
         # set a threshold if just_totals
         if outputmode is True:
             df2 = df.sum()
-            df2.name = 'Total'
+            if not just_totals:
+                df2.name = 'Total'
+            else:
+                df2.name = 'Combined total'
             using_totals = True
             single_totals = True
         if just_totals:
@@ -574,7 +582,7 @@ def editor(dataframe1,
 
     if just_totals:
         # turn just_totals into series:
-        df = pd.Series(df['Total'], name = 'Total')
+        df = pd.Series(df['Combined total'], name = 'Combined total')
         df = df.order(ascending = False)
     # generate totals branch if not percentage results:
     if df1_istotals:
@@ -603,8 +611,8 @@ def editor(dataframe1,
     output = outputnames(query_bit, df, total)
 
     # pandas options
-    pd.set_option('display.max_columns', 4)
-    pd.set_option('display.max_rows', 5)
+    pd.set_option('display.max_columns', 10)
+    pd.set_option('display.max_rows', 10)
     pd.set_option('expand_frame_repr', False)
 
     #print '\nResult (sample)\n'
