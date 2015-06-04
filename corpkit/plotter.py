@@ -33,6 +33,11 @@ def plotter(title,
 
     have_python_tex = check_pytex()
 
+    # pie chart requires subplots
+    if 'kind' in kwargs:
+        if kwargs['kind'] == 'pie':
+            subplots = True
+
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib']
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
