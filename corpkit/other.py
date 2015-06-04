@@ -319,6 +319,7 @@ def multiquery(corpus, query, sort_by = 'total'):
 
     import collections
     import pandas
+    import pandas as pd
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
 
@@ -341,7 +342,6 @@ def interroplot(path, query):
     quickstart = interrogator(path, 't', query)
     edited = editor(quickstart.results, '%', quickstart.totals)
     plotter(quickstart.results, title = str(path))
-
 
 def datareader(data, on_cloud = False):
     """
