@@ -74,6 +74,9 @@ def plotter(title,
     if num_to_plot == 'all':
         num_to_plot = len(list(dataframe.columns))
     
+    # cut dataframe
+    dataframe = dataframe.head(num_to_plot)
+    
     # no title for subplots because ugly
     if subplots:
         title_to_show = ''
