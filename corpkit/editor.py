@@ -25,7 +25,9 @@ def editor(dataframe1,
             only_totals = False,
             remove_above_p = False,
             p = 0.05, 
-            revert_year = True
+            revert_year = True,
+
+            print_info = True
             ):
     """Edit results of corpus interrogation"""
 
@@ -34,7 +36,7 @@ def editor(dataframe1,
     import numpy as np
     import collections
     from pandas import DataFrame, Series
-    from corpkit.progressbar import ProgressBar
+    # from corpkit.progressbar import ProgressBar
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -46,18 +48,23 @@ def editor(dataframe1,
     except ImportError:
         pass
 
-    def combiney(df, df2, operation = '%', threshold = 'medium'):
+    def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
         # delete under threshold
         if just_totals:
             if using_totals:
-                # does the same thing twice. bad
-                to_drop = list(df2[df2['Total'] < threshold].index)
-                df = df.drop([e for e in to_drop if e in list(df.index)])
-                df2 = df2.drop([e for e in to_drop])
-                # remove anything not in df2 from df
-                #to_keep = list(df.index)
-                #df = df.ix[to_keep]
+                if not single_totals:
+                    to_drop = list(df2[df2['Total'] < threshold].index)
+                    df = df.drop([e for e in to_drop if e in list(df.index)])
+                    if prinf:
+                        to_show = []
+                        [to_show.append(w) for w in to_drop[:5]]
+                        if len(to_drop) > 10:
+                            to_show.append('...')
+                            [to_show.append(w) for w in to_drop[-5:]]
+                        print 'Removing %d entries below threshold:\n    %s\n' % (len(to_drop), '\n    '.join(to_show))
+                        if len(to_drop) > 10:
+                            print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
         if single_totals:
             if operation == '%':
                 df = df * 100.0
@@ -130,22 +137,24 @@ def editor(dataframe1,
 
         return parsed_input
 
-    def just_these_entries(df, parsed_input):
+    def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
-        print 'Keeping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
-        if len(parsed_input) > 20:
-            print '... and %d more ... \n' % (len(parsed_input) - 20)
+        if prinf:
+            print 'Keeping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
+            if len(parsed_input) > 20:
+                print '... and %d more ... \n' % (len(parsed_input) - 20)
         df = df.drop(entries, axis = 1)
         return df
 
-    def skip_these_entries(df, parsed_input):
-        print 'Skipping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
-        if len(parsed_input) > 20:
-            print '... and %d more ... \n' % (len(parsed_input) - 20)
+    def skip_these_entries(df, parsed_input, prinf = True):
+        if prinf:     
+            print 'Skipping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
+            if len(parsed_input) > 20:
+                print '... and %d more ... \n' % (len(parsed_input) - 20)
         df = df.drop(parsed_input, axis = 1)
         return df
 
-    def newname_getter(df, parsed_input, newname = 'combine'):
+    def newname_getter(df, parsed_input, newname = 'combine', prinf = True):
         """makes appropriate name for merged entries"""
         if type(newname) == int:
             the_newname = list(df.columns)[newname]
@@ -169,43 +178,47 @@ def editor(dataframe1,
             the_newname = unicode(the_newname, errors = 'ignore')
         return the_newname
 
-    def merge_these_entries(df, parsed_input, the_newname):
+    def merge_these_entries(df, parsed_input, the_newname, prinf = True):
         # make new entry with sum of parsed input
-        print 'Merging %d entries as "%s":\n    %s\n' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:20]))
-        if len(parsed_input) > 20:
-            print '... and %d more ... \n' % (len(parsed_input) - 20)
+        if prinf:
+            print 'Merging %d entries as "%s":\n    %s\n' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:20]))
+            if len(parsed_input) > 20:
+                print '... and %d more ... \n' % (len(parsed_input) - 20)
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         df = df.drop(parsed_input, axis = 1)
         df[the_newname] = temp
         return df
 
-    def just_these_subcorpora(df, lst_of_subcorpora):
+    def just_these_subcorpora(df, lst_of_subcorpora, prinf = True):        
         if type(lst_of_subcorpora[0]) == int:
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         good_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        print 'Keeping %d subcorpora:\n    %s\n' % (len(good_years), '\n    '.join(good_years[:20]))
-        if len(good_years) > 20:
-            print '... and %d more ... \n' % len(good_years) - 20
+        if prinf:
+            print 'Keeping %d subcorpora:\n    %s\n' % (len(good_years), '\n    '.join(good_years[:20]))
+            if len(good_years) > 20:
+                print '... and %d more ... \n' % len(good_years) - 20
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         return df
 
-    def skip_these_subcorpora(df, lst_of_subcorpora):
+    def skip_these_subcorpora(df, lst_of_subcorpora, prinf = True):
         if type(lst_of_subcorpora) == int:
             lst_of_subcorpora = [lst_of_subcorpora]
         if type(lst_of_subcorpora[0]) == int:
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         bad_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        print 'Skipping %d subcorpora:\n    %s\n' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:20]]))
-        if len(bad_years) > 20:
-            print '... and %d more ... \n' % len(bad_years) - 20
+        if prinf:       
+            print 'Skipping %d subcorpora:\n    %s\n' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:20]]))
+            if len(bad_years) > 20:
+                print '... and %d more ... \n' % len(bad_years) - 20
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
         return df
 
-    def span_these_subcorpora(df, lst_of_subcorpora):
+    def span_these_subcorpora(df, lst_of_subcorpora, prinf = True):
         non_totals = [subcorpus for subcorpus in list(df.index)]
         good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
-        print 'Keeping subcorpora:\n    %d--%d' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
+        if prinf:        
+            print 'Keeping subcorpora:\n    %d--%d' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         # retotal needed here
         return df
@@ -217,7 +230,7 @@ def editor(dataframe1,
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value
         return df
     
-    def merge_these_subcorpora(df, lst_of_subcorpora, new_subcorpus_name = False):
+    def merge_these_subcorpora(df, lst_of_subcorpora, new_subcorpus_name = False, prinf = True):
         # handles subcorpus names, not indices, right now
         if type(lst_of_subcorpora) == int:
             lst_of_subcorpora = [lst_of_subcorpora]
@@ -234,6 +247,8 @@ def editor(dataframe1,
         if type(df) == pandas.core.series.Series:
             df[the_newname] = sum([df[i] for i in lst_of_subcorpora])
             df = df.drop(lst_of_subcorpora)
+        if prinf:
+            print 'Merging subcorpora as "%s":\n    %s' % (the_newname, ', '.join(lst_of_subcorpora))
         return df
 
     def do_stats(df):
@@ -372,7 +387,7 @@ def editor(dataframe1,
                 #df = recalc(df, operation = operation)
         return df
 
-    def set_threshold(big_list, threshold):
+    def set_threshold(big_list, threshold, prinf = True):
         if type(threshold) == str:
             if threshold.startswith('l'):
                 denominator = 10000
@@ -391,10 +406,14 @@ def editor(dataframe1,
         else:
             the_threshold = threshold
         
-        print 'Threshold: %d' % the_threshold
+        if prinf:
+            print 'Threshold: %d\n' % the_threshold
         return the_threshold
 
 #####################################################
+
+    if print_info:
+        print '\n***Processing results***\n========================\n'
 
     # check if we're in concordance mode
     try:
@@ -407,6 +426,7 @@ def editor(dataframe1,
 
     # copy dataframe to be very safe
     df = dataframe1.copy()
+
 
     # do concordance work
     if conc_lines:
@@ -444,11 +464,13 @@ def editor(dataframe1,
     # copy and remove totals if there is
     single_totals = True
     using_totals = False
+    outputmode = False
 
     try:
-        if dataframe2.empty is False:
+        if dataframe2.empty is False:            
             df2 = dataframe2.copy()
             using_totals = True
+
             if type(df2) == pandas.core.frame.DataFrame:
                 if len(df2.columns) > 1:
                     single_totals = False
@@ -459,7 +481,8 @@ def editor(dataframe1,
             else:
                 raise ValueError('dataframe2 not recognised.')   
     except AttributeError:
-        pass
+        if dataframe2 == 'self':
+            outputmode = True
 
     if projection:
         # projection shouldn't do anything when working with '%', remember.
@@ -469,37 +492,37 @@ def editor(dataframe1,
 
     # merging
     if merge_entries:
-        the_newname = newname_getter(df, parse_input(merge_entries), newname = newname)
+        the_newname = newname_getter(df, parse_input(merge_entries), newname = newname, prinf = print_info)
     if merge_entries:
-        df = merge_these_entries(df, parse_input(merge_entries), the_newname)
+        df = merge_these_entries(df, parse_input(merge_entries), the_newname, prinf = print_info)
         if not single_totals:
-            df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname)
+            df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname, prinf = False)
     if merge_subcorpora:
-        df = merge_these_subcorpora(df, merge_subcorpora, new_subcorpus_name = new_subcorpus_name)
+        df = merge_these_subcorpora(df, merge_subcorpora, new_subcorpus_name = new_subcorpus_name, prinf = print_info)
         if using_totals:
-            df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name)        
+            df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name, prinf = False)        
 
     if just_entries:
-        df = just_these_entries(df, parse_input(just_entries))
+        df = just_these_entries(df, parse_input(just_entries), prinf = print_info)
         if not single_totals:
-            df2 = just_these_entries(df2, parse_input(just_entries))
+            df2 = just_these_entries(df2, parse_input(just_entries), prinf = False)
     if skip_entries:
-        df = skip_these_entries(df, parse_input(skip_entries))
+        df = skip_these_entries(df, parse_input(skip_entries), prinf = print_info)
         if not single_totals:
-            df2 = skip_these_entries(df2, parse_input(skip_entries))
+            df2 = skip_these_entries(df2, parse_input(skip_entries), prinf = False)
 
     if just_subcorpora:
-        df = just_these_subcorpora(df, just_subcorpora)
+        df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
         if not single_totals:
-            df2 = just_these_subcorpora(df2, just_subcorpora)
+            df2 = just_these_subcorpora(df2, just_subcorpora, prinf = False)
     if skip_subcorpora:
-        df = skip_these_subcorpora(df, skip_subcorpora)
+        df = skip_these_subcorpora(df, skip_subcorpora, prinf = print_info)
         if not single_totals:
-            df2 = skip_these_subcorpora(df2, skip_subcorpora)
+            df2 = skip_these_subcorpora(df2, skip_subcorpora, prinf = False)
     if span_subcorpora:
-        df = span_these_subcorpora(df, span_subcorpora)
+        df = span_these_subcorpora(df, span_subcorpora, prinf = print_info)
         if not single_totals:
-            df2 = span_these_subcorpora(df2, span_subcorpora)
+            df2 = span_these_subcorpora(df2, span_subcorpora, prinf = False)
 
     # drop infinites and nans
     df = df.replace([np.inf, -np.inf], np.nan)
@@ -525,13 +548,18 @@ def editor(dataframe1,
             total = tot1 * 100.0 / tot2
 
     # combine lists
-    if using_totals:
+    if using_totals or outputmode:
+        the_threshold = 0
         # set a threshold if just_totals
+        if outputmode is True:
+            df2 = df.sum()
+            df2.name = 'Total'
+            using_totals = True
+            single_totals = True
         if just_totals:
-            the_threshold = set_threshold(df2, threshold)
-        else:
-            the_threshold = 0
-        df = combiney(df, df2, operation = operation, threshold = the_threshold)
+            if not single_totals:
+                the_threshold = set_threshold(df2, threshold, prinf = print_info)
+        df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
 
     # resort data
     if sort_by:
@@ -580,7 +608,8 @@ def editor(dataframe1,
     pd.set_option('expand_frame_repr', False)
 
     #print '\nResult (sample)\n'
-    #print '=' * 80 + '\n'
+    if print_info:
+        print '========================\n'
     #print df.head().T
     #print ''
 
