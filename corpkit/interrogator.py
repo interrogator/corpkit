@@ -8,7 +8,8 @@ def interrogator(path, options, query,
                 phrases = False, 
                 dep_type = 'basic-dependencies',
                 function_filter = False,
-                table_size = 50):
+                table_size = 50,
+                plaintext = False):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -425,6 +426,13 @@ def interrogator(path, options, query,
         gc.collect()
         return result
 
+    def plaintexter(plaintext_regex, plaintext_data):
+        try:
+            result = re.findall(plaintext_regex, plaintext_data)
+            return result
+        except:
+            return
+
     def depnummer(xmldata):
         """print dependency number"""
         just_good_deps = SoupStrainer('dependencies', type=dep_type)
@@ -597,8 +605,13 @@ def interrogator(path, options, query,
         optiontext = 'Words only.'
     else:
         if not dependency:
-            # it's tregex. check if ok
-            query_test(query, have_ipython = have_ipython, on_cloud = on_cloud)
+            if not plaintext:
+                query_test(query, have_ipython = have_ipython, on_cloud = on_cloud)
+            else:
+                try:
+                    plaintext_regex = re.compile(r'\b' + query + r'\b')
+                except re.error:
+                    raise ValueError("Regular expression '%s' contains an error." % query)                
         else:
             try:
                 re.compile(query)
@@ -713,9 +726,10 @@ def interrogator(path, options, query,
                     main_totals.append(tup)
                     continue
 
+
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
-        if dependency:
+        if dependency or plaintext:
             subcorpus_name = d[0]
             subcorpus_names.append(subcorpus_name)
             fileset = d[1]
@@ -727,7 +741,6 @@ def interrogator(path, options, query,
                 c += 1
                 with open(os.path.join(path, subcorpus_name, f), "rb") as text:
                     data = text.read()
-
                     if options.startswith('g') or options.startswith('G'):
                         result_from_file = govrole(data)
                     if options.startswith('d') or options.startswith('D'):
@@ -736,6 +749,8 @@ def interrogator(path, options, query,
                         result_from_file = funct(data)
                     if options.startswith('n') or options.startswith('N'):
                         result_from_file = depnummer(data)
+                    if plaintext:
+                        result_from_file = plaintexter(plaintext_regex, data)
                 if result_from_file is not None:
                     for entry in result_from_file:
                         result.append(entry)
