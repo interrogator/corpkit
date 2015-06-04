@@ -80,7 +80,11 @@ def plotter(title,
         num_to_plot = len(list(dataframe.columns))
     
     # cut dataframe
-    dataframe = dataframe.head(num_to_plot)
+    try:
+        tst = dataframe['Combined total']
+        dataframe = dataframe.head(num_to_plot)
+    except:
+        pass
     
     # no title for subplots because ugly
     if subplots:
