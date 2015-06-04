@@ -230,7 +230,10 @@ def editor(dataframe1,
                 subcorpus = str(subcorpus)
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value
             if prinf:
-                print 'Projection: %s * %d' % (subcorpus, projection_value)
+                if type(projection_value) == float:
+                    print 'Projection: %s * %s' % (subcorpus, projection_value)
+                if type(projection_value) == int:
+                    print 'Projection: %s * %d' % (subcorpus, projection_value)
         if prinf:
             print ''
         return df
