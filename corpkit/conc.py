@@ -142,14 +142,11 @@ def conc(corpus, query,
         #new_word = spaces + word + spaces
         series.append(pd.Series([start, word, end], index = [lname, mname, rname]))
 
+    # randomise results...
     if random:
         import random
-        if len(series) < n:
-            n = len(series)
-        random_indices = random.sample(range(len(series)), n)
+        random_indices = random.sample(range(len(series)), len(series))
         series = [s for index, s in enumerate(series) if index in random_indices]
-    else:
-        series = series[:n]
 
     df = pd.concat(series, axis = 1).T
     pd.set_option('display.max_columns', 500)
@@ -157,7 +154,7 @@ def conc(corpus, query,
     pd.set_option('display.width', 1000)
     pd.set_option('expand_frame_repr', False)
     pd.set_option('colheader_justify', 'left')
-    print df.to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+    print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
     df.columns = ['l', 'm', 'r']
     return df
 
