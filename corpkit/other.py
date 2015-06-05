@@ -330,7 +330,7 @@ def multiquery(corpus, query, sort_by = 'total'):
         results.append(result.totals)
     results = pd.concat(results, axis = 1)
 
-    results = editor(results, sort_by = sort_by)
+    results = editor(results, sort_by = sort_by, print_info = False)
     
     return results
 
