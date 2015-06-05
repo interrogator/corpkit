@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='corpkit',
-      version='0.31',
+      version='0.32',
       description='A toolkit for working with parsed corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
