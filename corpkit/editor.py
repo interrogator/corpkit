@@ -1,4 +1,3 @@
-# a file for working with dataframe1s. most importantly, make a dataframe1 plotter.
 
 def editor(dataframe1, 
             operation = '%',
@@ -8,25 +7,19 @@ def editor(dataframe1,
             keep_top = False,
             just_totals = False,
             threshold = 'medium',
-            
             just_entries = False,
             skip_entries = False,
             merge_entries = False,
             newname = 'combine',
-
             just_subcorpora = False,
             skip_subcorpora = False,
             span_subcorpora = False,
             merge_subcorpora = False,
             new_subcorpus_name = False,
-
             projection = False,
-
-            only_totals = False,
             remove_above_p = False,
             p = 0.05, 
             revert_year = True,
-
             print_info = True
             ):
     """Edit results of corpus interrogation"""
@@ -63,7 +56,7 @@ def editor(dataframe1,
                             to_show.append('...')
                             [to_show.append(w) for w in to_drop[-5:]]
                         if len(to_drop) > 0:
-                            print 'Removing %d entries below threshold:\n    %s\n' % (len(to_drop), '\n    '.join(to_show))
+                            print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
                         if len(to_drop) > 10:
                             print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
         if single_totals:
@@ -141,17 +134,17 @@ def editor(dataframe1,
     def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
         if prinf:
-            print 'Keeping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
-            if len(parsed_input) > 20:
-                print '... and %d more ... \n' % (len(parsed_input) - 20)
+            print 'Keeping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
+            if len(parsed_input) > 10:
+                print '... and %d more ... \n' % (len(parsed_input) - 10)
         df = df.drop(entries, axis = 1)
         return df
 
     def skip_these_entries(df, parsed_input, prinf = True):
         if prinf:     
-            print 'Skipping %d entries:\n    %s\n' % (len(parsed_input), '\n    '.join(parsed_input[:20]))
-            if len(parsed_input) > 20:
-                print '... and %d more ... \n' % (len(parsed_input) - 20)
+            print 'Skipping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
+            if len(parsed_input) > 10:
+                print '... and %d more ... \n' % (len(parsed_input) - 10)
         df = df.drop(parsed_input, axis = 1)
         return df
 
@@ -182,9 +175,9 @@ def editor(dataframe1,
     def merge_these_entries(df, parsed_input, the_newname, prinf = True):
         # make new entry with sum of parsed input
         if prinf:
-            print 'Merging %d entries as "%s":\n    %s\n' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:20]))
-            if len(parsed_input) > 20:
-                print '... and %d more ... \n' % (len(parsed_input) - 20)
+            print 'Merging %d entries as "%s":\n    %s' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:10]))
+            if len(parsed_input) > 10:
+                print '... and %d more ... \n' % (len(parsed_input) - 10)
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         df = df.drop(parsed_input, axis = 1)
@@ -196,9 +189,9 @@ def editor(dataframe1,
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         good_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
         if prinf:
-            print 'Keeping %d subcorpora:\n    %s\n' % (len(good_years), '\n    '.join(good_years[:20]))
-            if len(good_years) > 20:
-                print '... and %d more ... \n' % len(good_years) - 20
+            print 'Keeping %d subcorpora:\n    %s' % (len(good_years), '\n    '.join(good_years[:10]))
+            if len(good_years) > 10:
+                print '... and %d more ... \n' % len(good_years) - 10
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         return df
 
@@ -209,9 +202,9 @@ def editor(dataframe1,
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         bad_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
         if prinf:       
-            print 'Skipping %d subcorpora:\n    %s\n' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:20]]))
-            if len(bad_years) > 20:
-                print '... and %d more ... \n' % len(bad_years) - 20
+            print 'Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]]))
+            if len(bad_years) > 10:
+                print '... and %d more ... \n' % len(bad_years) - 10
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
         return df
 
@@ -416,12 +409,10 @@ def editor(dataframe1,
         
         if prinf:
             print 'Threshold: %d\n' % the_threshold
+            printed_th = True
         return the_threshold
 
 #####################################################
-
-    if print_info:
-        print '\n***Processing results***\n========================\n'
 
     # check if we're in concordance mode
     try:
@@ -460,6 +451,9 @@ def editor(dataframe1,
 
         return df
 
+    if print_info:
+        print '\n***Processing results***\n========================\n'
+
     df1_istotals = False
     if type(df) == pandas.core.series.Series:
         df1_istotals = True
@@ -473,6 +467,7 @@ def editor(dataframe1,
     single_totals = True
     using_totals = False
     outputmode = False
+    printed_th = False
 
     try:
         if dataframe2.empty is False:            
@@ -620,7 +615,9 @@ def editor(dataframe1,
 
     #print '\nResult (sample)\n'
     if print_info:
-        print '========================\n'
+        #if merge_entries or merge_subcorpora or span_subcorpora or just_subcorpora or \
+           #just_entries or skip_entries or skip_subcorpora or printed_th or projection:
+        print '***Done!***\n========================\n'
     #print df.head().T
     #print ''
 
