@@ -9,7 +9,7 @@ def plotter(title,
             legend = 'best',
             num_to_plot = 7,
             tex = 'try',
-            subplots = False,
+            colours = 'Paired',
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -33,10 +33,14 @@ def plotter(title,
 
     have_python_tex = check_pytex()
 
-    # pie chart requires subplots
-    if 'kind' in kwargs:
-        if kwargs['kind'] == 'pie':
-            subplots = True
+    # are we doing subplots?
+    sbplt = False
+    if 'subplots' in kwargs:
+        if kwargs['subplots'] is True:
+            sbplt = True
+
+    if colours is True:
+        colours = 'Paired'
 
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib']
     if style not in styles:
@@ -44,20 +48,34 @@ def plotter(title,
 
 
     # try to use tex
+    using_tex = False
     if tex == 'try' or tex is True:
         try:
             rc('text', usetex=True)
             rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+            using_tex = True
         except:
             rc('text', usetex=False)
     else:
         rc('text', usetex=False)   
 
+  # pie chart requires subplots
+    piemode = False
+    if 'kind' in kwargs:
+        if kwargs['kind'] == 'pie':
+            piemode = True
+            sbplt = True
+
+    kwargs['subplots'] = sbplt
     # copy data, make series into df
     dataframe = df.copy()
+    was_series = False
     if type(dataframe) == pandas.core.series.Series:
+        was_series = True
         dataframe = DataFrame(dataframe)
-
+        # this gets tid of the y_label thing showing up for pie mode...
+        if piemode:
+            dataframe.columns = ['']
     # attempt to convert x axis to ints:
     try:
         dataframe.index = [int(i) for i in list(dataframe.index)]
@@ -77,8 +95,36 @@ def plotter(title,
     #plt.figure()
 
     if num_to_plot == 'all':
-        num_to_plot = len(list(dataframe.columns))
-    
+        if was_series:
+            num_to_plot = len(dataframe)
+        else:
+            num_to_plot = len(list(dataframe.columns))
+
+    #  use colormap if need be:
+    colormap = False
+    if num_to_plot > 7:
+        if 'kind' in kwargs:
+            if kwargs['kind'] in ['pie', 'line', 'area']:
+                if colours:
+                    kwargs['colormap'] = colours
+        else:
+            if colours:
+                kwargs['colormap'] = colours
+    if 'kind' in kwargs:
+        if colours:
+            if kwargs['kind'] == 'bar':
+                if len(list(dataframe.columns)) == 1:
+                    import numpy as np
+                    the_range = np.linspace(0, 1, num_to_plot)
+                    cmap = plt.get_cmap(colours)
+                    kwargs['colors'] = [cmap(n) for n in the_range]
+
+    # no legend for bar chart if just one label
+    if 'kind' in kwargs:
+        if kwargs['kind'] in ['bar', 'area', 'line']:
+            if was_series:
+                legend = False
+
     # cut dataframe
     try:
         tst = dataframe['Combined total']
@@ -87,27 +133,30 @@ def plotter(title,
         pass
     
     # no title for subplots because ugly
-    if subplots:
+    if sbplt and not piemode:
         title_to_show = ''
         figsize = (figsize[0], figsize[1] * 2.5)
     else:
         title_to_show = title
-
+    if piemode:
+        title_to_show = ''
+        figsize = (figsize[0], figsize[0])
+        legend = False
 
     # try to use styles
     if style != 'matplotlib' and style is not False:
         with plt.style.context((style)):
 
             if type(legend) == bool:
-                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, legend = legend, **kwargs)
+                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
             else:
-                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, **kwargs)
+                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
     # plot without style
     else:    
         if type(legend) == bool:
-            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, legend = legend, **kwargs)
+            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
         else:
-            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, subplots = subplots, **kwargs)
+            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
 
     # make and set x label:
     if x_label is False:
@@ -122,7 +171,7 @@ def plotter(title,
             x_label = 'Group'
 
     if x_label is not None:
-        if not subplots:
+        if not sbplt:
             plt.xlabel(x_label)
 
     # make and set y label
@@ -139,62 +188,60 @@ def plotter(title,
                 y_label = 'Absolute frequency'
     
     if y_label is not None:
-        if not subplots:
+        if not sbplt:
             plt.ylabel(y_label)
 
     # hacky: turn legend into subplot titles :)
-    if subplots:
+    if sbplt:
         for index, f in enumerate(a_plot):
             titletext = list(dataframe.columns)[index]
-            f.legend_.remove()
-            f.set_title(titletext)
+            if not piemode:
+                f.legend_.remove()        
+                f.set_title(titletext)
 
     # legend values
     possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
                 'right': 5, 'center left': 6, 'center right': 7, 'lower center': 8, 
                 'upper center': 9, 'center': 10}
 
-    if not legend.startswith('o'):
-        if legend == 'outside right':
-            legend = 'outside upper right'
-
-        if type(legend) == int:
-            the_loc = legend
-        elif type(legend) == str:
-            try:
-                the_loc = possible[legend]
-            except KeyError:
-                raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+    if legend:
+        if not legend.startswith('o'):
+            if legend == 'outside right':
+                legend = 'outside upper right'
+            if type(legend) == int:
+                the_loc = legend
+            elif type(legend) == str:
+                try:
+                    the_loc = possible[legend]
+                except KeyError:
+                    raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+            else:
+                raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
+            if not sbplt:
+                plt.legend(loc=the_loc)
+        elif legend.startswith('o'):
+            if legend.startswith('outside r') or legend.startswith('o r'):
+                legend = 'outside upper right'
+            if not sbplt:
+                os, plc = legend.split(' ', 1)
+                try:
+                    if plc == 'upper right':
+                    #the_loc = possible[plc]
+                        plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
+                    if plc == 'center right':
+                        plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
+                    if plc == 'lower right':
+                        plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
+                #if plc == 'upper left':
+                    #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
+                except KeyError:
+                    raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
         else:
-            raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
-        if not subplots:
-            plt.legend(loc=the_loc)
-    elif legend.startswith('o'):
-        if legend.startswith('outside r') or legend.startswith('o r'):
-            legend = 'outside upper right'
-        if not subplots:
-            os, plc = legend.split(' ', 1)
-            try:
-                if plc == 'upper right':
-                #the_loc = possible[plc]
-                    plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
-                if plc == 'center right':
-                    plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
-                if plc == 'lower right':
-                    plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
-            #if plc == 'upper left':
-                #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
-            except KeyError:
-                raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
-    else:
-        raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
-        
-    #if legend == 'upper center':
-        #ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=True, shadow=True)
+            raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
 
     # make figure
     plt.subplots_adjust(bottom=0.20)
-    if not subplots:
+    if not sbplt:
         fig1 = a_plot.get_figure()
         if not have_python_tex:
             fig1.show()
