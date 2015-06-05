@@ -10,6 +10,7 @@ def plotter(title,
             num_to_plot = 7,
             tex = 'try',
             colours = 'Paired',
+            cumulative = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -73,9 +74,6 @@ def plotter(title,
     if type(dataframe) == pandas.core.series.Series:
         was_series = True
         dataframe = DataFrame(dataframe)
-        # this gets tid of the y_label thing showing up for pie mode...
-        if piemode:
-            dataframe.columns = ['']
     # attempt to convert x axis to ints:
     try:
         dataframe.index = [int(i) for i in list(dataframe.index)]
@@ -88,11 +86,8 @@ def plotter(title,
     except:
         pass
     
-    #try:
-        #dataframe = dataframe.drop('Total', axis = 1)
-    #except:
-        #pass
-    #plt.figure()
+    if cumulative:
+        dataframe = DataFrame(dataframe.cumsum())
 
     if num_to_plot == 'all':
         if was_series:
@@ -112,7 +107,7 @@ def plotter(title,
                 kwargs['colormap'] = colours
     if 'kind' in kwargs:
         if colours:
-            if kwargs['kind'] == 'bar':
+            if kwargs['kind'].startswith('bar'):
                 if len(list(dataframe.columns)) == 1:
                     import numpy as np
                     the_range = np.linspace(0, 1, num_to_plot)
@@ -121,17 +116,21 @@ def plotter(title,
 
     # no legend for bar chart if just one label
     if 'kind' in kwargs:
-        if kwargs['kind'] in ['bar', 'area', 'line']:
+        if kwargs['kind'] in ['bar', 'barh', 'area', 'line']:
             if was_series:
                 legend = False
 
-    # cut dataframe
+    # cut dataframe if just_totals
     try:
         tst = dataframe['Combined total']
         dataframe = dataframe.head(num_to_plot)
     except:
         pass
     
+    # rotate automatically
+    #if len(max(list(dataframe.columns), key=len)) > 6:
+        #kwargs['rot'] = 45
+
     # no title for subplots because ugly
     if sbplt and not piemode:
         title_to_show = ''
@@ -143,10 +142,13 @@ def plotter(title,
         figsize = (figsize[0], figsize[0])
         legend = False
 
+    # this gets tid of the y_label thing showing up for pie mode...
+    if piemode:
+        dataframe.columns = ['']
+
     # try to use styles
     if style != 'matplotlib' and style is not False:
         with plt.style.context((style)):
-
             if type(legend) == bool:
                 a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
             else:
@@ -158,6 +160,13 @@ def plotter(title,
         else:
             a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
 
+    # bigger ticks?
+    #if using_tex:
+    #    size = (figsize[0] / 2) + 12
+    #else:
+    #    size = (figsize[0] / 2) + 7
+    #if type(a_plot) != numpy.ndarray:
+    #    a_plot.tick_params(axis='x', which='major', labelsize=size)
     # make and set x label:
     if x_label is False:
         check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
