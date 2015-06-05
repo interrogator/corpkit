@@ -59,18 +59,24 @@ def editor(dataframe1,
                             print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
                         if len(to_drop) > 10:
                             print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+                        else:
+                            print ''
+                else:
+                    denom = df2
+        else:
+            denom = list(df2)
         if single_totals:
             if operation == '%':
                 df = df * 100.0
-                df = df.div(list(df2), axis = 0)
+                df = df.div(denom, axis = 0)
             elif operation == '+':
-                df = df.add(list(df2), axis = 0)
+                df = df.add(denom, axis = 0)
             elif operation == '-':
-                df = df.sub(list(df2), axis = 0)
+                df = df.sub(denom, axis = 0)
             elif operation == '*':
-                df = df.mul(list(df2), axis = 0)
+                df = df.mul(denom, axis = 0)
             elif operation == '/':
-                df = df.div(list(df2), axis = 0)
+                df = df.div(denom, axis = 0)
             return df
 
         elif not single_totals:
@@ -137,6 +143,8 @@ def editor(dataframe1,
             print 'Keeping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
             if len(parsed_input) > 10:
                 print '... and %d more ... \n' % (len(parsed_input) - 10)
+            else:
+                print ''
         df = df.drop(entries, axis = 1)
         return df
 
@@ -145,6 +153,8 @@ def editor(dataframe1,
             print 'Skipping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
             if len(parsed_input) > 10:
                 print '... and %d more ... \n' % (len(parsed_input) - 10)
+            else:
+                print ''
         df = df.drop(parsed_input, axis = 1)
         return df
 
@@ -178,6 +188,8 @@ def editor(dataframe1,
             print 'Merging %d entries as "%s":\n    %s' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:10]))
             if len(parsed_input) > 10:
                 print '... and %d more ... \n' % (len(parsed_input) - 10)
+            else:
+                print ''
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         df = df.drop(parsed_input, axis = 1)
@@ -191,7 +203,9 @@ def editor(dataframe1,
         if prinf:
             print 'Keeping %d subcorpora:\n    %s' % (len(good_years), '\n    '.join(good_years[:10]))
             if len(good_years) > 10:
-                print '... and %d more ... \n' % len(good_years) - 10
+                print '... and %d more ... \n' % (len(good_years) - 10)
+            else:
+                print ''
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         return df
 
@@ -204,7 +218,9 @@ def editor(dataframe1,
         if prinf:       
             print 'Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]]))
             if len(bad_years) > 10:
-                print '... and %d more ... \n' % len(bad_years) - 10
+                print '... and %d more ... \n' % (len(bad_years) - 10)
+            else:
+                print ''
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
         return df
 
@@ -311,6 +327,7 @@ def editor(dataframe1,
     def resort(df, sort_by = False, keep_stats = False):
         """sort results"""
         # translate options and make sure they are parseable
+        
         options = ['total', 'name', 'infreq', 'increase', 
                    'decrease', 'static', 'most', 'least', 'none']
 
@@ -323,6 +340,16 @@ def editor(dataframe1,
         if sort_by not in options:
             raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
 
+        if just_totals:
+            if sort_by == 'infreq':
+                df = df.sort(columns = 'Combined total', ascending = True)
+            elif sort_by == 'total':
+                df = df.sort(columns = 'Combined total', ascending = False)
+            elif sort_by == 'name':
+                df = df.sort_index()
+            return df
+
+        # this is really shitty now that i know how to sort, like in the above
         if sort_by == 'total':
             if df1_istotals:
                 df = df.T
@@ -381,11 +408,6 @@ def editor(dataframe1,
             # reorder with totals and stats at end
             df = df[move_totals]
 
-            #elif sort_by == 'static':
-                #reordered = 
-
-            #if operation != '%':
-                #df = recalc(df, operation = operation)
         return df
 
     def set_threshold(big_list, threshold, prinf = True):
@@ -532,13 +554,15 @@ def editor(dataframe1,
     df = df.fillna(0.0)
 
     # make just_totals as dataframe
+    just_one_total_number = False
     if just_totals:
         df = pd.DataFrame(df.sum(), columns = ['Combined total'])
         if using_totals:
             if not single_totals:
                 df2 = pd.DataFrame(df2.sum(), columns = ['Combined total'])
             else:
-                df2 = pd.DataFrame(df2.sum, columns = ['Combined total'])
+                just_one_total_number = True
+                df2 = df2.sum()
 
     # generate '%' totals here ...
     if using_totals:
@@ -581,7 +605,6 @@ def editor(dataframe1,
     if just_totals:
         # turn just_totals into series:
         df = pd.Series(df['Combined total'], name = 'Combined total')
-        df = df.order(ascending = False)
     # generate totals branch if not percentage results:
     if df1_istotals:
         total = pd.Series(df['Total'], name = 'Total')
@@ -608,16 +631,11 @@ def editor(dataframe1,
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     output = outputnames(query_bit, df, total)
 
-    # pandas options
-    pd.set_option('display.max_columns', 10)
-    pd.set_option('display.max_rows', 10)
-    pd.set_option('expand_frame_repr', False)
-
     #print '\nResult (sample)\n'
     if print_info:
         #if merge_entries or merge_subcorpora or span_subcorpora or just_subcorpora or \
            #just_entries or skip_entries or skip_subcorpora or printed_th or projection:
-        print '***Done!***\n========================\n'
+        print '\n***Done!***\n========================\n'
     #print df.head().T
     #print ''
 
