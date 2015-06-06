@@ -7,7 +7,7 @@ def plotter(title,
             figsize = (13, 6),
             save = False,
             legend_pos = 'best',
-            reverse_legend = False,
+            reverse_legend = 'guess',
             num_to_plot = 7,
             tex = 'try',
             colours = 'Paired',
@@ -146,7 +146,13 @@ def plotter(title,
                     cmap = plt.get_cmap(colours)
                     kwargs['colors'] = [cmap(n) for n in the_range]
 
-    # no legend for bar chart if just one label
+    # reversing legend option
+    if reverse_legend is True:
+        rev_leg = True
+    elif reverse_legend is False:
+        rev_leg = False
+
+    # show legend or don't, guess whether to reverse based on kind
     legend = True
     if 'kind' in kwargs:
         if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
@@ -154,6 +160,11 @@ def plotter(title,
                 legend = False
             if kwargs['kind'] == 'pie':
                 legend = False
+        if kwargs['kind'] in ['barh', 'area']:
+            if reverse_legend == 'guess':
+                rev_leg = True
+    if not 'rev_leg' in locals():
+        rev_leg = False
 
     # the default legend placement
     if legend_pos is True:
@@ -191,7 +202,6 @@ def plotter(title,
 
     # use styles and plot
     with plt.style.context((style)):
-        print kwargs
         a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
     if x_label is False:
         check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
@@ -271,13 +281,25 @@ def plotter(title,
             leg_options['borderaxespad'] = 1
 
         with plt.style.context((style)):
-            ax = plt.gca()
-            if legend:
-                print leg_options
+            ax = plt.subplot(111)
+            box = ax.get_position()
+            #ax.set_position([box.x0, box.y0, box.width, box.height])
+
+            # Put a legend to the right of the current axis
+            if not rev_leg:
                 ax.legend(**leg_options)
-                if reverse_legend:
-                    handles, labels = ax.get_legend_handles_labels()
-                    ax.legend(handles[::-1], labels[::-1])
+            else:
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles[::-1], labels[::-1], **leg_options)
+
+
+
+
+
+
+
+
+
 
     # make room at the bottom for label?
     plt.subplots_adjust(bottom=0.20)
