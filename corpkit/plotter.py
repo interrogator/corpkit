@@ -34,6 +34,37 @@ def plotter(title,
 
     have_python_tex = check_pytex()
 
+    def get_savename(imagefolder, save = False, title = False):
+        """Come up with the savename for the image."""
+        import os
+        def urlify(s):
+            "Turn title into filename"
+            import re
+            s = s.lower()
+            s = re.sub(r"[^\w\s]", '', s)
+            s = re.sub(r"\s+", '-', s)
+            return s     
+        # name as 
+        if type(save) == str:
+            savename = os.path.join(imagefolder, (urlify(save) + '.png'))
+        #this 'else' is redundant now that title is obligatory
+        else:
+            if title:
+                filename = urlify(title) + '.png'
+                savename = os.path.join(imagefolder, filename)
+        #    # generic sequential naming
+        #    else:
+        #        list_images = [i for i in sorted(os.listdir(imagefolder)) if i.startswith('image-')]
+        #        if len(list_images) > 0:
+        #            num = int(list_images[-1].split('-')[1].split('.')[0]) + 1
+        #            autoname = 'image-' + str(num).zfill(3)
+        #            savename = os.path.join(imagefolder, autoname + '.png')
+        #        else:
+        #            savename = os.path.join(imagefolder, 'image-001.png')
+        #if savename.endswith('.png.png'):
+        #    savename = savename[:-4]
+        return savename
+
     # are we doing subplots?
     sbplt = False
     if 'subplots' in kwargs:
@@ -120,6 +151,10 @@ def plotter(title,
             if was_series:
                 legend = False
 
+    # the default legend placement
+    if legend is True:
+        legend = 'best'
+
     # cut dataframe if just_totals
     try:
         tst = dataframe['Combined total']
@@ -127,7 +162,7 @@ def plotter(title,
     except:
         pass
     
-    # rotate automatically
+    #rotate automatically
     #if len(max(list(dataframe.columns), key=len)) > 6:
         #kwargs['rot'] = 45
 
@@ -147,28 +182,13 @@ def plotter(title,
         if len(dataframe.columns) == 1:
             dataframe.columns = ['']
 
-    # try to use styles
-    if style != 'matplotlib' and style is not False:
-        with plt.style.context((style)):
-            if type(legend) == bool:
-                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
-            else:
-                a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
-    # plot without style
-    else:    
+    # use styles and plot
+    with plt.style.context((style)):
         if type(legend) == bool:
             a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
         else:
             a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
 
-    # bigger ticks?
-    #if using_tex:
-    #    size = (figsize[0] / 2) + 12
-    #else:
-    #    size = (figsize[0] / 2) + 7
-    #if type(a_plot) != numpy.ndarray:
-    #    a_plot.tick_params(axis='x', which='major', labelsize=size)
-    # make and set x label:
     if x_label is False:
         check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
         try:
@@ -215,42 +235,48 @@ def plotter(title,
                 'upper center': 9, 'center': 10}
 
     if legend:
-        if not legend.startswith('o'):
-            if legend == 'outside right':
-                legend = 'outside upper right'
-            if type(legend) == int:
-                the_loc = legend
-            elif type(legend) == str:
-                try:
-                    the_loc = possible[legend]
-                except KeyError:
-                    raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+        with plt.style.context((style)):
+            if not legend.startswith('o'):
+                if legend == 'outside right':
+                    legend = 'outside upper right'
+                if type(legend) == int:
+                    the_loc = legend
+                elif type(legend) == str:
+                    try:
+                        the_loc = possible[legend]
+                    except KeyError:
+                        raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+                else:
+                    raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
+                if not sbplt: 
+                    if not sbplt:
+                        plt.legend(loc=the_loc, framealpha=.8)
+                    else:
+                        plt.legend(loc=the_loc)
+            elif legend.startswith('o'):
+                if legend.startswith('outside r') or legend.startswith('o r'):
+                    legend = 'outside upper right'
+                if not sbplt:
+                    os, plc = legend.split(' ', 1)
+                    try:
+                        if plc == 'upper right':
+                        #the_loc = possible[plc]
+                            plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
+                        if plc == 'center right':
+                            plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
+                        if plc == 'lower right':
+                            plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
+                    #if plc == 'upper left':
+                        #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
+                    except KeyError:
+                        raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
             else:
-                raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
-            if not sbplt:
-                plt.legend(loc=the_loc)
-        elif legend.startswith('o'):
-            if legend.startswith('outside r') or legend.startswith('o r'):
-                legend = 'outside upper right'
-            if not sbplt:
-                os, plc = legend.split(' ', 1)
-                try:
-                    if plc == 'upper right':
-                    #the_loc = possible[plc]
-                        plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
-                    if plc == 'center right':
-                        plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
-                    if plc == 'lower right':
-                        plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
-                #if plc == 'upper left':
-                    #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
-                except KeyError:
-                    raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
-        else:
-            raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
+                raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
+
+    # make room at the bottom for label?
+    plt.subplots_adjust(bottom=0.20)
 
     # make figure
-    plt.subplots_adjust(bottom=0.20)
     if not sbplt:
         fig1 = a_plot.get_figure()
         if not have_python_tex:
@@ -263,6 +289,7 @@ def plotter(title,
         return
 
     if save:
+        import os
         if have_python_tex:
             imagefolder = '../images'
         else:
@@ -274,40 +301,12 @@ def plotter(title,
             os.makedirs(imagefolder)
 
         # save image and get on with our lives
-        fig1.savefig(savename, dpi=150, transparent=True)
+        if not sbplt:
+            fig1.savefig(savename, dpi=150, transparent=True)
+        else:
+            plt.savefig(savename, dpi=150, transparent=True)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
         else:
             raise ValueError("Error making %s." % savename)
-
-
-    def get_savename(imagefolder, save = False, title = False):
-        """Come up with the savename for the image."""
-
-        def urlify(s):
-            "Turn title into filename"
-            import re
-            s = s.lower()
-            s = re.sub(r"[^\w\s]", '', s)
-            s = re.sub(r"\s+", '-', s)
-            return s     
-
-        # name as 
-        if type(save) == str:
-            savename = os.path.join(imagefolder, urlify(save) + '.png')
-        else:
-            if title:
-                savename = os.path.join(imagefolder, urlify(title) + '.png')
-            # generic sequential naming
-            else:
-                list_images = [i for i in sorted(os.listdir(imagefolder)) if i.startswith('image-')]
-                if len(list_images) > 0:
-                    num = int(list_images[-1].split('-')[1].split('.')[0]) + 1
-                    autoname = 'image-' + str(num).zfill(3)
-                    savename = os.path.join(imagefolder, autoname + '.png')
-                else:
-                    savename = os.path.join(imagefolder, 'image-001.png')
-        if savename.endswith('.png.png'):
-            savename = savename[:-4]
-        return savename
