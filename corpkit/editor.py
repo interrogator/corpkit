@@ -164,10 +164,10 @@ def editor(dataframe1,
             the_newname = list(df.columns)[newname]
         elif type(newname) == str:
             if newname == 'combine':
-                if len(parsed_input) < 4:
+                if len(parsed_input) <= 3:
                     the_newname = '/'.join(parsed_input)
-                else:
-                    the_newname = '/'.join(parsed_input[:4]) + '...'
+                elif len(parsed_input) > 3:
+                    the_newname = '/'.join(parsed_input[:3]) + '...'
             else:
                 the_newname = newname
         if newname is False:
@@ -245,34 +245,6 @@ def editor(dataframe1,
                     print 'Projection: %s * %d' % (subcorpus, projection_value)
         if prinf:
             print ''
-        return df
-    
-    def merge_these_subcorpora(df, parsed_input, new_subcorpus_name = False, prinf = True):
-
-        df = df.T
-        print df
-        print parsed_input
-        
-        if type(lst_of_subcorpora) == int:
-            lst_of_subcorpora = [lst_of_subcorpora]
-        if type(lst_of_subcorpora[0]) == int:
-            lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
-        if new_subcorpus_name is False:
-            the_newname = '/'.join(sorted(lst_of_subcorpora))
-        elif type(new_subcorpus_name) == str:
-            the_newname = new_subcorpus_name
-
-        if type(df) == pandas.core.frame.DataFrame:
-            df.ix[the_newname] = sum([df.ix[i] for i in lst_of_subcorpora])
-            df = df.drop(lst_of_subcorpora, axis = 0)
-        if type(df) == pandas.core.series.Series:
-            df[the_newname] = sum([df[i] for i in lst_of_subcorpora])
-            df = df.drop(lst_of_subcorpora)
-        if prinf:
-            print 'Merging subcorpora as "%s":\n    %s' % (the_newname, ', '.join(lst_of_subcorpora))
-        
-        df = df.T
-
         return df
 
     def do_stats(df):
@@ -611,8 +583,7 @@ def editor(dataframe1,
         if not just_totals:
             df = df[list(df.columns)[:keep_top]]
         else:
-            import warnings
-            warnings.warn("keep_top has no effect if just_totals is True.")
+            df = df.head(keep_top)
 
     if just_totals:
         # turn just_totals into series:
@@ -651,10 +622,10 @@ def editor(dataframe1,
     #print df.head().T
     #print ''
 
-    pd.set_option('display.max_rows', 16)
-    pd.set_option('display.max_columns', 10)
+    pd.set_option('display.max_rows', 10)
+    pd.set_option('display.max_columns', 8)
     pd.set_option('max_colwidth',70)
-    pd.set_option('display.width', 1000)
+    pd.set_option('display.width', 800)
     pd.set_option('expand_frame_repr', False)
 
     return output
