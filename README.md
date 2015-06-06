@@ -475,12 +475,12 @@ Now, some intense plotting:
 ```
 Output:
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt.png" />
-<br>
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png" />
-<br>
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png" />
-<br>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt.png"  height="100" width="100"/>
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png"  height="100" width="100"/>
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png"  height="100" width="100"/>
+
 
 ## More information
 
