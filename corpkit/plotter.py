@@ -224,7 +224,8 @@ def plotter(title,
 
     if x_label is not None:
         if not sbplt:
-            plt.xlabel(x_label)
+            if not piemode:
+                plt.xlabel(x_label)
 
     # make and set y label
     if y_label is False:
@@ -241,7 +242,8 @@ def plotter(title,
     
     if y_label is not None:
         if not sbplt:
-            plt.ylabel(y_label)
+            if not piemode:
+                plt.ylabel(y_label)
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
@@ -295,18 +297,10 @@ def plotter(title,
 
             # Put a legend to the right of the current axis
             if not rev_leg:
-                ax.legend(**leg_options)
+                lgd = ax.legend(**leg_options)
             else:
                 handles, labels = ax.get_legend_handles_labels()
-                ax.legend(handles[::-1], labels[::-1], **leg_options)
-
-
-
-
-
-
-
-
+                lgd = ax.legend(handles[::-1], labels[::-1], **leg_options)
 
 
     # make room at the bottom for label?
@@ -339,9 +333,15 @@ def plotter(title,
 
         # save image and get on with our lives
         if not sbplt:
-            fig1.savefig(savename, dpi=150, transparent=True)
+            if legend_pos.startswith('o'):
+                fig1.savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            else:
+                fig1.savefig(savename, dpi=150, transparent=False)
         else:
-            plt.savefig(savename, dpi=150, transparent=True)
+            if legend_pos.startswith('o'):
+                plt.savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            else:
+                plt.savefig(savename, dpi=150, transparent=False)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
