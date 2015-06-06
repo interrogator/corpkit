@@ -3,7 +3,8 @@ def conc(corpus, query,
         n = 100, 
         random = False, 
         window = 40, 
-        trees = False): 
+        trees = False,
+        plaintext = 'try'): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
     import pandas as pd
     from pandas import DataFrame
@@ -43,63 +44,65 @@ def conc(corpus, query,
     print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
 
+    if plaintext == 'try':
+        if not tregex_engine(corpus = corpus, check_for_trees = True):
+            plaintext = True
+        else:
+            plaintext = False
+
+
     if trees:
         options = '-s'
     else:
         options = '-t'
-    # get whole sentences:
-    whole_results = tregex_engine(query, 
+    if not plaintext:
+        whole_results = tregex_engine(query, 
                                   options = ['-o', '-w', options], 
                                   corpus = corpus, 
                                   on_cloud = on_cloud)
-    middle_column_result = tregex_engine(query, 
+        middle_column_result = tregex_engine(query, 
                                   options = ['-o', options], 
                                   corpus = corpus, 
                                   on_cloud = on_cloud)
 
-    if len(whole_results) == 0:
-        if not tregex_engine(corpus = corpus, check_for_trees = True):
-            import nltk
-            sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-            whole_results = []
-            middle_column_result = []
-            small_regex = re.compile(query)
-            big_regex = re.compile(r'.*' + query + r'.*')
-            fs = [os.path.join(corpus, f) for f in os.listdir(corpus)]
-            # do recursive if need
-            if any(os.path.isdir(f) for f in fs):
-                recursive_files = []
-                for dirname, dirnames, filenames in os.walk(corpus):
-                    for filename in filenames:
-                        recursive_files.append(os.path.join(dirname, filename))
-                fs = recursive_files
-            for f in fs:
-                raw = open(f).read().replace('\n', ' ')
-                # encoding ... ?
-                sents = sent_tokenizer.tokenize(raw)
-                for sent in sents:
-                    try:
-                        for match in re.findall(small_regex, raw):
-                            middle_column_result.append(match)
-                            whole_results.append(sent)
-                    except:
-                        continue
-    if len(whole_results) == 0:
-        if good_tregex_query:
-            raise ValueError("No results found. Any chance you're trying to use a Tregex query on a plain-text corpus?")
+    if plaintext:
+        import nltk
+        sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+        whole_results = []
+        middle_column_result = []
+        small_regex = re.compile(query)
+        big_regex = re.compile(r'.*' + query + r'.*')
+        fs = [os.path.join(corpus, f) for f in os.listdir(corpus)]
+        # do recursive if need
+        if any(os.path.isdir(f) for f in fs):
+            recursive_files = []
+            for dirname, dirnames, filenames in os.walk(corpus):
+                for filename in filenames:
+                    recursive_files.append(os.path.join(dirname, filename))
+            fs = recursive_files
+        for f in fs:
+            raw = open(f).read().replace('\n', ' ')
+            # encoding ... ?
+            sents = sent_tokenizer.tokenize(raw)
+            for sent in sents:
+                try:
+                    for match in re.findall(small_regex, raw):
+                        middle_column_result.append(match)
+                        whole_results.append(sent)
+                except:
+                    continue
 
     try:
         # get longest middle column result, or discover no results and raise error
         maximum = len(max(middle_column_result, key=len))
     except ValueError:
-        raise ValueError("No matches found, sorry. I wish there was more I could tell you.")
+        time = strftime("%H:%M:%S", localtime())
+        print "\n%s: No matches found." % time
+        return
 
     zipped = zip(whole_results, middle_column_result)
     unique_results = []
 
-    # make sure we have some results
-    if len(zipped) == 0:
-        raise ValueError("No matches found, sorry. I wish there was more I could tell you.") 
 
     for whole_result, middle_part in zipped:
         if not trees:
@@ -127,10 +130,11 @@ def conc(corpus, query,
     # randomise results...
     if random:
         from random import shuffle
-        series = suffle(series)
+        shuffle(series)
 
-    # temp options only!! with x as y...
     df = pd.concat(series, axis = 1).T
+
+    # make temporary
     pd.set_option('display.max_columns', 500)
     pd.set_option('max_colwidth',window * 2)
     pd.set_option('display.width', 1000)
