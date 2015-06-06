@@ -39,6 +39,7 @@ from other import interroplot
 from other import quicktree
 from other import searchtree
 from other import datareader
+from other import tregex_engine
 
 from build import dictmaker
 from build import correctspelling
