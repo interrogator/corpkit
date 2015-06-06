@@ -144,7 +144,8 @@ def plotter(title,
 
     # this gets tid of the y_label thing showing up for pie mode...
     if piemode:
-        dataframe.columns = ['']
+        if len(dataframe.columns) == 1:
+            dataframe.columns = ['']
 
     # try to use styles
     if style != 'matplotlib' and style is not False:
