@@ -97,7 +97,11 @@ def plotter(title,
     if 'kind' in kwargs:
         if kwargs['kind'] == 'pie':
             piemode = True
-            sbplt = True
+            #sbplt = True
+            if using_tex:
+                kwargs['autopct'] = r'%1.1f\%%'
+            else:
+                kwargs['autopct'] = '%1.1f%%'
 
     kwargs['subplots'] = sbplt
     # copy data, make series into df
@@ -189,7 +193,6 @@ def plotter(title,
         title_to_show = title
     if piemode:
         title_to_show = ''
-        figsize = (figsize[0], figsize[0])
         legend = False
 
     # this gets tid of the y_label thing showing up for pie mode...
@@ -200,9 +203,14 @@ def plotter(title,
     if legend is False:
         kwargs['legend'] = False
 
+    if piemode:
+        if not sbplt:
+            kwargs['y'] = list(dataframe.columns)[0]
     # use styles and plot
     with plt.style.context((style)):
         a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
+        if piemode:
+            a_plot.set_aspect('equal')
     if x_label is False:
         check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
         try:
@@ -311,6 +319,7 @@ def plotter(title,
             fig1.show()
     else:
         if not have_python_tex:
+            plt.axis('equal')
             plt.show()
 
     if not save:
