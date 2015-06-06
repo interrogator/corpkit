@@ -115,7 +115,7 @@ def editor(dataframe1,
                 #clear_output()
         return df
 
-    def parse_input(input):
+    def parse_input(df, input):
         """turn whatever has been passed in into list of words that can be used as pandas indices"""
         import re
         if type(input) == int:
@@ -247,8 +247,12 @@ def editor(dataframe1,
             print ''
         return df
     
-    def merge_these_subcorpora(df, lst_of_subcorpora, new_subcorpus_name = False, prinf = True):
-        # handles subcorpus names, not indices, right now
+    def merge_these_subcorpora(df, parsed_input, new_subcorpus_name = False, prinf = True):
+
+        df = df.T
+        print df
+        print parsed_input
+        
         if type(lst_of_subcorpora) == int:
             lst_of_subcorpora = [lst_of_subcorpora]
         if type(lst_of_subcorpora[0]) == int:
@@ -266,6 +270,9 @@ def editor(dataframe1,
             df = df.drop(lst_of_subcorpora)
         if prinf:
             print 'Merging subcorpora as "%s":\n    %s' % (the_newname, ', '.join(lst_of_subcorpora))
+        
+        df = df.T
+
         return df
 
     def do_stats(df):
@@ -517,37 +524,42 @@ def editor(dataframe1,
 
     # merging
     if merge_entries:
-        the_newname = newname_getter(df, parse_input(merge_entries), newname = newname, prinf = print_info)
+        the_newname = newname_getter(df, parse_input(df, merge_entries), newname = newname, prinf = print_info)
+    
     if merge_entries:
-        df = merge_these_entries(df, parse_input(merge_entries), the_newname, prinf = print_info)
+        df = merge_these_entries(df, parse_input(df, merge_entries), the_newname, prinf = print_info)
         if not single_totals:
-            df2 = merge_these_entries(df2, parse_input(merge_entries), the_newname, prinf = False)
+            df2 = merge_these_entries(df2, parse_input(df, merge_entries), the_newname, prinf = False)
+    
     if merge_subcorpora:
-        df = merge_these_subcorpora(df, merge_subcorpora, new_subcorpus_name = new_subcorpus_name, prinf = print_info)
+        the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), newname = new_subcorpus_name, prinf = print_info)
+        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, prinf = print_info).T
         if using_totals:
-            df2 = merge_these_subcorpora(df2, merge_subcorpora, new_subcorpus_name = new_subcorpus_name, prinf = False)        
-
+            df2 = merge_these_entries(df2.T, parse_input(df.T, merge_subcorpora), the_newname, prinf = print_info).T
+    
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
         if using_totals:
             df2 = just_these_subcorpora(df2, just_subcorpora, prinf = False)
+    
     if skip_subcorpora:
         df = skip_these_subcorpora(df, skip_subcorpora, prinf = print_info)
         if using_totals:
             df2 = skip_these_subcorpora(df2, skip_subcorpora, prinf = False)
+    
     if span_subcorpora:
         df = span_these_subcorpora(df, span_subcorpora, prinf = print_info)
         if using_totals:
             df2 = span_these_subcorpora(df2, span_subcorpora, prinf = False)
 
     if just_entries:
-        df = just_these_entries(df, parse_input(just_entries), prinf = print_info)
+        df = just_these_entries(df, parse_input(df, just_entries), prinf = print_info)
         if not single_totals:
-            df2 = just_these_entries(df2, parse_input(just_entries), prinf = False)
+            df2 = just_these_entries(df2, parse_input(df, just_entries), prinf = False)
     if skip_entries:
-        df = skip_these_entries(df, parse_input(skip_entries), prinf = print_info)
+        df = skip_these_entries(df, parse_input(df, skip_entries), prinf = print_info)
         if not single_totals:
-            df2 = skip_these_entries(df2, parse_input(skip_entries), prinf = False)
+            df2 = skip_these_entries(df2, parse_input(df, skip_entries), prinf = False)
 
     # drop infinites and nans
     df = df.replace([np.inf, -np.inf], np.nan)
