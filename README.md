@@ -41,15 +41,17 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `keywords()`      | get keywords and ngrams from corpus/subcorpus/concordance lines | 
 | `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
 
-While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can generally also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
+While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
 The idea is to run the tools from an [IPython Notebook](http://ipython.org/notebook.html), but you could also operate the toolkit from the command line if you wanted to have less fun.
+
+The most comprehensive use of `corpkit` to date has been for an investigation of the word *risk* in The New York Times, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of `corpkit` can be best viewed via [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
 ### Key features
 
 #### `interrogator()`
 
-* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) to search parse trees for complex lexicogrammatical phenomena
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
 * Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
@@ -60,7 +62,7 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 
 #### `editor()`
 
-* Remove, keep or merge interrogation results or subcorpora using indices, words or Regular Expressions (see below)
+* Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
 * Use linear regression to figure out the trajectories of results, and sort by the most increasing, decreasing or static values
 * Show the *p*-value for linear regression slopes, or exclude results above *p*
@@ -74,12 +76,12 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 
 #### `plotter()` 
 
-* Plot using Pandas/Matplotlib
+* Plot using *Pandas*/*Matplotlib*
 * Plot anything you like: words, tags, counts for grammatical features ...
-* Create line charts, bar charts, pie charts, etc with the `kind` argument
+* Create line charts, bar charts, pie charts, etc. with the `kind` argument
 * Use `subplots = True` to produce individual charts for each result
-* Customisable figure titles, axes labels, legends, image size, etc.
-* Uses `TeX` if you have it
+* Customisable figure titles, axes labels, legends, image size, colormaps, etc.
+* Use `TeX` if you have it
 * Use log scales if you really want
 * Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
 * Save images to file
@@ -89,7 +91,7 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 * View top results as a table via `Pandas`
 * Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
-* Randomise concordance results, determine window size, save to CSV, etc.
+* Randomise concordance results, determine window size, output to CSV, etc.
 * Quickly save interrogations and figures to file, and reload results in new sessions with `save_result()` and `load_result()`
 * Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
 * Start a new blank project with `new_project()`
@@ -98,8 +100,9 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 
 * n-gramming and keywording can be done via `interrogator()`
 * keywording can easily be done on your concordance lines
-* you can use `editor()` to edit concordance line output
-* You can build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
+* Use loops to concordance the top results from an interrogation, or check their keyness
+* use `editor()` to edit concordance line output as well as interrogations
+* build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
 * and so on ...
 
 Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.
@@ -205,7 +208,7 @@ Here's another basic example of `interrogator()`, `editor()` and `plotter()` at 
 ...                  skip_subcorpora = [1963], sort_by = 'total')
 
 # plot the results
->>> plotter(riskofnoun, title = 'Risk of (noun)', num_to_plot = 7)
+>>> plotter('Risk of (noun)', to_plot.results, num_to_plot = 7)
 ```
 
 Output: 
@@ -226,7 +229,7 @@ You can use Tregex queries to concordance things, too:
 ...    n = 10, random = True)
 ```
 
-Output (a Pandas DataFrame):
+Output (a *Pandas DataFrame*):
 
 ```
 0    hedge funds or high-risk stocks obviously poses a         greater   risk to the pension program than a portfolio of   
@@ -306,8 +309,8 @@ Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `edito
 >>> specific_sayers = editor(sayers.results, skip_entries = [0, 1, 2, 4, 5, 6, 
 ...    8, 10, 14, 15, 27], skip_subcorpora = [1963], sort_by = 'total')
 
-# plot with a bunch of options
->>> plotter(specific_sayers, title = 'People who say stuff',
+# plot
+>>> plotter('People who say stuff', specific_sayers.results,
 ...    num_to_plot = 9)
 ```
 
@@ -353,7 +356,7 @@ We can use `editor()` to make some thematic categories:
 >>> them_cat = editor, them_cat, merge_entries = ['company', 'bank', 'investor', 
 ...    'government', 'leader', 'president', 'officer', 'politician', 
 ...    'institution', 'agency', 'candidate', 'firm'], 
-...    newname = 'Institutions')
+...    newname = 'Institutions', sort_by = 'total')
 
 # plot riskers:
 >>> plotter(them_cat, title = 'Types of riskers', num_to_plot = 2)
@@ -372,14 +375,14 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 >>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
 
 # get some key terms
->>> interesting_riskers = editor(noun_riskers.results, keep_entries = 
-...    ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
-...    'woman', 'child', 'person'])
+>>> nouns = ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
+...    'woman', 'child', 'person']
+>>> interesting_riskers = editor(noun_riskers.results, '%', keep_entries = 
+...    )
 
-# use `just_totals` to make a barchart of totals
->>> plotter(interesting_riskers, title = 'Risk and power', sort_by = 'most', 
-...    just_totals = True, y_label = 'Risker percentage',
-...    num_to_plot = 'all')
+# use `just_totals`, and make a bar chart:
+>>> plotter(interesting_riskers, title = 'Risk and power', interesting_riskers.results, 
+...    y_label = 'Risker percentage', num_to_plot = 'all', kind = 'bar')
 ```
 
 Output:
