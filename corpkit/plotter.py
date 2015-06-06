@@ -6,7 +6,8 @@ def plotter(title,
             style = 'ggplot',
             figsize = (13, 6),
             save = False,
-            legend = 'best',
+            legend_pos = 'best',
+            reverse_legend = False,
             num_to_plot = 7,
             tex = 'try',
             colours = 'Paired',
@@ -146,14 +147,17 @@ def plotter(title,
                     kwargs['colors'] = [cmap(n) for n in the_range]
 
     # no legend for bar chart if just one label
+    legend = True
     if 'kind' in kwargs:
-        if kwargs['kind'] in ['bar', 'barh', 'area', 'line']:
+        if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
             if was_series:
+                legend = False
+            if kwargs['kind'] == 'pie':
                 legend = False
 
     # the default legend placement
-    if legend is True:
-        legend = 'best'
+    if legend_pos is True:
+        legend_pos = 'best'
 
     # cut dataframe if just_totals
     try:
@@ -182,13 +186,13 @@ def plotter(title,
         if len(dataframe.columns) == 1:
             dataframe.columns = ['']
 
+    if legend is False:
+        kwargs['legend'] = False
+
     # use styles and plot
     with plt.style.context((style)):
-        if type(legend) == bool:
-            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, legend = legend, **kwargs)
-        else:
-            a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
-
+        print kwargs
+        a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(title = title_to_show, figsize = figsize, **kwargs)
     if x_label is False:
         check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
         try:
@@ -229,49 +233,51 @@ def plotter(title,
                 f.legend_.remove()        
                 f.set_title(titletext)
 
-    # legend values
-    possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
-                'right': 5, 'center left': 6, 'center right': 7, 'lower center': 8, 
-                'upper center': 9, 'center': 10}
-
+    # MAKE LEGEND OPTIONS
     if legend:
+        leg_options = {'framealpha': .8}
+        if legend_pos:
+            possible = {'best': 0,
+                        'upper right': 1,
+                        'upper left': 2,
+                        'lower left': 3,
+                        'lower right': 4,  
+                        'right': 5,
+                        'center left': 6,
+                        'center right': 7,
+                        'lower center': 8,
+                        'upper center': 9,
+                        'center': 10,
+                        'o r': 2,
+                        'outside right': 2,
+                        'outside upper right': 2,
+                        'outside center right': 'center left',
+                        'outside lower right': 'lower left'}
+            if type(legend_pos) == int:
+                the_loc = legend_pos
+            elif type(legend_pos) == str:
+                try:
+                    the_loc = possible[legend_pos]
+                except KeyError:
+                    raise KeyError('legend_pos value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+            leg_options['loc'] = the_loc
+            if legend_pos in ['o r', 'outside right', 'outside upper right']:
+                leg_options['bbox_to_anchor'] = (1.02, 1)
+            if legend_pos == 'outside center right':
+                leg_options['bbox_to_anchor'] = (1.02, 0.5)
+            if legend_pos == 'outside lower right':
+                leg_options['bbox_to_anchor'] = (1.02, 0)
+        if legend_pos.startswith('o'):
+            leg_options['borderaxespad'] = 1
+
         with plt.style.context((style)):
-            if not legend.startswith('o'):
-                if legend == 'outside right':
-                    legend = 'outside upper right'
-                if type(legend) == int:
-                    the_loc = legend
-                elif type(legend) == str:
-                    try:
-                        the_loc = possible[legend]
-                    except KeyError:
-                        raise KeyError('legend value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
-                else:
-                    raise KeyError('legend value must be one of:\n%s' %', '.join(possible.keys()))
-                if not sbplt: 
-                    if not sbplt:
-                        plt.legend(loc=the_loc, framealpha=.8)
-                    else:
-                        plt.legend(loc=the_loc)
-            elif legend.startswith('o'):
-                if legend.startswith('outside r') or legend.startswith('o r'):
-                    legend = 'outside upper right'
-                if not sbplt:
-                    os, plc = legend.split(' ', 1)
-                    try:
-                        if plc == 'upper right':
-                        #the_loc = possible[plc]
-                            plt.legend(bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=1)
-                        if plc == 'center right':
-                            plt.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', borderaxespad=1)
-                        if plc == 'lower right':
-                            plt.legend(bbox_to_anchor=(1.02, 0), loc='lower left', borderaxespad=1)
-                    #if plc == 'upper left':
-                        #plt.legend(bbox_to_anchor=(1, 0), loc=1, borderaxespad=1)
-                    except KeyError:
-                        raise KeyError('legend value must be one of: %s\n or an int between 0-10.' %', '.join(possible.keys()))
-            else:
-                raise KeyError('legend value must be one of: %s' %', '.join(possible.keys()))        
+            ax = plt.gca()
+            if legend:
+                print leg_options
+                ax.legend(**leg_options)
+                if reverse_legend:
+                    handles, labels = ax.get_legend_handles_labels()
+                    ax.legend(handles[::-1], labels[::-1])
 
     # make room at the bottom for label?
     plt.subplots_adjust(bottom=0.20)
