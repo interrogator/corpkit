@@ -9,7 +9,7 @@ def interrogator(path, options, query,
                 dep_type = 'basic-dependencies',
                 function_filter = False,
                 table_size = 50,
-                plaintext = False):
+                plaintext = 'try'):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -125,10 +125,9 @@ def interrogator(path, options, query,
     except ImportError:
         pass
 
-    from corpkit.tests import (query_test, 
-                               check_dit, 
-                               check_pytex)
+    from corpkit.tests import check_dit, check_pytex
     from corpkit.progressbar import ProgressBar
+    from corpkit.other import tregex_engine
     import dictionaries
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
@@ -543,16 +542,20 @@ def interrogator(path, options, query,
     
     # dependency options:
     elif options.startswith('n') or options.startswith('N'):
+        options = 'n'
         depnum = True
         dependency = True
         optiontext = 'Dependency index number only.'
     elif options.startswith('f') or options.startswith('F'):
+        options = 'f'
         dependency = True
         optiontext = 'Functional role only.'
     elif options.startswith('g') or options.startswith('G'):
+        options = 'g'
         dependency = True
         optiontext = 'Role and governor.'
     elif options.startswith('d') or options.startswith('D'):
+        options = 'd'
         dependency = True
         optiontext = 'Dependent and its role.'
     else:
@@ -595,28 +598,16 @@ def interrogator(path, options, query,
         if dep_type not in allowed_dep_types:
             raise ValueError('dep_type %s not recognised. Must be one of: %s' % (dep_type, ', '.join(allowed_dep_types)))
 
-    # parse query
+    # find out if doing keywords or ngrams
     if query.startswith('key'):
+        query = 'keywords'
         keywording = True
         optiontext = 'Words only.'
     elif 'ngram' in query:
+        query = 'ngrams'
         n_gramming = True
         phrases = True
         optiontext = 'Words only.'
-    else:
-        if not dependency:
-            if not plaintext:
-                query_test(query, have_ipython = have_ipython, on_cloud = on_cloud)
-            else:
-                try:
-                    plaintext_regex = re.compile(r'\b' + query + r'\b')
-                except re.error:
-                    raise ValueError("Regular expression '%s' contains an error." % query)                
-        else:
-            try:
-                re.compile(query)
-            except re.error:
-                raise ValueError("Regular expression '%s' contains an error." % query)
 
     # if keywording and self is the dictionary, make the dict if need be:
     if keywording:
@@ -670,8 +661,33 @@ def interrogator(path, options, query,
 
     # loop through each subcorpus
     subcorpus_names = []
+
+    # check first subcorpus to see if we're using plaintext
+    if len(sorted_dirs) == 1:
+        subcorpus = path
+    else:
+        subcorpus = os.path.join(path,sorted_dirs[0])
+    if plaintext == 'try':
+        if not tregex_engine(corpus = subcorpus, check_for_trees = True):
+            plaintext = True
+        else:
+            plaintext = False
+
+    # check for valid query. so ugly.
+    if query not in ['d', 'n', 'g', 'f', 'keywords', 'ngrams']:
+        if not plaintext:
+            good_tregex_query = tregex_engine(query = query, 
+            check_query = True, on_cloud = on_cloud)
+        else:
+            try:
+                plaintext_regex = re.compile(r'\b' + query + r'\b')
+            except re.error:
+                raise ValueError("Regular expression '%s' contains an error." % query)                
+    if dependency:
+        re.compile(query)
+    
     for index, d in enumerate(sorted_dirs):
-        if not dependency:
+        if not dependency and not plaintext:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
             p.animate(index)
@@ -701,24 +717,14 @@ def interrogator(path, options, query,
                         for _ in range(int(score)):
                             result.append(ngram)
     
-            #if tregex, determine ipython or not and search
+            #if tregex, search
             else:
-                if have_ipython:
-                    if on_cloud:
-                        tregex_command = 'sh tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
-                    else:
-                        tregex_command = 'tregex.sh -o -%s \'%s\' %s 2>/dev/null' %(options, query, subcorpus)
-                    result_with_blanklines = get_ipython().getoutput(tregex_command)
-                    result = [line for line in result_with_blanklines if line]
-                else:
-                    if on_cloud:
-                        tregex_command = ["sh", "tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
-                    else:
-                        tregex_command = ["tregex.sh", "-o", "-%s" % options, '%s' % query, "%s" % subcorpus]
-                    FNULL = open(os.devnull, 'w')
-                    result = subprocess.check_output(tregex_command, stderr=FNULL)
-                    result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
-            
+                op = ['-o', '-' + options]
+                result = tregex_engine(query = query, 
+                                       options = op, 
+                                       corpus = subcorpus,
+                                       on_cloud = on_cloud)
+                
                 # if just counting matches, just 
                 # add subcorpus name and count...
                 if only_count:
@@ -741,13 +747,13 @@ def interrogator(path, options, query,
                 c += 1
                 with open(os.path.join(path, subcorpus_name, f), "rb") as text:
                     data = text.read()
-                    if options.startswith('g') or options.startswith('G'):
+                    if options == 'g':
                         result_from_file = govrole(data)
-                    if options.startswith('d') or options.startswith('D'):
+                    if options == 'd':
                         result_from_file = deprole(data)
-                    if options.startswith('f') or options.startswith('F'):
+                    if options == 'f':
                         result_from_file = funct(data)
-                    if options.startswith('n') or options.startswith('N'):
+                    if options == 'n':
                         result_from_file = depnummer(data)
                     if plaintext:
                         result_from_file = plaintexter(plaintext_regex, data)
