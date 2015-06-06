@@ -4,7 +4,7 @@ def conc(corpus, query,
         random = False, 
         window = 40, 
         trees = False): 
-    """A concordancer for Tregex queries"""
+    """A concordancer for Tregex queries over trees or regexes over plain text"""
     import pandas as pd
     from pandas import DataFrame
     import os
@@ -18,7 +18,8 @@ def conc(corpus, query,
     except ImportError:
         pass
     import pydoc
-    from corpkit.tests import query_test, check_pytex, check_dit
+    from corpkit.other import tregex_engine
+    from corpkit.tests import check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -30,6 +31,9 @@ def conc(corpus, query,
     # check if on the cloud, as this changes how we do tregex queries
     on_cloud = check_dit()
 
+    # check query
+    good_tregex_query = tregex_engine(query, check_query = True)
+
     # make sure there's a corpus
     if not os.path.exists(corpus):
         raise ValueError('Corpus file or folder not found: %s' % corpus)
@@ -39,72 +43,50 @@ def conc(corpus, query,
     print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
 
-        
     if trees:
         options = '-s'
     else:
         options = '-t'
     # get whole sentences:
-    if have_ipython:
-        if on_cloud:
-            tregex_command = 'sh tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-        else:
-            tregex_command = 'tregex.sh -o -w %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-        whole_results = get_ipython().getoutput(tregex_command)
-        whole_results = [line for line in whole_results if line]
-    else:
-        if on_cloud:
-            tregex_command = ["sh", "tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
-        else:
-            tregex_command = ["tregex.sh", "-o", "-w", "%s" % options, '%s' % query, "%s" % corpus]
-        FNULL = open(os.devnull, 'w')
-        whole_results = subprocess.check_output(tregex_command, stderr=FNULL)
-        whole_results = os.linesep.join([s for s in whole_results.splitlines() if s]).split('\n')
-    
-    # get just the match of the sentence
-    if have_ipython:
-        if on_cloud:
-            tregex_command = 'sh tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-        else:
-            tregex_command = 'tregex.sh -o %s \'%s\' %s 2>/dev/null' %(options, query, corpus)
-        middle_column_result = get_ipython().getoutput(tregex_command)
-        middle_column_result = [line for line in middle_column_result if line]
-    else:
-        if on_cloud:
-            tregex_command = ["sh", "tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
-        else:
-            tregex_command = ["tregex.sh", "-o", "%s" % options, '%s' % query, "%s" % corpus]
-        FNULL = open(os.devnull, 'w')
-        middle_column_result = subprocess.check_output(tregex_command, stderr=FNULL)
-        middle_column_result = os.linesep.join([s for s in middle_column_result.splitlines() if s]).split('\n')
-        
-    # if no trees, do it with plain text
-    # so ugly, sorry
+    whole_results = tregex_engine(query, 
+                                  options = ['-o', '-w', options], 
+                                  corpus = corpus, 
+                                  on_cloud = on_cloud)
+    middle_column_result = tregex_engine(query, 
+                                  options = ['-o', options], 
+                                  corpus = corpus, 
+                                  on_cloud = on_cloud)
 
     if len(whole_results) == 0:
-
-        import nltk
-        sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-        whole_results = []
-        middle_column_result = []
-        small_regex = re.compile(query)
-        big_regex = re.compile(r'.*' + query + r'.*')
-        fs = [os.path.join(corpus, f) for f in os.listdir(corpus)]
-        for f in fs:
-            raw = open(f).read().replace('\n', ' ')
-            # encoding ... ?
-            sents = sent_tokenizer.tokenize(raw)
-            for sent in sents:
-                try:
-                    for match in re.findall(small_regex, raw):
-                        middle_column_result.append(match)
-                        whole_results.append(sent)
-                except:
-                    continue
-
+        if not tregex_engine(corpus = corpus, check_for_trees = True):
+            import nltk
+            sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+            whole_results = []
+            middle_column_result = []
+            small_regex = re.compile(query)
+            big_regex = re.compile(r'.*' + query + r'.*')
+            fs = [os.path.join(corpus, f) for f in os.listdir(corpus)]
+            # do recursive if need
+            if any(os.path.isdir(f) for f in fs):
+                recursive_files = []
+                for dirname, dirnames, filenames in os.walk(corpus):
+                    for filename in filenames:
+                        recursive_files.append(os.path.join(dirname, filename))
+                fs = recursive_files
+            for f in fs:
+                raw = open(f).read().replace('\n', ' ')
+                # encoding ... ?
+                sents = sent_tokenizer.tokenize(raw)
+                for sent in sents:
+                    try:
+                        for match in re.findall(small_regex, raw):
+                            middle_column_result.append(match)
+                            whole_results.append(sent)
+                    except:
+                        continue
     if len(whole_results) == 0:
-        # make sure query is valid:
-        query_test(query)
+        if good_tregex_query:
+            raise ValueError("No results found. Any chance you're trying to use a Tregex query on a plain-text corpus?")
 
     try:
         # get longest middle column result, or discover no results and raise error
@@ -144,10 +126,10 @@ def conc(corpus, query,
 
     # randomise results...
     if random:
-        import random
-        random_indices = random.sample(range(len(series)), len(series))
-        series = [s for index, s in enumerate(series) if index in random_indices]
+        from random import shuffle
+        series = suffle(series)
 
+    # temp options only!! with x as y...
     df = pd.concat(series, axis = 1).T
     pd.set_option('display.max_columns', 500)
     pd.set_option('max_colwidth',window * 2)
