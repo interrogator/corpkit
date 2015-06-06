@@ -164,7 +164,7 @@ def editor(dataframe1,
             the_newname = list(df.columns)[newname]
         elif type(newname) == str:
             if newname == 'combine':
-                if parsed_input < 4:
+                if len(parsed_input) < 4:
                     the_newname = '/'.join(parsed_input)
                 else:
                     the_newname = '/'.join(parsed_input[:4]) + '...'
