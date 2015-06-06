@@ -389,6 +389,99 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power.png" />
 <br>
 
+#### Really tricky stuff
+
+With a bit of practice, you can do some pretty awesome stuff. The following plots require only one interrogation:
+
+```python
+>>> modals = interrogator(annual_trees, 'words', 'MD < __')
+>>> modals = load_result('modals')
+# simple stuff: make relative frequencies for individual or total results
+>>> rel_modals = editor(modals.results, '%', modals.totals)
+
+# trickier: make an 'others' result from low-total entries
+>>> low_indices = [i for i, w in enumerate(list(modals.results.index)) if i > 6]
+>>> each_modal_total = editor(modals.results, '%', modals.totals, merge_entries = low_indices, 
+                          newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
+
+# complex stuff: merge results
+>>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m[^d]']
+>>> for regex in entries_to_merge:
+    >>> modals = editor(modals.results, merge_entries = regex)
+    
+# complex stuff: merge subcorpora
+>>> subcorpora_to_merge = [('1960s', r'^196'), ('1980s', r'^198'), ('1990s', r'^199'), 
+                       ('2000s', r'^200'), ('2010s', r'^201')]
+for subcorp, search in subcorpora_to_merge:
+    modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
+    
+# make relative, sort, remove what we don't want
+>>> modals = editor(modals.results, '%', modals.totals,
+                 just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
+
+# clear output and show results
+print rel_modals.results, each_modal_total.results, '\n\n', modals.results
+```
+Output:
+```
+          would       will        can      could  ...        need     shall      dare  shalt
+1963  22.326833  23.537323  17.955615   6.590451  ...    0.000000  0.537996  0.000000      0
+1987  24.750614  18.505132  15.512505  11.117537  ...    0.072286  0.260228  0.014457      0
+1988  23.138986  19.257117  16.182067  11.219364  ...    0.091338  0.060892  0.000000      0
+1989  22.766053  19.368358  15.371950  11.749738  ...    0.134710  0.014968  0.014968      0
+1990  24.631154  18.061811  15.716726  12.253456  ...    0.062121  0.046591  0.000000      0
+...         ...        ...        ...        ...  ...         ...       ...       ...    ...
+2010  24.989858  17.200811  15.388776  14.171738  ...    0.108181  0.067613  0.000000      0
+2011  23.185818  17.574289  15.584747  14.577222  ...    0.089274  0.000000  0.000000      0
+2012  23.097345  16.283186  15.132743  15.353982  ...    0.029499  0.029499  0.000000      0
+2013  22.136269  17.286522  16.349301  15.620351  ...    0.029753  0.029753  0.000000      0
+2014  21.618357  17.101449  16.908213  14.347826  ...    0.024155  0.000000  0.000000      0
+
+[29 rows x 17 columns] would     23.235853
+will      17.484034
+can       15.844070
+could     13.243449
+may        9.581255
+should     7.292294
+other      7.290155
+Name: Combined total, dtype: float64 
+
+       would/will/'ll...  can/could/ca  may/might/must  should/shall/shalt
+1960s          47.276395     25.016812       19.569603            7.800941
+1980s          44.756285     28.050776       19.224476            7.566817
+1990s          44.481957     29.142571       19.140310            6.892708
+2000s          42.386571     30.710739       19.182867            7.485681
+2010s          42.581666     32.045745       17.777845            7.397044
+
+```
+
+Now, some intense plotting:
+
+```python
+# exploded pie chart
+>>> expl = [0 for s in list(each_modal_total.results)]
+>>> expl['other'] = 0.1
+>>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = expl,
+...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11), save = True)
+
+# stacked area chart
+>>> plotter('An ocean of modals', rel_modals.results.drop('1963'), kind = 'area', 
+...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
+...    legend_pos = 'outside lower right', y_label = 'Percentage of all modals', save = True)
+
+# bar chart, transposing and reversing the data
+>>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
+...    x_label = 'Percentage of all modals', y_label = 'Modal group', save = True)
+```
+Output:
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt.png" />
+<br>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png" />
+<br>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png" />
+<br>
+
 ## More information
 
 Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
