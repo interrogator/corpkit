@@ -60,6 +60,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     import pickle
     import os
     import pandas
+    from time import localtime, strftime
     # currently, allow overwrite. if that's not ok:
     #if os.path.isfile(csvmake):
         #raise ValueError("Save error: %s already exists in %s. \
@@ -84,8 +85,11 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         os.makedirs(savedir)
     if not savename.endswith('.p'):
         savename = savename + '.p'
-    f = open('%s/%s' % (savedir, savename), 'w')
+    fullpath = os.path.join(savedir, savename)
+    f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
+    time = strftime("%H:%M:%S", localtime())
+    print '\n%s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
 def load_result(savename, loaddir = 'data/saved_interrogations'):
