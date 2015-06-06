@@ -237,10 +237,11 @@ def new_project(name):
     else:
         print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
 
-def searchtree(tree, query):
+def searchtree(tree, query, options = ['-t', '-o']):
     "Searches a tree with Tregex and returns matching terminals"
     import os
-    from corpkit.tests import query_test, check_dit, check_pytex
+    from corpkit.other import tregex_engine
+    from corpkit.tests import check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -252,22 +253,8 @@ def searchtree(tree, query):
     fo = open('tree.tmp',"w")
     fo.write(tree + '\n')
     fo.close()
-    if have_ipython:
-        if on_cloud:
-            tregex_command = 'sh tregex.sh -o -t \'%s\' tree.tmp 2>/dev/null' % query
-        else:
-            tregex_command = 'tregex.sh -o -t \'%s\' tree.tmp 2>/dev/null' % query
-        result_with_blank = get_ipython().getoutput(tregex_command)
-        result = [r for r in result_with_blank if r]
-    else:
-        if on_cloud:
-            tregex_command = ["sh", "tregex.sh", "-o", "-t", '%s' % query, "tree.tmp"]
-        else:
-            tregex_command = ["tregex.sh", "-o", "-t", '%s' % query, "tree.tmp"]
-        FNULL = open(os.devnull, 'w')
-        result = subprocess.check_output(tregex_command, stderr=FNULL)
-        result = os.linesep.join([s for s in result.splitlines() if s]).split('\n')
-    tregex_command = 'sh ./tregex.sh -o -t \'' + query + '\' tmp.tree 2>/dev/null'
+    result = tregex_engine(query = query, check_query = True)
+    result = tregex_engine(query = query, options = options, corpus = "tree.tmp")
     os.remove("tree.tmp")
     return result
 
@@ -357,7 +344,8 @@ def datareader(data, on_cloud = False):
     """
     import os
     import pandas
-    from corpkit.tests import query_test, check_pytex, check_dit
+    from corpkit.other import tregex_engine
+    from corpkit.tests import check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -365,6 +353,8 @@ def datareader(data, on_cloud = False):
     except NameError:
         import subprocess
         have_ipython = False
+
+    on_cloud = check_dit()
     
     # if unicode, make it a string
     if type(data) == unicode:
@@ -384,30 +374,24 @@ def datareader(data, on_cloud = False):
                 good = raw
         # if it's a dir, flatten all trees
         elif os.path.isdir(data):
-            # if trees
-            # these four versions of the same shell command will be the death of me.
-            if have_ipython:
-                if on_cloud:
-                    tregex_command = 'sh tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
-                else:
-                    tregex_command = 'tregex.sh -o -w -t \'__ !> __\' %s 2>/dev/null' % data
-                trees_with_blank = get_ipython().getoutput(tregex_command)
-                trees = [tree for tree in trees_with_blank if tree]
+            is_trees = tregex_engine(corpus = data, check_for_trees = True)
+            if is_trees:
+                trees = tregex_engine(corpus = data,
+                                  options = ['-o', '-t', '-w'], 
+                                  query = r'__ !> __', 
+                                  on_cloud = on_cloud)
             else:
-                if on_cloud:
-                    tregex_command = ["sh", "tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
-                else:
-                    tregex_command = ["tregex.sh", "-o", "-w", "-t", "__ !> __" % data]
-                FNULL = open(os.devnull, 'w')
-                trees = subprocess.check_output(tregex_command, stderr=FNULL)
-                trees = os.linesep.join([s for s in trees.splitlines() if s]).split()
-            good = '\n'.join(trees)
-            if len(trees) == 0:
-                # assuming data isn't trees, so 
-                # read plain text out of files ...
                 list_of_texts = []
-                for f in os.listdir(data):
-                    raw = open(os.path.join(data, f)).read()
+                fs = [os.path.join(data, f) for f in os.listdir(data)]
+                # do recursive if need
+                if any(os.path.isdir(f) for f in fs):
+                    recursive_files = []
+                    for dirname, dirnames, filenames in os.walk(data):
+                        for filename in filenames:
+                            recursive_files.append(os.path.join(dirname, filename))
+                    fs = recursive_files
+                for f in fs:
+                    raw = open(f).read()
                     list_of_texts.append(raw)
                 good = '\n'.join(list_of_texts)
                 try:
@@ -434,3 +418,83 @@ def datareader(data, on_cloud = False):
     # if list of tokens...?
     
     return good
+
+def tregex_engine(query = False, 
+                  options = False, 
+                  corpus = False, 
+                  on_cloud = False, 
+                  check_query = False,
+                  check_for_trees = False):
+    """This does a tregex query.
+    query: tregex query
+    options: list of tregex options
+    corpus: place to search
+    on_cloud: check_dit output
+    check_query: just make sure query ok"""
+    import subprocess 
+    import re
+    if on_cloud:
+        tregex_command = ["sh", "tregex.sh"]
+    else:
+        tregex_command = ["tregex.sh"]
+
+    if not query:
+        query = 'NP'
+    # if checking for trees, use the -T option
+    if check_for_trees:
+        options = ['-T']
+
+    # append list of options to query    
+    if options:
+        [tregex_command.append(o) for o in options]
+    if query:
+        tregex_command.append(query)
+    if corpus:
+        tregex_command.append(corpus)
+    # do query
+    try:
+        res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+    # exception handling for regex error
+    except Exception, e:
+        res = str(e.output).split('\n')
+    
+    if check_query:
+        # define error searches 
+        tregex_error = re.compile(r'^Error parsing expression')
+        regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
+        # if tregex error, give general error message
+        if re.match(tregex_error, res[0]):
+            tregex_error_output = "Error parsing Tregex expression. Check for balanced parentheses and boundary delimiters."
+            raise ValueError(tregex_error_output) 
+        
+        # if regex error, try to help
+        if re.match(regex_error, res[0]):
+            info = res[0].split(':')
+            index_of_error = re.findall(r'index [0-9]+', info[1])
+            justnum = index_of_error[0].split('dex ')
+            spaces = ' ' * int(justnum[1])
+            remove_start = query.split('/', 1)
+            remove_end = remove_start[1].split('/', -1)
+            regex_error_output = 'Error parsing regex inside Tregex query:%s'\
+            '. Best guess: \n%s\n%s^' % (str(info[1]), str(remove_end[0]), spaces)
+            raise ValueError(regex_error_output)
+        return True
+
+    # remove errors and blank lines
+    res = [s for s in res if not s.startswith('PennTreeReader:') and s]
+    # find end of stderr
+    regex = re.compile('(Reading trees from file|using default tree)')
+    # remove stderr at start
+    std_last_index = res.index(next(s for s in res if re.search(regex, s)))
+    res = res[std_last_index + 1:]
+    if check_for_trees:
+        if res[0].startswith('1:Next tree read:'):
+            return True
+        else:
+            return False
+    # return if no matches
+    if res[-1] == 'There were 0 matches in total.':
+        return []
+    # remove total
+    res = res[:-1]
+    return res
