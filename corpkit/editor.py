@@ -639,4 +639,10 @@ def editor(dataframe1,
     #print df.head().T
     #print ''
 
+    pd.set_option('display.max_rows', 16)
+    pd.set_option('display.max_columns', 10)
+    pd.set_option('max_colwidth',70)
+    pd.set_option('display.width', 1000)
+    pd.set_option('expand_frame_repr', False)
+
     return output
