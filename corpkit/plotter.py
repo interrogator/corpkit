@@ -313,7 +313,8 @@ def plotter(title,
             fig1.show()
     else:
         if not have_python_tex:
-            plt.axis('equal')
+            if piemode:
+                plt.axis('equal')
             plt.show()
 
     if not save:
