@@ -674,7 +674,7 @@ def interrogator(path, options, query,
     subcorpus_names = []
 
     # check for valid query. so ugly.
-    if not dependency and not keywording and not ngramming and not plaintext:
+    if not dependency and not keywording and not n_gramming and not plaintext:
         good_tregex_query = tregex_engine(query = query, 
         check_query = True, on_cloud = on_cloud)
     else:
