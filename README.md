@@ -22,7 +22,7 @@
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
   - [More complex queries and plots](#more-complex-queries-and-plots)
-  - [Really tricky stuff](#really-tricky-stuff)
+  - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
@@ -396,9 +396,9 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
 <br>
 
-### Really tricky stuff
+### Visualisation options
 
-With a bit of creativity, you can do some pretty awesome data-viz. The following plots require only one interrogation:
+With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
 >>> modals = interrogator(annual_trees, 'words', 'MD < __')
@@ -466,7 +466,7 @@ Now, some intense plotting:
 ```python
 # exploded pie chart
 >>> expl = [0 for s in list(each_modal_total.results)]
->>> expl['other'] = 0.1
+>>> expl[-1] = 0.1
 >>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = expl,
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
@@ -481,7 +481,7 @@ Now, some intense plotting:
 ```
 Output:
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt.png"  height="400" width="400"/>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png"  height="400" width="400"/>
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png"  height="450" width="350"/>
 
