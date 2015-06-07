@@ -14,6 +14,7 @@ def plotter(title,
             cumulative = False,
             pie_legend = True,
             show_totals = False,
+            transparent = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -111,6 +112,9 @@ def plotter(title,
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
             sbplt = True
+
+    if sbplt:
+        figsize = (figsize[1], figsize[0])
 
     if colours is True:
         colours = 'Paired'
@@ -254,7 +258,8 @@ def plotter(title,
 
     # no title for subplots because ugly
     if sbplt:
-        del kwargs['title'] 
+        if 'title' in kwargs:
+            del kwargs['title'] 
     else:
         kwargs['title'] = title
         
@@ -293,13 +298,19 @@ def plotter(title,
         if legend_pos.startswith('o'):
             leg_options['borderaxespad'] = 1
 
-    if show_totals.endswith('both') or show_totals.endswith('legend'):
+    if not piemode:
+        if show_totals.endswith('both') or show_totals.endswith('legend'):
+            dataframe = rename_data_with_total(dataframe, 
+                                           was_series = was_series, 
+                                           using_tex = using_tex, 
+                                           absolutes = absolutes)
+    else:
         if pie_legend:
             dataframe = rename_data_with_total(dataframe, 
                                            was_series = was_series, 
                                            using_tex = using_tex, 
                                            absolutes = absolutes)
-    
+
     plt.figure()
 
     # some pie things
@@ -322,7 +333,10 @@ def plotter(title,
 
     # use styles and plot
     with plt.style.context((style)):
-        dataframe.plot(figsize = figsize, **kwargs)
+        if not sbplt:
+            dataframe.plot(figsize = figsize, **kwargs)
+        else:
+            ax = dataframe.plot(figsize = figsize, **kwargs)
         if legend:
             if not rev_leg:
                 lgd = plt.legend(**leg_options)
@@ -372,12 +386,18 @@ def plotter(title,
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
-        for index, f in enumerate(plt):
-            titletext = list(dataframe.columns)[index]
-            if not piemode:
-                f.legend_.remove()        
-            f.set_title(titletext)
-
+        if 'layout' not in kwargs:
+            for index, a in enumerate(ax):
+                print a
+                titletext = list(dataframe.columns)[index]
+                a.legend_.remove()        
+                a.set_title(titletext)
+        else:
+            for index, cols in enumerate(ax):
+                for col in cols:
+                    titletext = list(dataframe.columns)[index]
+                    col.legend_.remove()        
+                    col.set_title(titletext)
 
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
@@ -431,9 +451,9 @@ def plotter(title,
 
         # save image and get on with our lives
         if legend_pos.startswith('o'):
-            plt.gcf().savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.gcf().savefig(savename, dpi=150, transparent=transparent, bbox_extra_artists=(lgd,), bbox_inches='tight')
         else:
-            plt.gcf().savefig(savename, dpi=150, transparent=False)
+            plt.gcf().savefig(savename, dpi=150, transparent=transparent)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
