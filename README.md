@@ -393,7 +393,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```
 
 Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power2.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
 <br>
 
 ### Really tricky stuff
