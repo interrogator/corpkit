@@ -9,7 +9,7 @@ def interrogator(path, options, query,
                 dep_type = 'basic-dependencies',
                 function_filter = False,
                 table_size = 50,
-                plaintext = 'try'):
+                plaintext = 'guess'):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -643,6 +643,17 @@ def interrogator(path, options, query,
     allwords_list = []
     main_totals = []
 
+    # check first subcorpus to see if we're using plaintext
+    if len(sorted_dirs) == 1:
+        subcorpus = path
+    else:
+        subcorpus = os.path.join(path,sorted_dirs[0])
+    if plaintext == 'guess':
+        if not tregex_engine(corpus = subcorpus, check_for_trees = True):
+            plaintext = True
+        else:
+            plaintext = False
+
     # if doing dependencies, make list of all files, and a progress bar
     if dependency:
         all_files = []
@@ -662,27 +673,15 @@ def interrogator(path, options, query,
     # loop through each subcorpus
     subcorpus_names = []
 
-    # check first subcorpus to see if we're using plaintext
-    if len(sorted_dirs) == 1:
-        subcorpus = path
-    else:
-        subcorpus = os.path.join(path,sorted_dirs[0])
-    if plaintext == 'try':
-        if not tregex_engine(corpus = subcorpus, check_for_trees = True):
-            plaintext = True
-        else:
-            plaintext = False
-
     # check for valid query. so ugly.
-    if query not in ['d', 'n', 'g', 'f', 'keywords', 'ngrams']:
-        if not plaintext:
-            good_tregex_query = tregex_engine(query = query, 
-            check_query = True, on_cloud = on_cloud)
-        else:
-            try:
-                plaintext_regex = re.compile(r'\b' + query + r'\b')
-            except re.error:
-                raise ValueError("Regular expression '%s' contains an error." % query)                
+    if not dependency and not keywording and not ngramming and not plaintext:
+        good_tregex_query = tregex_engine(query = query, 
+        check_query = True, on_cloud = on_cloud)
+    else:
+        try:
+            plaintext_regex = re.compile(r'\b' + query + r'\b')
+        except re.error:
+            raise ValueError("Regular expression '%s' contains an error." % query)                
     if dependency:
         re.compile(query)
     
