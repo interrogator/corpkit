@@ -188,12 +188,18 @@ Or, just use *(I)Python* (more difficult, less fun):
 
 Output: 
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md2.png" />
 <br>
 
 ## Examples
 
-Here's another basic example of `interrogator()`, `editor()` and `plotter()` at work on the NYT corpus:
+`interroplot()` is just a demo function that does three things in order:
+
+1. uses `interrogator()` to search `corpus` for a (Regex or Tregex) `query`
+2. uses `editor()` to calculate the relative frequencies of each result
+3. uses `plotter()` to show the top seven results
+ 
+Here's an example of the three functions at work on the NYT corpus:
 
 ```python
 >>> from corpkit import interrogator, editor, plotter
@@ -213,7 +219,7 @@ Here's another basic example of `interrogator()`, `editor()` and `plotter()` at 
 
 Output: 
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/riskofnoun.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
 <br>
 
 ### Concordancing
