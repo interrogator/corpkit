@@ -194,6 +194,7 @@ def plotter(title,
     if piemode:
         title_to_show = ''
         legend = False
+        figsize = (figsize[0] * 1.5, figsize[1] * 1.5)
 
     # this gets tid of the y_label thing showing up for pie mode...
     if piemode:
