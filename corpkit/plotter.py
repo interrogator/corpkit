@@ -187,8 +187,15 @@ def plotter(title,
             num_to_plot = len(list(dataframe.columns))
 
     #cut data short
+    plotting_a_totals_column = False
     if was_series:
-        dataframe = dataframe[:num_to_plot]
+        if list(dataframe.columns)[0] != 'Total':
+            dataframe = dataframe[:num_to_plot]
+        else:
+            plotting_a_totals_column = True
+            if not 'legend' in kwargs:
+                legend = False
+            num_to_plot = len(dataframe)
     else:
         dataframe = dataframe.T.head(num_to_plot).T
 
@@ -199,11 +206,13 @@ def plotter(title,
 
     #  use colormap if need be:
     if num_to_plot > 7:
-        if 'kind' in kwargs:
-            if kwargs['kind'] in ['pie', 'line', 'area']:
-                if colours:
-                    kwargs['colormap'] = colours
-        else:
+        if not was_series:
+            if 'kind' in kwargs:
+                if kwargs['kind'] in ['pie', 'line', 'area']:
+                    if colours:
+                        if not plotting_a_totals_column:
+                            kwargs['colormap'] = colours
+        #else:
             if colours:
                 kwargs['colormap'] = colours
     
@@ -225,7 +234,8 @@ def plotter(title,
 
 
     # show legend or don't, guess whether to reverse based on kind
-    legend = True
+    if not 'legend' in locals():
+        legend = True
     if 'kind' in kwargs:
         if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
             if was_series:
@@ -252,9 +262,13 @@ def plotter(title,
     except:
         pass
     
-    # rotate automatically?
+    # rotate automatically
     if 'rot' not in kwargs:
-        if max(list(dataframe.columns)[:num_to_plot], key=len) > 6:
+        if not was_series:
+            xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
+        else:
+            xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
+        if len(max(xvals, key=len)) > 6:
             kwargs['rot'] = 45
 
     # no title for subplots because ugly
@@ -312,12 +326,13 @@ def plotter(title,
                                            absolutes = absolutes)
     else:
         if pie_legend:
-            dataframe = rename_data_with_total(dataframe, 
+            if show_totals.endswith('both') or show_totals.endswith('legend'):
+                dataframe = rename_data_with_total(dataframe, 
                                            was_series = was_series, 
                                            using_tex = using_tex, 
                                            absolutes = absolutes)
 
-    plt.figure()
+    #plt.figure()
 
     # some pie things
     if piemode:
@@ -338,7 +353,7 @@ def plotter(title,
                     leg_options['labels'] = list(dataframe.index)           
 
     if legend is False:
-        kwargs['legend'] = None
+        kwargs['legend'] = False
 
     # cumulative grab first col
     if cumulative:
@@ -361,6 +376,9 @@ def plotter(title,
     if piemode:
         if not sbplt:
             plt.gca().set_aspect('equal')
+        else:
+            plt.gca().set_aspect('equal')
+            plt.axis('equal')
 
         # this would limit percent charts y axis to 100 :)
         # if not absolutes:
@@ -410,19 +428,23 @@ def plotter(title,
                 a.set_title(titletext)
         else:
             if not piemode:
+                plt.suptitle(title)
                 for index, cols in enumerate(ax):
                     for col in cols:
-                        if not piemode:
-                            titletext = list(dataframe.columns)[index]
-                            col.legend_.remove()
-                            col.set_title(titletext)
+                        titletext = list(dataframe.columns)[index]
+                        col.legend_.remove()
+                        col.set_title(titletext)
             else:
+                plt.suptitle(title)
                 count = 0
                 for index, cols in enumerate(ax):
                     for col in cols:
                         titletext = list(dataframe.columns)[count]
                         count += 1
                         col.set_title(titletext)
+                        col.axes.get_xaxis().set_visible(False)
+                        col.axes.get_yaxis().set_visible(False)
+                        col.axis('equal')
                         # remove y_label here
 
 
@@ -461,8 +483,8 @@ def plotter(title,
                 else:
                     plt.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))        
 
-    if not have_python_tex:
-        plt.gcf().show()
+    #if not have_python_tex:
+        #plt.gcf().show()
 
     if save:
         import os
