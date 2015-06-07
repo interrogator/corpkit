@@ -9,7 +9,8 @@ def interrogator(path, options, query,
                 dep_type = 'basic-dependencies',
                 function_filter = False,
                 table_size = 50,
-                plaintext = 'guess'):
+                plaintext = 'guess',
+                quicksave = False):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -148,6 +149,15 @@ def interrogator(path, options, query,
            
     have_python_tex = check_pytex()
     on_cloud = check_dit()
+
+    # check that there's nothing in the quicksave path
+    if quicksave:
+        savedir = 'data/saved_interrogations'
+        if not quicksave.endswith('.p'):
+            quicksave = quicksave + '.p'
+        fullpath = os.path.join(savedir, quicksave)
+        if os.path.isfile(fullpath):
+            raise ValueError("Save error: %s already exists in %s. Pick a new name." % (quicksave, savedir))
 
     regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
 
@@ -790,6 +800,9 @@ def interrogator(path, options, query,
         output = outputnames(query_options, stotals)
         if have_ipython:
             clear_output()
+        if quicksave:
+            from corpkit.other import save_result
+            save_result(output, quicksave)
         return output
 
     # flatten and sort master list, in order to make a list of unique words
@@ -864,5 +877,8 @@ def interrogator(path, options, query,
         warnings.warn('No totals produced. Maybe your query needs work.')
     if stotals.sum() == 0:
         warnings.warn('Total total of zero. Maybe your query needs work.')
+    if quicksave:
+        from corpkit.other import save_result
+        save_result(output, quicksave)
     return output
     
