@@ -1,8 +1,8 @@
 
 def plotter(title,
             df,
-            x_label = False,
-            y_label = False,
+            x_label = None,
+            y_label = None,
             style = 'ggplot',
             figsize = (13, 6),
             save = False,
@@ -13,7 +13,7 @@ def plotter(title,
             colours = 'Paired',
             cumulative = False,
             pie_legend = True,
-            show_total = 'plot',
+            show_totals = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -22,8 +22,8 @@ def plotter(title,
     http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.plot.html
     http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.plot
 
-    pie_legend: show legend for pie charts instead of ticks
-    show_total: where to show percent: False, 'plot', 'legend', or 'both'
+    pie_legend: False to label slices rather than give legend
+    show_totals: where to show percent/abs frequencies: False, 'plot', 'legend', or 'both'
 
     """
 
@@ -71,7 +71,42 @@ def plotter(title,
         #    savename = savename[:-4]
         return savename
 
+    def rename_data_with_total(dataframe, was_series = False, using_tex = False, absolutes = True):
+        if was_series:
+            where_the_words_are = dataframe.index
+        else:
+            where_the_words_are = dataframe.columns
+        the_labs = []
+        for w in list(where_the_words_are):
+            if not absolutes:
+                if was_series:
+                    perc = dataframe.T[w][0]
+                else:
+                    the_labs.append(w)
+                    continue
+                if using_tex:
+                    the_labs.append('%s (%.2f\%%)' % (w, perc))
+                else:
+                    the_labs.append('%s (%.2f %%)' % (w, perc))
+            else:
+                if was_series:
+                    score = dataframe.T[w].sum()
+                else:
+                    score = dataframe[w].sum()
+                if using_tex:
+                    the_labs.append('%s (n=%d)' % (w, score))
+                else:
+                    the_labs.append('%s (n=%d)' % (w, score))
+        if not was_series:
+            dataframe.columns = the_labs
+        else:
+            vals = list(dataframe[list(dataframe.columns)[0]].values)
+            dataframe = pd.DataFrame(vals, index = the_labs)
+            dataframe.columns = ['Total']
+        return dataframe
+
     # are we doing subplots?
+    # redundant ish now
     sbplt = False
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
@@ -83,7 +118,6 @@ def plotter(title,
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib']
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
-
 
     # try to use tex
     using_tex = False
@@ -97,21 +131,25 @@ def plotter(title,
     else:
         rc('text', usetex=False)   
 
+    if show_totals is False:
+        show_totals = 'none'
 
-    if show_total is False:
-        show_total = 'none'
-
+    # find out if pie mode, add autopct format
     piemode = False
     if 'kind' in kwargs:
         if kwargs['kind'] == 'pie':
             piemode = True
-            if show_total.endswith('plot') or show_total.endswith('both'):
+            # always the best spot for pie
+            if legend_pos == 'best':
+                legend_pos = 'lower left'
+            if show_totals.endswith('plot') or show_totals.endswith('both'):
                 if using_tex:
                     kwargs['autopct'] = r'%1.1f\%%'
                 else:
                     kwargs['autopct'] = '%1.1f%%'
 
     kwargs['subplots'] = sbplt
+
     # copy data, make series into df
     dataframe = df.copy()
     was_series = False
@@ -144,12 +182,18 @@ def plotter(title,
         else:
             num_to_plot = len(list(dataframe.columns))
 
+    #cut data short
+    if was_series:
+        dataframe = dataframe[:num_to_plot]
+    else:
+        dataframe = dataframe.T.head(num_to_plot).T
 
-    #if num_to_plot > len(list(dataframe.columns)):
-        #num_to_plot = len(list(dataframe.columns))
+    # make and set y label
+    absolutes = True
+    if type(dataframe[list(dataframe.columns)[0]][list(dataframe.index)[0]]) == numpy.float64:
+        absolutes = False
 
     #  use colormap if need be:
-    colormap = False
     if num_to_plot > 7:
         if 'kind' in kwargs:
             if kwargs['kind'] in ['pie', 'line', 'area']:
@@ -158,6 +202,8 @@ def plotter(title,
         else:
             if colours:
                 kwargs['colormap'] = colours
+    
+    # multicoloured bar charts
     if 'kind' in kwargs:
         if colours:
             if kwargs['kind'].startswith('bar'):
@@ -208,111 +254,25 @@ def plotter(title,
 
     # no title for subplots because ugly
     if sbplt:
-        figsize = (figsize[0], figsize[1] * 2.5)
+        del kwargs['title'] 
     else:
         kwargs['title'] = title
-    
-    # not using pandas for labels anymore.
-    
-    if piemode:
-        if pie_legend:
-            legend = True
-            kwargs['labels'] = None
-        else:
-            legend = False            
-        figsize = (figsize[0] * 1.5, figsize[1] * 1.5)
+        
+    # not using pandas for labels or legend anymore.
+    #kwargs['labels'] = None
+    #kwargs['legend'] = False
 
-        # this gets tid of the y_label thing showing up for pie mode...
-        if len(dataframe.columns) == 1:
-            dataframe.columns = ['']
-
-        if not sbplt:
-            kwargs['y'] = list(dataframe.columns)[0]
-
-    # no legend option
-    if legend is False:
-        kwargs['legend'] = False
-
-    # cumulative grab first col
-    if cumulative:
-        kwargs['y'] = list(dataframe.columns)[0]
-
-    # use styles and plot
-    with plt.style.context((style)):
-
-        a_plot = DataFrame(dataframe[list(dataframe.columns)[:num_to_plot]]).plot(figsize = figsize, **kwargs)
-
-        # this would limit percent charts y axis to 100 :)
-        # if not absolutes:
-        #     a_plot.set_ylim(0, 100)
-
-        if piemode:
-            a_plot.set_aspect('equal')
-    if x_label is False:
-        check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
-        try:
-            check_x_axis = int(check_x_axis)
-            if 1500 < check_x_axis < 2050:
-                x_label = 'Year'
-            else:
-                x_label = 'Group'
-        except:
-            x_label = 'Group'
-
-    if x_label is not None:
-        if not sbplt:
-            if not piemode:
-                plt.xlabel(x_label)
-
-    # make and set y label
-    absolutes = True
-    if y_label is False:
-        try:
-            if type(dataframe[list(dataframe.columns)[0]][list(dataframe.index)[0]]) == numpy.float64:
-                y_label = 'Percentage'
-                absolutes = False
-            else:
-                y_label = 'Absolute frequency'
-        except:
-            if type(dataframe['Total'][list(dataframe.index)[0]]) == numpy.float64:
-                y_label = 'Percentage'
-                absolutes = False
-            else:
-                y_label = 'Absolute frequency'
-    
-    if y_label is not None:
-        if not sbplt:
-            if not piemode:
-                plt.ylabel(y_label)
-
-    # hacky: turn legend into subplot titles :)
-    if sbplt:
-        for index, f in enumerate(a_plot):
-            titletext = list(dataframe.columns)[index]
-            if not piemode:
-                f.legend_.remove()        
-            f.set_title(titletext)
-
-    # MAKE LEGEND OPTIONS
+    # make legend
     if legend:
+        # kwarg optiosn go in leg_options
         leg_options = {'framealpha': .8}
+        # determine legend position based on this dict
         if legend_pos:
-            possible = {'best': 0,
-                        'upper right': 1,
-                        'upper left': 2,
-                        'lower left': 3,
-                        'lower right': 4,  
-                        'right': 5,
-                        'center left': 6,
-                        'center right': 7,
-                        'lower center': 8,
-                        'upper center': 9,
-                        'center': 10,
-                        'o r': 2,
-                        'outside right': 2,
-                        'outside upper right': 2,
-                        'outside center right': 'center left',
-                        'outside lower right': 'lower left'}
+            possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
+                        'right': 5, 'center left': 6, 'center right': 7, 'lower center': 8, 'upper center': 9, 
+                        'center': 10, 'o r': 2, 'outside right': 2, 'outside upper right': 2, 
+                        'outside center right': 'center left', 'outside lower right': 'lower left'}
+
             if type(legend_pos) == int:
                 the_loc = legend_pos
             elif type(legend_pos) == str:
@@ -321,60 +281,108 @@ def plotter(title,
                 except KeyError:
                     raise KeyError('legend_pos value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
             leg_options['loc'] = the_loc
+            #weirdness needed for outside plot
             if legend_pos in ['o r', 'outside right', 'outside upper right']:
                 leg_options['bbox_to_anchor'] = (1.02, 1)
             if legend_pos == 'outside center right':
                 leg_options['bbox_to_anchor'] = (1.02, 0.5)
             if legend_pos == 'outside lower right':
                 leg_options['bbox_to_anchor'] = (1.02, 0)
+        
+        # a bit of distance between legend and plot for outside legends
         if legend_pos.startswith('o'):
             leg_options['borderaxespad'] = 1
 
-        if was_series:
-            where_the_words_are = dataframe.index
-        else:
-            where_the_words_are = dataframe.columns
+    if show_totals.endswith('both') or show_totals.endswith('legend'):
+        if pie_legend:
+            dataframe = rename_data_with_total(dataframe, 
+                                           was_series = was_series, 
+                                           using_tex = using_tex, 
+                                           absolutes = absolutes)
+    
+    plt.figure()
 
-        if show_total.endswith('none') or show_total.endswith('plot'):
-            the_labs = list(where_the_words_are)[:num_to_plot]
-        else:
-            the_labs = []
-            for w in list(where_the_words_are)[:num_to_plot]:
-                if not absolutes:
-                    if was_series:
-                        perc = dataframe.T[w][0]
-                    else:
-                        continue
-                    if using_tex:
-                        the_labs.append('%s (%.2f\%%)' % (w, perc))
-                    else:
-                        the_labs.append('%s (%.2f %%)' % (w, perc))
-                else:
-                    if was_series:
-                        score = dataframe.T[w].sum()
-                    else:
-                        score = dataframe[w].sum()
-                    if using_tex:
-                        the_labs.append('%s (n=%d)' % (w, score))
-                    else:
-                        the_labs.append('%s (n=%d)' % (w, score))                    
-
-        leg_options['labels'] = the_labs
-
-        with plt.style.context((style)):
-            ax = plt.subplot(111)
-            box = ax.get_position()
-            #ax.set_position([box.x0, box.y0, box.width, box.height])
-
-            # Put a legend to the right of the current axis
-            if not rev_leg:
-                lgd = ax.legend(**leg_options)
+    # some pie things
+    if piemode:
+        # this gets tid of the y_label thing showing up for pie mode...
+        kwargs['y'] = list(dataframe.columns)[0]
+        if pie_legend:
+            kwargs['labels'] = None
+            if was_series:
+                leg_options['labels'] = list(dataframe.index)
             else:
-                handles, labels = ax.get_legend_handles_labels()
-                lgd = ax.legend(handles[::-1], labels[::-1], **leg_options)
+                leg_options['labels'] = list(dataframe.columns)
 
+    if legend is False:
+        kwargs['legend'] = None
+
+    # cumulative grab first col
+    if cumulative:
+        kwargs['y'] = list(dataframe.columns)[0]
+
+    # use styles and plot
+    with plt.style.context((style)):
+        dataframe.plot(figsize = figsize, **kwargs)
+        if legend:
+            if not rev_leg:
+                lgd = plt.legend(**leg_options)
+            else:
+                handles, labels = plt.gca().get_legend_handles_labels()
+                lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+
+    if piemode:
+        plt.gca().set_aspect('equal')
+
+        # this would limit percent charts y axis to 100 :)
+        # if not absolutes:
+        #     a_plot.set_ylim(0, 100)
+
+    # add x label  
+    if x_label is not False:
+        if type(x_label) == str:
+            plt.xlabel(x_label)
+        else:
+            check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
+            try:
+                check_x_axis = int(check_x_axis)
+                if 1500 < check_x_axis < 2050:
+                    x_label = 'Year'
+                else:
+                    x_label = 'Group'
+            except:
+                x_label = 'Group'
+
+        if not sbplt:
+            if not piemode:
+                plt.xlabel(x_label)
+
+    y_l = False
+    if not absolutes:
+        y_l = 'Percentage'
+    else:
+        y_l = 'Absolute frequency'
+    
+    if y_label is not False:
+        if not sbplt:
+            if not piemode:
+                if type(y_label) == str:
+                    plt.ylabel(y_label)
+                else:
+                    plt.ylabel(y_l)
+
+    # hacky: turn legend into subplot titles :)
+    if sbplt:
+        for index, f in enumerate(plt):
+            titletext = list(dataframe.columns)[index]
+            if not piemode:
+                f.legend_.remove()        
+            f.set_title(titletext)
+
+
+    # add sums to bar graphs and pie graphs
+    # doubled right now, no matter
     if was_series:  
-        if show_total.endswith('plot') or show_total.endswith('both'):
+        if show_totals.endswith('plot') or show_totals.endswith('both'):
             for i, label in enumerate(list(dataframe.index)):
                 if len(dataframe.ix[label]) == 1:
                     score = dataframe.ix[label][0]
@@ -382,13 +390,15 @@ def plotter(title,
                     if absolutes:
                         score = dataframe.ix[label].sum()
                     else:
-                        raise ValueError("It's not possible to determine total percentage from individual percentages.")
+                        import warnings
+                        warnings.warn("It's not possible to determine total percentage from individual percentages.")
+                        continue
                 if not absolutes:
-                    a_plot.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
                 else:
-                    a_plot.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))
     else:
-        if show_total.endswith('plot') or show_total.endswith('both'):
+        if show_totals.endswith('plot') or show_totals.endswith('both'):
             for i, label in enumerate(list(dataframe.columns)):
                 if len(dataframe[label]) == 1:
                     score = dataframe[label][0]
@@ -396,29 +406,16 @@ def plotter(title,
                     if absolutes:
                         score = dataframe[label].sum()
                     else:
-                        raise ValueError("It's not possible to determine total percentage from individual percentages.")
+                        import warnings
+                        warnings.warn("It's not possible to determine total percentage from individual percentages.")
+                        continue
                 if not absolutes:
-                    a_plot.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
                 else:
-                    a_plot.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))        
+                    plt.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))        
 
-
-    # make room at the bottom for label?
-    plt.subplots_adjust(bottom=0.20)
-
-    # make figure
-    if not sbplt:
-        fig1 = a_plot.get_figure()
-        if not have_python_tex:
-            fig1.show()
-    else:
-        if not have_python_tex:
-            if piemode:
-                plt.axis('equal')
-            plt.show()
-
-    if not save:
-        return
+    if not have_python_tex:
+        plt.gcf().show()
 
     if save:
         import os
@@ -433,16 +430,10 @@ def plotter(title,
             os.makedirs(imagefolder)
 
         # save image and get on with our lives
-        if not sbplt:
-            if legend_pos.startswith('o'):
-                fig1.savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
-            else:
-                fig1.savefig(savename, dpi=150, transparent=False)
+        if legend_pos.startswith('o'):
+            plt.gcf().savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
         else:
-            if legend_pos.startswith('o'):
-                plt.savefig(savename, dpi=150, transparent=False, bbox_extra_artists=(lgd,), bbox_inches='tight')
-            else:
-                plt.savefig(savename, dpi=150, transparent=False)
+            plt.gcf().savefig(savename, dpi=150, transparent=False)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
