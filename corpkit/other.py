@@ -332,7 +332,7 @@ def interroplot(path, query):
     from corpkit import interrogator, editor, plotter
     quickstart = interrogator(path, 't', query)
     edited = editor(quickstart.results, '%', quickstart.totals)
-    plotter(quickstart.results, title = str(path))
+    plotter(str(path), edited.results)
 
 def datareader(data, on_cloud = False):
     """
