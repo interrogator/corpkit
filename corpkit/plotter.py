@@ -223,6 +223,7 @@ def plotter(title,
     elif reverse_legend is False:
         rev_leg = False
 
+
     # show legend or don't, guess whether to reverse based on kind
     legend = True
     if 'kind' in kwargs:
@@ -269,6 +270,11 @@ def plotter(title,
 
     # make legend
     if legend:
+        # temporary, this makes legend in an acceptable spot at least
+        if piemode:
+            if sbplt:
+                legend_pos = 'outside right'
+
         # kwarg optiosn go in leg_options
         leg_options = {'framealpha': .8}
         # determine legend position based on this dict
@@ -315,14 +321,21 @@ def plotter(title,
 
     # some pie things
     if piemode:
-        # this gets tid of the y_label thing showing up for pie mode...
-        kwargs['y'] = list(dataframe.columns)[0]
-        if pie_legend:
-            kwargs['labels'] = None
-            if was_series:
-                leg_options['labels'] = list(dataframe.index)
-            else:
-                leg_options['labels'] = list(dataframe.columns)
+        if not sbplt:
+            kwargs['y'] = list(dataframe.columns)[0]
+            if pie_legend:
+                kwargs['labels'] = None
+                if was_series:
+                    leg_options['labels'] = list(dataframe.index)
+                else:
+                    leg_options['labels'] = list(dataframe.columns)
+        else:
+            if pie_legend:
+                kwargs['labels'] = None
+                if was_series:
+                    leg_options['labels'] = list(dataframe.index)
+                else:
+                    leg_options['labels'] = list(dataframe.index)           
 
     if legend is False:
         kwargs['legend'] = None
@@ -333,6 +346,7 @@ def plotter(title,
 
     # use styles and plot
     with plt.style.context((style)):
+
         if not sbplt:
             dataframe.plot(figsize = figsize, **kwargs)
         else:
@@ -345,7 +359,8 @@ def plotter(title,
                 lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
 
     if piemode:
-        plt.gca().set_aspect('equal')
+        if not sbplt:
+            plt.gca().set_aspect('equal')
 
         # this would limit percent charts y axis to 100 :)
         # if not absolutes:
@@ -386,18 +401,30 @@ def plotter(title,
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
+        # if no layouts, just turn legends into titles
         if 'layout' not in kwargs:
             for index, a in enumerate(ax):
-                print a
+
                 titletext = list(dataframe.columns)[index]
                 a.legend_.remove()        
                 a.set_title(titletext)
         else:
-            for index, cols in enumerate(ax):
-                for col in cols:
-                    titletext = list(dataframe.columns)[index]
-                    col.legend_.remove()        
-                    col.set_title(titletext)
+            if not piemode:
+                for index, cols in enumerate(ax):
+                    for col in cols:
+                        if not piemode:
+                            titletext = list(dataframe.columns)[index]
+                            col.legend_.remove()
+                            col.set_title(titletext)
+            else:
+                count = 0
+                for index, cols in enumerate(ax):
+                    for col in cols:
+                        titletext = list(dataframe.columns)[count]
+                        count += 1
+                        col.set_title(titletext)
+                        # remove y_label here
+
 
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
@@ -410,8 +437,8 @@ def plotter(title,
                     if absolutes:
                         score = dataframe.ix[label].sum()
                     else:
-                        import warnings
-                        warnings.warn("It's not possible to determine total percentage from individual percentages.")
+                        #import warnings
+                        #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
                     plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
@@ -426,8 +453,8 @@ def plotter(title,
                     if absolutes:
                         score = dataframe[label].sum()
                     else:
-                        import warnings
-                        warnings.warn("It's not possible to determine total percentage from individual percentages.")
+                        #import warnings
+                        #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
                     plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
