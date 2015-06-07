@@ -22,6 +22,7 @@
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
   - [More complex queries and plots](#more-complex-queries-and-plots)
+  - [Really tricky stuff](#really-tricky-stuff)
 - [More information](#more-information)
 - [IPython Notebook usability](#ipython-notebook-usability)
 - [Coming soon](#coming-soon)
@@ -201,14 +202,13 @@ Here's another basic example of `interrogator()`, `editor()` and `plotter()` at 
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # count terminals/leaves of trees only, and do lemmatisation:
->>> riskofnoun = interrogator(corpus, 'words', q, lemmatise = True)
+>>> risk_of = interrogator(corpus, 'words', q, lemmatise = True)
 
 # use editor to turn absolute into relative frequencies
->>> to_plot = editor(riskofnoun.results, '%', riskofnoun.totals, 
-...                  skip_subcorpora = [1963], sort_by = 'total')
+>>> to_plot = editor(risk_of.results, '%', risk_of.totals)
 
 # plot the results
->>> plotter('Risk of (noun)', to_plot.results, num_to_plot = 7)
+>>> plotter('Risk of (noun)', to_plot.results, y_label = 'Percentage of all results')
 ```
 
 Output: 
@@ -292,8 +292,7 @@ Output:
 Let's plot *he* and *she*:
 
 ```python
->>> plotter(sayers.results, title = 'Gender of sayers in the NYT',
-...    num_to_plot = 2)
+>>> plotter('Gender of sayers in the NYT', sayers.results, num_to_plot = 2)
 ```
 
 Output:
@@ -310,8 +309,7 @@ Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `edito
 ...    8, 10, 14, 15, 27], skip_subcorpora = [1963], sort_by = 'total')
 
 # plot
->>> plotter('People who say stuff', specific_sayers.results,
-...    num_to_plot = 9)
+>>> plotter('People who say stuff', specific_sayers.results, num_to_plot = 9)
 ```
 
 Output:
@@ -324,10 +322,12 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 
 ```python
 # a query to find heads of nps that are subjects of risk processes
->>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) | <<# (/VB.?/ < /(?i)(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts|pose|poses|posed|posing)/) < (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
+>>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < ' /(?i).?\brisk.?/) ' \
+...         r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
+...         r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
  
->>> quickview(riskers.results, n = 10)
+>>> quickview(noun_riskers.results, n = 10)
 ```
 
 Output:
@@ -348,18 +348,19 @@ Output:
 We can use `editor()` to make some thematic categories:
 
 ```python
->>> them_cat = editor(noun_riskers.results, '%', noun_riskers.totals,
-...            merge_entries = ['person', 'man', 'woman', 
-...            'child', 'consumer', 'baby', 'student', 'patient'], 
-...            newname = 'Everyday people')
+# get everyday people
+>>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
+>>> them_cat = editor(noun_riskers.results, merge_entries = p, newname = 'Everyday people')
 
->>> them_cat = editor, them_cat, merge_entries = ['company', 'bank', 'investor', 
-...    'government', 'leader', 'president', 'officer', 'politician', 
-...    'institution', 'agency', 'candidate', 'firm'], 
-...    newname = 'Institutions', sort_by = 'total')
+# get business, gov, institutions
+>>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
+...      'politician', 'institution', 'agency', 'candidate', 'firm']
+>>> them_cat = editor(them_cat.results, '%', noun_riskers.totals, merge_entries = i, 
+...    newname = 'Institutions', sort_by = 'total', skip_subcorpora = 1963,
+...    just_entries = ['Everyday people', 'Institutions'])
 
-# plot riskers:
->>> plotter(them_cat, title = 'Types of riskers', num_to_plot = 2)
+# plot result
+>>> plotter('Types of riskers', them_cat.results, y_label = 'Percentage of all riskers')
 ```
 
 Output:
@@ -375,27 +376,26 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 >>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
 
 # get some key terms
->>> nouns = ['politician', 'candidate', 'lawmaker', 'governor', 'man', 
-...    'woman', 'child', 'person']
->>> interesting_riskers = editor(noun_riskers.results, '%', keep_entries = 
-...    )
+>>> people = ['man', 'woman', 'child', 'baby', 'politician', 
+...           'senator', 'obama', 'clinton', 'bush']
+>>> selected = editor(noun_riskers.results, '%', noun_lemmata.results, 
+...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
-# use `just_totals`, and make a bar chart:
->>> plotter(interesting_riskers, title = 'Risk and power', interesting_riskers.results, 
-...    y_label = 'Risker percentage', num_to_plot = 'all', kind = 'bar')
+# make a bar chart:
+>>> plotter('Risk and power', selected.results, num_to_plot = 'all', kind = k, 
+...    x_label = 'Word', rot = 45, y_label = 'Risker percentage', fontsize = 15)
 ```
 
 Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power.png" />
 <br>
 
-#### Really tricky stuff
+### Really tricky stuff
 
-With a bit of practice, you can do some pretty awesome stuff. The following plots require only one interrogation:
+With a bit of creativity, you can do some pretty awesome data-viz. The following plots require only one interrogation:
 
 ```python
 >>> modals = interrogator(annual_trees, 'words', 'MD < __')
->>> modals = load_result('modals')
 # simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = editor(modals.results, '%', modals.totals)
 
@@ -405,7 +405,7 @@ With a bit of practice, you can do some pretty awesome stuff. The following plot
                           newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
 # complex stuff: merge results
->>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m[^d]']
+>>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m']
 >>> for regex in entries_to_merge:
     >>> modals = editor(modals.results, merge_entries = regex)
     
@@ -419,7 +419,7 @@ for subcorp, search in subcorpora_to_merge:
 >>> modals = editor(modals.results, '%', modals.totals,
                  just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
 
-# clear output and show results
+# show results
 print rel_modals.results, each_modal_total.results, '\n\n', modals.results
 ```
 Output:
@@ -462,16 +462,16 @@ Now, some intense plotting:
 >>> expl = [0 for s in list(each_modal_total.results)]
 >>> expl['other'] = 0.1
 >>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = expl,
-...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11), save = True)
+...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
 # stacked area chart
 >>> plotter('An ocean of modals', rel_modals.results.drop('1963'), kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
-...    legend_pos = 'outside lower right', y_label = 'Percentage of all modals', save = True)
+...    legend_pos = 'outside lower right', y_label = 'Percentage of all modals')
 
 # bar chart, transposing and reversing the data
 >>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
-...    x_label = 'Percentage of all modals', y_label = 'Modal group', save = True)
+...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 ```
 Output:
 
