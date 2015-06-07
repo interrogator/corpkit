@@ -61,10 +61,13 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     import os
     import pandas
     from time import localtime, strftime
-    # currently, allow overwrite. if that's not ok:
-    #if os.path.isfile(csvmake):
-        #raise ValueError("Save error: %s already exists in %s. \
-                    #Pick a new name." % (savename, savedir))
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+    if not savename.endswith('.p'):
+        savename = savename + '.p'
+    fullpath = os.path.join(savedir, savename)
+    if os.path.isfile(fullpath):
+        raise ValueError("Save error: %s already exists in %s. Pick a new name." % (savename, savedir))
     
     # if it's just a table or series
     if type(interrogation) == pandas.core.frame.DataFrame or type(interrogation) == pandas.core.series.Series:
@@ -81,15 +84,10 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         except:
             raise ValueError(' %s' % interrogation)
             
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
-    if not savename.endswith('.p'):
-        savename = savename + '.p'
-    fullpath = os.path.join(savedir, savename)
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
-    print '\n%s: Data saved: %s\n' % (time, fullpath)
+    print '\n %s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
 def load_result(savename, loaddir = 'data/saved_interrogations'):
@@ -380,7 +378,7 @@ def datareader(data, on_cloud = False):
         elif os.path.isdir(data):
             is_trees = tregex_engine(corpus = data, check_for_trees = True)
             if is_trees:
-                trees = tregex_engine(corpus = data,
+                list_of_texts = tregex_engine(corpus = data,
                                   options = ['-o', '-t', '-w'], 
                                   query = r'__ !> __', 
                                   on_cloud = on_cloud)
@@ -397,11 +395,11 @@ def datareader(data, on_cloud = False):
                 for f in fs:
                     raw = open(f).read()
                     list_of_texts.append(raw)
-                good = '\n'.join(list_of_texts)
-                try:
-                    good = good.encode('utf-8', errors = 'ignore')
-                except:
-                    pass
+            good = '\n'.join(list_of_texts)
+            try:
+                good = good.encode('utf-8', errors = 'ignore')
+            except:
+                pass
         # if a string of text, just keyword that
         else:
             good = data.encode('utf-8', errors = 'ignore')
