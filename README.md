@@ -480,13 +480,11 @@ Now, some intense plotting:
 ...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 ```
 Output:
-
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png"  height="400" width="400"/>
-
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png"  height="450" width="350"/>
-
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png"  height="230" width="450"/>
-
+<p align="center">
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png"  height="400" width="400"/>
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png"  height="450" width="350"/>
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png"  height="230" width="450"/>
+</p>
 
 ## More information
 
