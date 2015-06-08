@@ -15,6 +15,7 @@ def plotter(title,
             pie_legend = True,
             show_totals = False,
             transparent = False,
+            output_format = 'png',
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -29,6 +30,7 @@ def plotter(title,
     """
 
     import os
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib import rc
     import pandas
@@ -41,7 +43,7 @@ def plotter(title,
 
     have_python_tex = check_pytex()
 
-    def get_savename(imagefolder, save = False, title = False):
+    def get_savename(imagefolder, save = False, title = False, ext = 'png'):
         """Come up with the savename for the image."""
         import os
         def urlify(s):
@@ -52,13 +54,16 @@ def plotter(title,
             s = re.sub(r"\s+", '-', s)
             return s     
         # name as 
+        if not ext.startswith('.'):
+            ext = '.' + ext
         if type(save) == str:
-            savename = os.path.join(imagefolder, (urlify(save) + '.png'))
+            savename = os.path.join(imagefolder, (urlify(save) + ext))
         #this 'else' is redundant now that title is obligatory
         else:
             if title:
-                filename = urlify(title) + '.png'
+                filename = urlify(title) + ext
                 savename = os.path.join(imagefolder, filename)
+
         #    # generic sequential naming
         #    else:
         #        list_images = [i for i in sorted(os.listdir(imagefolder)) if i.startswith('image-')]
@@ -68,8 +73,10 @@ def plotter(title,
         #            savename = os.path.join(imagefolder, autoname + '.png')
         #        else:
         #            savename = os.path.join(imagefolder, 'image-001.png')
-        #if savename.endswith('.png.png'):
-        #    savename = savename[:-4]
+        
+        # remove duplicated ext
+        if savename.endswith('%s%s' % (ext, ext)):
+            savename = savename.replace('%s%s' % (ext, ext), ext, 1)
         return savename
 
     def rename_data_with_total(dataframe, was_series = False, using_tex = False, absolutes = True):
@@ -179,7 +186,18 @@ def plotter(title,
         dataframe = dataframe.drop('Total', axis = 0)
     except:
         pass
+
+    # set backend?
+    output_formats = ['svgz', 'ps', 'emf', 'rgba', 'raw', 'pdf', 'svg', 'eps', 'png', 'pgf']
+    if output_format not in output_formats:
+        raise ValueError('%s output format not recognised. Must be: %s' % (output_format, ', '.join(output_formats)))
     
+    # don't know if these are necessary
+    if 'pdf' in output_format:
+        plt.switch_backend(output_format) 
+    if 'pgf' in output_format:
+        plt.switch_backend(output_format)
+
     if num_to_plot == 'all':
         if was_series:
             num_to_plot = len(dataframe)
@@ -493,16 +511,16 @@ def plotter(title,
         else:
             imagefolder = 'images'
 
-        savename = get_savename(imagefolder, save = save, title = title)
+        savename = get_savename(imagefolder, save = save, title = title, ext = output_format)
 
         if not os.path.isdir(imagefolder):
             os.makedirs(imagefolder)
 
         # save image and get on with our lives
         if legend_pos.startswith('o'):
-            plt.gcf().savefig(savename, dpi=150, transparent=transparent, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.gcf().savefig(savename, dpi=150, transparent=transparent, bbox_extra_artists=(lgd,), bbox_inches='tight', format = output_format)
         else:
-            plt.gcf().savefig(savename, dpi=150, transparent=transparent)
+            plt.gcf().savefig(savename, dpi=150, transparent=transparent, format = output_format)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
