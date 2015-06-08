@@ -6,8 +6,6 @@
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 
-> **Note**: I'm currently making everything Pandas compliant, so that we may all bask in the glory of the DataFrame. Documentation of major changes forthcoming.
-
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
