@@ -265,7 +265,7 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 ...    function_filter = r'^nsubj$', lemmatise = True)
 
 # have a look at the top results
->>> quickview(sayers.results, n = 20)
+>>> quickview(sayers, n = 20)
 ```
 
 Output:
@@ -294,36 +294,74 @@ Output:
  20: doctor (n=770)
 
 ```
-Let's plot *he* and *she*:
 
-```python
->>> plotter('Pronominal sayers in the NYT', genders.results.T, kind = 'pie',
-...    subplots = True, figsize = (15, 2.75), how_totals = 'plot')
-```
-
-Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pronominal-sayers-in-the-nyt.png" />
-<br>
-
-Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `editor()`, and plot something:
+First, let's try removing the pronouns using `editor()`:
 
 ```python
 >>> from corpkit import editor
 
-# give editor() indices to keep or remove
-# sort by increasing trajectory
->>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 14, 24]
+# give editor() indices, words or regexes to keep or remove
+>>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
 >>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
-...    skip_subcorpora = [1963], sort_by = 'increasing')
+...    skip_subcorpora = [1963])
+>>> quickview(sayers_no_prp, n = 10)
+```
 
-# plot
+Output:
+
+```
+  0: official (n=4342)
+  1: expert (n=2055)
+  2: analyst (n=1369)
+  3: report (n=1098)
+  4: company (n=1066)
+  5: researcher (n=987)
+  6: study (n=900)
+  7: critic (n=825)
+  8: person (n=801)
+  9: agency (n=796)
+```
+
+Great. Now, let's sort the entries by trajectory, and then plot:
+
+```python
+# sort with editor()
+>>> sayers_no_prp = editor(sayers_no_prp, '%', sayers.totals, sort_by = 'increase')
+>>> 
+# make an area chart with custom y label
 >>> plotter('Sayers, increasing', sayers_no_prp.results, kind = 'area', 
 ...    y_label = 'Percentage of all sayers')
 ```
 
 Output:
+
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" />
 <br>
+
+We can also merge subcorpora. Let's look for changes in gendered pronouns as "*sayers*":
+
+```python
+>>> subcorpora_to_merge = [('1960s', r'^196'), 
+...    ('1980s', r'^198'), ('1990s', r'^199'), 
+...    ('2000s', r'^200'), ('2010s', r'^201')]
+
+>>> for subcorp, search in subcorpora_to_merge:
+...    sayers = editor(sayers.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
+
+# now, get relative frequencies for he and she
+>>> genders = editor(sayers.results, '%', sayers.totals, just_entries = ['he', 'she'])
+
+# and plot it as a series of pie charts, showing totals on the slices:
+>>> plotter('Pronominal sayers in the NYT', genders.results.T, kind = 'pie',
+...    subplots = True, figsize = (15, 2.75), show_totals = 'plot')
+```
+
+Output:
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pronominal-sayers-in-the-nyt.png" />
+<br>
+
+Woohoo, a decreasing gender divide! 
 
 ### More complex queries and plots
 
@@ -336,7 +374,7 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 ...         r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
  
->>> quickview(noun_riskers.results, n = 10)
+>>> quickview(noun_riskers, n = 10)
 ```
 
 Output:
@@ -396,6 +434,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```
 
 Output:
+
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
 <br>
 
@@ -429,7 +468,7 @@ for subcorp, search in subcorpora_to_merge:
                  just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
 
 # show results
-print rel_modals.results, each_modal_total.results, '\n\n', modals.results
+print rel_modals.results, each_modal_total.results, modals.results
 ```
 Output:
 ```
@@ -437,16 +476,13 @@ Output:
 1963  22.326833  23.537323  17.955615   6.590451  ...    0.000000  0.537996  0.000000      0
 1987  24.750614  18.505132  15.512505  11.117537  ...    0.072286  0.260228  0.014457      0
 1988  23.138986  19.257117  16.182067  11.219364  ...    0.091338  0.060892  0.000000      0
-1989  22.766053  19.368358  15.371950  11.749738  ...    0.134710  0.014968  0.014968      0
-1990  24.631154  18.061811  15.716726  12.253456  ...    0.062121  0.046591  0.000000      0
 ...         ...        ...        ...        ...  ...         ...       ...       ...    ...
-2010  24.989858  17.200811  15.388776  14.171738  ...    0.108181  0.067613  0.000000      0
-2011  23.185818  17.574289  15.584747  14.577222  ...    0.089274  0.000000  0.000000      0
 2012  23.097345  16.283186  15.132743  15.353982  ...    0.029499  0.029499  0.000000      0
 2013  22.136269  17.286522  16.349301  15.620351  ...    0.029753  0.029753  0.000000      0
 2014  21.618357  17.101449  16.908213  14.347826  ...    0.024155  0.000000  0.000000      0
+[29 rows x 17 columns] 
 
-[29 rows x 17 columns] would     23.235853
+would     23.235853
 will      17.484034
 can       15.844070
 could     13.243449
@@ -471,14 +507,14 @@ Now, some intense plotting:
 >>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
+# bar chart, transposing and reversing the data
+>>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
+...    x_label = 'Percentage of all modals', y_label = 'Modal group')
+
 # stacked area chart
 >>> plotter('An ocean of modals', rel_modals.results.drop('1963'), kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
 ...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
-
-# bar chart, transposing and reversing the data
->>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
-...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 ```
 Output:
 <p align="center">
