@@ -563,7 +563,7 @@ def editor(dataframe1,
         the_threshold = 0
         # set a threshold if just_totals
         if outputmode is True:
-            df2 = df.sum()
+            df2 = df.T.sum()
             if not just_totals:
                 df2.name = 'Total'
             else:
