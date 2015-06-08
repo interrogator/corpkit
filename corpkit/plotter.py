@@ -4,7 +4,7 @@ def plotter(title,
             x_label = None,
             y_label = None,
             style = 'ggplot',
-            figsize = (13, 6),
+            figsize = (10, 4),
             save = False,
             legend_pos = 'best',
             reverse_legend = 'guess',
@@ -224,6 +224,8 @@ def plotter(title,
     if num_to_plot == 'all':
         if was_series:
             if not piemode:
+                num_to_plot = len(dataframe)
+            else:
                 num_to_plot = len(dataframe)
         else:
             if not piemode:
