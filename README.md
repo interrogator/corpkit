@@ -297,9 +297,8 @@ Output:
 Let's plot *he* and *she*:
 
 ```python
->>> plotter('Pronominal sayers in the NYT', genders.results.T,
-...    kind = 'pie', pie_legend = True, subplots = True, figsize = (15, 2.75),
-...     show_totals = 'plot')
+>>> plotter('Pronominal sayers in the NYT', genders.results.T, kind = 'pie',
+...    subplots = True, figsize = (15, 2.75), how_totals = 'plot')
 ```
 
 Output:
