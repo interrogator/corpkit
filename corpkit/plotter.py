@@ -13,6 +13,7 @@ def plotter(title,
             colours = 'Paired',
             cumulative = False,
             pie_legend = True,
+            partial_pie = False,
             show_totals = False,
             transparent = False,
             output_format = 'png',
@@ -113,15 +114,31 @@ def plotter(title,
             dataframe.columns = ['Total']
         return dataframe
 
+    def auto_explode(dataframe, input, was_series = False, num_to_plot = 7):
+        """give me a list of strings and i'll output explode option"""
+        output = [0 for s in range(num_to_plot)]
+        if was_series:
+            l = list(dataframe.index)
+        else:
+            l = list(dataframe.columns)
+
+        if type(input) == str or type(input) == int:
+            input = [input]
+        if type(input) == list:
+            for i in input:
+                if type(i) == str:
+                    index = l.index(i)
+                else:
+                    index = i
+                output[index] = 0.1
+        return output
+
     # are we doing subplots?
     # redundant ish now
     sbplt = False
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
             sbplt = True
-
-    if sbplt:
-        figsize = (figsize[1], figsize[0])
 
     if colours is True:
         colours = 'Paired'
@@ -154,10 +171,16 @@ def plotter(title,
             if legend_pos == 'best':
                 legend_pos = 'lower left'
             if show_totals.endswith('plot') or show_totals.endswith('both'):
+                #kwargs['pctdistance'] = 0.65
                 if using_tex:
                     kwargs['autopct'] = r'%1.1f\%%'
                 else:
                     kwargs['autopct'] = '%1.1f%%'
+
+    
+    #if piemode:
+        #if partial_pie:
+            #kwargs['startangle'] = 180
 
     kwargs['subplots'] = sbplt
 
@@ -200,9 +223,24 @@ def plotter(title,
 
     if num_to_plot == 'all':
         if was_series:
-            num_to_plot = len(dataframe)
+            if not piemode:
+                num_to_plot = len(dataframe)
         else:
-            num_to_plot = len(list(dataframe.columns))
+            if not piemode:
+                num_to_plot = len(list(dataframe.columns))
+            else:
+                num_to_plot = len(dataframe.index)
+
+    # explode pie, or remove if not piemode
+    if 'explode' in kwargs:
+        if not piemode:
+            del kwargs['explode']
+    if piemode:
+        if 'explode' in kwargs:
+            kwargs['explode'] = auto_explode(dataframe, 
+                                             kwargs['explode'], 
+                                             was_series = was_series, 
+                                             num_to_plot = num_to_plot)
 
     #cut data short
     plotting_a_totals_column = False
@@ -214,6 +252,7 @@ def plotter(title,
             if not 'legend' in kwargs:
                 legend = False
             num_to_plot = len(dataframe)
+
     else:
         dataframe = dataframe.T.head(num_to_plot).T
 
@@ -233,6 +272,19 @@ def plotter(title,
         #else:
             if colours:
                 kwargs['colormap'] = colours
+
+    if piemode:
+        if num_to_plot > 7:
+            kwargs['colormap'] = colours
+        else:
+            if num_to_plot > 7:
+                kwargs['colormap'] = colours
+        #else:
+            #if len(dataframe.T.columns) < 8:
+                #try:
+                    #del kwargs['colormap']
+                #except:
+                    #pass
     
     # multicoloured bar charts
     if 'kind' in kwargs:
@@ -283,7 +335,10 @@ def plotter(title,
     # rotate automatically
     if 'rot' not in kwargs:
         if not was_series:
-            xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
+            xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
+            #if 'kind' in kwargs:
+                #if kwargs['kind'] in ['barh', 'area']:
+                    #xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
         else:
             xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
         if len(max(xvals, key=len)) > 6:
@@ -350,7 +405,9 @@ def plotter(title,
                                            using_tex = using_tex, 
                                            absolutes = absolutes)
 
-    #plt.figure()
+    if piemode:
+        if partial_pie:
+            dataframe = dataframe / 100.0
 
     # some pie things
     if piemode:
@@ -391,16 +448,14 @@ def plotter(title,
                 handles, labels = plt.gca().get_legend_handles_labels()
                 lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
 
+        if not sbplt:
+            if 'layout' not in kwargs:
+                plt.tight_layout()
+
     if piemode:
         if not sbplt:
-            plt.gca().set_aspect('equal')
-        else:
-            plt.gca().set_aspect('equal')
+            plt.tight_layout()
             plt.axis('equal')
-
-        # this would limit percent charts y axis to 100 :)
-        # if not absolutes:
-        #     a_plot.set_ylim(0, 100)
 
     # add x label  
     if x_label is not False:
@@ -437,38 +492,37 @@ def plotter(title,
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
-        # if no layouts, just turn legends into titles
+        # title the big plot
+        #plt.suptitle(title, fontsize = 16)
+        # get all axes
         if 'layout' not in kwargs:
-            for index, a in enumerate(ax):
-
-                titletext = list(dataframe.columns)[index]
-                a.legend_.remove()        
-                a.set_title(titletext)
+            axes = [l for index, l in enumerate(ax)]
         else:
-            if not piemode:
-                plt.suptitle(title)
-                for index, cols in enumerate(ax):
-                    for col in cols:
-                        titletext = list(dataframe.columns)[index]
-                        col.legend_.remove()
-                        col.set_title(titletext)
-            else:
-                plt.suptitle(title)
-                count = 0
-                for index, cols in enumerate(ax):
-                    for col in cols:
-                        titletext = list(dataframe.columns)[count]
-                        count += 1
-                        col.set_title(titletext)
-                        col.axes.get_xaxis().set_visible(False)
-                        col.axes.get_yaxis().set_visible(False)
-                        col.axis('equal')
-                        # remove y_label here
+            axes = []
+            cols = [l for index, l in enumerate(ax)]
+            for col in cols:
+                for bit in col:
+                    axes.append(bit)
+    
+        # set subplot titles
+    
+        for index, a in enumerate(axes):
+            try:
+                titletext = list(dataframe.columns)[index]
+            except:
+                pass
+            a.set_title(titletext)
+            # remove axis labels for pie plots
+            if piemode:
+                a.axes.get_xaxis().set_visible(False)
+                a.axes.get_yaxis().set_visible(False)
+                a.axis('equal')
 
-
+    
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
-    if was_series:  
+    if was_series:
+        the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
             for i, label in enumerate(list(dataframe.index)):
                 if len(dataframe.ix[label]) == 1:
@@ -481,10 +535,11 @@ def plotter(title,
                         #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
-                    plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate('%.2f' % score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
                 else:
-                    plt.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate(score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
     else:
+        the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
             for i, label in enumerate(list(dataframe.columns)):
                 if len(dataframe[label]) == 1:
@@ -497,12 +552,15 @@ def plotter(title,
                         #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
-                    plt.annotate('%.2f' % score, (i - (num_to_plot / 60.0), score + 0.2))
+                    plt.annotate('%.2f' % score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
                 else:
-                    plt.annotate(score, (i - (num_to_plot / 60.0), score + 0.2))        
+                    plt.annotate(score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))        
 
     #if not have_python_tex:
         #plt.gcf().show()
+
+    plt.subplots_adjust(left=0.1)
+    plt.tight_layout()
 
     if save:
         import os
