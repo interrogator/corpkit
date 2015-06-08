@@ -16,7 +16,7 @@
   - [Via `pip`](#via-pip)
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
-- [Examples](#examples)
+- [More detailed examples](#more-detailed-examples)
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
   - [More complex queries and plots](#more-complex-queries-and-plots)
@@ -187,13 +187,13 @@ Or, just use *(I)Python* (more difficult, less fun):
 Output: 
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md2.png" />
-<br>
+<br><br>
 
-## Examples
+## More detailed examples
 
 `interroplot()` is just a demo function that does three things in order:
 
-1. uses `interrogator()` to search `corpus` for a (Regex or Tregex) `query`
+1. uses `interrogator()` to search corpus for a (Regex or Tregex) query
 2. uses `editor()` to calculate the relative frequencies of each result
 3. uses `plotter()` to show the top seven results
  
@@ -212,13 +212,14 @@ Here's an example of the three functions at work on the NYT corpus:
 >>> to_plot = editor(risk_of.results, '%', risk_of.totals)
 
 # plot the results
->>> plotter('Risk of (noun)', to_plot.results, y_label = 'Percentage of all results')
+>>> plotter('Risk of (noun)', to_plot.results, y_label = 'Percentage of all results',
+...    style = 'fivethirtyeight')
 ```
 
 Output: 
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
-<br>
+<br><br>
 
 ### Concordancing
 
@@ -229,8 +230,7 @@ You can use Tregex queries to concordance things, too:
 
 >>> subcorpus = 'data/nyt/years/2005'
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
->>> lines = conc(subcorpus, query, window = 50, 
-...    n = 10, random = True)
+>>> lines = conc(subcorpus, query, window = 50, n = 10, random = True)
 ```
 
 Output (a *Pandas DataFrame*):
@@ -270,7 +270,7 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 
 Output:
 
-```python
+```
   0: he (n=24530)
   1: she (n=5558)
   2: they (n=5510)
@@ -300,7 +300,7 @@ First, let's try removing the pronouns using `editor()`:
 ```python
 >>> from corpkit import editor
 
-# give editor() indices, words or regexes to keep or remove
+# give editor() indices, words or regexes to keep remove or merge
 >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
 >>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
 ...    skip_subcorpora = [1963])
@@ -327,7 +327,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 ```python
 # sort with editor()
 >>> sayers_no_prp = editor(sayers_no_prp, '%', sayers.totals, sort_by = 'increase')
->>> 
+
 # make an area chart with custom y label
 >>> plotter('Sayers, increasing', sayers_no_prp.results, kind = 'area', 
 ...    y_label = 'Percentage of all sayers')
@@ -336,9 +336,9 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" />
-<br>
+<br><br>
 
-We can also merge subcorpora. Let's look for changes in gendered pronouns as "*sayers*":
+We can also merge subcorpora. Let's look for changes in gendered pronouns:
 
 ```python
 >>> subcorpora_to_merge = [('1960s', r'^196'), 
@@ -359,7 +359,7 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns as "*s
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pronominal-sayers-in-the-nyt.png" />
-<br>
+<br><br>
 
 Woohoo, a decreasing gender divide! 
 
@@ -379,17 +379,17 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 
 Output:
 
-```python
-['   0: person (195)',
- '   1: company (139)',
- '   2: bank (80)',
- '   3: investor (66)',
- '   4: government (63)',
- '   5: man (51)',
- '   6: leader (48)',
- '   7: woman (43)',
- '   8: official (40)',
- '   9: player (39)']
+```
+  0: person (n=195)
+  1: company (n=139)
+  2: bank (n=80)
+  3: investor (n=66)
+  4: government (n=63)
+  5: man (n=51)
+  6: leader (n=48)
+  7: woman (n=43)
+  8: official (n=40)
+  9: player (n=39)
 ```
 
 We can use `editor()` to make some thematic categories:
@@ -397,11 +397,13 @@ We can use `editor()` to make some thematic categories:
 ```python
 # get everyday people
 >>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
+
 >>> them_cat = editor(noun_riskers.results, merge_entries = p, newname = 'Everyday people')
 
 # get business, gov, institutions
 >>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
 ...      'politician', 'institution', 'agency', 'candidate', 'firm']
+
 >>> them_cat = editor(them_cat.results, '%', noun_riskers.totals, merge_entries = i, 
 ...    newname = 'Institutions', sort_by = 'total', skip_subcorpora = 1963,
 ...    just_entries = ['Everyday people', 'Institutions'])
@@ -413,7 +415,7 @@ We can use `editor()` to make some thematic categories:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/types-of-riskers.png" />
-<br>
+<br><br>
 
 Let's also find out what percentage of the time some nouns appear as riskers:
 
@@ -436,7 +438,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
-<br>
+<br><br>
 
 ### Visualisation options
 
@@ -449,26 +451,26 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 
 # trickier: make an 'others' result from low-total entries
 >>> low_indices = [i for i, w in enumerate(list(modals.results.index)) if i > 6]
->>> each_modal_total = editor(modals.results, '%', modals.totals, merge_entries = low_indices, 
-                          newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
+>>> each_md = editor(modals.results, '%', modals.totals, merge_entries = low_indices, 
+...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
 # complex stuff: merge results
 >>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m']
 >>> for regex in entries_to_merge:
-    >>> modals = editor(modals.results, merge_entries = regex)
+...    modals = editor(modals.results, merge_entries = regex)
     
 # complex stuff: merge subcorpora
 >>> subcorpora_to_merge = [('1960s', r'^196'), ('1980s', r'^198'), ('1990s', r'^199'), 
-                       ('2000s', r'^200'), ('2010s', r'^201')]
+...    ('2000s', r'^200'), ('2010s', r'^201')]
 for subcorp, search in subcorpora_to_merge:
     modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
     
 # make relative, sort, remove what we don't want
 >>> modals = editor(modals.results, '%', modals.totals,
-                 just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
+...    just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
 
 # show results
-print rel_modals.results, each_modal_total.results, modals.results
+print rel_modals.results, each_md.results, modals.results
 ```
 Output:
 ```
@@ -504,7 +506,7 @@ Now, some intense plotting:
 
 ```python
 # exploded pie chart
->>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = ['other'],
+>>> plotter('Pie chart of common modals in the NYT', each_md.results, explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
 # bar chart, transposing and reversing the data
@@ -528,7 +530,7 @@ Output:
 Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
 
 1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk)
+2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk) (most `corpkit` use)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 ## IPython Notebook usability
