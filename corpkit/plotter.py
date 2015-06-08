@@ -454,6 +454,7 @@ def plotter(title,
             if 'layout' not in kwargs:
                 plt.tight_layout()
 
+
     if piemode:
         if not sbplt:
             plt.tight_layout()
@@ -562,7 +563,8 @@ def plotter(title,
         #plt.gcf().show()
 
     plt.subplots_adjust(left=0.1)
-    plt.tight_layout()
+    if 'layout' not in kwargs:
+        plt.tight_layout()
 
     if save:
         import os
