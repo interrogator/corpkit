@@ -271,36 +271,39 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 Output:
 
 ```python
-['   0: he (23507)',
- '   1: she (5383)',
- '   2: they (4952)',
- '   3: official (4160)',
- '   4: it (2732)',
- '   5: who (2572)',
- '   6: that (2265)',
- '   7: expert (2011)',
- '   8: i (1926)',
- '   9: analyst (1342)',
- '  10: we (1027)',
- '  11: report (1012)',
- '  12: company (945)',
- '  13: researcher (930)',
- '  14: you (889)',
- '  15: which (870)',
- '  16: critic (796)',
- '  17: study (743)',
- '  18: executive (731)',
- '  19: doctor (726)']
-```
+  0: he (n=24530)
+  1: she (n=5558)
+  2: they (n=5510)
+  3: official (n=4348)
+  4: it (n=3752)
+  5: who (n=2940)
+  6: that (n=2665)
+  7: i (n=2062)
+  8: expert (n=2057)
+  9: analyst (n=1369)
+ 10: we (n=1214)
+ 11: report (n=1103)
+ 12: company (n=1070)
+ 13: which (n=1043)
+ 14: you (n=987)
+ 15: researcher (n=987)
+ 16: study (n=901)
+ 17: critic (n=826)
+ 18: person (n=802)
+ 19: agency (n=798)
+ 20: doctor (n=770)
 
+```
 Let's plot *he* and *she*:
 
 ```python
->>> plotter('Gender of sayers in the NYT', sayers.results, num_to_plot = 2)
+>>> plotter('Pronominal sayers in the NYT', genders.results.T,
+...    kind = 'pie', pie_legend = True, subplots = True, figsize = (15, 2.75),
+...     show_totals = 'plot')
 ```
 
 Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/gender-of-sayers-in-the-nyt.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pronominal-sayers-in-the-nyt.png" />
 <br>
 
 Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `editor()`, and plot something:
@@ -309,15 +312,18 @@ Woohoo, a decreasing gender divide! Next, let's remove the pronouns using `edito
 >>> from corpkit import editor
 
 # give editor() indices to keep or remove
->>> specific_sayers = editor(sayers.results, skip_entries = [0, 1, 2, 4, 5, 6, 
-...    8, 10, 14, 15, 27], skip_subcorpora = [1963], sort_by = 'total')
+# sort by increasing trajectory
+>>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 14, 24]
+>>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
+...    skip_subcorpora = [1963], sort_by = 'increasing')
 
 # plot
->>> plotter('People who say stuff', specific_sayers.results, num_to_plot = 9)
+>>> plotter('Sayers, increasing', sayers_no_prp.results, kind = 'area', 
+...    y_label = 'Percentage of all sayers')
 ```
 
 Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/people-who-say-stuff.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" />
 <br>
 
 ### More complex queries and plots
@@ -387,7 +393,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 
 # make a bar chart:
 >>> plotter('Risk and power', selected.results, num_to_plot = 'all', kind = k, 
-...    x_label = 'Word', rot = 45, y_label = 'Risker percentage', fontsize = 15)
+...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
 ```
 
 Output:
@@ -463,15 +469,13 @@ Now, some intense plotting:
 
 ```python
 # exploded pie chart
->>> expl = [0 for s in list(each_modal_total.results)]
->>> expl[-1] = 0.1
->>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = expl,
+>>> plotter('Pie chart of common modals in the NYT', each_modal_total.results, explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
 # stacked area chart
 >>> plotter('An ocean of modals', rel_modals.results.drop('1963'), kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
-...    legend_pos = 'outside lower right', y_label = 'Percentage of all modals')
+...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
 
 # bar chart, transposing and reversing the data
 >>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
@@ -481,7 +485,7 @@ Output:
 <p align="center">
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png"  height="400" width="400"/>
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png"  height="230" width="550"/>
-<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals.png"  height="450" width="550"/>
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png"  height="450" width="550"/>
 </p>
 
 ## More information
