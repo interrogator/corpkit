@@ -108,6 +108,7 @@ def interrogator(path, options, query,
     import os
     import re
     import signal
+    import numpy
     import collections
     import warnings
     from collections import Counter
@@ -797,7 +798,8 @@ def interrogator(path, options, query,
         the_options = {}
         the_options['path'] = path
         the_options['options'] = options
-        the_options['tregex_options'] = translated_options
+        the_options['datatype'] = numpy.int64
+        the_options['translated_options'] = translated_options
         the_options['query'] = query 
         the_options['lemmatise'] = lemmatise
         the_options['dictionary'] = dictionary
@@ -873,8 +875,11 @@ def interrogator(path, options, query,
     # add options to named tuple
     the_time_ended = strftime("%Y-%m=%d %H:%M:%S")
     the_options = {}
+    the_options['function'] = 'interrogator'
     the_options['path'] = path
     the_options['options'] = options
+    the_options['datatype'] = datatype
+    the_options['translated_options'] = translated_options
     the_options['query'] = query 
     the_options['lemmatise'] = lemmatise
     the_options['dictionary'] = dictionary
