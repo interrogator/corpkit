@@ -244,6 +244,11 @@ def plotter(title,
                                              was_series = was_series, 
                                              num_to_plot = num_to_plot)
 
+    if 'legend' in kwargs:
+        legend = kwargs['legend']
+    else:
+        legend = True
+
     #cut data short
     plotting_a_totals_column = False
     if was_series:
@@ -260,8 +265,12 @@ def plotter(title,
 
     # make and set y label
     absolutes = True
-    if type(dataframe[list(dataframe.columns)[0]][list(dataframe.index)[0]]) == numpy.float64:
-        absolutes = False
+    if was_series:
+        if type(dataframe.iloc[0]) == numpy.float64:
+            absolutes = False
+    else:
+        if type(dataframe.iloc[0][0]) == numpy.float64:
+            absolutes = False
 
     #  use colormap if need be:
     if num_to_plot > 7:
@@ -304,10 +313,7 @@ def plotter(title,
     elif reverse_legend is False:
         rev_leg = False
 
-
     # show legend or don't, guess whether to reverse based on kind
-    if not 'legend' in locals():
-        legend = True
     if 'kind' in kwargs:
         if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
             if was_series:
@@ -522,6 +528,7 @@ def plotter(title,
             except:
                 pass
             a.set_title(titletext)
+            a.legend_.remove()
             # remove axis labels for pie plots
             if piemode:
                 a.axes.get_xaxis().set_visible(False)
