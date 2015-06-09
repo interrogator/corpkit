@@ -601,11 +601,11 @@ def editor(dataframe1,
 
     # find out datatype
     if df1_istotals:
-        datatype = type(df.iloc[0])
+        datatype = df.iloc[0].dtype
     elif just_totals:
-        datatype = type(df.iloc[0])  
+        datatype = df.iloc[0].dtype  
     else:
-        datatype = type(df.iloc[0][0])
+        datatype = df.iloc[0][0].dtype
 
     #make named_tuple
     the_operation = 'none'
@@ -646,7 +646,7 @@ def editor(dataframe1,
     if print_info:
         #if merge_entries or merge_subcorpora or span_subcorpora or just_subcorpora or \
            #just_entries or skip_entries or skip_subcorpora or printed_th or projection:
-        print '\n***Done!***\n========================\n'
+        print '***Done!***\n========================\n'
     #print df.head().T
     #print ''
 
