@@ -134,6 +134,8 @@ def interrogator(path, options, query,
                                               usa_convert, 
                                               taglemma)
 
+    the_time_started = strftime("%Y-%m=%d %H:%M:%S")
+
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
@@ -200,9 +202,10 @@ def interrogator(path, options, query,
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         if not depnum:
-            list_of_matches = [w.lower() for w in list_of_matches]
+            # remove commas for pandas csv tokeniser, which i should probably remove soon.
+            list_of_matches = [w.lower().replace(',', '') for w in list_of_matches]
         # remove punct etc.
-        if options != 'o' and options != 'u':
+        if translated_options != 'o' and translated_options != 'u':
             list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
         
         list_of_matches.sort()
@@ -238,11 +241,11 @@ def interrogator(path, options, query,
                 entry.pop()
             else:
                 word = entry
-            if options.startswith('u'):
+            if translated_options.startswith('u'):
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser when appropriate
-            if options.startswith('t') or options.startswith('w') or 'keyword' in query or 'ngram' in query:
+            if translated_options.startswith('t') or translated_options.startswith('w') or 'keyword' in query or 'ngram' in query:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
@@ -511,12 +514,7 @@ def interrogator(path, options, query,
                 line.append(the_key)
             csvdata.append(','.join(line))
         csv = '\n'.join(csvdata)
-        if not have_pandas:
-            df = csv
-        else:
-            df = read_csv(StringIO(csv))
-            pd.set_option('display.max_columns', len(subcorpus_names))
-            pd.set_option('display.max_rows', num_rows + 1)
+        df = read_csv(StringIO(csv))
         return df
 
     # a few things are off by default:
@@ -533,39 +531,39 @@ def interrogator(path, options, query,
     # parse options
     # handle hyphen at start
     if options.startswith('-'):
-        options = options[1:]
+        translated_options = options[1:]
     
     # Tregex options:
     if options.startswith('p') or options.startswith('P') or options.startswith('u') or options.startswith('U'):
         optiontext = 'Part-of-speech tags only.'
-        options = 'u'
+        translated_options = 'u'
     elif options.startswith('b') or options.startswith('B') or options.startswith('o') or options.startswith('O'):
         optiontext = 'Tags and words.'
-        options = 'o'
+        translated_options = 'o'
     elif options.startswith('t') or options.startswith('T') or options.startswith('w') or options.startswith('W'):
         optiontext = 'Words only.'
-        options = 't'
+        translated_options = 't'
     elif options.startswith('c') or options.startswith('C'):
         only_count = True
-        options = 'C'
+        translated_options = 'C'
         optiontext = 'Counts only.'
     
     # dependency options:
     elif options.startswith('n') or options.startswith('N'):
-        options = 'n'
+        translated_options = 'n'
         depnum = True
         dependency = True
         optiontext = 'Dependency index number only.'
     elif options.startswith('f') or options.startswith('F'):
-        options = 'f'
+        translated_options = 'f'
         dependency = True
         optiontext = 'Functional role only.'
     elif options.startswith('g') or options.startswith('G'):
-        options = 'g'
+        translated_options = 'g'
         dependency = True
         optiontext = 'Role and governor.'
     elif options.startswith('d') or options.startswith('D'):
-        options = 'd'
+        translated_options = 'd'
         dependency = True
         optiontext = 'Dependent and its role.'
     else:
@@ -573,9 +571,9 @@ def interrogator(path, options, query,
     
     # if query is a special query, convert it:
     if query == 'any':
-        if options == 't' or options == 'C':
+        if translated_options == 't' or translated_options == 'C':
             query = r'/.?[A-Za-z0-9].?/ !< __'
-        if options == 'u' or options == 'o':
+        if translated_options == 'u' or translated_options == 'o':
             query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
     if 'subjects' in query:
         query = r'__ >># @NP'
@@ -728,7 +726,7 @@ def interrogator(path, options, query,
     
             #if tregex, search
             else:
-                op = ['-o', '-' + options]
+                op = ['-o', '-' + translated_options]
                 result = tregex_engine(query = query, 
                                        options = op, 
                                        corpus = subcorpus,
@@ -754,13 +752,13 @@ def interrogator(path, options, query,
                 c += 1
                 with open(os.path.join(path, subcorpus_name, f), "rb") as text:
                     data = text.read()
-                    if options == 'g':
+                    if translated_options == 'g':
                         result_from_file = govrole(data)
-                    if options == 'd':
+                    if translated_options == 'd':
                         result_from_file = deprole(data)
-                    if options == 'f':
+                    if translated_options == 'f':
                         result_from_file = funct(data)
-                    if options == 'n':
+                    if translated_options == 'n':
                         result_from_file = depnummer(data)
                     if plaintext:
                         result_from_file = plaintexter(plaintext_regex, data)
@@ -794,13 +792,34 @@ def interrogator(path, options, query,
         stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
         stotals.name = 'Total' 
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
-        query_options = [path, query, options] 
-        output = outputnames(query_options, stotals)
+        the_time_ended = strftime("%Y-%m=%d %H:%M:%S")
+        # add options to named tuple
+        the_options = {}
+        the_options['path'] = path
+        the_options['options'] = options
+        the_options['tregex_options'] = translated_options
+        the_options['query'] = query 
+        the_options['lemmatise'] = lemmatise
+        the_options['dictionary'] = dictionary
+        the_options['titlefilter'] = titlefilter 
+        the_options['lemmatag'] = lemmatag
+        the_options['spelling'] = spelling
+        the_options['phrases'] = phrases
+        the_options['dep_type'] = dep_type
+        the_options['function_filter'] = function_filter
+        the_options['table_size'] = table_size
+        the_options['plaintext'] = plaintext
+        the_options['quicksave'] = quicksave
+        the_options['time_started'] = the_time_started
+        the_options['time_ended'] = the_time_ended
+
+        output = outputnames(the_options, stotals)
         if have_ipython:
             clear_output()
         if quicksave:
             from corpkit.other import save_result
             save_result(output, quicksave)
+
         return output
 
     # flatten and sort master list, in order to make a list of unique words
@@ -851,10 +870,28 @@ def interrogator(path, options, query,
         pandas_frame = pandas_frame * 10
         
     #make results into named tuple
-    query_options = [path, query, options] 
+    # add options to named tuple
+    the_time_ended = strftime("%Y-%m=%d %H:%M:%S")
+    the_options = {}
+    the_options['path'] = path
+    the_options['options'] = options
+    the_options['query'] = query 
+    the_options['lemmatise'] = lemmatise
+    the_options['dictionary'] = dictionary
+    the_options['titlefilter'] = titlefilter 
+    the_options['lemmatag'] = lemmatag
+    the_options['spelling'] = spelling
+    the_options['phrases'] = phrases
+    the_options['dep_type'] = dep_type
+    the_options['function_filter'] = function_filter
+    the_options['table_size'] = table_size
+    the_options['plaintext'] = plaintext
+    the_options['quicksave'] = quicksave
+    the_options['time_started'] = the_time_started
+    the_options['time_ended'] = the_time_ended
 
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
-    output = outputnames(query_options, pandas_frame, stotals, df)
+    output = outputnames(the_options, pandas_frame, stotals, df)
 
     time = strftime("%H:%M:%S", localtime())
     if have_ipython:
