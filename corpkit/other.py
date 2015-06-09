@@ -1,33 +1,83 @@
 def quickview(results, n = 25):
-    """view top n results of results"""
-    import corpkit
+    """view top n results of results.
+
+    Ideally, pass it interrogator() or plotter output. It will also accept DatFrames
+    or Series (i.e. .results or .totals branches."""
+
+    import corfpkit
     import pandas
+    import numpy
     # bad hack to find out type of results
-    if '.interrogation' in str(type(results)):
-        option = results.query[1]
+
+    if 'interrogation' in str(type(results)):
+        cls = results.query['function']
+
+    if cls == 'interrogator':
+        datatype = results.query['datatype']
+        if datatype is numpy.int64:
+            option = 'total'
+        else:
+            option = '%'
+        if results.query['query'] == 'keywords':
+            option = 'keywords'
+        elif results.query['query'] == 'ngrams':
+            option = 'ngrams'
+
         try:
             results_branch = results.results
             resbranch = True
         except AttributeError:
             resbranch = False
-    elif type(results) == pandas.core.frame.DataFrame:
+
+    elif cls == 'editor':
+        # currently, it's wrong if you edit keywords! oh well
+        datatype = results.query['datatype']
+        if results.query['just_totals']:
+            resbranch = False
+            if type(results.results.iloc[0]) == numpy.int64:
+                option = 'total'
+            else:
+                option = '%' 
+            results_branch = results.results
+        else:
+            if datatype is numpy.int64:
+                option = 'total'
+            else:
+                option = '%'
+            try:
+                results_branch = results.results
+                resbranch = True
+            except AttributeError:
+                resbranch = False
+
+    if type(results) == pandas.core.frame.DataFrame:
         results_branch = results
         resbranch = True
-        option = 'total' # not really used, just prevents error and prints n=
+        if type(results.iloc[0][0]) == numpy.int64:
+            option = 'total'
+        else:
+            option = '%'
+
     elif type(results) == pandas.core.series.Series:
         resbranch = False
+        if type(results.iloc[0]) == numpy.int64:
+            option = 'total'
+        else:
+            option = '%' 
+
     if resbranch:
-        for index, w in enumerate(list(results_branch)[:n]):
-            fildex = '% 3d' % index
-            if option == 'keywords':
-                print '%s: %s (k=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
-            elif option == '%':
-                print '%s: %s' % (fildex, w)
-            else:
-                print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+        the_list = list(results_branch)[:n]
     else:
-        print 'Totals:'
-        print results
+        the_list = list(results.index)[:n]
+
+    for index, w in enumerate(the_list):
+        fildex = '% 3d' % index
+        if option == 'keywords':
+            print '%s: %s (k=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+        elif option == '%' or option == 'ratio':
+            print '%s: %s' % (fildex, w)
+        else:
+            print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
 
 def concprinter(df, kind = 'string', n = 100):
     """print conc lines nicely, to string, latex or csv"""
@@ -103,13 +153,13 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     if type(unpickled) == pandas.core.frame.DataFrame or type(unpickled) == pandas.core.series.Series:
         output = unpickled
     elif len(unpickled) == 4:
-        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
+        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])        
     elif len(unpickled) == 3:
-        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2])
     elif len(unpickled) == 2:
-        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
+        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
         output = outputnames(unpickled[0], unpickled[1])
     return output
 
