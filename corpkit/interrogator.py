@@ -10,7 +10,8 @@ def interrogator(path, options, query,
                 function_filter = False,
                 table_size = 50,
                 plaintext = 'guess',
-                quicksave = False):
+                quicksave = False,
+                **kwargs):
     
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
