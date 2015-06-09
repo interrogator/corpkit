@@ -326,7 +326,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
 # sort with editor()
->>> sayers_no_prp = editor(sayers_no_prp, '%', sayers.totals, sort_by = 'increase')
+>>> sayers_no_prp = editor(sayers_no_prp.results, '%', sayers.totals, sort_by = 'increase')
 
 # make an area chart with custom y label
 >>> plotter('Sayers, increasing', sayers_no_prp.results, kind = 'area', 
