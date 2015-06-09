@@ -4,7 +4,7 @@ def plotter(title,
             x_label = None,
             y_label = None,
             style = 'ggplot',
-            figsize = (10, 4),
+            figsize = (8, 4),
             save = False,
             legend_pos = 'best',
             reverse_legend = 'guess',
@@ -478,6 +478,9 @@ def plotter(title,
         if not sbplt:
             if not piemode:
                 plt.xlabel(x_label)
+
+    # no weird scalar results:
+    plt.ticklabel_format(useOffset = False)
 
     y_l = False
     if not absolutes:
