@@ -4,7 +4,7 @@ def quickview(results, n = 25):
     Ideally, pass it interrogator() or plotter output. It will also accept DatFrames
     or Series (i.e. .results or .totals branches."""
 
-    import corfpkit
+    import corpkit
     import pandas
     import numpy
     # bad hack to find out type of results
@@ -14,7 +14,7 @@ def quickview(results, n = 25):
 
     if cls == 'interrogator':
         datatype = results.query['datatype']
-        if datatype is numpy.int64:
+        if datatype == 'float64':
             option = 'total'
         else:
             option = '%'
@@ -28,6 +28,7 @@ def quickview(results, n = 25):
             resbranch = True
         except AttributeError:
             resbranch = False
+            results_branch = results
 
     elif cls == 'editor':
         # currently, it's wrong if you edit keywords! oh well
@@ -40,7 +41,7 @@ def quickview(results, n = 25):
                 option = '%' 
             results_branch = results.results
         else:
-            if datatype is numpy.int64:
+            if datatype == 'int64':
                 option = 'total'
             else:
                 option = '%'
@@ -68,16 +69,22 @@ def quickview(results, n = 25):
     if resbranch:
         the_list = list(results_branch)[:n]
     else:
-        the_list = list(results.index)[:n]
+        the_list = list(results_branch.index)[:n]
 
     for index, w in enumerate(the_list):
         fildex = '% 3d' % index
         if option == 'keywords':
-            print '%s: %s (k=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+            print '%s: %s' %(fildex, w)
         elif option == '%' or option == 'ratio':
             print '%s: %s' % (fildex, w)
         else:
-            print '%s: %s (n=%d)' %(fildex, w, sum(i for i in list(results_branch[w])))
+            if resbranch:
+                tot = sum(i for i in list(results_branch[w]))
+            else:
+                tot = results_branch[w]
+            print '%s: %s (n=%d)' %(fildex, w, tot)
+
+
 
 def concprinter(df, kind = 'string', n = 100):
     """print conc lines nicely, to string, latex or csv"""
@@ -360,6 +367,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     import os
     import pandas
     import pandas as pd
+    from time import strftime, localtime
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
 
@@ -379,7 +387,8 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     results = pd.concat(results, axis = 1)
 
     results = editor(results, sort_by = sort_by, print_info = False)
-    
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
     if quicksave:
         from corpkit.other import save_result
         save_result(results, quicksave)
@@ -565,3 +574,23 @@ def tregex_engine(query = False,
     # remove total
     res = res[:-1]
     return res
+
+def load_all_results(data_dir = 'data/saved_interrogations'):
+    """load every saved interrogation in data_dir into a dict"""
+    import os
+    import time
+    from time import localtime, strftime
+    r = {}
+    fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
+    if len(fs) == 0:
+        raise ValueError('No results found in %s' % datadir)
+    for finding in fs:
+        try:
+            r[os.path.splitext(finding)[0]] = load_result(finding)
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
+        
+        except:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
+    return r
