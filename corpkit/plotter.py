@@ -480,7 +480,11 @@ def plotter(title,
                 plt.xlabel(x_label)
 
     # no weird scalar results:
-    plt.ticklabel_format(useOffset = False)
+    try: 
+        plt.ticklabel_format(useOffset = False)
+    except:
+        # if other kind of plot...
+        pass
 
     y_l = False
     if not absolutes:
