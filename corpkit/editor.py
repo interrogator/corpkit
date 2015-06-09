@@ -599,14 +599,10 @@ def editor(dataframe1,
         # might be wrong if using division or something...
         total = df.T.sum()
 
-    # find out datatype
-    if df1_istotals:
-        datatype = df.iloc[0].dtype
-    elif just_totals:
-        datatype = df.iloc[0].dtype  
+    if type(df) == pandas.core.frame.DataFrame:
+        datatype = df.ix[0].dtype
     else:
-        datatype = df.iloc[0][0].dtype
-
+        datatype = df.dtype
     #make named_tuple
     the_operation = 'none'
     if using_totals:
