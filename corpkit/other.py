@@ -299,7 +299,7 @@ def quicktree(sentence):
     return Image(filename='tree.png')
     os.remove("tree.png")
 
-def multiquery(corpus, query, sort_by = 'total'):
+def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     """Creates a named tuple for a list of named queries to count.
 
     Pass in something like:
@@ -307,10 +307,19 @@ def multiquery(corpus, query, sort_by = 'total'):
     [[u'NPs in corpus', r'NP'], [u'VPs in corpus', r'VP']]"""
 
     import collections
+    import os
     import pandas
     import pandas as pd
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
+
+    if quicksave:
+        savedir = 'data/saved_interrogations'
+        if not quicksave.endswith('.p'):
+            quicksave = quicksave + '.p'
+        fullpath = os.path.join(savedir, quicksave)
+        if os.path.isfile(fullpath):
+            raise ValueError("Save error: %s already exists in %s. Pick a new name." % (quicksave, savedir))
 
     results = []
     for name, pattern in query:
@@ -321,6 +330,9 @@ def multiquery(corpus, query, sort_by = 'total'):
 
     results = editor(results, sort_by = sort_by, print_info = False)
     
+    if quicksave:
+        from corpkit.other import save_result
+        save_result(results, quicksave)
     return results
 
 
@@ -481,6 +493,9 @@ def tregex_engine(query = False,
             '. Best guess: \n%s\n%s^' % (str(info[1]), str(remove_end[0]), spaces)
             raise ValueError(regex_error_output)
         return True
+
+    if '-C' in options:
+        return res[-1]
 
     # remove errors and blank lines
     res = [s for s in res if not s.startswith('PennTreeReader:') and s]
