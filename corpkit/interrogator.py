@@ -799,7 +799,7 @@ def interrogator(path, options, query,
         the_options = {}
         the_options['path'] = path
         the_options['options'] = options
-        the_options['datatype'] = 'int64'
+        the_options['datatype'] = pandas_frame.loc[0].dtype
         the_options['translated_options'] = translated_options
         the_options['query'] = query 
         the_options['lemmatise'] = lemmatise
