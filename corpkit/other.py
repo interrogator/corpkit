@@ -35,7 +35,7 @@ def quickview(results, n = 25):
         datatype = results.query['datatype']
         if results.query['just_totals']:
             resbranch = False
-            if type(results.results.iloc[0]) == numpy.int64:
+            if results.results.dtype == 'int64':
                 option = 'total'
             else:
                 option = '%' 
