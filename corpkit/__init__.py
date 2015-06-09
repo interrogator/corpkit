@@ -40,6 +40,7 @@ from other import quicktree
 from other import searchtree
 from other import datareader
 from other import tregex_engine
+from other import load_all_results
 
 from build import dictmaker
 from build import correctspelling
