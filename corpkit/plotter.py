@@ -1,3 +1,5 @@
+#interactive??
+
 
 def plotter(title,
             df,
@@ -17,6 +19,7 @@ def plotter(title,
             show_totals = False,
             transparent = False,
             output_format = 'png',
+            interactive = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -32,7 +35,7 @@ def plotter(title,
 
     import os
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt, mpld3
     from matplotlib import rc
     import pandas
     import pandas as pd
@@ -41,6 +44,16 @@ def plotter(title,
     import numpy
     from time import localtime, strftime
     from corpkit.tests import check_pytex
+    import signal
+
+
+    
+
+    def signal_handler(signal, frame):
+        """exit on ctrl+c, rather than just stop loop"""
+        import sys
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
 
     have_python_tex = check_pytex()
 
@@ -157,7 +170,10 @@ def plotter(title,
         except:
             rc('text', usetex=False)
     else:
-        rc('text', usetex=False)   
+        rc('text', usetex=False)  
+
+    if interactive:
+        using_tex = False 
 
     if show_totals is False:
         show_totals = 'none'
@@ -541,6 +557,8 @@ def plotter(title,
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
 
+
+
     if not sbplt:
         if 'kind' in kwargs:
             if kwargs['kind'].startswith('bar'):
@@ -609,3 +627,4 @@ def plotter(title,
             print '\n' + time + ": " + savename + " created."
         else:
             raise ValueError("Error making %s." % savename)
+    
