@@ -733,14 +733,12 @@ def interrogator(path, options, query,
                                        options = op, 
                                        corpus = subcorpus,
                                        on_cloud = on_cloud)
-                
                 # if just counting matches, just 
                 # add subcorpus name and count...
                 if only_count:
-                    tup = [d, int(result[0])]
+                    tup = [d, int(result)]
                     main_totals.append(tup)
                     continue
-
 
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
