@@ -83,7 +83,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Use `TeX` if you have it
 * Use log scales if you really want
 * Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
-* Save images to file
+* Save images to file, as `.pdf` or `.png`
 
 #### Other stuff
 
@@ -369,9 +369,9 @@ Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *r
 
 ```python
 # a query to find heads of nps that are subjects of risk processes
->>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < ' /(?i).?\brisk.?/) ' \
-...         r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
-...         r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
+>>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
+...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
+...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
  
 >>> quickview(noun_riskers, n = 10)
