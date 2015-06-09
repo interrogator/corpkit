@@ -20,7 +20,8 @@ def editor(dataframe1,
             remove_above_p = False,
             p = 0.05, 
             revert_year = True,
-            print_info = True
+            print_info = True,
+            **kwargs
             ):
     """Edit results of corpus interrogation"""
 
@@ -29,7 +30,7 @@ def editor(dataframe1,
     import numpy as np
     import collections
     from pandas import DataFrame, Series
-    # from corpkit.progressbar import ProgressBar
+    from time import localtime, strftime
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -40,6 +41,8 @@ def editor(dataframe1,
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    the_time_started = strftime("%Y-%m=%d %H:%M:%S")
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
@@ -596,23 +599,48 @@ def editor(dataframe1,
         # might be wrong if using division or something...
         total = df.T.sum()
 
-    #make named_tuple
-    the_option = 'totals'
-    if using_totals:
-        the_option = operation
-        query_bit = ['coming soon', the_option, 'coming soon']
+    # find out datatype
+    if df1_istotals:
+        datatype = type(df.iloc[0])
+    elif just_totals:
+        datatype = type(df.iloc[0])  
     else:
-        try:
-            if type(df[list(df.columns)[0]][list(df.index)[0]]) == numpy.float64:
-                the_option = '%'
-            else:
-                the_option = 'totals' # fake name, interpreted as abs freq result
-        except:
-            pass
-    query_bit = ['coming soon', the_option, 'coming soon']
+        datatype = type(df.iloc[0][0])
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    output = outputnames(query_bit, df, total)
+    #make named_tuple
+    the_operation = 'none'
+    if using_totals:
+        the_operation = operation
+
+    the_options = {}
+    the_options['time_started'] = the_time_started
+    the_options['function'] = 'editor'
+    the_options['dataframe1'] = dataframe1
+    the_options['operation'] = the_operation
+    the_options['dataframe2'] = dataframe2
+    the_options['datatype'] = datatype
+    the_options['sort_by'] = sort_by
+    the_options['keep_stats'] = keep_stats
+    the_options['just_totals'] = just_totals
+    the_options['threshold'] = threshold
+    the_options['just_entries'] = just_entries
+    the_options['just_entries'] = just_entries
+    the_options['skip_entries'] = skip_entries
+    the_options['merge_entries'] = merge_entries
+    the_options['newname'] = newname
+    the_options['just_subcorpora'] = just_subcorpora
+    the_options['skip_subcorpora'] = skip_subcorpora
+    the_options['span_subcorpora'] = span_subcorpora
+    the_options['merge_subcorpora'] = merge_subcorpora
+    the_options['new_subcorpus_name'] = new_subcorpus_name
+    the_options['projection'] = projection
+    the_options['remove_above_p'] = remove_above_p
+    the_options['p'] = p
+    the_options['revert_year'] = revert_year
+    the_options['print_info'] = print_info
+
+    outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
+    output = outputnames(the_options, df, total)
 
     #print '\nResult (sample)\n'
     if print_info:
