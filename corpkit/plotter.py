@@ -143,7 +143,7 @@ def plotter(title,
     if colours is True:
         colours = 'Paired'
 
-    styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib']
+    styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight']
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
 
@@ -266,10 +266,10 @@ def plotter(title,
     # make and set y label
     absolutes = True
     if was_series:
-        if type(dataframe.iloc[0]) == numpy.float64:
+        if dataframe.iloc[0].dtype == 'float64':
             absolutes = False
     else:
-        if type(dataframe.iloc[0][0]) == numpy.float64:
+        if dataframe.iloc[0][0].dtype == 'float64':
             absolutes = False
 
     #  use colormap if need be:
@@ -306,6 +306,8 @@ def plotter(title,
                     the_range = np.linspace(0, 1, num_to_plot)
                     cmap = plt.get_cmap(colours)
                     kwargs['colors'] = [cmap(n) for n in the_range]
+                    # make a bar width ... ?
+                    kwargs['width'] = figsize[0] / float(num_to_plot)
 
     # reversing legend option
     if reverse_legend is True:
@@ -372,6 +374,8 @@ def plotter(title,
 
         # kwarg optiosn go in leg_options
         leg_options = {'framealpha': .8}
+        if 'shadow' in kwargs:
+            leg_options['shadow'] = True
         # determine legend position based on this dict
         if legend_pos:
             possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
@@ -446,7 +450,7 @@ def plotter(title,
     with plt.style.context((style)):
 
         if not sbplt:
-            dataframe.plot(figsize = figsize, **kwargs)
+            ax = dataframe.plot(figsize = figsize, **kwargs)
         else:
             ax = dataframe.plot(figsize = figsize, **kwargs)
         if legend:
@@ -459,7 +463,6 @@ def plotter(title,
         if not sbplt:
             if 'layout' not in kwargs:
                 plt.tight_layout()
-
 
     if piemode:
         if not sbplt:
@@ -534,10 +537,14 @@ def plotter(title,
                 a.axes.get_xaxis().set_visible(False)
                 a.axes.get_yaxis().set_visible(False)
                 a.axis('equal')
-
     
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
+
+    if not sbplt:
+        if 'kind' in kwargs:
+            if kwargs['kind'].startswith('bar'):
+                width = ax.containers[0][0].get_width()
     if was_series:
         the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
@@ -552,9 +559,9 @@ def plotter(title,
                         #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
-                    plt.annotate('%.2f' % score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
+                    plt.annotate('%.2f' % score, (i, score), ha = 'center', va = 'bottom')
                 else:
-                    plt.annotate(score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
+                    plt.annotate(score, (i, score), ha = 'center', va = 'bottom')
     else:
         the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
@@ -569,9 +576,9 @@ def plotter(title,
                         #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
-                    plt.annotate('%.2f' % score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))
+                    plt.annotate('%.2f' % score, (i, score), ha = 'center', va = 'bottom')
                 else:
-                    plt.annotate(score, (i - (num_to_plot / 100.0), score + (the_y_limit / 100)))        
+                    plt.annotate(score, (i, score), ha = 'center', va = 'bottom')        
 
     #if not have_python_tex:
         #plt.gcf().show()
