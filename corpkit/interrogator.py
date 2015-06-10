@@ -11,6 +11,7 @@ def interrogator(path, options, query,
                 table_size = 50,
                 plaintext = 'guess',
                 quicksave = False,
+                add_to = False,
                 **kwargs):
     
     """
@@ -799,7 +800,7 @@ def interrogator(path, options, query,
         the_options = {}
         the_options['path'] = path
         the_options['options'] = options
-        the_options['datatype'] = pandas_frame.loc[0].dtype
+        the_options['datatype'] = pandas_frame.iloc[0].dtype
         the_options['translated_options'] = translated_options
         the_options['query'] = query 
         the_options['lemmatise'] = lemmatise
@@ -823,7 +824,12 @@ def interrogator(path, options, query,
             from corpkit.other import save_result
             save_result(output, quicksave)
 
-        return output
+        if add_to:
+            d = add_to[0]
+            d[add_to[1]] = output
+            return output, d
+        else:
+            return output
 
     # flatten and sort master list, in order to make a list of unique words
     allwords = [item for sublist in allwords_list for item in sublist]
@@ -879,7 +885,7 @@ def interrogator(path, options, query,
     the_options['function'] = 'interrogator'
     the_options['path'] = path
     the_options['options'] = options
-    the_options['datatype'] = datatype
+    the_options['datatype'] = pandas_frame.iloc[0].dtype
     the_options['translated_options'] = translated_options
     the_options['query'] = query 
     the_options['lemmatise'] = lemmatise
@@ -921,5 +927,11 @@ def interrogator(path, options, query,
     if quicksave:
         from corpkit.other import save_result
         save_result(output, quicksave)
-    return output
+
+    if add_to:
+        d = add_to[0]
+        d[add_to[1]] = output
+        return output, d
+    else:
+        return output
     
