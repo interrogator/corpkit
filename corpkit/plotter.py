@@ -757,17 +757,19 @@ def plotter(title,
 
         for i, l in enumerate(lines):
             y_vals = l.get_ydata()
+            x_vals = l.get_xdata()
+            x_vals = [str(x) for x in x_vals]
             if absolutes:
-                ls = ['%s: %d' % (labels[i], y_val) for y_val in y_vals]
+                ls = ['%s (%s: %d)' % (labels[i], x_val, y_val) for x_val, y_val in zip(x_vals, y_vals)]
             else:
-                ls = ['%s: %.2f%%' % (labels[i], y_val) for y_val in y_vals]
+                ls = ['%s (%s: %.2f%%)' % (labels[i], x_val, y_val) for x_val, y_val in zip(x_vals, y_vals)]
             if '2' in interactive:
-                if 'kind' in kwargs:
-                    if kwargs['kind'] == 'area':
-                        tooltips = mpld3.plugins.LineLabelTooltip(ax.get_lines()[i], labels[i])
-                        mpld3.plugins.connect(plt.gcf(), tooltips)
-                    else:
-                        tooltips = mpld3.plugins.PointLabelTooltip(l, labels = ls)
+                if 'kind' in kwargs and kwargs['kind'] == 'area':
+                    
+                    tooltips = mpld3.plugins.LineLabelTooltip(ax.get_lines()[i], labels[i])
+                    mpld3.plugins.connect(plt.gcf(), tooltips)
+                else:
+                    tooltips = mpld3.plugins.PointLabelTooltip(l, labels = ls)
                 mpld3.plugins.connect(plt.gcf(), tooltips)
         
             # works:
@@ -937,5 +939,8 @@ def plotter(title,
     if interactive:
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(left=.1)
-        ax.legend_.remove()
+        try:
+            ax.legend_.remove()
+        except:
+            pass
         return mpld3.display()
