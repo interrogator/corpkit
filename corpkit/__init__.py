@@ -24,6 +24,7 @@ from plotter import plotter
 from conc import conc
 from keys import keywords
 from colls import collocates
+from plugins import HighlightLines, InteractiveLegendPlugin
 
 from other import quickview
 from other import concprinter
