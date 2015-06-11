@@ -563,6 +563,7 @@ def tregex_engine(query = False,
     # remove stderr at start
     std_last_index = res.index(next(s for s in res if re.search(regex, s)))
     res = res[std_last_index + 1:]
+    # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
         if res[0].startswith('1:Next tree read:'):
             return True
