@@ -1,4 +1,24 @@
-__all__ = ["interrogator", "editor", "plotter", "conc", "keys", "colls", "other", "build"]
+__all__ = ["interrogator",
+           "editor",
+           "plotter",
+           "conc",
+           "keywords",
+           "collocates",
+           "quickview",
+           "concprinter",
+           "save_result",
+           "load_result",
+           "report_display",
+           "ipyconverter",
+           "conv",
+           "pytoipy",
+           "new_project",
+           "multiquery",
+           "interroplot",
+           "quicktree",
+           "searchtree",
+           "tregex_engine",
+           "load_all_results"]
 
 import os
 import sys
