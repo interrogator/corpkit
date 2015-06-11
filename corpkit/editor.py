@@ -363,12 +363,11 @@ def editor(dataframe1,
             elif sort_by == 'decrease':
                 df = df[slopes.argsort()]
             
-            # untested
             if remove_above_p:
-                df = df.T.loc[:, (df.T.p < p)].T
-            
-            # list of all columns
-            move_totals = list(df.columns)
+                # the easy way to do it!
+                df = df.T
+                df = df[df['p'] <= p]
+                df = df.T
             
             # add total to end           
             #try:
@@ -382,13 +381,13 @@ def editor(dataframe1,
                 df = df.drop(statfields, axis = 0)
 
             # or, remove them from the columns list and add them to the end
-            else:
-                for stat in statfields:
-                    move_totals.remove(stat)
-                    move_totals.append(stat)
+            #else:
+                #for stat in statfields:
+                    #move_totals.remove(stat)
+                    #move_totals.append(stat)
 
             # reorder with totals and stats at end
-            df = df[move_totals]
+            #df = df[move_totals]
 
         return df
 
