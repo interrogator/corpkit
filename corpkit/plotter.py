@@ -1,6 +1,3 @@
-#interactive??
-
-
 def plotter(title,
             df,
             x_label = None,
@@ -20,6 +17,7 @@ def plotter(title,
             transparent = False,
             output_format = 'png',
             interactive = False,
+            black_and_white = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -347,6 +345,7 @@ def plotter(title,
                     # make a bar width ... ?
                     kwargs['width'] = figsize[0] / float(num_to_plot)
 
+
     # reversing legend option
     if reverse_legend is True:
         rev_leg = True
@@ -510,7 +509,23 @@ def plotter(title,
             except:
                 pass
 
-    
+
+    MARKERSIZE = figsize[0] / 2.5
+    COLORMAP = {
+            0: {'marker': None, 'dash': (None,None)},
+            1: {'marker': None, 'dash': [5,5]},
+            2: {'marker': "o", 'dash': [5,3,1,3]},
+            3: {'marker': None, 'dash': [1,3]},
+            4: {'marker': "s", 'dash': [5,2,5,2,5,10]},
+            5: {'marker': None, 'dash': [5,3,1,2,1,10]},
+            6: {'marker': 'o', 'dash': (None,None)},
+            7: {'marker': None, 'dash': [5,3,1,3]},
+            8: {'marker': "1", 'dash': [1,3]},
+            9: {'marker': "*", 'dash': [5,5]},
+            10: {'marker': "2", 'dash': [5,2,5,2,5,10]},
+            11: {'marker': "s", 'dash': (None,None)}
+            }
+
     # use styles and plot 
     with plt.style.context((style)):
 
@@ -518,6 +533,21 @@ def plotter(title,
             ax = dataframe.plot(figsize = figsize, **kwargs)
         else:
             ax = dataframe.plot(figsize = figsize, **kwargs)
+
+        if black_and_white:
+            # white background
+            plt.gca().set_axis_bgcolor('w')
+            # change everything to black and white with interesting dashes and markers
+            c = 0
+            for line in ax.get_lines():
+                line.set_color('black')
+                line.set_dashes(COLORMAP[c]['dash'])
+                line.set_marker(COLORMAP[c]['marker'])
+                line.set_markersize(MARKERSIZE)
+                c += 1
+                if c == len(COLORMAP.keys()):
+                    c = 0
+
         if legend:
             if 3 not in interactive_types:
                 if not rev_leg:
@@ -525,6 +555,10 @@ def plotter(title,
                 else:
                     handles, labels = plt.gca().get_legend_handles_labels()
                     lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+
+
+
+
         #if interactive:
             #if legend:
                 #lgd.set_title("")
