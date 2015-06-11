@@ -76,7 +76,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 #### `plotter()` 
 
 * Plot using *Pandas*/*Matplotlib*
-* Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [Risk Semantics notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
+* Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
 * Create line charts, bar charts, pie charts, etc. with the `kind` argument
 * Use `subplots = True` to produce individual charts for each result
