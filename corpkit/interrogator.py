@@ -155,15 +155,6 @@ def interrogator(path, options, query,
     have_python_tex = check_pytex()
     on_cloud = check_dit()
 
-    # check that there's nothing in the quicksave path
-    if quicksave:
-        savedir = 'data/saved_interrogations'
-        if not quicksave.endswith('.p'):
-            quicksave = quicksave + '.p'
-        fullpath = os.path.join(savedir, quicksave)
-        if os.path.isfile(fullpath):
-            raise ValueError("Save error: %s already exists in %s. Pick a new name." % (quicksave, savedir))
-
     regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
 
     def signal_handler(signal, frame):
@@ -585,10 +576,37 @@ def interrogator(path, options, query,
     if 'modals' in query:
         query = r'MD < __'
     if 'participants' in query:
-        query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP) $ VP | > VP)'
+        query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
     if 'entities' in query:
         query = r'NP <# NNP'
         titlefilter = True
+
+    # check that there's nothing in the quicksave path
+    if quicksave:
+        savedir = 'data/saved_interrogations'
+        if not quicksave.endswith('.p'):
+            quicksave = quicksave + '.p'
+        fullpath = os.path.join(savedir, quicksave)
+        if os.path.isfile(fullpath):
+            # if the file exists, check if the query is pretty much the same
+            from corpkit import load_result
+            loaded = load_result(quicksave)
+            if loaded.query['query'] == query and \
+            loaded.query['path'] == path and \
+            loaded.query['translated_options'] == translated_options and \
+            loaded.query['lemmatise'] == lemmatise and \
+            loaded.query['titlefilter'] == titlefilter and \
+            loaded.query['spelling'] == spelling and \
+            loaded.query['dep_type'] == dep_type and \
+            loaded.query['function'] == 'interrogator' and \
+            loaded.query['function_filter'] == function_filter:
+                time = strftime("%H:%M:%S", localtime())
+                print ('%s: Duplicate interrogation found in %s.\n' \
+                       '          Returning %s instead.\n' \
+                       '          Use a new quicksave name if you want to run this query.'% (time, savedir, fullpath))
+                return loaded
+            else:
+                raise ValueError("Save error: non-identifical %s already exists in %s. Pick a new name." % (quicksave, savedir))
 
     # titlefiltering only works with phrases, so turn it on
     if titlefilter:
@@ -658,7 +676,8 @@ def interrogator(path, options, query,
     if len(sorted_dirs) == 1:
         subcorpus = path
     else:
-        subcorpus = os.path.join(path,sorted_dirs[0])
+        # set to last subcorpus, just to make 'guess' quicker in my case
+        subcorpus = os.path.join(path,sorted_dirs[-1])
     if plaintext == 'guess':
         if not tregex_engine(corpus = subcorpus, check_for_trees = True):
             plaintext = True
@@ -713,16 +732,15 @@ def interrogator(path, options, query,
                 from corpkit import keywords
                 keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
                                         printstatus = False, clear = False)
-                result = []
-    
-                # this remains a total hack, and sacrifices a little 
-                # bit of accuracy when doing the division. rewrite, one day.
+                
+                unicode_keys = []
                 if keywording:
-                    for index, word, score in keys:
-                        divided_score = score / 10.0
-                        for _ in range(int(divided_score)):
-                            result.append(word)
+                    for index, w, score in keys:
+                        word = unicode(w, 'utf-8', errors = 'ignore')
+                        unicode_keys.append([index, word, score])
+                    result = unicode_keys
                 elif n_gramming:
+                    result = []
                     for index, ngram, score in ngrams:
                         for _ in range(int(score)):
                             result.append(ngram)
@@ -769,7 +787,8 @@ def interrogator(path, options, query,
                     for entry in result_from_file:
                         result.append(entry)
 
-        result.sort()
+        if not keywording:
+            result.sort()
 
         # add subcorpus name and total count to totals
         # prefer int subcorpus names...
@@ -778,11 +797,21 @@ def interrogator(path, options, query,
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        processed_result = processwords(result)
+        if not keywording:
+            processed_result = processwords(result)
+            allwords_list.append(processed_result)
+        else:
+            allwords_list.append([w for index, w, score in result])
+            # add results master list and to results list
+        
+        if keywording:
+            little_dict = {}
+            for index, word, score in result:
+                little_dict[word] = score
+            dicts.append(Counter(little_dict))
+        else:
+            dicts.append(Counter(processed_result))
 
-        # add results master list and to results list
-        allwords_list.append(processed_result)
-        dicts.append(Counter(processed_result))
 
     # 100%
     p.animate(len(sorted_dirs))
@@ -800,7 +829,7 @@ def interrogator(path, options, query,
         the_options = {}
         the_options['path'] = path
         the_options['options'] = options
-        the_options['datatype'] = pandas_frame.iloc[0].dtype
+        the_options['datatype'] = stotals.dtype
         the_options['translated_options'] = translated_options
         the_options['query'] = query 
         the_options['lemmatise'] = lemmatise
@@ -842,7 +871,6 @@ def interrogator(path, options, query,
     #calculate results
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
-
     # turn master dict into dataframe, sorted
     pandas_frame = DataFrame(the_big_dict, index = subcorpus_names)
     #pandas_frame[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
@@ -875,8 +903,6 @@ def interrogator(path, options, query,
     # reconstitute keyword scores, because we earlier
     # this means that keyness scores are a bit off. not good.
     # still needs to be done
-    if keywording:
-        pandas_frame = pandas_frame * 10
         
     #make results into named tuple
     # add options to named tuple
@@ -902,15 +928,19 @@ def interrogator(path, options, query,
     the_options['time_started'] = the_time_started
     the_options['time_ended'] = the_time_ended
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
-    output = outputnames(the_options, pandas_frame, stotals, df)
+    if not keywording:
+        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
+        output = outputnames(the_options, pandas_frame, stotals, df)
+    else:
+        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'table'])
+        output = outputnames(the_options, pandas_frame, df)
 
-    time = strftime("%H:%M:%S", localtime())
     if have_ipython:
         clear_output()
     
     # warnings if nothing generated
     # should these 'break'
+    time = strftime("%H:%M:%S", localtime())
     if not only_count:
         if not keywording:
             print '%s: Finished! %d unique results, %d total.' % (time, len(pandas_frame.columns), stotals.sum())
