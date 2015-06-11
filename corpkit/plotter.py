@@ -55,7 +55,7 @@ def plotter(title,
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
 
-    have_python_tex = check_pytex()
+    running_python_tex = check_pytex()
 
     def get_savename(imagefolder, save = False, title = False, ext = 'png'):
         """Come up with the savename for the image."""
@@ -534,6 +534,10 @@ def plotter(title,
         else:
             ax = dataframe.plot(figsize = figsize, **kwargs)
 
+        if transparent:
+            plt.gcf().patch.set_facecolor('white')
+            plt.gcf().patch.set_alpha(0)
+
         if black_and_white:
             # white background
             plt.gca().set_axis_bgcolor('w')
@@ -731,16 +735,21 @@ def plotter(title,
                 else:
                     plt.annotate(score, (i, score), ha = 'center', va = 'bottom')        
 
-    #if not have_python_tex:
+    #if not running_python_tex:
         #plt.gcf().show()
 
     plt.subplots_adjust(left=0.1)
+    plt.subplots_adjust(bottom=0.18)
     #if 'layout' not in kwargs:
         #plt.tight_layout()
 
+
+
+
+
     if save:
         import os
-        if have_python_tex:
+        if running_python_tex:
             imagefolder = '../images'
         else:
             imagefolder = 'images'
@@ -752,16 +761,16 @@ def plotter(title,
 
         # save image and get on with our lives
         if legend_pos.startswith('o'):
-            plt.gcf().savefig(savename, dpi=150, transparent=transparent, bbox_extra_artists=(lgd,), bbox_inches='tight', format = output_format)
+            plt.gcf().savefig(savename, dpi=150, bbox_extra_artists=(lgd,), bbox_inches='tight', format = output_format)
         else:
-            plt.gcf().savefig(savename, dpi=150, transparent=transparent, format = output_format)
+            plt.gcf().savefig(savename, dpi=150, format = output_format)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print '\n' + time + ": " + savename + " created."
         else:
             raise ValueError("Error making %s." % savename)
 
-    if not interactive:
+    if not interactive and not running_python_tex:
         plt.show()
     
     if interactive:
