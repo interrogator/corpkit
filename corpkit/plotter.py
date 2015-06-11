@@ -49,240 +49,7 @@ def plotter(title,
     if interactive:
         import collections
         from mpld3 import plugins, utils
-
-        class HighlightLines(plugins.PluginBase):
-            """A plugin to highlight lines on hover"""
-
-            JAVASCRIPT = """
-            mpld3.register_plugin("linehighlight", LineHighlightPlugin);
-            LineHighlightPlugin.prototype = Object.create(mpld3.Plugin.prototype);
-            LineHighlightPlugin.prototype.constructor = LineHighlightPlugin;
-            LineHighlightPlugin.prototype.requiredProps = ["line_ids"];
-            LineHighlightPlugin.prototype.defaultProps = {alpha_bg:0.0, alpha_fg:1.0}
-            function LineHighlightPlugin(fig, props){
-                mpld3.Plugin.call(this, fig, props);
-            };
-
-            LineHighlightPlugin.prototype.draw = function(){
-              for(var i=0; i<this.props.line_ids.length; i++){
-                 var obj = mpld3.get_element(this.props.line_ids[i], this.fig),
-                     alpha_fg = this.props.alpha_fg;
-                     alpha_bg = this.props.alpha_bg;
-                 obj.elements()
-                     .on("mouseover.highlight", function(d, i){
-                                    d3.select(this).transition().duration(50)
-                                      .style("stroke-opacity", alpha_fg); })
-                     .on("mouseout.highlight", function(d, i){
-                                    d3.select(this).transition().duration(200)
-                                      .style("stroke-opacity", alpha_bg); });
-              }
-            };
-            """
-
-            def __init__(self, lines):
-                self.lines = lines
-                self.dict_ = {"type": "linehighlight",
-                              "line_ids": [utils.get_id(line) for line in lines],
-                              "alpha_bg": lines[0].get_alpha(),
-                              "alpha_fg": 1.0}
-
-
-        class InteractiveLegendPlugin(plugins.PluginBase):
-            """A plugin for an interactive legends. 
-            
-            Inspired by http://bl.ocks.org/simzou/6439398
-            
-            Parameters
-            ----------
-            plot_elements : iterable of matplotliblib elements
-                the elements to associate with a given legend items
-            labels : iterable of strings
-                The labels for each legend element
-            css : str, optional
-                css to be included, for styling if desired
-            ax :  matplotlib axes instance, optional
-                the ax to which the legend belongs. Default is the first
-                axes
-            alpha_sel : float, optional
-                the alpha value to apply to the plot_element(s) associated 
-                with the legend item when the legend item is selected. 
-                Default is 1.0
-            alpha_unsel : float, optional
-                the alpha value to apply to the plot_element(s) associated 
-                with the legend item when the legend item is unselected. 
-                Default is 0.2
-                
-            Examples
-            --------
-            
-            """
-            
-            JAVASCRIPT = """
-            mpld3.register_plugin("interactive_legend", InteractiveLegend);
-            InteractiveLegend.prototype = Object.create(mpld3.Plugin.prototype);
-            InteractiveLegend.prototype.constructor = InteractiveLegend;
-            InteractiveLegend.prototype.requiredProps = ["element_ids", "labels"];
-            InteractiveLegend.prototype.defaultProps = {"ax":null, 
-                                                        "alpha_sel":1.0,
-                                                        "alpha_unsel":0}
-            function InteractiveLegend(fig, props){
-                mpld3.Plugin.call(this, fig, props);
-            };
-
-            InteractiveLegend.prototype.draw = function(){
-                console.log(this)
-                var alpha_sel = this.props.alpha_sel
-                var alpha_unsel = this.props.alpha_unsel
-            
-                var legendItems = new Array();
-                for(var i=0; i<this.props.labels.length; i++){
-                    var obj = {}
-                    obj.label = this.props.labels[i]
-                    
-                    var element_id = this.props.element_ids[i]
-                    mpld3_elements = []
-                    for(var j=0; j<element_id.length; j++){
-                        var mpld3_element = mpld3.get_element(element_id[j], this.fig)
-                        mpld3_elements.push(mpld3_element)
-                    }
-                    
-                    obj.mpld3_elements = mpld3_elements
-                    obj.visible = false; // must be setable from python side
-                    legendItems.push(obj);
-                }
-                console.log(legendItems)
-                
-                // determine the axes with which this legend is associated
-                var ax = this.props.ax
-                if(!ax){
-                    ax = this.fig.axes[0]
-                } else{
-                    ax = mpld3.get_element(ax, this.fig);
-                }
-                
-                // add a legend group to the canvas of the figure
-                var legend = this.fig.canvas.append("svg:g")
-                                       .attr("class", "legend");
-                
-                // add the rectangles
-                legend.selectAll("rect")
-                        .data(legendItems)
-                     .enter().append("rect")
-                        .attr("height",10)
-                        .attr("width", 25)
-                        .attr("x",ax.width+10+ax.position[0])
-                        .attr("y",function(d,i) {
-                                    return ax.position[1]+ i * 25 - 10;})
-                        .attr("stroke", get_color)
-                        .attr("class", "legend-box")
-                        .style("fill", function(d, i) {
-                                    return d.visible ? get_color(d) : "white";}) 
-                        .on("click", click)
-                
-                // add the labels
-                legend.selectAll("text")
-                        .data(legendItems)
-                    .enter().append("text")
-                      .attr("x", function (d) {
-                                    return ax.width+10+ax.position[0] + 40})
-                      .attr("y", function(d,i) { 
-                                    return ax.position[1]+ i * 25})
-                      .text(function(d) { return d.label })
-                
-                // specify the action on click
-                function click(d,i){
-                    d.visible = !d.visible;
-                    d3.select(this)
-                      .style("fill",function(d, i) {
-                        return d.visible ? get_color(d) : "white";
-                      })
-                      
-                    for(var i=0; i<d.mpld3_elements.length; i++){
-                    
-                        var type = d.mpld3_elements[i].constructor.name
-                        if(type =="mpld3_Line"){
-                            d3.select(d.mpld3_elements[i].path[0][0])
-                                .style("stroke-opacity", 
-                                        d.visible ? alpha_sel : alpha_unsel);
-                        } else if(type=="mpld3_PathCollection"){
-                            d3.selectAll(d.mpld3_elements[i].pathsobj[0])
-                                .style("stroke-opacity", 
-                                        d.visible ? alpha_sel : alpha_unsel)
-                                .style("fill-opacity", 
-                                        d.visible ? alpha_sel : alpha_unsel);
-                        } else{
-                            console.log(type + " not yet supported")
-                        }
-                    }
-                };
-                
-                // helper function for determining the color of the rectangles
-                function get_color(d){
-                    var type = d.mpld3_elements[0].constructor.name
-                    var color = "black";
-                    if(type =="mpld3_Line"){
-                        color = d.mpld3_elements[0].props.edgecolor;
-                    } else if(type=="mpld3_PathCollection"){
-                        color = d.mpld3_elements[0].props.facecolors[0];
-                    } else{
-                        console.log(type + " not yet supported")
-                    }
-                    return color
-                };
-            };
-            """
-
-            css_ = """
-            .legend-box {
-              cursor: pointer;  
-            }
-            """
-            
-            def __init__(self, plot_elements, labels, ax=None,
-                         alpha_sel=1,alpha_unsel=0.2):
-                
-                self.ax = ax
-                
-                if ax:
-                    ax = utils.get_id(ax)
-                
-                mpld3_element_ids = self._determine_mpld3ids(plot_elements)
-                self.mpld3_element_ids = mpld3_element_ids
-                
-                self.dict_ = {"type": "interactive_legend",
-                              "element_ids": mpld3_element_ids,
-                              "labels":labels,
-                              "ax":ax,
-                              "alpha_sel":alpha_sel,
-                              "alpha_unsel":alpha_unsel}
-            
-            def _determine_mpld3ids(self, plot_elements):
-                """
-                Helper function to get the mpld3_id for each
-                of the specified elements.
-                
-                This is a convenience function. You can
-                now do:
-                
-                lines = ax.plot(x,y)
-                plugins.connect(fig, HighlightLines(lines, labels))
-                
-                rather than first having to wrap each entry in
-                lines in a seperate list.
-                
-                """
-
-
-                mpld3_element_ids = []
-            
-                for entry in plot_elements:
-                    if isinstance(entry, collections.Iterable):
-                        mpld3_element_ids.append([utils.get_id(element) for element in entry])
-                    else:   
-                        mpld3_element_ids.append([utils.get_id(entry)])
-
-                return mpld3_element_ids
-
+        from corpkit.plugins import InteractiveLegendPlugin, HighlightLines
 
     def signal_handler(signal, frame):
         """exit on ctrl+c, rather than just stop loop"""
@@ -412,6 +179,26 @@ def plotter(title,
 
     if show_totals is False:
         show_totals = 'none'
+
+    # find out what kind of plot we're making, and enable
+    # or disable interactive values if need be
+    if 'kind' not in kwargs:
+        kwargs['kind'] = 'line'
+
+    if interactive:
+        if kwargs['kind'].startswith('bar'):
+            interactive_types = [3]
+        elif kwargs['kind'] == 'area':
+            interactive_types = [2, 3]
+        elif kwargs['kind'] == 'line':
+            interactive_types = [2, 3]
+        elif kwargs['kind'] == 'pie':
+            interactive_types = None
+            warnings.warn('Interactive plotting not yet available for pie plots.')
+        else:
+            interactive_types = [None]
+    if interactive is False:
+        interactive_types = [None]
 
     # find out if pie mode, add autopct format
     piemode = False
@@ -605,13 +392,18 @@ def plotter(title,
         if len(max(xvals, key=len)) > 6:
             kwargs['rot'] = 45
 
-    # no title for subplots because ugly
+    # no title for subplots because ugly,
     if sbplt:
         if 'title' in kwargs:
             del kwargs['title'] 
     else:
         kwargs['title'] = title
         
+    # no interactive subplots yet:
+    if sbplt and interactive:
+        import warnings
+        interactive = False
+        warnings.warn('No interactive subplots yet, sorry.')
     # not using pandas for labels or legend anymore.
     #kwargs['labels'] = None
     #kwargs['legend'] = False
@@ -690,10 +482,6 @@ def plotter(title,
                 else:
                     leg_options['labels'] = list(dataframe.index)   
 
-    linemode = True
-    if 'kind' in kwargs:
-        if kwargs['kind'] != 'line':
-            linemode = False       
     
     #areamode = False
     #if 'kind' in kwargs:
@@ -709,8 +497,8 @@ def plotter(title,
 
     # line highlighting option for interactive!
     if interactive:
-        if '2' in interactive:
-            if linemode:
+        if 2 in interactive_types:
+            if kwargs['kind'] == 'line':
                 kwargs['marker'] = ','
         if not piemode:
             kwargs['alpha'] = 0.1
@@ -727,11 +515,11 @@ def plotter(title,
     with plt.style.context((style)):
 
         if not sbplt:
-            dataframe.plot(figsize = figsize, **kwargs)
+            ax = dataframe.plot(figsize = figsize, **kwargs)
         else:
             ax = dataframe.plot(figsize = figsize, **kwargs)
         if legend:
-            if '3' not in interactive:
+            if 3 not in interactive_types:
                 if not rev_leg:
                     lgd = plt.legend(**leg_options)
                 else:
@@ -745,14 +533,17 @@ def plotter(title,
                 #plt.tight_layout()
 
     if interactive:
+        # 1 = highlight lines
+        # 2 = line labels
+        # 3 = legend switches
         ax = plt.gca()
         # fails for piemode
         lines = ax.lines
         handles, labels = plt.gca().get_legend_handles_labels()
-        if '1' in interactive:
+        if 1 in interactive_types:
             plugins.connect(plt.gcf(), HighlightLines(lines))
 
-        if '3' in interactive:
+        if 3 in interactive_types:
             plugins.connect(plt.gcf(), InteractiveLegendPlugin(lines, labels, alpha_unsel=0.0))
 
         for i, l in enumerate(lines):
@@ -763,14 +554,14 @@ def plotter(title,
                 ls = ['%s (%s: %d)' % (labels[i], x_val, y_val) for x_val, y_val in zip(x_vals, y_vals)]
             else:
                 ls = ['%s (%s: %.2f%%)' % (labels[i], x_val, y_val) for x_val, y_val in zip(x_vals, y_vals)]
-            if '2' in interactive:
-                if 'kind' in kwargs and kwargs['kind'] == 'area':
-                    
-                    tooltips = mpld3.plugins.LineLabelTooltip(ax.get_lines()[i], labels[i])
-                    mpld3.plugins.connect(plt.gcf(), tooltips)
-                else:
-                    tooltips = mpld3.plugins.PointLabelTooltip(l, labels = ls)
-                mpld3.plugins.connect(plt.gcf(), tooltips)
+            if 2 in interactive_types:
+                #if 'kind' in kwargs and kwargs['kind'] == 'area':
+                tooltip_line = mpld3.plugins.LineLabelTooltip(lines[i], labels[i])
+                mpld3.plugins.connect(plt.gcf(), tooltip_line)
+                #else:
+                if kwargs['kind'] == 'line':
+                    tooltip_point = mpld3.plugins.PointLabelTooltip(l, labels = ls)
+                    mpld3.plugins.connect(plt.gcf(), tooltip_point)
         
             # works:
             #plugins.connect(plt.gcf(), plugins.LineLabelTooltip(l, labels[i]))
@@ -935,6 +726,9 @@ def plotter(title,
             print '\n' + time + ": " + savename + " created."
         else:
             raise ValueError("Error making %s." % savename)
+
+    if not interactive:
+        plt.show()
     
     if interactive:
         plt.subplots_adjust(right=.8)
