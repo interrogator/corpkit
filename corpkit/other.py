@@ -146,7 +146,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
-    print '\n %s: Data saved: %s\n' % (time, fullpath)
+    print ' %s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
 def load_result(savename, loaddir = 'data/saved_interrogations'):

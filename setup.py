@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='corpkit',
-      version='0.34',
+      version='0.36',
       description='A toolkit for working with parsed corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
@@ -17,6 +17,7 @@ setup(name='corpkit',
                         "matplotlib >= 1.4.3",
                         "nltk >= 3.0.0",
                         "pandas >= 0.16.1",
+                        "mpld3 >= 0.2",
                        ],
       #extras_require = {
       #                  'dependencies':  ["ReportLab>=1.2", "RXP"],
