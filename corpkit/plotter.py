@@ -338,12 +338,13 @@ def plotter(title,
         if colours:
             if kwargs['kind'].startswith('bar'):
                 if len(list(dataframe.columns)) == 1:
-                    import numpy as np
-                    the_range = np.linspace(0, 1, num_to_plot)
-                    cmap = plt.get_cmap(colours)
-                    kwargs['colors'] = [cmap(n) for n in the_range]
+                    if not black_and_white:
+                        import numpy as np
+                        the_range = np.linspace(0, 1, num_to_plot)
+                        cmap = plt.get_cmap(colours)
+                        kwargs['colors'] = [cmap(n) for n in the_range]
                     # make a bar width ... ?
-                    kwargs['width'] = figsize[0] / float(num_to_plot)
+                    #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
 
     # reversing legend option
@@ -510,11 +511,11 @@ def plotter(title,
                 pass
 
 
-    MARKERSIZE = figsize[0] / 2.5
+    MARKERSIZE = 4
     COLORMAP = {
             0: {'marker': None, 'dash': (None,None)},
             1: {'marker': None, 'dash': [5,5]},
-            2: {'marker': "o", 'dash': [5,3,1,3]},
+            2: {'marker': "o", 'dash': (None,None)},
             3: {'marker': None, 'dash': [1,3]},
             4: {'marker': "s", 'dash': [5,2,5,2,5,10]},
             5: {'marker': None, 'dash': [5,3,1,2,1,10]},
@@ -526,6 +527,35 @@ def plotter(title,
             11: {'marker': "s", 'dash': (None,None)}
             }
 
+    HATCHES = {
+            0:  {'color': '#dfdfdf', 'hatch':"/"},
+            1:  {'color': '#6f6f6f', 'hatch':"\\"},
+            2:  {'color': 'b', 'hatch':"|"},
+            3:  {'color': '#dfdfdf', 'hatch':"-"},
+            4:  {'color': '#6f6f6f', 'hatch':"+"},
+            5:  {'color': 'b', 'hatch':"x"}
+            }
+
+    if black_and_white:
+        if kwargs['kind'] == 'line':
+            kwargs['linewidth'] = 1
+
+        def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+            import matplotlib.colors as colors
+            import numpy as np
+            new_cmap = colors.LinearSegmentedColormap.from_list(
+            'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+            cmap(np.linspace(minval, maxval, n)))
+            return new_cmap
+
+        cmap = plt.get_cmap('Greys')
+        new_cmap = truncate_colormap(cmap, 0.25, 0.95)
+        if kwargs['kind'] == 'bar':
+            # darker if just one entry
+            if len(dataframe.columns) == 1:
+                new_cmap = truncate_colormap(cmap, 0.70, 0.90)
+        kwargs['colormap'] = new_cmap
+
     # use styles and plot 
     with plt.style.context((style)):
 
@@ -534,23 +564,32 @@ def plotter(title,
         else:
             ax = dataframe.plot(figsize = figsize, **kwargs)
 
+        if 'rot' in kwargs:
+            if kwargs['rot'] != 0 and kwargs['rot'] != 90:
+                labels = [item.get_text() for item in ax.get_xticklabels()]
+                ax.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
+
         if transparent:
             plt.gcf().patch.set_facecolor('white')
             plt.gcf().patch.set_alpha(0)
 
         if black_and_white:
-            # white background
+            #plt.grid()
             plt.gca().set_axis_bgcolor('w')
-            # change everything to black and white with interesting dashes and markers
-            c = 0
-            for line in ax.get_lines():
-                line.set_color('black')
-                line.set_dashes(COLORMAP[c]['dash'])
-                line.set_marker(COLORMAP[c]['marker'])
-                line.set_markersize(MARKERSIZE)
-                c += 1
-                if c == len(COLORMAP.keys()):
-                    c = 0
+            if kwargs['kind'] == 'line':
+                # white background
+
+                # change everything to black and white with interesting dashes and markers
+                c = 0
+                for line in ax.get_lines():
+                    line.set_color('black')
+                    #line.set_width(1)
+                    line.set_dashes(COLORMAP[c]['dash'])
+                    line.set_marker(COLORMAP[c]['marker'])
+                    line.set_markersize(MARKERSIZE)
+                    c += 1
+                    if c == len(COLORMAP.keys()):
+                        c = 0
 
         if legend:
             if 3 not in interactive_types:
@@ -559,6 +598,8 @@ def plotter(title,
                 else:
                     handles, labels = plt.gca().get_legend_handles_labels()
                     lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+            #if black_and_white:
+                #lgd.set_facecolor('w')
 
 
 
@@ -694,15 +735,17 @@ def plotter(title,
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
 
-
-
     if not sbplt:
         if 'kind' in kwargs:
             if kwargs['kind'].startswith('bar'):
                 width = ax.containers[0][0].get_width()
+    
+
     if was_series:
         the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
+            # make plot a bit higher if putting these totals on it
+            plt.ylim([0,the_y_limit * 1.05])
             for i, label in enumerate(list(dataframe.index)):
                 if len(dataframe.ix[label]) == 1:
                     score = dataframe.ix[label][0]
@@ -745,8 +788,6 @@ def plotter(title,
 
 
 
-
-
     if save:
         import os
         if running_python_tex:
@@ -773,6 +814,7 @@ def plotter(title,
     if not interactive and not running_python_tex:
         plt.show()
     
+
     if interactive:
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(left=.1)
