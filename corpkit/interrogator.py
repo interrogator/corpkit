@@ -9,7 +9,7 @@ def interrogator(path, options, query,
                 dep_type = 'basic-dependencies',
                 function_filter = False,
                 table_size = 50,
-                plaintext = 'guess',
+                plaintext = False,
                 quicksave = False,
                 add_to = False,
                 **kwargs):
@@ -19,10 +19,10 @@ def interrogator(path, options, query,
     keywords/ngrams
 
     Output: a named tuple, with 'branches':
-        variable_name.query = a record of what query generated th
-        variable_name.results = a list of all results
-        variable_name.totals = a list of just totals
-        variable_name.table = a Pandas (or CSV if Pandas not found) table
+        variable_name.query = a record of what query generated the results
+        variable_name.results = a table of results, sorted by total freq
+        variable_name.totals = a list of totals for each subcorpus (except when keywording)
+        variable_name.table = a DataFrame showing top results in each subcorpus
         of top <table_size> results
 
     Parameters
@@ -45,7 +45,9 @@ def interrogator(path, options, query,
                 /good/ might return amod:day
             d/dep: get dependent and its role:
                 /day/ might return amod:sunny
-        for keywords/ngrams, use 't'
+        - plaintext:
+            r/regex: search plain text with query as regex
+        for keywords/ngrams, use 'words'
    
     query : str
         - a Tregex query (if using a Tregex option)
@@ -195,9 +197,10 @@ def interrogator(path, options, query,
         # dependency is already unicode because of bs4
         if not dependency:
             list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
-        if not depnum:
-            # remove commas for pandas csv tokeniser, which i should probably remove soon.
-            list_of_matches = [w.lower().replace(',', '') for w in list_of_matches]
+        
+        # remove commas for pandas csv tokeniser, which i should probably remove soon.
+        list_of_matches = [w.lower().replace(',', '') for w in list_of_matches]
+        
         # remove punct etc.
         if translated_options != 'o' and translated_options != 'u':
             list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
@@ -441,15 +444,18 @@ def interrogator(path, options, query,
 
     def depnummer(xmldata):
         """print dependency number"""
-        just_good_deps = SoupStrainer('dependencies', type=dep_type)
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
+        soup = BeautifulSoup(xmldata)
         result = []
-        for dep in soup.find_all('dep'):
-            for dependent in dep.find_all('dependent', limit = 1):
-                word = dependent.get_text()
-                if re.match(regex, word):
+        for sent in soup.find_all('sentence'):
+            right_deps = sent.find("dependencies", {"type":dep_type})
+            for index, dep in enumerate(right_deps.find_all('dep')):
+                for dependent in dep.find_all('dependent', limit = 1):
+                    word = dependent.get_text()
+                    if re.match(regex, word):
+                        result.append(index)
+
                     # get just the number
-                    result.append(int(dependent.attrs.get('idx')))
+                    #result.append(int(dependent.attrs.get('idx')))
         
         # attempt to stop memory problems. 
         # not sure if this helps, though:
@@ -461,38 +467,7 @@ def interrogator(path, options, query,
 
     def depnum_reorder(results_list, output = 'results'):
         """reorder depnum results and/or generate totals list"""
-        yearlist = [[unicode(i[0])] for i in results_list[0][1:]]
-        #print yearlist
-        totallist = [u'Total']
-        counts = []
-        for entry in results_list: # for each depnum:
-            depnum = entry[0]
-            #print depnum
-            count = sum(d[1] for d in entry[1:])
-            #print count
-            totallist.append([depnum, count])
-        for year in yearlist:
-            for entry in results_list:
-                word = entry[0]
-                data = entry[1:]
-                #depnum_and_count = [word, sum([d[1] for d in data])] # sum for each depnum
-                #totallist.append(depnum_and_count)
-                for theyear, count in data:
-                    if theyear == int(year[0]):
-                        fixed_datum = [word, count]
-                        year.append(fixed_datum)
-        # this could be done more efficiently earlier:
-        for year in yearlist:
-            for entry in year[1:]:
-                if entry[0] > 50:
-                    year.remove(entry)
-        for entry in totallist[1:]:
-            if entry[0] > 50:
-                    totallist.remove(entry)
-        if output == 'results':
-            return yearlist
-        if output == 'totals':
-            return totallist
+        return results_list
 
     def tabler(subcorpus_names, list_of_dicts, num_rows):
         csvdata = [','.join(subcorpus_names)]
@@ -541,6 +516,10 @@ def interrogator(path, options, query,
         only_count = True
         translated_options = 'C'
         optiontext = 'Counts only.'
+    elif options.startswith('r'):
+        plaintext = True
+        optiontext = 'Regular expression matches only.'
+        translated_options = 'regex'
     
     # dependency options:
     elif options.startswith('n') or options.startswith('N'):
@@ -569,15 +548,15 @@ def interrogator(path, options, query,
             query = r'/.?[A-Za-z0-9].?/ !< __'
         if translated_options == 'u' or translated_options == 'o':
             query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-    if 'subjects' in query:
+    if query == 'subjects':
         query = r'__ >># @NP'
-    if 'processes' in query:
+    if query == 'processes':
         query = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
-    if 'modals' in query:
+    if query == 'modals':
         query = r'MD < __'
-    if 'participants' in query:
+    if query == 'participants':
         query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
-    if 'entities' in query:
+    if query == 'entities':
         query = r'NP <# NNP'
         titlefilter = True
 
@@ -685,7 +664,7 @@ def interrogator(path, options, query,
             plaintext = False
 
     # if doing dependencies, make list of all files, and a progress bar
-    if dependency:
+    if dependency or plaintext:
         all_files = []
         for d in sorted_dirs:
             subcorpus = os.path.join(path, d)
@@ -714,7 +693,6 @@ def interrogator(path, options, query,
             raise ValueError("Regular expression '%s' contains an error." % query)                
     if dependency:
         re.compile(query)
-    
     for index, d in enumerate(sorted_dirs):
         if not dependency and not plaintext:
             subcorpus_name = d
@@ -797,11 +775,14 @@ def interrogator(path, options, query,
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not keywording:
+        if not keywording and not depnum:
             processed_result = processwords(result)
+        if depnum:
+            processed_result = result
             allwords_list.append(processed_result)
-        else:
+        if keywording:
             allwords_list.append([w for index, w, score in result])
+
             # add results master list and to results list
         
         if keywording:
@@ -811,7 +792,6 @@ def interrogator(path, options, query,
             dicts.append(Counter(little_dict))
         else:
             dicts.append(Counter(processed_result))
-
 
     # 100%
     p.animate(len(sorted_dirs))
@@ -873,36 +853,28 @@ def interrogator(path, options, query,
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
     # turn master dict into dataframe, sorted
     pandas_frame = DataFrame(the_big_dict, index = subcorpus_names)
-    #pandas_frame[u'Total'] = sum([pandas_frame.T[d] for d in sorted_dirs])
-    #pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
     pandas_frame['Total'] = pandas_frame.sum(axis=1)
     pandas_frame = pandas_frame.T
     tot = pandas_frame.ix['Total']
-    pandas_frame = pandas_frame[tot.argsort()[::-1]]
+    if not depnum:
+        pandas_frame = pandas_frame[tot.argsort()[::-1]]
     pandas_frame = pandas_frame.drop('Total', axis = 0)
-    #move_totals = list(pandas_frame.columns)
-    #move_totals.remove('Total')
-    #move_totals.append('Total')
-    #pandas_frame = pandas_frame[move_totals]
 
     # totals --- could just use the frame above ...
     stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
     stotals.name = 'Total'
 
     # return pandas/csv table of most common results in each subcorpus
-    if table_size > max([len(d) for d in dicts]):
-        table_size = max([len(d) for d in dicts])
-    df = tabler(subcorpus_names, dicts, table_size)
+    if not depnum:
+        if table_size > max([len(d) for d in dicts]):
+            table_size = max([len(d) for d in dicts])
+        df = tabler(subcorpus_names, dicts, table_size)
     
     # depnum is a little different, though
     # still needs to be done
     if depnum:
-        pass
-    
-    # reconstitute keyword scores, because we earlier
-    # this means that keyness scores are a bit off. not good.
-    # still needs to be done
+        pandas_frame = pandas_frame.T
         
     #make results into named tuple
     # add options to named tuple
@@ -928,18 +900,20 @@ def interrogator(path, options, query,
     the_options['time_started'] = the_time_started
     the_options['time_ended'] = the_time_ended
 
-    if not keywording:
+    if not keywording and not depnum:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
         output = outputnames(the_options, pandas_frame, stotals, df)
-    else:
+    if keywording:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'table'])
         output = outputnames(the_options, pandas_frame, df)
+    if depnum:
+        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+        output = outputnames(the_options, pandas_frame, stotals)        
 
     if have_ipython:
         clear_output()
     
-    # warnings if nothing generated
-    # should these 'break'
+    # warnings if nothing generated...
     time = strftime("%H:%M:%S", localtime())
     if not only_count:
         if not keywording:
