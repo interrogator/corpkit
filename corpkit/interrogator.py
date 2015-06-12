@@ -713,7 +713,24 @@ def interrogator(path, option, query,
                 dictmaker(path, dictionary)
     
     # get list of subcorpora and sort them
-    sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
+    got_corpus = False
+    while got_corpus is False:
+        try:
+            sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
+            got_corpus = True
+        except OSError:
+            got_corpus = False
+            time = strftime("%H:%M:%S", localtime())
+            selection = raw_input('\n%s: Corpus directory not found: " %s ". You can either:\n\n' \
+                '              a) enter a new corpus path\n' \
+                '              b) exit\n\nYour selection: ' % (time, path))
+            if 'a' in selection:
+                path = raw_input('\nNew corpus path: ')
+            elif 'b' in selection:
+                print ''
+                return
+
+
     sorted_dirs.sort(key=int)
     num_zeroes = len(str(sorted_dirs[-1]))
     
@@ -905,7 +922,7 @@ def interrogator(path, option, query,
         stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
         stotals.name = 'Total' 
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
-        the_time_ended = strftime("%Y-%m=%d %H:%M:%S")
+        the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
         # add option to named tuple
         the_options = {}
         the_options['path'] = path
@@ -934,8 +951,9 @@ def interrogator(path, option, query,
         if have_ipython:
             clear_output()
         if quicksave:
-            from corpkit.other import save_result
-            save_result(output, quicksave)
+            if stotals.sum() > 0:
+                from corpkit.other import save_result
+                save_result(output, quicksave)
         
         time = strftime("%H:%M:%S", localtime())
         print '%s: Finished! %d total occurrences.\n' % (time, stotals.sum())
@@ -1031,13 +1049,20 @@ def interrogator(path, option, query,
         print '%s: Finished! %d unique results.\n' % (time, len(pandas_frame.columns))
     if len(pandas_frame.columns) == 0:
         warnings.warn('No results produced. Maybe your query needs work.')
-    if len(main_totals) == 0:
-        warnings.warn('No totals produced. Maybe your query needs work.')
-    if stotals.sum() == 0:
-        warnings.warn('Total total of zero. Maybe your query needs work.')
+    
+    if not keywording:
+        if stotals.sum() == 0:
+            warnings.warn('No totals produced. Maybe your query needs work.')
+
     if quicksave:
-        from corpkit.other import save_result
-        save_result(output, quicksave)
+        if not keywording:
+            if stotals.sum() > 0 and len(pandas_frame.columns) > 0:
+                from corpkit.other import save_result
+                save_result(output, quicksave)
+        else:
+            if len(pandas_frame.columns) > 0:
+                from corpkit.other import save_result
+                save_result(output, quicksave)
 
     if add_to:
         d = add_to[0]
@@ -1047,8 +1072,6 @@ def interrogator(path, option, query,
         return output
 
 if __name__ == '__main__':
-    print 'Working from the command line.'
-
     import argparse
 
     epi = "Example usage:\n\npython interrogator.py 'path/to/corpus' 'words' '/NN.?/ >># (NP << /\brisk/)' np_heads --lemmatise --spelling 'UK'" \
@@ -1080,6 +1103,17 @@ if __name__ == '__main__':
                              help='The kind of Stanford dependencies you want to search')
     
     args = parser.parse_args()
+
+    if not vars(args)['quicksave'] and not vars(args)['path'] and not vars(args)['option'] and not vars(args)['query']:
+        ready_to_start = False
+        while not ready_to_start:
+            print "\n    Welcome to corpkit!\n\n    This function is called interrogator().\n\n    It allows you to search constituency trees with Tregex, Stanford Dependency parses, or plain text corpora with Regular Expressions.\n\n    You're about to be prompted for some information:\n          1) a name for the interrogation\n          2) a path to your corpus\n          3) an option, specifying the kind of search you want to do\n          4) a Tregex query or regular expression.\n"
+            ready = raw_input("    When you're ready, type 'start', or 'exit' to cancel: ")
+            if ready.startswith('s'):
+                ready_to_start = True
+            elif ready.startswith('e'):
+                print '\n    OK ... come back soon!\n'
+                quit()
 
     all_args = {}
 
