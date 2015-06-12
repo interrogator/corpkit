@@ -132,7 +132,11 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     elif len(interrogation) == 2:
         temp_list = [interrogation.query, interrogation.totals]
     elif len(interrogation) == 3:
-        temp_list = [interrogation.query, interrogation.results, interrogation.totals]
+        if interrogation.query['function'] == 'interrogator':
+            if interrogation.query['query'].startswith('k'):
+                temp_list = [interrogation.query, interrogation.results, interrogation.table]
+        else:
+            temp_list = [interrogation.query, interrogation.results, interrogation.totals]
     elif len(interrogation) == 4:
         temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
     else:
@@ -163,7 +167,14 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])        
     elif len(unpickled) == 3:
-        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
+        if unpickled[0]['function'] == 'interrogator':
+            if unpickled[0].query['query'].startswith('k'):
+                outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'table'])
+            else:
+                # not presently possible, i think:
+                outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
+        else:
+            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2])
     elif len(unpickled) == 2:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
