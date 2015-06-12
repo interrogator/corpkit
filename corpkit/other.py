@@ -123,8 +123,11 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     if not savename.endswith('.p'):
         savename = savename + '.p'
     fullpath = os.path.join(savedir, savename)
-    if os.path.isfile(fullpath):
-        raise ValueError("Save error: %s already exists in %s. Pick a new name." % (savename, savedir))
+    while os.path.isfile(fullpath):
+        selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
+        if not selection.endswith('.p'):
+            selection = selection + '.p'
+            fullpath = os.path.join(savedir, selection)
     
     # if it's just a table or series
     if type(interrogation) == pandas.core.frame.DataFrame or type(interrogation) == pandas.core.series.Series:
@@ -139,12 +142,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
             temp_list = [interrogation.query, interrogation.results, interrogation.totals]
     elif len(interrogation) == 4:
         temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
-    else:
-        try:
-            temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
-        except:
-            raise ValueError(' %s' % interrogation)
-            
+
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
@@ -165,7 +163,7 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         output = unpickled
     elif len(unpickled) == 4:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
-        output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])        
+        output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])
     elif len(unpickled) == 3:
         if unpickled[0]['function'] == 'interrogator':
             if unpickled[0]['query'].startswith('k'):
@@ -387,8 +385,11 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
         if not quicksave.endswith('.p'):
             quicksave = quicksave + '.p'
         fullpath = os.path.join(savedir, quicksave)
-        if os.path.isfile(fullpath):
-            raise ValueError("Save error: %s already exists in %s. Pick a new name." % (quicksave, savedir))
+        while os.path.isfile(fullpath):
+            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
+            if not selection.endswith('.p'):
+                selection = selection + '.p'
+                fullpath = os.path.join(savedir, selection)
 
     results = []
     for name, pattern in query:
@@ -498,7 +499,7 @@ def datareader(data, on_cloud = False):
         if conc_lines:
             good = '\n'.join([' '.join(list(data.ix[l])) for l in list(data.index)])
     else:
-        raise ValueError('Input not recognised...')
+        raise ValueError('Input not recognised. Sorry about that.')
     # if list of tokens...?
     
     return good
@@ -517,53 +518,80 @@ def tregex_engine(query = False,
     check_query: just make sure query ok"""
     import subprocess 
     import re
-    if on_cloud:
-        tregex_command = ["sh", "tregex.sh"]
-    else:
-        tregex_command = ["tregex.sh"]
+    from time import localtime, strftime
 
-    if not query:
-        query = 'NP'
-    # if checking for trees, use the -T option
-    if check_for_trees:
-        options = ['-T']
+    # if check_query, enter the while loop
+    # if not, get out of it
+    an_error_occurred = True
+    while an_error_occurred:
 
-    # append list of options to query    
-    if options:
-        [tregex_command.append(o) for o in options]
-    if query:
-        tregex_command.append(query)
-    if corpus:
-        tregex_command.append(corpus)
-    # do query
-    try:
-        res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
-    # exception handling for regex error
-    except Exception, e:
-        res = str(e.output).split('\n')
-    
-    if check_query:
-        # define error searches 
-        tregex_error = re.compile(r'^Error parsing expression')
-        regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
-        # if tregex error, give general error message
-        if re.match(tregex_error, res[0]):
-            tregex_error_output = "Error parsing Tregex expression. Check for balanced parentheses and boundary delimiters."
-            raise ValueError(tregex_error_output) 
+        if on_cloud:
+            tregex_command = ["sh", "tregex.sh"]
+        else:
+            tregex_command = ["tregex.sh"]
+        if not query:
+            query = 'NP'
+        # if checking for trees, use the -T option
+        if check_for_trees:
+            options = ['-T']
+
+        # append list of options to query    
+        if options:
+            [tregex_command.append(o) for o in options]
+        if query:
+            tregex_command.append(query)
+        if corpus:
+            tregex_command.append(corpus)
+        # do query
+        try:
+            res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+        # exception handling for regex error
+        except Exception, e:
+            res = str(e.output).split('\n')
         
-        # if regex error, try to help
-        if re.match(regex_error, res[0]):
-            info = res[0].split(':')
-            index_of_error = re.findall(r'index [0-9]+', info[1])
-            justnum = index_of_error[0].split('dex ')
-            spaces = ' ' * int(justnum[1])
-            remove_start = query.split('/', 1)
-            remove_end = remove_start[1].split('/', -1)
-            regex_error_output = 'Error parsing regex inside Tregex query:%s'\
-            '. Best guess: \n%s\n%s^' % (str(info[1]), str(remove_end[0]), spaces)
-            raise ValueError(regex_error_output)
-        return True
-
+        if check_query:
+            # define error searches 
+            tregex_error = re.compile(r'^Error parsing expression')
+            regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
+            # if tregex error, give general error message
+            if re.match(tregex_error, res[0]):
+                tregex_error_output = ""
+                time = strftime("%H:%M:%S", localtime())
+                selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n' \
+                    '              a) rewrite it now\n' \
+                    '              b) exit\n\nYour selection: ' % (time, query))
+                if 'a' in selection:
+                    query = raw_input('\nNew Tregex query: ')
+                elif 'b' in selection:
+                    print ''
+                    return
+            
+            # if regex error, try to help
+            elif re.match(regex_error, res[0]):
+                info = res[0].split(':')
+                index_of_error = re.findall(r'index [0-9]+', info[1])
+                justnum = index_of_error[0].split('dex ')
+                spaces = ' ' * int(justnum[1])
+                remove_start = query.split('/', 1)
+                remove_end = remove_start[1].split('/', -1)
+                time = strftime("%H:%M:%S", localtime())
+                selection = raw_input('\n%s: Error parsing regex inside Tregex query: %s'\
+                '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
+                '              a) rewrite it now\n' \
+                '              b) exit\n\nYour selection: ' % (time, str(info[1]), str(remove_end[0]), spaces))
+                if 'a' in selection:
+                    query = raw_input('\nNew Tregex query: ')
+                elif 'b' in selection:
+                    print ''
+                    return                
+            else:
+                an_error_occurred = False
+                return query
+        # if not query checking, leave this horrible while loop
+        else: 
+            an_error_occurred = False
+    
+    # counting is easy, just get out with the number
     if '-C' in options:
         return res[-1]
 
