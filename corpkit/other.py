@@ -168,7 +168,7 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])        
     elif len(unpickled) == 3:
         if unpickled[0]['function'] == 'interrogator':
-            if unpickled[0].query['query'].startswith('k'):
+            if unpickled[0]['query'].startswith('k'):
                 outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'table'])
             else:
                 # not presently possible, i think:
