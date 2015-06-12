@@ -42,7 +42,7 @@ def editor(dataframe1,
     except ImportError:
         pass
 
-    the_time_started = strftime("%Y-%m=%d %H:%M:%S")
+    the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
