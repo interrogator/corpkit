@@ -138,6 +138,8 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         if interrogation.query['function'] == 'interrogator':
             if interrogation.query['query'].startswith('k'):
                 temp_list = [interrogation.query, interrogation.results, interrogation.table]
+            else:
+                temp_list = [interrogation.query, interrogation.results, interrogation.totals]
         else:
             temp_list = [interrogation.query, interrogation.results, interrogation.totals]
     elif len(interrogation) == 4:
@@ -146,7 +148,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
-    print ' %s: Data saved: %s\n' % (time, fullpath)
+    print '\n%s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
 def load_result(savename, loaddir = 'data/saved_interrogations'):
@@ -243,7 +245,7 @@ def conv(inputfile, loadme = True):
 def pytoipy(inputfile):
     """A .py to .ipynb converter.
 
-    This function converts .py files to ipynb, relying on the IPython API. 
+    This function converts .py files to ipynb.
     Comments in the .py file can be used to delimit cells, headings, etc. For example:
 
     # <headingcell level=1>
@@ -410,6 +412,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     # if nothing, the query's fine! 
 
 def interroplot(path, query):
+    """Interrogates path with Tregex query, gets relative frequencies, and plots the top seven results"""
     from corpkit import interrogator, editor, plotter
     quickstart = interrogator(path, 't', query)
     edited = editor(quickstart.results, '%', quickstart.totals)
@@ -509,13 +512,14 @@ def tregex_engine(query = False,
                   corpus = False, 
                   on_cloud = False, 
                   check_query = False,
-                  check_for_trees = False):
+                  check_for_trees = False,):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
     corpus: place to search
     on_cloud: check_dit output
-    check_query: just make sure query ok"""
+    check_query: just make sure query ok
+    check_for_trees: find out if corpus contains parse trees"""
     import subprocess 
     import re
     from time import localtime, strftime
