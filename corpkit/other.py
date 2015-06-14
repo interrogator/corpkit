@@ -509,20 +509,20 @@ def datareader(data, on_cloud = False):
 
 def tregex_engine(query = False, 
                   options = False, 
-                  corpus = False, 
-                  on_cloud = False, 
+                  corpus = False,  
                   check_query = False,
                   check_for_trees = False,):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
     corpus: place to search
-    on_cloud: check_dit output
     check_query: just make sure query ok
     check_for_trees: find out if corpus contains parse trees"""
     import subprocess 
     import re
     from time import localtime, strftime
+    from corpkit.tests import check_dit
+    on_cloud = check_dit()
 
     # if check_query, enter the while loop
     # if not, get out of it
@@ -597,7 +597,7 @@ def tregex_engine(query = False,
     
     # counting is easy, just get out with the number
     if '-C' in options:
-        return res[-1]
+        return int(res[-1])
 
     # remove errors and blank lines
     res = [s for s in res if not s.startswith('PennTreeReader:') and s]
