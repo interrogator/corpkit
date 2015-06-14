@@ -131,7 +131,7 @@ def interrogator(path, option, query,
     except ImportError:
         pass
 
-    from corpkit.tests import check_dit, check_pytex
+    from corpkit.tests import check_pytex
     from corpkit.progressbar import ProgressBar
     from corpkit.other import tregex_engine
     import dictionaries
@@ -155,7 +155,6 @@ def interrogator(path, option, query,
         have_ipython = False
            
     have_python_tex = check_pytex()
-    on_cloud = check_dit()
 
     regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
 
@@ -451,8 +450,9 @@ def interrogator(path, option, query,
         if type(pattern) == str:
             pattern = [pattern]
         result = []
+        tokenized = nltk.word_tokenize(plaintext_data)
         for p in pattern:
-            num_matches = plaintext_data.count(p)
+            num_matches = tokenized.count(p)
             for m in range(num_matches):
                 result.append(p)
         return result
@@ -495,8 +495,8 @@ def interrogator(path, option, query,
                 line.append(the_key)
             csvdata.append(','.join(line))
         csv = '\n'.join(csvdata)
-        df = read_csv(StringIO(csv))
-        return df
+        word_table = read_csv(StringIO(csv))
+        return word_table
 
     # a few things are off by default:
     only_count = False
@@ -509,7 +509,6 @@ def interrogator(path, option, query,
     # some empty lists we'll need
     dicts = []
     allwords_list = []
-    main_totals = []
 
     # check if pythontex is being used:
     # have_python_tex = check_pythontex()
@@ -532,6 +531,7 @@ def interrogator(path, option, query,
             optiontext = 'Words only.'
             translated_option = 't'
         elif option.startswith('c') or option.startswith('C'):
+            count_results = {}
             only_count = True
             translated_option = 'C'
             optiontext = 'Counts only.'
@@ -807,8 +807,7 @@ def interrogator(path, option, query,
 
     # check for valid query. so ugly.
     if not dependency and not keywording and not n_gramming and not plaintext:
-        query = tregex_engine(query = query, 
-        check_query = True, on_cloud = on_cloud)
+        query = tregex_engine(query = query, check_query = True)
     
     else:
         if dependency or translated_option == 'r':
@@ -885,13 +884,12 @@ def interrogator(path, option, query,
             else:
                 op = ['-o', '-' + translated_option]
                 result = tregex_engine(query = query, options = op, 
-                                       corpus = subcorpus,
-                                       on_cloud = on_cloud)
+                                       corpus = subcorpus)
+                
                 # if just counting matches, just 
                 # add subcorpus name and count...
                 if only_count:
-                    tup = [d, int(result)]
-                    main_totals.append(tup)
+                    count_results[d] = result
                     continue
 
         # for dependencies, d[0] is the subcorpus name 
@@ -931,11 +929,6 @@ def interrogator(path, option, query,
         if not keywording:
             result.sort()
 
-        # add subcorpus name and total count to totals
-        # prefer int subcorpus names...
-        # could remove this silliness really
-        main_totals.append([subcorpus_name, len(result)])
-
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
         if not keywording and not depnum:
@@ -972,7 +965,7 @@ def interrogator(path, option, query,
     
     # if only counting, get total total and finish up:
     if only_count:
-        stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
+        stotals = pd.Series(count_results)
         stotals.name = 'Total' 
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
@@ -1029,35 +1022,34 @@ def interrogator(path, option, query,
     #calculate results
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
-    # turn master dict into dataframe, sorted
-    pandas_frame = DataFrame(the_big_dict, index = subcorpus_names)
-    pandas_frame = pandas_frame.T
-    pandas_frame['Total'] = pandas_frame.sum(axis=1)
-    pandas_frame = pandas_frame.T
-    tot = pandas_frame.ix['Total']
-    if not depnum:
-        pandas_frame = pandas_frame[tot.argsort()[::-1]]
-    pandas_frame = pandas_frame.drop('Total', axis = 0)
     
+    # turn master dict into dataframe, sorted
+    df = DataFrame(the_big_dict, index = subcorpus_names)
+    df.ix['Total'] = df.sum()
+    tot = df.ix['Total']
+    if not depnum:
+        df = df[tot.argsort()[::-1]]
+    df = df.drop('Total', axis = 0)
+    
+    # totals --- could just use the frame above ...
+    stotals = df.sum(axis = 1)
+    stotals.name = 'Total'
+
     # make result into series if only one subcorpus
     if one_big_corpus:
-        pandas_frame = pandas_frame.T[subcorpus_names[0]]
-        pandas_frame.name = query
-
-    # totals --- could just use the frame above ...
-    stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
-    stotals.name = 'Total'
+        df = df.T[subcorpus_names[0]]
+        #df.name = query
 
     # return pandas/csv table of most common results in each subcorpus
     if not depnum:
         if table_size > max([len(d) for d in dicts]):
             table_size = max([len(d) for d in dicts])
-        df = tabler(subcorpus_names, dicts, table_size)
+        word_table = tabler(subcorpus_names, dicts, table_size)
     
     # depnum is a little different, though
     # still needs to be done
     if depnum:
-        pandas_frame = pandas_frame.T
+        df = df.T
         
     #make results into named tuple
     # add option to named tuple
@@ -1066,7 +1058,7 @@ def interrogator(path, option, query,
     the_options['function'] = 'interrogator'
     the_options['path'] = path
     the_options['option'] = option
-    the_options['datatype'] = pandas_frame.iloc[0].dtype
+    the_options['datatype'] = df.iloc[0].dtype
     try:
         the_options['translated_option'] = translated_option
     except:
@@ -1088,13 +1080,13 @@ def interrogator(path, option, query,
 
     if not keywording and not depnum:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
-        output = outputnames(the_options, pandas_frame, stotals, df)
+        output = outputnames(the_options, df, stotals, word_table)
     if keywording:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'table'])
-        output = outputnames(the_options, pandas_frame, df)
+        output = outputnames(the_options, df, word_table)
     if depnum:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-        output = outputnames(the_options, pandas_frame, stotals)        
+        output = outputnames(the_options, df, stotals)        
 
     if have_ipython:
         clear_output()
@@ -1102,9 +1094,9 @@ def interrogator(path, option, query,
     
     # warnings if nothing generated...
     if not one_big_corpus:
-        num_diff_results = len(list(pandas_frame.columns))
+        num_diff_results = len(list(df.columns))
     else:
-        num_diff_results = len(pandas_frame)
+        num_diff_results = len(df)
 
     if not keywording:
         print '%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotals.sum())
@@ -1135,21 +1127,33 @@ def interrogator(path, option, query,
         return output
 
 if __name__ == '__main__':
+
     import argparse
 
     epi = "Example usage:\n\npython interrogator.py 'path/to/corpus' 'words' '/NN.?/ >># (NP << /\brisk/)' np_heads --lemmatise --spelling 'UK'" \
     "\n\nTranslation: 'interrogate path/to/corpus for words that are heads of NPs that contain risk.\n" \
     "Lemmatise each result, and save the result as a set of CSV files in np_heads.'\n\n"
 
-    parser = argparse.ArgumentParser(description='Interrogate a structured/parsed corpus', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=epi)
-    parser.add_argument('-p', '--path', metavar='P', type=str,
-                             help='Path to the corpus')
-    parser.add_argument('-o', '--option', metavar='O', type=str,
-                             help='Search type')
-    parser.add_argument('-q', '--query', metavar='Q',
-                             help='Tregex or Regex query')
-    parser.add_argument('-s', '--quicksave', type=str, metavar='S',
-                             help='A name for the interrogation and the files it produces')
+    parser = argparse.ArgumentParser(description='Interrogate a linguistic corpus in sophisticated ways', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=epi)
+    import sys
+    if len(sys.argv) == 1:
+        parser.add_argument('-p', '--path', metavar='P', type=str,
+                                 help='Path to the corpus')
+        parser.add_argument('-o', '--option', metavar='O', type=str,
+                                 help='Search type')
+        parser.add_argument('-q', '--query', metavar='Q',
+                                 help='Tregex or Regex query')
+        parser.add_argument('-s', '--quicksave', type=str, metavar='S',
+                                 help='A name for the interrogation and the files it produces')
+    else:
+        parser.add_argument('-path', metavar='P', type=str,
+                                 help='Path to the corpus')
+        parser.add_argument('-option', metavar='O', type=str,
+                                 help='Search type')
+        parser.add_argument('-query', metavar='Q',
+                                 help='Tregex or Regex query')
+        parser.add_argument('-quicksave', type=str, metavar='S',
+                                 help='A name for the interrogation and the files it produces')        
 
     parser.add_argument('-l', '--lemmatise',
                              help='Do lemmatisation?', action='store_true')
