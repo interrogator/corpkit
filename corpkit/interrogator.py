@@ -440,12 +440,22 @@ def interrogator(path, option, query,
         gc.collect()
         return result
 
-    def plaintexter(regex, plaintext_data):
+    def plaintext_regex_search(regex, plaintext_data):
         try:
             result = re.findall(regex, plaintext_data)
             return result
         except:
             return
+
+    def plaintext_simple_search(pattern, plaintext_data):
+        if type(pattern) == str:
+            pattern = [pattern]
+        result = []
+        for p in pattern:
+            num_matches = plaintext_data.count(p)
+            for m in range(num_matches):
+                result.append(p)
+        return result
 
     def depnummer(xmldata):
         """print dependency number"""
@@ -495,7 +505,11 @@ def interrogator(path, option, query,
     dependency = False
     plaintext = False
     depnum = False
+
+    # some empty lists we'll need
     dicts = []
+    allwords_list = []
+    main_totals = []
 
     # check if pythontex is being used:
     # have_python_tex = check_pythontex()
@@ -521,14 +535,31 @@ def interrogator(path, option, query,
             only_count = True
             translated_option = 'C'
             optiontext = 'Counts only.'
-        elif option.startswith('r'):
+
+        #plaintext options
+        elif option.startswith('r') or option.startswith('R'):
             plaintext = True
             optiontext = 'Regular expression matches only.'
-            translated_option = 'regex'
-        
+            translated_option = 'r'
+        elif option.startswith('s') or option.startswith('S'):
+            plaintext = True
+            optiontext = 'Simple plain-text search.'
+            translated_option = 's'
+
+        #keywording and ngramming options
+        elif option.startswith('k') or option.startswith('K'):
+            query = 'keywords'
+            keywording = True
+            optiontext = 'Keywords only.'
+        elif option.startswith('n') or option.startswith('n'):
+            query = 'ngrams'
+            n_gramming = True
+            phrases = True
+            optiontext = 'n-grams only.'
+
         # dependency option:
-        elif option.startswith('n') or option.startswith('N'):
-            translated_option = 'n'
+        elif option.startswith('i') or option.startswith('I'):
+            translated_option = 'i'
             depnum = True
             dependency = True
             optiontext = 'Dependency index number only.'
@@ -555,6 +586,7 @@ def interrogator(path, option, query,
                           '              n) get dependency index of regular expression match\n' \
                           '              p) get part-of-speech tag with Tregex\n' \
                           '              r) regular expression, for plaintext corpora\n' \
+                          '              s) simple search string, for plaintext corpora\n' \
                           '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
                           '              x) exit\n\nYour selection: ' % (time, option))
             option = selection
@@ -643,7 +675,10 @@ def interrogator(path, option, query,
     if titlefilter:
         phrases = True
 
-    # dependencies can't be phrases
+    # dependencies:
+    # can't be phrases
+    # check if regex valid
+    # check if dep_type valid
     if dependency:
         import gc
         from bs4 import BeautifulSoup, SoupStrainer
@@ -670,8 +705,6 @@ def interrogator(path, option, query,
                     print ''
                     return
 
-    # make sure dep_type is valid:
-    if dependency:
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         while dep_type not in allowed_dep_types:
             selection = raw_input('\n%s: Dependency type "%s" not recognised. Must be one of:\n\n' \
@@ -687,17 +720,6 @@ def interrogator(path, option, query,
             else:
                 pass
 
-    # find out if doing keywords or ngrams
-    if query.startswith('key'):
-        query = 'keywords'
-        keywording = True
-        optiontext = 'Words only.'
-    elif 'ngram' in query:
-        query = 'ngrams'
-        n_gramming = True
-        phrases = True
-        optiontext = 'Words only.'
-
     # if keywording and self is the dictionary, make the dict if need be:
     if keywording:
         if dictionary.startswith('self') or dictionary == os.path.basename(path):
@@ -712,7 +734,7 @@ def interrogator(path, option, query,
                 print '\n%s: Making reference corpus ...' % time
                 dictmaker(path, dictionary)
     
-    # get list of subcorpora and sort them
+    # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
     while got_corpus is False:
         try:
@@ -729,38 +751,47 @@ def interrogator(path, option, query,
             elif 'b' in selection:
                 print ''
                 return
-
-
-    sorted_dirs.sort(key=int)
-    num_zeroes = len(str(sorted_dirs[-1]))
     
     # treat as one large corpus if no subdirs found
+    one_big_corpus = False
     if len(sorted_dirs) == 0:
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
+        one_big_corpus = True
         sorted_dirs = [os.path.basename(path)]
     
-    # some empty lists we'll need
-    allwords_list = []
-    main_totals = []
-
-    # check first subcorpus to see if we're using plaintext
-    if len(sorted_dirs) == 1:
-        subcorpus = path
+    # numerically sort subcorpora if the first can be an int
     else:
-        # set to last subcorpus, just to make 'guess' quicker in my case
-        subcorpus = os.path.join(path,sorted_dirs[-1])
-    if plaintext == 'guess':
-        if not tregex_engine(corpus = subcorpus, check_for_trees = True):
-            plaintext = True
-        else:
-            plaintext = False
+        try:
+            check = int(sorted_dirs[0])
+            sorted_dirs.sort(key=int)
+        except:
+            pass
+
+    # plaintext guessing
+    # if plaintext == 'guess':
+    #     if not one_big_corpus:
+    #         # set to last subcorpus, just to make 'guess' quicker in my case
+    #         subcorpus = os.path.join(path,sorted_dirs[-1])
+    #     else:
+    #         # horrible for large corpora
+    #         subcorpus = path
+    #     if not tregex_engine(corpus = subcorpus, check_for_trees = True):
+    #         plaintext = True
+    #     else:
+    #         plaintext = False
 
     # if doing dependencies, make list of all files, and a progress bar
     if dependency or plaintext:
         all_files = []
         for d in sorted_dirs:
-            subcorpus = os.path.join(path, d)
-            files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+            if not one_big_corpus:
+                subcorpus = os.path.join(path, d)
+            else:
+                subcorpus = path
+            if dependency:
+                files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+            else:
+                files = [f for f in os.listdir(subcorpus)]
             all_files.append([d, files])
         total_files = len([item for sublist in all_files for item in sublist[1]])
         sorted_dirs = all_files
@@ -778,38 +809,48 @@ def interrogator(path, option, query,
     if not dependency and not keywording and not n_gramming and not plaintext:
         query = tregex_engine(query = query, 
         check_query = True, on_cloud = on_cloud)
+    
     else:
-        is_valid = True
-        try:
-            if plaintext:
-                regex = re.compile(r'\b' + query + r'\b')
-            else:
-                regex = re.compile(query)
+        if dependency or translated_option == 'r':
             is_valid = True
-        except re.error:
-            is_valid = False
-
-        while not is_valid:
-            time = strftime("%H:%M:%S", localtime())
-            selection = raw_input('\n%s: Regular expression " %s " contains an error. You can either:\n\n' \
-                '              a) rewrite it now\n' \
-                '              b) exit\n\nYour selection: ' % (time, query))
-            if 'a' in selection:
-                query = raw_input('\nNew regular expression: ')
-                try:
+            try:
+                if translated_option == 'r':
                     regex = re.compile(r'\b' + query + r'\b')
-                    is_valid = True
-                except re.error:
-                    is_valid = False
-            elif 'b' in selection:
-                print ''
-                return
+                else:
+                    regex = re.compile(query)
+                is_valid = True
+            except re.error:
+                is_valid = False
+            while not is_valid:
+                time = strftime("%H:%M:%S", localtime())
+                selection = raw_input('\n%s: Regular expression " %s " contains an error. You can either:\n\n' \
+                    '              a) rewrite it now\n' \
+                    '              b) exit\n\nYour selection: ' % (time, query))
+                if 'a' in selection:
+                    query = raw_input('\nNew regular expression: ')
+                    try:
+                        regex = re.compile(r'\b' + query + r'\b')
+                        is_valid = True
+                    except re.error:
+                        is_valid = False
+                elif 'b' in selection:
+                    print ''
+                    return
+
+    #print list nicely
+    if not translated_option == 's':
+        qtext = query
+    else:
+        if type(query) == list:
+            qtext = ', '.join(query)
+        else:
+            qtext = query
 
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
     print ("\n%s: Beginning corpus interrogation: %s" \
            "\n          Query: '%s'\n          %s" \
-           "\n          Interrogating corpus ... \n" % (time, path, query, optiontext) )
+           "\n          Interrogating corpus ... \n" % (time, path, qtext, optiontext) )
 
     for index, d in enumerate(sorted_dirs):
         if not dependency and not plaintext:
@@ -865,7 +906,11 @@ def interrogator(path, option, query,
                 # pass the x/y argument for more updates
                 p.animate(c, str(c) + '/' + str(total_files))
                 c += 1
-                with open(os.path.join(path, subcorpus_name, f), "rb") as text:
+                if one_big_corpus:
+                    filepath = os.path.join(path, f)
+                else:
+                    filepath = os.path.join(path, subcorpus_name, f)
+                with open(filepath, "rb") as text:
                     data = text.read()
                     if translated_option == 'g':
                         result_from_file = govrole(data)
@@ -875,8 +920,10 @@ def interrogator(path, option, query,
                         result_from_file = funct(data)
                     if translated_option == 'n':
                         result_from_file = depnummer(data)
-                    if plaintext:
-                        result_from_file = plaintexter(regex, data)
+                    if translated_option == 'r':
+                        result_from_file = plaintext_regex_search(regex, data)
+                    if translated_option == 's':
+                        result_from_file = plaintext_simple_search(query, data)
                 if result_from_file is not None:
                     for entry in result_from_file:
                         result.append(entry)
@@ -911,9 +958,15 @@ def interrogator(path, option, query,
         else:
             dicts.append(Counter(processed_result))
 
-    # 100%
-    p.animate(len(sorted_dirs))
-    
+    if not dependency and not plaintext:
+        p.animate(len(sorted_dirs))
+    else:
+        # weird float div by 0 zero error here for plaintext
+        try:
+            p.animate(total_files)
+        except:
+            pass
+
     if not have_ipython:
         print '\n'
     
@@ -985,6 +1038,11 @@ def interrogator(path, option, query,
     if not depnum:
         pandas_frame = pandas_frame[tot.argsort()[::-1]]
     pandas_frame = pandas_frame.drop('Total', axis = 0)
+    
+    # make result into series if only one subcorpus
+    if one_big_corpus:
+        pandas_frame = pandas_frame.T[subcorpus_names[0]]
+        pandas_frame.name = query
 
     # totals --- could just use the frame above ...
     stotals = pd.Series([c for name, c in main_totals], index = [str(name) for name, c in main_totals])
@@ -1003,7 +1061,7 @@ def interrogator(path, option, query,
         
     #make results into named tuple
     # add option to named tuple
-    the_time_ended = strftime("%Y-%m=%d %H:%M:%S")
+    the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
     the_options = {}
     the_options['function'] = 'interrogator'
     the_options['path'] = path
@@ -1043,11 +1101,16 @@ def interrogator(path, option, query,
 
     
     # warnings if nothing generated...
-    if not keywording:
-        print '%s: Finished! %d unique results, %d total.\n' % (time, len(pandas_frame.columns), stotals.sum())
+    if not one_big_corpus:
+        num_diff_results = len(list(pandas_frame.columns))
     else:
-        print '%s: Finished! %d unique results.\n' % (time, len(pandas_frame.columns))
-    if len(pandas_frame.columns) == 0:
+        num_diff_results = len(pandas_frame)
+
+    if not keywording:
+        print '%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotals.sum())
+    else:
+        print '%s: Finished! %d unique results.\n' % (time, num_diff_results)
+    if num_diff_results == 0:
         warnings.warn('No results produced. Maybe your query needs work.')
     
     if not keywording:
@@ -1056,11 +1119,11 @@ def interrogator(path, option, query,
 
     if quicksave:
         if not keywording:
-            if stotals.sum() > 0 and len(pandas_frame.columns) > 0:
+            if stotals.sum() > 0 and num_diff_results > 0:
                 from corpkit.other import save_result
                 save_result(output, quicksave)
         else:
-            if len(pandas_frame.columns) > 0:
+            if num_diff_results > 0:
                 from corpkit.other import save_result
                 save_result(output, quicksave)
 
@@ -1083,7 +1146,7 @@ if __name__ == '__main__':
                              help='Path to the corpus')
     parser.add_argument('-o', '--option', metavar='O', type=str,
                              help='Search type')
-    parser.add_argument('-q', '--query', metavar='Q', type=str,
+    parser.add_argument('-q', '--query', metavar='Q',
                              help='Tregex or Regex query')
     parser.add_argument('-s', '--quicksave', type=str, metavar='S',
                              help='A name for the interrogation and the files it produces')
@@ -1105,15 +1168,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not vars(args)['quicksave'] and not vars(args)['path'] and not vars(args)['option'] and not vars(args)['query']:
-        ready_to_start = False
-        while not ready_to_start:
-            print "\n    Welcome to corpkit!\n\n    This function is called interrogator().\n\n    It allows you to search constituency trees with Tregex, Stanford Dependency parses, or plain text corpora with Regular Expressions.\n\n    You're about to be prompted for some information:\n          1) a name for the interrogation\n          2) a path to your corpus\n          3) an option, specifying the kind of search you want to do\n          4) a Tregex query or regular expression.\n"
-            ready = raw_input("    When you're ready, type 'start', or 'exit' to cancel: ")
-            if ready.startswith('s'):
-                ready_to_start = True
-            elif ready.startswith('e'):
-                print '\n    OK ... come back soon!\n'
-                quit()
+        print "\nWelcome to corpkit!\n\nThis function is called interrogator().\n\nIt allows you to search constituency trees with Tregex, Stanford Dependency parses, or plain text corpora with Regular Expressions.\n\nYou're about to be prompted for some information:\n    1) a name for the interrogation\n    2) a path to your corpus\n    3) a Tregex query or regular expression\n    4) an option, specifying the kind of search you want to do.\n"
+        ready = raw_input("When you're ready, type 'start', or 'exit' to cancel: ")
+        if ready.startswith('e'):
+            print '\n    OK ... come back soon!\n'
+            quit()
 
     all_args = {}
 
@@ -1130,13 +1189,33 @@ if __name__ == '__main__':
         all_args['quicksave'] = urlify(name)
     if not vars(args)['path']:
         all_args['path'] = raw_input('\nPath to the corpus: ')
-    if not vars(args)['option']:
-        all_args['option'] = raw_input('\nQuery option: ')
     if not vars(args)['query']:
+        print '\nFor the following sentence:\n\n    "The sunny days have come at last."\n\nyou could perform a number of kinds of searches:\n\n    - Tregex queries will search the parse tree:\n        "/NNS/" locates "days", a plural noun\n        "/NN.?/ $ (JJ < /(?i)sunny/)" locates days, sister to adjectival "sunny"\n    - Regex options are used for searching plaintext or dependencies:\n        "[A-Za-z]+s\b" will return "days"\n' 
         all_args['query'] = raw_input('\nQuery: ')
+    if not vars(args)['option']:
+        print '\nSelect search option. For the following sentence:\n\n    "Some sunny days have come at last."\n\nyou could:\n\n' \
+                          '    b) Get tag and word of Tregex match ("(nns days)"\n' \
+                          '    c) count Tregex matches\n' \
+                          '    d) Get dependent of regular expression match and the r/ship ("amod:sunny")\n' \
+                          '    f) Get dependency function of regular expression match ("nsubj")\n' \
+                          '    g) get governor of regular expression match and the r/ship ("nsubj:have")\n' \
+                          '    n) get dependency index of regular expression match ("1")\n' \
+                          '    p) get part-of-speech tag with Tregex ("nns")\n' \
+                          '    r) regular expression, for plaintext corpora\n' \
+                          '    w) get word(s) returned by Tregex/keywords/ngrams ("day/s")\n' \
+                          '    x) exit\n' 
+        all_args['option'] = raw_input('\nQuery option: ')
+        if 'x' in all_args['option']:
+            quit()
+
     for entry in vars(args).keys():
         if entry not in all_args.keys():
             all_args[entry] = vars(args)[entry]
+
+    conf = raw_input("OK, we're ready to interrogate. If you want to exit now, type 'exit'. Otherwise, press enter to begin!")
+    if conf:
+        if conf.startswith('e'):
+            quit()
 
     res = interrogator(**all_args)
     # what to do with it!?
