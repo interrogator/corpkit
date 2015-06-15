@@ -319,7 +319,6 @@ def searchtree(tree, query, options = ['-t', '-o']):
     except NameError:
         import subprocess
         have_ipython = False
-    on_cloud = check_dit()
     fo = open('tree.tmp',"w")
     fo.write(tree + '\n')
     fo.close()
@@ -414,11 +413,11 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
 def interroplot(path, query):
     """Interrogates path with Tregex query, gets relative frequencies, and plots the top seven results"""
     from corpkit import interrogator, editor, plotter
-    quickstart = interrogator(path, 't', query)
-    edited = editor(quickstart.results, '%', quickstart.totals)
+    quickstart = interrogator(path, 'words', query)
+    edited = editor(quickstart.results, '%', quickstart.totals, print_info = False)
     plotter(str(path), edited.results)
 
-def datareader(data, on_cloud = False):
+def datareader(data):
     """
     Returns a string of plain text from a number of kinds of data.
 
@@ -441,8 +440,6 @@ def datareader(data, on_cloud = False):
     except NameError:
         import subprocess
         have_ipython = False
-
-    on_cloud = check_dit()
     
     # if unicode, make it a string
     if type(data) == unicode:
@@ -466,8 +463,7 @@ def datareader(data, on_cloud = False):
             if is_trees:
                 list_of_texts = tregex_engine(corpus = data,
                                   options = ['-o', '-t', '-w'], 
-                                  query = r'__ !> __', 
-                                  on_cloud = on_cloud)
+                                  query = r'__ !> __',)
             else:
                 list_of_texts = []
                 fs = [os.path.join(data, f) for f in os.listdir(data)]
