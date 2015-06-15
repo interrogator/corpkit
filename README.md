@@ -463,15 +463,15 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 # complex stuff: merge subcorpora
 >>> subcorpora_to_merge = [('1960s', r'^196'), ('1980s', r'^198'), ('1990s', r'^199'), 
 ...    ('2000s', r'^200'), ('2010s', r'^201')]
-for subcorp, search in subcorpora_to_merge:
-    modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
+>>> for subcorp, search in subcorpora_to_merge:
+...    modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
     
 # make relative, sort, remove what we don't want
 >>> modals = editor(modals.results, '%', modals.totals,
 ...    just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
 
 # show results
-print rel_modals.results, each_md.results, modals.results
+>>> print rel_modals.results, each_md.results, modals.results
 ```
 Output:
 ```
