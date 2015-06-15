@@ -25,6 +25,7 @@ def eugener(path,
     from collections import Counter
     import pandas as pd
     from corpkit.progressbar import ProgressBar
+    from corpkit.other import tregex_engine
 
     # manual lemmatisation here:
     from dictionaries.word_transforms import wordlist
@@ -42,7 +43,6 @@ def eugener(path,
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
 
-    on_cloud = check_dit()
     regex = re.compile(query)
     wordregex = re.compile('[A-Za-z0-9]')
 
@@ -72,21 +72,8 @@ def eugener(path,
         p.animate(index)
         # search the corpus for whole sents containing risk word
         subcorpus = os.path.join(path, corpus)
-        if have_ipython:
-            if on_cloud:
-                tregex_command = 'sh tregex.sh -o \'__ <# (__ !< __)\' %s 2>/dev/null' %(subcorpus)
-            else:
-                tregex_command = 'tregex.sh -o \'__ <# (__ !< __)\' %s 2>/dev/null' %(subcorpus)
-            result_with_blanklines = get_ipython().getoutput(tregex_command)
-            results = [line for line in result_with_blanklines if line]
-        else:
-            if on_cloud:
-                tregex_command = ["sh", "tregex.sh", "-o", '__ <# (__ !< __)', "%s" % subcorpus]
-            else:
-                tregex_command = ["tregex.sh", "-o", '__ <# (__ !< __)', "%s" % subcorpus]
-            FNULL = open(os.devnull, 'w')
-            results = subprocess.check_output(tregex_command, stderr=FNULL)
-            results = os.linesep.join([s for s in results.splitlines() if s]).split('\n')
+        query = r'__ <# (__ !< __)'
+        results = tregex_engine(query, ['-o'], subcorpus)
         # unicode        
         results = [unicode(r, 'utf-8', errors = 'ignore') for r in results]
         

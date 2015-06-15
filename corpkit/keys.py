@@ -35,8 +35,6 @@ def keywords(data,
     from corpkit.other import datareader
     from corpkit.tests import check_dit
 
-    on_cloud = check_dit()
-
     if nngram == 'all':
         nngram = 99999
     if nkey  == 'all':
@@ -49,7 +47,7 @@ def keywords(data,
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
         print "\n%s: Generating keywords and ngrams... \n" % time
-    good = datareader(data, on_cloud = on_cloud)
+    good = datareader(data)
     keywords, ngrams = keywords_and_ngrams(good, dictionary = dictionary, **kwargs)
     keywords_list_version = []
     for index, item in enumerate(keywords):
