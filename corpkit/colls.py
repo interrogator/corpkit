@@ -13,12 +13,12 @@ def collocates(data, nbest = 30, window = 5):
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    on_cloud = check_dit()
+        
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     #if noprint is False:
     print "\n%s: Generating %d collocates ... \n" % (time, nbest)
-    good = datareader(data, on_cloud = on_cloud)
+    good = datareader(data)
     if type(good) != unicode:
         good = unicode(good.lower(), 'utf-8', errors = 'ignore')
     else:

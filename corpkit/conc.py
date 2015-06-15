@@ -29,9 +29,6 @@ def conc(corpus, query,
         import subprocess
         have_ipython = False
     
-    # check if on the cloud, as this changes how we do tregex queries
-    on_cloud = check_dit()
-
     # check query
     good_tregex_query = tregex_engine(query, check_query = True)
 
@@ -58,12 +55,10 @@ def conc(corpus, query,
     if not plaintext:
         whole_results = tregex_engine(query, 
                                   options = ['-o', '-w', options], 
-                                  corpus = corpus, 
-                                  on_cloud = on_cloud)
+                                  corpus = corpus)
         middle_column_result = tregex_engine(query, 
                                   options = ['-o', options], 
-                                  corpus = corpus, 
-                                  on_cloud = on_cloud)
+                                  corpus = corpus)
 
     if plaintext:
         import nltk
