@@ -684,10 +684,14 @@ def plotter(title,
                 plt.xlabel(x_label)
 
     # no weird scalar results:
-    try: 
-        plt.ticklabel_format(useOffset = False)
+    #plt.gca().ticklabel_format(useOffset = False)
+    try:
+        from matplotlib.ticker import ScalarFormatter
+        ax = plt.gca().xaxis
+        ax.set_major_formatter(ScalarFormatter()) 
+        ax = plt.gca().yaxis
+        ax.set_major_formatter(ScalarFormatter()) 
     except:
-        # if other kind of plot...
         pass
 
     y_l = False
@@ -825,5 +829,5 @@ def plotter(title,
             pass
         return mpld3.display()
 
-        
+
 
