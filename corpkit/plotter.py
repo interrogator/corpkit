@@ -45,6 +45,7 @@ def plotter(title,
     import signal
 
     if interactive:
+        import mpld3
         import collections
         from mpld3 import plugins, utils
         from corpkit.plugins import InteractiveLegendPlugin, HighlightLines
@@ -823,3 +824,5 @@ def plotter(title,
         except:
             pass
         return mpld3.display()
+
+        
