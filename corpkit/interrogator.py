@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-def interrogator(path, option, query, 
+def interrogator(path, option, query = 'any', 
                 lemmatise = False, 
                 dictionary = 'bnc.p', 
                 titlefilter = False, 
@@ -444,7 +444,7 @@ def interrogator(path, option, query,
             pattern = [pattern]
         result = []
         for p in pattern:
-            matches = re.findall(pattern, plaintext_data)
+            matches = re.findall(p, plaintext_data)
             for m in matches:
                 result.append(m)
         return result
@@ -453,11 +453,16 @@ def interrogator(path, option, query,
         if type(pattern) == str:
             pattern = [pattern]
         result = []
+        # this slows things down significantly ...
         tokenized = nltk.word_tokenize(plaintext_data)
         for p in pattern:
-            num_matches = tokenized.count(p)
-            for m in range(num_matches):
-                result.append(p)
+            if not any_plaintext_word:
+                num_matches = tokenized.count(p)
+                for m in range(num_matches):
+                    result.append(p)
+            else:
+                for m in tokenized:
+                    result.append(m)
         return result
 
     def depnummer(xmldata):
@@ -528,17 +533,23 @@ def interrogator(path, option, query,
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
-                query = r'/(?i)^(' + '|'.join(query) + r')$/ < __'
+                query = r'__ < (/(?i)^(' + '|'.join(query) + r')$/ !< __)'
+            if query == 'any':
+                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('b') or option.startswith('B'):
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
                 query = r'__ < (/(?i)^(' + '|'.join(query) + r')$/ !< __)'
+            if query == 'any':
+                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('w') or option.startswith('W'):
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
                 query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __'
+            if query == 'any':
+                query = r'/.?[A-Za-z0-9].?/ !< __'
         elif option.startswith('c') or option.startswith('C'):
             count_results = {}
             only_count = True
@@ -546,24 +557,31 @@ def interrogator(path, option, query,
             optiontext = 'Counts only.'
             if type(query) == list:
                 query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __' 
+            if query == 'any':
+                query = r'/.?[A-Za-z0-9].?/ !< __'
 
         #plaintext options
         elif option.startswith('r') or option.startswith('R'):
             plaintext = True
             optiontext = 'Regular expression matches only.'
             translated_option = 'r'
+            if query == 'any':
+                query = r'.*'
+
         elif option.startswith('s') or option.startswith('S'):
             plaintext = True
             optiontext = 'Simple plain-text search.'
             translated_option = 's'
+            if query == 'any':
+                any_plaintext_word = True
+            else:
+                any_plaintext_word = False
 
         #keywording and ngramming options
         elif option.startswith('k') or option.startswith('K'):
             translated_option = 'k'
             keywording = True
             optiontext = 'Keywords only.'
-            if not query:
-                query = 'any'
             if type(query) == list:
                 query = r'(?i)^(' + '|'.join(query) + r')$'
 
@@ -572,10 +590,8 @@ def interrogator(path, option, query,
             n_gramming = True
             phrases = True
             optiontext = 'n-grams only.'
-            if not query:
-                query = 'any'
             if type(query) == list:
-                query = r'(?i)^(' + '|'.join(query) + r')$'
+                query = r'(?i)\b(' + '|'.join(query) + r')\b'
 
         # dependency option:
         elif option.startswith('i') or option.startswith('I'):
@@ -614,6 +630,17 @@ def interrogator(path, option, query,
     if dependency:
         if type(query) == list:
             query = r'(?i)^(' + '|'.join(query) + r')$' 
+        if query == 'any':
+            query = r'.*'
+
+    if plaintext is True:
+        try:
+            if tregex_engine(corpus = os.path.join(path, os.listdir(path)[-1]), check_for_trees = True):
+                decision = raw_input('\nIt appears that your corpus contains parse trees. If using a plaintext search option, your counts will likely be inaccurate.\n\nHit enter to continue, or type "exit" to start again: ')
+                if decision.startswith('e'):
+                    return
+        except:
+            pass
     
     # if query is a special query, convert it:
     if query == 'any':
@@ -838,7 +865,10 @@ def interrogator(path, option, query,
             is_valid = True
             try:
                 if translated_option == 'r':
-                    regex = re.compile(r'\b' + query + r'\b')
+                    if type(query) == str:
+                        regex = re.compile(r'\b' + query + r'\b')
+                    else:
+                        regex = query
                 else:
                     regex = re.compile(query)
                 is_valid = True
@@ -900,14 +930,19 @@ def interrogator(path, option, query,
                         if query != 'any':
                             if re.search(query, word):
                                 unicode_keys.append([index, word, score])
+                        else:
+                            unicode_keys.append([index, word, score])
                     result = unicode_keys
                 elif n_gramming:
                     result = []
                     for index, ngram, score in ngrams:
                         if query != 'any':
-                            if re.search(query, ngram[0]) or re.search(query, ngram[1]):
+                            if re.search(query, ngram):
                                 for _ in range(int(score)):
                                     result.append(ngram)
+                        else:
+                            for _ in range(int(score)):
+                                result.append(ngram)
             #if tregex, search
             else:
                 op = ['-o', '-' + translated_option]
@@ -944,13 +979,13 @@ def interrogator(path, option, query,
                         result_from_file = deprole(data)
                     if translated_option == 'f':
                         result_from_file = funct(data)
-                    if translated_option == 'n':
+                    if translated_option == 'i':
                         result_from_file = depnummer(data)
                     if translated_option == 'r':
                         result_from_file = plaintext_regex_search(regex, data)
                     if translated_option == 's':
                         result_from_file = plaintext_simple_search(query, data)
-                if result_from_file is not None:
+                if 'result_from_file' in locals():
                     for entry in result_from_file:
                         result.append(entry)
 
@@ -1053,19 +1088,24 @@ def interrogator(path, option, query,
     
     # turn master dict into dataframe, sorted
     df = DataFrame(the_big_dict, index = subcorpus_names)
-    df.ix['Total'] = df.sum()
-    tot = df.ix['Total']
-    if not depnum:
-        df = df[tot.argsort()[::-1]]
-    df = df.drop('Total', axis = 0)
-    
+    try:
+        df.ix['Total'] = df.sum()
+        tot = df.ix['Total']
+        if not depnum:
+            df = df[tot.argsort()[::-1]]
+        df = df.drop('Total', axis = 0)
+    except:
+        pass
     # totals --- could just use the frame above ...
     stotals = df.sum(axis = 1)
     stotals.name = 'Total'
 
     # make result into series if only one subcorpus
     if one_big_corpus:
-        df = df.T[subcorpus_names[0]]
+        try:
+            df = df.T[subcorpus_names[0]]
+        except:
+            pass
         #df.name = query
 
     # return pandas/csv table of most common results in each subcorpus
@@ -1075,7 +1115,6 @@ def interrogator(path, option, query,
         word_table = tabler(subcorpus_names, dicts, table_size)
     
     # depnum is a little different, though
-    # still needs to be done
     if depnum:
         df = df.T
         
@@ -1131,12 +1170,14 @@ def interrogator(path, option, query,
     else:
         print '%s: Finished! %d unique results.\n' % (time, num_diff_results)
     if num_diff_results == 0:
+        print '' 
         warnings.warn('No results produced. Maybe your query needs work.')
-    
+        return output
     if not keywording:
         if stotals.sum() == 0:
+            print '' 
             warnings.warn('No totals produced. Maybe your query needs work.')
-
+            return output
     if quicksave:
         if not keywording:
             if stotals.sum() > 0 and num_diff_results > 0:
@@ -1153,6 +1194,14 @@ def interrogator(path, option, query,
         return output, d
     else:
         return output
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
 
