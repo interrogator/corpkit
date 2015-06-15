@@ -439,12 +439,15 @@ def interrogator(path, option, query,
         gc.collect()
         return result
 
-    def plaintext_regex_search(regex, plaintext_data):
-        try:
-            result = re.findall(regex, plaintext_data)
-            return result
-        except:
-            return
+    def plaintext_regex_search(pattern, plaintext_data):
+        if type(pattern) == str:
+            pattern = [pattern]
+        result = []
+        for p in pattern:
+            matches = re.findall(pattern, plaintext_data)
+            for m in matches:
+                result.append(m)
+        return result
 
     def plaintext_simple_search(pattern, plaintext_data):
         if type(pattern) == str:
@@ -521,20 +524,28 @@ def interrogator(path, option, query,
     # Tregex option:
     translated_option = False
     while not translated_option:
-        if option.startswith('p') or option.startswith('P') or option.startswith('u') or option.startswith('U'):
+        if option.startswith('p') or option.startswith('P'):
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
-        elif option.startswith('b') or option.startswith('B') or option.startswith('o') or option.startswith('O'):
+            if type(query) == list:
+                query = r'/(?i)^(' + '|'.join(query) + r')$/ < __'
+        elif option.startswith('b') or option.startswith('B'):
             optiontext = 'Tags and words.'
             translated_option = 'o'
-        elif option.startswith('t') or option.startswith('T') or option.startswith('w') or option.startswith('W'):
+            if type(query) == list:
+                query = r'__ < (/(?i)^(' + '|'.join(query) + r')$/ !< __)'
+        elif option.startswith('w') or option.startswith('W'):
             optiontext = 'Words only.'
             translated_option = 't'
+            if type(query) == list:
+                query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __'
         elif option.startswith('c') or option.startswith('C'):
             count_results = {}
             only_count = True
             translated_option = 'C'
             optiontext = 'Counts only.'
+            if type(query) == list:
+                query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __' 
 
         #plaintext options
         elif option.startswith('r') or option.startswith('R'):
@@ -548,14 +559,23 @@ def interrogator(path, option, query,
 
         #keywording and ngramming options
         elif option.startswith('k') or option.startswith('K'):
-            query = 'keywords'
+            translated_option = 'k'
             keywording = True
             optiontext = 'Keywords only.'
+            if not query:
+                query = 'any'
+            if type(query) == list:
+                query = r'(?i)^(' + '|'.join(query) + r')$'
+
         elif option.startswith('n') or option.startswith('n'):
-            query = 'ngrams'
+            translated_option = 'n'
             n_gramming = True
             phrases = True
             optiontext = 'n-grams only.'
+            if not query:
+                query = 'any'
+            if type(query) == list:
+                query = r'(?i)^(' + '|'.join(query) + r')$'
 
         # dependency option:
         elif option.startswith('i') or option.startswith('I'):
@@ -590,6 +610,10 @@ def interrogator(path, option, query,
                           '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
                           '              x) exit\n\nYour selection: ' % (time, option))
             option = selection
+
+    if dependency:
+        if type(query) == list:
+            query = r'(?i)^(' + '|'.join(query) + r')$' 
     
     # if query is a special query, convert it:
     if query == 'any':
@@ -873,13 +897,17 @@ def interrogator(path, option, query,
                 if keywording:
                     for index, w, score in keys:
                         word = unicode(w, 'utf-8', errors = 'ignore')
-                        unicode_keys.append([index, word, score])
+                        if query != 'any':
+                            if re.search(query, word):
+                                unicode_keys.append([index, word, score])
                     result = unicode_keys
                 elif n_gramming:
                     result = []
                     for index, ngram, score in ngrams:
-                        for _ in range(int(score)):
-                            result.append(ngram)
+                        if query != 'any':
+                            if re.search(query, ngram[0]) or re.search(query, ngram[1]):
+                                for _ in range(int(score)):
+                                    result.append(ngram)
             #if tregex, search
             else:
                 op = ['-o', '-' + translated_option]
