@@ -683,17 +683,29 @@ def plotter(title,
             if not piemode:
                 plt.xlabel(x_label)
 
-    # no weird scalar results:
-    #plt.gca().ticklabel_format(useOffset = False)
+    # no offsets for numerical x and y values
     try:
+        # check if x axis can be an int
+        check_x_axis = list(dataframe.index)[0]
+        can_it_be_int = int(check_x_axis)
+        # if so, set these things
         from matplotlib.ticker import ScalarFormatter
-        ax = plt.gca().xaxis
-        ax.set_major_formatter(ScalarFormatter()) 
-        ax = plt.gca().yaxis
-        ax.set_major_formatter(ScalarFormatter()) 
+        plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
     except:
         pass
 
+    # same for y axis
+    try:
+        # check if x axis can be an int
+        check_y_axis = list(dataframe.columns)[0]
+        can_it_be_int = int(check_y_axis)
+        # if so, set these things
+        from matplotlib.ticker import ScalarFormatter
+        plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
+    except:
+        pass
+
+    # y labelling
     y_l = False
     if not absolutes:
         y_l = 'Percentage'
@@ -744,8 +756,8 @@ def plotter(title,
         if 'kind' in kwargs:
             if kwargs['kind'].startswith('bar'):
                 width = ax.containers[0][0].get_width()
-    
 
+    
     if was_series:
         the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
