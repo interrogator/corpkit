@@ -756,8 +756,10 @@ def interrogator(path, option, query = 'any',
                     print ''
                     return
 
+        
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         while dep_type not in allowed_dep_types:
+            time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: Dependency type "%s" not recognised. Must be one of:\n\n' \
                 '              a) basic-dependencies' \
                 '              b) collapsed-dependencies' \
