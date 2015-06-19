@@ -1,10 +1,8 @@
-
 def keywords(data, 
              dictionary = 'bnc.p', 
              clear = True, 
              printstatus = True, 
-             nkey = 'all', 
-             nngram = 'all',
+             n = 'all', 
              **kwargs):
     """Feed this function some data and get its keywords.
 
@@ -31,14 +29,12 @@ def keywords(data,
         import subprocess
         have_ipython = False
 
-    from corpkit.keys import ngrams, keywords_and_ngrams
+    from corpkit.keys import spindle_ngrams, keywords_and_ngrams
     from corpkit.other import datareader
     from corpkit.tests import check_dit
 
-    if nngram == 'all':
-        nngram = 99999
-    if nkey  == 'all':
-        nkey = 99999
+    if n  == 'all':
+        n = 99999
 
     if not dictionary.endswith('.p'):
         dictionary = dictionary + '.p'
@@ -46,35 +42,89 @@ def keywords(data,
     # turn all sentences into long string
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
-        print "\n%s: Generating keywords and ngrams... \n" % time
-    good = datareader(data)
-    keywords, ngrams = keywords_and_ngrams(good, dictionary = dictionary, **kwargs)
-    keywords_list_version = []
-    for index, item in enumerate(keywords):
-        aslist = [index, item[0], item[1]]
-        keywords_list_version.append(aslist)
-    ngrams_list_version = []
-    for index, item in enumerate(ngrams):
-        joined_ngram = ' '.join(item[0])
-        aslist = [index, joined_ngram, item[1]]
-        ngrams_list_version.append(aslist)
+        print "\n%s: Generating keywords ...\n" % time
+    good = datareader(data, **kwargs)
+    keywords = keywords_and_ngrams(good, dictionary = dictionary, show = 'keywords', **kwargs)
+    import pandas as pd
+    out = pd.Series([s for k, s in keywords], index = [k for k, s in keywords])
+    out.name = 'keywords'
     if clear:
-        clear_output()    
-    return keywords_list_version[:nkey], ngrams_list_version[:nngram]
+        clear_output()
+    return out[:n]
+
+def ngrams(data,
+           dictionary = 'bnc.p',
+           clear = True, 
+           printstatus = True, 
+           n = 'all',
+           **kwargs):
+    """Feed this function some data and get its keywords.
+
+    You can use dictmaker() to build a new dictionary 
+    to serve as reference corpus, or use bnc.p
+
+    A list of what counts as data is available in the 
+    docstring of datareader().
+    """
+    
+    import re
+    import time
+    from time import localtime, strftime
+
+    try:
+        from IPython.display import display, clear_output
+    except ImportError:
+        pass
+    try:
+        get_ipython().getoutput()
+    except TypeError:
+        have_ipython = True
+    except NameError:
+        import subprocess
+        have_ipython = False
+
+    from corpkit.keys import spindle_ngrams, keywords_and_ngrams
+    from corpkit.other import datareader
+    from corpkit.tests import check_dit
+
+    if n == 'all':
+        n = 99999
+
+    time = strftime("%H:%M:%S", localtime())
+    if printstatus:
+        print "\n%s: Generating ngrams... \n" % time
+    good = datareader(data, **kwargs)
+    if 'lemmatise' in kwargs:
+        if kwargs['lemmatise'] is True:
+            good = ' '.join(good)
+    good = datareader(data, **kwargs)
+    ngrams = keywords_and_ngrams(good, dictionary = dictionary, show = 'ngrams', **kwargs)
+    import pandas as pd
+    out = pd.Series([s for k, s in ngrams], index = [k for k, s in ngrams])
+    out.name = 'ngrams'
+    if clear:
+        clear_output()
+    return out[:n]
+
 
 
 # from Spindle: just altered dictionary stuff and number to show
-def ngrams(words, n=2, nngram = 'all'):
+def spindle_ngrams(words, n=2, nngram = 'all'):
     return (tuple(words[i:i+n]) for i in range(0, len(words) - (n - 1)))
 
+
 # from Spindle
-def keywords_and_ngrams(input, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 'all', nngram = 'all'):
+def keywords_and_ngrams(input, thresholdBigrams=2, 
+                        dictionary = 'bnc.p', show = 'keywords',
+                        **kwargs):
     from collections import defaultdict
     import math
     import json
     import os
     from dictionaries.stopwords import stopwords as my_stopwords
     import cPickle as pickle
+    if not dictionary.endswith('.p'):
+        dictionary = dictionary + '.p'
     try:
         fdist_dictfile = pickle.load( open( dictionary, "rb" ) )
     except IOError:
@@ -90,7 +140,7 @@ def keywords_and_ngrams(input, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 
             except IOError:
                 raise IOError('Could not find %s in current directory, data/dictionaries or %s' % (dictionary, dictionaries_path))
     
-    # Total number of words in Spoken BNC
+    # Total number of words in reference corpus
     dictsum = sum(fdist_dictfile.itervalues())
     fdistText = defaultdict(int)
     sumText = 0
@@ -130,11 +180,11 @@ def keywords_and_ngrams(input, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 
         dicLL[k] = float(2* ((a*logaE1)+(b*math.log(b/E2))))
 
     sortedLL = sorted(dicLL, key=dicLL.__getitem__, reverse=True)
-    listKeywords = [(k, dicLL[k]) for k in sortedLL if k.isalpha()]
+    listKeywords = [(unicode(k, 'utf-8', errors = 'ignore'), dicLL[k]) for k in sortedLL if k.isalpha()]
 
     keywords = [keyw[0] for keyw in listKeywords]
     counts = defaultdict(int)
-    for ng in ngrams(listWords, 2):
+    for ng in spindle_ngrams(listWords, 2):
         counts[ng] += 1
 
     listBigrams = []
@@ -142,6 +192,9 @@ def keywords_and_ngrams(input, thresholdBigrams=2, dictionary = 'bnc.p', nkey = 
         w0 = ng[0]
         w1 = ng[1]
         if w0 in keywords and w1 in keywords and c>thresholdBigrams:
-            listBigrams.append((ng, c))
+            listBigrams.append((' '.join(ng), c))
 
-    return (listKeywords, listBigrams)
+    if show == 'keywords':
+        return listKeywords
+    elif show == 'ngrams':
+        return listBigrams
