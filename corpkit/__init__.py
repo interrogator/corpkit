@@ -3,6 +3,7 @@ __all__ = ["interrogator",
            "plotter",
            "conc",
            "keywords",
+           "ngrams",
            "collocates",
            "quickview",
            "concprinter",
@@ -18,7 +19,8 @@ __all__ = ["interrogator",
            "quicktree",
            "searchtree",
            "tregex_engine",
-           "load_all_results"]
+           "load_all_results",
+           "dictmaker"]
 
 import os
 import sys
@@ -43,6 +45,7 @@ from editor import editor
 from plotter import plotter
 from conc import conc
 from keys import keywords
+from keys import ngrams
 from colls import collocates
 from plugins import HighlightLines, InteractiveLegendPlugin
 
