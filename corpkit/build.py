@@ -3,7 +3,12 @@
 #   Author: Daniel McDonald
 
 
-def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
+def dictmaker(path, 
+              dictname,
+              query = 'any',
+              dictpath = 'data/dictionaries',
+              lemmatise = False,
+              just_content_words = False):
     """makes a pickle wordlist named dictname in dictpath"""
     import os
     import pickle
@@ -14,6 +19,7 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
     import shutil
     from collections import Counter
     from corpkit.progressbar import ProgressBar
+    from corpkit.other import tregex_engine
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -26,47 +32,94 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
         import subprocess
         have_ipython = False
     
+    if lemmatise:
+        dictname = dictname + '-lemmatised'
     if not dictname.endswith('.p'):
         dictname = dictname + '.p'
 
-    sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
+    # allow direct passing of dirs
+    path_is_list = False
+    if type(path) == str:
+        sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     # if no subcorpora, just do the dir passed in
-    if len(sorted_dirs) == 0:
-        sorted_dirs = [path]
-    sorted_dirs.sort(key=int)
+        if len(sorted_dirs) == 0:
+            sorted_dirs = [path]
+    elif type(path) == list:
+        path_is_list = True
+        sorted_dirs = sorted(path)
+        if type(sorted_dirs[0]) == int:
+            sorted_dirs = [str(d) for d in sorted_dirs]
+
+    try:
+        sorted_dirs.sort(key=int)
+    except:
+        pass
     try:
         if not os.path.exists(dictpath):
             os.makedirs(dictpath)
     except IOError:
         print "Error making " + dictpath + "/ directory."
-    if os.path.isfile(os.path.join(dictpath, dictname)):
-        raise ValueError(os.path.join(dictpath, dictname) + " already exists. Delete it or use a new filename.")
+    while os.path.isfile(os.path.join(dictpath, dictname)):
+        time = strftime("%H:%M:%S", localtime())
+        selection = raw_input('\n%s: %s already exists in %s.\n' \
+               '          You have the following options:\n\n' \
+               '              a) save with a new name\n' \
+               '              b) delete %s\n' \
+               '              c) exit\n\nYour selection: ' % (time, dictname, dictpath, os.path.join(dictpath, dictname)))
+        if 'a' in selection:
+            sel = raw_input('\nNew save name: ')
+            dictname = sel
+            if lemmatise:
+                dictname = dictname + '-lemmatised'
+            if not dictname.endswith('.p'):
+                dictname = dictname + '.p'
+        elif 'b' in selection:
+            os.remove(os.path.join(dictpath, dictname))
+        elif 'c' in selection:
+            print ''
+            return
+        else:
+            as_str = str(selection)
+            print '          Choice "%s" not recognised.' % selection
+
+
     time = strftime("%H:%M:%S", localtime())
     print '\n%s: Extracting words from files ... \n' % time
     p = ProgressBar(len(sorted_dirs))
     all_results = []
-    query = r'ROOT < __'
+    
+    # translate any query
+    if query == 'any':
+        if lemmatise:
+            query = r'__ <# (__ !< __)'
+        else:
+            query = r'__ !< __'
+    
+    if lemmatise:
+        options = ['-o']
+    else:
+        options = ['-t', '-o']
+    
+    allwords = []
     for index, d in enumerate(sorted_dirs):
         p.animate(index)
-        if len(sorted_dirs) == 1:
+        if not path_is_list:
+            if len(sorted_dirs) == 1:
+                subcorp = d
+            else:
+                subcorp = os.path.join(path, d)
+        else:
             subcorp = d
+        if index == 0:
+            trees_found = tregex_engine(corpus = subcorp, check_for_trees = True)
+            if not trees_found:
+                lemmatise = False
+                dictname = dictname.replace('-lemmatised', '')
+        if trees_found:
+            results = tregex_engine(corpus = subcorp, options = options, query = query, 
+                                    lemmatise = lemmatise,
+                                    just_content_words = just_content_words) 
         else:
-            subcorp = os.path.join(path, d)
-
-        if have_ipython:
-            tregex_command = 'tregex.sh -o -t -w \'%s\' %s 2>/dev/null' %(query, subcorp)
-            results_with_blank = get_ipython().getoutput(tregex_command)
-            results = [result for result in results_with_blank if result]
-        else:
-            tregex_command = ["tregex.sh", "-o", "-t", "-w", '%s' % query, "%s" % subcorp]
-            FNULL = open(os.devnull, 'w')
-            results = subprocess.check_output(tregex_command, stderr=FNULL)
-            results = os.linesep.join([s for s in results.splitlines() if s]).split('\n')
-
-        # work with plain text too
-        if len(results) == 0:
-            # assuming data isn't trees, so 
-            # read plain text out of files ...
             list_of_texts = []
             for f in os.listdir(subcorp):
                 raw = open(os.path.join(subcorp, f)).read()
@@ -77,33 +130,30 @@ def dictmaker(path, dictname, dictpath = 'data/dictionaries'):
             except:
                 pass
 
-        for line in results:
-            all_results.append(line)
+        for result in results:
+            allwords.append(result)    
 
-    p.animate(len(sorted_dirs))
-    #if have_ipython:
-        #clear_output()
-    time = strftime("%H:%M:%S", localtime())
-    print '\n\n%s: Tokenising %d lines ... \n' % ( time, len(all_results))
-    all_results = '\n'.join(all_results)
-    text = unicode(all_results.lower(), 'utf-8', errors = 'ignore')
-    sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-    sents = sent_tokenizer.tokenize(text)
-    tokenized_sents = [nltk.word_tokenize(i) for i in sents]
-    # flatten  allwords
-    allwords = [item for sublist in tokenized_sents for item in sublist]
-    # sort allwords
-    allwords = sorted(allwords)
-    time = strftime("%H:%M:%S", localtime())
-    print time + ': Counting ' + str(len(allwords)) + ' words ... \n'
+        if not lemmatise:
+            p.animate(len(sorted_dirs))
+            time = strftime("%H:%M:%S", localtime())
+            print '\n\n%s: Tokenising %d lines ... \n' % ( time, len(results))
+            results = '\n'.join(results)
+            text = unicode(results.lower(), 'utf-8', errors = 'ignore')
+            sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+            sents = sent_tokenizer.tokenize(text)
+            tokenized_sents = [nltk.word_tokenize(i) for i in sents]
+            # flatten  allwords
+            allwords = [item for sublist in tokenized_sents for item in sublist]
+
     # make a dict
+    p.animate(len(sorted_dirs))
+
     dictionary = Counter(allwords)
 
     with open(os.path.join(dictpath, dictname), 'wb') as handle:
         pickle.dump(dictionary, handle)
     time = strftime("%H:%M:%S", localtime())
-    print time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
-
+    print '\n\n' + time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
 
 def get_urls(url, criteria = False, remove = True):
     """Get a list of all urls within an html document"""
