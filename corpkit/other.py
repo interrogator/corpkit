@@ -10,9 +10,9 @@ def quickview(results, n = 25):
     # bad hack to find out type of results
 
     if 'interrogation' in str(type(results)):
-        cls = results.query['function']
+        clas = results.query['function']
 
-    if cls == 'interrogator':
+    if clas == 'interrogator':
         datatype = results.query['datatype']
         if datatype == 'float64':
             option = 'total'
@@ -30,7 +30,7 @@ def quickview(results, n = 25):
             resbranch = False
             results_branch = results
 
-    elif cls == 'editor':
+    elif clas == 'editor':
         # currently, it's wrong if you edit keywords! oh well
         datatype = results.query['datatype']
         if results.query['just_totals']:
@@ -109,7 +109,6 @@ def concprinter(df, kind = 'string', n = 100):
     if kind.startswith('c'):
         print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
-
 
 def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     """Save an interrogation as pickle to savedir"""
@@ -417,7 +416,7 @@ def interroplot(path, query):
     edited = editor(quickstart.results, '%', quickstart.totals, print_info = False)
     plotter(str(path), edited.results)
 
-def datareader(data):
+def datareader(data, plaintext = False, **kwargs):
     """
     Returns a string of plain text from a number of kinds of data.
 
@@ -448,22 +447,27 @@ def datareader(data):
                 good = data.encode('utf-8', errors = 'ignore')
 
     elif type(data) == str:
-        # if it's a file, assume csv and get the big part
+        # if it's a file, read it
         if os.path.isfile(data):
-            f = open(data)
-            raw = f.read()
-            # obsolete
-            if data.endswith('csv'):
-                bad, good = re.compile(r'Entire sentences \(n=[0-9]+\):').split(raw)
-            else:
-                good = raw
+            good = open(data).read()
         # if it's a dir, flatten all trees
         elif os.path.isdir(data):
-            is_trees = tregex_engine(corpus = data, check_for_trees = True)
-            if is_trees:
+            query = r'__ !> __'
+            options = ['-o', '-t', '-w']
+            if 'lemmatise' in kwargs:
+                if kwargs['lemmatise'] is True:
+                    query = r'__ <# (__ !< __)'
+                    options = ['-o']
+ 
+            #while plaintext is False:
+                #for f in first_twenty:
+                    #plaintext = tregex_engine(corpus = f, check_for_trees = True)
+            
+            if not plaintext:
                 list_of_texts = tregex_engine(corpus = data,
-                                  options = ['-o', '-t', '-w'], 
-                                  query = r'__ !> __',)
+                                              options = options,
+                                              query = query, 
+                                              **kwargs)
             else:
                 list_of_texts = []
                 fs = [os.path.join(data, f) for f in os.listdir(data)]
@@ -507,7 +511,9 @@ def tregex_engine(query = False,
                   options = False, 
                   corpus = False,  
                   check_query = False,
-                  check_for_trees = False,):
+                  check_for_trees = False,
+                  lemmatise = False,
+                  just_content_words = False):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
@@ -518,13 +524,27 @@ def tregex_engine(query = False,
     import re
     from time import localtime, strftime
     from corpkit.tests import check_dit
+    from dictionaries.word_transforms import wordlist
+
     on_cloud = check_dit()
+
+    def find_wordnet_tag(tag):
+        if tag.startswith('j'):
+            tag = 'a'
+        elif tag.startswith('v') or tag.startswith('m'):
+            tag = 'v'
+        elif tag.startswith('n'):
+            tag = 'n'
+        elif tag.startswith('r'):
+            tag = 'r'
+        else:
+            tag = False
+        return tag
 
     # if check_query, enter the while loop
     # if not, get out of it
     an_error_occurred = True
     while an_error_occurred:
-
         if on_cloud:
             tregex_command = ["sh", "tregex.sh"]
         else:
@@ -535,7 +555,7 @@ def tregex_engine(query = False,
         if check_for_trees:
             options = ['-T']
 
-        # append list of options to query    
+        # append list of options to query 
         if options:
             [tregex_command.append(o) for o in options]
         if query:
@@ -613,6 +633,35 @@ def tregex_engine(query = False,
         return []
     # remove total
     res = res[:-1]
+    # make unicode and lowercase
+    res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
+
+    if lemmatise:
+        # CAN'T BE USED WITH ALMOST EVERY OPTION!
+        allwords = []
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lmtzr=WordNetLemmatizer()
+         # turn this into a list of words or lemmas, with or without closed words
+        for result in res:
+            # remove brackets and split on first space
+            result = result.lstrip('(')
+            result = result.rstrip(')')
+            tag, word = result.split(' ', 1)
+            # get wordnet tag from stanford tag
+            wordnet_tag = find_wordnet_tag(tag)
+            short_tag = tag[:2]
+            # do manual lemmatisation first
+            if word in wordlist:
+                word = wordlist[word]
+            # do wordnet lemmatisation
+            if wordnet_tag:
+                word = lmtzr.lemmatize(word, wordnet_tag)
+            if just_content_words:
+                if wordnet_tag:
+                    allwords.append(word)
+            else:
+                allwords.append(word)
+        res = allwords
     return res
 
 def load_all_results(data_dir = 'data/saved_interrogations'):
