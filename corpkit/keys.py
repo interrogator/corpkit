@@ -50,6 +50,9 @@ def keywords(data,
     out.name = 'keywords'
     if clear:
         clear_output()
+    if printstatus:
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Done! %d results.\n' % (time, len(list(out.index)))
     return out[:n]
 
 def ngrams(data,
@@ -187,12 +190,13 @@ def keywords_and_ngrams(input, thresholdBigrams=2,
     for ng in spindle_ngrams(listWords, 2):
         counts[ng] += 1
 
-    listBigrams = []
-    for c, ng in sorted(((c, ng) for ng, c in counts.iteritems()), reverse=True):
-        w0 = ng[0]
-        w1 = ng[1]
-        if w0 in keywords and w1 in keywords and c>thresholdBigrams:
-            listBigrams.append((' '.join(ng), c))
+    if show == 'ngrams':
+        listBigrams = []
+        for c, ng in sorted(((c, ng) for ng, c in counts.iteritems()), reverse=True):
+            w0 = ng[0]
+            w1 = ng[1]
+            if w0 in keywords and w1 in keywords and c>thresholdBigrams:
+                listBigrams.append((' '.join(ng), c))
 
     if show == 'keywords':
         return listKeywords
