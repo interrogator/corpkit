@@ -12,6 +12,7 @@ def interrogator(path, option, query = 'any',
                 table_size = 50,
                 quicksave = False,
                 add_to = False,
+                add_pos_to_g_d_option = False,
                 **kwargs):
     
     """
@@ -328,12 +329,16 @@ def interrogator(path, option, query = 'any',
                             if role != u'root':
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
                                 result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text
                                 # could just correct spelling here ...
                                 if function_filter:
                                     if re.search(funfil_regex, role):
                                         result.append(result_word)
                                 else:
-                                    colsep = role + u':' + result_word
+                                    if add_pos_to_g_d_option:
+                                        colsep = role + u':' + result_pos + u':' + result_word
+                                    else:
+                                        colsep = role + u':' + result_word
                                     result.append(colsep)
                             else:
                                 result.append(u'root:root')
@@ -385,11 +390,15 @@ def interrogator(path, option, query = 'any',
                             # find this idea
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
                             result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text
                             if function_filter:
                                 if re.search(funfil_regex, role):
                                     result.append(result_word)
                             else:
-                                colsep = role + u':' + result_word
+                                if add_pos_to_g_d_option:
+                                    colsep = role + u':' + result_pos + u':' + result_word
+                                else:
+                                    colsep = role + u':' + result_word
                                 result.append(colsep)
         else:
             just_good_deps = SoupStrainer('dependencies', type=dep_type)
