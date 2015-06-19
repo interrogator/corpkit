@@ -4,21 +4,18 @@ def conc(corpus, query,
         random = False, 
         window = 40, 
         trees = False,
-        plaintext = 'try'): 
+        plaintext = 'guess'): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
+    import os
+    import re
     import pandas as pd
     from pandas import DataFrame
-    import os
-    from random import randint
-    import time
     from time import localtime, strftime
-    import re
-    from collections import defaultdict
+    
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    import pydoc
     from corpkit.other import tregex_engine
     from corpkit.tests import check_pytex, check_dit
     try:
@@ -28,6 +25,10 @@ def conc(corpus, query,
     except NameError:
         import subprocess
         have_ipython = False
+    
+    # convert list to query
+    if type(query) == list:
+        query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __'
     
     # check query
     good_tregex_query = tregex_engine(query, check_query = True)
@@ -41,12 +42,11 @@ def conc(corpus, query,
     print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
 
-    if plaintext == 'try':
+    if plaintext == 'guess':
         if not tregex_engine(corpus = corpus, check_for_trees = True):
             plaintext = True
         else:
             plaintext = False
-
 
     if trees:
         options = '-s'
@@ -97,7 +97,6 @@ def conc(corpus, query,
 
     zipped = zip(whole_results, middle_column_result)
     unique_results = []
-
 
     for whole_result, middle_part in zipped:
         if not trees:
