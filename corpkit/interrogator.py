@@ -586,7 +586,7 @@ def interrogator(path, option, query = 'any',
             else:
                 any_plaintext_word = False
 
-        #keywording and ngramming options
+        #keywording and n_gramming options
         elif option.startswith('k') or option.startswith('K'):
             translated_option = 'k'
             keywording = True
@@ -697,7 +697,7 @@ def interrogator(path, option, query = 'any',
                 dict_for_print = '          ' + '\n          '.join(sorted(['%s: %s' % (k, v) for k, v in loaded.query.items()])) + '\n'
                 time = strftime("%H:%M:%S", localtime())
                 selection = raw_input('\n%s: %s interrogation found in %s:\n\n%s\n' \
-                       '          You have the following option:\n\n' \
+                       '          You have the following options:\n\n' \
                        '              a) save with a new name\n' \
                        '              b) turn off "quicksave"\n' \
                        '              c) return the results from %s\n' \
@@ -785,7 +785,11 @@ def interrogator(path, option, query = 'any',
     # if keywording and self is the dictionary, make the dict if need be:
     if keywording:
         if dictionary.startswith('self') or dictionary == os.path.basename(path):
-            dictionary = os.path.basename(path) + '.p'
+            if lemmatise:
+                lem = '-lemmatised'
+            else:
+                lem = ''
+            dictionary = os.path.basename(path) + lem + '.p'
             dictpath = 'data/dictionaries'
             import pickle
             try:
@@ -794,7 +798,7 @@ def interrogator(path, option, query = 'any',
                 from corpkit.build import dictmaker
                 time = strftime("%H:%M:%S", localtime())
                 print '\n%s: Making reference corpus ...' % time
-                dictmaker(path, dictionary)
+                dictmaker(path, dictionary, lemmatise = lemmatise)
     
     # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
@@ -929,31 +933,39 @@ def interrogator(path, option, query = 'any',
                 subcorpus = os.path.join(path,subcorpus_name)
     
             # get keywords and ngrams, rather than tregex:
-            if keywording or n_gramming:
-                from corpkit import keywords
-                keys, ngrams = keywords(subcorpus, dictionary = dictionary, 
-                                        printstatus = False, clear = False)
 
-                unicode_keys = []
-                if keywording:
-                    for index, w, score in keys:
-                        word = unicode(w, 'utf-8', errors = 'ignore')
-                        if query != 'any':
-                            if re.search(query, word):
-                                unicode_keys.append([index, word, score])
-                        else:
-                            unicode_keys.append([index, word, score])
-                    result = unicode_keys
-                elif n_gramming:
-                    result = []
-                    for index, ngram, score in ngrams:
-                        if query != 'any':
-                            if re.search(query, ngram):
-                                for _ in range(int(score)):
-                                    result.append(ngram)
-                        else:
-                            for _ in range(int(score)):
-                                result.append(ngram)
+            jcw = False
+            if keywording or n_gramming:
+                if 'just_content_words' in kwargs:
+                    if kwargs['just_content_words'] is True:
+                        jcw = True
+
+            if keywording:
+                result = []
+                from corpkit import keywords
+                spindle_out = keywords(subcorpus, dictionary = dictionary, just_content_words = jcw,
+                                        printstatus = False, clear = False, lemmatise = lemmatise)
+                for w in list(spindle_out.index):
+
+                    if query != 'any':
+                        if re.search(query, w):
+                            result.append([w, spindle_out[w]])
+                    else:
+                        result.append([w, spindle_out[w]])
+
+            elif n_gramming:
+                result = []
+                from corpkit import ngrams
+                spindle_out = ngrams(subcorpus, dictionary = dictionary, just_content_words = jcw,
+                                        printstatus = False, clear = False, lemmatise = lemmatise)
+                for w in list(spindle_out.index):
+                    if query != 'any':
+                        if re.search(query, w):
+                            for _ in range(spindle_out[w]):
+                                result.append(w)
+                    else:
+                        result.append(w)
+
             #if tregex, search
             else:
                 op = ['-o', '-' + translated_option]
@@ -1011,7 +1023,7 @@ def interrogator(path, option, query = 'any',
             processed_result = result
             
         if keywording:
-            allwords_list.append([w for index, w, score in result])
+            allwords_list.append([w for w, score in result])
         else:
             allwords_list.append(processed_result)
 
@@ -1019,7 +1031,7 @@ def interrogator(path, option, query = 'any',
         
         if keywording:
             little_dict = {}
-            for index, word, score in result:
+            for word, score in result:
                 little_dict[word] = score
             dicts.append(Counter(little_dict))
         else:
