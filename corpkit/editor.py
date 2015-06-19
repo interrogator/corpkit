@@ -3,7 +3,7 @@ def editor(dataframe1,
             operation = '%',
             dataframe2 = False,
             sort_by = False,
-            keep_stats = False,
+            keep_stats = True,
             keep_top = False,
             just_totals = False,
             threshold = 'medium',
@@ -310,7 +310,7 @@ def editor(dataframe1,
         """sort results"""
         # translate options and make sure they are parseable
         
-        options = ['total', 'name', 'infreq', 'increase', 
+        options = ['total', 'name', 'infreq', 'increase', 'turbulent',
                    'decrease', 'static', 'most', 'least', 'none']
 
         if sort_by is True:
@@ -332,6 +332,8 @@ def editor(dataframe1,
             return df
 
         # this is really shitty now that i know how to sort, like in the above
+        if keep_stats:
+            df = do_stats(df)
         if sort_by == 'total':
             if df1_istotals:
                 df = df.T
@@ -342,52 +344,43 @@ def editor(dataframe1,
             df = df.drop('temp-Total', axis = 1)
             if df1_istotals:
                 df = df.T
-            #df = recalc(df, operation = operation)
         elif sort_by == 'infreq':
+            if df1_istotals:
+                df = df.T
             df = recalc(df, operation = operation)
             tot = df.ix['temp-Total']
             df = df[tot.argsort()]
             df = df.drop('temp-Total', axis = 0)
             df = df.drop('temp-Total', axis = 1)
-            #df = recalc(df, operation = operation)
+            if df1_istotals:
+                df = df.T
         elif sort_by == 'name':
             # currently case sensitive...
             df = df.reindex_axis(sorted(df.columns), axis=1)
-            #df = recalc(df, operation = operation)
         else:
             statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
-            df = do_stats(df)
+            
+            if not keep_stats:
+                df = do_stats(df)
+
             slopes = df.ix['slope']
             if sort_by == 'increase':
                 df = df[slopes.argsort()[::-1]]
             elif sort_by == 'decrease':
                 df = df[slopes.argsort()]
-            
+            elif sort_by == 'static':
+                df = df[slopes.abs().argsort()]
+            elif sort_by == 'turbulent':
+                df = df[slopes.abs().argsort()[::-1]]
             if remove_above_p:
                 # the easy way to do it!
                 df = df.T
                 df = df[df['p'] <= p]
                 df = df.T
-            
-            # add total to end           
-            #try:
-                #move_totals.remove('Total')
-                #move_totals.append('Total')
-            #except:
-                #pass
 
             # remove stats field by default
             if not keep_stats:
                 df = df.drop(statfields, axis = 0)
-
-            # or, remove them from the columns list and add them to the end
-            #else:
-                #for stat in statfields:
-                    #move_totals.remove(stat)
-                    #move_totals.append(stat)
-
-            # reorder with totals and stats at end
-            #df = df[move_totals]
 
         return df
 
