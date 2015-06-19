@@ -4,7 +4,7 @@ def eugener(path,
             depth = 5, 
             top = 20, 
             lemmatise = False,
-            remove_closed_class = False,
+            just_content_words = False,
             remove_query_from_output = False,
             remove_zero_depth = False,
             return_tags = False):
@@ -16,7 +16,7 @@ def eugener(path,
     depth: number of places left and right to look
     top: number of most frequent entries to return
     lemmatise: wordnet lemmatisation
-    remove_closed_class: keep only n, v, a, r tagged words
+    just_content_words: keep only n, v, a, r tagged words
     remove_query_from_output: remove o
     """
     import os
@@ -47,19 +47,6 @@ def eugener(path,
     wordregex = re.compile('[A-Za-z0-9]')
 
     print ''
-    
-    def find_wordnet_tag(tag):
-        if tag.startswith('J'):
-            tag = 'a'
-        elif tag.startswith('V') or tag.startswith('M'):
-            tag = 'v'
-        elif tag.startswith('N'):
-            tag = 'n'
-        elif tag.startswith('R'):
-            tag = 'r'
-        else:
-            tag = False
-        return tag
 
     # get list of subcorpora
     dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
@@ -72,42 +59,15 @@ def eugener(path,
         p.animate(index)
         # search the corpus for whole sents containing risk word
         subcorpus = os.path.join(path, corpus)
-        query = r'__ <# (__ !< __)'
-        results = tregex_engine(query, ['-o'], subcorpus)
+        if lemmatise:
+            query = r'__ <# (__ !< __)'
+        else:
+            query = r'__ !> __'
+        results = tregex_engine(query, ['-o'], subcorpus, 
+                                lemmatise = lemmatise, 
+                                just_content_words = just_content_words)
         # unicode        
         results = [unicode(r, 'utf-8', errors = 'ignore') for r in results]
-        
-        # so we now have a list of unicode items in this format: '(NNP Eugene)'.
-        
-        # turn this into a list of words or lemmas, with or without closed words
-        processed = []
-        for result in results:
-            # remove brackets and split on first space
-            result = result.lstrip('(')
-            result = result.rstrip(')')
-            tag, word = result.split(' ', 1)
-            # get wordnet tag from stanford tag
-            wordnet_tag = find_wordnet_tag(tag)
-            short_tag = tag[:2]
-            if lemmatise:
-                # do manual lemmatisation first
-                if word in wordlist:
-                    word = wordlist[word]
-                # do wordnet lemmatisation
-                if wordnet_tag:
-                    word = lmtzr.lemmatize(word, wordnet_tag)
-                    processed.append((word, short_tag))
-                # what to do with closed class words?
-                else:
-                    if not remove_closed_class:
-                        processed.append((word, short_tag))
-            # without lemmatisation, what to do with closed class words
-            else:
-                if not remove_closed_class:
-                    processed.append((word, short_tag))
-                else:
-                    if wordnet_tag:
-                        processed.append((word, short_tag))
 
         # lowercase
         processed = [(r.lower(), tag) for r, tag in processed]
