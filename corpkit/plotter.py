@@ -18,6 +18,7 @@ def plotter(title,
             output_format = 'png',
             interactive = False,
             black_and_white = False,
+            show_p_val = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -296,17 +297,38 @@ def plotter(title,
             if not 'legend' in kwargs:
                 legend = False
             num_to_plot = len(dataframe)
-
     else:
         dataframe = dataframe.T.head(num_to_plot).T
 
+    # remove stats fields, put p in entry text, etc.
+    statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
+    try:
+        dataframe.ix['p']
+        there_are_p_vals = True
+    except:
+        there_are_p_vals = False
+    if show_p_val:
+        if there_are_p_vals:
+            newnames = []
+            for col in list(dataframe.columns):
+                pval = dataframe[col]['p']
+                newname = '%s (p=%s)' % (col, format(pval, '.5f'))
+                newnames.append(newname)
+            dataframe.columns = newnames
+            dataframe.drop(statfields, axis = 0, inplace = True)
+        else:
+            warnings.warn('No p-values calculated to show.\n\nUse sort_by and keep_stats in editor() to generate these values.')
+    else:
+        if there_are_p_vals:
+            dataframe.drop(statfields, axis = 0, inplace = True)
+
     # make and set y label
     absolutes = True
-    if was_series:
-        if dataframe.iloc[0].dtype == 'float64':
+    if type(dataframe) == pandas.core.frame.DataFrame:
+        if not all([s.is_integer() for s in dataframe.ix[0,:].values]):
             absolutes = False
     else:
-        if dataframe.iloc[0][0].dtype == 'float64':
+        if not all([s.is_integer() for s in dataframe.values]):        
             absolutes = False
 
     #  use colormap if need be:
@@ -503,14 +525,19 @@ def plotter(title,
                 kwargs['marker'] = ','
         if not piemode:
             kwargs['alpha'] = 0.1
-        # convert dates --- works only in my current case!
-        if plotting_a_totals_column or not was_series:
-            try:
-                n = pd.PeriodIndex([d for d in list(dataframe.index)], freq='A')
-                dataframe = dataframe.set_index(n)
-            except:
-                pass
-
+    
+    # convert dates --- works only in my current case!
+    if plotting_a_totals_column or not was_series:
+        try:
+            can_it_be_int = int(list(dataframe.index)[0])
+            can_be_int = True
+        except:
+            can_be_int = False
+        if can_be_int:
+            if 1500 < int(list(dataframe.index)[0]):
+                if 2050 > int(list(dataframe.index)[0]):
+                    n = pd.PeriodIndex([d for d in list(dataframe.index)], freq='A')
+                    dataframe = dataframe.set_index(n)
 
     MARKERSIZE = 4
     COLORMAP = {
@@ -602,9 +629,6 @@ def plotter(title,
             #if black_and_white:
                 #lgd.set_facecolor('w')
 
-
-
-
         #if interactive:
             #if legend:
                 #lgd.set_title("")
@@ -684,15 +708,16 @@ def plotter(title,
                 plt.xlabel(x_label)
 
     # no offsets for numerical x and y values
-    try:
-        # check if x axis can be an int
-        check_x_axis = list(dataframe.index)[0]
-        can_it_be_int = int(check_x_axis)
-        # if so, set these things
-        from matplotlib.ticker import ScalarFormatter
-        plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
-    except:
-        pass
+    if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
+        try:
+            # check if x axis can be an int
+            check_x_axis = list(dataframe.index)[0]
+            can_it_be_int = int(check_x_axis)
+            # if so, set these things
+            from matplotlib.ticker import ScalarFormatter
+            plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
+        except:
+            pass
 
     # same for y axis
     try:
@@ -742,7 +767,10 @@ def plotter(title,
             except:
                 pass
             a.set_title(titletext)
-            a.legend_.remove()
+            try:
+                a.legend_.remove()
+            except:
+                pass
             # remove axis labels for pie plots
             if piemode:
                 a.axes.get_xaxis().set_visible(False)
