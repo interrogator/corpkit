@@ -8,7 +8,8 @@ def dictmaker(path,
               query = 'any',
               dictpath = 'data/dictionaries',
               lemmatise = False,
-              just_content_words = False):
+              just_content_words = False,
+              use_dependencies = False):
     """makes a pickle wordlist named dictname in dictpath"""
     import os
     import pickle
@@ -87,6 +88,31 @@ def dictmaker(path,
     print '\n%s: Extracting words from files ... \n' % time
     p = ProgressBar(len(sorted_dirs))
     all_results = []
+
+    def tokener(xmldata):
+        """print word, using good lemmatisation"""
+        from bs4 import BeautifulSoup
+        import gc
+        open_classes = ['N', 'V', 'M', 'R', 'J']
+        result = []
+        soup = BeautifulSoup(xmldata)    
+        for token in soup.find_all('token'):
+            word = token.word.text
+            query = re.compile(r'.*')
+            if re.search(query, word):
+                if lemmatise:
+                    word = token.lemma.text
+                    if just_content_words:
+                        if not token.pos.text[0] in open_classes:
+                            continue        
+                result.append(word)
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
+        return result
     
     # translate any query---though at the moment there is no need to use any 
     # query other than 'any' ...
@@ -101,6 +127,12 @@ def dictmaker(path,
     else:
         options = ['-t', '-o']
     
+    if use_dependencies:
+        if query == 'any':
+            query = r'.*'
+        query = re.compile(query)
+
+    
     allwords = []
 
     for index, d in enumerate(sorted_dirs):
@@ -114,33 +146,48 @@ def dictmaker(path,
             subcorp = d
 
         # check query first time through    
-        if index == 0:
-            trees_found = tregex_engine(corpus = subcorp, check_for_trees = True)
+        if not use_dependencies:
+            if index == 0:
+                trees_found = tregex_engine(corpus = subcorp, check_for_trees = True)
+                if not trees_found:
+                    lemmatise = False
+                    dictname = dictname.replace('-lemmatised', '')
+            if trees_found:
+                results = tregex_engine(corpus = subcorp, options = options, query = query, 
+                                        lemmatise = lemmatise,
+                                        just_content_words = just_content_words)
+
+                for result in results:
+                    allwords.append(result)  
+
+        elif use_dependencies:
+            regex_nonword_filter = re.compile("[A-Za-z]")
+            results = []
+            fs = [os.path.join(subcorp, f) for f in os.listdir(subcorp)]
+            for f in fs:
+                data = open(f).read()
+                result_from_a_file = tokener(data)
+                for w in result_from_a_file:
+                    if re.search(regex_nonword_filter, w):
+                        allwords.append(w.lower())
+
+        if not use_dependencies:
             if not trees_found:
-                lemmatise = False
-                dictname = dictname.replace('-lemmatised', '')
-        if trees_found:
-            results = tregex_engine(corpus = subcorp, options = options, query = query, 
-                                    lemmatise = lemmatise,
-                                    just_content_words = just_content_words) 
+                for f in os.listdir(subcorp):
+                    raw = unicode(open(os.path.join(subcorp, f)).read(), 'utf-8', errors = 'ignore')
+                    sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+                    sents = sent_tokenizer.tokenize(raw)
+                    tokenized_sents = [nltk.word_tokenize(i) for i in sents]
+                    for sent in tokenized_sents:
+                        for w in sent:
+                            allwords.append(w.lower()) 
 
-            for result in results:
-                allwords.append(result)  
-
-        else:
-            for f in os.listdir(subcorp):
-                raw = unicode(open(os.path.join(subcorp, f)).read(), 'utf-8', errors = 'ignore')
-                sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-                sents = sent_tokenizer.tokenize(raw)
-                tokenized_sents = [nltk.word_tokenize(i) for i in sents]
-                for sent in tokenized_sents:
-                    for w in sent:
-                        allwords.append(w.lower()) 
-
-    # make a dict
+    #100%
     p.animate(len(sorted_dirs))
-
+    
+    # make a dict
     dictionary = Counter(allwords)
+    return dictionary
 
     with open(os.path.join(dictpath, dictname), 'wb') as handle:
         pickle.dump(dictionary, handle)
