@@ -199,10 +199,9 @@ def interrogator(path, option, query = 'any',
     def processwords(list_of_matches):
         """edit matches from interrogations"""
 
-        # make everything unicode, lowercase and sorted
-        # dependency is already unicode because of bs4
-        if not dependency:
-            list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
+        # everything should already be in unicode by this point.
+        #if not dependency:
+            #list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
         
         # remove commas for pandas csv tokeniser, which i should probably remove soon.
         list_of_matches = [w.lower().replace(',', '') for w in list_of_matches]
@@ -782,8 +781,12 @@ def interrogator(path, option, query = 'any',
             else:
                 pass
 
-    # if keywording and self is the dictionary, make the dict if need be:
-    if keywording:
+    if keywording or n_gramming:
+        jcw = False
+        if 'just_content_words' in kwargs:
+            if kwargs['just_content_words'] is True:
+                jcw = True
+
         if dictionary.startswith('self') or dictionary == os.path.basename(path):
             if lemmatise:
                 lem = '-lemmatised'
@@ -798,7 +801,7 @@ def interrogator(path, option, query = 'any',
                 from corpkit.build import dictmaker
                 time = strftime("%H:%M:%S", localtime())
                 print '\n%s: Making reference corpus ...' % time
-                dictmaker(path, dictionary, lemmatise = lemmatise)
+                dictmaker(path, dictionary, lemmatise = lemmatise, just_content_words = jcw)
     
     # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
@@ -932,14 +935,6 @@ def interrogator(path, option, query = 'any',
             else:
                 subcorpus = os.path.join(path,subcorpus_name)
     
-            # get keywords and ngrams, rather than tregex:
-
-            jcw = False
-            if keywording or n_gramming:
-                if 'just_content_words' in kwargs:
-                    if kwargs['just_content_words'] is True:
-                        jcw = True
-
             if keywording:
                 result = []
                 from corpkit import keywords
@@ -964,7 +959,8 @@ def interrogator(path, option, query = 'any',
                             for _ in range(spindle_out[w]):
                                 result.append(w)
                     else:
-                        result.append(w)
+                        for _ in range(spindle_out[w]):
+                            result.append(w)
 
             #if tregex, search
             else:
