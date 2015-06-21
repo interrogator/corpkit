@@ -70,6 +70,7 @@ def dictmaker(path,
             sel = raw_input('\nNew save name: ')
             dictname = sel
             if lemmatise:
+                dictname = dictname.replace('-lemmatised.p', '')
                 dictname = dictname + '-lemmatised'
             if not dictname.endswith('.p'):
                 dictname = dictname + '.p'
@@ -82,13 +83,13 @@ def dictmaker(path,
             as_str = str(selection)
             print '          Choice "%s" not recognised.' % selection
 
-
     time = strftime("%H:%M:%S", localtime())
     print '\n%s: Extracting words from files ... \n' % time
     p = ProgressBar(len(sorted_dirs))
     all_results = []
     
-    # translate any query
+    # translate any query---though at the moment there is no need to use any 
+    # query other than 'any' ...
     if query == 'any':
         if lemmatise:
             query = r'__ <# (__ !< __)'
@@ -101,6 +102,7 @@ def dictmaker(path,
         options = ['-t', '-o']
     
     allwords = []
+
     for index, d in enumerate(sorted_dirs):
         p.animate(index)
         if not path_is_list:
@@ -110,6 +112,8 @@ def dictmaker(path,
                 subcorp = os.path.join(path, d)
         else:
             subcorp = d
+
+        # check query first time through    
         if index == 0:
             trees_found = tregex_engine(corpus = subcorp, check_for_trees = True)
             if not trees_found:
@@ -119,31 +123,19 @@ def dictmaker(path,
             results = tregex_engine(corpus = subcorp, options = options, query = query, 
                                     lemmatise = lemmatise,
                                     just_content_words = just_content_words) 
+
+            for result in results:
+                allwords.append(result)  
+
         else:
-            list_of_texts = []
             for f in os.listdir(subcorp):
-                raw = open(os.path.join(subcorp, f)).read()
-                list_of_texts.append(raw)
-            results = '\n'.join(list_of_texts)
-            try:
-                results = results.encode('utf-8', errors = 'ignore')
-            except:
-                pass
-
-        for result in results:
-            allwords.append(result)    
-
-        if not lemmatise:
-            p.animate(len(sorted_dirs))
-            time = strftime("%H:%M:%S", localtime())
-            print '\n\n%s: Tokenising %d lines ... \n' % ( time, len(results))
-            results = '\n'.join(results)
-            text = unicode(results.lower(), 'utf-8', errors = 'ignore')
-            sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-            sents = sent_tokenizer.tokenize(text)
-            tokenized_sents = [nltk.word_tokenize(i) for i in sents]
-            # flatten  allwords
-            allwords = [item for sublist in tokenized_sents for item in sublist]
+                raw = unicode(open(os.path.join(subcorp, f)).read(), 'utf-8', errors = 'ignore')
+                sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+                sents = sent_tokenizer.tokenize(raw)
+                tokenized_sents = [nltk.word_tokenize(i) for i in sents]
+                for sent in tokenized_sents:
+                    for w in sent:
+                        allwords.append(w.lower()) 
 
     # make a dict
     p.animate(len(sorted_dirs))
