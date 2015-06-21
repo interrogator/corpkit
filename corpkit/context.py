@@ -9,6 +9,8 @@ def eugener(path,
             remove_zero_depth = False,
             return_tags = False):
     """ 
+    ***This is probably broken now, can fix if there's a use for it.***
+    
     get most frequent words in corpus path to left and right of query regex
 
     path: path to corpus containing subcorpora
@@ -66,8 +68,6 @@ def eugener(path,
         results = tregex_engine(query, ['-o'], subcorpus, 
                                 lemmatise = lemmatise, 
                                 just_content_words = just_content_words)
-        # unicode        
-        results = [unicode(r, 'utf-8', errors = 'ignore') for r in results]
 
         # lowercase
         processed = [(r.lower(), tag) for r, tag in processed]
