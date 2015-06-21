@@ -439,37 +439,43 @@ def datareader(data, plaintext = False, **kwargs):
     except NameError:
         import subprocess
         have_ipython = False
+
+    tregex_engine_used = False
     
     # if unicode, make it a string
     if type(data) == unicode:
         if not os.path.isdir(data):
             if not os.path.isfile(data):
-                good = data.encode('utf-8', errors = 'ignore')
-
-    elif type(data) == str:
+                return good
+    if type(data) == str:
         # if it's a file, read it
         if os.path.isfile(data):
             good = open(data).read()
         # if it's a dir, flatten all trees
         elif os.path.isdir(data):
-            query = r'__ !> __'
-            options = ['-o', '-t', '-w']
+            # get all sentences newline separated
+            query = r'__ !< __'
+            options = ['-o', '-t']
+
+            # if lemmatise, we get each word on a newline
             if 'lemmatise' in kwargs:
                 if kwargs['lemmatise'] is True:
                     query = r'__ <# (__ !< __)'
                     options = ['-o']
  
+            # check for trees ...
             #while plaintext is False:
                 #for f in first_twenty:
                     #plaintext = tregex_engine(corpus = f, check_for_trees = True)
             
             if not plaintext:
-                list_of_texts = tregex_engine(corpus = data,
+                tregex_engine_used = True
+                results = tregex_engine(corpus = data,
                                               options = options,
                                               query = query, 
                                               **kwargs)
             else:
-                list_of_texts = []
+                results = []
                 fs = [os.path.join(data, f) for f in os.listdir(data)]
                 # do recursive if need
                 if any(os.path.isdir(f) for f in fs):
@@ -478,17 +484,23 @@ def datareader(data, plaintext = False, **kwargs):
                         for filename in filenames:
                             recursive_files.append(os.path.join(dirname, filename))
                     fs = recursive_files
+                
+                import nltk
+                sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
                 for f in fs:
-                    raw = open(f).read()
-                    list_of_texts.append(raw)
-            good = '\n'.join(list_of_texts)
-            try:
-                good = good.encode('utf-8', errors = 'ignore')
-            except:
-                pass
-        # if a string of text, just keyword that
+                    raw = unicode(open(f).read(), 'utf-8', errors = 'ignore')
+                    sents = sent_tokenizer.tokenize(raw)
+                    tokenized_sents = [nltk.word_tokenize(i) for i in sents]
+                    for sent in tokenized_sents:
+                        for w in sent:
+                            results.append(w.lower()) 
+
+            return results
+
+            #good = '\n'.join(results)
+        # if a string of text, 
         else:
-            good = data.encode('utf-8', errors = 'ignore')
+            good = data
     # if conc results, turn into string...
     elif type(data) == pandas.core.frame.DataFrame:
         # if conc lines:
@@ -500,11 +512,19 @@ def datareader(data, plaintext = False, **kwargs):
         except:
             conc_lines = False
         if conc_lines:
-            good = '\n'.join([' '.join(list(data.ix[l])) for l in list(data.index)])
+            # may not be unicode!?
+            good = [' '.join(list(data.ix[l])) for l in list(data.index)]
+
     else:
-        raise ValueError('Input not recognised. Sorry about that.')
-    # if list of tokens...?
-    
+        good = data
+
+    # make unicode
+    if not tregex_engine_used:
+        try:
+            good = unicode(good, 'utf-8', errors = 'ignore')
+        except TypeError:
+            pass
+
     return good
 
 def tregex_engine(query = False, 
