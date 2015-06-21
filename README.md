@@ -54,7 +54,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
 * Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
-* Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code), and chart their keyness
+* Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code)), and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
 * Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually
 * Output Pandas DataFrames that can be easily edited and visualised
