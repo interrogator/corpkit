@@ -36,13 +36,13 @@ def keywords(data,
     
     # get list of words
     good = datareader(data, **kwargs)
+
+    # remove bad stuff from result
+    regex_nonword_filter = re.compile("[A-Za-z]")
+    good = [i for i in good if re.search(regex_nonword_filter, i)] 
     
     # get keywords as list of tuples
     kwds = keywords_and_ngrams(good, dictionary = dictionary, show = 'keywords', **kwargs)
-
-    # remove bad stuff from result
-    regex_nonword_filter = re.compile("[A-Za-z-\']")
-    kwds = [i for i in kwds if re.search(regex_nonword_filter, i[0]) and i[0] not in my_stopwords] 
 
     # turn into series
     import pandas as pd
@@ -96,10 +96,11 @@ def ngrams(data,
     if printstatus:
         print "\n%s: Generating ngrams... \n" % time
     good = datareader(data, **kwargs)
-    ngrams = keywords_and_ngrams(good, dictionary = dictionary, show = 'ngrams', **kwargs)
 
     regex_nonword_filter = re.compile("[A-Za-z-\']")
-    ngrams = [i for i in ngrams if re.search(regex_nonword_filter, i[0]) and i[0] not in my_stopwords] 
+    good = [i for i in good if re.search(regex_nonword_filter, i) and i not in my_stopwords] 
+
+    ngrams = keywords_and_ngrams(good, dictionary = dictionary, show = 'ngrams', **kwargs)
 
     import pandas as pd
     out = pd.Series([s for k, s in ngrams], index = [k for k, s in ngrams])
