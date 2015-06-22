@@ -45,9 +45,9 @@ def interrogator(path,
             n/number: get the index *number* of the governor
             f/funct: get the semantic *function*
             g/gov: get *governor* role and governor:
-                /good/ might return amod:day
+                r'^good$' might return amod:day
             d/dep: get dependent and its role:
-                /day/ might return amod:sunny
+                r'^day$' might return amod:sunny
             t/token: get tokens from dependency data
         - plaintext:
             r/regex: search plain text with query as regex
@@ -672,7 +672,10 @@ def interrogator(path,
                           '              t) match tokens via dependencies \n' \
                           '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
                           '              x) exit\n\nYour selection: ' % (time, option))
+            if selection.startswith('x'):
+                return
             option = selection
+
 
     if dependency:
         if type(query) == list:
@@ -730,7 +733,6 @@ def interrogator(path,
             else:
                 dup_non_i = 'non-identical'
 
-            # first attempt at user input!
             while os.path.isfile(fullpath) and quicksave:
                 dict_for_print = '          ' + '\n          '.join(sorted(['%s: %s' % (k, v) for k, v in loaded.query.items()])) + '\n'
                 time = strftime("%H:%M:%S", localtime())
