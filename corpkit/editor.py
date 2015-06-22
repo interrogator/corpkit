@@ -44,6 +44,10 @@ def editor(dataframe1,
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
+    from corpkit.tests import check_pytex
+    if check_pytex():
+        print_info = False
+
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
         # delete under threshold
