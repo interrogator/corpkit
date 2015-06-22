@@ -40,10 +40,12 @@ def dictmaker(path,
 
     # allow direct passing of dirs
     path_is_list = False
+    one_big_corpus = False
     if type(path) == str:
         sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
     # if no subcorpora, just do the dir passed in
         if len(sorted_dirs) == 0:
+            one_big_corpus = True
             sorted_dirs = [path]
     elif type(path) == list:
         path_is_list = True
@@ -86,8 +88,25 @@ def dictmaker(path,
 
     time = strftime("%H:%M:%S", localtime())
     print '\n%s: Extracting words from files ... \n' % time
-    p = ProgressBar(len(sorted_dirs))
-    all_results = []
+
+    # all this just to get a list of files and make a better progress bar
+    if use_dependencies:
+        counts = []
+        for d in sorted_dirs:
+            if not one_big_corpus:
+                subcorpus = os.path.join(path, d)
+            else:
+                subcorpus = path
+            if use_dependencies:
+                files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+            else:
+                files = [f for f in os.listdir(subcorpus)]
+            counts.append(len(files))
+        num_files = sum(counts)
+        c = 0
+        p = ProgressBar(num_files)
+    else:
+        p = ProgressBar(len(sorted_dirs))
 
     def tokener(xmldata):
         """print word, using good lemmatisation"""
@@ -95,7 +114,8 @@ def dictmaker(path,
         import gc
         open_classes = ['N', 'V', 'M', 'R', 'J']
         result = []
-        soup = BeautifulSoup(xmldata)    
+        just_good_deps = SoupStrainer('tokens')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
         for token in soup.find_all('token'):
             word = token.word.text
             query = re.compile(r'.*')
@@ -128,6 +148,7 @@ def dictmaker(path,
         options = ['-t', '-o']
     
     if use_dependencies:
+        from bs4 import BeautifulSoup, SoupStrainer
         if query == 'any':
             query = r'.*'
         query = re.compile(query)
@@ -136,7 +157,8 @@ def dictmaker(path,
     allwords = []
 
     for index, d in enumerate(sorted_dirs):
-        p.animate(index)
+        if not use_dependencies:
+            p.animate(index)
         if not path_is_list:
             if len(sorted_dirs) == 1:
                 subcorp = d
@@ -165,6 +187,8 @@ def dictmaker(path,
             results = []
             fs = [os.path.join(subcorp, f) for f in os.listdir(subcorp)]
             for f in fs:
+                p.animate(c, str(c) + '/' + str(num_files))
+                c += 1
                 data = open(f).read()
                 result_from_a_file = tokener(data)
                 for w in result_from_a_file:
@@ -187,7 +211,6 @@ def dictmaker(path,
     
     # make a dict
     dictionary = Counter(allwords)
-    return dictionary
 
     with open(os.path.join(dictpath, dictname), 'wb') as handle:
         pickle.dump(dictionary, handle)
