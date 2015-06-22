@@ -112,7 +112,7 @@ def dictmaker(path,
         """print word, using good lemmatisation"""
         from bs4 import BeautifulSoup
         import gc
-        open_classes = ['N', 'V', 'M', 'R', 'J']
+        open_classes = ['N', 'V', 'R', 'J']
         result = []
         just_good_deps = SoupStrainer('tokens')
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
