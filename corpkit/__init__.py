@@ -20,7 +20,8 @@ __all__ = ["interrogator",
            "searchtree",
            "tregex_engine",
            "load_all_results",
-           "dictmaker"]
+           "dictmaker",
+           "texify"]
 
 import os
 import sys
@@ -65,6 +66,7 @@ from other import searchtree
 from other import datareader
 from other import tregex_engine
 from other import load_all_results
+from other import texify
 
 from build import dictmaker
 from build import correctspelling
