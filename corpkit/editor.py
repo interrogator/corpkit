@@ -43,6 +43,8 @@ def editor(dataframe1,
         pass
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
+    
+    pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     from corpkit.tests import check_pytex
     if check_pytex():
