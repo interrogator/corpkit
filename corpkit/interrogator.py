@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
-def interrogator(path, option, query = 'any', 
+def interrogator(path, 
+                option, 
+                query = 'any', 
                 lemmatise = False, 
                 dictionary = 'bnc.p', 
                 titlefilter = False, 
@@ -46,29 +48,33 @@ def interrogator(path, option, query = 'any',
                 /good/ might return amod:day
             d/dep: get dependent and its role:
                 /day/ might return amod:sunny
+            t/token: get tokens from dependency data
         - plaintext:
             r/regex: search plain text with query as regex
-        for keywords/ngrams, use 'words'
-   
+            s/simple: search for word or list of words in plaintext files
+        - other:
+            k/keywords: search for keywords, using dictionary as the reference corpus
+                        use 'self' to make the whole corpus into a dictionary
+            n/ngrams: search for ngrams   
     query : str
         - a Tregex query (if using a Tregex option)
-        - 'keywords' (use keywords() on each subcorpus)
-        - 'ngrams' (use keywords() on each subcorpus)
-        - A regex to match a token/tokens (if using a dependencies option)
+        - A regex to match a token/tokens (if using a dependencies, plaintext, or keywords/ngrams)
+        - A list of words or parts of words to match (e.g. ['cat', 'dog', 'cow'])
 
     lemmatise : Boolean
-        Do lemmatisation on results?
+        Do lemmatisation on results? Uses Wordnet for constituency, or CoreNLP for dependency
     lemmatag : False/'n'/'v'/'a'/'r'
         explicitly pass a pos to lemmatiser
     titlefilter : Boolean
         strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
     spelling : False/'US'/UK
-        convert all to U.S. English
+        convert all to U.S. or U.K. English
     phrases : Boolean
         Use if your expected results are multiword and thus need tokenising
     dictionary : string
         The name of a dictionary made with dictmaker() for keywording.
         BNC included as default.
+        'self' will make a dictionary from the whole corpus
     dep_type : str
         the kind of Stanford CoreNLP dependency parses you want to use:
         - 'basic-dependencies'
@@ -77,34 +83,34 @@ def interrogator(path, option, query = 'any',
     function_filter : Bool/regex
         If you set this to a regex, for the 'g' and 'd' option, only words 
         whose function matches the regex will be kept, and the tag will not be printed
+    quicksave : str
+       save result after interrogation has finished, using str as file name
+    ** kwargs : just_content_words for dictionary building
+               more generally, kwargs allows users to pass in earlier interrogation
+               settings in order to reperform the search.
 
     Example 1: Tree querying
     --------
-    from corpkit import interrogator, tally, plotter
+    from corpkit import interrogator, plotter
     corpus = 'path/to/corpus'
     ion_nouns = interrogator(corpus, 'w', r'/NN.?/ < /(?i)ion\b'/)
-    tally(ion_nouns.results, [0, 1, 2, 3, 4])
+    quickview(ion_nouns, 5)
     plotter('Common -ion words', ion_nouns.results, fract_of = ion_nouns.totals)
 
     Output:
 
-    ['0: election: 22 total occurrences.',
-     '1: decision: 14 total occurrences.',
-     '2: question: 10 total occurrences.',
-     '3: nomination: 8 total occurrences.',
-     '4: recession: 8 total occurrences.']
+    0: election: (n=22)
+    1: decision: (n=14)
+    2: question: (n=10)
+    3: nomination:(n=8)
+    4: recession:(n=8)
 
     <matplotlib figure>
 
     Example 2: Dependencies querying
     -----------------------
     risk_functions = interrogator(corpus, 'f', r'(?i)\brisk')
-    print risk_functions.results[0]
     plotter('Functions of risk words', risk_functions.results, num_to_plot = 15)
-
-    Output:
-
-    ['pobj', [1989, 1], [2005, 52], [2006, 52], [u'Total', 105]]
 
     <matplotlib figure>
 
@@ -367,6 +373,34 @@ def interrogator(path, option, query = 'any',
         gc.collect()
         return result
 
+    def tokener(xmldata):
+        """print word, using good lemmatisation"""
+        from bs4 import BeautifulSoup
+        import gc
+        open_classes = ['N', 'V', 'M', 'R', 'J']
+        result = []
+        just_good_deps = SoupStrainer('tokens')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
+        for token in soup.find_all('token'):
+            word = token.word.text
+            query = re.compile(r'.*')
+            if re.search(query, word):
+                if lemmatise:
+                    word = token.lemma.text
+                    if 'just_content_words' in kwargs:
+                        if kwargs['just_content_words'] is True:
+                            if not token.pos.text[0] in open_classes:
+                                continue
+                result.append(word)
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
+        return result
+
+
     def deprole(xmldata):
         """print funct:dep, using good lemmatisation"""
         # for each sentence
@@ -615,6 +649,10 @@ def interrogator(path, option, query = 'any',
             translated_option = 'g'
             dependency = True
             optiontext = 'Role and governor.'
+        elif option.startswith('t') or option.startswith('T'):
+            translated_option = 'q' # dummy
+            dependency = True
+            optiontext = 'Tokens only.'
         elif option.startswith('d') or option.startswith('D'):
             translated_option = 'd'
             dependency = True
@@ -631,6 +669,7 @@ def interrogator(path, option, query = 'any',
                           '              p) get part-of-speech tag with Tregex\n' \
                           '              r) regular expression, for plaintext corpora\n' \
                           '              s) simple search string, for plaintext corpora\n' \
+                          '              t) match tokens via dependencies \n' \
                           '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
                           '              x) exit\n\nYour selection: ' % (time, option))
             option = selection
@@ -998,6 +1037,8 @@ def interrogator(path, option, query = 'any',
                         result_from_file = deprole(data)
                     if translated_option == 'f':
                         result_from_file = funct(data)
+                    if translated_option == 'q':
+                        result_from_file = tokener(data)
                     if translated_option == 'i':
                         result_from_file = depnummer(data)
                     if translated_option == 'r':
@@ -1272,7 +1313,8 @@ if __name__ == '__main__':
         ready = raw_input("When you're ready, type 'start', or 'exit' to cancel: ")
         if ready.startswith('e'):
             print '\n    OK ... come back soon!\n'
-            quit()
+            import sys
+            sys.exit()
 
     all_args = {}
 
@@ -1306,7 +1348,8 @@ if __name__ == '__main__':
                           '    x) exit\n' 
         all_args['option'] = raw_input('\nQuery option: ')
         if 'x' in all_args['option']:
-            quit()
+            import sys
+            sys.exit()
 
     for entry in vars(args).keys():
         if entry not in all_args.keys():
@@ -1315,7 +1358,8 @@ if __name__ == '__main__':
     conf = raw_input("OK, we're ready to interrogate. If you want to exit now, type 'exit'. Otherwise, press enter to begin!")
     if conf:
         if conf.startswith('e'):
-            quit()
+            import sys
+            sys.exit()
 
     res = interrogator(**all_args)
     # what to do with it!?
