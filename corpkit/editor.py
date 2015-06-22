@@ -127,6 +127,10 @@ def editor(dataframe1,
     def parse_input(df, input):
         """turn whatever has been passed in into list of words that can be used as pandas indices"""
         import re
+        
+        if input == 'all':
+            input = r'.*'
+
         if type(input) == int:
             input = [input]
 
@@ -134,7 +138,7 @@ def editor(dataframe1,
             try:
                 regex = re.compile(input)
                 parsed_input = [w for w in list(df) if re.search(regex, w)]
-
+                return parsed_input
             except:
                 input = [input]
 
@@ -316,6 +320,7 @@ def editor(dataframe1,
         """sort results"""
         # translate options and make sure they are parseable
         
+
         options = ['total', 'name', 'infreq', 'increase', 'turbulent',
                    'decrease', 'static', 'most', 'least', 'none']
 
@@ -327,6 +332,17 @@ def editor(dataframe1,
             sort_by = 'infreq'
         if sort_by not in options:
             raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
+
+        if operation.startswith('k'):
+            if sort_by == 'total':
+                df = df.order(ascending = False)
+
+            elif sort_by == 'infreq':
+                df = df.order(ascending = True)
+
+            elif sort_by == 'name':
+                df = df.sort_index()
+            return df
 
         if just_totals:
             if sort_by == 'infreq':
@@ -428,7 +444,6 @@ def editor(dataframe1,
     # copy dataframe to be very safe
     df = dataframe1.copy()
 
-
     # do concordance work
     if conc_lines:
         df = dataframe1.copy()
@@ -456,13 +471,17 @@ def editor(dataframe1,
     if print_info:
         print '\n***Processing results***\n========================\n'
 
+
     df1_istotals = False
     if type(df) == pandas.core.series.Series:
         df1_istotals = True
         df = pandas.DataFrame(df)
         # if just a single result
     else:
-        df = pandas.DataFrame(df) # set it the correct name?
+        df = pandas.DataFrame(df)
+    if operation.startswith('k'):
+        if df1_istotals:
+            df = df.T
     
     # figure out if there's a second list
     # copy and remove totals if there is
@@ -499,16 +518,15 @@ def editor(dataframe1,
     if merge_entries:
         the_newname = newname_getter(df, parse_input(df, merge_entries), newname = newname, prinf = print_info)
     
-    if merge_entries:
         df = merge_these_entries(df, parse_input(df, merge_entries), the_newname, prinf = print_info)
         if not single_totals:
-            df2 = merge_these_entries(df2, parse_input(df, merge_entries), the_newname, prinf = False)
+            df2 = merge_these_entries(df2, parse_input(df2, merge_entries), the_newname, prinf = False)
     
     if merge_subcorpora:
         the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), newname = new_subcorpus_name, prinf = print_info)
         df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, prinf = print_info).T
         if using_totals:
-            df2 = merge_these_entries(df2.T, parse_input(df.T, merge_subcorpora), the_newname, prinf = print_info).T
+            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, prinf = print_info).T
     
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
@@ -528,11 +546,11 @@ def editor(dataframe1,
     if just_entries:
         df = just_these_entries(df, parse_input(df, just_entries), prinf = print_info)
         if not single_totals:
-            df2 = just_these_entries(df2, parse_input(df, just_entries), prinf = False)
+            df2 = just_these_entries(df2, parse_input(df2, just_entries), prinf = False)
     if skip_entries:
         df = skip_these_entries(df, parse_input(df, skip_entries), prinf = print_info)
         if not single_totals:
-            df2 = skip_these_entries(df2, parse_input(df, skip_entries), prinf = False)
+            df2 = skip_these_entries(df2, parse_input(df2, skip_entries), prinf = False)
 
     # drop infinites and nans
     df = df.replace([np.inf, -np.inf], np.nan)
@@ -561,25 +579,33 @@ def editor(dataframe1,
 
     # combine lists
     if using_totals or outputmode:
-        the_threshold = 0
-        # set a threshold if just_totals
-        if outputmode is True:
-            df2 = df.T.sum()
-            if not just_totals:
-                df2.name = 'Total'
-            else:
-                df2.name = 'Combined total'
-            using_totals = True
-            single_totals = True
-        if just_totals:
-            if not single_totals:
-                the_threshold = set_threshold(df2, threshold, prinf = print_info)
-        df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
+        if not operation.startswith('k'):
+            the_threshold = 0
+            # set a threshold if just_totals
+            if outputmode is True:
+                df2 = df.T.sum()
+                if not just_totals:
+                    df2.name = 'Total'
+                else:
+                    df2.name = 'Combined total'
+                using_totals = True
+                single_totals = True
+            if just_totals:
+                if not single_totals:
+                    the_threshold = set_threshold(df2, threshold, prinf = print_info)
+            df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
+        
+    
+        # if doing keywording...
+    if operation.startswith('k'):
+        from corpkit.keys import keywords
+        #df = df.iloc[:,0]
+        df = keywords(df, df2, printstatus = False)
 
     # resort data
     if sort_by:
         df = resort(df, keep_stats = keep_stats, sort_by = sort_by)
-    
+
     if keep_top:
         if not just_totals:
             df = df[list(df.columns)[:keep_top]]
@@ -589,9 +615,18 @@ def editor(dataframe1,
     if just_totals:
         # turn just_totals into series:
         df = pd.Series(df['Combined total'], name = 'Combined total')
+
+    #if using_totals:
+        #if operation.startswith('k'):
+            #if just_totals:
+                #df = pd.Series(df.ix[0], name = 'Keyness')
+    
     # generate totals branch if not percentage results:
-    if df1_istotals:
-        total = pd.Series(df['Total'], name = 'Total')
+    if df1_istotals or operation.startswith('k'):
+        try:
+            total = pd.Series(df['Total'], name = 'Total')
+        except:
+            total = 'none'
         #total = df.copy()
     else:
         # might be wrong if using division or something...
