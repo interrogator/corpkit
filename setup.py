@@ -1,9 +1,8 @@
 from setuptools import setup, find_packages
 
-
 setup(name='corpkit',
-      version='0.37',
-      description='A toolkit for working with parsed corpora',
+      version='0.38',
+      description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
       package_data={'corpkit': ['*.jar', 'corpkit/*.jar'],
@@ -17,7 +16,9 @@ setup(name='corpkit',
                         "matplotlib >= 1.4.3",
                         "nltk >= 3.0.0",
                         "pandas >= 0.16.1",
-                        "mpld3 >= 0.2",
+                        "mpld3 >= 0.2", 
+                        "beautifulsoup4>=4.3.2"
+                        # add bs4, what else? ipython?
                        ],
       #extras_require = {
       #                  'dependencies':  ["ReportLab>=1.2", "RXP"],
