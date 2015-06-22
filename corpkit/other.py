@@ -7,49 +7,71 @@ def quickview(results, n = 25):
     import corpkit
     import pandas
     import numpy
-    # bad hack to find out type of results
+    import os
+
+    # handle dictionaries too:
+    dictpath = 'data/dictionaries'
+    savedpath = 'data/saved_interrogations'
+
+    if type(results) == str:
+        if os.path.isfile(os.path.join(dictpath, results)):
+            import pickle
+            from collections import Counter
+            unpickled = pickle.load(open(os.path.join(dictpath, results), 'rb'))
+            print '\nTop %d entries in %s:\n' % (n, os.path.join(dictpath, results))
+            for index, (w, f) in enumerate(unpickled.most_common(n)):
+                fildex = '% 3d' % index
+                print '%s: %s (n=%d)' %(fildex, w, f)
+            return
+
+        elif os.path.isfile(os.path.join(savedpath, results)):
+            from corpkit import load_result
+            print '\n%s loaded temporarily from file:\n' % results
+            results = load_result(results)
+        else:
+            raise ValueError('File %s not found in data/saved_interrogations or data/dictionaries')
 
     if 'interrogation' in str(type(results)):
         clas = results.query['function']
 
-    if clas == 'interrogator':
-        datatype = results.query['datatype']
-        if datatype == 'float64':
-            option = 'total'
-        else:
-            option = '%'
-        if results.query['query'] == 'keywords':
-            option = 'keywords'
-        elif results.query['query'] == 'ngrams':
-            option = 'ngrams'
-
-        try:
-            results_branch = results.results
-            resbranch = True
-        except AttributeError:
-            resbranch = False
-            results_branch = results
-
-    elif clas == 'editor':
-        # currently, it's wrong if you edit keywords! oh well
-        datatype = results.query['datatype']
-        if results.query['just_totals']:
-            resbranch = False
-            if results.results.dtype == 'int64':
-                option = 'total'
-            else:
-                option = '%' 
-            results_branch = results.results
-        else:
-            if datatype == 'int64':
+        if clas == 'interrogator':
+            datatype = results.query['datatype']
+            if datatype == 'float64':
                 option = 'total'
             else:
                 option = '%'
+            if results.query['query'] == 'keywords':
+                option = 'keywords'
+            elif results.query['query'] == 'ngrams':
+                option = 'ngrams'
+
             try:
                 results_branch = results.results
                 resbranch = True
             except AttributeError:
                 resbranch = False
+                results_branch = results
+
+        elif clas == 'editor':
+            # currently, it's wrong if you edit keywords! oh well
+            datatype = results.query['datatype']
+            if results.query['just_totals']:
+                resbranch = False
+                if results.results.dtype == 'int64':
+                    option = 'total'
+                else:
+                    option = '%' 
+                results_branch = results.results
+            else:
+                if datatype == 'int64':
+                    option = 'total'
+                else:
+                    option = '%'
+                try:
+                    results_branch = results.results
+                    resbranch = True
+                except AttributeError:
+                    resbranch = False
 
     if type(results) == pandas.core.frame.DataFrame:
         results_branch = results
@@ -61,10 +83,13 @@ def quickview(results, n = 25):
 
     elif type(results) == pandas.core.series.Series:
         resbranch = False
+        results_branch = results
         if type(results.iloc[0]) == numpy.int64:
             option = 'total'
         else:
-            option = '%' 
+            option = '%'
+        if results.name == 'keywords':
+            option = 'series_keywords'
 
     if resbranch:
         the_list = list(results_branch)[:n]
@@ -77,6 +102,10 @@ def quickview(results, n = 25):
             print '%s: %s' %(fildex, w)
         elif option == '%' or option == 'ratio':
             print '%s: %s' % (fildex, w)
+        elif option == 'series_keywords':
+            tot = results_branch[w]
+            print '%s: %s (kq=%d)' %(fildex, w, tot)
+
         else:
             if resbranch:
                 tot = sum(i for i in list(results_branch[w]))
@@ -112,15 +141,34 @@ def concprinter(df, kind = 'string', n = 100):
 
 def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     """Save an interrogation as pickle to savedir"""
-    from collections import namedtuple
+    import collections
+    from collections import namedtuple, Counter
     import pickle
     import os
     import pandas
     from time import localtime, strftime
+
+    if savename.endswith('.p'):
+        savename = savename[:-2]
+
+    def urlify(s):
+        "Turn savename into filename"
+        import re
+        s = s.lower()
+        s = re.sub(r"[^\w\s]", '', s)
+        s = re.sub(r"\s+", '-', s)
+        return s
+
+    savename = urlify(savename)
+
     if not os.path.exists(savedir):
         os.makedirs(savedir)
+    
     if not savename.endswith('.p'):
         savename = savename + '.p'
+
+    savename = savename.replace('lemmatised', '-lemmatised')
+
     fullpath = os.path.join(savedir, savename)
     while os.path.isfile(fullpath):
         selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
@@ -129,7 +177,10 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
             fullpath = os.path.join(savedir, selection)
     
     # if it's just a table or series
-    if type(interrogation) == pandas.core.frame.DataFrame or type(interrogation) == pandas.core.series.Series:
+    if type(interrogation) == pandas.core.frame.DataFrame or \
+        type(interrogation) == pandas.core.series.Series or \
+        type(interrogation) == dict or \
+        type(interrogation) == collections.Counter:
         temp_list = [interrogation]
     elif len(interrogation) == 2:
         temp_list = [interrogation.query, interrogation.totals]
@@ -159,9 +210,19 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     if not savename.endswith('.p'):
         savename = savename + '.p'
     unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
-    
-    if type(unpickled) == pandas.core.frame.DataFrame or type(unpickled) == pandas.core.series.Series:
+
+    if type(unpickled) == pandas.core.frame.DataFrame or \
+    type(unpickled) == pandas.core.series.Series or \
+    type(unpickled) == dict or \
+    type(unpickled) == collections.Counter:
         output = unpickled
+
+    if len(unpickled) == 1:
+        if type(unpickled[0]) == pandas.core.frame.DataFrame or \
+        type(unpickled[0]) == pandas.core.series.Series or \
+        type(unpickled[0]) == dict or \
+        type(unpickled[0]) == collections.Counter:
+            output = unpickled[0]
     elif len(unpickled) == 4:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
         output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])
@@ -179,7 +240,6 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
         output = outputnames(unpickled[0], unpickled[1])
     return output
-
 
 def report_display():
     """Displays/downloads the risk report, depending on your browser settings"""
@@ -703,3 +763,10 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
     return r
+
+def texify(series, n = 20, colname = 'Keyness'):
+    """turn a series into a latex table"""
+    import pandas as pd
+    df = pd.DataFrame(series)
+    df.columns = [colname]
+    return df.head(n).to_latex()
