@@ -155,7 +155,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         "Turn savename into filename"
         import re
         s = s.lower()
-        s = re.sub(r"[^\w\s]", '', s)
+        s = re.sub(r"[^\w\s-]", '', s)
         s = re.sub(r"\s+", '-', s)
         return s
 
@@ -657,14 +657,14 @@ def tregex_engine(query = False,
             if re.match(tregex_error, res[0]):
                 tregex_error_output = ""
                 time = strftime("%H:%M:%S", localtime())
-                selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n' \
+                selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
                 if 'a' in selection:
                     query = raw_input('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print ''
-                    return
+                    return False
             
             # if regex error, try to help
             elif re.match(regex_error, res[0]):
