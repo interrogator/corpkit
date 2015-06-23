@@ -66,7 +66,7 @@ def plotter(title,
             "Turn title into filename"
             import re
             s = s.lower()
-            s = re.sub(r"[^\w\s]", '', s)
+            s = re.sub(r"[^\w\s-]", '', s)
             s = re.sub(r"\s+", '-', s)
             return s     
         # name as 
