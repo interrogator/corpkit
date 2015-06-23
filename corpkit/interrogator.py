@@ -373,6 +373,24 @@ def interrogator(path,
         gc.collect()
         return result
 
+    def get_lemmata(xmldata):
+        from bs4 import BeautifulSoup
+        import gc
+        result = []
+        just_good_deps = SoupStrainer('token')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
+        for token in soup:
+            word = token.lemma.text
+            if re.search(query, word):
+                result.append(word)
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
+        return result
+
     def tokener(xmldata):
         """print word, using good lemmatisation"""
         from bs4 import BeautifulSoup
@@ -649,6 +667,10 @@ def interrogator(path,
             translated_option = 'g'
             dependency = True
             optiontext = 'Role and governor.'
+        elif option.startswith('l') or option.startswith('L'):
+            translated_option = 'l'
+            dependency = True
+            optiontext = 'Lemmata only.'
         elif option.startswith('t') or option.startswith('T'):
             translated_option = 'q' # dummy
             dependency = True
@@ -665,6 +687,7 @@ def interrogator(path,
                           '              d) Get dependent of regular expression match and the r/ship\n' \
                           '              f) Get dependency function of regular expression match\n' \
                           '              g) get governor of regular expression match and the r/ship\n' \
+                          '              l) get lemmata via dependencies\n'
                           '              n) get dependency index of regular expression match\n' \
                           '              p) get part-of-speech tag with Tregex\n' \
                           '              r) regular expression, for plaintext corpora\n' \
@@ -675,7 +698,6 @@ def interrogator(path,
             if selection.startswith('x'):
                 return
             option = selection
-
 
     if dependency:
         if type(query) == list:
@@ -918,6 +940,8 @@ def interrogator(path,
     # check for valid query. so ugly.
     if not dependency and not keywording and not n_gramming and not plaintext:
         query = tregex_engine(query = query, check_query = True)
+        if query is False:
+            return
     
     else:
         if dependency or translated_option == 'r':
@@ -1041,6 +1065,8 @@ def interrogator(path,
                         result_from_file = funct(data)
                     if translated_option == 'q':
                         result_from_file = tokener(data)
+                    if translated_option == 'l':
+                        result_from_file = get_lemmata(data)
                     if translated_option == 'i':
                         result_from_file = depnummer(data)
                     if translated_option == 'r':
@@ -1324,7 +1350,7 @@ if __name__ == '__main__':
         "Turn title into filename"
         import re
         s = s.lower()
-        s = re.sub(r"[^\w\s]", '', s)
+        s = re.sub(r"[^\w\s-]", '', s)
         s = re.sub(r"\s+", '-', s)
         return s     
 
