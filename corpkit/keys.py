@@ -20,7 +20,6 @@ def keywords(data,
     import pandas
     import pandas as pd
     from collections import Counter
-    from dictionaries.stopwords import stopwords as my_stopwords
 
     try:
         from IPython.display import display, clear_output
