@@ -89,7 +89,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 #### Other stuff
 
 * View top results as a table via `Pandas`
-* Tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
+* Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
 * Randomise concordance results, determine window size, output to CSV, etc.
 * Quickly save interrogations and figures to file, and reload results in new sessions with `save_result()` and `load_result()`
@@ -103,6 +103,8 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 * Use loops to concordance the top results from an interrogation, or check their keyness
 * use `editor()` to edit concordance line output as well as interrogations
 * build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
+* Restrict keyword analysis to particular parts of lexis/grammar (i.e. NP heads), removing the need for stopword lists, and making topic summarisation easier
+* Use `interrogator()` output or subset of output as target or reference corpus
 * and so on ...
 
 Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.
