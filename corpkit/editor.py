@@ -21,6 +21,7 @@ def editor(dataframe1,
             p = 0.05, 
             revert_year = True,
             print_info = True,
+            convert_spelling = False,
             **kwargs
             ):
     """Edit results of corpus interrogation"""
@@ -41,6 +42,8 @@ def editor(dataframe1,
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    pd.options.mode.chained_assignment = None
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
     
@@ -149,6 +152,28 @@ def editor(dataframe1,
                 parsed_input = [word for word in input if word in df.columns]
 
         return parsed_input
+
+    def convert_spell(df, convert_to = 'US'):
+        from dictionaries.word_transforms import usa_convert
+        if convert_to == 'UK':
+            usa_convert = {v: k for k, v in usa_convert.items()}
+        """turn dataframes into us/uk spelling"""
+        fixed = []
+        for val in list(df.columns):
+            try:
+                fixed.append(usa_convert[val])
+            except:
+                fixed.append(val)
+
+        df.columns = fixed
+        # now we have to merge all duplicates
+        for dup in df.columns.get_duplicates():
+            #num_dupes = len(list(df[dup].columns))
+            temp = df[dup].sum(axis = 1)
+            #df = df.drop([dup for d in range(num_dupes)], axis = 1)
+            df = df.drop(dup, axis = 1)
+            df[dup] = temp
+        return df
 
     def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
@@ -514,6 +539,14 @@ def editor(dataframe1,
         if using_totals:
             df2 = projector(df2, projection)
 
+    if convert_spelling:
+        if print_info:
+            print 'Converting spelling ... \n'
+        df = convert_spell(df, convert_to = convert_spelling)
+        if not single_totals:
+            df2 = convert_spell(df2, convert_to = convert_spelling)
+        sort_by = 'total'
+
     # merging
     if merge_entries:
         the_newname = newname_getter(df, parse_input(df, merge_entries), newname = newname, prinf = print_info)
@@ -678,11 +711,15 @@ def editor(dataframe1,
         print '***Done!***\n========================\n'
     #print df.head().T
     #print ''
-
-    pd.set_option('display.max_rows', 10)
-    pd.set_option('display.max_columns', 8)
+    if operation.startswith('k') or just_totals or df1_istotals:
+        pd.set_option('display.max_rows', 30)
+    else:
+        pd.set_option('display.max_rows', 15)
+    pd.set_option('display.max_columns', 12)
     pd.set_option('max_colwidth',70)
     pd.set_option('display.width', 800)
     pd.set_option('expand_frame_repr', False)
 
     return output
+
+
