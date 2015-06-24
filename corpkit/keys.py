@@ -43,7 +43,11 @@ def keywords(data,
     # turn into series
     out = pd.Series([s for k, s in kwds], index = [k for k, s in kwds])
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
+
     out.name = 'keywords'
+    # drop infinites and nans
+    out = out.replace([np.inf, -np.inf], np.nan)
+    out = out.fillna(0.0)
     
     # print and return
     if clear:
