@@ -209,7 +209,7 @@ def plotter(title,
             if legend_pos == 'best':
                 legend_pos = 'lower left'
             if show_totals.endswith('plot') or show_totals.endswith('both'):
-                #kwargs['pctdistance'] = 0.65
+                kwargs['pctdistance'] = 1.1
                 if using_tex:
                     kwargs['autopct'] = r'%1.1f\%%'
                 else:
@@ -303,6 +303,10 @@ def plotter(title,
     # remove stats fields, put p in entry text, etc.
     statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
     try:
+        dataframe = dataframe.drop(statfields, axis = 1)
+    except:
+        pass    
+    try:
         dataframe.ix['p']
         there_are_p_vals = True
     except:
@@ -325,8 +329,11 @@ def plotter(title,
     # make and set y label
     absolutes = True
     if type(dataframe) == pandas.core.frame.DataFrame:
-        if not all([s.is_integer() for s in dataframe.ix[0,:].values]):
-            absolutes = False
+        try:
+            if not all([s.is_integer() for s in dataframe.iloc[0,:].values]):
+                absolutes = False
+        except:
+            pass
     else:
         if not all([s.is_integer() for s in dataframe.values]):        
             absolutes = False
@@ -413,7 +420,8 @@ def plotter(title,
         else:
             xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
         if len(max(xvals, key=len)) > 6:
-            kwargs['rot'] = 45
+            if not piemode:
+                kwargs['rot'] = 45
 
     # no title for subplots because ugly,
     if sbplt:
@@ -463,11 +471,13 @@ def plotter(title,
             if legend_pos == 'outside center right':
                 leg_options['bbox_to_anchor'] = (1.02, 0.5)
             if legend_pos == 'outside lower right':
-                leg_options['bbox_to_anchor'] = (1.02, 0)
+                leg_options['loc'] == 'upper right'
+                leg_options['bbox_to_anchor'] = (0.5, 0.5)
         
         # a bit of distance between legend and plot for outside legends
-        if legend_pos.startswith('o'):
-            leg_options['borderaxespad'] = 1
+        if type(legend_pos) == str:
+            if legend_pos.startswith('o'):
+                leg_options['borderaxespad'] = 1
 
     if not piemode:
         if show_totals.endswith('both') or show_totals.endswith('legend'):
@@ -504,7 +514,6 @@ def plotter(title,
                     leg_options['labels'] = list(dataframe.index)
                 else:
                     leg_options['labels'] = list(dataframe.index)   
-
     
     #areamode = False
     #if 'kind' in kwargs:
@@ -675,10 +684,11 @@ def plotter(title,
         #tooltip = plugins.LineLabelTooltip(lines)
         #mpld3.plugins.connect(plt.gcf(), mpld3.plugins.PointLabelTooltip(lines))
 
-    #if piemode:
-        #if not sbplt:
-            #plt.tight_layout()
-            #plt.axis('equal')
+    if piemode:
+        if not sbplt:
+            plt.axis('equal')
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
 
 
     # add x label
@@ -785,7 +795,6 @@ def plotter(title,
             if kwargs['kind'].startswith('bar'):
                 width = ax.containers[0][0].get_width()
 
-    
     if was_series:
         the_y_limit = plt.ylim()[1]
         if show_totals.endswith('plot') or show_totals.endswith('both'):
