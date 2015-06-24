@@ -16,6 +16,7 @@ def editor(dataframe1,
             span_subcorpora = False,
             merge_subcorpora = False,
             new_subcorpus_name = False,
+            replace_names = False,
             projection = False,
             remove_above_p = False,
             p = 0.05, 
@@ -24,7 +25,10 @@ def editor(dataframe1,
             convert_spelling = False,
             **kwargs
             ):
-    """Edit results of corpus interrogation"""
+    """Edit results of corpus interrogation.
+
+    replace_names: give a tuple with (to_find, replacement)
+                      give a raw string to delete"""
 
     import pandas
     import pandas as pd
@@ -153,8 +157,10 @@ def editor(dataframe1,
 
         return parsed_input
 
-    def convert_spell(df, convert_to = 'US'):
+    def convert_spell(df, convert_to = 'US', print_info = print_info):
         from dictionaries.word_transforms import usa_convert
+        if print_info:
+            print 'Converting spelling ... \n'
         if convert_to == 'UK':
             usa_convert = {v: k for k, v in usa_convert.items()}
         """turn dataframes into us/uk spelling"""
@@ -166,6 +172,11 @@ def editor(dataframe1,
                 fixed.append(val)
 
         df.columns = fixed
+        return df
+
+    def merge_duplicates(df, print_info = print_info):
+        if print_info:
+            print 'Merging duplicate entries ... \n'
         # now we have to merge all duplicates
         for dup in df.columns.get_duplicates():
             #num_dupes = len(list(df[dup].columns))
@@ -174,6 +185,30 @@ def editor(dataframe1,
             df = df.drop(dup, axis = 1)
             df[dup] = temp
         return df
+
+    def name_replacer(df, replace_names, print_info = print_info):
+        import re        
+        # double or single nest if need be
+        if type(replace_names) == str:
+            replace_names = [(replace_names, '')]
+        if type(replace_names[0]) == str:
+            replace_names = [replace_names]
+        """replace entry names and merge"""
+        for to_find, replacement in replace_names:
+            if print_info:
+                try:
+                    print 'Replacing "%s" with "%s" ...\n' % (to_find, replacement)
+                except:
+                    print 'Deleting "%s" from entry names ...\n' % (to_find)
+            to_find = re.compile(to_find)
+            try:
+                replacement = replacement
+            except:
+                replacement = ''
+            df.columns = [re.sub(to_find, replacement, l) for l in list(df.columns)]
+        df = merge_duplicates(df, print_info = False)
+        return df
+
 
     def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
@@ -220,10 +255,10 @@ def editor(dataframe1,
             the_newname = unicode(the_newname, errors = 'ignore')
         return the_newname
 
-    def merge_these_entries(df, parsed_input, the_newname, prinf = True):
+    def merge_these_entries(df, parsed_input, the_newname, prinf = True, merging = 'entries'):
         # make new entry with sum of parsed input
         if prinf:
-            print 'Merging %d entries as "%s":\n    %s' % (len(parsed_input), the_newname, '\n    '.join(parsed_input[:10]))
+            print 'Merging %d %s as "%s":\n    %s' % (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10]))
             if len(parsed_input) > 10:
                 print '... and %d more ... \n' % (len(parsed_input) - 10)
             else:
@@ -314,17 +349,26 @@ def editor(dataframe1,
                            index = statfields, 
                            columns = list(df.columns))
         df = df.append(sl)
+        # drop infinites and nans
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0.0)
         return df
 
     def recalc(df, operation = '%'):
+        statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
         """Add totals to the dataframe1"""
 
         #df.drop('Total', axis = 0, inplace = True)
         #df.drop('Total', axis = 1, inplace = True)
-
-        df['temp-Total'] = df.sum(axis = 1)
+        try:
+            df['temp-Total'] = df.drop(statfields).sum(axis = 1)
+        except:
+            df['temp-Total'] = df.sum(axis = 1)
         df = df.T
-        df['temp-Total'] = df.sum(axis = 1)
+        try:
+            df['temp-Total'] = df.drop(statfields).sum(axis = 1)
+        except:
+            df['temp-Total'] = df.sum(axis = 1)
         df = df.T
 
         # make totals percentages if need be.
@@ -541,12 +585,35 @@ def editor(dataframe1,
             df2 = projector(df2, projection)
 
     if convert_spelling:
-        if print_info:
-            print 'Converting spelling ... \n'
         df = convert_spell(df, convert_to = convert_spelling)
+        df = merge_duplicates(df)
+
         if not single_totals:
-            df2 = convert_spell(df2, convert_to = convert_spelling)
-        sort_by = 'total'
+            df2 = convert_spell(df2, convert_to = convert_spelling, print_info = False)
+            df2 = merge_duplicates(df2, print_info = False)
+        if not sort_by:
+            sort_by = 'total'
+
+    if replace_names:
+        df = name_replacer(df, replace_names)
+        df = merge_duplicates(df)
+        if not single_totals:
+            df2 = name_replacer(df2, print_info = False)
+            df2 = merge_duplicates(df2, print_info = False)
+        if not sort_by:
+            sort_by = 'total'
+
+    # remove old stats if they're there:
+    statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
+    try:
+        df = df.drop(statfields, axis = 0)
+    except:
+        pass
+    if using_totals:
+        try:
+            df2 = df2.drop(statfields, axis = 0)
+        except:
+            pass
 
     # merging
     if merge_entries:
@@ -558,9 +625,9 @@ def editor(dataframe1,
     
     if merge_subcorpora:
         the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), newname = new_subcorpus_name, prinf = print_info)
-        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, prinf = print_info).T
+        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, merging = subcorpora, prinf = print_info).T
         if using_totals:
-            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, prinf = print_info).T
+            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, merging = subcorpora, prinf = print_info).T
     
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
@@ -628,7 +695,6 @@ def editor(dataframe1,
                 if not single_totals:
                     the_threshold = set_threshold(df2, threshold, prinf = print_info)
             df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
-        
     
         # if doing keywording...
     if operation.startswith('k'):
@@ -663,10 +729,10 @@ def editor(dataframe1,
         # turn just_totals into series:
         df = pd.Series(df['Combined total'], name = 'Combined total')
 
-    #if using_totals:
-        #if operation.startswith('k'):
-            #if just_totals:
-                #df = pd.Series(df.ix[0], name = 'Keyness')
+    if df1_istotals:
+        if operation.startswith('k'):
+            df = pd.Series(df.ix[0])
+            df.name = '%s: keyness' % df.name
     
     # generate totals branch if not percentage results:
     if df1_istotals or operation.startswith('k'):
@@ -729,12 +795,10 @@ def editor(dataframe1,
         pd.set_option('display.max_rows', 30)
     else:
         pd.set_option('display.max_rows', 15)
-    pd.set_option('display.max_columns', 12)
+    pd.set_option('display.max_columns', 8)
     pd.set_option('max_colwidth',70)
     pd.set_option('display.width', 800)
     pd.set_option('expand_frame_repr', False)
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     return output
-
-
