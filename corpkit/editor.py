@@ -359,15 +359,16 @@ def editor(dataframe1,
             raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
 
         if operation.startswith('k'):
-            if sort_by == 'total':
-                df = df.order(ascending = False)
+            if type(df) == pandas.core.series.Series:
+                if sort_by == 'total':
+                    df = df.order(ascending = False)
 
-            elif sort_by == 'infreq':
-                df = df.order(ascending = True)
+                elif sort_by == 'infreq':
+                    df = df.order(ascending = True)
 
-            elif sort_by == 'name':
-                df = df.sort_index()
-            return df
+                elif sort_by == 'name':
+                    df = df.sort_index()
+                return df
 
         if just_totals:
             if sort_by == 'infreq':
@@ -633,7 +634,20 @@ def editor(dataframe1,
     if operation.startswith('k'):
         from corpkit.keys import keywords
         #df = df.iloc[:,0]
-        df = keywords(df, df2, printstatus = False)
+        if type(df) == pandas.core.frame.DataFrame:
+            kwds = []
+            for ind in list(df.index):
+                ser = keywords(df.ix[ind], df2, printstatus = False)
+                ser.name = ind
+                kwds.append(ser)
+            df = pd.concat(kwds, axis = 1)
+        else:
+            df = keywords(df, df2, printstatus = False)
+        df = df.T
+    
+    # drop infinites and nans
+    df = df.replace([np.inf, -np.inf], np.nan)
+    df = df.fillna(0.0)
 
     # resort data
     if sort_by:
@@ -719,6 +733,7 @@ def editor(dataframe1,
     pd.set_option('max_colwidth',70)
     pd.set_option('display.width', 800)
     pd.set_option('expand_frame_repr', False)
+    pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     return output
 
