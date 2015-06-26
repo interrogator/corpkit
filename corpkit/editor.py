@@ -170,7 +170,6 @@ def editor(dataframe1,
                 fixed.append(usa_convert[val])
             except:
                 fixed.append(val)
-
         df.columns = fixed
         return df
 
@@ -591,7 +590,7 @@ def editor(dataframe1,
         if not single_totals:
             df2 = convert_spell(df2, convert_to = convert_spelling, print_info = False)
             df2 = merge_duplicates(df2, print_info = False)
-        if not sort_by:
+        if not df1_istotals:
             sort_by = 'total'
 
     if replace_names:
@@ -625,9 +624,9 @@ def editor(dataframe1,
     
     if merge_subcorpora:
         the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), newname = new_subcorpus_name, prinf = print_info)
-        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, merging = subcorpora, prinf = print_info).T
+        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
         if using_totals:
-            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, merging = subcorpora, prinf = print_info).T
+            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
     
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
