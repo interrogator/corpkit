@@ -20,7 +20,11 @@ wordlist = {u"felt": u"feel",
             u"teen-ager": u"teenager",
             u"teen-agers": u"teenager",
             u"republicans": u"republican",
-            u"democrats": u"democrat"}
+            u"them": u"they",
+            u"us": u"we",
+            u"me": u"i",
+            u"her": u"she",
+            u"him": u"he"}
             #u"would": u"would/will",
             #u"will": u"would/will",
             #u"wo": u"would/will",
