@@ -15,6 +15,8 @@ def interrogator(path,
                 quicksave = False,
                 add_to = False,
                 add_pos_to_g_d_option = False,
+                custom_engine = False,
+                post_process = False,
                 **kwargs):
     
     """
@@ -85,6 +87,10 @@ def interrogator(path,
         whose function matches the regex will be kept, and the tag will not be printed
     quicksave : str
        save result after interrogation has finished, using str as file name
+    custom_engine : function
+       pass a function to process every xml file and return a list of results
+    post_process : function
+       pass a function that processes every item in the list of results
     ** kwargs : just_content_words for dictionary building
                more generally, kwargs allows users to pass in earlier interrogation
                settings in order to reperform the search.
@@ -151,6 +157,10 @@ def interrogator(path,
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
+
+    # put me in a more appropriate spot
+    if custom_engine is not False:
+        option = 'z'
     
     # check if we are in ipython
     try:
@@ -205,16 +215,14 @@ def interrogator(path,
     def processwords(list_of_matches):
         """edit matches from interrogations"""
 
-        # everything should already be in unicode by this point.
-        #if not dependency:
-            #list_of_matches = [unicode(w, 'utf-8', errors = 'ignore') for w in list_of_matches]
-        
-        # remove commas for pandas csv tokeniser, which i should probably remove soon.
-        list_of_matches = [w.lower().replace(',', '') for w in list_of_matches]
-        
-        # remove punct etc.
-        if translated_option != 'o' and translated_option != 'u':
-            list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
+        if post_process is not False:
+            list_of_matches = [post_process(m) for m in list_of_matches]
+        else:
+            # remove commas for pandas csv tokeniser, which i should probably remove soon.
+            list_of_matches = [w.lower() for w in list_of_matches]
+            # remove punct etc.
+            if translated_option != 'o' and translated_option != 'u':
+                list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
         
         list_of_matches.sort()
         
@@ -550,6 +558,14 @@ def interrogator(path,
         return result
 
     def tabler(subcorpus_names, list_of_dicts, num_rows):
+        import pandas as pd
+        cols = []
+        for subcorp, data in zip(subcorpus_names, list_of_dicts):
+            col = pd.Series([w for w, v in data.most_common(num_rows)], name = subcorp)
+            cols.append(col)
+        word_table = pd.concat(cols, axis = 1)
+        return word_table
+
         csvdata = [','.join(subcorpus_names)]
         # for number of rows of data in table
         for i in range(num_rows):
@@ -564,6 +580,7 @@ def interrogator(path,
             csvdata.append(','.join(line))
         csv = '\n'.join(csvdata)
         word_table = read_csv(StringIO(csv))
+        word_table = DataFrame(data, index = subcorpus_names)
         return word_table
 
     # a few things are off by default:
@@ -654,6 +671,10 @@ def interrogator(path,
                 query = r'(?i)\b(' + '|'.join(query) + r')\b'
 
         # dependency option:
+        elif option.startswith('z') or option.startswith('Z'):
+            translated_option = 'z'
+            dependency = True
+            optiontext = 'Using custom dependency query engine.'
         elif option.startswith('i') or option.startswith('I'):
             translated_option = 'i'
             depnum = True
@@ -826,7 +847,6 @@ def interrogator(path,
                 elif 'b' in selection:
                     print ''
                     return
-
         
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         while dep_type not in allowed_dep_types:
@@ -1057,6 +1077,8 @@ def interrogator(path,
                     filepath = os.path.join(path, subcorpus_name, f)
                 with open(filepath, "rb") as text:
                     data = text.read()
+                    if translated_option == 'z':
+                        result_from_file = custom_engine(data)
                     if translated_option == 'g':
                         result_from_file = govrole(data)
                     if translated_option == 'd':
