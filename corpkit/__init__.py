@@ -21,7 +21,6 @@ __all__ = ["interrogator",
            "tregex_engine",
            "load_all_results",
            "dictmaker",
-           "pinterrogator",
            "texify"]
 
 import os
@@ -43,7 +42,6 @@ sys.path.append(os.path.join(thepath, 'dictionaries'))
 sys.path.append(thepath)
 
 from interrogator import interrogator
-from par import pinterrogator
 from editor import editor
 from plotter import plotter
 from conc import conc

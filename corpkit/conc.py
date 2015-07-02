@@ -32,6 +32,8 @@ def conc(corpus, query,
     
     # check query
     good_tregex_query = tregex_engine(query, check_query = True)
+    if good_tregex_query is False:
+        return
 
     # make sure there's a corpus
     if not os.path.exists(corpus):
@@ -59,7 +61,7 @@ def conc(corpus, query,
         middle_column_result = tregex_engine(query, 
                                   options = ['-o', options], 
                                   corpus = corpus)
-
+    
     if plaintext:
         import nltk
         sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
@@ -126,8 +128,12 @@ def conc(corpus, query,
         from random import shuffle
         shuffle(series)
 
-    df = pd.concat(series, axis = 1).T
+    try:
+        df = pd.concat(series, axis = 1).T
+    except ValueError:
+        raise ValueError("No results found, I'm afraid. Check your query and path.")
 
+        
     # make temporary
     pd.set_option('display.max_columns', 500)
     pd.set_option('max_colwidth',window * 2)
