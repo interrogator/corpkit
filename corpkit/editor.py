@@ -33,6 +33,7 @@ def editor(dataframe1,
     import pandas
     import pandas as pd
     import numpy as np
+    import re
     import collections
     from pandas import DataFrame, Series
     from time import localtime, strftime
@@ -520,18 +521,24 @@ def editor(dataframe1,
         if just_entries:
             if type(just_entries) == int:
                 just_entries = [just_entries]
+            if type(just_entries) == str:
+                df = df[df['m'].str.contains(just_entries)]
             if type(just_entries) == list:
-                if type(just_entries[0]) != int:
-                    raise ValueError('just_entries must be int or list of ints when working with concordance lines.')
+                if type(just_entries[0]) == str:
+                    regex = re.compile(r'(?i)^(' + r'|'.join(just_entries) + r')$')
+                    df = df[df['m'].str.contains(regex)]
                 else:
                     df = df.ix[just_entries].reset_index(drop = True)
 
         if skip_entries:
             if type(skip_entries) == int:
                 skip_entries = [skip_entries]
+            if type(skip_entries) == str:
+                df = df[~df['m'].str.contains(skip_entries)]
             if type(skip_entries) == list:
-                if type(skip_entries[0]) != int:
-                    raise ValueError('skip_entries must be int or list of ints when working with concordance lines.')
+                if type(skip_entries[0]) == str:
+                    regex = re.compile(r'(?i)^(' + r'|'.join(skip_entries) + r')$')
+                    df = df[~df['m'].str.contains(regex)]
                 else:
                     df = df.ix[[e for e in list(df.index) if e not in skip_entries]].reset_index(drop = True)
 
