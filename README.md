@@ -455,7 +455,7 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 >>> rel_modals = editor(modals.results, '%', modals.totals)
 
 # trickier: make an 'others' result from low-total entries
->>> low_indices = [i for i, w in enumerate(list(modals.results.index)) if i > 6]
+>>> low_indices = range(7, modals.results.shape[1])
 >>> each_md = editor(modals.results, '%', modals.totals, merge_entries = low_indices, 
 ...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
