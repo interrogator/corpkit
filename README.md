@@ -363,7 +363,7 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 
 Output:
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/pronominal-sayers-in-the-nyt.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ann_he_she.png" />
 <br><br>
 
 Woohoo, a decreasing gender divide! 
