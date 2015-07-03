@@ -158,13 +158,34 @@ def editor(dataframe1,
 
         return parsed_input
 
+
+    def synonymise(df, pos = 'n'):
+        """pass a df and a pos and convert df columns to most common synonyms"""
+        import nltk
+        from nltk.corpus import wordnet as wn
+        #from dictionaries.taxonomies import taxonomies
+        from collections import Counter
+        fixed = []
+        for w in list(df.columns):
+            try:
+                syns = []
+                for syns in wn.synsets(w, pos = pos):
+                    for w in syns:
+                        synonyms.append(w)
+                top_syn = Counter(syns).most_common(1)[0][0]
+                fixed.append(top_syn)
+            except:
+                fixed.append(w)
+        df.columns = fixed
+        return df
+
     def convert_spell(df, convert_to = 'US', print_info = print_info):
+        """turn dataframes into us/uk spelling"""
         from dictionaries.word_transforms import usa_convert
         if print_info:
             print 'Converting spelling ... \n'
         if convert_to == 'UK':
             usa_convert = {v: k for k, v in usa_convert.items()}
-        """turn dataframes into us/uk spelling"""
         fixed = []
         for val in list(df.columns):
             try:
@@ -231,8 +252,11 @@ def editor(dataframe1,
         df = df.drop(parsed_input, axis = 1)
         return df
 
-    def newname_getter(df, parsed_input, newname = 'combine', prinf = True):
+    def newname_getter(df, parsed_input, newname = 'combine', prinf = True, merging_subcorpora = False):
         """makes appropriate name for merged entries"""
+        if merging_subcorpora:
+            if newname is False:
+                newname = 'combine'
         if type(newname) == int:
             the_newname = list(df.columns)[newname]
         elif type(newname) == str:
@@ -630,7 +654,10 @@ def editor(dataframe1,
             df2 = merge_these_entries(df2, parse_input(df2, merge_entries), the_newname, prinf = False)
     
     if merge_subcorpora:
-        the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), newname = new_subcorpus_name, prinf = print_info)
+        the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), 
+                                     newname = new_subcorpus_name, 
+                                     merging_subcorpora = True,
+                                     prinf = print_info)
         df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
         if using_totals:
             df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
@@ -808,3 +835,18 @@ def editor(dataframe1,
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     return output
+
+    #def get_superordinate_word(word, pos = 'n', depth = 1):
+    #    import nltk
+    #    from nltk.corpus import wordnet as wn
+    #    entry = wn.synset('.'.join([word, pos, '01']))
+    #    hyper = lambda s: s.hypernyms()
+    #    #subord = list(set([w.replace('_', ' ') for s in entry.closure(hypo, depth = d) for w in s.lemma_names()]))
+    #    supers = list(entry.closure(hyper))[-depth]
+    #    rightdepth = sorted(supers.lemma_names())[0].replace('_', ' ')
+    #    #supord = list(set([w.replace('_', ' ') for s in entry.closure(hyper, depth = d) for w in s.lemma_names()]))
+    #    return rightdepth
+    #    print "Synonyms:", ", ".join(j.lemma_names())
+
+#entry = wn.synset('car.n.01')
+#entry.hypernyms()
