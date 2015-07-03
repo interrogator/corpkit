@@ -468,7 +468,7 @@ def process_types():
                     'ed',
                     'ing',
                     '']    
-        return r'(?i)\b((%s)(%s)|(%s))\b' % ( '{0,2}|'.join(regular) + '{0,2}',
+        return r'(?i)\b((%s)(%s)|(%s))\b' % ( '{1,2}|'.join(regular) + '{1,2}',
                                       '|'.join(suffixes), '|'.join(irregular))
     
     list_of_regexes = []
