@@ -152,6 +152,11 @@ def interrogator(path,
                                               usa_convert, 
                                               taglemma)
 
+    if 'paralleling' in kwargs:
+        paralleling = kwargs['paralleling']
+    else:
+        paralleling = False
+
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
     if lemmatise:
@@ -1167,6 +1172,9 @@ def interrogator(path,
         the_options['time_ended'] = the_time_ended
 
         output = outputnames(the_options, stotals)
+        if 'outname' in kwargs:
+            stotals.name = kwargs['outname']
+            return stotals
         if have_ipython:
             clear_output()
         if quicksave:
@@ -1227,6 +1235,9 @@ def interrogator(path,
     # depnum is a little different, though
     if depnum:
         df = df.T
+
+    if paralleling:
+        return (kwargs['outname'], df)
         
     #make results into named tuple
     # add option to named tuple
@@ -1268,7 +1279,6 @@ def interrogator(path,
     if have_ipython:
         clear_output()
 
-    
     # warnings if nothing generated...
     if not one_big_corpus:
         num_diff_results = len(list(df.columns))
@@ -1283,6 +1293,7 @@ def interrogator(path,
         print '' 
         warnings.warn('No results produced. Maybe your query needs work.')
         return output
+
     if not keywording:
         if stotals.sum() == 0:
             print '' 
@@ -1304,6 +1315,7 @@ def interrogator(path,
         return output, d
     else:
         return output
+
 
 
 
