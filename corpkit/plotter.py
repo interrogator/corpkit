@@ -206,10 +206,10 @@ def plotter(title,
         if kwargs['kind'] == 'pie':
             piemode = True
             # always the best spot for pie
-            if legend_pos == 'best':
-                legend_pos = 'lower left'
+            #if legend_pos == 'best':
+                #legend_pos = 'lower left'
             if show_totals.endswith('plot') or show_totals.endswith('both'):
-                kwargs['pctdistance'] = 1.1
+                kwargs['pctdistance'] = 0.6
                 if using_tex:
                     kwargs['autopct'] = r'%1.1f\%%'
                 else:
@@ -431,6 +431,8 @@ def plotter(title,
         kwargs['title'] = title
         
     # no interactive subplots yet:
+
+
     if sbplt and interactive:
         import warnings
         interactive = False
@@ -439,14 +441,8 @@ def plotter(title,
     #kwargs['labels'] = None
     #kwargs['legend'] = False
 
-    # make legend
     if legend:
-        # temporary, this makes legend in an acceptable spot at least
-        if piemode:
-            if sbplt:
-                legend_pos = 'outside right'
-
-        # kwarg optiosn go in leg_options
+        # kwarg options go in leg_options
         leg_options = {'framealpha': .8}
         if 'shadow' in kwargs:
             leg_options['shadow'] = True
@@ -502,14 +498,14 @@ def plotter(title,
         if not sbplt:
             kwargs['y'] = list(dataframe.columns)[0]
             if pie_legend:
-                kwargs['labels'] = None
+                kwargs['legend'] = False
                 if was_series:
                     leg_options['labels'] = list(dataframe.index)
                 else:
                     leg_options['labels'] = list(dataframe.columns)
         else:
             if pie_legend:
-                kwargs['labels'] = None
+                kwargs['legend'] = False
                 if was_series:
                     leg_options['labels'] = list(dataframe.index)
                 else:
@@ -593,14 +589,22 @@ def plotter(title,
                 new_cmap = truncate_colormap(cmap, 0.70, 0.90)
         kwargs['colormap'] = new_cmap
 
-    # use styles and plot 
+    # use styles and plot
+
     with plt.style.context((style)):
 
         if not sbplt:
             ax = dataframe.plot(figsize = figsize, **kwargs)
         else:
-            ax = dataframe.plot(figsize = figsize, **kwargs)
-
+            if not piemode and not sbplt:
+                ax = dataframe.plot(figsize = figsize, **kwargs)
+            else:
+                dataframe.plot(figsize = figsize, **kwargs)
+                handles, labels = plt.gca().get_legend_handles_labels()
+                plt.legend( handles, labels, loc = leg_options['loc'], bbox_to_anchor = (0,-0.1,1,1),
+                bbox_transform = plt.gcf().transFigure )
+                plt.show()
+                return
         if 'rot' in kwargs:
             if kwargs['rot'] != 0 and kwargs['rot'] != 90:
                 labels = [item.get_text() for item in ax.get_xticklabels()]
@@ -629,12 +633,14 @@ def plotter(title,
                         c = 0
 
         if legend:
-            if 3 not in interactive_types:
-                if not rev_leg:
-                    lgd = plt.legend(**leg_options)
-                else:
-                    handles, labels = plt.gca().get_legend_handles_labels()
-                    lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+            if not piemode and not sbplt:
+                if 3 not in interactive_types:
+                    if not rev_leg:
+                        lgd = plt.legend(**leg_options)
+                    else:
+                        handles, labels = plt.gca().get_legend_handles_labels()
+                        lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+
             #if black_and_white:
                 #lgd.set_facecolor('w')
 
