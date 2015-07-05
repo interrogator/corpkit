@@ -3,22 +3,11 @@
 #   dictionaries: process type wordlists
 #   Author: Daniel McDonald
 
-# Author's note: 
+# This sinister code makes regular expressions to match verbs. You can add to the lists below.
 
-# This list of process types, and entire associated method, is very simplistic. 
-# It comes from what Mick O'Donnell (genius behind UAM Corpus Tool) sent me.
-# Unlike UAM Corpus Tool, there is no disambiguation of senses based on grammatical features. It's best considered a heuristic, at this point.
-# These are useful when the Tregex query is already very precise, 
-# and you just want to cut down the kinds of /VB.?/.
-# In truth, this file represents one of the most obviously evil things I have ever done.
+# Thanks to Mick O'Donnell for the initial lists of process types
 
-# Also, there is no material process list, because I haven't figured out how to do it yet. Currently, I just use:
 
-# r'/VB.?/ !< %s !< %s !< %s' % (processes.relational, processes.verbal, processes.mental)
-
-# Also, I'm starting to wonder if I should just use list comprehension *after*
-# Tregex does its search. Perhaps there could be a list of filters to be passed 
-# to interrogator(), like 'relational only', 'usa english', etc.?
 
 def process_types():
     """This function takes lists of regular and irregular process verbs
@@ -30,17 +19,10 @@ def process_types():
                                       "became",
                                       "become",
                                       "becoming",
-                                      "appear",
-                                      "appears",
                                       "feel",
                                       "feels",
                                       "felt",
                                       "feeling",
-                                      "smell",
-                                      "smells",
-                                      "smelled",
-                                      "smelt",
-                                      "smelling",
                                       "be",
                                       "was",
                                       "been",
@@ -63,20 +45,10 @@ def process_types():
     regular_relational_processes = ["sound",
                                       "look",
                                       "seem",
-                                      "appear"]
+                                      "appear",
+                                      "smell"]
     
-
-    irregular_verbal_processes = ['certify',
-                                  'certifies',
-                                  'certified',
-                                  'certified',
-                                  'certifying',
-                                  'deny',
-                                  'denies',
-                                  'denied',
-                                  'denied',
-                                  'denying',
-                                  'forbid',
+    irregular_verbal_processes = ['forbid',
                                   'forbids',
                                   'forbade',
                                   'forbidden',
@@ -91,41 +63,15 @@ def process_types():
                                   'forswore',
                                   'forsworn',
                                   'forswearing',
-                                  'imply',
-                                  'implies',
-                                  'implied',
-                                  'implied',
-                                  'implying',
-                                  'move',
-                                  'moves',
-                                  'moved',
-                                  'moved',
-                                  'moving',
-                                  'notify',
-                                  'notifies',
-                                  'notified',
-                                  'notified',
-                                  'notifying',
                                   'prophesy',
                                   'prophesies',
                                   'prophesied',
                                   'prophesied',
                                   'prophesying',
-                                  'reply',
-                                  'replies',
-                                  'replied',
-                                  'replied',
-                                  'replying',
                                   'say',
                                   'says',
                                   'said',
-                                  'said',
                                   'saying',
-                                  'specify',
-                                  'specifies',
-                                  'specified',
-                                  'specified',
-                                  'specifying',
                                   'swear',
                                   'swears',
                                   'swore',
@@ -134,14 +80,20 @@ def process_types():
                                   'tell',
                                   'tells',
                                   'told',
-                                  'told',
                                   'telling',
                                   'write',
                                   'writes',
                                   'wrote',
                                   'written',
                                   'writing']
-    regular_verbal_processes = ['accede',
+    regular_verbal_processes = ['certify', 
+                                'deny', 
+                                'imply', 
+                                'move', 
+                                'notify', 
+                                'reply', 
+                                'specify'
+                                'accede',
                                 'add',
                                 'admit',
                                 'advise',
@@ -244,20 +196,12 @@ def process_types():
                                 'rumor',
                                 'rumour',
                                 'yell']
+
     irregular_mental_processes = ['choose',
                                   'chooses',
                                   'chose',
                                   'chosen',
                                   'choosing',
-                                  'dream',
-                                  'dreams',
-                                  'dreamed',
-                                  'dreamt',
-                                  'dreaming',
-                                  'fancy',
-                                  'fancies',
-                                  'fancied',
-                                  'fancying',
                                   'feel',
                                   'feels',
                                   'felt',
@@ -266,10 +210,6 @@ def process_types():
                                   'finds',
                                   'found',
                                   'finding',
-                                  'figure',
-                                  'figures',
-                                  'figured',
-                                  'figuring',
                                   'forget',
                                   'forgets',
                                   'forgot',
@@ -280,19 +220,10 @@ def process_types():
                                   'heard',
                                   'hearing',
                                   'know',
-                                  'justify',
-                                  'justifies',
-                                  'justified',
-                                  'justifying',
                                   'knows',
                                   'knew',
                                   'known',
                                   'knowing',
-                                  'learn',
-                                  'learns',
-                                  'learned',
-                                  'learnt',
-                                  'learning',
                                   'mean',
                                   'means',
                                   'meant',
@@ -313,11 +244,6 @@ def process_types():
                                   'saw',
                                   'seen',
                                   'seeing',
-                                  'smell',
-                                  'smells',
-                                  'smelled',
-                                  'smelt',
-                                  'smelling',
                                   'think',
                                   'thinks',
                                   'thought',
@@ -325,11 +251,7 @@ def process_types():
                                   'understand',
                                   'understands',
                                   'understood',
-                                  'understanding',
-                                  'worry',
-                                  'worries',
-                                  'worried',
-                                  'worrying']
+                                  'understanding']
     
     regular_mental_processes = ['abide',
                                 'abominate',
@@ -459,21 +381,143 @@ def process_types():
                                 'wish',
                                 'wonder',
                                 'yearn',
-                                'rediscover']
+                                'rediscover'
+                                'dream',
+                                'justify', 
+                                'figure', 
+                                'smell', 
+                                'worry']
 
     def regex_maker(irregular, regular):
-        """makes a regex from the list of words passed to it"""
-        suffixes = ['s',
-                    'es',
-                    'ed',
-                    'ing',
-                    '']    
-        return r'(?i)\b((%s)(%s)|(%s))\b' % ( '{1,2}|'.join(regular) + '{1,2}',
-                                      '|'.join(suffixes), '|'.join(irregular))
+        """makes a regex from the lists of words passed to it"""
+        # add alternative spellings
+        from dictionaries.word_transforms import usa_convert
+        uk_convert = {v: k for k, v in usa_convert.items()}
+
+        sib_ends = ['s', 'ss', 'sh', 'ch', 'x']
+        vowels = ['a', 'e', 'i', 'o', 'u']
+        non_double_words = ['happen', 'visit']
+        t_ends = ['bend', 
+                  'build',
+                  'burn',
+                  'deal',
+                  'dream',
+                  'dwell',
+                  'lean',
+                  'leap',
+                  'learn',
+                  'mean',
+                  'send', 
+                  'shot',
+                  'smell',
+                  'spend', 
+                  'spill',
+                  'spoil']
+
+        to_add_to_regular_list = []
+        to_add_to_irregular_list = []
+
+        for w in regular:
+            if w in usa_convert.keys():
+              to_add_to_regular_list.append(usa_convert[w])
+        for w in regular:
+            if w in uk_convert.keys():
+              to_add_to_regular_list.append(uk_convert[w])
+        for w in irregular:
+            if w in usa_convert.keys():
+              to_add_to_irregular_list.append(usa_convert[w])
+        for w in irregular:
+            if w in uk_convert.keys():
+              to_add_to_irregular_list.append(uk_convert[w])
+
+        regular = sorted(list(set(regular + to_add_to_regular_list)))
+        irregular = sorted(list(set(irregular + to_add_to_irregular_list)))
+
+        regular_verbforms = []
+        for w in regular:
+            # remove entries in there by mistake!
+            if w in irregular:
+                print "'%s' in both regular and irregular lists." % w
+                continue
+            # base form
+            regular_verbforms.append(w)
+            # 3rd singular: 
+            # catch -> catches
+            if any([w.endswith(sib_end) for sib_end in sib_ends]):
+                regular_verbforms.append(w + 'es')
+            # buy -> buys
+            #elif any([w.endswith('%sy' % v) for v in vowels]):
+                #regular_verbforms.append(w + 's')
+            # try -> tries
+            elif w.endswith('y'):
+                if not any([w.endswith('%sy' % v) for v in vowels]):
+                    regular_verbforms.append(w[:-1] + 'ies')
+                else:
+                    regular_verbforms.append(w + 's')
+            # bat -> bats, buy -> buys
+            else:
+                regular_verbforms.append(w + 's')
+
+            # past tense
+            # double the last letter if need be:
+            if w[-1] not in vowels and w[-1] != 'y':
+                if w[-2] in vowels:
+                    if w[-3] not in vowels:
+                        if w not in non_double_words:
+                            if len(w) < 6:
+                                w = w + w[-1]
+
+            # try -> tried
+            if w.endswith('y'):
+                if w[-2] not in vowels:
+                    regular_verbforms.append(w[:-1] + 'ied')
+                else:
+                    regular_verbforms.append(w + 'ed')
+            elif w.endswith('e'):
+                regular_verbforms.append(w + 'd')
+            else:
+                regular_verbforms.append(w + 'ed')
+                if w in t_ends:
+                    if w.endswith('d'):
+                        regular_verbforms.append(w[:-1] + 't')
+                    elif w.endswith('ll'):
+                        regular_verbforms.append(w[:-1] + 't')
+                    else:
+                        regular_verbforms.append(w + 't')
+            # is there a -t rule?
+
+            # 'ing'
+            # animate -> animating
+            if w.endswith('e'):
+                if not any([w.endswith('%se' % v) for v in vowels]):
+                    regular_verbforms.append(w[:-1] + 'ing')
+                else:
+                    pass
+            # look -> looking, see -> seeing
+            else:
+                regular_verbforms.append(w + 'ing')
+
+        verbforms = sorted(list(set(regular_verbforms + irregular)))
+        
+        to_add_to_verbforms_list = []
+        for w in verbforms:
+            if w in usa_convert.keys():
+              to_add_to_verbforms_list.append(usa_convert[w])
+        for w in verbforms:
+            if w in uk_convert.keys():
+              to_add_to_verbforms_list.append(uk_convert[w])
+        verbforms = sorted(list(set(verbforms + to_add_to_verbforms_list)))
+        return r'(?i)\b(' + r'|'.join(verbforms) + r')\b'
     
     list_of_regexes = []
-    for process_type in [[irregular_relational_processes, regular_relational_processes], [irregular_mental_processes, regular_mental_processes], [irregular_verbal_processes, regular_verbal_processes]]:
-        as_regex = regex_maker(process_type[0], process_type[1])
+    for process_type in [[irregular_relational_processes, 
+                         regular_relational_processes], 
+                         [irregular_mental_processes, 
+                         regular_mental_processes], 
+                         [irregular_verbal_processes, 
+                         regular_verbal_processes]]:
+        # replace handles lemmata ending in e
+        as_regex = regex_maker(process_type[0], process_type[1]).replace('e{1,2}', 'e{0,1}')
         list_of_regexes.append(as_regex)
 
         #regex_list = [regex_maker(process_type) for process_type in [relational_processes, mental_processes, verbal_processes]]
@@ -486,3 +530,11 @@ def process_types():
     return output
 
 processes = process_types()
+
+
+verbforms = []
+for w in lst:
+    forms = [w.replace("n't", "") for w in lexeme(w)]
+    for f in forms:
+        verbforms.append(f)
+
