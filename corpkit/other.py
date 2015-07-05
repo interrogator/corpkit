@@ -836,32 +836,40 @@ def pmultiquery(corpus,
     import os
     import pandas
     import pandas as pd
+    from collections import namedtuple
     from time import strftime, localtime
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
+    from corpkit.other import save_result
     from joblib import Parallel, delayed
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
-    if quicksave:
-        savedir = 'data/saved_interrogations'
-        if not quicksave.endswith('.p'):
-            quicksave = quicksave + '.p'
-        fullpath = os.path.join(savedir, quicksave)
-        while os.path.isfile(fullpath):
-            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
-            if not selection.endswith('.p'):
-                selection = selection + '.p'
-                fullpath = os.path.join(savedir, selection)
+    #if quicksave:
+    #    if type(quicksave) != bool:
+    #        raise ValueError('quicksave must be True/False when using pmultiquery.')
+    #    savedir = 'data/saved_interrogations'
+    #    for n, q in query:
+    #        quicksave = n
+    #        if not quicksave.endswith('.p'):
+    #            quicksave = quicksave + '.p'
+    #        fullpath = os.path.join(savedir, quicksave)
+    #        while os.path.isfile(fullpath):
+    #            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (quicksave, savedir))
+    #            if not selection.endswith('.p'):
+    #                selection = selection + '.p'
+    #                fullpath = os.path.join(savedir, selection)
 
     d = {'path': corpus,
          'option': option,
-         'paralleling': True}
+         'paralleling': True,
+         'function': 'interrogator'}
 
     for k, v in kwargs.items():
         d[k] = v
 
     ds = []
+    query = sorted(query)
     for name, q in query:
         a_dict = dict(d)
         a_dict['query'] = q
@@ -869,9 +877,24 @@ def pmultiquery(corpus,
         ds.append(a_dict)
         
     res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+    res = sorted(res)
     if not option.startswith('c'):
+        out = {}
         print ''
-        return res
+        for (name, data), (name2, q), d in zip(res, query, ds):
+            if not option.startswith('k'):
+                outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+                stotal = data.sum(axis = 1)
+                stotal.name = u'Total'
+                output = outputnames(d, data, stotal)
+            else:
+                outputnames = collections.namedtuple('interrogation', ['query', 'results'])
+                output = outputnames(d, data)
+            out[name] = output
+        if quicksave:
+            for k, v in out.items():
+                save_result(v, k)
+        return out
     else:
         results = pd.concat(res, axis = 1)
         results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
