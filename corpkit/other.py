@@ -458,7 +458,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
         results.append(result.totals)
     results = pd.concat(results, axis = 1)
 
-    results = editor(results, sort_by = sort_by, print_info = False)
+    results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
     time = strftime("%H:%M:%S", localtime())
     print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
     if quicksave:
@@ -770,3 +770,114 @@ def texify(series, n = 20, colname = 'Keyness'):
     df = pd.DataFrame(series)
     df.columns = [colname]
     return df.head(n).to_latex()
+
+def make_nltk_text(directory):
+    """turn a lot of trees into an nltk style text"""
+    import nltk
+    import os
+    from corpkit.other import tregex_engine
+    if type(directory) == str:
+        dirs = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+        if len(dirs) == 0:
+            dirs = [directory]
+    elif type(directory) == list:
+        dirs = directory
+    out = []
+    for d in dirs:
+        print d
+        res = tregex_engine(corpus = dir, query = 'ROOT < __', options = ['-w', '-t'])
+        for r in res:
+            out.append(r)
+    print 'Tokenising ...'
+    as_string = '\n'.join(out)
+    as_list_of_tokens = nltk.word_tokenize(as_string)
+    text = nltk.Text(as_list_of_tokens)
+    return text
+
+def get_synonyms(word, pos = False):
+    import nltk
+    from nltk.corpus import wordnet
+    if pos:
+        syns = wordnet.synsets(word, pos = pos)
+    else:
+        syns = wordnet.synsets(word)
+    return list(set([l.name().replace('_', ' ').lower() for s in syns for l in s.lemmas()]))
+
+def synonym_dictmaker(df):
+    syn_dict = {}
+    text = make_nltk_text(d)
+    for w in list(df.columns):
+        if w not in syn_dict.keys() and w not in syn_dict.values():
+            wds = get_synonyms(w, pos = pos) + text.similar(w)[:10]
+            sel = raw_input('Enter the indexes to remove from this list of proposed synonyms, or type "exit" to quit:\n\n%s\n') % '\n'.join(wds)
+            if sel.startswith('e'):
+                return
+            for i in sel:
+                del wds[i]
+            for word in wds:
+                syn_dict[word] = w
+    return syn_dict
+    
+
+def pmultiquery(corpus, 
+    option = 'c', 
+    query = 'any', 
+    sort_by = 'total', 
+    quicksave = False, 
+    **kwargs):
+    """Creates a named tuple for a list of named queries to count.
+
+    Pass in something like:
+
+    [(u'NPs in corpus', r'NP'), 
+    (u'VPs in corpus', r'VP')]"""
+
+    import collections
+    import os
+    import pandas
+    import pandas as pd
+    from time import strftime, localtime
+    from corpkit.interrogator import interrogator
+    from corpkit.editor import editor
+    from joblib import Parallel, delayed
+    import multiprocessing
+    num_cores = multiprocessing.cpu_count()
+
+    if quicksave:
+        savedir = 'data/saved_interrogations'
+        if not quicksave.endswith('.p'):
+            quicksave = quicksave + '.p'
+        fullpath = os.path.join(savedir, quicksave)
+        while os.path.isfile(fullpath):
+            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
+            if not selection.endswith('.p'):
+                selection = selection + '.p'
+                fullpath = os.path.join(savedir, selection)
+
+    d = {'path': corpus,
+         'option': option,
+         'paralleling': True}
+
+    for k, v in kwargs.items():
+        d[k] = v
+
+    ds = []
+    for name, q in query:
+        a_dict = dict(d)
+        a_dict['query'] = q
+        a_dict['outname'] = name
+        ds.append(a_dict)
+        
+    res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+    if not option.startswith('c'):
+        print ''
+        return res
+    else:
+        results = pd.concat(res, axis = 1)
+        results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
+        if quicksave:
+            from corpkit.other import save_result
+            save_result(results, quicksave)
+        return results
