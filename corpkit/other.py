@@ -819,7 +819,7 @@ def synonym_dictmaker(df):
     return syn_dict
     
 
-def pmultiquery(corpus, 
+def pmultiquery(path, 
     option = 'c', 
     query = 'any', 
     sort_by = 'total', 
@@ -845,43 +845,58 @@ def pmultiquery(corpus,
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
-    #if quicksave:
-    #    if type(quicksave) != bool:
-    #        raise ValueError('quicksave must be True/False when using pmultiquery.')
-    #    savedir = 'data/saved_interrogations'
-    #    for n, q in query:
-    #        quicksave = n
-    #        if not quicksave.endswith('.p'):
-    #            quicksave = quicksave + '.p'
-    #        fullpath = os.path.join(savedir, quicksave)
-    #        while os.path.isfile(fullpath):
-    #            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (quicksave, savedir))
-    #            if not selection.endswith('.p'):
-    #                selection = selection + '.p'
-    #                fullpath = os.path.join(savedir, selection)
+    # are we processing multiple queries or corpora?
+    if type(path) != str:
+        multiple_corpora = True
+    elif type(query) != str:
+        multiple_corpora = False
 
-    d = {'path': corpus,
-         'option': option,
+    # make sure quicksaves are right type
+    if quicksave is True:
+        raise ValueError('quicksave must be string when using pmultiquery.')
+    
+    # the options that don't change
+    d = {'option': option,
          'paralleling': True,
          'function': 'interrogator'}
 
+    # add kwargs to query
     for k, v in kwargs.items():
         d[k] = v
 
+    # make a list of dicts to pass to interrogator,
+    # with the iterable unique in every one
     ds = []
-    query = sorted(query)
-    for name, q in query:
-        a_dict = dict(d)
-        a_dict['query'] = q
-        a_dict['outname'] = name
-        ds.append(a_dict)
-        
+    if multiple_corpora:
+        path = sorted(path)
+        for p in path:
+            name = os.path.basename(p)
+            a_dict = dict(d)
+            a_dict['path'] = p
+            a_dict['query'] = query
+            a_dict['outname'] = name
+            ds.append(a_dict)
+    else:
+        query = sorted(query)
+        for name, q in query:
+            a_dict = dict(d)
+            a_dict['path'] = path
+            a_dict['query'] = q
+            a_dict['outname'] = name
+            ds.append(a_dict)
+
+
+    # run in parallel, get either a list of tuples (non-c option)
+    # or a dataframe (c option)
     res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
     res = sorted(res)
+
+    # turn list into dict of results, make query and total branches,
+    # save and return
     if not option.startswith('c'):
         out = {}
         print ''
-        for (name, data), (name2, q), d in zip(res, query, ds):
+        for (name, data), d in zip(res, ds):
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
                 stotal = data.sum(axis = 1)
@@ -893,8 +908,9 @@ def pmultiquery(corpus,
             out[name] = output
         if quicksave:
             for k, v in out.items():
-                save_result(v, k)
+                save_result(v, k, savedir = 'data/saved_interrogations/%s' % quicksave)
         return out
+    # make query and total branch, save, return
     else:
         results = pd.concat(res, axis = 1)
         results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
