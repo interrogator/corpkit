@@ -1,4 +1,3 @@
-
 def eugener(path, 
             query, 
             depth = 5, 

@@ -21,7 +21,9 @@ __all__ = ["interrogator",
            "tregex_engine",
            "load_all_results",
            "dictmaker",
-           "texify"]
+           "texify",
+           "make_nltk_text",
+           "pmultiquery"]
 
 import os
 import sys
@@ -67,6 +69,8 @@ from other import datareader
 from other import tregex_engine
 from other import load_all_results
 from other import texify
+from other import make_nltk_text
+from other import pmultiquery
 
 from build import dictmaker
 from build import correctspelling
