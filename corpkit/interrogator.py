@@ -889,7 +889,7 @@ def interrogator(path,
                 from corpkit.build import dictmaker
                 time = strftime("%H:%M:%S", localtime())
                 print '\n%s: Making reference corpus ...' % time
-                dictmaker(path, dictionary, lemmatise = lemmatise, just_content_words = jcw)
+                dictmaker(path, dictionary, query, lemmatise = lemmatise, just_content_words = jcw)
     
     # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
