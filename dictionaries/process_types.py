@@ -3,13 +3,11 @@
 #   dictionaries: process type wordlists
 #   Author: Daniel McDonald
 
-# This sinister code makes regular expressions to match verbs. You can add to the lists below.
+# This code used to make a regular expression to match the words
+# That's been commented out. Now, you get a word list. This can still be passed
+# to interrogator(), however, which will make the regex. 
 
-# Thanks to Mick O'Donnell for the initial lists of process types
-
-
-
-def process_types():
+def process_types(regex = False):
     """Make a named tuple for each process type (no material yet)"""
     import collections
     
@@ -289,7 +287,7 @@ def process_types():
                    "smell", 
                    "worry"]
 
-    def regex_maker(verb_list):
+    def regex_or_list_maker(verb_list):
         """makes a regex from the list of words passed to it"""
         # add alternative spellings
         from dictionaries.word_transforms import usa_convert
@@ -311,11 +309,11 @@ def process_types():
               verbforms.append(f)
           # deal with contractions
           if w == 'be':
-              be_conts = [r'[^a-z]m', r'[^a-z]re', r'[^a-z]s']
+              be_conts = [r"'m", r"'re", r"'s"]
               for cont in be_conts:
                   verbforms.append(cont)
-          if w == 'have':
-              have_conts = [r'^[a-z]d', r'[^a-z]s', r'[^a-z]ve']
+          if w == "have":
+              have_conts = [r"'d", r"'s", r"'ve"]
               for cont in have_conts:
                   verbforms.append(cont)
         
@@ -327,20 +325,24 @@ def process_types():
             if w in uk_convert.keys():
               to_add.append(uk_convert[w])
         verbforms = sorted(list(set(verbforms + to_add)))
-        return r'(?i)\b(' + r'|'.join(verbforms) + r')\b'
+        if not regex:
+            return verbforms
+        else:
+            return r'(?i)\b(' + r'|'.join(verbforms) + r')\b'
     
     list_of_regexes = []
 
     for process_type in [relational, mental, verbal]:
         # replace handles lemmata ending in e
-        as_regex = regex_maker(process_type)
-        list_of_regexes.append(as_regex)
+        as_list_or_regex = regex_or_list_maker(process_type)
+        list_of_regexes.append(as_list_or_regex)
 
-        #regex_list = [regex_maker(process_type) for process_type in [relational_processes, mental_processes, verbal_processes]]
+        #regex_list = [regex_or_list_maker(process_type) for process_type in [relational_processes, mental_processes, verbal_processes]]
         # implement material process as any word not on this list?
 
     outputnames = collections.namedtuple("processes", ['relational', 'mental', 'verbal'])
     output = outputnames(list_of_regexes[0], list_of_regexes[1], list_of_regexes[2])
     return output
 
-processes = process_types()
+processes = process_types(regex = False)
+regex_processes = process_types(regex = True)
