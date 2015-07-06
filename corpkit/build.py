@@ -134,8 +134,7 @@ def dictmaker(path,
         gc.collect()
         return result
     
-    # translate any query---though at the moment there is no need to use any 
-    # query other than 'any' ...
+    # translate 'any' query
     if query == 'any':
         if lemmatise:
             query = r'__ <# (__ !< __)'
@@ -153,7 +152,6 @@ def dictmaker(path,
             query = r'.*'
         query = re.compile(query)
 
-    
     allwords = []
 
     for index, d in enumerate(sorted_dirs):
