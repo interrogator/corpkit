@@ -146,7 +146,11 @@ def keywords_and_ngrams(target_corpus, reference_corpus, thresholdBigrams=2, sho
     dicLL = {}
 
     for k, b in target_corpus.items():
-            a = reference_corpus[k]
+            # this try for non-Counter dicts, which return keyerror if no result
+            try:
+                a = reference_corpus[k]
+            except:
+                a = 0
             c = ref_sum
             d = target_sum
             if a == None:
