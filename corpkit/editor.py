@@ -23,6 +23,7 @@ def editor(dataframe1,
             revert_year = True,
             print_info = True,
             convert_spelling = False,
+            selfdrop = True,
             **kwargs
             ):
     """Edit results of corpus interrogation.
@@ -229,7 +230,6 @@ def editor(dataframe1,
             df.columns = [re.sub(to_find, replacement, l) for l in list(df.columns)]
         df = merge_duplicates(df, print_info = False)
         return df
-
 
     def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
@@ -730,18 +730,40 @@ def editor(dataframe1,
             df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
     
         # if doing keywording...
+
     if operation.startswith('k'):
+        # allow saved dicts to be df2, etc
+        try:
+            if dataframe2 == 'self':
+                df2 = df
+        except TypeError:
+            pass
+        if dataframe2 != 'self' and type(dataframe2) == str:
+            df2 = dataframe2
+
         from corpkit.keys import keywords
         #df = df.iloc[:,0]
         if type(df) == pandas.core.frame.DataFrame:
             kwds = []
             for ind in list(df.index):
-                ser = keywords(df.ix[ind], df2, printstatus = False)
+                if not selfdrop:
+                    ser = keywords(df.ix[ind], df2, printstatus = False)
+                else:
+                    try:
+                        ser = keywords(df.ix[ind], df2.drop(ind), printstatus = False)
+                    except:
+                        ser = keywords(df.ix[ind], df2, printstatus = False)
                 ser.name = ind
                 kwds.append(ser)
             df = pd.concat(kwds, axis = 1)
         else:
-            df = keywords(df, df2, printstatus = False)
+            if not selfdrop:
+                df = keywords(df, df2, printstatus = False)
+            else:
+                try:
+                    df = keywords(df, df2.drop(df.name), printstatus = False)
+                except:
+                    df = keywords(df, df2, printstatus = False)
         df = df.T
     
     # drop infinites and nans
@@ -850,3 +872,7 @@ def editor(dataframe1,
 
 #entry = wn.synset('car.n.01')
 #entry.hypernyms()
+
+
+
+
