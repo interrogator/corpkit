@@ -21,6 +21,7 @@
 - [More detailed examples](#more-detailed-examples)
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
+  - [Keywording](#keywording)
   - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
@@ -60,6 +61,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Look for ngrams in each subcorpus, and chart their frequency
 * Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually
 * Output Pandas DataFrames that can be easily edited and visualised
+* Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
 #### `editor()`
 
@@ -368,9 +370,85 @@ Output:
 
 Woohoo, a decreasing gender divide! 
 
+### Keywording
+
+It is my contention that the practice of *keywording* in corpus linguistics needs some serious critical reflection. As I see it, there are two main problems. First is the reliance on 'reference corpora' of general language use: those of us interested in discourse analysis are unlikely to believe that any 'general reference corpus' could ever be truly balanced or representative.
+
+The second problem is the idea of stopwords. Essentially, when most people calculate keywords, they automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is obviously silly: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding *a priori* subjective judgements about what is interesting language into a process that corpus linguists like to consider 'objective'.
+
+So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, look for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs).
+
+We can do these kinds of things easily with `corpkit`. Right now, the keywording algorithm is log-likelihood (pull requests adding other algorithm options to `corpkit/keys.py` would be *very* welcome):
+
+```python
+# processes only
+part = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
+p = interrogator(corpus, 'words', part, lemmatise = True)
+
+# this drops each year from the reference corpus during calculation
+keys = editor(p.results, 'keywords', 'self', sort_by = 'total')
+print keys.results.ix['2011'].order(ascending = False)
+```
+Output:
+
+```
+
+```
+
+Or, we can do something more complex (using more `Pandas`, less `editor()`):
+
+```python
+yrs = ['1987', '1988', '1989']
+keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs))
+print keys.results
+```
+
+Output:
+
+```
+
+```
+
+If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included):
+
+```python
+# this will recognise a saved dict file, a dict, a DataFrame, a Series,
+# or even a path to trees, which will get flattened.
+print editor(processes.results, 'k', 'bnc.p', just_subcorpora = '2013').results.ix[0]
+```
+Finally, for the record, you can also use `interrogator()` or `keywords()` to calculate the same things, though generally with less flexibility and awesomeness:
+
+```python
+keys = keywords(p.results.ix['2002'], reference_corpus = p.results)
+keys = interrogator(corpus, 'keywords', 'any', dictionary = 'self')
+```
+
 ### More complex queries and plots
 
-Let's find out what kinds of noun lemmas are subjects of risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*).
+We can use another function, `pmultiquery()`, to parallel-process a number of queries or corpora. Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*) using constituency parses:
+
+```python
+query = (['risk', r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)'], 
+    ['take risk', r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'], 
+    ['run risk', r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'], 
+    ['put at risk', r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))'], 
+    ['pose risk', r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'])
+
+# pmultiquery works for any option, and takes any keyword argument
+# used by interrogator()
+processes = pmultiquery(corpus, 'count', query)
+# you could also pass a list of corpus paths and a single query
+# if not using 'c' option, a dict of each result is created
+
+proc_rel = editor(processes.results, '%', processes.totals)
+plotter('Risk processes', proc_rel.results)
+```
+Output:
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" />
+<br><br>
+
+Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:
 
 ```python
 # a query to find heads of nps that are subjects of risk processes
