@@ -24,6 +24,7 @@ def editor(dataframe1,
             print_info = True,
             convert_spelling = False,
             selfdrop = True,
+            calc_all = True,
             **kwargs
             ):
     """Edit results of corpus interrogation.
@@ -734,12 +735,12 @@ def editor(dataframe1,
         # allow saved dicts to be df2, etc
         try:
             if dataframe2 == 'self':
-                df2 = df
+                df2 = df.copy()
         except TypeError:
             pass
         if type(dataframe2) == str:
             if dataframe2 != 'self':
-                df2 = dataframe2
+                df2 = dataframe
         
         # set threshold
         if threshold:
@@ -751,7 +752,9 @@ def editor(dataframe1,
                       selfdrop = selfdrop, 
                       threshold = the_threshold, 
                       printstatus = print_info,
-                      editing = True)
+                      editing = True,
+                      calc_all = calc_all,
+                      **kwargs)
 
         # eh?
         df = df.T
