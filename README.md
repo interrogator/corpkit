@@ -39,8 +39,7 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `conc()`          | complex concordancing of subcorpora | 
-| `editor()`       | edit `interrogator()` or `conc()` results      | 
-| `keywords()`      | get keywords and ngrams from corpus/subcorpus/concordance lines | 
+| `editor()`       | edit `interrogator()` or `conc()` results, calculate keywords      | 
 | `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
 
 While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
@@ -372,7 +371,7 @@ Woohoo, a decreasing gender divide!
 
 ### Keywording
 
-The practice of *keywording* in corpus linguistics needs some serious critical reflection. As I see it, there are two main problems. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
+As I see it, there are two main problems with keywording, as done in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
 
 So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
@@ -386,9 +385,11 @@ When using `editor()` to calculate keywords, there are a few default parameters 
 
 | Keyword argument | Function | Default setting | Type
 |---|---|---|---|
-| `threshold`  | Remove words occurring fewer than `n` times in reference corpus  | `False` | `'high/medium/low'`/integer/`True/False`
+| `threshold`  | Remove words occurring fewer than `n` times in reference corpus  | `False` | `'high/medium/low'`/ `True/False` / `int`
 | `calc_all`  | Calculate keyness for words in both reference and target corpus, rather than just target corpus  | `True` | `True/False`
 | `selfdrop`  | Attempt to remove target data from reference data when calculating keyness  | `True`  | `True/False`
+
+Let's try it both ways:
 
 ```python
 # 'self' as reference corpus uses p.results
@@ -460,8 +461,7 @@ adoboli        161.30
 
 ```python
 terror = ['terror', 'terrorism', 'terrorist']
-terr = editor(p.results, 'k', 'self', merge_entries = terror, 
-              newname = 'terror')
+terr = editor(p.results, 'k', 'self', merge_entries = terror, newname = 'terror')
 print terr.results.terror
 ```
 
