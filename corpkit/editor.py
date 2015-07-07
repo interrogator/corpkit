@@ -740,17 +740,14 @@ def editor(dataframe1,
             pass
         if type(dataframe2) == str:
             if dataframe2 != 'self':
-                df2 = dataframe
-        
-        # set threshold
-        if threshold:
-            the_threshold = set_threshold(df2, threshold, prinf = print_info, for_keywords = True)
+                df2 = dataframe2
+    
         else:
             the_threshold = False
 
         df = keywords(df, df2, 
                       selfdrop = selfdrop, 
-                      threshold = the_threshold, 
+                      threshold = threshold, 
                       printstatus = print_info,
                       editing = True,
                       calc_all = calc_all,
@@ -779,9 +776,13 @@ def editor(dataframe1,
 
     if df1_istotals:
         if operation.startswith('k'):
-            df = pd.Series(df.ix[0])
-            df.name = '%s: keyness' % df.name
-    
+            try:
+                df = pd.Series(df.ix[dataframe1.name])
+                df.name = '%s: keyness' % df.name
+            except:
+                df = df.iloc[0,:]
+                df.name = 'keyness' % df.name
+
     # generate totals branch if not percentage results:
     if df1_istotals or operation.startswith('k'):
         try:
@@ -812,7 +813,7 @@ def editor(dataframe1,
     the_options['sort_by'] = sort_by
     the_options['keep_stats'] = keep_stats
     the_options['just_totals'] = just_totals
-    the_options['threshold'] = the_threshold
+    the_options['threshold'] = threshold # can be wrong!
     the_options['just_entries'] = just_entries
     the_options['just_entries'] = just_entries
     the_options['skip_entries'] = skip_entries
