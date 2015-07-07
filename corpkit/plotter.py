@@ -291,8 +291,12 @@ def plotter(title,
     plotting_a_totals_column = False
     if was_series:
         if list(dataframe.columns)[0] != 'Total':
-            dataframe = dataframe[:num_to_plot]
-        else:
+            try:
+                can_be_ints = [int(x) for x in list(dataframe.index)]
+                num_to_plot = len(dataframe)
+            except:
+                dataframe = dataframe[:num_to_plot]
+        elif list(dataframe.columns)[0] == 'Total':
             plotting_a_totals_column = True
             if not 'legend' in kwargs:
                 legend = False
