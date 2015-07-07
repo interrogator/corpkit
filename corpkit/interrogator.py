@@ -4,7 +4,7 @@ def interrogator(path,
                 option, 
                 query = 'any', 
                 lemmatise = False, 
-                dictionary = 'bnc.p', 
+                reference_corpus = 'bnc.p', 
                 titlefilter = False, 
                 lemmatag = False, 
                 spelling = False, 
@@ -55,8 +55,8 @@ def interrogator(path,
             r/regex: search plain text with query as regex
             s/simple: search for word or list of words in plaintext files
         - other:
-            k/keywords: search for keywords, using dictionary as the reference corpus
-                        use 'self' to make the whole corpus into a dictionary
+            k/keywords: search for keywords, using reference_corpus as the reference corpus
+                        use 'self' to make the whole corpus into a reference_corpus
             n/ngrams: search for ngrams   
     query : str
         - a Tregex query (if using a Tregex option)
@@ -73,10 +73,10 @@ def interrogator(path,
         convert all to U.S. or U.K. English
     phrases : Boolean
         Use if your expected results are multiword and thus need tokenising
-    dictionary : string
-        The name of a dictionary made with dictmaker() for keywording.
+    reference_corpus : string
+        The name of a reference_corpus made with dictmaker() for keywording.
         BNC included as default.
-        'self' will make a dictionary from the whole corpus
+        'self' will make a reference_corpus from the whole corpus
     dep_type : str
         the kind of Stanford CoreNLP dependency parses you want to use:
         - 'basic-dependencies'
@@ -91,7 +91,7 @@ def interrogator(path,
        pass a function to process every xml file and return a list of results
     post_process : function
        pass a function that processes every item in the list of results
-    ** kwargs : just_content_words for dictionary building
+    ** kwargs : just_content_words for reference_corpus building
                more generally, kwargs allows users to pass in earlier interrogation
                settings in order to reperform the search.
 
@@ -875,21 +875,21 @@ def interrogator(path,
             if kwargs['just_content_words'] is True:
                 jcw = True
 
-        if dictionary.startswith('self') or dictionary == os.path.basename(path):
+        if reference_corpus.startswith('self') or reference_corpus == os.path.basename(path):
             if lemmatise:
                 lem = '-lemmatised'
             else:
                 lem = ''
-            dictionary = os.path.basename(path) + lem + '.p'
+            reference_corpus = os.path.basename(path) + lem + '.p'
             dictpath = 'data/dictionaries'
             import pickle
             try:
-                dic = pickle.load( open( os.path.join(dictpath, dictionary), "rb" ) )
+                dic = pickle.load( open( os.path.join(dictpath, reference_corpus), "rb" ) )
             except:
                 from corpkit.build import dictmaker
                 time = strftime("%H:%M:%S", localtime())
                 print '\n%s: Making reference corpus ...' % time
-                dictmaker(path, dictionary, query, lemmatise = lemmatise, just_content_words = jcw)
+                dictmaker(path, reference_corpus, query, lemmatise = lemmatise, just_content_words = jcw)
     
     # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
@@ -1028,7 +1028,7 @@ def interrogator(path,
             if keywording:
                 result = []
                 from corpkit import keywords
-                spindle_out = keywords(subcorpus, dictionary = dictionary, just_content_words = jcw,
+                spindle_out = keywords(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
                                         printstatus = False, clear = False, lemmatise = lemmatise)
                 for w in list(spindle_out.index):
 
@@ -1041,7 +1041,7 @@ def interrogator(path,
             elif n_gramming:
                 result = []
                 from corpkit import ngrams
-                spindle_out = ngrams(subcorpus, dictionary = dictionary, just_content_words = jcw,
+                spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
                                         printstatus = False, clear = False, lemmatise = lemmatise)
                 for w in list(spindle_out.index):
                     if query != 'any':
@@ -1158,7 +1158,7 @@ def interrogator(path,
             the_options['translated_options'] = translated_options
         the_options['query'] = query 
         the_options['lemmatise'] = lemmatise
-        the_options['dictionary'] = dictionary
+        the_options['reference_corpus'] = reference_corpus
         the_options['titlefilter'] = titlefilter 
         the_options['lemmatag'] = lemmatag
         the_options['spelling'] = spelling
@@ -1197,7 +1197,7 @@ def interrogator(path,
     allwords.sort()
     unique_words = set(allwords)
 
-    #make master dictionary
+    #make master reference_corpus
     the_big_dict = {}
 
     #calculate results
@@ -1253,7 +1253,7 @@ def interrogator(path,
         the_options['translated_options'] = translated_options
     the_options['query'] = query 
     the_options['lemmatise'] = lemmatise
-    the_options['dictionary'] = dictionary
+    the_options['reference_corpus'] = reference_corpus
     the_options['titlefilter'] = titlefilter 
     the_options['lemmatag'] = lemmatag
     the_options['spelling'] = spelling
@@ -1356,8 +1356,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-l', '--lemmatise',
                              help='Do lemmatisation?', action='store_true')
-    parser.add_argument('-dict', '--dictionary', type=str, default='bnc.p',
-                             help='A dictionary file to use as a reference corpus when keywording')
+    parser.add_argument('-dict', '--reference_corpus', type=str, default='bnc.p',
+                             help='A reference_corpus file to use as a reference corpus when keywording')
     parser.add_argument('-sp', '--spelling', type=str,
                              help='Normalise to US/UK spelling')
     parser.add_argument('-t', '--titlefilter',
