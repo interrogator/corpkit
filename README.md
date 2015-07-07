@@ -372,55 +372,165 @@ Woohoo, a decreasing gender divide!
 
 ### Keywording
 
-It is my contention that the practice of *keywording* in corpus linguistics needs some serious critical reflection. As I see it, there are two main problems. First is the reliance on 'reference corpora' of general language use: those of us interested in discourse analysis are unlikely to believe that any 'general reference corpus' could ever be truly balanced or representative.
+The practice of *keywording* in corpus linguistics needs some serious critical reflection. As I see it, there are two main problems. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
 
-The second problem is the idea of stopwords. Essentially, when most people calculate keywords, they automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is obviously silly: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding *a priori* subjective judgements about what is interesting language into a process that corpus linguists like to consider 'objective'.
-
-So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, look for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs).
-
-We can do these kinds of things easily with `corpkit`. Right now, the keywording algorithm is log-likelihood (pull requests adding other algorithm options to `corpkit/keys.py` would be *very* welcome):
+So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
 ```python
-# processes only
+# just heads of participants
 part = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
 p = interrogator(corpus, 'words', part, lemmatise = True)
-
-# this drops each year from the reference corpus during calculation
-keys = editor(p.results, 'keywords', 'self', sort_by = 'total')
-print keys.results.ix['2011'].order(ascending = False)
-```
-Output:
-
 ```
 
-```
+When using `editor()` to calculate keywords, there are a few default parameters that can be easily changed:
 
-Or, we can do something more complex (using more `Pandas`, less `editor()`):
+| Keyword argument | Function | Default setting | Type
+|---|---|---|---|
+| `threshold`  | Remove words occurring fewer than `n` times in reference corpus  | `False` | `'high/medium/low'`/integer/`True/False`
+| `calc_all`  | Calculate keyness for words in both reference and target corpus, rather than just target corpus  | `True` | `True/False`
+| `selfdrop`  | Attempt to remove target data from reference data when calculating keyness  | `True`  | `True/False`
 
 ```python
-yrs = ['1987', '1988', '1989']
-keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs))
+# 'self' as reference corpus uses p.results
+keys = editor(p.results, 'keywords', 'self', sort_by = 'total')
+keys2 = editor(p.results.ix['2011'], 'keywords', p.results, sort_by = 'total', 
+      selfdrop = False, calc_all = True, threshold = False)
+print keys.results.ix['2011'].order(ascending = False) # 1
+print keys2.results.ix['2011'].order(ascending = False) # 2
+
+```
+Output (i.e. key participants in NYT paragraphs from 2011 containing a risk word):
+
+```
+# 1                       # 2
+bank          640.60      bank             575.96
+crisis        234.26      crisis           206.04
+obama         166.61      obama            147.13
+regulator     138.40      regulator        125.34
+rule          122.97      reactor          115.49
+investor      105.26      rule             113.13
+debt           96.22      italy            108.88
+europe         84.52      investor         101.20
+rating         83.93      default          101.16
+recovery       76.44      demiraj           90.32
+republican     70.37      debt              86.58
+lender         59.15      downgrade         80.83
+ratio          56.83      qaddafi           80.07
+plant          54.29      egyptian          77.61
+loan           51.61      fannie            76.81
+economy        51.12      mf                76.38
+device         50.54      greece            75.81
+government     49.87      rating            75.57
+disaster       47.64      europe            73.37
+player         46.06      rajaratnam        70.42
+mortgage       45.81      kan               70.42
+```
+
+It's important to note how dramatically results can be affected by a few simple options: the Arab Spring and Rajaratnam's conviction are missing from the example on the left.
+
+A key strength of `corpkit`'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
+
+```python
+yrs = ['2011', '2012', '2013', '2014']
+keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs), threshold = False)
 print keys.results
 ```
 
 Output:
 
 ```
+bank          1795.24
+obama          722.36
+romney         560.67
+jpmorgan       527.57
+rule           413.94
+dimon          389.86
+draghi         349.80
+regulator      317.82
+italy          282.00
+crisis         243.43
+putin          209.51
+greece         208.80
+snowden        208.35
+mf             192.78
+adoboli        161.30
+```
+
+... or track the keyness of a set of words over time:
+
+```python
+terror = ['terror', 'terrorism', 'terrorist']
+terr = editor(p.results, 'k', 'self', merge_entries = terror, 
+              newname = 'terror')
+print terr.results.terror
+```
+
+Output:
 
 ```
+1963    -2.51
+1987    -3.67
+1988   -16.09
+1989    -6.24
+1990   -16.24
+...       ...
+Name: terror, dtype: float64
+```
+
+#### Plotting keywords
+
+Naturally, we can use `plotter()` for our keywords too:
+
+
+```python
+>>> plotter('Terror* as Participant in the \emph{NYT}', pols.results.terror, 
+...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
+>>> politicans = ['bush', 'obama', 'gore', 'clinton', 'mccain', 'reagan', 
+...               'romney', 'dole', 'kennedy', 'gorbachev']
+>>> plotter('Politicans', keys.results[politicans], num_to_plot = 'all', 
+...           y_label = 'L/L keyness', legend_pos = 'center left')
+
+```
+Output:
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ll-pols.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
+<br><br>
+
+#### Traditional reference corpora
 
 If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included):
 
 ```python
 # this will recognise a saved dict file, a dict, a DataFrame, a Series,
 # or even a path to trees, which will get flattened.
-print editor(processes.results, 'k', 'bnc.p', just_subcorpora = '2013').results.ix[0]
+print editor(p.results.ix['2013'], 'k', 'bnc.p').results.ix[0]
 ```
-Finally, for the record, you can also use `interrogator()` or `keywords()` to calculate the same things, though generally with less flexibility and awesomeness:
+Output:
+
+```
+way            4470.15
+state          3632.00
+effect         2953.49
+likely         2913.58
+many           2674.11
+part           2674.11
+something      2614.24
+obama          2414.68
+more           2294.94
+information    2255.03
+able           2135.29
+willing        2035.51
+use            1875.87
+research       1776.09
+one            1536.61
+```
+
+Finally, for the record, you can also use `interrogator()` or `keywords()` to calculate the same things, though generally with less flexibility:
 
 ```python
-keys = keywords(p.results.ix['2002'], reference_corpus = p.results)
-keys = interrogator(corpus, 'keywords', 'any', dictionary = 'self')
+from corpkit import keywords
+keys = keywords(p.results.ix['2002'], reference_corpus = p.results])
+keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
 ```
 
 ### More complex queries and plots
@@ -457,7 +567,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
  
->>> quickview(noun_riskers, n = 10)
+>>> quickview(noun_riskers, 10)
 ```
 
 Output:
