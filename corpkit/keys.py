@@ -129,7 +129,7 @@ def keywords(data,
             loaded_target_corpus = turn_input_into_counter(data.ix[i], **kwargs)
 
 
-            ser = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
+            ser = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, calc_all = calc_all,
                                    show = 'keywords', **kwargs)
             # turn into series
             ser = pd.Series([s for k, s in ser], index = [k for k, s in ser])
@@ -160,7 +160,7 @@ def keywords(data,
 
         loaded_target_corpus = turn_input_into_counter(data, **kwargs)
 
-        kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
+        kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, calc_all = calc_all,
                                show = 'keywords', **kwargs)
         # turn into series
         out = pd.Series([s for k, s in kwds], index = [k for k, s in kwds])
@@ -224,7 +224,8 @@ def ngrams(data,
     regex_nonword_filter = re.compile("[A-Za-z-\']")
     good = [i for i in good if re.search(regex_nonword_filter, i) and i not in my_stopwords] 
 
-    ngrams = keywords_and_ngrams(good, reference_corpus = reference_corpus, show = 'ngrams', **kwargs)
+    ngrams = keywords_and_ngrams(good, reference_corpus = reference_corpus, 
+                                 calc_all = calc_all, show = 'ngrams', **kwargs)
 
     import pandas as pd
     out = pd.Series([s for k, s in ngrams], index = [k for k, s in ngrams])
