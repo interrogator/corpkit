@@ -500,7 +500,7 @@ def editor(dataframe1,
 
         return df
 
-    def set_threshold(big_list, threshold, prinf = True):
+    def set_threshold(big_list, threshold, prinf = True, for_keywords = False):
         if type(threshold) == str:
             if threshold.startswith('l'):
                 denominator = 10000
@@ -515,13 +515,12 @@ def editor(dataframe1,
             if type(big_list) == pandas.core.series.Series:
                 tot = big_list.sum()
             the_threshold = float(tot) / float(denominator)
-
+            #if for_keywords:
+                #the_threshold = the_threshold / 2
         else:
             the_threshold = threshold
-        
         if prinf:
             print 'Threshold: %d\n' % the_threshold
-            printed_th = True
         return the_threshold
 
 #####################################################
@@ -588,7 +587,6 @@ def editor(dataframe1,
     single_totals = True
     using_totals = False
     outputmode = False
-    printed_th = False
 
     try:
         if dataframe2.empty is False:            
@@ -729,41 +727,33 @@ def editor(dataframe1,
                     the_threshold = set_threshold(df2, threshold, prinf = print_info)
             df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
     
-        # if doing keywording...
-
+    # if doing keywording...
     if operation.startswith('k'):
+        from corpkit.keys import keywords
+
         # allow saved dicts to be df2, etc
         try:
             if dataframe2 == 'self':
                 df2 = df
         except TypeError:
             pass
-        if dataframe2 != 'self' and type(dataframe2) == str:
-            df2 = dataframe2
-
-        from corpkit.keys import keywords
-        #df = df.iloc[:,0]
-        if type(df) == pandas.core.frame.DataFrame:
-            kwds = []
-            for ind in list(df.index):
-                if not selfdrop:
-                    ser = keywords(df.ix[ind], df2, printstatus = False)
-                else:
-                    try:
-                        ser = keywords(df.ix[ind], df2.drop(ind), printstatus = False)
-                    except:
-                        ser = keywords(df.ix[ind], df2, printstatus = False)
-                ser.name = ind
-                kwds.append(ser)
-            df = pd.concat(kwds, axis = 1)
+        if type(dataframe2) == str:
+            if dataframe2 != 'self':
+                df2 = dataframe2
+        
+        # set threshold
+        if threshold:
+            the_threshold = set_threshold(df2, threshold, prinf = print_info, for_keywords = True)
         else:
-            if not selfdrop:
-                df = keywords(df, df2, printstatus = False)
-            else:
-                try:
-                    df = keywords(df, df2.drop(df.name), printstatus = False)
-                except:
-                    df = keywords(df, df2, printstatus = False)
+            the_threshold = False
+
+        df = keywords(df, df2, 
+                      selfdrop = selfdrop, 
+                      threshold = the_threshold, 
+                      printstatus = print_info,
+                      editing = True)
+
+        # eh?
         df = df.T
     
     # drop infinites and nans
@@ -819,7 +809,7 @@ def editor(dataframe1,
     the_options['sort_by'] = sort_by
     the_options['keep_stats'] = keep_stats
     the_options['just_totals'] = just_totals
-    the_options['threshold'] = threshold
+    the_options['threshold'] = the_threshold
     the_options['just_entries'] = just_entries
     the_options['just_entries'] = just_entries
     the_options['skip_entries'] = skip_entries

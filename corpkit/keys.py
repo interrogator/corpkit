@@ -2,7 +2,10 @@ def keywords(data,
              reference_corpus = 'bnc.p', 
              clear = True, 
              printstatus = True, 
-             n = 'all', 
+             n = 'all',
+             threshold = False,
+             selfdrop = True,
+             editing = False,
              **kwargs):
     """Feed this function some data and get its keywords.
 
@@ -29,23 +32,67 @@ def keywords(data,
 
     from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
 
-    if printstatus:
+    if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print "\n%s: Generating keywords ...\n" % time
 
-    loaded_target_corpus = turn_input_into_counter(data, **kwargs)
+    # drop infrequent words from keywording
+    if threshold:
+        if type(reference_corpus) == pandas.core.frame.DataFrame:
+            to_drop = list(reference_corpus.loc[:,(reference_corpus.sum(axis=0) < threshold)].columns)
+        elif type(reference_corpus) == pandas.core.series.Series:
+            to_drop = to_drop = list(reference_corpus[reference_corpus < threshold].index)
+        if type(data) == pandas.core.frame.DataFrame:
+            gw = list(data.columns)
+        elif type(data) == pandas.core.series.Series:
+            gw = list(data.index)
+        to_drop = [i for i in to_drop if i in gw]
+        try:
+            data = data.drop(to_drop, axis = 1)
+        except ValueError:
+            data = data.drop(to_drop)
+        if printstatus:
+            to_show = []
+            [to_show.append(w) for w in to_drop[:5]]
+            if len(to_drop) > 10:
+                to_show.append('...')
+                [to_show.append(w) for w in to_drop[-5:]]
+            if len(to_drop) > 0:
+                print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
+            if len(to_drop) > 10:
+                print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+            else:
+                print ''
     
     loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
     
-    # get keywords as list of tuples
-    kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
+    if type(data) == pandas.core.frame.DataFrame:
+        kwds = []
+        for i in list(data.index):
+            if selfdrop:
+                try:
+                    loaded_ref_corpus = turn_input_into_counter(reference_corpus.drop(i), **kwargs)
+                except:
+                    pass
+            loaded_target_corpus = turn_input_into_counter(data.ix[i], **kwargs)
+            ser = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
+                                   show = 'keywords', **kwargs)
+            # turn into series
+            ser = pd.Series([s for k, s in ser], index = [k for k, s in ser])
+            pd.set_option('display.float_format', lambda x: '%.2f' % x)
+            ser.name = i
+            kwds.append(ser)
+        out = pd.concat(kwds, axis = 1)
+
+    else:
+        loaded_target_corpus = turn_input_into_counter(data, **kwargs)
+        kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
                                show = 'keywords', **kwargs)
+        # turn into series
+        out = pd.Series([s for k, s in kwds], index = [k for k, s in kwds])
+        pd.set_option('display.float_format', lambda x: '%.2f' % x)
+        out.name = 'keywords'
 
-    # turn into series
-    out = pd.Series([s for k, s in kwds], index = [k for k, s in kwds])
-    pd.set_option('display.float_format', lambda x: '%.2f' % x)
-
-    out.name = 'keywords'
     # drop infinites and nans
     out = out.replace([np.inf, -np.inf], np.nan)
     out = out.fillna(0.0)
@@ -53,7 +100,7 @@ def keywords(data,
     # print and return
     if clear:
         clear_output()
-    if printstatus:
+    if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print '%s: Done! %d results.\n' % (time, len(list(out.index)))
 
