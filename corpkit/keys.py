@@ -6,6 +6,7 @@ def keywords(data,
              threshold = False,
              selfdrop = True,
              editing = False,
+             calc_all = True,
              **kwargs):
     """Feed this function some data and get its keywords.
 
@@ -32,6 +33,18 @@ def keywords(data,
 
     from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
 
+    if type(reference_corpus) == str:
+        if reference_corpus == 'self':
+            reference_corpus = data.copy()
+
+    # turn of selfdrop if df indices aren't shared:
+    # this is skipped if loading from file or something
+    if type(data) == pandas.core.frame.DataFrame and type(reference_corpus) == pandas.core.frame.DataFrame:
+        ref_subc = list(reference_corpus.index)
+        tg_subc = list(data.index)
+        if not all([x in ref_subc for x in tg_subc]):
+            selfdrop = False
+
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print "\n%s: Generating keywords ...\n" % time
@@ -40,17 +53,17 @@ def keywords(data,
     if threshold:
         if type(reference_corpus) == pandas.core.frame.DataFrame:
             to_drop = list(reference_corpus.loc[:,(reference_corpus.sum(axis=0) < threshold)].columns)
+            if calc_all:
+                reference_corpus = reference_corpus.drop(to_drop, errors = 'ignore', axis = 1)
         elif type(reference_corpus) == pandas.core.series.Series:
             to_drop = to_drop = list(reference_corpus[reference_corpus < threshold].index)
-        if type(data) == pandas.core.frame.DataFrame:
-            gw = list(data.columns)
-        elif type(data) == pandas.core.series.Series:
-            gw = list(data.index)
-        to_drop = [i for i in to_drop if i in gw]
+            if calc_all:
+                reference_corpus = reference_corpus.drop(to_drop, errors = 'ignore')
         try:
-            data = data.drop(to_drop, axis = 1)
+            data = data.drop(to_drop, errors = 'ignore', axis = 1)
         except ValueError:
-            data = data.drop(to_drop)
+            data = data.drop(to_drop, errors = 'ignore')
+
         if printstatus:
             to_show = []
             [to_show.append(w) for w in to_drop[:5]]
@@ -64,16 +77,21 @@ def keywords(data,
             else:
                 print ''
     
-    loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
-    
     if type(data) == pandas.core.frame.DataFrame:
         kwds = []
         for i in list(data.index):
+            # this could potentially slow down calculation using saved dicts
             if selfdrop:
                 try:
                     loaded_ref_corpus = turn_input_into_counter(reference_corpus.drop(i), **kwargs)
+                # if dropping doesn't work, make loaded_ref_corpus without dropping, but only once
                 except:
-                    pass
+                    try:
+                        loaded_ref_corpus
+                    except NameError:
+                        loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
+            else:
+                loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
             loaded_target_corpus = turn_input_into_counter(data.ix[i], **kwargs)
             ser = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
                                    show = 'keywords', **kwargs)
@@ -85,6 +103,16 @@ def keywords(data,
         out = pd.concat(kwds, axis = 1)
 
     else:
+        if selfdrop and type(reference_corpus) == pandas.core.frame.DataFrame:
+            try:
+                loaded_ref_corpus = turn_input_into_counter(reference_corpus.drop(data.name), **kwargs)
+            except:
+                try:
+                    loaded_ref_corpus
+                except NameError:
+                    loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
+        else:
+            loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
         loaded_target_corpus = turn_input_into_counter(data, **kwargs)
         kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
                                show = 'keywords', **kwargs)
@@ -169,7 +197,7 @@ def ngrams(data,
     return out[:n]
 
 # from Spindle
-def keywords_and_ngrams(target_corpus, reference_corpus, thresholdBigrams=2, show = 'keywords',
+def keywords_and_ngrams(target_corpus, reference_corpus, calc_all = True, thresholdBigrams=2, show = 'keywords',
                         **kwargs):
     import collections
     from collections import Counter
@@ -191,35 +219,47 @@ def keywords_and_ngrams(target_corpus, reference_corpus, thresholdBigrams=2, sho
     ref_sum = sum(reference_corpus.itervalues())
 
     dicLL = {}
+    if calc_all:
+        wordlist = list(set(target_corpus.keys() + reference_corpus.keys()))
+    else:
+        wordlist = target_corpus.keys()
+    for w in wordlist:
+        # this try for non-Counter dicts, which return keyerror if no result
+        try:
+            a = reference_corpus[w]
+        except:
+            a = 0
+        try:
+            b = target_corpus[w]
+        except:
+            b = 0
+        c = ref_sum
+        d = target_sum
+        if a == None:
+            a = 0
+        if b == None:
+            b = 0
 
-    for k, b in target_corpus.items():
-            # this try for non-Counter dicts, which return keyerror if no result
-            try:
-                a = reference_corpus[k]
-            except:
-                a = 0
-            c = ref_sum
-            d = target_sum
-            if a == None:
-                a = 0
-            if b == None:
-                b = 0
+        # my test for if pos or neg
+        neg = False
+        if (b / float(d)) < (a / float(c)):
+            neg = True
 
-            # my test for if pos or neg
-            neg = False
-            if (b / float(d)) < (a / float(c)):
-                neg = True
+        E1 = float(c)*((float(a)+float(b))/ (float(c)+float(d)))
+        E2 = float(d)*((float(a)+float(b))/ (float(c)+float(d)))
 
-            E1 = float(c)*((float(a)+float(b))/ (float(c)+float(d)))
-            E2 = float(d)*((float(a)+float(b))/ (float(c)+float(d)))
-            if a == 0:
-                logaE1 = 0
-            else:
-                logaE1 = math.log(a/E1)  
-            score = float(2* ((a*logaE1)+(b*math.log(b/E2))))
-            if neg:
-                score = -score
-            dicLL[k] = score
+        if a == 0:
+            logaE1 = 0
+        else:
+            logaE1 = math.log(a/E1)  
+        if b == 0:
+            logaE2 = 0
+        else:
+            logaE2 = math.log(b/E2)  
+        score = float(2* ((a*logaE1)+(b*logaE2)))
+        if neg:
+            score = -score
+        dicLL[w] = score
     sortedLL = sorted(dicLL, key=dicLL.__getitem__, reverse=True)
     listKeywords = [(k, dicLL[k]) for k in sortedLL]
 
