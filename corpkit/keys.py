@@ -33,9 +33,13 @@ def keywords(data,
 
     from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
 
+    the_threshold = False
+
     if type(reference_corpus) == str:
         if reference_corpus == 'self':
             reference_corpus = data.copy()
+        else:
+            selfdrop = False
 
     # turn of selfdrop if df indices aren't shared:
     # this is skipped if loading from file or something
@@ -48,17 +52,55 @@ def keywords(data,
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print "\n%s: Generating keywords ...\n" % time
+    
+    def set_threshold_and_remove_under(data, reference_corpus, threshold, for_keywords = False):
+        from collections import Counter
+        import pandas
 
-    # drop infrequent words from keywording
-    if threshold:
+        if type(threshold) == str:
+            if threshold.startswith('l'):
+                denominator = 10000
+            if threshold.startswith('m'):
+                denominator = 5000
+            if threshold.startswith('h'):
+                denominator = 2500
+
+            if type(reference_corpus) == pandas.core.frame.DataFrame:
+                tot = reference_corpus.sum().sum()
+
+            if type(reference_corpus) == pandas.core.series.Series:
+                tot = reference_corpus.sum()
+
+            if type(reference_corpus) == dict or type(reference_corpus) == collections.Counter:
+                tot = sum(reference_corpus.values())
+
+            the_threshold = float(tot) / float(denominator)
+            #if for_keywords:
+                #the_threshold = the_threshold / 2
+        else:
+            the_threshold = threshold
+        if printstatus:
+            print 'Threshold: %d\n' % the_threshold
+
+        # drop infrequent words from keywording
         if type(reference_corpus) == pandas.core.frame.DataFrame:
-            to_drop = list(reference_corpus.loc[:,(reference_corpus.sum(axis=0) < threshold)].columns)
+            to_drop = list(reference_corpus.loc[:,(reference_corpus.sum(axis=0) < the_threshold)].columns)
             if calc_all:
                 reference_corpus = reference_corpus.drop(to_drop, errors = 'ignore', axis = 1)
         elif type(reference_corpus) == pandas.core.series.Series:
-            to_drop = to_drop = list(reference_corpus[reference_corpus < threshold].index)
+            to_drop = list(reference_corpus[reference_corpus < the_threshold].index)
             if calc_all:
                 reference_corpus = reference_corpus.drop(to_drop, errors = 'ignore')
+        # i think it is always a counter now ...
+        else:
+            to_drop = []
+            for w, v in reference_corpus.items():
+                if v < threshold:
+                    to_drop.append(w)
+                    if calc_all:
+                        del reference_corpus[w]
+        
+        # remove under threshold from target corpora
         try:
             data = data.drop(to_drop, errors = 'ignore', axis = 1)
         except ValueError:
@@ -76,8 +118,19 @@ def keywords(data,
                 print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
             else:
                 print ''
-    
+        return data, reference_corpus, the_threshold
+
+        
+
     if type(data) == pandas.core.frame.DataFrame:
+        loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
+        # set threshold
+        if threshold:
+            data, loaded_ref_corpus, the_threshold = set_threshold_and_remove_under(data, 
+                    loaded_ref_corpus, threshold, for_keywords = True)
+        else:
+            the_threshold = False
+
         kwds = []
         for i in list(data.index):
             # this could potentially slow down calculation using saved dicts
@@ -113,7 +166,15 @@ def keywords(data,
                     loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
         else:
             loaded_ref_corpus = turn_input_into_counter(reference_corpus, **kwargs)
+    
+        if threshold:
+            data, loaded_ref_corpus, the_threshold = set_threshold_and_remove_under(data, 
+                    loaded_ref_corpus, threshold, for_keywords = True)
+        else:
+            the_threshold = False
+
         loaded_target_corpus = turn_input_into_counter(data, **kwargs)
+
         kwds = keywords_and_ngrams(loaded_target_corpus, loaded_ref_corpus, 
                                show = 'keywords', **kwargs)
         # turn into series
@@ -197,7 +258,11 @@ def ngrams(data,
     return out[:n]
 
 # from Spindle
-def keywords_and_ngrams(target_corpus, reference_corpus, calc_all = True, thresholdBigrams=2, show = 'keywords',
+def keywords_and_ngrams(target_corpus, 
+                        reference_corpus, 
+                        calc_all = True, 
+                        thresholdBigrams=2, 
+                        show = 'keywords', 
                         **kwargs):
     import collections
     from collections import Counter
@@ -233,6 +298,9 @@ def keywords_and_ngrams(target_corpus, reference_corpus, calc_all = True, thresh
             b = target_corpus[w]
         except:
             b = 0
+        if 'only_words_in_both_corpora' in kwargs:
+            if a == 0 and kwargs['only_words_in_both_corpora'] is True:
+                continue
         c = ref_sum
         d = target_sum
         if a == None:
@@ -377,3 +445,5 @@ def turn_input_into_counter(data, **kwargs):
                     data = dict_of_dicts[int(selection)]
                 except:
                     print '\nInput "%s" not recognised.' % data
+
+
