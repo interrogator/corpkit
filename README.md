@@ -404,9 +404,9 @@ Let's try it both ways:
 ...    print k.results.ix['2011'].order(ascending = False)
 
 ```
-Output (formatted!):
+Output:
 
-| #1: default       | |   #2: no `selfdrop` | |  #3: no `calc_all`    |  |  #4: no `threshold` |
+| #1: default       | |   #2: no `selfdrop` | |  #3: no `calc_all`    |  |  #4: no `threshold` | |
 |---|---:|---|---:|---|---:|---|---:|
 | risk        | 1941.47  |  risk        |  1909.79  |  risk        | 1941.47   |  bank       |   668.19
 | bank        | 1365.70  |  bank        |  1247.51  |  bank        | 1365.70   |  crisis     |   242.05
