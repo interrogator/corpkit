@@ -869,22 +869,34 @@ def pmultiquery(path,
     ds = []
     if multiple_corpora:
         path = sorted(path)
-        for p in path:
+        for index, p in enumerate(path):
             name = os.path.basename(p)
             a_dict = dict(d)
             a_dict['path'] = p
             a_dict['query'] = query
             a_dict['outname'] = name
+            a_dict['printstatus'] = False
             ds.append(a_dict)
     else:
         query = sorted(query)
-        for name, q in query:
+        for index, (name, q) in enumerate(query):
             a_dict = dict(d)
             a_dict['path'] = path
             a_dict['query'] = q
             a_dict['outname'] = name
+            a_dict['printstatus'] = False
             ds.append(a_dict)
 
+    time = strftime("%H:%M:%S", localtime())
+    if multiple_corpora:
+        print ("\n%s: Beginning parallel corpus interrogation:\n              %s" \
+           "\n          Query: '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, "\n              ".join(path), query) )
+
+    else:
+        print ("\n%s: Beginning corpus interrogation: %s" \
+           "\n          Queries:\n              '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, path, "'\n              '".join([i[1] for i in query])) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -906,6 +918,14 @@ def pmultiquery(path,
                 outputnames = collections.namedtuple('interrogation', ['query', 'results'])
                 output = outputnames(d, data)
             out[name] = output
+    
+        # could be wrong for unstructured corpora?
+        num_diff_results = len(data)
+        time = strftime("%H:%M:%S", localtime())
+        if not option.startswith('k'):
+            print '\n%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotal.sum())
+        else:
+            print '\n%s: Finished! %d unique results.\n' % (time, num_diff_results)
         if quicksave:
             for k, v in out.items():
                 save_result(v, k, savedir = 'data/saved_interrogations/%s' % quicksave)
@@ -915,7 +935,7 @@ def pmultiquery(path,
         results = pd.concat(res, axis = 1)
         results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
+        print '\n%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
         if quicksave:
             from corpkit.other import save_result
             save_result(results, quicksave)
