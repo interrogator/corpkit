@@ -478,15 +478,14 @@ Naturally, we can use `plotter()` for our keywords too:
 ```python
 >>> plotter('Terror* as Participant in the \emph{NYT}', pols.results.terror, 
 ...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
->>> politicans = ['bush', 'obama', 'gore', 'clinton', 'mccain', 'reagan', 
-...               'romney', 'dole', 'kennedy', 'gorbachev']
->>> plotter('Politicans', keys.results[politicans], num_to_plot = 'all', 
-...           y_label = 'L/L keyness', legend_pos = 'center left')
-
+>>> politicians = ['bush', 'obama', 'gore', 'clinton', 'mccain', 
+...                'romney', 'dole', 'reagan', 'gorbachev']
+>>> plotter('Keyness of politicians in the \emph{NYT}', k.results[politicans], num_to_plot = 'all', 
+...    y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
 ```
 Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ll-pols.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-emphnyt.png" />
 <br><br>
 
 #### Traditional reference corpora
