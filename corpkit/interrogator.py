@@ -17,6 +17,7 @@ def interrogator(path,
                 add_pos_to_g_d_option = False,
                 custom_engine = False,
                 post_process = False,
+                printstatus = True,
                 **kwargs):
     
     """
@@ -151,6 +152,28 @@ def interrogator(path,
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
                                               taglemma)
+
+    # if actually a multiquery, do that
+    if hasattr(path, '__iter__') or hasattr(query, '__iter__'):
+        from corpkit.other import pmultiquery
+        d = { 'path': path, 
+              'option': option, 
+              'query': query , 
+              'lemmatise': lemmatise , 
+              'reference_corpus': reference_corpus , 
+              'titlefilter': titlefilter , 
+              'lemmatag': lemmatag , 
+              'spelling': spelling , 
+              'phrases': phrases , 
+              'dep_type': dep_type , 
+              'function_filter': function_filter , 
+              'table_size': table_size , 
+              'quicksave': quicksave , 
+              'add_to': add_to , 
+              'add_pos_to_g_d_option': add_pos_to_g_d_option, 
+              'custom_engine': custom_engine , 
+              'post_process': post_process }
+        return pmultiquery(**d)
 
     if 'paralleling' in kwargs:
         paralleling = kwargs['paralleling']
@@ -1009,7 +1032,8 @@ def interrogator(path,
 
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
-    print ("\n%s: Beginning corpus interrogation: %s" \
+    if printstatus:
+        print ("\n%s: Beginning corpus interrogation: %s" \
            "\n          Query: '%s'\n          %s" \
            "\n          Interrogating corpus ... \n" % (time, path, qtext, optiontext) )
 
@@ -1182,8 +1206,9 @@ def interrogator(path,
                 from corpkit.other import save_result
                 save_result(output, quicksave)
         
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Finished! %d total occurrences.\n' % (time, stotals.sum())
+        if printstatus:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Finished! %d total occurrences.\n' % (time, stotals.sum())
 
         if add_to:
             d = add_to[0]
@@ -1285,10 +1310,13 @@ def interrogator(path,
     else:
         num_diff_results = len(df)
 
+    time = strftime("%H:%M:%S", localtime())
     if not keywording:
-        print '%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotals.sum())
+        if printstatus:
+            print '%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotals.sum())
     else:
-        print '%s: Finished! %d unique results.\n' % (time, num_diff_results)
+        if printstatus:
+            print '%s: Finished! %d unique results.\n' % (time, num_diff_results)
     if num_diff_results == 0:
         print '' 
         warnings.warn('No results produced. Maybe your query needs work.')
