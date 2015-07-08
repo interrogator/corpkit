@@ -22,6 +22,7 @@
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
   - [Keywording](#keywording)
+  - [Parallel processing](#parallel-processing)
   - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
@@ -377,8 +378,8 @@ So, what to do? Well, first, don't use 'general reference corpora' unless you re
 
 ```python
 # just heads of participants
-part = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
-p = interrogator(corpus, 'words', part, lemmatise = True)
+>>> part = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
+>>> p = interrogator(corpus, 'words', part, lemmatise = True)
 ```
 
 When using `editor()` to calculate keywords, there are a few default parameters that can be easily changed:
@@ -393,11 +394,11 @@ Let's try it both ways:
 
 ```python
 # 'self' as reference corpus uses p.results
-keys = editor(p.results, 'keywords', 'self', sort_by = 'total')
-keys2 = editor(p.results.ix['2011'], 'keywords', p.results, sort_by = 'total', 
-      selfdrop = False, calc_all = True, threshold = False)
-print keys.results.ix['2011'].order(ascending = False) # 1
-print keys2.results.ix['2011'].order(ascending = False) # 2
+>>> k1 = editor(p.results, 'keywords', 'self', sort_by = 'total')
+>>> k2 = editor(p.results.ix['2011'], 'keywords', p.results, sort_by = 'total',
+...    selfdrop = False, calc_all = True, threshold = False)
+>>> print k1.results.ix['2011'].order(ascending = False) # 1
+>>> print k2.results.ix['2011'].order(ascending = False) # 2
 
 ```
 Output (i.e. key participants in NYT paragraphs from 2011 containing a risk word):
@@ -432,9 +433,10 @@ It's important to note how dramatically results can be affected by a few simple 
 A key strength of `corpkit`'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
 
 ```python
-yrs = ['2011', '2012', '2013', '2014']
-keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs), threshold = False)
-print keys.results
+>>> yrs = ['2011', '2012', '2013', '2014']
+>>> keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs),
+...    threshold = False)
+>>> print keys.results
 ```
 
 Output:
@@ -460,9 +462,9 @@ adoboli        161.30
 ... or track the keyness of a set of words over time:
 
 ```python
-terror = ['terror', 'terrorism', 'terrorist']
-terr = editor(p.results, 'k', 'self', merge_entries = terror, newname = 'terror')
-print terr.results.terror
+>>> terror = ['terror', 'terrorism', 'terrorist']
+>>> terr = editor(p.results, 'k', 'self', merge_entries = terror, newname = 'terror')
+>>> print terr.results.terror
 ```
 
 Output:
@@ -480,7 +482,6 @@ Name: terror, dtype: float64
 #### Plotting keywords
 
 Naturally, we can use `plotter()` for our keywords too:
-
 
 ```python
 >>> plotter('Terror* as Participant in the \emph{NYT}', pols.results.terror, 
@@ -503,7 +504,8 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 ```python
 # this will recognise a saved dict file, a dict, a DataFrame, a Series,
 # or even a path to trees, which will get flattened.
-print editor(p.results.ix['2013'], 'k', 'bnc.p').results.ix[0]
+# unfortunately, this bnc version has stopwords removed!
+>>> print editor(p.results.ix['2013'], 'k', 'bnc.p').results.ix[0]
 ```
 Output:
 
@@ -514,49 +516,44 @@ effect         2953.49
 likely         2913.58
 many           2674.11
 part           2674.11
-something      2614.24
-obama          2414.68
-more           2294.94
-information    2255.03
-able           2135.29
-willing        2035.51
-use            1875.87
-research       1776.09
-one            1536.61
+...                ...
 ```
 
-Finally, for the record, you can also use `interrogator()` or `keywords()` to calculate the same things, though generally with less flexibility:
+Finally, for the record, you could also use `interrogator()` or `keywords()` to calculate keywords, though these options may offer less flexibility:
 
 ```python
-from corpkit import keywords
-keys = keywords(p.results.ix['2002'], reference_corpus = p.results])
-keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
+>>> from corpkit import keywords
+>>> keys = keywords(p.results.ix['2002'], reference_corpus = p.results])
+>>> keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
 ```
 
-### More complex queries and plots
+### Parallel processing
 
-We can use another function, `pmultiquery()`, to parallel-process a number of queries or corpora. Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*) using constituency parses:
+`interrogator()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
+
+1. a list of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
+2. a list of tuples as `query` (i.e. `[('Verb phrases', r'VP')]`)
+
+Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*) using constituency parses:
 
 ```python
-query = (['risk', r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)'], 
-    ['take risk', r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'], 
-    ['run risk', r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'], 
-    ['put at risk', r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))'], 
-    ['pose risk', r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'])
+>>> query = [('risk', r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)'), 
+...    ('take risk', r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'), 
+...    ('run risk', r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'), 
+...    ('put at risk', r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))'), 
+...    ('pose risk', r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)')]
 
-# pmultiquery works for any option, and takes any keyword argument
-# used by interrogator()
-processes = pmultiquery(corpus, 'count', query)
-# you could also pass a list of corpus paths and a single query
-# if not using 'c' option, a dict of each result is created
-
-proc_rel = editor(processes.results, '%', processes.totals)
-plotter('Risk processes', proc_rel.results)
+>>> processes = interrogator(corpus, 'count', query)
+>>> proc_rel = editor(processes.results, '%', processes.totals)
+>>> plotter('Risk processes', proc_rel.results)
 ```
+
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" />
 <br><br>
+
+### More complex queries and plots
 
 Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:
 
