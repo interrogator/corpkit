@@ -68,12 +68,13 @@ def keywords(data,
                 denominator = 5000
             if threshold.startswith('h'):
                 denominator = 2500
+            if for_keywords:
+                denominator = denominator * 5 
 
             tot = sum(reference_corpus.values())
 
             the_threshold = float(tot) / float(denominator)
-            #if for_keywords:
-                #the_threshold = the_threshold / 2
+
         else:
             the_threshold = threshold
         if printstatus:
