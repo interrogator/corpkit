@@ -37,7 +37,11 @@ def keywords(data,
 
     if type(reference_corpus) == str:
         if reference_corpus == 'self':
+            if type(data) == pandas.core.series.Series:
+                import warnings
+                warnings.warn('Using "self" option with Series as data will result in 0.0 keyness.')
             reference_corpus = data.copy()
+
         else:
             selfdrop = False
 
@@ -293,10 +297,15 @@ def keywords_and_ngrams(target_corpus,
             a = 0
         if b == None:
             b = 0
+
         # my test for if pos or neg
+        # try catches the unlikely 0.0 error
         neg = False
-        if (b / float(d)) < (a / float(c)):
-            neg = True
+        try:
+            if (b / float(d)) < (a / float(c)):
+                neg = True
+        except:
+            pass
 
         E1 = float(c)*((float(a)+float(b))/ (float(c)+float(d)))
         E2 = float(d)*((float(a)+float(b))/ (float(c)+float(d)))
