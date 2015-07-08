@@ -4,7 +4,7 @@
 
 
 
-### D. McDonald
+### Daniel McDonald
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 
@@ -240,7 +240,7 @@ You can use Tregex queries to concordance things, too:
 >>> lines = conc(subcorpus, query, window = 50, n = 10, random = True)
 ```
 
-Output (a *Pandas DataFrame*):
+Output (a `Pandas DataFrame`):
 
 ```
 0    hedge funds or high-risk stocks obviously poses a         greater   risk to the pension program than a portfolio of   
@@ -377,8 +377,8 @@ As I see it, there are two main problems with keywording, as done in corpus ling
 So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
 ```python
-# just heads of participants
->>> part = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
+# just heads of participants (no pronouns, though!)
+>>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
 >>> p = interrogator(corpus, 'words', part, lemmatise = True)
 ```
 
@@ -394,39 +394,37 @@ Let's try it both ways:
 
 ```python
 # 'self' as reference corpus uses p.results
->>> k1 = editor(p.results, 'keywords', 'self', sort_by = 'total')
->>> k2 = editor(p.results.ix['2011'], 'keywords', p.results, sort_by = 'total',
-...    selfdrop = False, calc_all = True, threshold = False)
->>> print k1.results.ix['2011'].order(ascending = False) # 1
->>> print k2.results.ix['2011'].order(ascending = False) # 2
+>>> options = {'selfdrop': True, 
+...            'selfdrop': False, 
+...            'calc_all': False, 
+...            'threshold': False}
+
+>>> for k, v in options.items():
+...    k = editor(p.results, 'keywords', 'self', k = v)
+...    print k.results.ix['2011'].order(ascending = False)
 
 ```
-Output (i.e. key participants in NYT paragraphs from 2011 containing a risk word):
+Output (formatted!):
 
-```
-# 1                       # 2
-bank          640.60      bank             575.96
-crisis        234.26      crisis           206.04
-obama         166.61      obama            147.13
-regulator     138.40      regulator        125.34
-rule          122.97      reactor          115.49
-investor      105.26      rule             113.13
-debt           96.22      italy            108.88
-europe         84.52      investor         101.20
-rating         83.93      default          101.16
-recovery       76.44      demiraj           90.32
-republican     70.37      debt              86.58
-lender         59.15      downgrade         80.83
-ratio          56.83      qaddafi           80.07
-plant          54.29      egyptian          77.61
-loan           51.61      fannie            76.81
-economy        51.12      mf                76.38
-device         50.54      greece            75.81
-government     49.87      rating            75.57
-disaster       47.64      europe            73.37
-player         46.06      rajaratnam        70.42
-mortgage       45.81      kan               70.42
-```
+| #1: default       | |   #2: no `selfdrop` | |  #3: no `calc_all`    |  |  #4: no `threshold` |
+|---|---:|---|---:|---|---:|---|---:|
+| risk        | 1941.47  |  risk        |  1909.79  |  risk        | 1941.47   |  bank       |   668.19
+| bank        | 1365.70  |  bank        |  1247.51  |  bank        | 1365.70   |  crisis     |   242.05
+| crisis      |  431.36  |  crisis      |   388.01  |  crisis      |  431.36   |  obama      |   172.41
+| investor    |  410.06  |  investor    |   387.08  |  investor    |  410.06   |  demiraj    |   161.90
+| rule        |  316.77  |  rule        |   293.33  |  rule        |  316.77   |  regulator  |   144.91
+| obama       |  314.25  |  regulator   |   286.40  |  obama       |  314.25   |  reactor    |   141.45
+| regulator   |  312.10  |  obama       |   283.52  |  regulator   |  312.10   |  italy      |   136.48
+| government  |  261.87  |  government  |   249.53  |  government  |  261.87   |  rule       |   129.98
+|             |   ...    |              |    ...    |              |   ...     |             |    ...  
+| novel       |  -36.36  |  application |   -35.02  |  fat         |  -11.33   |  company    |   -55.15
+| korea       |  -36.43  |  dispute     |   -35.02  |  merck       |  -18.69   |  vioxx      |   -66.61
+| yankee      |  -36.51  |  giant       |   -35.02  |  risky       |  -20.97   |  greenspan  |   -82.13
+| clinton     |  -37.80  |  tactic      |   -35.09  |  hussein     |  -25.42   |  clinton    |   -87.33
+| vioxx       |  -38.00  |  vioxx       |   -35.29  |  clinton     |  -37.80   |  today      |   -89.49
+| greenspan   |  -54.35  |  greenspan   |   -51.38  |  vioxx       |  -38.00   |  risky      |  -125.76
+| bush        | -153.06  |  bush        |  -143.02  |  bush        | -153.06   |  bush       |  -253.95
+| yesterday   | -162.30  |  yesterday   |  -151.71  |  yesterday   | -162.30   |  yesterday  |  -268.29
 
 It's important to note how dramatically results can be affected by a few simple options: the Arab Spring and Rajaratnam's conviction are missing from the example on the left.
 
