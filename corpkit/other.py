@@ -878,8 +878,8 @@ def pmultiquery(path,
             a_dict['printstatus'] = False
             ds.append(a_dict)
     else:
-        query = sorted(query)
-        for index, (name, q) in enumerate(query):
+        import collections
+        for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
             a_dict['path'] = path
             a_dict['query'] = q
@@ -895,8 +895,8 @@ def pmultiquery(path,
 
     else:
         print ("\n%s: Beginning corpus interrogation: %s" \
-           "\n          Queries:\n              '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, path, "'\n              '".join([i[1] for i in query])) )
+           "\n          Queries: '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, path, "', '".join(query.values())) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -922,21 +922,18 @@ def pmultiquery(path,
         # could be wrong for unstructured corpora?
         num_diff_results = len(data)
         time = strftime("%H:%M:%S", localtime())
-        if not option.startswith('k'):
-            print '\n%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotal.sum())
-        else:
-            print '\n%s: Finished! %d unique results.\n' % (time, num_diff_results)
+        print "\n%s: Finished! Output is a dictionary with keys:\n\n          '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
         if quicksave:
             for k, v in out.items():
                 save_result(v, k, savedir = 'data/saved_interrogations/%s' % quicksave)
         return out
     # make query and total branch, save, return
     else:
-        results = pd.concat(res, axis = 1)
-        results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
+        out = pd.concat(res, axis = 1)
+        out = editor(out, sort_by = sort_by, print_info = False, keep_stats = False)
         time = strftime("%H:%M:%S", localtime())
-        print '\n%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
+        print '\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
         if quicksave:
             from corpkit.other import save_result
-            save_result(results, quicksave)
-        return results
+            save_result(out, quicksave)
+        return out
