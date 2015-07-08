@@ -372,7 +372,7 @@ Woohoo, a decreasing gender divide!
 
 ### Keywording
 
-As I see it, there are two main problems with keywording, as done in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
+As I see it, there are two main problems with keywording, as typically performed in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
 
 So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
@@ -390,7 +390,7 @@ When using `editor()` to calculate keywords, there are a few default parameters 
 | `calc_all`  | Calculate keyness for words in both reference and target corpus, rather than just target corpus  | `True` | `True/False`
 | `selfdrop`  | Attempt to remove target data from reference data when calculating keyness  | `True`  | `True/False`
 
-Let's try it both ways:
+Let's have a look at how these options change the output:
 
 ```python
 # 'self' as reference corpus uses p.results
@@ -420,7 +420,7 @@ Output:
 | bush        | -153.06  |  bush        |  -143.02  |  bush        | -153.06   |  bush       |  -253.95 |
 | yesterday   | -162.30  |  yesterday   |  -151.71  |  yesterday   | -162.30   |  yesterday  |  -268.29 |
 
-It's important to note how dramatically results can be affected by a few simple options: the Arab Spring and Rajaratnam's conviction are missing from the example on the left.
+As you can see, slight variations on keywording give different impressions of the same corpus!
 
 A key strength of `corpkit`'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
 
