@@ -531,17 +531,17 @@ Finally, for the record, you could also use `interrogator()` or `keywords()` to 
 
 `interrogator()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
 
-1. a list of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
-2. a list of tuples as `query` (i.e. `[('Verb phrases', r'VP')]`)
+1. a `list` of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
+2. a `dict` as `query` (i.e. `{'Noun phrases': r'NP', 'Verb phrases': r'VP'}`)
 
-Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*) using constituency parses:
+Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
 ```python
->>> query = [('risk', r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)'), 
-...    ('take risk', r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'), 
-...    ('run risk', r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'), 
-...    ('put at risk', r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))'), 
-...    ('pose risk', r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)')]
+>>> query = {'risk': r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)', 
+...    'take risk': r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
+...    'run risk': r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
+...    'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
+...    'pose risk': r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
 >>> processes = interrogator(corpus, 'count', query)
 >>> proc_rel = editor(processes.results, '%', processes.totals)
