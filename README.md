@@ -408,23 +408,17 @@ Output:
 
 | #1: default       | |   #2: no `selfdrop` | |  #3: no `calc_all`    |  |  #4: no `threshold` | |
 |---|---:|---|---:|---|---:|---|---:|
-| risk        | 1941.47  |  risk        |  1909.79  |  risk        | 1941.47   |  bank       |   668.19
-| bank        | 1365.70  |  bank        |  1247.51  |  bank        | 1365.70   |  crisis     |   242.05
-| crisis      |  431.36  |  crisis      |   388.01  |  crisis      |  431.36   |  obama      |   172.41
-| investor    |  410.06  |  investor    |   387.08  |  investor    |  410.06   |  demiraj    |   161.90
-| rule        |  316.77  |  rule        |   293.33  |  rule        |  316.77   |  regulator  |   144.91
-| obama       |  314.25  |  regulator   |   286.40  |  obama       |  314.25   |  reactor    |   141.45
-| regulator   |  312.10  |  obama       |   283.52  |  regulator   |  312.10   |  italy      |   136.48
-| government  |  261.87  |  government  |   249.53  |  government  |  261.87   |  rule       |   129.98
-|             |   ...    |              |    ...    |              |   ...     |             |    ...  
-| novel       |  -36.36  |  application |   -35.02  |  fat         |  -11.33   |  company    |   -55.15
-| korea       |  -36.43  |  dispute     |   -35.02  |  merck       |  -18.69   |  vioxx      |   -66.61
-| yankee      |  -36.51  |  giant       |   -35.02  |  risky       |  -20.97   |  greenspan  |   -82.13
-| clinton     |  -37.80  |  tactic      |   -35.09  |  hussein     |  -25.42   |  clinton    |   -87.33
-| vioxx       |  -38.00  |  vioxx       |   -35.29  |  clinton     |  -37.80   |  today      |   -89.49
-| greenspan   |  -54.35  |  greenspan   |   -51.38  |  vioxx       |  -38.00   |  risky      |  -125.76
-| bush        | -153.06  |  bush        |  -143.02  |  bush        | -153.06   |  bush       |  -253.95
-| yesterday   | -162.30  |  yesterday   |  -151.71  |  yesterday   | -162.30   |  yesterday  |  -268.29
+| risk        | 1941.47  |  risk        |  1909.79  |  risk        | 1941.47   |  bank       |   668.19 |
+| bank        | 1365.70  |  bank        |  1247.51  |  bank        | 1365.70   |  crisis     |   242.05 |
+| crisis      |  431.36  |  crisis      |   388.01  |  crisis      |  431.36   |  obama      |   172.41 |
+| investor    |  410.06  |  investor    |   387.08  |  investor    |  410.06   |  demiraj    |   161.90 |
+| rule        |  316.77  |  rule        |   293.33  |  rule        |  316.77   |  regulator  |   144.91 |
+|             |   ...    |              |    ...    |              |   ...     |             |    ...   |
+| clinton     |  -37.80  |  tactic      |   -35.09  |  hussein     |  -25.42   |  clinton    |   -87.33 |
+| vioxx       |  -38.00  |  vioxx       |   -35.29  |  clinton     |  -37.80   |  today      |   -89.49 |
+| greenspan   |  -54.35  |  greenspan   |   -51.38  |  vioxx       |  -38.00   |  risky      |  -125.76 |
+| bush        | -153.06  |  bush        |  -143.02  |  bush        | -153.06   |  bush       |  -253.95 |
+| yesterday   | -162.30  |  yesterday   |  -151.71  |  yesterday   | -162.30   |  yesterday  |  -268.29 |
 
 It's important to note how dramatically results can be affected by a few simple options: the Arab Spring and Rajaratnam's conviction are missing from the example on the left.
 
