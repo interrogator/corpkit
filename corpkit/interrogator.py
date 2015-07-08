@@ -153,8 +153,15 @@ def interrogator(path,
                                               usa_convert, 
                                               taglemma)
 
-    # if actually a multiquery, do that
-    if hasattr(path, '__iter__') or hasattr(query, '__iter__'):
+    # determine if actually a multiquery
+    is_multiquery = False
+    if hasattr(path, '__iter__'):
+        is_multiquery = True
+    if type(query) == dict or type(query) == collections.OrderedDict:
+        is_multiquery = True
+
+    # run pmultiquery if so
+    if is_multiquery:
         from corpkit.other import pmultiquery
         d = { 'path': path, 
               'option': option, 
