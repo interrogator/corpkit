@@ -571,7 +571,6 @@ def editor(dataframe1,
     if print_info:
         print '\n***Processing results***\n========================\n'
 
-
     df1_istotals = False
     if type(df) == pandas.core.series.Series:
         df1_istotals = True
@@ -580,6 +579,9 @@ def editor(dataframe1,
     else:
         df = pandas.DataFrame(df)
     if operation.startswith('k'):
+        if sort_by is False:
+            if not df1_istotals:
+                sort_by = 'turbulent'
         if df1_istotals:
             df = df.T
     
