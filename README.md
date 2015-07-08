@@ -268,7 +268,7 @@ Because I mostly use systemic functional grammar, there is also a simple(ish) to
 # use verbal process regex as the query
 # deprole finds the dependent of verbal processes, and its functional role
 # keep only results matching function_filter regex
->>> sayers = interrogator(corpus, 'deprole', processes.verbal, 
+>>> sayers = interrogator(corpus, 'd', processes.verbal, 
 ...    function_filter = r'^nsubj$', lemmatise = True)
 
 # have a look at the top results
@@ -485,8 +485,8 @@ Naturally, we can use `plotter()` for our keywords too:
 
 ```
 Output:
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ll-pols.png" />
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ll-pols.png" />
 <br><br>
 
 #### Traditional reference corpora
