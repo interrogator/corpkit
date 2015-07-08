@@ -157,6 +157,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
         s = s.lower()
         s = re.sub(r"[^\w\s-]", '', s)
         s = re.sub(r"\s+", '-', s)
+        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
         return s
 
     savename = urlify(savename)

@@ -160,6 +160,10 @@ def interrogator(path,
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
 
+    # just for me: convert spelling automatically for bipolar
+    if path == 'data/postcounts':
+        convert_spelling = 'UK'
+
     # run pmultiquery if so
     if is_multiquery:
         from corpkit.other import pmultiquery
@@ -1421,6 +1425,7 @@ if __name__ == '__main__':
         s = s.lower()
         s = re.sub(r"[^\w\s-]", '', s)
         s = re.sub(r"\s+", '-', s)
+        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
         return s     
 
     if not vars(args)['quicksave']:

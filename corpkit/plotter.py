@@ -68,7 +68,8 @@ def plotter(title,
             s = s.lower()
             s = re.sub(r"[^\w\s-]", '', s)
             s = re.sub(r"\s+", '-', s)
-            return s     
+            s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+            return s
         # name as 
         if not ext.startswith('.'):
             ext = '.' + ext
@@ -515,10 +516,10 @@ def plotter(title,
                 else:
                     leg_options['labels'] = list(dataframe.index)   
     
-    #areamode = False
-    #if 'kind' in kwargs:
-        #if kwargs['kind'] == 'area':
-            #areamode = True        
+    areamode = False
+    if 'kind' in kwargs:
+        if kwargs['kind'] == 'area':
+            areamode = True        
 
     if legend is False:
         kwargs['legend'] = False
@@ -598,6 +599,11 @@ def plotter(title,
     with plt.style.context((style)):
 
         if not sbplt:
+            # check if negative values, no stacked if so
+            if areamode:
+                if dataframe.applymap(lambda x: x < 0.0).any().any():
+                    kwargs['stacked'] = False
+                    rev_leg = False
             ax = dataframe.plot(figsize = figsize, **kwargs)
         else:
             if not piemode and not sbplt:
