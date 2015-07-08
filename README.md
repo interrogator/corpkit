@@ -499,24 +499,28 @@ Output:
 
 #### Traditional reference corpora
 
-If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included):
+If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `editor()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
 
 ```python
-# this will recognise a saved dict file, a dict, a DataFrame, a Series,
-# or even a path to trees, which will get flattened.
-# unfortunately, this bnc version has stopwords removed!
->>> print editor(p.results.ix['2013'], 'k', 'bnc.p').results.ix[0]
+>>> print editor(p.results.ix['2013'], 'k', 'bnc.p').results
+>>> print editor(p.results.ix['2013'], 'k', 'bnc.p', calc_all = False).results
 ```
-Output:
+
+Output (not so useful):
 
 ```
-way            4470.15
-state          3632.00
-effect         2953.49
-likely         2913.58
-many           2674.11
-part           2674.11
-...                ...
+#1                                #2
+bank           5568.25            bank      5568.25
+person         5423.24            person    5423.24
+company        3839.14            company   3839.14
+way            3537.16            way       3537.16
+state          2873.94            state     2873.94
+                ...                           ...  
+three          -691.25            ten       -199.36
+people         -829.97            bit       -205.97
+going          -877.83            sort      -254.71
+erm           -2429.29            thought   -255.72
+yeah          -3179.90            will      -679.06
 ```
 
 Finally, for the record, you could also use `interrogator()` or `keywords()` to calculate keywords, though these options may offer less flexibility:
