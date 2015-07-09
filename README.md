@@ -480,8 +480,8 @@ Naturally, we can use `plotter()` for our keywords too:
 ...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
 >>> politicians = ['bush', 'obama', 'gore', 'clinton', 'mccain', 
 ...                'romney', 'dole', 'reagan', 'gorbachev']
->>> plotter('Keyness of politicians in the \emph{NYT}', k.results[politicans], num_to_plot = 'all', 
-...    y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
+>>> plotter('Keyness of politicians in the \emph{NYT}', k.results[politicans], 
+...    num_to_plot = 'all', y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
 ```
 Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
@@ -640,7 +640,7 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 ...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
 # complex stuff: merge results
->>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m']
+>>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m', r'^sh']
 >>> for regex in entries_to_merge:
 ...    modals = editor(modals.results, merge_entries = regex)
     
@@ -651,8 +651,8 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 ...    modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
     
 # make relative, sort, remove what we don't want
->>> modals = editor(modals.results, '%', modals.totals,
-...    just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 3)
+>>> modals = editor(modals.results, '%', modals.totals, keep_stats = False,
+...    just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 4)
 
 # show results
 >>> print rel_modals.results, each_md.results, modals.results
