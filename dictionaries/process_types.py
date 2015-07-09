@@ -325,6 +325,16 @@ def process_types(regex = False):
             if w in uk_convert.keys():
               to_add.append(uk_convert[w])
         verbforms = sorted(list(set(verbforms + to_add)))
+        t = []
+
+        # ensure unicode
+        for w in verbforms:
+            if type(w) != unicode:
+                t.append(unicode(w, 'utf-8', errors = 'ignore'))
+            else:
+                t.append(w)
+        verbforms = t
+        
         if not regex:
             return verbforms
         else:
@@ -345,4 +355,3 @@ def process_types(regex = False):
     return output
 
 processes = process_types(regex = False)
-regex_processes = process_types(regex = True)

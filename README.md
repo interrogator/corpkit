@@ -312,7 +312,7 @@ First, let's try removing the pronouns using `editor()`. The quickest way is to 
 # alternative approaches:
 # >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
 # >>> prps = ['he', 'she', 'you']
-# >>> prps = as_regex(wl.pronouns)
+# >>> prps = as_regex(wl.pronouns, boundaries = 'line')
 
 # give editor() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
