@@ -826,13 +826,15 @@ def pmultiquery(path,
     sort_by = 'total', 
     quicksave = False, 
     **kwargs):
-    """Creates a named tuple for a list of named queries to count.
+    """Parallel process multiple queries or corpora.
 
-    Pass in something like:
+    This function is used by interrogator if:
 
-    [(u'NPs in corpus', r'NP'), 
-    (u'VPs in corpus', r'VP')]"""
-
+        a) path is a list of paths
+        b) query is a dict of named queries.
+    
+    This function needs joblib 0.8.4 or above in order to run properly."""
+    
     import collections
     import os
     import pandas
@@ -842,7 +844,10 @@ def pmultiquery(path,
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
     from corpkit.other import save_result
-    from joblib import Parallel, delayed
+    try:
+        from joblib import Parallel, delayed
+    except:
+        raise ValueError('joblib, the module used for multiprocessing, cannot be found. Install with:\n\n        pip install joblib')
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
@@ -938,3 +943,8 @@ def pmultiquery(path,
             from corpkit.other import save_result
             save_result(out, quicksave)
         return out
+
+def as_regex(lst):
+    """turns a wordlist into a regular expression"""
+    import re
+    return r'(?i)\b(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')\b'
