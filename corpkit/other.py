@@ -944,7 +944,23 @@ def pmultiquery(path,
             save_result(out, quicksave)
         return out
 
-def as_regex(lst):
-    """turns a wordlist into a regular expression"""
+def as_regex(lst, boundaries = 'word', case_sensitive = False):
+    """turns a wordlist into an uncompiled regular expression"""
     import re
-    return r'(?i)\b(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')\b'
+    if case_sensitive:
+        case = r''
+    else:
+        case = r'(?i)'
+    if boundaries == 'word':
+        boundary1 = r'\b'
+        boundary2 = r'\b'
+    elif boundaries == 'line':
+        boundary1 = r'^'
+        boundary2 = r'$'
+    elif boundaries == 'space':
+        boundary1 = r'\s'
+        boundary2 = r'\s'
+    elif not boundaries:
+        boundary1 = r''
+        boundary2 = r''
+    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + boundary2
