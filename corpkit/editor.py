@@ -155,7 +155,7 @@ def editor(dataframe1,
         if type(input) == list:
             if type(input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in input]
-            elif type(input[0]) == str:
+            elif type(input[0]) == str or type(input[0]) == unicode:
                 parsed_input = [word for word in input if word in df.columns]
 
         return parsed_input
@@ -536,8 +536,34 @@ def editor(dataframe1,
         conc_lines = False
 
     # copy dataframe to be very safe
-    df = dataframe1.copy()
+    try:
+        df = dataframe1.copy()
+    except AttributeError:
+        no_good_dataframe1 = True
+        while no_good_dataframe1:
+            if 'interrogation' in str(type(dataframe1)):
+                sel = raw_input("\nIt looks like you're trying to edit an interrogation, " \
+                                  "rather than an interrogation's .results or .totals branch. You can:\n\n    a) select .results branch\n    b) select .totals branch\n    c) exit\n\nYour choice: ")
+                if sel.startswith('a'):
+                    try:
+                        dataframe1 = dataframe1.results
+                        no_good_dataframe1 = False
+                    except:
+                        pass
+                elif sel.startswith('b'):
+                    try:
+                        dataframe1 = dataframe1.totals
+                        no_good_dataframe1 = False
+                    except:
+                        pass
+                else:
+                    return
+            else:
+                raise ValueError("Thing to be edited (dataframe1) needs to be a Pandas DataFrame or Series. " \
+                                  "Right now, its type is: '%s'." % type(dataframe1).__name__)
 
+        df = dataframe1.copy()
+    
     # do concordance work
     if conc_lines:
         df = dataframe1.copy()
