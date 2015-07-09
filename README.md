@@ -259,7 +259,7 @@ You can use this output as a dictionary, or extract keywords and ngrams from it,
 
 ### Systemic functional stuff
 
-Because I mostly use systemic functional grammar, there is also a simple(ish) tool for building Regular Expressions to distinguish between process types (relational, mental, verbal) when interrogating a corpus. If you add words to `dictionaries/process_types.py`, they will be added to the regex.
+Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, `pattern.en` will 
 
 ```python
 >>> from corpkit import quickview
@@ -302,13 +302,19 @@ Output:
 
 ```
 
-First, let's try removing the pronouns using `editor()`:
+First, let's try removing the pronouns using `editor()`. The quickest way is to use the editable wordlists stored in `dictionaries/wordlists`:
 
 ```python
 >>> from corpkit import editor
+>>> from dictionaries.wordlists import wordlists as wl
+>>> prps = wl.pronouns
 
-# give editor() indices, words or regexes to keep remove or merge
->>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
+# alternative approaches:
+# >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
+# >>> prps = ['he', 'she', 'you']
+# >>> prps = as_regex(wl.pronouns)
+
+# give editor() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
 ...    skip_subcorpora = [1963])
 >>> quickview(sayers_no_prp, n = 10)

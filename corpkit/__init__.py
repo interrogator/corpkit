@@ -23,7 +23,8 @@ __all__ = ["interrogator",
            "dictmaker",
            "texify",
            "make_nltk_text",
-           "pmultiquery"]
+           "pmultiquery",
+           "as_regex"]
 
 import os
 import sys
@@ -71,10 +72,12 @@ from other import load_all_results
 from other import texify
 from other import make_nltk_text
 from other import pmultiquery
+from other import as_regex
 
 from build import dictmaker
 from build import correctspelling
 
 from dictionaries.process_types import processes
+from dictionaries.wordlists import wordlists
 
 
