@@ -966,4 +966,4 @@ def as_regex(lst, boundaries = 'word', case_sensitive = False):
     else:
         boundary1 = boundaries[0]
         boundary2 = boundaries[1]
-    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) \+ \r')' + boundary2
+    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + boundary2
