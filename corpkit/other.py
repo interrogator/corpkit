@@ -819,7 +819,6 @@ def synonym_dictmaker(df):
                 syn_dict[word] = w
     return syn_dict
     
-
 def pmultiquery(path, 
     option = 'c', 
     query = 'any', 
@@ -847,7 +846,8 @@ def pmultiquery(path,
     try:
         from joblib import Parallel, delayed
     except:
-        raise ValueError('joblib, the module used for multiprocessing, cannot be found. Install with:\n\n        pip install joblib')
+        raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
+                         'Install with:\n\n        pip install joblib')
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
@@ -963,4 +963,7 @@ def as_regex(lst, boundaries = 'word', case_sensitive = False):
     elif not boundaries:
         boundary1 = r''
         boundary2 = r''
-    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + boundary2
+    else:
+        boundary1 = boundaries[0]
+        boundary2 = boundaries[1]
+    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) \+ \r')' + boundary2
