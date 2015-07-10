@@ -174,3 +174,177 @@ def eugener(path,
         print item, '\n', dfs[item].head(), '\n'
     return dfs
 
+def get_result(corp_word_permission_tup):
+    from collections import Counter
+    import re
+    import operator
+    
+    # expand tup
+    word_corpus = corp_word_permission_tup[0]
+    word = corp_word_permission_tup[1]
+
+    permissive = corp_word_permission_tup[2]
+    tagged = corp_word_permission_tup[3]
+    regex = corp_word_permission_tup[4]
+
+    if tagged:
+        print 'Doing "%s" ...' % word[0]
+        if regex:
+            regex_word, regex_tag = re.compile(r'(?i)' + word[0]), re.compile(r'(?i)' + word[1])
+        else:
+            regex_word, regex_tag = re.compile(r'(?i)^' + word[0] + r'$'), re.compile(r'(?i)^' + word[1] + r'$')
+    else:
+        print 'Doing "%s" ...' % word
+        regex_word = re.compile(r'(?i)^' + word + r'$')
+        
+    contexts = []
+    if not tagged:
+        for i, token in enumerate(word_corpus):
+            if i == 0 or i == (len(word_corpus) - 1):
+                continue
+            
+            if re.search(regex_word, token):
+                context = (word_corpus[i - 1], word_corpus[i + 1])
+                contexts.append(context)
+    else:
+        for i, (token, c_tag) in enumerate(word_corpus):
+            if i == 0 or i == (len(word_corpus) - 1):
+                continue
+            if re.search(regex_word, token) and re.search(regex_tag, c_tag):
+                context = (word_corpus[i - 1][0], word_corpus[i + 1][0])
+                contexts.append(context)
+    counted = Counter(contexts)
+
+    # get rid of single occurrences
+    singles = []
+    for k, v in counted.items():
+        if v == 1:
+            singles.append(k)
+
+    for s in singles:
+        del counted[s]
+    
+    seems_similar = []
+
+    if not tagged:
+        if not permissive:
+            for left, right in counted.keys():
+                for i, token in enumerate(word_corpus):
+                    if i == 0 or i >= (len(word_corpus) - 2):
+                        continue
+                    if token == left and word_corpus[i + 2] == right:
+                        in_common_word = word_corpus[i + 1]
+                        if not re.search(regex_word, in_common_word):
+                            seems_similar.append(in_common_word)
+        else:
+            for left, right in counted.keys():
+                for i, token in enumerate(word_corpus):
+                    if i == 0 or i == (len(word_corpus) - 1):
+                        continue
+                    if token == left:
+                        try:
+                            in_common_word = word_corpus[i + 1]
+                        except:
+                            continue
+                        if not re.search(regex_word, in_common_word):
+                            seems_similar.append(in_common_word)
+                    if token == right:
+                        in_common_word = word_corpus[i - 1]
+                        if not re.search(regex_word, in_common_word):
+                            seems_similar.append(in_common_word)
+    else:
+        if not permissive:
+            for left, right in counted.keys():
+                for i, (token, c_tag) in enumerate(word_corpus):
+                    if i == 0 or i >= (len(word_corpus) - 2):
+                        continue
+                    if token == left and word_corpus[i + 2][0] == right:
+                        in_common_word, itstag = word_corpus[i + 1]
+                        if not re.search(regex_word, in_common_word):
+                            if re.search(regex_tag, itstag):
+                                seems_similar.append(in_common_word)
+        else:
+            for left, right in counted.keys():
+                for i, (token, c_tag) in enumerate(word_corpus):
+                    if i == 0 or i == (len(word_corpus) - 1):
+                        continue
+                    if token == left:
+                        in_common_word, itstag = word_corpus[i + 1]
+                        if not re.search(regex_word, in_common_word):
+                            if re.search(regex_tag, itstag):
+                                seems_similar.append(in_common_word)
+                    if token == right:
+                        in_common_word, itstag = word_corpus[i - 1]
+                        if not re.search(regex_word, in_common_word):
+                            if re.search(regex_tag, itstag):
+                                seems_similar.append(in_common_word)
+    out_list = []
+    count = Counter(seems_similar)
+    count = count.most_common(len(count))
+    for k, v in count:
+        if v > 1:
+            out_list.append((k, v))
+    return (word, out_list)
+
+def sim(corpus, words, permissive = False, regex = True):
+    """corpus: list of words
+       words: word or list of words to search for
+
+       if your corpus is pos_tagged, pass words alongside tag as string
+
+       """
+    import multiprocessing
+    import nltk
+    import re
+    import operator
+
+    #from corpkit.context import get_result
+    from collections import Counter
+
+    try:
+        from joblib import Parallel, delayed
+    except:
+        raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
+                         'Install with:\n\n        pip install joblib')
+
+    output = {}
+    num_cores = multiprocessing.cpu_count()
+
+    tagged = False
+    if type(corpus[0]) == tuple:
+        tagged = True
+
+    print 'Removing punctuation from corpus ... '
+    wordfilter = re.compile(r'^[^-][A-Za-z]')
+    if not tagged:
+        word_corpus = [w for w in corpus if re.search(wordfilter, w)]
+    else:
+        word_corpus = [(w, t) for w, t in corpus if re.search(wordfilter, w)]
+
+    # nest word list if need be
+    if not tagged:
+        if type(words) == str or type(words) == unicode:
+            words = [words]
+    else:
+        if type(words[0]) == str or type(words[0]) == unicode:
+            words = [words]
+
+    if tagged:
+        if type(words[0]) != tuple:
+            raise ValueError('When using tagged corpora, your wordlist must be tuples of (word, tag)')
+        
+    if len(words) == 1:
+        input = (word_corpus, words[0], permissive, tagged, regex)
+        return get_result(input)[1]
+    else:
+        # make tups that can be multiprocessed
+        tups = [(word_corpus, word, permissive, tagged, regex) for word in words]
+        # get_result returns (word, [(simword1, score), (simword2, score)])
+        res = Parallel(n_jobs=num_cores)(delayed(get_result)(t) for t in tups)
+
+        # convert result to dict
+        output = {}
+        for word, lst in res:
+            output[word] = lst
+
+        return output
