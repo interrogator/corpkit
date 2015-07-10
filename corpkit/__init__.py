@@ -24,7 +24,8 @@ __all__ = ["interrogator",
            "texify",
            "make_nltk_text",
            "pmultiquery",
-           "as_regex"]
+           "as_regex",
+           "sim"]
 
 import os
 import sys
@@ -73,6 +74,7 @@ from other import texify
 from other import make_nltk_text
 from other import pmultiquery
 from other import as_regex
+from context import sim
 
 from build import dictmaker
 from build import correctspelling
