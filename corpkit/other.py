@@ -147,6 +147,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     import os
     import pandas
     from time import localtime, strftime
+    import nltk
 
     if savename.endswith('.p'):
         savename = savename[:-2]
@@ -181,7 +182,8 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     if type(interrogation) == pandas.core.frame.DataFrame or \
         type(interrogation) == pandas.core.series.Series or \
         type(interrogation) == dict or \
-        type(interrogation) == collections.Counter:
+        type(interrogation) == collections.Counter or \
+        type(interrogation) == nltk.text.Text:
         temp_list = [interrogation]
     elif len(interrogation) == 2:
         temp_list = [interrogation.query, interrogation.totals]
@@ -208,21 +210,23 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     import pickle
     import os
     import pandas
+    import nltk
     if not savename.endswith('.p'):
         savename = savename + '.p'
     unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
-
     if type(unpickled) == pandas.core.frame.DataFrame or \
     type(unpickled) == pandas.core.series.Series or \
     type(unpickled) == dict or \
-    type(unpickled) == collections.Counter:
+    type(unpickled) == collections.Counter or \
+    type(unpickled) == nltk.text.Text:
         output = unpickled
 
     if len(unpickled) == 1:
         if type(unpickled[0]) == pandas.core.frame.DataFrame or \
         type(unpickled[0]) == pandas.core.series.Series or \
         type(unpickled[0]) == dict or \
-        type(unpickled[0]) == collections.Counter:
+        type(unpickled[0]) == collections.Counter or \
+        type(unpickled[0]) == nltk.text.Text:
             output = unpickled[0]
     elif len(unpickled) == 4:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
@@ -594,7 +598,8 @@ def tregex_engine(query = False,
                   check_query = False,
                   check_for_trees = False,
                   lemmatise = False,
-                  just_content_words = False):
+                  just_content_words = False,
+                  return_tuples = False):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
@@ -636,6 +641,8 @@ def tregex_engine(query = False,
         if check_for_trees:
             options = ['-T']
 
+        if return_tuples or lemmatise:
+            options = ['-o']
         # append list of options to query 
         if options:
             [tregex_command.append(o) for o in options]
@@ -717,7 +724,7 @@ def tregex_engine(query = False,
     # make unicode and lowercase
     res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
 
-    if lemmatise:
+    if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
         allwords = []
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -732,17 +739,26 @@ def tregex_engine(query = False,
             wordnet_tag = find_wordnet_tag(tag)
             short_tag = tag[:2]
             # do manual lemmatisation first
-            if word in wordlist:
-                word = wordlist[word]
-            # do wordnet lemmatisation
-            if wordnet_tag:
-                word = lmtzr.lemmatize(word, wordnet_tag)
+            if lemmatise:
+                if word in wordlist:
+                    word = wordlist[word]
+                # do wordnet lemmatisation
+                if wordnet_tag:
+                    word = lmtzr.lemmatize(word, wordnet_tag)
             if just_content_words:
                 if wordnet_tag:
-                    allwords.append(word)
+                    if return_tuples:
+                        allwords.append((word, tag))
+                    else:
+                        allwords.append(word)
             else:
-                allwords.append(word)
+                if return_tuples:
+                    allwords.append((word, tag))
+                else:
+                    allwords.append(word)
         res = allwords
+    if return_tuples:
+        res = [(w, t.upper()) for w, t in res]
     return res
 
 def load_all_results(data_dir = 'data/saved_interrogations'):
@@ -772,7 +788,11 @@ def texify(series, n = 20, colname = 'Keyness'):
     df.columns = [colname]
     return df.head(n).to_latex()
 
-def make_nltk_text(directory):
+def make_nltk_text(directory, 
+                   collapse_dirs = True, 
+                   tagged = False, 
+                   lemmatise = False, 
+                   just_content_words = False):
     """turn a lot of trees into an nltk style text"""
     import nltk
     import os
@@ -783,17 +803,46 @@ def make_nltk_text(directory):
             dirs = [directory]
     elif type(directory) == list:
         dirs = directory
-    out = []
+
+    return_tuples = False
+    if tagged:
+        return_tuples = True
+
+    if just_content_words:
+        lemmatise = True
+
+    query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+    if not return_tuples and not lemmatise:
+        options = ['-o', '-t']
+    else:
+        options = ['-o']
+
+    # filthy code.
+    all_out = []
+
     for d in dirs:
-        print d
-        res = tregex_engine(corpus = dir, query = 'ROOT < __', options = ['-w', '-t'])
-        for r in res:
-            out.append(r)
-    print 'Tokenising ...'
-    as_string = '\n'.join(out)
-    as_list_of_tokens = nltk.word_tokenize(as_string)
-    text = nltk.Text(as_list_of_tokens)
-    return text
+        print "Flattening %s ... " % str(d)
+        res = tregex_engine(corpus = d, 
+                            query = query, 
+                            options = options,
+                            lemmatise = lemmatise,
+                            just_content_words = just_content_words,
+                            return_tuples = return_tuples)
+        all_out.append(res)
+
+    if collapse_dirs:
+        tmp = []
+        for res in all_out:
+            for w in res:
+                tmp.append(w)
+        all_out = tmp
+        textx = nltk.Text(all_out)
+    else:
+        textx = {}
+        for name, text in zip(dirs, all_out):
+            t = nltk.Text(all_out)
+            textx[os.path.basename(name)] = t
+    return textx
 
 def get_synonyms(word, pos = False):
     import nltk
