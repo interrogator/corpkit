@@ -22,7 +22,7 @@ def editor(dataframe1,
             p = 0.05, 
             revert_year = True,
             print_info = True,
-            convert_spelling = False,
+            spelling = False,
             selfdrop = True,
             calc_all = True,
             **kwargs
@@ -641,12 +641,12 @@ def editor(dataframe1,
         if using_totals:
             df2 = projector(df2, projection)
 
-    if convert_spelling:
-        df = convert_spell(df, convert_to = convert_spelling)
+    if spelling:
+        df = convert_spell(df, convert_to = spelling)
         df = merge_duplicates(df)
 
         if not single_totals:
-            df2 = convert_spell(df2, convert_to = convert_spelling, print_info = False)
+            df2 = convert_spell(df2, convert_to = spelling, print_info = False)
             df2 = merge_duplicates(df2, print_info = False)
         if not df1_istotals:
             sort_by = 'total'
