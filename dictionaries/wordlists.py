@@ -279,10 +279,20 @@ def closed_class_wordlists():
         u"dare", 
         u"shalt"]
 
+    titlewords = ['admiral', 'archbishop', 'alan', 'merrill', 'sarah', 
+              'queen', 'king', 'sen', 'chancellor', 'prime minister', 
+              'cardinal', 'bishop', 'father', 'hon', 'rev', 'reverend', 
+              'pope', 'sir', 'doctor', 'professor', 'president', 
+              'senator', 'congressman', 'congresswoman', 'mr', 'ms', 
+              'mrs', 'miss', 'dr', 'bill', 'hillary', 'hillary rodham', 
+              'saddam', 'osama', 'ayatollah', 'george', 'george w', 
+              'mitt', 'malcolm', 'barack', 'ronald', 'john', 'john f', 
+              'william', 'al', 'bob']
+
     #all_lists = [pronouns, articles, determiners, prepositions, connectors, modals]
     closedclass = sorted(list(set(pronouns + articles + determiners + prepositions + connectors + modals)))
-    outputnames = collections.namedtuple('wordlists', ['pronouns', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass'])
-    output = outputnames(pronouns, articles, determiners, prepositions, connectors, modals, closedclass)
+    outputnames = collections.namedtuple('wordlists', ['pronouns', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass', 'titles'])
+    output = outputnames(pronouns, articles, determiners, prepositions, connectors, modals, closedclass, titlewords)
     return output
 
 wordlists = closed_class_wordlists()
