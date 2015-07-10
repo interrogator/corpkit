@@ -316,12 +316,13 @@ def interrogator(path,
         return output
 
     def titlefilterer(list_of_matches):
-        from dictionaries.titlewords import titlewords, determiners
+        from dictionaries.wordlists import wordlists
+        badwords = wordlists.titles + wordlists.closedclass
         output = []
         for result in list_of_matches:
             head = result[-1]
             non_head = len(result) - 1 # ???
-            title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in titlewords and token.rstrip('.') not in determiners]
+            title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in badwords]
             title_stripped.append(head)
             output.append(title_stripped)
         return output
