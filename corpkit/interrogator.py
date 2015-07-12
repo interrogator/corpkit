@@ -377,7 +377,7 @@ def interrogator(path,
                         if re.match(regex, word):
                             role = dep.attrs.get('type')
                             gov = dep.find_all('governor', limit = 1)
-                            result_word = gov[0].get_text()
+                            #result_word = gov[0].get_text()
                             result_word_id = gov[0].attrs.get('idx')
                             if role != u'root':
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
@@ -466,7 +466,6 @@ def interrogator(path,
         gc.collect()
         return result
 
-
     def deprole(xmldata):
         """print funct:dep, using good lemmatisation"""
         # for each sentence
@@ -484,7 +483,7 @@ def interrogator(path,
                         if re.match(regex, word) or word == u'ROOT':
                             role = dep.attrs.get('type')
                             deppy = dep.find_all('dependent', limit = 1)
-                            result_word = deppy[0].get_text()
+                            #result_word = deppy[0].get_text()
                             result_word_id = deppy[0].attrs.get('idx')
                             # find this idea
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
@@ -516,6 +515,47 @@ def interrogator(path,
                             colsep = role + u':' + result_word
                             result.append(colsep)
         
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
+        return result
+
+    def words_by_function(xmldata):
+        """print match by function, using good lemmatisation"""
+        # for each sentence
+        result = []
+        if lemmatise:
+            # if lemmatise, we have to do something tricky.
+            just_good_deps = SoupStrainer('sentences')
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+            #print soup
+            for s in soup.find_all('sentence'):
+                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                for dep in right_dependency_grammar[0].find_all('dep'):
+                    for dependent in dep.find_all('dependent', limit = 1):
+                        if re.match(query, dep.attrs.get('type')):
+                            deppy = dep.find_all('dependent', limit = 1)
+                            result_word_id = deppy[0].attrs.get('idx')
+                            # find this idea
+                            token_info = s.find_all('token', id=result_word_id, limit = 1)
+                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                            # damn copula
+                            if result_word != u'be':
+                                #result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                                result.append(result_word)
+        else:
+            just_good_deps = SoupStrainer('dependencies', type=dep_type)
+            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
+            for dep in soup.find_all('dep'):
+                for dependent in dep.find_all('dependent', limit = 1):
+                    if re.match(regex, dep.attrs.get('type')):
+                        result_word = dependent.get_text()
+                        if result_word != u'be':
+                            result.append(result_word)
+    
         # attempt to stop memory problems. 
         # not sure if this helps, though:
         soup.decompose()
@@ -724,6 +764,10 @@ def interrogator(path,
             translated_option = 'f'
             dependency = True
             optiontext = 'Functional role only.'
+        elif option.startswith('m') or option.startswith('M'):
+            translated_option = 'm'
+            dependency = True
+            optiontext = 'Matching tokens by function label.'
         elif option.startswith('g') or option.startswith('G'):
             translated_option = 'g'
             dependency = True
@@ -1122,6 +1166,8 @@ def interrogator(path,
                         result_from_file = custom_engine(data)
                     if translated_option == 'g':
                         result_from_file = govrole(data)
+                    if translated_option == 'm':
+                        result_from_file = words_by_function(data)
                     if translated_option == 'd':
                         result_from_file = deprole(data)
                     if translated_option == 'f':
