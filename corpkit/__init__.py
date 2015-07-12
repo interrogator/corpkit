@@ -81,5 +81,6 @@ from build import correctspelling
 
 from dictionaries.process_types import processes
 from dictionaries.wordlists import wordlists
+from dictionaries.roles import roles
 
 
