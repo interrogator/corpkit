@@ -900,11 +900,29 @@ def pmultiquery(path,
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
+    def best_num_cores(num_cores, num_queries):
+        if num_queries <= num_cores:
+            return num_queries
+        if num_queries > num_cores:
+            if (num_queries / num_cores) == num_cores:
+                return int(num_cores)
+            if num_queries % num_cores == 0:
+                return int(num_queries / num_cores)        
+            else:
+                import math
+                if (float(math.sqrt(num_queries))).is_integer():
+                    return int(math.sqrt(num_queries))    
+        return (num_queries / num_cores) + 1
+
     # are we processing multiple queries or corpora?
+    # find out optimal number of cores to use.
+
     if type(path) != str:
         multiple_corpora = True
+        num_cores = best_num_cores(num_cores, len(path))
     elif type(query) != str:
         multiple_corpora = False
+        num_cores = best_num_cores(num_cores, len(query))
 
     # make sure quicksaves are right type
     if quicksave is True:
