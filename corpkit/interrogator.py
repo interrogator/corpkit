@@ -157,12 +157,15 @@ def interrogator(path,
     is_multiquery = False
     if hasattr(path, '__iter__'):
         is_multiquery = True
+        if 'postounts' in path[0]:
+            spelling = 'UK'
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
 
     # just for me: convert spelling automatically for bipolar
-    if path == 'data/postcounts':
-        convert_spelling = 'UK'
+    if not is_multiquery:
+        if 'postcounts' in path:
+            spelling = 'UK'
 
     # run pmultiquery if so
     if is_multiquery:
@@ -225,10 +228,9 @@ def interrogator(path,
         if lemmatag is False:
             tag = 'n' # same default as wordnet
             # attempt to find tag from tregex query
-            # currently this will fail with a query like r'/\bthis/'
             tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)')
-            tagchecker = re.compile(r'^[A-Z]{2,4}$')
-            treebank_tag = re.findall(tagfinder, query)
+            tagchecker = re.compile(r'^[A-Z]{1,4}$')
+            treebank_tag = re.findall(tagfinder, query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', ''))
             if re.match(tagchecker, treebank_tag[0]):
                 if treebank_tag[0].startswith('J'):
                     tag = 'a'
@@ -248,7 +250,8 @@ def interrogator(path,
                     '              n: (noun)' \
                     '              r: (adverb)' \
                     '              v: (verb)\n\nYour selection: ' % (time, lemmatag))
-                lemmatag = selection              
+                lemmatag = selection
+         
         return tag
     
     def processwords(list_of_matches):
@@ -672,26 +675,27 @@ def interrogator(path,
     
     # Tregex option:
     translated_option = False
+    from corpkit.other import as_regex
     while not translated_option:
         if option.startswith('p') or option.startswith('P'):
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
-                query = r'__ < (/(?i)^(' + '|'.join(query) + r')$/ !< __)'
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line')
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('b') or option.startswith('B'):
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
-                query = r'__ < (/(?i)^(' + '|'.join(query) + r')$/ !< __)'
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line')
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('w') or option.startswith('W'):
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
-                query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __'
+                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif option.startswith('c') or option.startswith('C'):
@@ -700,7 +704,7 @@ def interrogator(path,
             translated_option = 'C'
             optiontext = 'Counts only.'
             if type(query) == list:
-                query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __' 
+                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line')
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
@@ -727,7 +731,7 @@ def interrogator(path,
             keywording = True
             optiontext = 'Keywords only.'
             if type(query) == list:
-                query = r'(?i)^(' + '|'.join(query) + r')$'
+                query = as_regex(query, boundaries = 'line')
 
         elif option.startswith('n') or option.startswith('n'):
             translated_option = 'n'
@@ -735,7 +739,7 @@ def interrogator(path,
             phrases = True
             optiontext = 'n-grams only.'
             if type(query) == list:
-                query = r'(?i)\b(' + '|'.join(query) + r')\b'
+                query = as_regex(query, boundaries = 'word')
 
         # dependency option:
         elif option.startswith('z') or option.startswith('Z'):
