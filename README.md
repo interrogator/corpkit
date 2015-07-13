@@ -306,8 +306,8 @@ First, let's try removing the pronouns using `editor()`. The quickest way is to 
 
 ```python
 >>> from corpkit import editor
->>> from dictionaries.wordlists import wordlists as wl
->>> prps = wl.pronouns
+>>> from dictionaries.wordlists import wordlists
+>>> prps = wordlists.pronouns
 
 # alternative approaches:
 # >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
@@ -499,7 +499,10 @@ Output:
 If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `editor()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
 
 ```python
->>> print editor(p.results.ix['2013'], 'k', 'bnc.p').results
+# arbitrary list of common/boring words
+>>> from dictionaries.stopwords import stopwords
+>>> print editor(p.results.ix['2013'], 'k', 'bnc.p', 
+...    skip_entries = stopwords).results
 >>> print editor(p.results.ix['2013'], 'k', 'bnc.p', calc_all = False).results
 ```
 
