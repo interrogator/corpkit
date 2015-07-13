@@ -129,12 +129,12 @@ def concprinter(df, kind = 'string', n = 100):
     elif n == 'all':
         to_show = df
     else:
-        raise ValueError('n argument not recognised.')
+        raise ValueError('n argument "%s" not recognised.' % str(n))
     print ''
     if kind.startswith('s'):
         print to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     if kind.startswith('l'):
-        print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
+        print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1)
     if kind.startswith('c'):
         print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
@@ -781,16 +781,32 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
     return r
 
-def texify(series, n = 20, colname = 'Keyness', toptail = False):
+def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
     """turn a series into a latex table"""
     import pandas as pd
-    df = pd.DataFrame(series)
+    if sort_by:
+        df = pd.DataFrame(series.order(ascending = False))
+    else:
+        df = pd.DataFrame(series)
     df.columns = [colname]
     if not toptail:
         return df.head(n).to_latex()
     else:
         comb = pd.concat([df.head(n), df.tail(n)])
-        return comb.to_latex()
+        longest_word = max([len(w) for w in list(comb.index)])
+        tex = ''.join(comb.to_latex()).split('\n')
+        linelin = len(tex[0])
+        try:
+            newline = (' ' * (linelin / 2)) + ' &'
+            newline_len = len(newline)
+            newline = newline + (' ' * (newline_len - 1)) + r'\\'
+            newline = newline.replace(r'    \\', r'... \\')
+            newline = newline.replace(r'   ', r'... ', 1)
+        except:
+            newline = r'...    &     ... \\'
+        tex = tex[:n+4] + [newline] + tex[n+4:]
+        tex = '\n'.join(tex)
+        return tex
 
 def make_nltk_text(directory, 
                    collapse_dirs = True, 
@@ -904,29 +920,39 @@ def pmultiquery(path,
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
-    def best_num_cores(num_cores, num_queries):
+    def best_num_parallel(num_cores, num_queries):
+        """decide how many parallel processes to run
+
+        the idea, more or less, is to """
         if num_queries <= num_cores:
+            print 'a'
             return num_queries
         if num_queries > num_cores:
             if (num_queries / num_cores) == num_cores:
+                print 'b'
                 return int(num_cores)
             if num_queries % num_cores == 0:
-                return int(num_queries / num_cores)        
+                print 'c'
+                return max([int(num_queries / n) for n in range(2, num_cores) if int(num_queries / n) <= num_cores])        
             else:
                 import math
                 if (float(math.sqrt(num_queries))).is_integer():
-                    return int(math.sqrt(num_queries))    
-        return (num_queries / num_cores) + 1
+                    square_root = math.sqrt(num_queries)
+                    if square_root <= num_queries / num_cores: 
+                        print 'd'
+                        return int(square_root)    
+        print 'e'
+        return num_queries / ((num_queries / num_cores) + 1)
 
     # are we processing multiple queries or corpora?
     # find out optimal number of cores to use.
 
     if type(path) != str:
         multiple_corpora = True
-        num_cores = best_num_cores(num_cores, len(path))
+        num_cores = best_num_parallel(num_cores, len(path))
     elif type(query) != str:
         multiple_corpora = False
-        num_cores = best_num_cores(num_cores, len(query))
+        num_cores = best_num_parallel(num_cores, len(query))
 
     # make sure quicksaves are right type
     if quicksave is True:
@@ -966,14 +992,14 @@ def pmultiquery(path,
 
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora:
-        print ("\n%s: Beginning parallel corpus interrogation:\n              %s" \
+        print ("\n%s: Beginning %d parallel corpus interrogations:\n              %s" \
            "\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, "\n              ".join(path), query) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, "\n              ".join(path), query) )
 
     else:
-        print ("\n%s: Beginning corpus interrogation: %s" \
+        print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, path, "', '".join(query.values())) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, path, "', '".join(query.values())) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -999,7 +1025,7 @@ def pmultiquery(path,
         # could be wrong for unstructured corpora?
         num_diff_results = len(data)
         time = strftime("%H:%M:%S", localtime())
-        print "\n%s: Finished! Output is a dictionary with keys:\n\n          '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
+        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
         if quicksave:
             for k, v in out.items():
                 save_result(v, k, savedir = 'data/saved_interrogations/%s' % quicksave)
