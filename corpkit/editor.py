@@ -11,6 +11,7 @@ def editor(dataframe1,
             skip_entries = False,
             merge_entries = False,
             newname = 'combine',
+            multiple_merge = False,
             just_subcorpora = False,
             skip_subcorpora = False,
             span_subcorpora = False,
@@ -258,10 +259,11 @@ def editor(dataframe1,
         # double or single nest if need be
         if type(replace_names) == str:
             replace_names = [(replace_names, '')]
-        if type(replace_names[0]) == str:
-            replace_names = [replace_names]
+        if type(replace_names) != dict:
+            if type(replace_names[0]) == str:
+                replace_names = [replace_names]
         if type(replace_names) == dict:
-            replace_names = replace_names.items()
+            replace_names = [(v, k) for k, v in replace_names.items()]
         for to_find, replacement in replace_names:
             if print_info:
                 try:
@@ -335,7 +337,8 @@ def editor(dataframe1,
                 print ''
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
-        df = df.drop(parsed_input, axis = 1)
+        if not multiple_merge:
+            df = df.drop(parsed_input, axis = 1)
         df[the_newname] = temp
         return df
 
