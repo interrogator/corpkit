@@ -11,7 +11,7 @@ def translator():
             'aux': ['auxiliary', 'modal'],
             'auxpass': ['auxiliary', 'modal'],
             'ccomp': ['process', 'event'],
-            'cop': ['participant', 'thing'],
+            'cop': ['process', 'event'],
             'csubj': ['participant', 'thing', 'subject', 'actor'],
             'csubjpass': ['participant', 'thing', 'subject', 'goal'],
             'det': ['deictic'],
@@ -22,7 +22,7 @@ def translator():
             'nsubj': ['participant', 'thing', 'subject', 'actor'],
             'nsubjpass': ['participant', 'thing', 'subject', 'goal'],
             'predet': ['deictic'],
-            'prep': ['thing', 'circumstance'], # must be as regex
+            # 'prep': ['thing', 'circumstance'], # must be as regex
             'quantmod': ['numerative'],
             'root': ['process', 'event', 'predicator'],
             'number': ['numerative'],
