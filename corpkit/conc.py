@@ -28,8 +28,13 @@ def conc(corpus, query,
     
     # convert list to query
     if type(query) == list:
-        query = r'/(?i)^(' + '|'.join(query) + r')$/ !< __'
+        from corpkit.other import as_regex
+        query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
     
+    # lazy, daniel!
+    if window == 'all':
+        window = 9999
+
     # check query
     good_tregex_query = tregex_engine(query, check_query = True)
     if good_tregex_query is False:
