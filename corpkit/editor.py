@@ -27,10 +27,56 @@ def editor(dataframe1,
             calc_all = True,
             **kwargs
             ):
-    """Edit results of corpus interrogation.
+    """
+    Edit results of interrogations, calculate slopes, do keywording, sort, etc.
 
-    replace_names: give a tuple with (to_find, replacement)
-                      give a raw string to delete"""
+    dataframe1:         list of results or totals to edit
+    operation:          kind of maths to do on inputted lists:
+                        '+', '-', '/', '*', '%', 'k' (keywords)
+    dataframe2:         list of results or totals
+                        if list of results, for each entry in dataframe 1, locate
+                        entry with same name in dataframe 2, and do maths there
+    sort_by:            calculate slope, stderr, r, p values, then sort by:
+                        increase: highest to lowest slope value
+                        decrease: lowest to highest slope value
+                        turbulent: most change in y axis values
+                        static: least change in y axis values
+                        total/most: largest number first
+                        infreq/least: smallest number first
+                        name: alphabetically
+    keep_stats:         keep/drop stats values from dataframe after sorting
+    keep_top:           after sorting, remove all but the top n results
+    just_totals:        sum each column and work with sums
+    threshold:          when using results list as dataframe 2, drop values occurring
+                        fewer than n times. If not keywording, you can use:
+                        'high': dataframe2 total / 2500
+                        'medium': dataframe2 total / 5000
+                        'low': dataframe2 total / 10000
+                        If keywording, there are smaller default thresholds
+    just_entries:       keep only entries specified using:
+                        regex, list of indices, list of words
+    skip_entries:       as above
+    merge_entries:      as above
+    newname:            new name for merged entries
+    just_subcorpora:    as above
+    skip_subcorpora:    as above
+    span_subcorpora:    If numerical subcorpus names, give a tuple and get all
+                        numbers in between
+    merge_subcorpora:   as above
+    new_subcorpus_name: as above
+    replace_names:      edit result names and then merge duplicate names. Use either:
+                        a tuple: (r'regex-to-match', 'replacement text')
+                        a string: a regex to delete
+    projection:         a tuple of ('subcorpus-name', n) to multiply results by n
+    remove_above_p:     delete any result over p
+    p:                  set the p value
+    revert_year:        when doing linear regression on years, turn them into 1, 2 ...
+    print_info:         print stuff to console showing what's being edited
+    spelling:           convert/normalise spelling:
+                        'US' or 'UK'
+    selfdrop:           when keywording, try to remove target corpus from reference corpus
+    calc_all:           when keywording, calculate words that appear in either corpus
+    """
 
     import pandas
     import pandas as pd
@@ -135,7 +181,8 @@ def editor(dataframe1,
         return df
 
     def parse_input(df, input):
-        """turn whatever has been passed in into list of words that can be used as pandas indices"""
+        """turn whatever has been passed in into list of words that can 
+           be used as pandas indices---maybe a bad way to go about it"""
         import re
         
         if input == 'all':
@@ -395,19 +442,6 @@ def editor(dataframe1,
         except:
             df['temp-Total'] = df.sum(axis = 1)
         df = df.T
-
-        # make totals percentages if need be.
-        #if operation == '%':
-        #    df['Total'] = df['Total'] * 100.0
-        #    df['Total'] = df['Total'].div(list(df2), axis = 0)
-        #elif operation == '+':
-        #    df['Total'] = df['Total'].add(list(df2), axis = 0)
-        #elif operation == '-':
-        #    df['Total'] = df['Total'].sub(list(df2), axis = 0)
-        #elif operation == '*':
-        #    df['Total'] = df['Total'].mul(list(df2), axis = 0)
-        #elif operation == '/':
-        #    df['Total'] = df['Total'].div(list(df2), axis = 0)
         return df
 
     def resort(df, sort_by = False, keep_stats = False):
