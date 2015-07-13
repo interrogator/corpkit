@@ -404,14 +404,17 @@ def interrogator(path,
                     word = dependent.get_text()
                     if re.match(regex, word):
                         role = dep.attrs.get('type')
-                        gov = dep.find_all('governor', limit = 1)
-                        result_word = gov[0].get_text()
-                        if function_filter:
-                            if re.search(funfil_regex, role):
-                                result.append(result_word)
+                        if role != u'root':
+                            gov = dep.find_all('governor', limit = 1)
+                            result_word = gov[0].get_text()
+                            if function_filter:
+                                if re.search(funfil_regex, role):
+                                    result.append(result_word)
+                            else:
+                                colsep = role + u':' + result_word
+                                result.append(colsep)
                         else:
-                            colsep = role + u':' + result_word
-                            result.append(colsep)
+                            result.append(u'root:root')
 
         # attempt to stop memory problems. 
         # not sure if this helps, though:
@@ -443,7 +446,7 @@ def interrogator(path,
         """print word, using good lemmatisation"""
         from bs4 import BeautifulSoup
         import gc
-        open_classes = ['N', 'V', 'M', 'R', 'J']
+        open_classes = ['N', 'V', 'R', 'J']
         result = []
         just_good_deps = SoupStrainer('tokens')
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
@@ -504,7 +507,7 @@ def interrogator(path,
             for dep in soup.find_all('dep'):
                 for governor in dep.find_all('governor', limit = 1):
                     word = governor.get_text()
-                    if re.match(regex, word):
+                    if re.match(regex, word) or word == u'ROOT':
                         role = dep.attrs.get('type')
                         deppy = dep.find_all('dependent', limit = 1)
                         result_word = deppy[0].get_text()
@@ -539,7 +542,7 @@ def interrogator(path,
                         if re.match(query, dep.attrs.get('type')):
                             deppy = dep.find_all('dependent', limit = 1)
                             result_word_id = deppy[0].attrs.get('idx')
-                            # find this idea
+                            # find this id
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
                             result_word = token_info[0].find_all('lemma', limit = 1)[0].text
                             # damn copula
@@ -603,6 +606,7 @@ def interrogator(path,
         result = []
         # this slows things down significantly ...
         tokenized = nltk.word_tokenize(plaintext_data)
+        # consider saving tokenised corpus and then opening it when needed
         for p in pattern:
             if not any_plaintext_word:
                 num_matches = tokenized.count(p)
@@ -644,23 +648,6 @@ def interrogator(path,
             col = pd.Series([w for w, v in data.most_common(num_rows)], name = subcorp)
             cols.append(col)
         word_table = pd.concat(cols, axis = 1)
-        return word_table
-
-        csvdata = [','.join(subcorpus_names)]
-        # for number of rows of data in table
-        for i in range(num_rows):
-            line = []
-            for dictionary in list_of_dicts:
-                # check there are sufficient entries in the dictionary
-                if not len(dictionary) <= i:
-                    the_key = dictionary.most_common(i + 1)[-1][0]
-                else:
-                    the_key = ' '
-                line.append(the_key)
-            csvdata.append(','.join(line))
-        csv = '\n'.join(csvdata)
-        word_table = read_csv(StringIO(csv))
-        word_table = DataFrame(data, index = subcorpus_names)
         return word_table
 
     # a few things are off by default:
@@ -793,6 +780,7 @@ def interrogator(path,
                           '              f) Get dependency function of regular expression match\n' \
                           '              g) get governor of regular expression match and the r/ship\n' \
                           '              l) get lemmata via dependencies\n'
+                          '              m) get tokens by dependency role \n' \
                           '              n) get dependency index of regular expression match\n' \
                           '              p) get part-of-speech tag with Tregex\n' \
                           '              r) regular expression, for plaintext corpora\n' \
@@ -911,6 +899,9 @@ def interrogator(path,
         from bs4 import BeautifulSoup, SoupStrainer
         phrases = False
         if function_filter:
+            if type(function_filter) == list:
+                from corpkit.other import as_regex
+                function_filter = as_regex(function_filter)
             try:
                 funfil_regex = re.compile(function_filter)
                 is_valid = True
