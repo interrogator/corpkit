@@ -781,12 +781,16 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
     return r
 
-def texify(series, n = 20, colname = 'Keyness'):
+def texify(series, n = 20, colname = 'Keyness', toptail = False):
     """turn a series into a latex table"""
     import pandas as pd
     df = pd.DataFrame(series)
     df.columns = [colname]
-    return df.head(n).to_latex()
+    if not toptail:
+        return df.head(n).to_latex()
+    else:
+        comb = pd.concat([df.head(n), df.tail(n)])
+        return comb.to_latex()
 
 def make_nltk_text(directory, 
                    collapse_dirs = True, 
