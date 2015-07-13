@@ -56,7 +56,8 @@ def editor(dataframe1,
     just_entries:       keep only entries specified using:
                         regex, list of indices, list of words
     skip_entries:       as above
-    merge_entries:      as above
+    merge_entries:      as above, or can take a dictionary of:
+                        {newname: regex/wordlist/indexlist}
     newname:            new name for merged entries
     just_subcorpora:    as above
     skip_subcorpora:    as above
@@ -184,13 +185,10 @@ def editor(dataframe1,
         """turn whatever has been passed in into list of words that can 
            be used as pandas indices---maybe a bad way to go about it"""
         import re
-        
         if input == 'all':
             input = r'.*'
-
         if type(input) == int:
             input = [input]
-
         elif type(input) == str:
             try:
                 regex = re.compile(input)
@@ -198,13 +196,11 @@ def editor(dataframe1,
                 return parsed_input
             except:
                 input = [input]
-
         if type(input) == list:
             if type(input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in input]
             elif type(input[0]) == str or type(input[0]) == unicode:
                 parsed_input = [word for word in input if word in df.columns]
-
         return parsed_input
 
 
@@ -257,13 +253,15 @@ def editor(dataframe1,
         return df
 
     def name_replacer(df, replace_names, print_info = print_info):
+        """replace entry names and merge"""
         import re        
         # double or single nest if need be
         if type(replace_names) == str:
             replace_names = [(replace_names, '')]
         if type(replace_names[0]) == str:
             replace_names = [replace_names]
-        """replace entry names and merge"""
+        if type(replace_names) == dict:
+            replace_names = replace_names.items()
         for to_find, replacement in replace_names:
             if print_info:
                 try:
@@ -706,23 +704,29 @@ def editor(dataframe1,
         except:
             pass
 
-    # merging
+    # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
-        the_newname = newname_getter(df, parse_input(df, merge_entries), newname = newname, prinf = print_info)
-    
-        df = merge_these_entries(df, parse_input(df, merge_entries), the_newname, prinf = print_info)
-        if not single_totals:
-            df2 = merge_these_entries(df2, parse_input(df2, merge_entries), the_newname, prinf = False)
+        if type(merge_entries) != dict:
+            merge_entries = {newname: merge_entries}
+        for name, input in sorted(merge_entries.items()):
+            the_newname = newname_getter(df, parse_input(df, input), newname = name, prinf = print_info)
+            df = merge_these_entries(df, parse_input(df, input), the_newname, prinf = print_info)
+            if not single_totals:
+                df2 = merge_these_entries(df2, parse_input(df2, input), the_newname, prinf = False)
     
     if merge_subcorpora:
-        the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), 
-                                     newname = new_subcorpus_name, 
+        if type(merge_subcorpora) != dict:
+            merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
+        for name, input in sorted(merge_subcorpora.items()):
+            the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), 
+                                     newname = name, 
                                      merging_subcorpora = True,
                                      prinf = print_info)
-        df = merge_these_entries(df.T, parse_input(df.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
-        if using_totals:
-            df2 = merge_these_entries(df2.T, parse_input(df2.T, merge_subcorpora), the_newname, merging = 'subcorpora', prinf = print_info).T
+            df = merge_these_entries(df.T, parse_input(df.T, input), the_newname, merging = 'subcorpora', prinf = print_info).T
+            if using_totals:
+                df2 = merge_these_entries(df2.T, parse_input(df2.T, input), the_newname, merging = 'subcorpora', prinf = print_info).T
     
+
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
         if using_totals:
