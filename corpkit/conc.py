@@ -126,7 +126,7 @@ def conc(corpus, query,
     for start, word, end in unique_results:
         #spaces = ' ' * (maximum / 2 - (len(word) / 2))
         #new_word = spaces + word + spaces
-        series.append(pd.Series([start, word, end], index = [lname, mname, rname]))
+        series.append(pd.Series([start.encode('utf-8', errors = 'ignore'), word.encode('utf-8', errors = 'ignore'), end.encode('utf-8', errors = 'ignore')], index = [lname.encode('utf-8', errors = 'ignore'), mname.encode('utf-8', errors = 'ignore'), rname.encode('utf-8', errors = 'ignore')]))
 
     # randomise results...
     if random:
@@ -137,7 +137,6 @@ def conc(corpus, query,
         df = pd.concat(series, axis = 1).T
     except ValueError:
         raise ValueError("No results found, I'm afraid. Check your query and path.")
-
         
     # make temporary
     pd.set_option('display.max_columns', 500)
