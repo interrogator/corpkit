@@ -4,7 +4,9 @@ def conc(corpus, query,
         random = False, 
         window = 40, 
         trees = False,
-        plaintext = 'guess'): 
+        plaintext = 'guess',
+        add_links = False,
+        show_links = False): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
     import os
     import re
@@ -137,6 +139,20 @@ def conc(corpus, query,
         df = pd.concat(series, axis = 1).T
     except ValueError:
         raise ValueError("No results found, I'm afraid. Check your query and path.")
+
+    if add_links:
+
+        def _add_links(lines, links = False, show = 'thread'):
+            link = "http://www.healthboards.com/boards/bipolar-disorder/695089-labels.html"
+            linktext = '<a href="%s>link</a>' % link
+            import pandas as pd
+            inds = list(df.index)
+            num_objects = len(list(df.index))
+            ser = pd.Series([link for n in range(num_objects)], index = inds)
+            lines['link'] = ser
+            return lines
+        
+        df = _add_links(df)
         
     # make temporary
     pd.set_option('display.max_columns', 500)
@@ -144,7 +160,13 @@ def conc(corpus, query,
     pd.set_option('display.width', 1000)
     pd.set_option('expand_frame_repr', False)
     pd.set_option('colheader_justify', 'left')
-    print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
-    df.columns = ['l', 'm', 'r']
+    if not show_links:
+        print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+    else:
+        print HTML(df.to_html(escape=False))
+    if not add_links:
+        df.columns = ['l', 'm', 'r']
+    else:
+        df.columns = ['l', 'm', 'r', 'link']
     return df
 

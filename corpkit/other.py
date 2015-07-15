@@ -1064,3 +1064,8 @@ def as_regex(lst, boundaries = 'word', case_sensitive = False):
         boundary1 = boundaries[0]
         boundary2 = boundaries[1]
     return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + boundary2
+
+def show(lines, index, show = 'thread'):
+    """show lines.ix[index][link] as frame"""
+    url = lines.ix[index]['link'].replace('<a href=', '').replace('>link</a>', '')
+    return HTML('<iframe src=%s width=1000 height=500></iframe>' % url)

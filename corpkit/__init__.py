@@ -25,7 +25,8 @@ __all__ = ["interrogator",
            "make_nltk_text",
            "pmultiquery",
            "as_regex",
-           "sim"]
+           "sim",
+           "show"]
 
 import os
 import sys
@@ -74,6 +75,7 @@ from other import texify
 from other import make_nltk_text
 from other import pmultiquery
 from other import as_regex
+from other import show
 from context import sim
 
 from build import dictmaker
