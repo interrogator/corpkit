@@ -259,7 +259,7 @@ You can use this output as a dictionary, or extract keywords and ngrams from it,
 
 ### Systemic functional stuff
 
-Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, `pattern.en` will 
+Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, `pattern.en` will get all their inflections automatically.
 
 ```python
 >>> from corpkit import quickview
