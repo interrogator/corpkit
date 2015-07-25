@@ -80,7 +80,13 @@ taglemma = {u"cc": u"Coordinating conjunction",
            u"rbr": u"Adverb",
            u"rbs": u"Adverb",
            u"wp": u"Wh- pronoun",
-           u"wp$": u"Wh- pronoun"}
+           u"wp$": u"Wh- pronoun",
+           u"-rrb-": u"Bracket",
+           u"-lrb-": u"Bracket",
+           u"-rsb-": u"Bracket",
+           u"-lsb-": u"Bracket",
+           u"to": u"To"
+           }
 
 # Note: in this space were deptags, deptags_for_govrole and deptags_for_deprole
 # they were removed because they were a terrible idea.
