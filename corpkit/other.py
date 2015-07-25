@@ -173,10 +173,14 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
 
     fullpath = os.path.join(savedir, savename)
     while os.path.isfile(fullpath):
-        selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
-        if not selection.endswith('.p'):
-            selection = selection + '.p'
-            fullpath = os.path.join(savedir, selection)
+        selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+        if selection == 'o' or selection == 'O':
+            import os
+            os.remove(fullpath)
+        else:
+            if not selection.endswith('.p'):
+                selection = selection + '.p'
+                fullpath = os.path.join(savedir, selection)
     
     # if it's just a table or series
     if type(interrogation) == pandas.core.frame.DataFrame or \
