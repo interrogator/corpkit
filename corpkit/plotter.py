@@ -52,9 +52,25 @@ def plotter(title,
         from corpkit.plugins import InteractiveLegendPlugin, HighlightLines
 
     def signal_handler(signal, frame):
-        """exit on ctrl+c, rather than just stop loop"""
+        import signal
+        """pause on ctrl+c, rather than just stop loop"""
+
+        #def subsig(signal, frame):
+        #    """exit on ctrl c"""
+        #    import sys
+        #    sys.exit(0)
+        #
+        #signal.signal(signal.SIGINT, subsig)
+        
         import sys
-        sys.exit(0)
+        from time import localtime, strftime
+        time = strftime("%H:%M:%S", localtime())
+        sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
+        if sel.startswith('e') or sel.startswith('E'):
+            sys.exit(0)
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation resumed.\n' % time
     signal.signal(signal.SIGINT, signal_handler)
 
     running_python_tex = check_pytex()
