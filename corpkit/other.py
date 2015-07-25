@@ -641,6 +641,13 @@ def tregex_engine(query = False,
         if check_for_trees:
             options = ['-T']
 
+        filenaming = False
+        try:
+            if '-f' in options:
+                filenaming = True
+        except:
+            pass
+
         if return_tuples or lemmatise:
             options = ['-o']
         # append list of options to query 
@@ -656,7 +663,7 @@ def tregex_engine(query = False,
         # exception handling for regex error
         except Exception, e:
             res = str(e.output).split('\n')
-        
+
         if check_query:
             # define error searches 
             tregex_error = re.compile(r'^Error parsing expression')
@@ -722,7 +729,17 @@ def tregex_engine(query = False,
     # remove total
     res = res[:-1]
     # make unicode and lowercase
-    res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
+    make_tuples = []
+    if filenaming:
+        for index, r in enumerate(res):
+            if r.startswith('# /'):
+                make_tuples.append((r, res[index + 1]))
+        res = make_tuples
+                
+    if not filenaming:
+        res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
+    else:
+        res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
 
     if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
