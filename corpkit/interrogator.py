@@ -218,9 +218,25 @@ def interrogator(path,
     regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
 
     def signal_handler(signal, frame):
-        """exit on ctrl+c, rather than just stop loop"""
+        import signal
+        """pause on ctrl+c, rather than just stop loop"""
+
+        #def subsig(signal, frame):
+        #    """exit on ctrl c"""
+        #    import sys
+        #    sys.exit(0)
+        #
+        #signal.signal(signal.SIGINT, subsig)
+        
         import sys
-        sys.exit(0)
+        from time import localtime, strftime
+        time = strftime("%H:%M:%S", localtime())
+        sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
+        if sel.startswith('e') or sel.startswith('E'):
+            sys.exit(0)
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation resumed.\n' % time
     signal.signal(signal.SIGINT, signal_handler)
     
     def gettag(query, lemmatag = False):
@@ -1454,7 +1470,7 @@ if __name__ == '__main__':
     if not vars(args)['quicksave'] and not vars(args)['path'] and not vars(args)['option'] and not vars(args)['query']:
         print "\nWelcome to corpkit!\n\nThis function is called interrogator().\n\nIt allows you to search constituency trees with Tregex, Stanford Dependency parses, or plain text corpora with Regular Expressions.\n\nYou're about to be prompted for some information:\n    1) a name for the interrogation\n    2) a path to your corpus\n    3) a Tregex query or regular expression\n    4) an option, specifying the kind of search you want to do.\n"
         ready = raw_input("When you're ready, type 'start', or 'exit' to cancel: ")
-        if ready.startswith('e'):
+        if ready.startswith('e') or ready.startswith('E'):
             print '\n    OK ... come back soon!\n'
             import sys
             sys.exit()
