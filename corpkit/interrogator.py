@@ -385,7 +385,7 @@ def interrogator(path,
 
 
     def distancer(xmldata):
-        """get distance from root for matching word"""
+        """return distance from root for words matching query (root = 0)"""
         # for each sentence
         result = []
         # if lemmatise, we have to do something tricky.
@@ -990,6 +990,15 @@ def interrogator(path,
                     return
         
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
+        
+        # allow a b and c shorthand
+        if dep_type == 'a':
+            dep_type = allowed_dep_types[0]
+        if dep_type == 'b':
+            dep_type = allowed_dep_types[1]
+        if dep_type == 'c':
+            dep_type = allowed_dep_types[2]
+
         while dep_type not in allowed_dep_types:
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: Dependency type "%s" not recognised. Must be one of:\n\n' \
