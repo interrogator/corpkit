@@ -412,6 +412,9 @@ def interrogator(path,
                                         dep_to_check = d
                                         break
                                 c += 1
+                                # stop some kind of infinite loop
+                                if c > 98:
+                                    root_found = True
                         result.append(c)
 
         # attempt to stop memory problems. 
