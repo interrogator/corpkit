@@ -45,13 +45,16 @@ def interrogator(path,
             p/pos: only *pos* tag
             b/both: *both* words and tags
         - dependency option:
-            n/number: get the index *number* of the governor
+            a: get the distance from the root for each match
+            i/index: get the index of words
+                i.e. root = 0
             f/funct: get the semantic *function*
             g/gov: get *governor* role and governor:
                 r'^good$' might return amod:day
             d/dep: get dependent and its role:
                 r'^day$' might return amod:sunny
             t/token: get tokens from dependency data
+            m: search by label, returning tokens
         - plaintext:
             r/regex: search plain text with query as regex
             s/simple: search for word or list of words in plaintext files
@@ -380,6 +383,46 @@ def interrogator(path,
                     output.append(result)
             return output
 
+
+    def distancer(xmldata):
+        """get distance from root for matching word"""
+        # for each sentence
+        result = []
+        # if lemmatise, we have to do something tricky.
+        just_good_deps = SoupStrainer('sentences')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+        for s in soup.find_all('sentence'):
+            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+            deps = right_dependency_grammar[0].find_all('dep')
+            for index, dep in enumerate(deps):                
+                for dependent in dep.find_all('dependent', limit = 1):
+                    word = dependent.get_text()
+                    if re.match(regex, word):
+                        c = 0
+                        root_found = False
+                        while not root_found:
+                            if c == 0:
+                                dep_to_check = dep
+                            gov = dep_to_check.find_all('governor', limit = 1)
+                            gov_index = gov[0].attrs.get('idx')
+                            if gov_index == "0":
+                                root_found = True
+                            else:
+                                for d in deps:
+                                    if d.dependent.attrs.get('idx') == gov_index:
+                                        dep_to_check = d
+                                        break
+                                c += 1
+                        result.append(c)
+
+        # attempt to stop memory problems. 
+        # not sure if this helps, though:
+        soup.decompose()
+        soup = None
+        data = None
+        gc.collect()
+        return result
+
     def govrole(xmldata):
         """print funct:gov, using good lemmatisation"""
         # for each sentence
@@ -645,7 +688,7 @@ def interrogator(path,
                 for dependent in dep.find_all('dependent', limit = 1):
                     word = dependent.get_text()
                     if re.match(regex, word):
-                        result.append(index)
+                        result.append(index + 1)
 
                     # old method used on risk project
                     # get just the number
@@ -766,6 +809,10 @@ def interrogator(path,
             depnum = True
             dependency = True
             optiontext = 'Dependency index number only.'
+        elif option.startswith('a') or option.startswith('A'):
+            translated_option = 'a'
+            dependency = True
+            optiontext = 'Distance from root.'
         elif option.startswith('f') or option.startswith('F'):
             translated_option = 'f'
             dependency = True
@@ -1188,6 +1235,8 @@ def interrogator(path,
                         result_from_file = get_lemmata(data)
                     if translated_option == 'i':
                         result_from_file = depnummer(data)
+                    if translated_option == 'a':
+                        result_from_file = distancer(data)
                     if translated_option == 'r':
                         result_from_file = plaintext_regex_search(regex, data)
                     if translated_option == 's':
@@ -1201,9 +1250,9 @@ def interrogator(path,
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not keywording and not depnum:
+        if not keywording and not depnum and translated_option != 'a':
             processed_result = processwords(result)
-        if depnum:
+        if depnum or translated_option == 'a':
             processed_result = result
             
         if keywording:
