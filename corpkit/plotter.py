@@ -42,7 +42,7 @@ def plotter(title,
 
     import numpy
     from time import localtime, strftime
-    from corpkit.tests import check_pytex, check_spyder
+    from corpkit.tests import check_pytex, check_spider
     import signal
 
     if interactive:
@@ -74,7 +74,8 @@ def plotter(title,
     signal.signal(signal.SIGINT, signal_handler)
 
     running_python_tex = check_pytex()
-    running_spyder = check_spyder()
+    # incorrect spelling of spider on purpose
+    running_spider = check_spider()
 
     def get_savename(imagefolder, save = False, title = False, ext = 'png'):
         """Come up with the savename for the image."""
@@ -898,10 +899,10 @@ def plotter(title,
         else:
             raise ValueError("Error making %s." % savename)
 
-    if not interactive and not running_python_tex and not running_spyder:
+    if not interactive and not running_python_tex and not running_spider:
         plt.show()
     else:
-        if running_spyder:
+        if running_spider:
             return plt
 
     if interactive:
