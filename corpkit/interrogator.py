@@ -496,13 +496,12 @@ def interrogator(path,
             # if lemmatise, we have to do something tricky.
             just_good_deps = SoupStrainer('sentences')
             soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-            #print soup
             for s in soup.find_all('sentence'):
                 right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
                 for dep in right_dependency_grammar[0].find_all('dep'):
                     for governor in dep.find_all('governor', limit = 1):
                         word = governor.get_text()
-                        if re.match(regex, word) or word == u'ROOT':
+                        if re.match(regex, word):
                             role = dep.attrs.get('type')
                             deppy = dep.find_all('dependent', limit = 1)
                             #result_word = deppy[0].get_text()
@@ -526,7 +525,7 @@ def interrogator(path,
             for dep in soup.find_all('dep'):
                 for governor in dep.find_all('governor', limit = 1):
                     word = governor.get_text()
-                    if re.match(regex, word) or word == u'ROOT':
+                    if re.match(regex, word):
                         role = dep.attrs.get('type')
                         deppy = dep.find_all('dependent', limit = 1)
                         result_word = deppy[0].get_text()
