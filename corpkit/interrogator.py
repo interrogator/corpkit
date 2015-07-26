@@ -73,7 +73,7 @@ def interrogator(path,
         explicitly pass a pos to lemmatiser
     titlefilter : Boolean
         strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
-    spelling : False/'US'/UK
+    spelling : False/'US'/'UK'
         convert all to U.S. or U.K. English
     phrases : Boolean
         Use if your expected results are multiword and thus need tokenising
@@ -83,11 +83,11 @@ def interrogator(path,
         'self' will make a reference_corpus from the whole corpus
     dep_type : str
         the kind of Stanford CoreNLP dependency parses you want to use:
-        - 'basic-dependencies'
-        - 'collapsed-dependencies'
-        - 'collapsed-ccprocessed-dependencies'
+        - 'basic-dependencies'/'a'
+        - 'collapsed-dependencies'/'b'
+        - 'collapsed-ccprocessed-dependencies'/'c'
     function_filter : Bool/regex
-        If you set this to a regex, for the 'g' and 'd' option, only words 
+        If you set this to a regex, for the 'g' and 'd' options, only words 
         whose function matches the regex will be kept, and the tag will not be printed
     quicksave : str
        save result after interrogation has finished, using str as file name
@@ -95,8 +95,7 @@ def interrogator(path,
        pass a function to process every xml file and return a list of results
     post_process : function
        pass a function that processes every item in the list of results
-    ** kwargs : just_content_words for reference_corpus building
-               more generally, kwargs allows users to pass in earlier interrogation
+    ** kwargs : Mostly exists to allow users to pass in earlier interrogation
                settings in order to reperform the search.
 
     Example 1: Tree querying
@@ -112,8 +111,8 @@ def interrogator(path,
     0: election: (n=22)
     1: decision: (n=14)
     2: question: (n=10)
-    3: nomination:(n=8)
-    4: recession:(n=8)
+    3: nomination: (n=8)
+    4: recession: (n=8)
 
     <matplotlib figure>
 
@@ -487,6 +486,7 @@ def interrogator(path,
         return result
 
     def get_lemmata(xmldata):
+        """search for lemmata to count"""
         from bs4 import BeautifulSoup
         import gc
         result = []
@@ -496,8 +496,6 @@ def interrogator(path,
             word = token.lemma.text
             if re.search(query, word):
                 result.append(word)
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
         soup.decompose()
         soup = None
         data = None
@@ -505,7 +503,7 @@ def interrogator(path,
         return result
 
     def tokener(xmldata):
-        """print word, using good lemmatisation"""
+        """get tokens or lemmata from dependencies"""
         from bs4 import BeautifulSoup
         import gc
         open_classes = ['N', 'V', 'R', 'J']
@@ -514,8 +512,11 @@ def interrogator(path,
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
         for token in soup.find_all('token'):
             word = token.word.text
-            query = re.compile(r'.*')
-            if re.search(query, word):
+            if query == 'any':
+                regex = re.compile(r'.*')
+            else:
+                regex = re.compile(query)
+            if re.search(regex, word):
                 if lemmatise:
                     word = token.lemma.text
                     if 'just_content_words' in kwargs:
@@ -652,6 +653,7 @@ def interrogator(path,
         return result
 
     def plaintext_regex_search(pattern, plaintext_data):
+        """search for regex in plaintext corpora"""
         if type(pattern) == str:
             pattern = [pattern]
         result = []
@@ -662,6 +664,7 @@ def interrogator(path,
         return result
 
     def plaintext_simple_search(pattern, plaintext_data):
+        """search for tokens in plaintext corpora"""
         if type(pattern) == str:
             pattern = [pattern]
         result = []
@@ -679,7 +682,7 @@ def interrogator(path,
         return result
 
     def depnummer(xmldata):
-        """print dependency number"""
+        """get index of word in sentence?"""
         soup = BeautifulSoup(xmldata)
         result = []
         for sent in soup.find_all('sentence'):
@@ -703,6 +706,7 @@ def interrogator(path,
         return result
 
     def tabler(subcorpus_names, list_of_dicts, num_rows):
+        """make a word table showing num_rows results"""
         import pandas as pd
         cols = []
         for subcorp, data in zip(subcorpus_names, list_of_dicts):
@@ -840,8 +844,9 @@ def interrogator(path,
         else:
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
+                          '              a) Get distance from root for regex match\n' \
                           '              b) Get tag and word of Tregex match\n' \
-                          '              c) count Tregex match\n' \
+                          '              c) count Tregex matches\n' \
                           '              d) Get dependent of regular expression match and the r/ship\n' \
                           '              f) Get dependency function of regular expression match\n' \
                           '              g) get governor of regular expression match and the r/ship\n' \
@@ -860,7 +865,8 @@ def interrogator(path,
 
     if dependency:
         if type(query) == list:
-            query = r'(?i)^(' + '|'.join(query) + r')$' 
+            query = as_regex(query, boundaries = 'line')
+            #query = r'(?i)^(' + '|'.join(query) + r')$' 
         if query == 'any':
             query = r'.*'
 
@@ -912,7 +918,7 @@ def interrogator(path,
             loaded.query['function_filter'] == function_filter:
                 dup_non_i = 'Duplicate'
             else:
-                dup_non_i = 'non-identical'
+                dup_non_i = 'Non-identical'
 
             while os.path.isfile(fullpath) and quicksave:
                 dict_for_print = '          ' + '\n          '.join(sorted(['%s: %s' % (k, v) for k, v in loaded.query.items()])) + '\n'
