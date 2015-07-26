@@ -646,11 +646,11 @@ def tregex_engine(query = False,
             options = ['-T']
 
         filenaming = False
-        try:
-            if '-f' in options:
-                filenaming = True
-        except:
-            pass
+        #try:
+        #    if '-f' in options:
+        #        filenaming = True
+        #except:
+        #    pass
 
         if return_tuples or lemmatise:
             options = ['-o']
@@ -975,7 +975,7 @@ def pmultiquery(path,
     elif type(query) != str:
         multiple_corpora = False
         num_cores = best_num_parallel(num_cores, len(query))
-        
+
     if num_proc != 'default':
         num_cores = num_proc
 
