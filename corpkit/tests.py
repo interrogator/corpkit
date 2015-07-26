@@ -11,7 +11,7 @@ def check_pytex():
     else:
         return False
 
-def check_spyder():
+def check_spider():
     """checks for spyder, i hope"""
     import inspect
     thestack = []
