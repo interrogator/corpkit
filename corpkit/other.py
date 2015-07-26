@@ -913,7 +913,8 @@ def pmultiquery(path,
     option = 'c', 
     query = 'any', 
     sort_by = 'total', 
-    quicksave = False, 
+    quicksave = False,
+    num_proc = 'default', 
     **kwargs):
     """Parallel process multiple queries or corpora.
 
@@ -974,6 +975,9 @@ def pmultiquery(path,
     elif type(query) != str:
         multiple_corpora = False
         num_cores = best_num_parallel(num_cores, len(query))
+        
+    if num_proc != 'default':
+        num_cores = num_proc
 
     # make sure quicksaves are right type
     if quicksave is True:
