@@ -189,6 +189,10 @@ def editor(dataframe1,
         if input == 'all':
             input = r'.*'
         if type(input) == int:
+            try:
+                input = str(input)
+            except:
+                pass
             input = [input]
         elif type(input) == str:
             try:
@@ -719,9 +723,15 @@ def editor(dataframe1,
     
     if merge_subcorpora:
         if type(merge_subcorpora) != dict:
-            merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
+            if type(merge_subcorpora) == list:
+                if type(merge_subcorpora[0]) == tuple:
+                    merge_subcorpora = {x: y for x, y in merge_subcorpora}
+                elif type(merge_subcorpora[0]) == str or type(merge_subcorpora[0]) == unicode:
+                    merge_subcorpora = {new_subcorpus_name: x for x in merge_subcorpora}
+            else:
+                merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
         for name, input in sorted(merge_subcorpora.items()):
-            the_newname = newname_getter(df.T, parse_input(df.T, merge_subcorpora), 
+            the_newname = newname_getter(df.T, parse_input(df.T, input), 
                                      newname = name, 
                                      merging_subcorpora = True,
                                      prinf = print_info)
@@ -867,6 +877,13 @@ def editor(dataframe1,
         datatype = df.ix[0].dtype
     else:
         datatype = df.dtype
+
+    # TURN INT COL NAMES INTO STR
+    try:
+        df.results.columns = [str(d) for d in list(df.results.columns)]
+    except:
+        pass
+
     #make named_tuple
     the_operation = 'none'
     if using_totals:
