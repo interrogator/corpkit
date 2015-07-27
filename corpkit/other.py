@@ -234,7 +234,11 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
         if sel.startswith('e') or sel.startswith('E'):
             return
         else:
-            return possibles[int(sel) - 1]
+            try:
+                s = int(sel)
+                return possibles[s - 1]
+            except ValueError:
+                return sel
 
     while notfound:
         try:
