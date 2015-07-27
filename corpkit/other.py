@@ -217,7 +217,26 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     import nltk
     if not savename.endswith('.p'):
         savename = savename + '.p'
-    unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
+    try:
+        unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
+    except IOError:
+        def namesuggester(entered_name, searched_dir):
+            import nltk
+            names = os.listdir(searched_dir)
+            res = {}
+            for n in names:
+                sim = nltk.metrics.distance.edit_distance(entered_name, n, transpositions=False)
+                res[n] = sim
+            didyoumean = min(res, key=res.get).replace('.p', '')
+            if type(didyoumean) == list:
+                didyoumean = ', '.join([i.replace('.p', '') for i in didyoumean[:4]])
+                def rreplace(s, old, new, occurrence):
+                    li = s.rsplit(old, occurrence)
+                    return new.join(li)
+                didyoumean = rreplace(didyoumean, ', ', ' or ', 1)
+                didyoumean = didyoumean + '?'
+            raise ValueError('"%s" not found. Did you mean "%s"?' % (entered_name.replace('.p', ''), didyoumean))
+        namesuggester(savename, loaddir)
     if type(unpickled) == pandas.core.frame.DataFrame or \
     type(unpickled) == pandas.core.series.Series or \
     type(unpickled) == dict or \
