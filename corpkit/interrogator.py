@@ -723,6 +723,7 @@ def interrogator(path,
     keywording = False
     n_gramming = False
     dependency = False
+    distance_mode = False
     plaintext = False
     depnum = False
 
@@ -818,6 +819,7 @@ def interrogator(path,
             optiontext = 'Dependency index number only.'
         elif option.startswith('a') or option.startswith('A'):
             translated_option = 'a'
+            distance_mode = True
             dependency = True
             optiontext = 'Distance from root.'
         elif option.startswith('f') or option.startswith('F'):
@@ -1268,9 +1270,9 @@ def interrogator(path,
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not keywording and not depnum and translated_option != 'a':
+        if not keywording and not depnum and not distance_mode:
             processed_result = processwords(result)
-        if depnum or translated_option == 'a':
+        if depnum or distance_mode:
             processed_result = result
             
         if keywording:
@@ -1369,7 +1371,7 @@ def interrogator(path,
     try:
         df.ix['Total'] = df.sum()
         tot = df.ix['Total']
-        if not depnum:
+        if not depnum and not distance_mode:
             df = df[tot.argsort()[::-1]]
         df = df.drop('Total', axis = 0)
     except:
@@ -1387,13 +1389,13 @@ def interrogator(path,
         #df.name = query
 
     # return pandas/csv table of most common results in each subcorpus
-    if not depnum:
+    if not depnum and not distance_mode:
         if table_size > max([len(d) for d in dicts]):
             table_size = max([len(d) for d in dicts])
         word_table = tabler(subcorpus_names, dicts, table_size)
     
     # depnum is a little different, though
-    if depnum:
+    if depnum or distance_mode:
         df = df.T
 
     if paralleling:
@@ -1426,13 +1428,13 @@ def interrogator(path,
     the_options['time_started'] = the_time_started
     the_options['time_ended'] = the_time_ended
 
-    if not keywording and not depnum:
+    if not keywording and not depnum and not distance_mode:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
         output = outputnames(the_options, df, stotals, word_table)
     if keywording:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'table'])
         output = outputnames(the_options, df, word_table)
-    if depnum:
+    if depnum or distance_mode:
         outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
         output = outputnames(the_options, df, stotals)        
 
