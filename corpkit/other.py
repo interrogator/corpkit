@@ -217,26 +217,36 @@ def load_result(savename, loaddir = 'data/saved_interrogations'):
     import nltk
     if not savename.endswith('.p'):
         savename = savename + '.p'
-    try:
-        unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
-    except IOError:
-        def namesuggester(entered_name, searched_dir):
-            import nltk
-            names = os.listdir(searched_dir)
-            res = {}
-            for n in names:
-                sim = nltk.metrics.distance.edit_distance(entered_name, n, transpositions=False)
-                res[n] = sim
-            didyoumean = min(res, key=res.get).replace('.p', '')
-            if type(didyoumean) == list:
-                didyoumean = ', '.join([i.replace('.p', '') for i in didyoumean[:4]])
-                def rreplace(s, old, new, occurrence):
-                    li = s.rsplit(old, occurrence)
-                    return new.join(li)
-                didyoumean = rreplace(didyoumean, ', ', ' or ', 1)
-                didyoumean = didyoumean + '?'
-            raise ValueError('"%s" not found. Did you mean "%s"?' % (entered_name.replace('.p', ''), didyoumean))
-        namesuggester(savename, loaddir)
+    
+    notfound = True
+    
+    def namesuggester(entered_name, searched_dir):
+        import nltk
+        from itertools import groupby
+        from operator import itemgetter
+        names = os.listdir(searched_dir)
+        res = {}
+        for n in names:
+            sim = nltk.metrics.distance.edit_distance(entered_name, n, transpositions=False)
+            res[n] = sim
+        possibles = sorted([v.replace('.p', '') for k,v in groupby(sorted((v,k) for k,v in res.iteritems()), key=itemgetter(0)).next()[1]])
+        sel = raw_input('\n"%s" not found. Enter one of the below, or "e" to exit:\n\n%s\n\n' % (entered_name.replace('.p', ''), '\n'.join(['    %d) "%s"' % (index + 1, sug) for index, sug in enumerate(possibles[:10])])))
+        if sel.startswith('e') or sel.startswith('E'):
+            return
+        else:
+            return possibles[int(sel) - 1]
+
+    while notfound:
+        try:
+            unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
+            notfound = False
+        except IOError:
+            sel = namesuggester(savename, loaddir)
+            if not sel:
+                return
+            else:
+                savename = sel + '.p'
+
     if type(unpickled) == pandas.core.frame.DataFrame or \
     type(unpickled) == pandas.core.series.Series or \
     type(unpickled) == dict or \
