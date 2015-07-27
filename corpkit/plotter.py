@@ -266,6 +266,11 @@ def plotter(title,
         dataframe = dataframe.drop('Total', axis = 0)
     except:
         pass
+    # remove totals if there ... maybe redundant
+    try:
+        dataframe = dataframe.drop('Total', axis = 1)
+    except:
+        pass
 
     # set backend?
     output_formats = ['svgz', 'ps', 'emf', 'rgba', 'raw', 'pdf', 'svg', 'eps', 'png', 'pgf']
@@ -469,6 +474,13 @@ def plotter(title,
         leg_options = {'framealpha': .8}
         if 'shadow' in kwargs:
             leg_options['shadow'] = True
+        if 'ncol' in kwargs:
+            leg_options['ncol'] = kwargs['ncol']
+            del kwargs['ncol']
+        else:
+            if num_to_plot > 6:
+                leg_options['ncol'] = num_to_plot / 7
+
         # determine legend position based on this dict
         if legend_pos:
             possible = {'best': 0, 'upper right': 1, 'upper left': 2, 'lower left': 3, 'lower right': 4, 
