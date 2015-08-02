@@ -160,13 +160,18 @@ def conc(corpus, query,
     pd.set_option('display.width', 1000)
     pd.set_option('expand_frame_repr', False)
     pd.set_option('colheader_justify', 'left')
-    if not show_links:
-        print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+    if add_links:
+        if not show_links:
+            print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+        else:
+            print HTML(df.to_html(escape=False))
     else:
-        print HTML(df.to_html(escape=False))
+        print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+
     if not add_links:
         df.columns = ['l', 'm', 'r']
     else:
         df.columns = ['l', 'm', 'r', 'link']
     return df
 
+# r'/NN.?/ < /(?i)\brisk/ $ (/NN.?/ < /(?i)factor >># NP)' 
