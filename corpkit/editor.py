@@ -602,7 +602,13 @@ def editor(dataframe1,
                                   "Right now, its type is: '%s'." % type(dataframe1).__name__)
 
         df = dataframe1.copy()
-    
+
+    # make cols into strings
+    try:
+        df.columns = [str(c) for c in list(df.columns)]
+    except:
+        pass
+
     # do concordance work
     if conc_lines:
         df = dataframe1.copy()
