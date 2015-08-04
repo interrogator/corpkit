@@ -344,12 +344,16 @@ def editor(dataframe1,
 
     def merge_these_entries(df, parsed_input, the_newname, prinf = True, merging = 'entries'):
         # make new entry with sum of parsed input
-        if prinf:
-            print 'Merging %d %s as "%s":\n    %s' % (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10]))
-            if len(parsed_input) > 10:
-                print '... and %d more ... \n' % (len(parsed_input) - 10)
-            else:
-                print ''
+        if len(parsed_input) == 0:
+            import warnings
+            warnings.warn('No %s could be automatically merged.\n' % merging)
+        else:
+            if prinf:
+                print 'Merging %d %s as "%s":\n    %s' % (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10]))
+                if len(parsed_input) > 10:
+                    print '... and %d more ... \n' % (len(parsed_input) - 10)
+                else:
+                    print ''
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         if not multiple_merge:
@@ -379,20 +383,28 @@ def editor(dataframe1,
         if type(lst_of_subcorpora[0]) == int:
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         bad_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        if prinf:       
-            print 'Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]]))
-            if len(bad_years) > 10:
-                print '... and %d more ... \n' % (len(bad_years) - 10)
-            else:
-                print ''
+        if len(bad_years) == 0:
+            import warnings
+            warnings.warn('No subcorpora skipped.\n')
+        else:
+            if prinf:       
+                print 'Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]]))
+                if len(bad_years) > 10:
+                    print '... and %d more ... \n' % (len(bad_years) - 10)
+                else:
+                    print ''
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
         return df
 
     def span_these_subcorpora(df, lst_of_subcorpora, prinf = True):
         non_totals = [subcorpus for subcorpus in list(df.index)]
         good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
-        if prinf:        
-            print 'Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
+        if len(lst_of_subcorpora) == 0:
+            import warnings
+            warnings.warn('Span not identified.\n')
+        else:        
+            if prinf:        
+                print 'Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         # retotal needed here
         return df
