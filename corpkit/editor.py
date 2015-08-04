@@ -33,7 +33,7 @@ def editor(dataframe1,
 
     dataframe1:         list of results or totals to edit
     operation:          kind of maths to do on inputted lists:
-                        '+', '-', '/', '*', '%', 'k' (keywords)
+                        '+', '-', '/', '*', '%', 'k' (keywords), 'a' (distance scores)
     dataframe2:         list of results or totals
                         if list of results, for each entry in dataframe 1, locate
                         entry with same name in dataframe 2, and do maths there
@@ -144,39 +144,47 @@ def editor(dataframe1,
                 df = df.mul(denom, axis = 0)
             elif operation == '/':
                 df = df.div(denom, axis = 0)
+            elif operation == 'a':
+                for c in [c for c in list(df.columns) if int(c) > 1]:
+                    df[c] = df[c] * (1.0 / int(c))
+                df = df.sum(axis = 1) / df2
             return df
 
         elif not single_totals:
-            #p = ProgressBar(len(list(df.columns)))
-            for index, entry in enumerate(list(df.columns)):
-                #p.animate(index)
-                if operation == '%':
-                    try:
-                        df[entry] = df[entry] * 100.0 / df2[entry]
-                    except:
-                        continue
-                    #df.drop(entry, axis = 1, inplace = True)
-                    #df[entry] = maths_done
-                elif operation == '+':
-                    try:
-                        df[entry] = df[entry] + df2[entry]
-                    except:
-                        continue
-                elif operation == '-':
-                    try:
-                        df[entry] = df[entry] - df2[entry]
-                    except:
-                        continue
-                elif operation == '*':
-                    try:
-                        df[entry] = df[entry] * df2[entry]
-                    except:
-                        continue
-                elif operation == '/':
-                    try:
-                        df[entry] = df[entry] / df2[entry]
-                    except:
-                        continue
+            if not operation.startswith('a'):
+                for index, entry in enumerate(list(df.columns)):
+                    #p.animate(index)
+                    if operation == '%':
+                        try:
+                            df[entry] = df[entry] * 100.0 / df2[entry]
+                        except:
+                            continue
+                        #df.drop(entry, axis = 1, inplace = True)
+                        #df[entry] = maths_done
+                    elif operation == '+':
+                        try:
+                            df[entry] = df[entry] + df2[entry]
+                        except:
+                            continue
+                    elif operation == '-':
+                        try:
+                            df[entry] = df[entry] - df2[entry]
+                        except:
+                            continue
+                    elif operation == '*':
+                        try:
+                            df[entry] = df[entry] * df2[entry]
+                        except:
+                            continue
+                    elif operation == '/':
+                        try:
+                            df[entry] = df[entry] / df2[entry]
+                        except:
+                            continue
+            else:
+                for c in [c for c in list(df.columns) if int(c) > 1]:
+                    df[c] = df[c] * (1.0 / int(c))
+                df = df.sum(axis = 1) / df2.sum()
             #p.animate(len(list(df.columns)))
             #if have_ipython:
                 #clear_output()
@@ -679,6 +687,10 @@ def editor(dataframe1,
     except AttributeError:
         if dataframe2 == 'self':
             outputmode = True
+
+    if operation.startswith('a') or operation.startswith('A'):
+        if list(df.columns)[0] != '0' and list(df.columns)[0] != 0:
+            df = df.T
 
     if projection:
         # projection shouldn't do anything when working with '%', remember.
