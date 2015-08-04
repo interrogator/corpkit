@@ -213,7 +213,10 @@ def editor(dataframe1,
             if type(input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in input]
             elif type(input[0]) == str or type(input[0]) == unicode:
-                parsed_input = [word for word in input if word in df.columns]
+                try:
+                    parsed_input = [word for word in input if word in df.columns]
+                except AttributeError: # if series
+                    parsed_input = [word for word in input if word in df.index]
         return parsed_input
 
 
@@ -350,7 +353,10 @@ def editor(dataframe1,
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         if not multiple_merge:
-            df = df.drop(parsed_input, axis = 1)
+            if type(df) == pandas.core.series.Series:
+                df = df.drop(parsed_input)
+            else:
+                df = df.drop(parsed_input, axis = 1)
         df[the_newname] = temp
         return df
 
@@ -691,6 +697,9 @@ def editor(dataframe1,
     if operation.startswith('a') or operation.startswith('A'):
         if list(df.columns)[0] != '0' and list(df.columns)[0] != 0:
             df = df.T
+        if using_totals:
+            if not single_totals:
+                df2 = df2.T
 
     if projection:
         # projection shouldn't do anything when working with '%', remember.
@@ -745,7 +754,9 @@ def editor(dataframe1,
                 if type(merge_subcorpora[0]) == tuple:
                     merge_subcorpora = {x: y for x, y in merge_subcorpora}
                 elif type(merge_subcorpora[0]) == str or type(merge_subcorpora[0]) == unicode:
-                    merge_subcorpora = {new_subcorpus_name: x for x in merge_subcorpora}
+                    merge_subcorpora = {new_subcorpus_name: [x for x in merge_subcorpora]}
+                if type(merge_subcorpora[0]) == int:
+                    merge_subcorpora = {new_subcorpus_name: [str(x) for x in merge_subcorpora]}
             else:
                 merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
         for name, input in sorted(merge_subcorpora.items()):
@@ -755,7 +766,7 @@ def editor(dataframe1,
                                      prinf = print_info)
             df = merge_these_entries(df.T, parse_input(df.T, input), the_newname, merging = 'subcorpora', prinf = print_info).T
             if using_totals:
-                df2 = merge_these_entries(df2.T, parse_input(df2.T, input), the_newname, merging = 'subcorpora', prinf = print_info).T
+                df2 = merge_these_entries(df2.T, parse_input(df2.T, input), the_newname, merging = 'subcorpora', prinf = False).T
     
 
     if just_subcorpora:
