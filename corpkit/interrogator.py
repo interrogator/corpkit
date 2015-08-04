@@ -383,14 +383,15 @@ def interrogator(path,
             return output
 
 
-    def distancer(xmldata):
+    def distancer(xmldata, f):
+        import re
         """return distance from root for words matching query (root = 0)"""
         # for each sentence
         result = []
         # if lemmatise, we have to do something tricky.
         just_good_deps = SoupStrainer('sentences')
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-        for s in soup.find_all('sentence'):
+        for sindex, s in enumerate(soup.find_all('sentence')):
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             deps = right_dependency_grammar[0].find_all('dep')
             for index, dep in enumerate(deps):                
@@ -415,6 +416,10 @@ def interrogator(path,
                                 # stop some kind of infinite loop
                                 if c > 98:
                                     root_found = True
+                        # temporary: output info for a few files
+                        #import re
+                        #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
+                        #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
                         result.append(c)
 
         # attempt to stop memory problems. 
@@ -1256,7 +1261,7 @@ def interrogator(path,
                     if translated_option == 'i':
                         result_from_file = depnummer(data)
                     if translated_option == 'a':
-                        result_from_file = distancer(data)
+                        result_from_file = distancer(data, f)
                     if translated_option == 'r':
                         result_from_file = plaintext_regex_search(regex, data)
                     if translated_option == 's':
