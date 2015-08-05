@@ -11,6 +11,7 @@ def interrogator(path,
                 phrases = False, 
                 dep_type = 'basic-dependencies',
                 function_filter = False,
+                pos_filter = False,
                 table_size = 50,
                 quicksave = False,
                 add_to = False,
@@ -391,36 +392,66 @@ def interrogator(path,
         # if lemmatise, we have to do something tricky.
         just_good_deps = SoupStrainer('sentences')
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+        skipcount = 0
         for sindex, s in enumerate(soup.find_all('sentence')):
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             deps = right_dependency_grammar[0].find_all('dep')
-            for index, dep in enumerate(deps):                
-                for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text()
-                    if re.match(regex, word):
-                        c = 0
-                        root_found = False
-                        while not root_found:
-                            if c == 0:
-                                dep_to_check = dep
-                            gov = dep_to_check.find_all('governor', limit = 1)
-                            gov_index = gov[0].attrs.get('idx')
-                            if gov_index == "0":
+            if len(deps) > 99:
+                skipcount += 1
+                #import warnings
+                #warnings.warn('%d word sentence (index = %d) skipped in %s\n' % (len(deps) + 1, sindex, f))
+                continue
+            for index, dep in enumerate(deps):            
+                dependent = dep.find_all('dependent', limit = 1)[0]
+                word = dependent.get_text()
+                if re.match(regex, word):
+                    if function_filter and not pos_filter:
+                        role = dep.attrs.get('type')
+                        if not re.search(funfil_regex, role):
+                            continue
+                    if pos_filter and not function_filter:
+                        id = dependent.attrs.get('idx')
+                        token_info = s.find_all('token', id=id, limit = 1)
+                        #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                        if not re.search(pos_regex, result_pos):
+                            continue
+                    if pos_filter and function_filter:
+                        role = dep.attrs.get('type')
+                        id = dependent.attrs.get('idx')
+                        token_info = s.find_all('token', id=id, limit = 1)
+                        #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                        if not re.search(pos_regex, result_pos):
+                            continue
+                        if not re.search(funfil_regex, role):
+                            continue
+
+                    c = 0
+                    root_found = False
+                    while not root_found:
+                        if c == 0:
+                            dep_to_check = dep
+                        gov = dep_to_check.find_all('governor', limit = 1)
+                        gov_index = gov[0].attrs.get('idx')
+                        if gov_index == "0":
+                            root_found = True
+                        else:
+                            for d in deps:
+                                if d.dependent.attrs.get('idx') == gov_index:
+                                    dep_to_check = d
+                                    break
+                            c += 1
+                            # stop some kind of infinite loop
+                            if c > 98:
                                 root_found = True
-                            else:
-                                for d in deps:
-                                    if d.dependent.attrs.get('idx') == gov_index:
-                                        dep_to_check = d
-                                        break
-                                c += 1
-                                # stop some kind of infinite loop
-                                if c > 98:
-                                    root_found = True
-                        # temporary: output info for a few files
-                        #import re
-                        #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
-                        #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
-                        result.append(c)
+                                break
+
+                    # temporary: output info for a few files
+                    #import re
+                    #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
+                    #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
+                    result.append(c)
 
         # attempt to stop memory problems. 
         # not sure if this helps, though:
@@ -428,7 +459,7 @@ def interrogator(path,
         soup = None
         data = None
         gc.collect()
-        return result
+        return result, skipcount
 
     def govrole(xmldata):
         """print funct:gov, using good lemmatisation"""
@@ -452,11 +483,22 @@ def interrogator(path,
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
                                 result_word = token_info[0].find_all('lemma', limit = 1)[0].text
                                 result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                                # could just correct spelling here ...
-                                if function_filter:
+                                if function_filter and not pos_filter:
                                     if re.search(funfil_regex, role):
                                         result.append(result_word)
-                                else:
+                                    else:
+                                        continue
+                                if pos_filter and not function_filter:
+                                    if re.search(pos_regex, result_pos):
+                                        result.append(result_word)
+                                    else:
+                                        continue
+                                if pos_filter and function_filter:
+                                    if re.search(funfil_regex, role):
+                                        if re.search(pos_regex, result_pos):
+                                            result.append(result_word)
+                                            continue
+                                if not function_filter and not pos_filter:
                                     if add_pos_to_g_d_option:
                                         colsep = role + u':' + result_pos + u':' + result_word
                                     else:
@@ -479,7 +521,28 @@ def interrogator(path,
                             if function_filter:
                                 if re.search(funfil_regex, role):
                                     result.append(result_word)
-                            else:
+                                    continue
+                            if pos_filter:
+                                result_word_id = gov[0].attrs.get('idx')
+                                token_info = s.find_all('token', id=result_word_id, limit = 1)
+                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                                if re.search(pos_regex, result_pos):
+                                    result.append(result_word)
+                                else:
+                                    continue
+                            if function_filter and pos_filter:
+                                if re.search(funfil_regex, role):
+                                    result_word_id = gov[0].attrs.get('idx')
+                                    token_info = s.find_all('token', id=result_word_id, limit = 1)
+                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                                    if re.search(pos_regex, result_pos):
+                                        result.append(result_word)
+                                    else:
+                                        continue
+                                else:
+                                    continue
+
+                            if not function_filter and not pos_filter:
                                 colsep = role + u':' + result_word
                                 result.append(colsep)
                         else:
@@ -562,10 +625,22 @@ def interrogator(path,
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
                             result_word = token_info[0].find_all('lemma', limit = 1)[0].text
                             result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                            if function_filter:
+                            if function_filter and not pos_filter:
                                 if re.search(funfil_regex, role):
                                     result.append(result_word)
-                            else:
+                                else:
+                                    continue
+                            if pos_filter and not function_filter:
+                                if re.search(pos_regex, result_pos):
+                                    result.append(result_word)
+                                else:
+                                    continue
+                            if pos_filter and function_filter:
+                                if re.search(funfil_regex, role):
+                                    if re.search(pos_regex, result_pos):
+                                        result.append(result_word)
+                                        continue
+                            if not pos_filter and not function_filter:
                                 if add_pos_to_g_d_option:
                                     colsep = role + u':' + result_pos + u':' + result_word
                                 else:
@@ -972,6 +1047,37 @@ def interrogator(path,
     if titlefilter:
         phrases = True
 
+    def filtermaker(filter):
+        if type(filter) == list:
+            from corpkit.other import as_regex
+            filter = as_regex(filter)
+        try:
+            output = re.compile(filter)
+            is_valid = True
+        except:
+            is_valid = False
+        while not is_valid:
+            time = strftime("%H:%M:%S", localtime())
+            selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+                '              a) rewrite it now\n' \
+                '              b) exit\n\nYour selection: ' % (time, filter))
+            if 'a' in selection:
+                filter = raw_input('\nNew regular expression: ')
+                try:
+                    output = re.compile(r'\b' + filter + r'\b')
+                    is_valid = True
+                except re.error:
+                    is_valid = False
+            elif 'b' in selection:
+                print ''
+                return False
+        return output
+
+    if pos_filter:
+        pos_regex = filtermaker(pos_filter)
+        if pos_regex is False:
+            return
+
     # dependencies:
     # can't be phrases
     # check if regex valid
@@ -980,30 +1086,11 @@ def interrogator(path,
         import gc
         from bs4 import BeautifulSoup, SoupStrainer
         phrases = False
+
         if function_filter:
-            if type(function_filter) == list:
-                from corpkit.other import as_regex
-                function_filter = as_regex(function_filter)
-            try:
-                funfil_regex = re.compile(function_filter)
-                is_valid = True
-            except:
-                is_valid = False
-            while not is_valid:
-                time = strftime("%H:%M:%S", localtime())
-                selection = raw_input('\n%s: function_filter regular expression " %s " contains an error. You can either:\n\n' \
-                    '              a) rewrite it now\n' \
-                    '              b) exit\n\nYour selection: ' % (time, function_filter))
-                if 'a' in selection:
-                    function_filter = raw_input('\nNew regular expression: ')
-                    try:
-                        funfil_regex = re.compile(r'\b' + function_filter + r'\b')
-                        is_valid = True
-                    except re.error:
-                        is_valid = False
-                elif 'b' in selection:
-                    print ''
-                    return
+            funfil_regex = filtermaker(function_filter)
+            if funfil_regex is False:
+                return
         
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         
@@ -1234,6 +1321,7 @@ def interrogator(path,
             fileset = d[1]
             #for f in read_files:
             result = []
+            skipped_sents = 0
             for f in fileset:
                 # pass the x/y argument for more updates
                 p.animate(c, str(c) + '/' + str(total_files))
@@ -1261,7 +1349,8 @@ def interrogator(path,
                     if translated_option == 'i':
                         result_from_file = depnummer(data)
                     if translated_option == 'a':
-                        result_from_file = distancer(data, f)
+                        result_from_file, skipcount = distancer(data, f)
+                        skipped_sents += skipcount
                     if translated_option == 'r':
                         result_from_file = plaintext_regex_search(regex, data)
                     if translated_option == 's':
@@ -1402,6 +1491,11 @@ def interrogator(path,
     # depnum is a little different, though
     if depnum or distance_mode:
         df = df.T
+        # print skipped sents
+        if distance_mode:
+            if skipped_sents > 0:
+                import warnings
+                warnings.warn('\n%d sentences over 99 words skipped.\n' % skipped_sents)
 
     if paralleling:
         return (kwargs['outname'], df)
@@ -1449,6 +1543,8 @@ def interrogator(path,
     # warnings if nothing generated...
     if not one_big_corpus:
         num_diff_results = len(list(df.columns))
+        if depnum or distance_mode:
+            num_diff_results = len(list(df.T.columns))
     else:
         num_diff_results = len(df)
 
