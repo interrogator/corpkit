@@ -149,6 +149,9 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     from time import localtime, strftime
     import nltk
 
+    if type(interrogation) == str or type(interrogation) == unicode:
+        raise TypeError('First argument (i.e. the thing to save) cannot be a string.')
+
     if savename.endswith('.p'):
         savename = savename[:-2]
 
@@ -169,6 +172,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     if not savename.endswith('.p'):
         savename = savename + '.p'
 
+    # this feature creeps me out, i don't think it's needed any more
     savename = savename.replace('lemmatised', '-lemmatised')
 
     fullpath = os.path.join(savedir, savename)
