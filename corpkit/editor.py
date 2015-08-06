@@ -33,7 +33,10 @@ def editor(dataframe1,
 
     dataframe1:         list of results or totals to edit
     operation:          kind of maths to do on inputted lists:
-                        '+', '-', '/', '*', '%', 'k' (keywords), 'a' (distance scores)
+                        '+', '-', '/', '*', '%': self explanatory
+                        'k': log likelihood (keywords)
+                        'a': get distance metric (for use with interrogator 'a' option)
+                        'd': get percent difference (alternative approach to keywording)
     dataframe2:         list of results or totals
                         if list of results, for each entry in dataframe 1, locate
                         entry with same name in dataframe 2, and do maths there
@@ -110,6 +113,8 @@ def editor(dataframe1,
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
+
+
         # delete under threshold
         if just_totals:
             if using_totals:
@@ -144,6 +149,29 @@ def editor(dataframe1,
                 df = df.mul(denom, axis = 0)
             elif operation == '/':
                 df = df.div(denom, axis = 0)
+            elif operation == 'd':
+                to_drop = [n for n in list(df.columns) if df[n].sum() < threshold]
+                df = df.drop([e for e in to_drop if e in list(df.columns)], axis = 1)
+                if prinf:
+                    to_show = []
+                    [to_show.append(w) for w in to_drop[:5]]
+                    if len(to_drop) > 10:
+                        to_show.append('...')
+                        [to_show.append(w) for w in to_drop[-5:]]
+                    if len(to_drop) > 0:
+                        print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
+                    if len(to_drop) > 10:
+                        print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+                    else:
+                        print ''
+
+
+
+                norm_in_target = df * 100.0
+                norm_in_target = df.div(denom, axis = 0)
+                tot_in_ref = df.sum() * 100.0
+                norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0)
+                df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
             elif operation == 'a':
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
@@ -698,6 +726,9 @@ def editor(dataframe1,
                     single_totals = False
                 else:
                     df2 = pd.Series(df2)
+                if operation == 'd':
+                    df2 = df2.sum(axis = 1)
+                    single_totals = True
             elif type(df2) == pandas.core.series.Series:
                 single_totals = True
             else:
@@ -705,6 +736,8 @@ def editor(dataframe1,
     except AttributeError:
         if dataframe2 == 'self':
             outputmode = True
+
+
 
     if operation.startswith('a') or operation.startswith('A'):
         if list(df.columns)[0] != '0' and list(df.columns)[0] != 0:
@@ -846,6 +879,8 @@ def editor(dataframe1,
             if just_totals:
                 if not single_totals:
                     the_threshold = set_threshold(df2, threshold, prinf = print_info)
+            if operation == 'd':
+                the_threshold = set_threshold(df2, threshold, prinf = print_info) 
             df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
     
     # if doing keywording...
