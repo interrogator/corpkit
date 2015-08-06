@@ -19,6 +19,7 @@ def plotter(title,
             interactive = False,
             black_and_white = False,
             show_p_val = False,
+            indices = 'guess',
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -234,7 +235,7 @@ def plotter(title,
                 else:
                     kwargs['autopct'] = '%1.1f%%'
 
-    
+
     #if piemode:
         #if partial_pie:
             #kwargs['startangle'] = 180
@@ -271,6 +272,32 @@ def plotter(title,
         dataframe = dataframe.drop('Total', axis = 1)
     except:
         pass
+
+    # look at columns to see if all can be ints, in which case, set up figure
+    # for depnumming
+    if indices == 'guess':
+        def isint(x):
+            try:
+                a = float(x)
+                b = int(a)
+            except ValueError:
+                return False
+            else:
+                return a == b
+
+        if all([isint(x) is True for x in list(dataframe.columns)]):
+            indices = True
+        else:
+            indices = False
+
+    # if depnumming, plot all, transpose, and rename axes
+    if indices is True:
+        num_to_plot = 'all'
+        dataframe = dataframe.T
+        if y_label is None:
+            y_label = 'Percentage of all matches'
+        if x_label is None:
+            x_label = 'Distance from root'
 
     # set backend?
     output_formats = ['svgz', 'ps', 'emf', 'rgba', 'raw', 'pdf', 'svg', 'eps', 'png', 'pgf']
