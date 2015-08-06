@@ -1106,13 +1106,13 @@ def as_regex(lst, boundaries = 'word', case_sensitive = False):
         case = r''
     else:
         case = r'(?i)'
-    if boundaries == 'word':
+    if boundaries.startswith('w') or boundaries.startswith('W'):
         boundary1 = r'\b'
         boundary2 = r'\b'
-    elif boundaries == 'line':
+    if boundaries.startswith('l') or boundaries.startswith('L'):
         boundary1 = r'^'
         boundary2 = r'$'
-    elif boundaries == 'space':
+    if boundaries.startswith('s') or boundaries.startswith('S'):
         boundary1 = r'\s'
         boundary2 = r'\s'
     elif not boundaries:
