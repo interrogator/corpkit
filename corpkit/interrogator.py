@@ -443,7 +443,7 @@ def interrogator(path,
                                     break
                             c += 1
                             # stop some kind of infinite loop
-                            if c > 24:
+                            if c > 29:
                                 root_found = True
                                 break
 
@@ -451,7 +451,7 @@ def interrogator(path,
                     #import re
                     #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
                     #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
-                    if c < 25:
+                    if c < 30:
                         result.append(c)
 
         # attempt to stop memory problems. 
