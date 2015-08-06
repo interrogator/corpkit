@@ -150,8 +150,11 @@ def editor(dataframe1,
             elif operation == '/':
                 df = df.div(denom, axis = 0)
             elif operation == 'd':
+                #df.ix['Combined total'] = df.sum()
+                #to_drop = to_drop = list(df.T[df.T['Combined total'] < threshold].index)
                 to_drop = [n for n in list(df.columns) if df[n].sum() < threshold]
                 df = df.drop([e for e in to_drop if e in list(df.columns)], axis = 1)
+                #df.drop('Combined total')
                 if prinf:
                     to_show = []
                     [to_show.append(w) for w in to_drop[:5]]
@@ -165,13 +168,37 @@ def editor(dataframe1,
                     else:
                         print ''
 
-
-
-                norm_in_target = df * 100.0
+                # get normalised num in target corpus
                 norm_in_target = df.div(denom, axis = 0)
-                tot_in_ref = df.sum() * 100.0
-                norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0)
+                # get normalised num in reference corpus, with or without selfdrop
+                tot_in_ref = df.copy()
+                for c in list(tot_in_ref.index):
+                    if selfdrop:
+                        tot_in_ref.ix[c] = df.sum() - tot_in_ref.ix[c]
+                    else:
+                        tot_in_ref.ix[c] = df.sum()
+                norm_in_ref = tot_in_ref.div(df.sum().sum())
                 df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
+                #norm_in_ref = (tot_in_ref * 100.0) / df.sum().sum()
+                #print norm_in_target, norm_in_ref
+
+                #tot_in_ref = tot_in_ref * 100.0
+                #norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0).sum
+                
+                # do the maths
+                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
+
+                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
+
+
+                #tot_in_ref = df.sum() * 100.0
+                #norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0)
+                # do the maths
+                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
+
+
+
+
             elif operation == 'a':
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
@@ -731,6 +758,8 @@ def editor(dataframe1,
                     single_totals = True
             elif type(df2) == pandas.core.series.Series:
                 single_totals = True
+                #if operation == 'k':
+                    #raise ValueError('Keywording requires a DataFrame for dataframe2. Use "self"?')
             else:
                 raise ValueError('dataframe2 not recognised.')
     except AttributeError:
