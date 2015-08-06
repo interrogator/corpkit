@@ -1103,7 +1103,7 @@ def pmultiquery(path,
             save_result(out, quicksave)
         return out
 
-def as_regex(lst, boundaries = 'word', case_sensitive = False):
+def as_regex(lst, boundaries = 'w', case_sensitive = False):
     """turns a wordlist into an uncompiled regular expression"""
     import re
     if case_sensitive:
@@ -1113,10 +1113,10 @@ def as_regex(lst, boundaries = 'word', case_sensitive = False):
     if boundaries.startswith('w') or boundaries.startswith('W'):
         boundary1 = r'\b'
         boundary2 = r'\b'
-    if boundaries.startswith('l') or boundaries.startswith('L'):
+    elif boundaries.startswith('l') or boundaries.startswith('L'):
         boundary1 = r'^'
         boundary2 = r'$'
-    if boundaries.startswith('s') or boundaries.startswith('S'):
+    elif boundaries.startswith('s') or boundaries.startswith('S'):
         boundary1 = r'\s'
         boundary2 = r'\s'
     elif not boundaries:
