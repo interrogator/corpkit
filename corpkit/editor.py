@@ -732,12 +732,12 @@ def editor(dataframe1,
             elif type(df2) == pandas.core.series.Series:
                 single_totals = True
             else:
-                raise ValueError('dataframe2 not recognised.')   
+                raise ValueError('dataframe2 not recognised.')
     except AttributeError:
+        if operation in ['k', 'd', 'a', '%', '/', '*']:
+            dataframe2 = 'self'         
         if dataframe2 == 'self':
             outputmode = True
-
-
 
     if operation.startswith('a') or operation.startswith('A'):
         if list(df.columns)[0] != '0' and list(df.columns)[0] != 0:
