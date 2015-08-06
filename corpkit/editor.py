@@ -1,6 +1,6 @@
 
 def editor(dataframe1, 
-            operation = '%',
+            operation = None,
             dataframe2 = False,
             sort_by = False,
             keep_stats = False,
@@ -111,6 +111,29 @@ def editor(dataframe1,
     if check_pytex():
         print_info = False
 
+    import signal
+    def signal_handler(signal, frame):
+        import signal
+        """pause on ctrl+c, rather than just stop loop"""
+
+        #def subsig(signal, frame):
+        #    """exit on ctrl c"""
+        #    import sys
+        #    sys.exit(0)
+        #
+        #signal.signal(signal.SIGINT, subsig)
+        
+        import sys
+        from time import localtime, strftime
+        time = strftime("%H:%M:%S", localtime())
+        sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
+        if sel.startswith('e') or sel.startswith('E'):
+            sys.exit(0)
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation resumed.\n' % time
+    signal.signal(signal.SIGINT, signal_handler)
+
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
 
@@ -179,6 +202,7 @@ def editor(dataframe1,
                         tot_in_ref.ix[c] = df.sum()
                 norm_in_ref = tot_in_ref.div(df.sum().sum())
                 df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
+                df = df.replace(float(-100.00), np.nan)
                 #norm_in_ref = (tot_in_ref * 100.0) / df.sum().sum()
                 #print norm_in_target, norm_in_ref
 
@@ -508,8 +532,9 @@ def editor(dataframe1,
                            columns = list(df.columns))
         df = df.append(sl)
         # drop infinites and nans
-        df = df.replace([np.inf, -np.inf], np.nan)
-        df = df.fillna(0.0)
+        if operation != 'd':
+            df = df.replace([np.inf, -np.inf], np.nan)
+            df = df.fillna(0.0)
         return df
 
     def recalc(df, operation = '%'):
@@ -690,6 +715,9 @@ def editor(dataframe1,
     except:
         pass
 
+    if operation is None:
+        operation = 'None'
+
     # do concordance work
     if conc_lines:
         df = dataframe1.copy()
@@ -767,6 +795,9 @@ def editor(dataframe1,
             dataframe2 = 'self'         
         if dataframe2 == 'self':
             outputmode = True
+        else:
+            if operation in ['-', '+']:
+                raise ValueError('dataframe2 needed for +/- operations.')
 
     if operation.startswith('a') or operation.startswith('A'):
         if list(df.columns)[0] != '0' and list(df.columns)[0] != 0:
@@ -868,8 +899,9 @@ def editor(dataframe1,
             df2 = skip_these_entries(df2, parse_input(df2, skip_entries), prinf = False)
 
     # drop infinites and nans
-    df = df.replace([np.inf, -np.inf], np.nan)
-    df = df.fillna(0.0)
+    if operation != 'd':
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0.0)
 
     # make just_totals as dataframe
     just_one_total_number = False
@@ -941,8 +973,9 @@ def editor(dataframe1,
         df = df.T
     
     # drop infinites and nans
-    df = df.replace([np.inf, -np.inf], np.nan)
-    df = df.fillna(0.0)
+    if operation != 'd':
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0.0)
 
     # resort data
     if sort_by:
