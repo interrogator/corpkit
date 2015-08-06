@@ -1472,7 +1472,8 @@ def interrogator(path,
         df = df.drop('Total', axis = 0)
     except:
         pass
-    # totals --- could just use the frame above ...
+
+    # make totals branch
     stotals = df.sum(axis = 1)
     stotals.name = 'Total'
 
@@ -1490,14 +1491,9 @@ def interrogator(path,
             table_size = max([len(d) for d in dicts])
         word_table = tabler(subcorpus_names, dicts, table_size)
     
-    # depnum is a little different, though
-    if depnum or distance_mode:
-        df = df.T
-        # print skipped sents
-        if distance_mode:
-            if skipped_sents > 0:
-                import warnings
-                warnings.warn('\n%d sentences over 99 words skipped.\n' % skipped_sents)
+    # print skipped sent information for distance_mode
+    if printstatus and distance_mode and skipped_sents > 0:
+        print '\n          %d sentences over 99 words skipped.\n' % skipped_sents
 
     if paralleling:
         return (kwargs['outname'], df)
@@ -1545,8 +1541,6 @@ def interrogator(path,
     # warnings if nothing generated...
     if not one_big_corpus:
         num_diff_results = len(list(df.columns))
-        if depnum or distance_mode:
-            num_diff_results = len(list(df.T.columns))
     else:
         num_diff_results = len(df)
 
