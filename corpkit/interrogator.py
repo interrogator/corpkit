@@ -443,7 +443,7 @@ def interrogator(path,
                                     break
                             c += 1
                             # stop some kind of infinite loop
-                            if c > 98:
+                            if c > 24:
                                 root_found = True
                                 break
 
@@ -451,7 +451,8 @@ def interrogator(path,
                     #import re
                     #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
                     #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
-                    result.append(c)
+                    if c < 25:
+                        result.append(c)
 
         # attempt to stop memory problems. 
         # not sure if this helps, though:
@@ -1462,6 +1463,7 @@ def interrogator(path,
     
     # turn master dict into dataframe, sorted
     df = DataFrame(the_big_dict, index = subcorpus_names)
+
     try:
         df.ix['Total'] = df.sum()
         tot = df.ix['Total']
