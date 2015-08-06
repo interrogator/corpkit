@@ -184,7 +184,7 @@ def editor(dataframe1,
             else:
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
-                df = df.sum(axis = 1) / df2.sum()
+                df = df.sum(axis = 1) / df2.T.sum()
             #p.animate(len(list(df.columns)))
             #if have_ipython:
                 #clear_output()
