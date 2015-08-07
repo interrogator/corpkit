@@ -13,6 +13,10 @@ def quickview(results, n = 25):
     dictpath = 'data/dictionaries'
     savedpath = 'data/saved_interrogations'
 
+    # too lazy to code this properly for every possible data type:
+    if n == 'all':
+        n = 9999
+
     if type(results) == str:
         if os.path.isfile(os.path.join(dictpath, results)):
             import pickle
@@ -33,10 +37,9 @@ def quickview(results, n = 25):
 
     if 'interrogation' in str(type(results)):
         clas = results.query['function']
-
         if clas == 'interrogator':
             datatype = results.query['datatype']
-            if datatype == 'float64':
+            if datatype == 'int64':
                 option = 'total'
             else:
                 option = '%'
@@ -80,7 +83,6 @@ def quickview(results, n = 25):
             option = 'total'
         else:
             option = '%'
-
     elif type(results) == pandas.core.series.Series:
         resbranch = False
         results_branch = results
@@ -101,10 +103,15 @@ def quickview(results, n = 25):
         if option == 'keywords':
             print '%s: %s' %(fildex, w)
         elif option == '%' or option == 'ratio':
-            print '%s: %s' % (fildex, w)
+            if 'interrogation' in str(type(results)):
+                tot = results.totals[w]
+                totstr = "%.3f" % tot
+                print '%s: %s (%s%%)' % (fildex, w, totstr)
+            else:
+                print '%s: %s' % (fildex, w)
         elif option == 'series_keywords':
             tot = results_branch[w]
-            print '%s: %s (kq=%d)' %(fildex, w, tot)
+            print '%s: %s (k=%d)' %(fildex, w, tot)
 
         else:
             if resbranch:
@@ -1119,29 +1126,54 @@ def pmultiquery(path,
             save_result(out, quicksave)
         return out
 
-def as_regex(lst, boundaries = 'w', case_sensitive = False):
+def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
     """turns a wordlist into an uncompiled regular expression"""
     import re
     if case_sensitive:
         case = r''
     else:
         case = r'(?i)'
-    if boundaries.startswith('w') or boundaries.startswith('W'):
-        boundary1 = r'\b'
-        boundary2 = r'\b'
-    elif boundaries.startswith('l') or boundaries.startswith('L'):
-        boundary1 = r'^'
-        boundary2 = r'$'
-    elif boundaries.startswith('s') or boundaries.startswith('S'):
-        boundary1 = r'\s'
-        boundary2 = r'\s'
-    elif not boundaries:
+    if not boundaries:
         boundary1 = r''
         boundary2 = r''
-    else:
+    elif type(boundaries) == tuple or type(boundaries) == list:
         boundary1 = boundaries[0]
         boundary2 = boundaries[1]
-    return case + boundary1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + boundary2
+    else:
+        if boundaries.startswith('w') or boundaries.startswith('W'):
+            boundary1 = r'\b'
+            boundary2 = r'\b'
+        elif boundaries.startswith('l') or boundaries.startswith('L'):
+            boundary1 = r'^'
+            boundary2 = r'$'
+        elif boundaries.startswith('s') or boundaries.startswith('S'):
+            boundary1 = r'\s'
+            boundary2 = r'\s'
+        else:
+            raise ValueError('Boundaries not recognised. Use a tuple for custom start and end boundaries.')
+    if inverse:
+        inverser1 = r'(?!'
+        inverser2 = r')'
+    else:
+        inverser1 = r''
+        inverser2 = r''
+    #if no_punctuation:
+    #    if not inverse:
+    #        # not needed
+    #        punct = r''
+    #    else:
+    #        punct = r'|[^A-Za-z0-9]+'
+    #else:
+    #    if not inverse:
+    #        punct = r''
+    #    else:
+    #        punct = r''
+    if inverse:
+        joinbit = r'%s|%s' % (boundary2, boundary1)
+        return case + inverser1 + r'(' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
+    else:
+        return case + boundary1 + inverser1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + inverser2 + boundary2
+
 
 def show(lines, index, show = 'thread'):
     """show lines.ix[index][link] as frame"""
