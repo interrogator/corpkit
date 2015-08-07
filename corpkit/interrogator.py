@@ -220,19 +220,11 @@ def interrogator(path,
            
     have_python_tex = check_pytex()
 
-    regex_nonword_filter = re.compile("[A-Za-z0-9-\']")
+    regex_nonword_filter = re.compile("[A-Za-z0-9]")
 
     def signal_handler(signal, frame):
         import signal
-        """pause on ctrl+c, rather than just stop loop"""
-
-        #def subsig(signal, frame):
-        #    """exit on ctrl c"""
-        #    import sys
-        #    sys.exit(0)
-        #
-        #signal.signal(signal.SIGINT, subsig)
-        
+        """pause on ctrl+c, rather than just stop loop"""       
         import sys
         from time import localtime, strftime
         time = strftime("%H:%M:%S", localtime())
@@ -282,9 +274,9 @@ def interrogator(path,
             list_of_matches = [post_process(m) for m in list_of_matches]
         else:
             list_of_matches = [w.lower() for w in list_of_matches]
-            # remove punct etc.
+            # remove nonwords, strip . to normalise "dr."
             if translated_option != 'o' and translated_option != 'u':
-                list_of_matches = [w for w in list_of_matches if re.search(regex_nonword_filter, w)]
+                list_of_matches = [w.lstrip('.').rstrip('.') for w in list_of_matches if re.match(regex_nonword_filter, w)]
         
         list_of_matches.sort()
         
@@ -567,7 +559,7 @@ def interrogator(path,
         soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
         for token in soup:
             word = token.lemma.text
-            if re.search(query, word):
+            if re.match(query, word):
                 result.append(word)
         soup.decompose()
         soup = None
@@ -589,7 +581,7 @@ def interrogator(path,
                 regex = re.compile(r'.*')
             else:
                 regex = re.compile(query)
-            if re.search(regex, word):
+            if re.match(regex, word):
                 if lemmatise:
                     word = token.lemma.text
                     if 'just_content_words' in kwargs:
