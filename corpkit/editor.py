@@ -136,8 +136,7 @@ def editor(dataframe1,
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
-
-
+        totals = False
         # delete under threshold
         if just_totals:
             if using_totals:
@@ -162,15 +161,19 @@ def editor(dataframe1,
             denom = list(df2)
         if single_totals:
             if operation == '%':
+                totals = df.sum() * 100.0 / float(df.sum().sum())
                 df = df * 100.0
                 df = df.div(denom, axis = 0)
+                
             elif operation == '+':
                 df = df.add(denom, axis = 0)
             elif operation == '-':
                 df = df.sub(denom, axis = 0)
             elif operation == '*':
+                totals = df.sum() * float(df.sum().sum())
                 df = df.mul(denom, axis = 0)
             elif operation == '/':
+                totals = df.sum() / float(df.sum().sum())
                 df = df.div(denom, axis = 0)
             elif operation == 'd':
                 #df.ix['Combined total'] = df.sum()
@@ -203,34 +206,23 @@ def editor(dataframe1,
                 norm_in_ref = tot_in_ref.div(df.sum().sum())
                 df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
                 df = df.replace(float(-100.00), np.nan)
-                #norm_in_ref = (tot_in_ref * 100.0) / df.sum().sum()
-                #print norm_in_target, norm_in_ref
-
-                #tot_in_ref = tot_in_ref * 100.0
-                #norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0).sum
-                
-                # do the maths
-                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
-
-                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
-
-
-                #tot_in_ref = df.sum() * 100.0
-                #norm_in_ref = tot_in_ref.div(tot_in_ref.sum(), axis = 0)
-                # do the maths
-                #df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
-
-
-
 
             elif operation == 'a':
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
                 df = df.sum(axis = 1) / df2
-            return df
+            return df, totals
 
         elif not single_totals:
             if not operation.startswith('a'):
+                # generate totals
+                if operation == '%':
+                    totals = df.sum() * 100.0 / float(df2.sum().sum())
+                if operation == '*':
+                    totals = df.sum() * float(df2.sum().sum())
+                if operation == '/':
+                    totals = df.sum() / float(df2.sum().sum())
+
                 for index, entry in enumerate(list(df.columns)):
                     #p.animate(index)
                     if operation == '%':
@@ -267,7 +259,7 @@ def editor(dataframe1,
             #p.animate(len(list(df.columns)))
             #if have_ipython:
                 #clear_output()
-        return df
+        return df, totals
 
     def parse_input(df, input):
         """turn whatever has been passed in into list of words that can 
@@ -914,16 +906,6 @@ def editor(dataframe1,
                 just_one_total_number = True
                 df2 = df2.sum()
 
-    # generate '%' totals here ...
-    if using_totals:
-        if operation == '%':
-            tot1 = df.T.sum()
-            if single_totals:
-                tot2 = df2
-            else:
-                tot2 = df2.T.sum()
-            total = tot1 * 100.0 / tot2
-
     # combine lists
     if using_totals or outputmode:
         if not operation.startswith('k'):
@@ -942,7 +924,7 @@ def editor(dataframe1,
                     the_threshold = set_threshold(df2, threshold, prinf = print_info)
             if operation == 'd':
                 the_threshold = set_threshold(df2, threshold, prinf = print_info) 
-            df = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
+            df, tots = combiney(df, df2, operation = operation, threshold = the_threshold, prinf = print_info)
     
     # if doing keywording...
     if operation.startswith('k'):
@@ -1010,6 +992,11 @@ def editor(dataframe1,
     else:
         # might be wrong if using division or something...
         total = df.T.sum()
+
+    if not type(tots) == pandas.core.frame.DataFrame and not type(tots) == pandas.core.series.Series:
+        total = df.sum(axis = 1)
+    else:
+        total = tots
 
     if type(df) == pandas.core.frame.DataFrame:
         datatype = df.ix[0].dtype
