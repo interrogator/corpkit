@@ -164,6 +164,8 @@ def interrogator(path,
             spelling = 'UK'
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
+    if hasattr(function_filter, '__iter__'):
+        is_multiquery = True
 
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
@@ -279,7 +281,6 @@ def interrogator(path,
         if post_process is not False:
             list_of_matches = [post_process(m) for m in list_of_matches]
         else:
-            # remove commas for pandas csv tokeniser, which i should probably remove soon.
             list_of_matches = [w.lower() for w in list_of_matches]
             # remove punct etc.
             if translated_option != 'o' and translated_option != 'u':
