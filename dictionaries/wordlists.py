@@ -115,7 +115,7 @@ def closed_class_wordlists():
                 u"its",
                 u"last",
                 u"least",
-                u"little",
+                #u"little",
                 u"many",
                 u"more",
                 u"most",
@@ -123,7 +123,7 @@ def closed_class_wordlists():
                 u"muchee",
                 u"my",
                 u"neither",
-                u"next",
+                #u"next",
                 u"nil",
                 u"no",
                 u"none",
@@ -133,7 +133,7 @@ def closed_class_wordlists():
                 u"owne",
                 u"plenty",
                 u"quodque",
-                u"said",
+                #u"said",
                 u"several",
                 u"some",
                 u"such",
@@ -279,20 +279,82 @@ def closed_class_wordlists():
         u"dare", 
         u"shalt"]
 
-    titlewords = ['admiral', 'archbishop', 'alan', 'merrill', 'sarah', 
-              'queen', 'king', 'sen', 'chancellor', 'prime minister', 
-              'cardinal', 'bishop', 'father', 'hon', 'rev', 'reverend', 
-              'pope', 'sir', 'doctor', 'professor', 'president', 
-              'senator', 'congressman', 'congresswoman', 'mr', 'ms', 
-              'mrs', 'miss', 'dr', 'bill', 'hillary', 'hillary rodham', 
-              'saddam', 'osama', 'ayatollah', 'george', 'george w', 
-              'mitt', 'malcolm', 'barack', 'ronald', 'john', 'john f', 
-              'william', 'al', 'bob']
+    conjunctions = [u"though",
+                u"although",
+                u"even though",
+                u"while",
+                u"if",
+                u"only if",
+                u"unless",
+                u"until",
+                u"provided that",
+                u"assuming that",
+                u"even if",
+                u"in case",
+                u"lest",
+                u"than",
+                u"rather than",
+                u"whether",
+                u"as much as",
+                u"whereas",
+                u"after",
+                u"as long as",
+                u"as soon as",
+                u"before",
+                u"by the time",
+                u"now that",
+                u"once",
+                u"since",
+                u"till",
+                u"until",
+                u"when",
+                u"whenever",
+                u"while",
+                u"because",
+                u"since",
+                u"so that",
+                u"why",
+                u"that",
+                u"what",
+                u"whatever",
+                u"which",
+                u"whichever",
+                u"who",
+                u"whoever",
+                u"whom",
+                u"whomever",
+                u"whose",
+                u"how",
+                u"as though",
+                u"as if",
+                u"where",
+                u"wherever",
+                u"for",
+                u"and",
+                u"nor",
+                u"but",
+                u"or",
+                u"yet",
+                u"so",
+                u"however"]
+
+
+    titlewords = [u'admiral', u'archbishop', u'alan', u'merrill', u'sarah', 
+              'queen', u'king', u'sen', u'chancellor', u'prime minister', 
+              'cardinal', u'bishop', u'father', u'hon', u'rev', u'reverend', 
+              'pope', u'sir', u'doctor', u'professor', u'president', 
+              'senator', u'congressman', u'congresswoman', u'mr', u'ms', 
+              'mrs', u'miss', u'dr', u'bill', u'hillary', u'hillary rodham', 
+              'saddam', u'osama', u'ayatollah', u'george', u'george w', 
+              'mitt', u'malcolm', u'barack', u'ronald', u'john', u'john f', 
+              'william', u'al', u'bob']
+
+    other = ['not']
 
     #all_lists = [pronouns, articles, determiners, prepositions, connectors, modals]
-    closedclass = sorted(list(set(pronouns + articles + determiners + prepositions + connectors + modals)))
-    outputnames = collections.namedtuple('wordlists', ['pronouns', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass', 'titles'])
-    output = outputnames(pronouns, articles, determiners, prepositions, connectors, modals, closedclass, titlewords)
+    closedclass = sorted(list(set(pronouns + articles + conjunctions + determiners + prepositions + connectors + modals + other)))
+    outputnames = collections.namedtuple('wordlists', ['pronouns', 'conjunctions', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass', 'titles'])
+    output = outputnames(pronouns, conjunctions, articles, determiners, prepositions, connectors, modals, closedclass, titlewords)
     return output
 
 wordlists = closed_class_wordlists()
