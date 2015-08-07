@@ -952,6 +952,7 @@ def pmultiquery(path,
     sort_by = 'total', 
     quicksave = False,
     num_proc = 'default', 
+    function_filter = False,
     **kwargs):
     """Parallel process multiple queries or corpora.
 
@@ -984,27 +985,24 @@ def pmultiquery(path,
 
         the idea, more or less, is to """
         if num_queries <= num_cores:
-            print 'a'
             return num_queries
         if num_queries > num_cores:
             if (num_queries / num_cores) == num_cores:
-                print 'b'
                 return int(num_cores)
             if num_queries % num_cores == 0:
-                print 'c'
                 return max([int(num_queries / n) for n in range(2, num_cores) if int(num_queries / n) <= num_cores])        
             else:
                 import math
                 if (float(math.sqrt(num_queries))).is_integer():
                     square_root = math.sqrt(num_queries)
                     if square_root <= num_queries / num_cores: 
-                        print 'd'
                         return int(square_root)    
-        print 'e'
         return num_queries / ((num_queries / num_cores) + 1)
 
     # are we processing multiple queries or corpora?
     # find out optimal number of cores to use.
+    multiple_option = False
+    multiple_corpora = False
 
     if type(path) != str:
         multiple_corpora = True
@@ -1012,6 +1010,9 @@ def pmultiquery(path,
     elif type(query) != str:
         multiple_corpora = False
         num_cores = best_num_parallel(num_cores, len(query))
+    elif type(function_filter) != str:
+        multiple_option = True
+        num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
 
     if num_proc != 'default':
         num_cores = num_proc
@@ -1032,7 +1033,7 @@ def pmultiquery(path,
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
     ds = []
-    if multiple_corpora:
+    if multiple_corpora and not multiple_option:
         path = sorted(path)
         for index, p in enumerate(path):
             name = os.path.basename(p)
@@ -1042,7 +1043,7 @@ def pmultiquery(path,
             a_dict['outname'] = name
             a_dict['printstatus'] = False
             ds.append(a_dict)
-    else:
+    elif not multiple_corpora and not multiple_option:
         import collections
         for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
@@ -1051,17 +1052,32 @@ def pmultiquery(path,
             a_dict['outname'] = name
             a_dict['printstatus'] = False
             ds.append(a_dict)
+    elif multiple_option:
+        import collections
+        for index, (name, q) in enumerate(function_filter.items()):
+            a_dict = dict(d)
+            a_dict['path'] = path
+            a_dict['query'] = query
+            a_dict['outname'] = name
+            a_dict['function_filter'] = q
+            a_dict['printstatus'] = False
+            ds.append(a_dict)
 
     time = strftime("%H:%M:%S", localtime())
-    if multiple_corpora:
+    if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations:\n              %s" \
            "\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, "\n              ".join(path), query) )
 
-    else:
+    elif not multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n          Queries: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, path, "', '".join(query.values())) )
+
+    elif multiple_option:
+        print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
+           "\n          Query: '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, num_cores, path, query) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
