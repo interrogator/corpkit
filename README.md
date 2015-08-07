@@ -1,7 +1,6 @@
 ## *corpkit*: a Python-based toolkit for working with parsed linguistic corpora
 
-[![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.19221.svg)](http://dx.doi.org/10.5281/zenodo.19221) [![PyPI](https://img.shields.io/pypi/v/nine.svg)](https://pypi.python.org/pypi/corpkit)
-
+[![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.19221.svg)](http://dx.doi.org/10.5281/zenodo.19221) 
 
 ### Daniel McDonald
 
