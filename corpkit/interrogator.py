@@ -148,7 +148,9 @@ def interrogator(path,
     except ImportError:
         pass
 
-    from corpkit.tests import check_pytex
+
+
+    from corpkit.tests import check_pytex, check_t_kinter
     from corpkit.progressbar import ProgressBar
     from corpkit.other import tregex_engine
     import dictionaries
@@ -156,6 +158,9 @@ def interrogator(path,
                                               usa_convert, 
                                               taglemma)
 
+    tk = check_t_kinter()
+    if tk:
+        from corpkit.interface import GuiProgressBar
     # determine if actually a multiquery
     is_multiquery = False
     if hasattr(path, '__iter__'):
@@ -1195,11 +1200,19 @@ def interrogator(path,
         total_files = len([item for sublist in all_files for item in sublist[1]])
         sorted_dirs = all_files
         c = 0
-        p = ProgressBar(total_files)
+        
+        if tk:
+            gui_prog_bar = GuiProgressBar(total_files)
+        else:
+            p = ProgressBar(total_files)
+
     
     # if tregex, make progress bar for each dir
     else:
-        p = ProgressBar(len(sorted_dirs))
+        if tk:
+            gui_prog_bar = GuiProgressBar(len(sorted_dirs))
+        else:
+            p = ProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     subcorpus_names = []
@@ -1254,13 +1267,17 @@ def interrogator(path,
     if printstatus:
         print ("\n%s: Beginning corpus interrogation: %s" \
            "\n          Query: '%s'\n          %s" \
-           "\n          Interrogating corpus ... \n" % (time, path, qtext, optiontext) )
+           "\n          Interrogating corpus ... \n" % (time, os.path.basename(path), qtext, optiontext) )
 
     for index, d in enumerate(sorted_dirs):
         if not dependency and not plaintext:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
-            p.animate(index)
+            if tk:
+                gui_prog_bar.animate(index)
+            else:
+                p.animate(index)
+
     
             # get path to corpus/subcorpus
             if len(sorted_dirs) == 1:
@@ -1317,8 +1334,11 @@ def interrogator(path,
             result = []
             skipped_sents = 0
             for f in fileset:
-                # pass the x/y argument for more updates
-                p.animate(c, str(c) + '/' + str(total_files))
+                # pass the x/y argument for more updates  
+                if tk:
+                    gui_prog_bar.animate(c, str(c) + '/' + str(total_files))
+                else:
+                    p.animate(c, str(c) + '/' + str(total_files))
                 c += 1
                 if one_big_corpus:
                     filepath = os.path.join(path, f)
@@ -1379,11 +1399,18 @@ def interrogator(path,
             dicts.append(Counter(processed_result))
 
     if not dependency and not plaintext:
-        p.animate(len(sorted_dirs))
+        if tk:
+            gui_prog_bar.animate(len(sorted_dirs))
+        else:
+            p.animate(len(sorted_dirs))
     else:
         # weird float div by 0 zero error here for plaintext
         try:
-            p.animate(total_files)
+            
+            if tk:
+                gui_prog_bar.animate(len(sorted_dirs))
+            else:
+                p.animate(total_files)
         except:
             pass
 
