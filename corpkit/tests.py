@@ -11,6 +11,19 @@ def check_pytex():
     else:
         return False
 
+def check_t_kinter():
+    """checks for tkinter i hope"""
+    import inspect
+    thestack = []
+    for bit in inspect.stack():
+        for b in bit:
+            thestack.append(str(b))
+    as_string = ' '.join(thestack)
+    if 'Tkinter' in as_string:
+        return True
+    else:
+        return False
+
 def check_spider():
     """checks for spyder, i hope"""
     import inspect
