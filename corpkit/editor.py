@@ -907,6 +907,9 @@ def editor(dataframe1,
                 df2 = df2.sum()
 
     # combine lists
+
+    tots = df.sum(axis = 1)
+
     if using_totals or outputmode:
         if not operation.startswith('k'):
             the_threshold = 0
@@ -993,7 +996,7 @@ def editor(dataframe1,
         # might be wrong if using division or something...
         total = df.T.sum()
 
-    if not type(tots) == pandas.core.frame.DataFrame and not type(tots) == pandas.core.series.Series:
+    if type(tots) != pandas.core.frame.DataFrame and type(tots) != pandas.core.series.Series:
         total = df.sum(axis = 1)
     else:
         total = tots
