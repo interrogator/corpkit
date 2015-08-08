@@ -225,7 +225,7 @@ def demo():
         fontLabel["font"] = ("arial", var.get())
     
     root = Tk()
-    root.title("corpkit gui")
+    root.title("corpkit")
     note = Notebook(root, width= 1600, height =800, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
@@ -235,7 +235,6 @@ def demo():
     tab5 = note.add_tab(text = "Other")                                                 #Create a tab with the text "Tab Five"
     Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
     
-
     c = 0
 
     # corpus path setter
@@ -344,7 +343,6 @@ def demo():
         all_interrogations[the_name] = r
         refresh()  
 
-
     dataframe1s = OptionMenu(tab2, data1_pick, *tuple([i for i in all_interrogations.keys()]))
     dataframe1s.grid()  
 
@@ -363,20 +361,28 @@ def demo():
     ops.grid()
 
     data2_pick = StringVar(root)
-    data2_pick.set('Pick something to combine with.')
+    data2_pick.set('Pick something to combine with')
     dataframe2s = OptionMenu(tab2, data2_pick, *tuple([i for i in all_interrogations.keys()]))
     dataframe2s.grid()
 
     df2branch = IntVar()
     Checkbutton(tab2, text="Use results branch of df2?", variable=df2branch, onvalue = 'results', offvalue = 'totals').grid()
 
+    all_edited_results = OrderedDict()
+    all_edited_results['None'] = 'sorry'
+    
     def do_editing():
+
         from corpkit import editor
+        try:
+            del all_edited_results['None']
+        except KeyError:
+            pass
         operation_text = (ops.var).get()
         if operation_text == 'None' or operation_text == 'Select an operation':
             operation_text = None
         data2 = data2_pick.get()
-        if data2_pick == 'None' or data2_pick == 'Pick something to combine with.':
+        if data2_pick == 'None' or data2_pick == 'Pick something to combine with':
             data2 = False
         if data2:
             if df2branch == 'results':
@@ -388,13 +394,31 @@ def demo():
                          'dataframe2': data2 
                          }
         edited = editor(editor_args['dataframe1'].results, editor_args['operation'])
-        print edited.results.head(5).T.head(5).T.to_string()
+        c = 0
+        the_name = 'edited-%s' % str(c).zfill(2)
+        while the_name in all_edited_results.keys():
+            c += 1
+            the_name = 'edited-%s' % str(c).zfill(2)
+
+        all_edited_results[the_name] = edited
+        unedited_df_str.set(all_interrogations[data1_pick.get()].results.T.head(10).T.to_string)
+        edited_df_str.set(edited.results.T.head(10).T.to_string)
 
     spl = MyOptionMenu(tab1, 'Convert spelling', 'Off','UK','US')
     spl.grid()
 
-    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid()
+    unedited_df_str = StringVar()
+    unedited_df_str.set("xx")
+    edited_df_str = StringVar()
+    edited_df_str.set("xx")
+
     Button(tab2, text = 'Edit', command = lambda: do_editing()).grid()
+    unedited_result = Label(tab2, height=20, width=80, textvariable=unedited_df_str, justify = LEFT, font=("Courier New", 12)).grid(column = 1)
+    edited_result = Label(tab2, height=20, width=80, textvariable=edited_df_str, justify = LEFT, font=("Courier New", 12)).grid(column = 1)
+
+    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid()
+    
+    
     interrogation_name = StringVar()
     interrogation_name.set('waiting')
     Label(tab1, textvariable = interrogation_name.get()).grid()
@@ -411,11 +435,6 @@ def demo():
     #except:
     #    df_var.set(all_interrogations[-1])
     #Label(tab2, textvariable = df_var).grid()
-    Button(tab3, text = 'Destroy Tab Four!', command = lambda:note.destroy_tab(tab4)).grid()
-    Label(tab3, text = "Destroying a tab will remove it,\nand competely destoy all child widgets.\nOnce you destroy a tab, you have to recreate it\ncompletely in order to get it back.", font = ("Comic Sans MS", 12, "italic")).grid()
-    Label(tab4, text = 'Tab 4').grid()
-    Button(tab5, text = 'Tab One', command = lambda:note.focus_on(tab1)).grid(pady = 3)
-    Button(tab5, text = 'EXIT', width = 23, command = root.destroy).grid()
     note.focus_on(tab1)
     root.mainloop()
 
