@@ -830,6 +830,7 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
     """load every saved interrogation in data_dir into a dict"""
     import os
     import time
+    from corpkit.other import load_result
     from time import localtime, strftime
     r = {}
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
@@ -837,10 +838,9 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
         raise ValueError('No results found in %s' % datadir)
     for finding in fs:
         try:
-            r[os.path.splitext(finding)[0]] = load_result(finding)
+            r[os.path.splitext(finding)[0]] = load_result(finding, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
-        
         except:
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
