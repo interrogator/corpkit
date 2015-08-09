@@ -43,7 +43,7 @@ def plotter(title,
 
     import numpy
     from time import localtime, strftime
-    from corpkit.tests import check_pytex, check_spider
+    from corpkit.tests import check_pytex, check_spider, check_t_kinter
     import signal
 
     if interactive:
@@ -51,6 +51,8 @@ def plotter(title,
         import collections
         from mpld3 import plugins, utils
         from corpkit.plugins import InteractiveLegendPlugin, HighlightLines
+
+    tk = check_t_kinter()
 
     def signal_handler(signal, frame):
         import signal
@@ -938,10 +940,10 @@ def plotter(title,
         else:
             raise ValueError("Error making %s." % savename)
 
-    if not interactive and not running_python_tex and not running_spider:
+    if not interactive and not running_python_tex and not running_spider and not tk:
         plt.show()
     else:
-        if running_spider:
+        if running_spider or tk:
             return plt
 
     if interactive:
