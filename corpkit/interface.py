@@ -318,10 +318,10 @@ def corpkit_gui():
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
         if transdict[datatype_chosen_option.get()] != 'c':
             longest = max([len(str(i)) for i in list(r.results.columns)]) 
-            update_spreadsheet(interro_results, r.results, height = 260, width = longest * 5)
+            update_spreadsheet(interro_results, r.results, height = 260, width = 50)
         else:
             longest = 10
-        update_spreadsheet(interro_totals, totals_as_df, height = 10, width = longest * 5)
+        update_spreadsheet(interro_totals, totals_as_df, height = 10, width = 50)
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -515,13 +515,13 @@ def corpkit_gui():
         all_interrogations[the_name] = r
         # store edited interrogation
 
-        longest = max([len(str(i)) for i in list(the_data.results.columns)])
-        update_spreadsheet(o_editor_results, the_data.results, width = longest * 5)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = longest * 5)
+        #longest = max([len(str(i)) for i in list(the_data.results.columns)])
+        update_spreadsheet(o_editor_results, the_data.results, width = 50)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 50)
 
-        longest = max([len(str(i)) for i in list(r.results.columns)])
-        update_spreadsheet(n_editor_results, r.results, width = longest * 5)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, width = longest * 5)
+        #longest = max([len(str(i)) for i in list(r.results.columns)])
+        update_spreadsheet(n_editor_results, r.results, width = 50)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, width = 50)
         all_edited_results[the_name] = r
         refresh()
 
@@ -625,13 +625,13 @@ def corpkit_gui():
 
         the_kind = (chart_kind.var).get()
         if the_kind == 'Type of chart':
-            the_kind = False
+            the_kind = 'line'
         # plotter options
         d = {'num_to_plot': num,
              'kind': the_kind}
         f = plotter(plotnametext.get(), what_to_plot, **d)
         # a Tkinter.DrawingArea
-        canvas = FigureCanvasTkAgg(f, tab3)
+        canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
         canvas.get_tk_widget().grid(column = 1, row = 0, rowspan = 5)        
 
