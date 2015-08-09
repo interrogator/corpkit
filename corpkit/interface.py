@@ -216,10 +216,13 @@ class Notebook(Frame):
             self.iteratedTabs += 1                                                         #Add one to the loop count
 
 def corpkit_gui():
-    import Tkinter, Tkconstants, tkFileDialog
+    import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
     from Tkinter import StringVar, Listbox, Text
     import sys
     from tkintertable import TableCanvas, TableModel
+    #from dictionaries.process_types import process_types
+    #from dictionaries.roles import roles
+    #from dictionaries.wordlists import wordlists
     #from corpkit import interrogator, editor, plotter
 
     def adjustCanvas(someVariable = None):
@@ -243,7 +246,9 @@ def corpkit_gui():
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
         # Reset data1_pick and delete all old options
-        data1_pick.set(all_interrogations.keys()[-1])
+        # get the latest only after first interrogation
+        if len(all_interrogations.keys()) < 3:
+            data1_pick.set(all_interrogations.keys()[-1])
         #data2_pick.set(all_interrogations.keys()[-1])
         dataframe1s['menu'].delete(0, 'end')
         dataframe2s['menu'].delete(0, 'end')
@@ -251,7 +256,7 @@ def corpkit_gui():
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
 
-        new_choices = ['Select an interrogation']
+        new_choices = []
         for interro in all_interrogations.keys():
             new_choices.append(interro)
         new_choices = tuple(new_choices)
@@ -260,16 +265,16 @@ def corpkit_gui():
             dataframe2s['menu'].add_command(label=choice, command=Tkinter._setit(data2_pick, choice))
             every_interrogation['menu'].add_command(label=choice, command=Tkinter._setit(data_to_plot, choice))
             #every_interro_listbox.delete(0, END)
-            if choice != 'Select an interrogation' and choice != 'None':
+            if choice != 'None':
                 every_interro_listbox.insert(END, choice)
 
     transdict = {
             'Get distance from root for regex match': 'a',
             'Get tag and word of match': 'b',
             'Count matches': 'c',
-            'Get dependent of regular expression match and the r/ship': 'd',
-            'Get dependency function of regular expression match': 'f',
-            'Get governor of regular expression match and the r/ship': 'g',
+            'Get "role:dependent", matching governor': 'd',
+            'Get semantic role of match': 'f',
+            'Get "role:governor", matching dependent': 'g',
             'Get lemmata via dependencies': 'l',
             'Get tokens by dependency role': 'm',
             'Get dependency index of regular expression match': 'n',
@@ -299,7 +304,7 @@ def corpkit_gui():
                           **interrogator_args)
         # when not testing:
         #r = interrogator(fullpath.get(), chosen_option.get(), **interrogator_args)
-        if nametext.get() == 'interrogation name':
+        if nametext.get() == 'untitled' or nametext.get() == '':
             c = 0
             the_name = 'interrogation-%s' % str(c).zfill(2)
             while the_name in all_interrogations.keys():
@@ -312,17 +317,16 @@ def corpkit_gui():
         except KeyError:
             pass
         all_interrogations[the_name] = r
-        refresh()
         import pandas
 
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
         if transdict[datatype_chosen_option.get()] != 'c':
             longest = max([len(str(i)) for i in list(r.results.columns)]) 
-            update_spreadsheet(interro_results, r.results, height = 260, width = 50)
+            update_spreadsheet(interro_results, r.results, height = 260, indexwidth = 40)
         else:
             longest = 10
-        update_spreadsheet(interro_totals, totals_as_df, height = 10, width = 50)
-
+        update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 40)
+        refresh()
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
         def __init__(self, tab1, status, *options):
@@ -346,6 +350,8 @@ def corpkit_gui():
     def getdir():
         import os
         fp = tkFileDialog.askdirectory()
+        if not fp:
+            return
         fullpath.set(fp)
         basepath.set('Corpus: "%s"' % os.path.basename(fp))
         subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
@@ -353,16 +359,14 @@ def corpkit_gui():
             del subcorpora[k]
         subcorpora[fp] = subs
     
-    Button(tab1, textvariable = basepath, command = getdir).grid()
+    Label(tab1, text = 'Corpus directory: ').grid(row = 0, column = 0)
+    Button(tab1, textvariable = basepath, command = getdir).grid(row = 0, column = 1, sticky=E)
 
-
-    # not sure i need this ...
     def onselect(evt):
         w = evt.widget
         index = int(w.curselection()[0])
         value = w.get(index)
         datatype_chosen_option.set(value)
-
 
     def callback(*args):
         """if the drop down list for data type changes, fill options"""
@@ -371,9 +375,9 @@ def corpkit_gui():
                                  'Count matches', 
                                  'Get part-of-speech tag'],
                         'Dependencies':
-                                ['Get dependent of regular expression match and the r/ship',
-                                 'Get dependency function of regular expression match',
-                                 'Get governor of regular expression match and the r/ship',
+                                ['Get "role:dependent", matching governor',
+                                 'Get semantic role of match',
+                                 'Get "role:governor", matching dependent',
                                  'Get lemmata via dependencies',
                                  'Get tokens by dependency role',
                                  'Match tokens via dependencies',
@@ -386,15 +390,18 @@ def corpkit_gui():
         lst = option_dict[chosen]
         for e in lst:
             datatype_listbox.insert(END, e)
+        if chosen == 'Dependencies':
+            pick_dep_type.configure(state = NORMAL)
 
     datatype_picked = StringVar(root)
     datatype_picked.set('Dependencies')
+    Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0)
     pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Plaintext')))
-    pick_a_datatype.grid()
+    pick_a_datatype.grid(row = 1, column = 1, sticky=E)
     datatype_picked.trace("w", callback)
 
-    datatype_listbox = Listbox(tab1, selectmode = BROWSE)
-    datatype_listbox.grid()
+    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 40)
+    datatype_listbox.grid(row = 3, column = 0, columnspan = 2)
     datatype_chosen_option = StringVar()
     datatype_chosen_option.set('Get words')
     #datatype_chosen_option.set('w')
@@ -403,55 +410,94 @@ def corpkit_gui():
     datatype_picked.set('Trees')
     datatype_listbox.select_set(0)
 
+    def q_callback(*args):
+        if special_queries.get() == 'Custom':
+            q.configure(state=NORMAL)
 
     # query: should be drop down, with custom option ...
-    entrytext = StringVar()
-    entrytext.set('any')
-    Entry(tab1, textvariable = entrytext).grid()
+    queries = tuple(('Participants', 'Processes', 'Subjects', 'Custom'))
+    special_queries = StringVar(root)
+    special_queries.set('any')
+    Label(tab1, text = 'Preset query:').grid(row = 4, column = 0, sticky = W)
+    pick_a_query = OptionMenu(tab1, special_queries, *queries)
+    pick_a_query.grid(row = 4, column = 1, sticky=E)
+    special_queries.trace("w", q_callback)
 
-    # Interrogation name
-    nametext = StringVar()
-    nametext.set('interrogation name')
-    Entry(tab1, textvariable = nametext).grid()
+    entrytext = StringVar()
+    Label(tab1, text = 'Custom query:').grid(row = 5, column = 0, sticky = W)
+    entrytext.set('any')
+    q = Entry(tab1, textvariable = entrytext, width = 25, state = DISABLED)
+    q.grid(row = 5, column = 0, columnspan = 2, sticky = E)
 
     # boolean interrogation arguments
     lem = IntVar()
-    Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False).grid()
+    Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False).grid(column = 0, row = 6, sticky=W)
     phras = IntVar()
-    Checkbutton(tab1, text="Phrases", variable=phras, onvalue = True, offvalue = False).grid()
+    Checkbutton(tab1, text="Phrases (multiword results)", variable=phras, onvalue = True, offvalue = False).grid(column = 0, columnspan = 2, row = 6, sticky=E)
     tit_fil = IntVar()
-    Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid()
+    Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid(row = 7, column = 0, sticky=W)
 
-    spl = MyOptionMenu(tab1, 'Convert spelling', 'Off','UK','US')
-    spl.grid()
+    Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0)
+    spl = MyOptionMenu(tab1, 'Off','UK','US')
+    spl.grid(row = 8, column = 1)
 
-    # interrogate button
-    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid()
+    # dep type
+    dep_types = tuple(('Basic', 'Collapsed', 'Collapsed, CC-processed'))
+    kind_of_dep = StringVar(root)
+    kind_of_dep.set('Basic')
+    Label(tab1, text = 'Dependency type:').grid(row = 9, column = 0, sticky = W)
+    pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
+    pick_dep_type.config(state = DISABLED)
+    pick_dep_type.grid(row = 9, column = 1, sticky=E)
+    #kind_of_dep.trace("w", d_callback)
+
+    # Interrogation name
+    nametext = StringVar()
+    nametext.set('untitled')
+    Label(tab1, text = 'Interrogation name:').grid(row = 10, column = 0)
+    Entry(tab1, textvariable = nametext).grid(row = 10, column = 1)
+
+    def query_help():
+        tkMessageBox.showwarning('Not yet implemented', 'Coming soon ...')
+
+    # query help, interrogate button
+    Button(tab1, text = 'Query help', command = query_help).grid(row = 11, column = 0, sticky = W)
+    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 11, column = 1, sticky = E)
 
     # output
-    interro_results = Frame(tab1)
-    interro_results.grid(column = 1, row = 0, rowspan=3)
+    Label(tab1, text = 'Interrogation results:', font = ("Helvetica", 12, "bold")).grid(row = 0, column = 2, sticky = W, padx=20, pady=0)
+    interro_results = Frame(tab1, height = 28, width = 20, borderwidth = 2)
+    interro_results.grid(column = 2, row = 1, rowspan=7, padx=20, pady=5)
 
-    interro_totals = Frame(tab1, height = 1)
-    interro_totals.grid(column = 1, row = 4, rowspan=3)
+    Label(tab1, text = 'Interrogation totals:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 2, sticky = W, padx=20, pady=0)
+    interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
+    interro_totals.grid(column = 2, row = 8, rowspan=2, padx=20, pady=5)
 
     ##############    ##############     ##############     ##############     ############## 
     # EDITOR TAB #    # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB # 
     ##############    ##############     ##############     ##############     ############## 
 
-    def update_spreadsheet(frame_to_update, df_to_show, height = 140, width = 50):
+    def update_spreadsheet(frame_to_update, df_to_show, height = 140, width = False, indexwidth = 50):
         """refresh a spreadsheet in the editor window"""
         from collections import OrderedDict
         import pandas
         model = TableModel()
         as_int = pandas.DataFrame(df_to_show, dtype = object)
+        if width:
+            kwarg['width'] = width
+        else:
+            kwargs = {}
         raw_data = as_int.to_dict()
         raw_data = OrderedDict(sorted(raw_data.items(), key=lambda t: sum([i for i in t[1].values()]), reverse = True))
         #sorted_raw = OrderedDict{}
         #better = OrderedDict{}
         for name, val in raw_data.items():
             raw_data[name] = OrderedDict(sorted(val.items(), key=lambda t: t[0]))
-        table = TableCanvas(frame_to_update, model=model, showkeynamesinheader=True, height = height, rowheaderwidth=width)
+        table = TableCanvas(frame_to_update, model=model, 
+                            showkeynamesinheader=True, 
+                            height = height,
+                            rowheaderwidth=indexwidth,
+                            **kwargs)
         table.createTableFrame()
         model = table.model
         model.importDict(raw_data) #can import from a dictionary to populate model
@@ -505,7 +551,7 @@ def corpkit_gui():
         r = editor(data1, **editor_args)
         # name the edit
         c = 0
-        if edit_nametext.get() == 'edit name':
+        if edit_nametext.get() == 'untitled':
             the_name = 'edited-%s' % str(c).zfill(2)
             while the_name in all_edited_results.keys():
                 c += 1
@@ -516,76 +562,103 @@ def corpkit_gui():
         # store edited interrogation
 
         #longest = max([len(str(i)) for i in list(the_data.results.columns)])
-        update_spreadsheet(o_editor_results, the_data.results, width = 50)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 50)
+        update_spreadsheet(o_editor_results, the_data.results, height = 150, indexwidth = 50)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 50)
 
         #longest = max([len(str(i)) for i in list(r.results.columns)])
-        update_spreadsheet(n_editor_results, r.results, width = 50)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, width = 50)
+        update_spreadsheet(n_editor_results, r.results, indexwidth = 50, height = 150)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 50)
         all_edited_results[the_name] = r
         refresh()
 
 
+    def df_callback(*args):
+        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 150)
+        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10)
 
-
-    # Edit name
-    edit_nametext = StringVar()
-    edit_nametext.set('edit name')
-    Entry(tab2, textvariable = edit_nametext).grid()
-
-    # DF1 for editor
-    data1_pick = StringVar(root)
-    data1_pick.set("Select an interrogation")
     from collections import OrderedDict
     all_interrogations = OrderedDict()
     all_interrogations['None'] = 'sorry'
 
-    # DF1 options for editor
-    dataframe1s = OptionMenu(tab2, data1_pick, *tuple([i for i in all_interrogations.keys()]))
-    dataframe1s.grid()
+    tup = tuple([i for i in all_interrogations.keys()])
+    data1_pick = StringVar(root)
+    data1_pick.set(all_interrogations.keys()[0])
+    Label(tab2, text = 'To edit:').grid(row = 0, column = 0, sticky = W)
+    pick_df = OptionMenu(tab2, data1_pick, *tup)
+    pick_df.grid(row = 0, column = 1, sticky=E)
+    data1_pick.trace("w", df_callback)
 
-    # DF2 branch selection
-    df1branch = IntVar()
-    df1box = Checkbutton(tab2, text="Use results branch of df1?", variable=df1branch)
-    df1box.select()
-    df1box.grid()
+    # DF1 branch selection
+    df1branch = StringVar(root)
+    df1branch.set('results')
+    df1box = OptionMenu(tab2, 'results', 'totals')
+    #df1box.select()
+    df1box.grid(row = 0, column = 2)
+
+    def op_callback(*args):
+        if opp.get() != 'None':
+            ops.config(state = NORMAL)
 
     # operation for editor
+    opp = StringVar(root)
+    opp.set('None')
     operations = ('None', '%', '*', '/', '-', '+', 'a', 'd', 'k')
-    l =  ['Select an operation'] + [i for i in operations]
-    ops = MyOptionMenu(tab2, 'Select an operation', *operations)
-    ops.grid()
+    Label(tab2, text='Operation to perform').grid(column = 0)
+    ops = OptionMenu(tab2, 'None', *operations)
+    ops.config(state = DISABLED)
+    ops.grid(column = 1)
+    opp.trace("w", op_callback)
 
     # DF2 option for editor
+    tups = tuple(['Self'] + [i for i in all_interrogations.keys()])
     data2_pick = StringVar(root)
-    data2_pick.set('Pick something to combine with')
-    dataframe2s = OptionMenu(tab2, data2_pick, *tuple([i for i in all_interrogations.keys()]))
-    dataframe2s.grid()
+    data2_pick.set('Self')
+    Label(tab2, text = 'Denominator data:').grid(column = 0)
+    dataframe2s = OptionMenu(tab2, data2_pick, *tups)
+    dataframe2s.grid(column = 1)
 
-    # DF2 branch selection
-    df2branch = IntVar()
-    Checkbutton(tab2, text="Use results branch of df2?", variable=df2branch).grid()
+    # DF1 branch selection
+    df2branch = StringVar(root)
+    df2branch.set('totals')
+    df2box = OptionMenu(tab2, 'results', 'totals')
+    #df1box.select()
+    df1box.grid(row = 0, column = 2)
 
     spl_editor = MyOptionMenu(tab2, 'Convert spelling', 'Off','UK','US')
     spl_editor.grid()
 
-    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid()
+    # edit name
+    edit_nametext = StringVar()
+    edit_nametext.set('untitled')
+    Entry(tab2, textvariable = edit_nametext).grid(row = 14, column = 0, sticky = W)
+
+    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 14, column = 1, sticky = E)
     # storage of edited results
     all_edited_results = OrderedDict()
     all_edited_results['None'] = 'sorry'
 
     # output
-    o_editor_results = Frame(tab2)
-    o_editor_results.grid(column = 1, row = 0, rowspan=2)
+    Label(tab2, text = 'Results to edit:', 
+          font = ("Helvetica", 12, "bold")).grid(row = 0, 
+           column = 3, sticky = W, padx=20, pady=0)    
+    o_editor_results = Frame(tab2, height = 15, width = 20)
+    o_editor_results.grid(column = 3, row = 1, rowspan=5, padx=20, pady=5)
+    Label(tab2, text = 'Totals to edit:', 
+          font = ("Helvetica", 12, "bold")).grid(row = 6, 
+           column = 3, sticky = W, padx=20, pady=0)
+    o_editor_totals = Frame(tab2, height = 1, width = 20)
+    o_editor_totals.grid(column = 3, row = 7, rowspan=1, padx=20, pady=5)
+    Label(tab2, text = 'Edited results:', 
+          font = ("Helvetica", 12, "bold")).grid(row = 8, 
+           column = 3, sticky = W, padx=20, pady=0)        
+    n_editor_results = Frame(tab2, height = 15, width = 20)
+    n_editor_results.grid(column = 3, row = 9, rowspan=5, padx=20, pady=5)
+    Label(tab2, text = 'Edited totals:', 
+          font = ("Helvetica", 12, "bold")).grid(row = 15, 
+           column = 3, sticky = W, padx=20, pady=0)
+    n_editor_totals = Frame(tab2, height = 1, width = 20)
+    n_editor_totals.grid(column = 3, row = 16, rowspan=1, padx=20, pady=5)
 
-    o_editor_totals = Frame(tab2)
-    o_editor_totals.grid(column = 1, row = 2, rowspan=1)
-        
-    n_editor_results = Frame(tab2)
-    n_editor_results.grid(column = 1, row = 3, rowspan=2)
-
-    n_editor_totals = Frame(tab2)
-    n_editor_totals.grid(column = 1, row = 5, rowspan=1)
 
     interrogation_name = StringVar()
     interrogation_name.set('waiting')
@@ -765,8 +838,8 @@ def corpkit_gui():
         data_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
-    Button(tab5, textvariable = data_basepath, command = data_getdir).grid()
-    Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid()
+    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(sticky=E)
+    Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid(sticky=E)
 
     def save_one_or_more():
         from corpkit import save_result
