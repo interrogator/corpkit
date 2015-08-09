@@ -265,41 +265,43 @@ def plotter(title,
         pass
 
     # remove totals if there ... maybe redundant
-    try:
-        dataframe = dataframe.drop('Total', axis = 0)
-    except:
-        pass
-    # remove totals if there ... maybe redundant
-    try:
-        dataframe = dataframe.drop('Total', axis = 1)
-    except:
-        pass
+    if not was_series:
+        try:
+            dataframe = dataframe.drop('Total', axis = 0)
+        except:
+            pass
+        # remove totals if there ... maybe redundant
+        try:
+            dataframe = dataframe.drop('Total', axis = 1)
+        except:
+            pass
 
     # look at columns to see if all can be ints, in which case, set up figure
     # for depnumming
-    if indices == 'guess':
-        def isint(x):
-            try:
-                a = float(x)
-                b = int(a)
-            except ValueError:
-                return False
+    if not was_series:
+        if indices == 'guess':
+            def isint(x):
+                try:
+                    a = float(x)
+                    b = int(a)
+                except ValueError:
+                    return False
+                else:
+                    return a == b
+
+            if all([isint(x) is True for x in list(dataframe.columns)]):
+                indices = True
             else:
-                return a == b
+                indices = False
 
-        if all([isint(x) is True for x in list(dataframe.columns)]):
-            indices = True
-        else:
-            indices = False
-
-    # if depnumming, plot all, transpose, and rename axes
-    if indices is True:
-        num_to_plot = 'all'
-        dataframe = dataframe.T
-        if y_label is None:
-            y_label = 'Percentage of all matches'
-        if x_label is None:
-            x_label = 'Distance from root'
+        # if depnumming, plot all, transpose, and rename axes
+        if indices is True:
+            num_to_plot = 'all'
+            dataframe = dataframe.T
+            if y_label is None:
+                y_label = 'Percentage of all matches'
+            if x_label is None:
+                x_label = 'Distance from root'
 
     # set backend?
     output_formats = ['svgz', 'ps', 'emf', 'rgba', 'raw', 'pdf', 'svg', 'eps', 'png', 'pgf']
