@@ -612,7 +612,6 @@ def corpkit_gui():
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif branch_to_plot.get() == 0:
             what_to_plot = all_interrogations[data_to_plot.get()].totals
-        print what_to_plot
         # determine num to plot
         num = number_to_plot.get()
         try:
