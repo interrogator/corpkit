@@ -44,6 +44,180 @@
 
 # daniel mcdonald
 
+import Tkinter
+import sys,string
+
+class DbgText:
+    Dbgtopwin=None
+    Dbgwidget=None
+    DbgRoot=None
+    
+    def _kill_topwin(self):
+        DbgText.Dbgwidget=None
+        if DbgText.Dbgtopwin != None:
+            DbgText.Dbgtopwin.destroy()
+        DbgText.Dbgtopwin=None
+       
+    def __init__(self,kind=''):
+        self.kind=kind
+        self.window=None
+        self.widget=Tkinter.Label()
+        self.called=0
+        self.hide=0
+        self.buffer=''
+
+    def __del__(self):
+        "On deletion, wait for user to see the output"
+        #if DbgText.Dbgtopwin != None:
+            #See()
+        self._kill_topwin()
+    
+    def write(self,charstr):
+        "write text to buffer or window"
+        if self.hide:
+            self.buffer.append(charstr)
+        else:
+            if self.window == None:
+                if DbgText.Dbgtopwin == None:
+                    DbgText.Dbgtopwin=Tkinter.Tk()
+                    DbgText.Dbgtopwin.protocol('WM_DELETE_WINDOW',Dbg_kill_topwin)
+                    DbgText.Dbgwidget=Tkinter.Text(DbgText.Dbgtopwin)
+                    DbgText.Dbgwidget.pack(expand=1)
+                top=DbgText.Dbgtopwin
+                wid=DbgText.Dbgwidget
+            else:
+                if self.widget == None:
+                    self.widget=Tkinter.Text(self.window)
+                top=self.window
+                wid=self.widget
+            if self.kind != '':
+                ep=wid.index('end')
+                sp=string.split(ep,'.')
+                # determine length of 'previous' line
+                prevl=int(sp[0])
+                tx='\n'
+                if prevl:
+                    pl='%d.0' % (prevl-1)
+                    tx=wid.get(pl,ep)
+                # if this is start of a new line
+                if tx[0] == '\n':
+                    wid.insert('end',self.kind)
+            wid.insert('end',charstr)     
+        self.called=1
+        top.update()
+
+def Dbg_kill_topwin():
+    f=DbgText()
+    f._kill_topwin()
+    
+def Take_stdout():
+    "DIsplay stdout in text widget"
+    if not isinstance(sys.stdout,DbgText):
+        f=DbgText()
+        f.prev=sys.stdout
+        sys.stdout=f
+
+def Take_stderr():
+    "DIsplay stderr in text widget"
+    if not isinstance(sys.stderr,DbgText):
+        f=DbgText('*')
+        f.prev=sys.stderr
+        sys.stderr=f
+    
+def Restore_stdout():
+    f=sys.stdout
+    if isinstance(f,DbgText):
+        sys.stdout=f.prev
+        del f
+
+def Restore_stderr():
+    f=sys.stderr
+    if isinstance(f,DbgText):
+        sys.stderr=f.prev
+        del f
+
+def Define_Root():
+    root=Tkinter.Tk()
+    root.withdraw()
+    DbgText.DbgRoot=root
+
+def See():
+    db=DbgText()
+    if db.Dbgtopwin != None:
+        db.Dbgtopwin.mainloop() # loop for me to see
+
+def Take_all():
+    "send stderr/stdout to Tkinter text window/widget"
+    Take_stdout()
+    Take_stderr()
+
+def Restore_all():
+    "restore stderr/stdout"
+    Restore_stdout()
+    Restore_stderr()
+
+class ConsoleText(Tkinter.Text):
+    '''A Tkinter Text widget that provides a scrolling display of console
+    stderr and stdout.'''
+
+    class IORedirector(object):
+        '''A general class for redirecting I/O to this Text widget.'''
+        def __init__(self,text_area):
+            self.text_area = text_area
+
+    class StdoutRedirector(IORedirector):
+        '''A class for redirecting stdout to this Text widget.'''
+        def write(self,str):
+            self.text_area.write(str,False)
+
+    class StderrRedirector(IORedirector):
+        '''A class for redirecting stderr to this Text widget.'''
+        def write(self,str):
+            self.text_area.write(str,True)
+
+    def __init__(self, master=None, cnf={}, **kw):
+        '''See the __init__ for Tkinter.Text for most of this stuff.'''
+
+        Tkinter.Text.__init__(self, master, cnf, **kw)
+
+        self.started = False
+        self.write_lock = threading.Lock()
+
+        self.tag_configure('STDOUT',background='white',foreground='black')
+        self.tag_configure('STDERR',background='white',foreground='red')
+
+        self.config(state=Tkinter.DISABLED)
+
+    def start(self):
+        if self.started:
+            return
+        self.started = True
+        self.original_stdout = sys.stdout
+        self.original_stderr = sys.stderr
+        stdout_redirector = ConsoleText.StdoutRedirector(self)
+        stderr_redirector = ConsoleText.StderrRedirector(self)
+        sys.stdout = stdout_redirector
+        sys.stderr = stderr_redirector
+
+    def stop(self):
+
+        if not self.started:
+            return
+
+        self.started = False
+
+        sys.stdout = self.original_stdout
+        sys.stderr = self.original_stderr
+
+    def write(self,val,is_stderr=False):
+
+        self.write_lock.acquire()
+        self.config(state=TKinter.NORMAL)
+        self.insert('end',val,'STDERR' if is_stderr else 'STDOUT')
+        self.see('end')
+        self.config(state=TKinter.DISABLED)
+        self.write_lock.release()
+
 class GuiProgressBar:
     from time import localtime, strftime
     try:
@@ -236,7 +410,7 @@ def corpkit_gui():
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
     tab4 = note.add_tab(text = "Concordance")                                                 #Create a tab with the text "Tab Four"
-    tab5 = note.add_tab(text = "Manageme")                                                 #Create a tab with the text "Tab Five"
+    tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
     #Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
     
     ###################     ###################     ###################     ###################
@@ -296,6 +470,8 @@ def corpkit_gui():
         """performs an interrogation"""
 
         from corpkit import interrogator
+        #x.start()
+        Take_stdout()
         #root.TEXT_INFO = Label(tab1, height=20, width=80, text="", justify = LEFT, font=("Courier New", 12))
         #root.TEXT_INFO.grid(column=1, row = 1)
         conv = (spl.var).get()
@@ -330,11 +506,14 @@ def corpkit_gui():
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
         if transdict[datatype_chosen_option.get()] != 'c':
             longest = max([len(str(i)) for i in list(r.results.columns)]) 
-            update_spreadsheet(interro_results, r.results, height = 260, indexwidth = 40)
+            update_spreadsheet(interro_results, r.results, height = 260, indexwidth = 70)
         else:
             longest = 10
-        update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 40)
+        update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70)
         refresh()
+        Restore_stdout()
+        Dbg_kill_topwin()
+
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
         def __init__(self, tab1, status, *options):
@@ -481,11 +660,100 @@ def corpkit_gui():
     interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
     interro_totals.grid(column = 2, row = 8, rowspan=2, padx=20, pady=5)
 
+    #x = ConsoleText(tab1, width = 20)
+    #x.grid(row = 15, column = 0)
+
+
     ##############    ##############     ##############     ##############     ############## 
     # EDITOR TAB #    # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB # 
     ##############    ##############     ##############     ##############     ############## 
 
-    def update_spreadsheet(frame_to_update, df_to_show, height = 140, width = False, indexwidth = 50):
+    # a dict of the editor frame names and models
+    editor_tables = {}
+
+    def exchange_interro_branch(namedtupname, newdata, branch = 'results'):
+        """replaces a namedtuple results/totals with newdata
+           --- such a hack, should upgrade to recordtype"""
+        newdata = newdata.T
+        namedtup = all_interrogations[namedtupname]
+        if branch == 'results':
+            the_branch = namedtup.results
+            the_branch.drop(the_branch.index, inplace = True)
+            the_branch.drop(the_branch.columns, axis = 1, inplace = True)
+            for i in list(newdata.columns):
+                the_branch[i] = i
+            for index, i in enumerate(list(newdata.index)):
+                the_branch.loc[i] = newdata.ix[index]
+        elif branch == 'totals':
+            the_branch = namedtup.totals
+            the_branch.drop(the_branch.index, inplace = True)
+            for index, datum in zip(newdata.index, newdata):
+                the_branch.set_value(index, datum)
+
+        all_interrogations[namedtupname] = namedtup
+
+    def update_interrogation(table_id, id, is_total = False):
+        """takes any changes made to spreadsheet and saves to the interrogation"""
+        model=editor_tables[table_id]
+        recs = model.getAllCells()
+        colnames = model.columnNames
+        collabels = model.columnlabels
+        row=[]
+        csv_data = []
+        for c in colnames:
+            row.append(collabels[c])
+        csv_data.append(','.join([str(s) for s in row]))
+        #csv_data.append('\n')
+        for row in recs.keys():
+            rowname = model.getRecName(row)
+            csv_data.append(','.join([str(rowname)] + [str(s) for s in recs[row]]))
+            #csv_data.append('\n')
+            #writer.writerow(recs[row])
+        csv = '\n'.join(csv_data)
+        import pandas
+        from StringIO import StringIO
+        newdata = pandas.read_csv(StringIO(csv), index_col=0, header=0)
+        
+        # 0 id for the old data
+        if id == 0:
+            name_of_interrogation = data1_pick.get()
+        # 1 id for the new data
+        if id == 1:
+            name_of_interrogation = all_interrogations.keys()[-1]
+        if not is_total:
+            exchange_interro_branch(name_of_interrogation, newdata, branch = 'results')
+        else:
+            exchange_interro_branch(name_of_interrogation, newdata, branch = 'totals')
+
+    def update_all_interrogations():
+        import pandas
+        """update all_interrogations within spreadsheet data"""
+        update_interrogation(o_editor_results, id = 0)
+        update_interrogation(o_editor_totals, id = 0, is_total = True)
+        update_interrogation(n_editor_results, id = 1)
+        update_interrogation(n_editor_totals, id = 1, is_total = True)
+        print 'Updated interrogations with manual data'
+        the_data = all_interrogations[data1_pick.get()]
+        newdata = all_interrogations[all_interrogations.keys()[-1]]
+        update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70, width = 500)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
+        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100, width = 500)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
+        print 'Updated spreadsheet display in edit window.'
+
+
+    def is_number(s):
+        """check if str can be added for the below"""
+        try:
+            float(s) # for int, long and float
+        except ValueError:
+            try:
+                complex(s) # for complex
+            except ValueError:
+                return False
+        return True
+
+    def update_spreadsheet(frame_to_update, df_to_show, height = 140, width = False, indexwidth = 70):
         """refresh a spreadsheet in the editor window"""
         from collections import OrderedDict
         import pandas
@@ -494,13 +762,16 @@ def corpkit_gui():
             kwarg['width'] = width
         if df_to_show is not None:
             model = TableModel()
+
+            # sort df
             as_int = pandas.DataFrame(df_to_show, dtype = object)
             raw_data = as_int.to_dict()
             raw_data = OrderedDict(sorted(raw_data.items(), 
-                key=lambda t: sum([i for i in t[1].values()]), 
+                key=lambda t: sum([int(i) for i in t[1].values() if is_number(i)]), 
                 reverse = True))
             for name, val in raw_data.items():
                 raw_data[name] = OrderedDict(sorted(val.items(), key=lambda t: t[0]))
+            
             table = TableCanvas(frame_to_update, model=model, 
                                 showkeynamesinheader=True, 
                                 height = height,
@@ -513,13 +784,16 @@ def corpkit_gui():
             # sorts by total freq, ok for now
             table.sortTable(reverse = 1)
             table.redrawTable()
+            editor_tables[frame_to_update] = model
         else:
             table = TableCanvas(frame_to_update, height = height, width = width)
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
+
     def do_editing():
         """what happens when you press edit"""
+        Take_stdout()
         import pandas
         from corpkit import editor
         try:
@@ -602,27 +876,36 @@ def corpkit_gui():
         else:
             the_name = edit_nametext.get()
         all_interrogations[the_name] = r
-        # store edited interrogation
+        interroname = data1_pick.get()
+        resultname.set('Results to edit: %s' % str(interroname))        
+        update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70, width = 500)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
+        # update names above spreadsheets
 
-        #longest = max([len(str(i)) for i in list(the_data.results.columns)])
-        update_spreadsheet(o_editor_results, the_data.results, height = 150, indexwidth = 50, width = 500)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 50, width = 500)
+        e_name = all_interrogations.keys()[-1]
+        editoname.set('Edited results: %s' % str(e_name))
         # add current subcorpora
         subc_listbox.delete(0, 'end')
         for e in list(the_data.results.index):
             subc_listbox.insert(END, e)
         #longest = max([len(str(i)) for i in list(r.results.columns)])
-        update_spreadsheet(n_editor_results, r.results, indexwidth = 50, height = 150, width = 500)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 50, width = 500)
+        update_spreadsheet(n_editor_results, r.results, indexwidth = 70, height = 100, width = 500)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
         all_edited_results[the_name] = r
         refresh()
-
+        Restore_stdout()
+        Dbg_kill_topwin()
 
     def df_callback(*args):
-        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 150, width = 500)
+        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 500)
         update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 500)
-        update_spreadsheet(n_editor_results, None, height = 150, width = 500)
+        interroname = data1_pick.get()
+        resultname.set('Results to edit: %s' % str(interroname))
+        update_spreadsheet(n_editor_results, None, height = 100, width = 500)
         update_spreadsheet(n_editor_totals, None, height = 10, width = 500)
+        # update names above spreadsheets
+        e_name = ''
+        editoname.set('Edited results: %s' % str(e_name))
         subc_listbox.delete(0, 'end')
 
         for e in list(all_interrogations[data1_pick.get()].results.index):
@@ -684,7 +967,7 @@ def corpkit_gui():
     sort_val = StringVar(root)
     sort_val.set('None')
     sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
-    sorts.config(state = DISABLED)
+    #sorts.config(state = DISABLED)
     sorts.grid(row = 4, column = 2, sticky = E)
 
 
@@ -764,8 +1047,13 @@ def corpkit_gui():
     all_edited_results = OrderedDict()
     all_edited_results['None'] = 'sorry'
 
+    Button(tab2, text = 'Update interrogation with manually altered data', command = lambda: update_all_interrogations()).grid(row = 10, column = 3, sticky = E)
+
     # output
-    Label(tab2, text = 'Results to edit:', 
+    resultname = StringVar()
+    interroname = ''
+    resultname.set('Results to edit: %s' % str(interroname))
+    Label(tab2, textvariable = resultname, 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 3, sticky = W, padx=20, pady=0)    
     o_editor_results = Frame(tab2, height = 15, width = 40)
@@ -775,16 +1063,20 @@ def corpkit_gui():
            #column = 3, sticky = W, padx=20, pady=0)
     o_editor_totals = Frame(tab2, height = 1, width = 40)
     o_editor_totals.grid(column = 3, row = 4, rowspan=1, padx=20)
-    Label(tab2, text = 'Edited results:', 
-          font = ("Helvetica", 12, "bold")).grid(row = 6, 
+    
+    editoname = StringVar()
+    e_name = ''
+    editoname.set('Edited results: %s' % str(e_name))
+    Label(tab2, textvariable = editoname, 
+          font = ("Helvetica", 12, "bold")).grid(row = 5, 
            column = 3, sticky = W, padx=20, pady=0)        
     n_editor_results = Frame(tab2, height = 15, width = 40)
-    n_editor_results.grid(column = 3, row = 7, rowspan=3, padx=20)
+    n_editor_results.grid(column = 3, row = 6, rowspan=3, padx=20)
     #Label(tab2, text = 'Edited totals:', 
           #font = ("Helvetica", 12, "bold")).grid(row = 15, 
            #column = 3, sticky = W, padx=20, pady=0)
     n_editor_totals = Frame(tab2, height = 1, width = 40)
-    n_editor_totals.grid(column = 3, row = 11, rowspan=1, padx=20)
+    n_editor_totals.grid(column = 3, row =9, rowspan=1, padx=20)
 
     # ????
     interrogation_name = StringVar()
@@ -958,23 +1250,8 @@ def corpkit_gui():
     texuse = IntVar()
     Checkbutton(tab3, text="Use TeX", variable=texuse).grid(column = 1, row = 8, sticky = E)
 
-    stys = tuple(('ggplot', 'fivethirtyeights', 'bmh'))
-    plot_style = StringVar(root)
-    plot_style.set('ggplot')
-    Label(tab3, text = 'Plot style:').grid(row = 9, column = 0, sticky = W)
-    pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
-    pick_a_datatype.grid(row = 9, column = 1, sticky=E)
-
     # chart type
-    Label(tab3, text='Legend position:').grid(row = 10, column = 0, sticky = W)
-    legloc = StringVar(root)
-    legloc.set('best')
-    locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle'))
-    loc_options = OptionMenu(tab3, legloc, *locs)
-    loc_options.grid(row = 10, column = 1, sticky = E)
-
-    # chart type
-    Label(tab3, text='Colour scheme:').grid(row = 4, column = 0, sticky = W)
+    Label(tab3, text='Colour scheme:').grid(row = 9, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
     schemes = tuple(('Default',
@@ -1122,12 +1399,27 @@ def corpkit_gui():
     'PuBuGn',
     'nipy_spectral',
     'afmhot'))
-    ch_col = OptionMenu(tab3, charttype, *schemes)
-    ch_col.grid(row = 4, column = 1, sticky = E)
+    ch_col = OptionMenu(tab3, chart_cols, *schemes)
+    ch_col.grid(row = 9, column = 1, sticky = E)
 
+
+    stys = tuple(('ggplot', 'fivethirtyeights', 'bmh'))
+    plot_style = StringVar(root)
+    plot_style.set('ggplot')
+    Label(tab3, text = 'Plot style:').grid(row = 10, column = 0, sticky = W)
+    pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
+    pick_a_datatype.grid(row = 10, column = 1, sticky=E)
+
+    # legend pos
+    Label(tab3, text='Legend position:').grid(row = 11, column = 0, sticky = W)
+    legloc = StringVar(root)
+    legloc.set('best')
+    locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle'))
+    loc_options = OptionMenu(tab3, legloc, *locs)
+    loc_options.grid(row = 11, column = 1, sticky = E)
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 11, column = 1, sticky = E)
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 12, column = 1, sticky = E)
 
     # save image button
     Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 11)
@@ -1289,6 +1581,8 @@ def corpkit_gui():
     #    df_var.set(all_interrogations[-1])
     #Label(tab2, textvariable = df_var).grid()
 
+
+    
     note.focus_on(tab5)
     root.mainloop()
 
