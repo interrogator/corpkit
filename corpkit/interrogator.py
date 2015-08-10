@@ -160,7 +160,8 @@ def interrogator(path,
 
     tk = check_t_kinter()
     if tk:
-        from corpkit.interface import GuiProgressBar
+        from corpkit.progressbar import ProgressBar as GuiProgressBar
+        #from corpkit.interface import GuiProgressBar
     # determine if actually a multiquery
     is_multiquery = False
     if hasattr(path, '__iter__'):
