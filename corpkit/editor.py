@@ -806,7 +806,7 @@ def editor(dataframe1,
 
     if spelling:
         df = convert_spell(df, convert_to = spelling)
-        df = merge_duplicates(df)
+        df = merge_duplicates(df, print_info = False)
 
         if not single_totals:
             df2 = convert_spell(df2, convert_to = spelling, print_info = False)
@@ -846,13 +846,15 @@ def editor(dataframe1,
                 df2 = merge_these_entries(df2, parse_input(df2, input), the_newname, prinf = False)
     
     if merge_subcorpora:
+        print merge_subcorpora
+        print new_subcorpus_name
         if type(merge_subcorpora) != dict:
             if type(merge_subcorpora) == list:
                 if type(merge_subcorpora[0]) == tuple:
                     merge_subcorpora = {x: y for x, y in merge_subcorpora}
                 elif type(merge_subcorpora[0]) == str or type(merge_subcorpora[0]) == unicode:
                     merge_subcorpora = {new_subcorpus_name: [x for x in merge_subcorpora]}
-                if type(merge_subcorpora[0]) == int:
+                elif type(merge_subcorpora[0]) == int:
                     merge_subcorpora = {new_subcorpus_name: [str(x) for x in merge_subcorpora]}
             else:
                 merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
