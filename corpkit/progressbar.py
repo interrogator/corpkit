@@ -38,7 +38,10 @@ class ProgressBar:
         from time import localtime, strftime
         import sys
         print '\r', self,
-        sys.stdout.flush()
+        try:
+            sys.stdout.flush()
+        except:
+            pass
         if dirname:
             self.update_iteration(iter + 1, dirname)
         else:
