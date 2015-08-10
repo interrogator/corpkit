@@ -230,13 +230,13 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
-    note = Notebook(root, width= 900, height =800, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 1300, height =800, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
     tab4 = note.add_tab(text = "Concordance")                                                 #Create a tab with the text "Tab Four"
-    tab5 = note.add_tab(text = "Management")                                                 #Create a tab with the text "Tab Five"
+    tab5 = note.add_tab(text = "Manageme")                                                 #Create a tab with the text "Tab Five"
     #Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
     
     ###################     ###################     ###################     ###################
@@ -256,10 +256,16 @@ def corpkit_gui():
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
 
+        try:
+            del all_interrogations['None']
+        except:
+            pass
+
         new_choices = []
         for interro in all_interrogations.keys():
             new_choices.append(interro)
         new_choices = tuple(new_choices)
+        dataframe2s['menu'].add_command(label='Self', command=Tkinter._setit(data2_pick, 'Self'))
         for choice in new_choices:
             dataframe1s['menu'].add_command(label=choice, command=Tkinter._setit(data1_pick, choice))
             dataframe2s['menu'].add_command(label=choice, command=Tkinter._setit(data2_pick, choice))
@@ -267,6 +273,8 @@ def corpkit_gui():
             #every_interro_listbox.delete(0, END)
             if choice != 'None':
                 every_interro_listbox.insert(END, choice)
+
+
 
     transdict = {
             'Get distance from root for regex match': 'a',
@@ -481,30 +489,34 @@ def corpkit_gui():
         """refresh a spreadsheet in the editor window"""
         from collections import OrderedDict
         import pandas
-        model = TableModel()
-        as_int = pandas.DataFrame(df_to_show, dtype = object)
+        kwarg = {}
         if width:
             kwarg['width'] = width
+        if df_to_show is not None:
+            model = TableModel()
+            as_int = pandas.DataFrame(df_to_show, dtype = object)
+            raw_data = as_int.to_dict()
+            raw_data = OrderedDict(sorted(raw_data.items(), 
+                key=lambda t: sum([i for i in t[1].values()]), 
+                reverse = True))
+            for name, val in raw_data.items():
+                raw_data[name] = OrderedDict(sorted(val.items(), key=lambda t: t[0]))
+            table = TableCanvas(frame_to_update, model=model, 
+                                showkeynamesinheader=True, 
+                                height = height,
+                                rowheaderwidth=indexwidth,
+                                **kwarg)
+            table.createTableFrame()
+            model = table.model
+            model.importDict(raw_data) #can import from a dictionary to populate model
+            table.createTableFrame()
+            # sorts by total freq, ok for now
+            table.sortTable(reverse = 1)
+            table.redrawTable()
         else:
-            kwargs = {}
-        raw_data = as_int.to_dict()
-        raw_data = OrderedDict(sorted(raw_data.items(), key=lambda t: sum([i for i in t[1].values()]), reverse = True))
-        #sorted_raw = OrderedDict{}
-        #better = OrderedDict{}
-        for name, val in raw_data.items():
-            raw_data[name] = OrderedDict(sorted(val.items(), key=lambda t: t[0]))
-        table = TableCanvas(frame_to_update, model=model, 
-                            showkeynamesinheader=True, 
-                            height = height,
-                            rowheaderwidth=indexwidth,
-                            **kwargs)
-        table.createTableFrame()
-        model = table.model
-        model.importDict(raw_data) #can import from a dictionary to populate model
-        table.createTableFrame()
-        # sorts by total freq, ok for now
-        table.sortTable(reverse = 1)
-        table.redrawTable()
+            table = TableCanvas(frame_to_update, height = height, width = width)
+            table.createTableFrame()            # sorts by total freq, ok for now
+            table.redrawTable()
 
     def do_editing():
         """what happens when you press edit"""
@@ -515,25 +527,25 @@ def corpkit_gui():
         except KeyError:
             pass
         # translate operation into interrogator input
-        operation_text = (ops.var).get()
+        operation_text = opp.get()
         if operation_text == 'None' or operation_text == 'Select an operation':
             operation_text = None
         # translate dataframe2 into interrogator input
         data2 = data2_pick.get()
-        if data2 == 'None' or data2 == 'Pick something to combine with' or data2 == 'Select an interrogation':
+        if data2 == 'None' or data2 == '' or data2 == 'Self':
             data2 = False
 
         if data2:
-            if df2branch.get() == 1:
+            if df2branch.get() == 'results':
                 data2 = all_interrogations[data2].results
-            elif df2branch.get() == 0:
+            elif df2branch.get() == 'totals':
                 data2 = all_interrogations[data2].totals
 
         the_data = all_interrogations[data1_pick.get()]
-        if df1branch.get() == 1:
+        if df1branch.get() == 'results':
             data1 = all_interrogations[data1_pick.get()].results
         # is this wrong?
-        elif df1branch.get() == 0:
+        elif df1branch.get() == 'totals':
             data1 = all_interrogations[data1_pick.get()].totals
 
         if (spl_editor.var).get() == 'Off' or (spl_editor.var).get() == 'Convert spelling':
@@ -546,7 +558,38 @@ def corpkit_gui():
         editor_args = {'operation': operation_text,
                        'dataframe2': data2,
                        'spelling': spel}
-        
+
+        if (do_with_subc.var).get() == 'Merge':
+            editor_args['merge_subcorpora'] = subc_sel_vals
+        elif (do_with_subc.var).get() == 'Keep':
+            editor_args['just_subcorpora'] = subc_sel_vals
+        elif (do_with_subc.var).get() == 'Span':
+            editor_args['span_subcorpora'] = subc_sel_vals
+        elif (do_with_subc.var).get() == 'Skip':
+            editor_args['skip_subcorpora'] = subc_sel_vals
+
+        if (do_with_entries.var).get() == 'Merge':
+            editor_args['merge_entries'] = entry_regex.get()
+        elif (do_with_entries.var).get() == 'Keep':
+            editor_args['just_entries'] = entry_regex.get()
+        elif (do_with_entries.var).get() == 'Skip':
+            editor_args['skip_entries'] = entry_regex.get()
+        if new_subc_name.get() != '':
+            editor_args['new_subcorpus_name'] = new_subc_name.get()
+        if new_ent_name.get() != '':
+            editor_args['new_subcorpus_name'] = new_ent_name.get()
+
+        sort_trans = {'None': False,
+                      'Total': 'total',
+                      'Inverse total': 'infreq',
+                      'Name': 'name',
+                      'Increase': 'increase',
+                      'Decrease': 'decrease',
+                      'Static': 'static',
+                      'Turbulent': 'turbulent'}
+
+        editor_args['sort_by'] = sort_trans[sort_val.get()]
+            
         # do editing
         r = editor(data1, **editor_args)
         # name the edit
@@ -562,19 +605,28 @@ def corpkit_gui():
         # store edited interrogation
 
         #longest = max([len(str(i)) for i in list(the_data.results.columns)])
-        update_spreadsheet(o_editor_results, the_data.results, height = 150, indexwidth = 50)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 50)
-
+        update_spreadsheet(o_editor_results, the_data.results, height = 150, indexwidth = 50, width = 500)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 50, width = 500)
+        # add current subcorpora
+        subc_listbox.delete(0, 'end')
+        for e in list(the_data.results.index):
+            subc_listbox.insert(END, e)
         #longest = max([len(str(i)) for i in list(r.results.columns)])
-        update_spreadsheet(n_editor_results, r.results, indexwidth = 50, height = 150)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 50)
+        update_spreadsheet(n_editor_results, r.results, indexwidth = 50, height = 150, width = 500)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 50, width = 500)
         all_edited_results[the_name] = r
         refresh()
 
 
     def df_callback(*args):
-        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 150)
-        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10)
+        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 150, width = 500)
+        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 500)
+        update_spreadsheet(n_editor_results, None, height = 150, width = 500)
+        update_spreadsheet(n_editor_totals, None, height = 10, width = 500)
+        subc_listbox.delete(0, 'end')
+
+        for e in list(all_interrogations[data1_pick.get()].results.index):
+            subc_listbox.insert(END, e)        
 
     from collections import OrderedDict
     all_interrogations = OrderedDict()
@@ -584,55 +636,130 @@ def corpkit_gui():
     data1_pick = StringVar(root)
     data1_pick.set(all_interrogations.keys()[0])
     Label(tab2, text = 'To edit:').grid(row = 0, column = 0, sticky = W)
-    pick_df = OptionMenu(tab2, data1_pick, *tup)
-    pick_df.grid(row = 0, column = 1, sticky=E)
+    dataframe1s = OptionMenu(tab2, data1_pick, *tup)
+    dataframe1s.grid(row = 0, column = 1, sticky=E)
     data1_pick.trace("w", df_callback)
 
     # DF1 branch selection
-    df1branch = StringVar(root)
+    df1branch = StringVar()
     df1branch.set('results')
-    df1box = OptionMenu(tab2, 'results', 'totals')
+    df1box = OptionMenu(tab2, df1branch, 'results', 'totals')
     #df1box.select()
-    df1box.grid(row = 0, column = 2)
+    df1box.grid(row = 0, column = 2, sticky = E)
 
     def op_callback(*args):
         if opp.get() != 'None':
-            ops.config(state = NORMAL)
+            dataframe2s.config(state = NORMAL)
+            df2box.config(state = NORMAL)
+        elif opp.get() == 'None':
+            dataframe2s.config(state = DISABLED)
+            df2box.config(state = DISABLED)
 
     # operation for editor
     opp = StringVar(root)
     opp.set('None')
     operations = ('None', '%', '*', '/', '-', '+', 'a', 'd', 'k')
-    Label(tab2, text='Operation to perform').grid(column = 0)
-    ops = OptionMenu(tab2, 'None', *operations)
-    ops.config(state = DISABLED)
-    ops.grid(column = 1)
+    Label(tab2, text='Operation:').grid(row = 1, column = 0, sticky = W)
+    ops = OptionMenu(tab2, opp, *operations)
+    ops.grid(row = 1, column = 1, sticky = E)
     opp.trace("w", op_callback)
 
     # DF2 option for editor
     tups = tuple(['Self'] + [i for i in all_interrogations.keys()])
     data2_pick = StringVar(root)
     data2_pick.set('Self')
-    Label(tab2, text = 'Denominator data:').grid(column = 0)
+    Label(tab2, text = 'Denominator:').grid(row = 3, column = 0, sticky = W)
     dataframe2s = OptionMenu(tab2, data2_pick, *tups)
-    dataframe2s.grid(column = 1)
+    dataframe2s.config(state = DISABLED)
+    dataframe2s.grid(row = 3, column = 1, sticky = E)
 
-    # DF1 branch selection
+    # DF2 branch selection
     df2branch = StringVar(root)
     df2branch.set('totals')
-    df2box = OptionMenu(tab2, 'results', 'totals')
-    #df1box.select()
-    df1box.grid(row = 0, column = 2)
+    df2box = OptionMenu(tab2, df2branch, 'results', 'totals')
+    df2box.config(state = DISABLED)
+    df2box.grid(row = 3, column = 2, sticky = E)
 
-    spl_editor = MyOptionMenu(tab2, 'Convert spelling', 'Off','UK','US')
-    spl_editor.grid()
+    Label(tab2, text = 'Sort results by:').grid(row = 4, column = 0, sticky = W)
+    sort_val = StringVar(root)
+    sort_val.set('None')
+    sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
+    sorts.config(state = DISABLED)
+    sorts.grid(row = 4, column = 2, sticky = E)
+
+
+
+    Label(tab2, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
+    spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
+    spl_editor.grid(row = 5, column = 1, sticky = E)
+
+
+    # not hooked up yet
+    just_tot_setting = IntVar()
+    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting)
+    #just_tot_but.select()
+    just_tot_but.grid(column = 0, row = 6)
+
+    # not hooked up yet
+    keep_stats_setting = IntVar()
+    keep_stat_but = Checkbutton(tab2, text="Keep stats", variable=keep_stats_setting)
+    #keep_stat_but.select()
+    keep_stat_but.grid(column = 1, row = 6)
+
+    # not hooked up yet
+    rem_abv_p_set = IntVar()
+    rem_abv_p_but = Checkbutton(tab2, text="Remove above p", variable=rem_abv_p_set)
+    #rem_abv_p_but.select()
+    rem_abv_p_but.grid(column = 2, row = 6)
+
+    subc_sel_vals = []
+    # entries + entry field for regex, off, skip, keep, merge
+    Label(tab2, text = 'Entries:').grid(row = 7, column = 0, sticky = W, pady = 5)
+    entry_regex = StringVar()
+    entry_regex.set('')
+    Entry(tab2, textvariable = entry_regex).grid(row = 7, column = 1, sticky = E)
+    do_with_entries = MyOptionMenu(tab2, 'Off', 'Skip', 'Keep', 'Merge')
+    do_with_entries.grid(row = 7, column = 2, sticky = E)
+    Label(tab2, text = 'Merge name:', pady = 10).grid(row = 8, column = 1, sticky = 'NE')
+    new_ent_name = StringVar()
+    new_ent_name.set('')
+    Entry(tab2, textvariable = new_ent_name).grid(row = 8, column = 2, sticky = 'NE')
+
+
+    def onselect_subc(evt):
+        # remove old vals
+        for i in subc_sel_vals:
+            subc_sel_vals.pop()
+        wx = evt.widget
+        indices = wx.curselection()
+        for index in indices:
+            value = wx.get(index)
+            if value not in subc_sel_vals:
+                subc_sel_vals.append(value)
+
+    # subcorpora + optionmenu off, skip, keep
+    Label(tab2, text = 'Subcorpora:').grid(row = 9, column = 0, sticky = W)
+    subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5)
+    subc_listbox.grid(row = 9, column = 1, sticky = E)
+    # Set interrogation option
+    subc_chosen_option = StringVar()
+    #ei_chosen_option.set('w')
+    xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
+    # default: w option
+    subc_listbox.select_set(0)
+    do_with_subc = MyOptionMenu(tab2, 'Off', 'Skip', 'Keep', 'Merge', 'Span')
+    do_with_subc.grid(row = 9, column = 2, sticky = 'NE')
+    Label(tab2, text = 'Merge name:').grid(row = 9, column = 2, sticky = 'E')
+    new_subc_name = StringVar()
+    new_subc_name.set('')
+    Entry(tab2, textvariable = new_subc_name).grid(row = 9, column = 2, sticky = 'SE')
 
     # edit name
     edit_nametext = StringVar()
     edit_nametext.set('untitled')
-    Entry(tab2, textvariable = edit_nametext).grid(row = 14, column = 0, sticky = W)
-
-    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 14, column = 1, sticky = E)
+    Label(tab2, text = 'Edit name:').grid(row = 10, column = 0, sticky = W)
+    Entry(tab2, textvariable = edit_nametext).grid(row = 10, column = 1, sticky = 'news')
+    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 10, column = 2, sticky = E)
     # storage of edited results
     all_edited_results = OrderedDict()
     all_edited_results['None'] = 'sorry'
@@ -641,25 +768,25 @@ def corpkit_gui():
     Label(tab2, text = 'Results to edit:', 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 3, sticky = W, padx=20, pady=0)    
-    o_editor_results = Frame(tab2, height = 15, width = 20)
-    o_editor_results.grid(column = 3, row = 1, rowspan=5, padx=20, pady=5)
-    Label(tab2, text = 'Totals to edit:', 
-          font = ("Helvetica", 12, "bold")).grid(row = 6, 
-           column = 3, sticky = W, padx=20, pady=0)
-    o_editor_totals = Frame(tab2, height = 1, width = 20)
-    o_editor_totals.grid(column = 3, row = 7, rowspan=1, padx=20, pady=5)
+    o_editor_results = Frame(tab2, height = 15, width = 40)
+    o_editor_results.grid(column = 3, row = 1, rowspan=3, padx=20)
+    #Label(tab2, text = 'Totals to edit:', 
+          #font = ("Helvetica", 12, "bold")).grid(row = 4, 
+           #column = 3, sticky = W, padx=20, pady=0)
+    o_editor_totals = Frame(tab2, height = 1, width = 40)
+    o_editor_totals.grid(column = 3, row = 4, rowspan=1, padx=20)
     Label(tab2, text = 'Edited results:', 
-          font = ("Helvetica", 12, "bold")).grid(row = 8, 
+          font = ("Helvetica", 12, "bold")).grid(row = 6, 
            column = 3, sticky = W, padx=20, pady=0)        
-    n_editor_results = Frame(tab2, height = 15, width = 20)
-    n_editor_results.grid(column = 3, row = 9, rowspan=5, padx=20, pady=5)
-    Label(tab2, text = 'Edited totals:', 
-          font = ("Helvetica", 12, "bold")).grid(row = 15, 
-           column = 3, sticky = W, padx=20, pady=0)
-    n_editor_totals = Frame(tab2, height = 1, width = 20)
-    n_editor_totals.grid(column = 3, row = 16, rowspan=1, padx=20, pady=5)
+    n_editor_results = Frame(tab2, height = 15, width = 40)
+    n_editor_results.grid(column = 3, row = 7, rowspan=3, padx=20)
+    #Label(tab2, text = 'Edited totals:', 
+          #font = ("Helvetica", 12, "bold")).grid(row = 15, 
+           #column = 3, sticky = W, padx=20, pady=0)
+    n_editor_totals = Frame(tab2, height = 1, width = 40)
+    n_editor_totals.grid(column = 3, row = 11, rowspan=1, padx=20)
 
-
+    # ????
     interrogation_name = StringVar()
     interrogation_name.set('waiting')
     Label(tab1, textvariable = interrogation_name.get()).grid()
@@ -668,6 +795,9 @@ def corpkit_gui():
     #################       #################      #################      #################  
     # VISUALISE TAB #       # VISUALISE TAB #      # VISUALISE TAB #      # VISUALISE TAB #  
     #################       #################      #################      #################  
+
+
+    thefig = []
 
     def do_plotting():
 
@@ -681,9 +811,9 @@ def corpkit_gui():
         from matplotlib.figure import Figure
 
         from corpkit import plotter
-        if branch_to_plot.get() == 1:
+        if plotbranch.get() == 'results':
             what_to_plot = all_interrogations[data_to_plot.get()].results
-        elif branch_to_plot.get() == 0:
+        elif plotbranch.get() == 'totals':
             what_to_plot = all_interrogations[data_to_plot.get()].totals
         # determine num to plot
         num = number_to_plot.get()
@@ -695,74 +825,318 @@ def corpkit_gui():
             else:
                 num = 7
 
-        the_kind = (chart_kind.var).get()
+        the_kind = charttype.get()
         if the_kind == 'Type of chart':
             the_kind = 'line'
         # plotter options
         d = {'num_to_plot': num,
              'kind': the_kind}
+
+        d['style'] = plot_style.get()
+
+        if texuse.get() == 1:
+            d['tex'] = True
+        else:
+            d['tex'] = False
+
+        if bw.get() == 1:
+            d['black_and_white'] = True
+        else:
+            d['black_and_white'] = False
+
+        if log_x.get() == 1 and log_y.get() == 1:
+            d['log'] = 'x,y'
+        if log_x.get() == 1 and not log_y.get() == 1:
+            d['log'] = 'x'
+        if log_y.get() == 1 and not log_x.get() == 1:
+            d['log'] = 'y'
+
+        if x_axis_l.get() != '':
+            d['x_label'] = x_axis_l.get()
+        if x_axis_l.get() == 'None':
+            d['x_label'] = False
+        if y_axis_l.get() != '':
+            d['y_label'] = y_axis_l.get()
+        if y_axis_l.get() == 'None':
+            d['y_label'] = False
+
+        if chart_cols.get() != 'Default':
+            d['colours'] = chart_cols.get()
+
         f = plotter(plotnametext.get(), what_to_plot, **d)
         # a Tkinter.DrawingArea
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
-        canvas.get_tk_widget().grid(column = 1, row = 0, rowspan = 5)        
+        canvas.get_tk_widget().grid(column = 2, row = 0, rowspan = 10, padx = 20, columnspan = 3)        
+        for i in thefig:
+            thefig.pop()
+        thefig.append(f.gcf())
 
     def save_current_image():
-        return
+        import os
+        kwarg = {}
+        imagedir = image_fullpath.get()
+        if imagedir:
+            kwarg['initialdir'] = imagedir
+        kwarg['defaultextension'] = '.png'
+        filename = plotnametext.get()
+        if filename.startswith('Untitled'):
+            c = 0
+            filename = 'Untitled-%s' % str(c).zfill(3) + '.png'
+            while filename in os.listdir(imagedir):
+                c += 1
+                filename = 'Untitled-%s' % str(c).zfill(3) + '.png'
+        fo = tkFileDialog.asksaveasfilename(**kwarg)
+        #fo = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
+        if fo is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        #fo.write(f.gcf())
+        #fo.close() # `()` was missing.
+        thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
 
     def image_clear():
-        return
+        canvas.destroy()
 
     def reset_plotter_pane():
         return
 
 
     # title tab
+    Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W')
     plotnametext = StringVar()
-    plotnametext.set('Image title')
-    Entry(tab3, textvariable = plotnametext).grid()
+    plotnametext.set('Untitled')
+    Entry(tab3, textvariable = plotnametext).grid(row = 0, column = 1)
 
+    #Label(tab3, text = 'Image:').grid(row = 0, column = 2, padx = 20)
+
+    Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
     data_to_plot = StringVar(root)
     data_to_plot.set(all_interrogations[all_interrogations.keys()[-1]])
-
     every_interrogation = OptionMenu(tab3, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
-    every_interrogation.grid()
+    every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
 
     # branch selection
-    branch_to_plot = IntVar()
-    plotbranch_button = Checkbutton(tab3, text="Use results branch?", variable=branch_to_plot)
-    plotbranch_button.select()
-    plotbranch_button.grid()
-    # options:
+    plotbranch = StringVar(root)
+    plotbranch.set('results')
+    plotbox = OptionMenu(tab3, plotbranch, 'results', 'totals')
+    #plotbox.config(state = DISABLED)
+    plotbox.grid(row = 2, column = 0, sticky = E, columnspan = 2)
 
     # num_to_plot
+    Label(tab3, text = 'Results to show:').grid(row = 3, column = 0, sticky = W)
     number_to_plot = StringVar()
     number_to_plot.set('7')
-    Entry(tab3, textvariable = number_to_plot).grid()
+    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 3, column = 1, sticky = E)
 
-    # x label
-
-    # y label
-
-    # etc
-
+    # chart type
+    Label(tab3, text='Kind of chart').grid(row = 4, column = 0, sticky = W)
+    charttype = StringVar(root)
+    charttype.set('line')
     kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
-    k =  ['Type of chart'] + [i for i in kinds_of_chart]
-    chart_kind = MyOptionMenu(tab3, 'Type of chart', *kinds_of_chart)
-    chart_kind.grid()
+    chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
+    chart_kind.grid(row = 4, column = 1, sticky = E)
+
+    Label(tab3, text = 'x axis label:').grid(row = 5, column = 0, sticky = W)
+    x_axis_l = StringVar()
+    x_axis_l.set('')
+    Entry(tab3, textvariable = x_axis_l).grid(row = 5, column = 1, sticky = W)
+
+    Label(tab3, text = 'y axis label:').grid(row = 6, column = 0, sticky = W)
+    y_axis_l = StringVar()
+    y_axis_l.set('')
+    Entry(tab3, textvariable = y_axis_l).grid(row = 6, column = 1)
+
+    # log options
+    log_x = IntVar()
+    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 7, sticky = W)
+    log_y = IntVar()
+    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 7, sticky = E)
+
+    bw = IntVar()
+    Checkbutton(tab3, text="Black and white", variable=bw).grid(column = 0, row = 8, sticky = W)
+    texuse = IntVar()
+    Checkbutton(tab3, text="Use TeX", variable=texuse).grid(column = 1, row = 8, sticky = E)
+
+    stys = tuple(('ggplot', 'fivethirtyeights', 'bmh'))
+    plot_style = StringVar(root)
+    plot_style.set('ggplot')
+    Label(tab3, text = 'Plot style:').grid(row = 9, column = 0, sticky = W)
+    pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
+    pick_a_datatype.grid(row = 9, column = 1, sticky=E)
+
+    # chart type
+    Label(tab3, text='Legend position:').grid(row = 10, column = 0, sticky = W)
+    legloc = StringVar(root)
+    legloc.set('best')
+    locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle'))
+    loc_options = OptionMenu(tab3, legloc, *locs)
+    loc_options.grid(row = 10, column = 1, sticky = E)
+
+    # chart type
+    Label(tab3, text='Colour scheme:').grid(row = 4, column = 0, sticky = W)
+    chart_cols = StringVar(root)
+    chart_cols.set('Default')
+    schemes = tuple(('Default',
+    'Spectral',
+    'summer',
+    'coolwarm',
+    'Wistia_r',
+    'pink_r',
+    'Set1',
+    'Set2',
+    'Set3',
+    'brg_r',
+    'Dark2',
+    'prism',
+    'PuOr_r',
+    'afmhot_r',
+    'terrain_r',
+    'PuBuGn_r',
+    'RdPu',
+    'gist_ncar_r',
+    'gist_yarg_r',
+    'Dark2_r',
+    'YlGnBu',
+    'RdYlBu',
+    'hot_r',
+    'gist_rainbow_r',
+    'gist_stern',
+    'PuBu_r',
+    'cool_r',
+    'cool',
+    'gray',
+    'copper_r',
+    'Greens_r',
+    'GnBu',
+    'gist_ncar',
+    'spring_r',
+    'gist_rainbow',
+    'gist_heat_r',
+    'Wistia',
+    'OrRd_r',
+    'CMRmap',
+    'bone',
+    'gist_stern_r',
+    'RdYlGn',
+    'Pastel2_r',
+    'spring',
+    'terrain',
+    'YlOrRd_r',
+    'Set2_r',
+    'winter_r',
+    'PuBu',
+    'RdGy_r',
+    'spectral',
+    'rainbow',
+    'flag_r',
+    'jet_r',
+    'RdPu_r',
+    'gist_yarg',
+    'BuGn',
+    'Paired_r',
+    'hsv_r',
+    'bwr',
+    'cubehelix',
+    'Greens',
+    'PRGn',
+    'gist_heat',
+    'spectral_r',
+    'Paired',
+    'hsv',
+    'Oranges_r',
+    'prism_r',
+    'Pastel2',
+    'Pastel1_r',
+    'Pastel1',
+    'gray_r',
+    'jet',
+    'Spectral_r',
+    'gnuplot2_r',
+    'gist_earth',
+    'YlGnBu_r',
+    'copper',
+    'gist_earth_r',
+    'Set3_r',
+    'OrRd',
+    'gnuplot_r',
+    'ocean_r',
+    'brg',
+    'gnuplot2',
+    'PuRd_r',
+    'bone_r',
+    'BuPu',
+    'Oranges',
+    'RdYlGn_r',
+    'PiYG',
+    'CMRmap_r',
+    'YlGn',
+    'binary_r',
+    'gist_gray_r',
+    'Accent',
+    'BuPu_r',
+    'gist_gray',
+    'flag',
+    'bwr_r',
+    'RdBu_r',
+    'BrBG',
+    'Reds',
+    'Set1_r',
+    'summer_r',
+    'GnBu_r',
+    'BrBG_r',
+    'Reds_r',
+    'RdGy',
+    'PuRd',
+    'Accent_r',
+    'Blues',
+    'autumn_r',
+    'autumn',
+    'cubehelix_r',
+    'nipy_spectral_r',
+    'ocean',
+    'PRGn_r',
+    'Greys_r',
+    'pink',
+    'binary',
+    'winter',
+    'gnuplot',
+    'RdYlBu_r',
+    'hot',
+    'YlOrBr',
+    'coolwarm_r',
+    'rainbow_r',
+    'Purples_r',
+    'PiYG_r',
+    'YlGn_r',
+    'Blues_r',
+    'YlOrBr_r',
+    'seismic',
+    'Purples',
+    'seismic_r',
+    'RdBu',
+    'Greys',
+    'BuGn_r',
+    'YlOrRd',
+    'PuOr',
+    'PuBuGn',
+    'nipy_spectral',
+    'afmhot'))
+    ch_col = OptionMenu(tab3, charttype, *schemes)
+    ch_col.grid(row = 4, column = 1, sticky = E)
+
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid()
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 11, column = 1, sticky = E)
 
     # save image button
-    Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid()
+    Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 11)
 
     # clear image
-    Button(tab3, text = 'Clear image', command = lambda: do_plotting()).grid()
+    Button(tab3, text = 'Clear image', command = lambda: do_plotting()).grid(column = 3, row = 11)
 
     # reset pane
-    Button(tab3, text = 'Reset plotter pane', command = lambda: reset_plotter_pane()).grid()
+    Button(tab3, text = 'Reset plotter pane', command = lambda: reset_plotter_pane()).grid(column = 4, row = 11)
 
 
     ###################     ###################     ###################     ###################
@@ -835,10 +1209,27 @@ def corpkit_gui():
 
     def data_getdir():
         fp = tkFileDialog.askdirectory()
+        if not fp:
+            return
         data_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
+    
+    # corpus path setter
+    image_fullpath = StringVar()
+    image_fullpath.set('/users/danielmcdonald/documents/work/risk/images')
+    image_basepath = StringVar()
+    image_basepath.set('Select image directory')
+
+    def image_getdir():
+        fp = tkFileDialog.askdirectory()
+        if not fp:
+            return
+        image_fullpath.set(fp)
+        image_basepath.set('Images: "%s"' % os.path.basename(fp))
+
     Button(tab5, textvariable = data_basepath, command = data_getdir).grid(sticky=E)
+    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(sticky=E)
     Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid(sticky=E)
 
     def save_one_or_more():
