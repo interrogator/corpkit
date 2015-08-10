@@ -19,6 +19,7 @@ setup(name='corpkit',
                         "mpld3 >= 0.2", 
                         "beautifulsoup4>=4.3.2",
                         "pattern>=2.6"
+                        "tkintertable>=1.2"
                         # add bs4, what else? ipython?
                        ],
       #extras_require = {
