@@ -35,259 +35,38 @@
 """
 
 import Tkinter
+from Tkinter import *
 import sys,string
 import threading
+import ScrolledText
 
-class DbgText:
-    Dbgtopwin=None
-    Dbgwidget=None
-    DbgRoot=None
-    
-    def _kill_topwin(self):
-        DbgText.Dbgwidget=None
-        if DbgText.Dbgtopwin != None:
-            DbgText.Dbgtopwin.destroy()
-        DbgText.Dbgtopwin=None
-       
-    def __init__(self,kind=''):
-        self.kind=kind
-        self.window=None
-        self.widget=None
-        self.called=0
-        self.hide=0
-        self.buffer=''
-
-    def __del__(self):
-        "On deletion, wait for user to see the output"
-        #if DbgText.Dbgtopwin != None:
-            #See()
-        self._kill_topwin()
-    
-    def write(self,charstr):
-        "write text to buffer or window"
-        if self.hide:
-            self.buffer.append(charstr)
-        else:
-            if self.window == None:
-                if DbgText.Dbgtopwin == None:
-                    DbgText.Dbgtopwin=Tkinter.Tk()
-                    DbgText.Dbgtopwin.protocol('WM_DELETE_WINDOW',Dbg_kill_topwin)
-                    DbgText.Dbgwidget=Tkinter.Text(DbgText.Dbgtopwin)
-                    DbgText.Dbgwidget.pack(expand=1)
-                top=DbgText.Dbgtopwin
-                wid=DbgText.Dbgwidget
-            else:
-                if self.widget == None:
-                    self.widget=Tkinter.Text(self.window)
-                top=self.window
-                wid=self.widget
-            if self.kind != '':
-                ep=wid.index('end')
-                sp=string.split(ep,'.')
-                # determine length of 'previous' line
-                prevl=int(sp[0])
-                tx='\n'
-                if prevl:
-                    pl='%d.0' % (prevl-1)
-                    tx=wid.get(pl,ep)
-                # if this is start of a new line
-                if tx[0] == '\n':
-                    wid.insert('end',self.kind)
-            wid.insert('end',charstr)     
-        self.called=1
-        top.update()
-
-def Dbg_kill_topwin():
-    f=DbgText()
-    f._kill_topwin()
-    
-def Take_stdout():
-    "DIsplay stdout in text widget"
-    if not isinstance(sys.stdout,DbgText):
-        f=DbgText()
-        f.prev=sys.stdout
-        sys.stdout=f
-
-def Take_stderr():
-    "DIsplay stderr in text widget"
-    if not isinstance(sys.stderr,DbgText):
-        f=DbgText('*')
-        f.prev=sys.stderr
-        sys.stderr=f
-    
-def Restore_stdout():
-    f=sys.stdout
-    if isinstance(f,DbgText):
-        sys.stdout=f.prev
-        del f
-
-def Restore_stderr():
-    f=sys.stderr
-    if isinstance(f,DbgText):
-        sys.stderr=f.prev
-        del f
-
-def Define_Root():
-    root=Tkinter.Tk()
-    root.withdraw()
-    DbgText.DbgRoot=root
-
-def See():
-    db=DbgText()
-    if db.Dbgtopwin != None:
-        db.Dbgtopwin.mainloop() # loop for me to see
-
-def Take_all():
-    "send stderr/stdout to Tkinter text window/widget"
-    Take_stdout()
-    Take_stderr()
-
-def Restore_all():
-    "restore stderr/stdout"
-    Restore_stdout()
-    Restore_stderr()
-
-class ConsoleText(Tkinter.Label):
-    '''A Tkinter Label widget that provides a scrolling display of console
-    stderr and stdout.'''
-
-    class IORedirector(object):
-        '''A general class for redirecting I/O to this Label widget.'''
-        def __init__(self,Label_area):
-            self.Label_area = Label_area
-
-    class StdoutRedirector(IORedirector):
-        '''A class for redirecting stdout to this Label widget.'''
-        def write(self,str):
-            self.Label_area.write(str,False)
-
-    class StderrRedirector(IORedirector):
-        '''A class for redirecting stderr to this Label widget.'''
-        def write(self,str):
-            self.Label_area.write(str,True)
-
-    def __init__(self, master=None, cnf={}, **kw):
-        '''See the __init__ for Tkinter.Label for most of this stuff.'''
-        import threading
-
-        Tkinter.Label.__init__(self, master, cnf, **kw)
-
-        self.started = False
-        self.write_lock = threading.Lock()
-
-        #self.tag_configure('STDOUT',background='white',foreground='black')
-        #self.tag_configure('STDERR',background='white',foreground='red')
-
-        self.config(state=Tkinter.DISABLED)
-
-    def start(self):
-        if self.started:
-            return
-        self.started = True
-        self.original_stdout = sys.stdout
-        self.original_stderr = sys.stderr
-        stdout_redirector = ConsoleText.StdoutRedirector(self)
-        stderr_redirector = ConsoleText.StderrRedirector(self)
-        sys.stdout = stdout_redirector
-        sys.stderr = stderr_redirector
-
-    def stop(self):
-
-        if not self.started:
-            return
-
-        self.started = False
-
-        sys.stdout = self.original_stdout
-        sys.stderr = self.original_stderr
-
-    def write(self,val,is_stderr=False):
-
-        self.write_lock.acquire()
-        self.config(state=TKinter.NORMAL)
-        self.insert('end',val,'STDERR' if is_stderr else 'STDOUT')
-        self.see('end')
-        self.config(state=TKinter.DISABLED)
-        self.write_lock.release()
-
-class GuiProgressBar:
-    from time import localtime, strftime
-    try:
-        from IPython.display import display, clear_output
-    except ImportError:
-        pass
-    have_ipython = False
-    def __init__(self, iterations):
-        from time import localtime, strftime
-        try:
-            from IPython.display import display, clear_output
-        except ImportError:
-            pass
-        have_ipython = False
-        self.iterations = iterations
-        self.prog_bar = '[]'
-        self.fill_char = '*'
-        self.width = 60
-        self.__update_amount(0)
-        if have_ipython:
-            self.animate = self.animate_ipython
-        else:
-            self.animate = self.animate_noipython
-
-    def animate_ipython(self, iter, dirname = None):
-        from time import localtime, strftime
-        import sys
-
-        sys.stdout.flush()
-        if dirname:
-            self.update_iteration(iter + 1, dirname)
-        else:
-            self.update_iteration(iter + 1, dirname)
-        return '\r', self
-    def animate_noipython(self, iter, dirname = None):
-        from time import localtime, strftime
-        import sys
-
-        if dirname:
-            self.update_iteration(iter + 1, dirname)
-        else:
-            self.update_iteration(iter + 1, dirname)
-        return '\r', self
-
-    def update_iteration(self, elapsed_iter, dirname = None):
-        from time import localtime, strftime
-        self.__update_amount((elapsed_iter / float(self.iterations)) * 100.0, dirname)
-        self.prog_bar += ' ' # + ' %d of %s complete' % (elapsed_iter, self.iterations)
-
-    def __update_amount(self, new_amount, dirname = None):
-        from time import localtime, strftime
-        percent_done = int(round((new_amount / 100.0) * 100.0, 2))
-        all_full = self.width - 2
-        num_hashes = int(round((percent_done / 100.0) * all_full))
-        time = strftime("%H:%M:%S", localtime())
-        self.prog_bar = time + ': [' + self.fill_char * num_hashes + ' ' * (all_full - num_hashes) + ']'
-        pct_place = (len(self.prog_bar) // 2) + (3)
-        if dirname:
-            pct_string = '%d%% ' % percent_done + '(' + dirname + ')'
-        else:
-            pct_string = '%d%%' % percent_done # could pass dirname here!
-        self.prog_bar = self.prog_bar[0:pct_place] + \
-           (pct_string + self.prog_bar[pct_place + len(pct_string):])
-
-    def __str__(self):
-        return str(self.prog_bar)
-
-from Tkinter import *
+########################################################################
+class RedirectText(object):
+    """"""
+ 
+    #----------------------------------------------------------------------
+    def __init__(self, text_ctrl):
+        """Constructor"""
+        self.output = text_ctrl
+ 
+    #----------------------------------------------------------------------
+    def write(self, string):
+        """"""
+        self.output.insert(Tkinter.END, string)
+ 
 
 class IORedirector(object):
-    def __init__(self,TEXT_INFO):
-        self.TEXT_INFO = TEXT_INFO
+    '''A general class for redirecting I/O to this Text widget.'''
+    def __init__(self,text_area):
+        self.text_area = text_area
 
 class StdoutRedirector(IORedirector):
+    '''A class for redirecting stdout to this Text widget.'''
     def write(self,str):
-        self.TEXT_INFO.config(text=self.TEXT_INFO.cget('text') + str)
+        self.text_area.write(str,False)
 
 class Notebook(Frame):
+
     """Notebook Widget"""
     def __init__(self, parent, activerelief = RAISED, inactiverelief = RIDGE, xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', **kw):
         """Construct a Notebook Widget
@@ -320,12 +99,19 @@ class Notebook(Frame):
         self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 30, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
+        self.text = ScrolledText.ScrolledText(self.statusbar)
+        self.text.grid()
+
+        self.redir = RedirectText(self.text)
+        sys.stdout = self.redir
+
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
         self.noteBookFrame.grid()
         self.BFrame.grid(row = 0) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
         self.statusbar.grid(row = 2)
+        
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -416,13 +202,11 @@ def corpkit_gui():
 
     # a dict of the editor frame names and models
     editor_tables = {}
-    import threading
-    mostrecent_stdout = 
-    mostrecent_stdout = StringVar()
-    mostrecent_stdout.set('Dummy')
-    x = ConsoleText(note.statusbar)
-    x.start()
-    Label(note.statusbar, textvariable = mostrecent_stdout).grid()
+    #import threading
+    #sys.stdout = StdoutRedirector(root)
+    #mostrecent_stdout = StringVar()
+    #mostrecent_stdout.set('Dummy')
+    #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
