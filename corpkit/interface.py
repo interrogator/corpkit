@@ -39,7 +39,8 @@ from Tkinter import *
 import sys,string
 import threading
 import ScrolledText
-import Queue
+import time
+from time import strftime, localtime
 
 ########################################################################
 class RedirectText(object):
@@ -93,7 +94,6 @@ class Notebook(Frame):
         self.deletedTabs = []        
         self.xpad = xpad
         self.ypad = ypad
-        self.queue = queue
         self.activerelief = activerelief
         self.inactiverelief = inactiverelief                                               
         self.kwargs = kw                                                                   
@@ -101,11 +101,13 @@ class Notebook(Frame):
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
         self.noteBookFrame = Frame(parent)                                                 #Create a frame to hold everything together
         self.BFrame = Frame(self.noteBookFrame)
-        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 30, width = kw['width'])                                            #Create a frame to put the "tabs" in
+        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = ScrolledText.ScrolledText(self.statusbar, height = 1)
+        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 14))
         self.text.grid()
+        # alternative ...
+        #self.text = Text(self.statusbar, height = 1, undo = True)
         self.text.update_idletasks()
         def callback(*args):
             self.text.see(END)
@@ -121,23 +123,8 @@ class Notebook(Frame):
         self.BFrame.grid(row = 0) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
         self.statusbar.grid(row = 2)
-        self.statusbar.update_idletasks()
-        self.update_idletasks()
-        self.text.update_idletasks()
 
-    def processIncoming(self):
-        """Handle all messages currently in the queue, if any."""
-        while self.queue.qsize(  ):
-            try:
-                msg = self.queue.get(0)
-                # Check contents of message and do whatever is needed. As a
-                # simple test, print it (in real life, you would
-                # suitably update the GUI's display in a richer fashion).
-                print msg
-            except Queue.Empty:
-                # just on general principles, although we don't
-                # expect this branch to be taken in this case
-                pass
+
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -196,9 +183,6 @@ class Notebook(Frame):
                 break                                                                      #Job is done, exit the loop
             self.iteratedTabs += 1                                                         #Add one to the loop count
 
-
-
-
 def corpkit_gui():
     import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
     from Tkinter import StringVar, Listbox, Text
@@ -217,7 +201,7 @@ def corpkit_gui():
     root.title("corpkit")
 
     #HWHW
-    note = Notebook(root, width= 950, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 970, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
@@ -235,10 +219,11 @@ def corpkit_gui():
 
     # a dict of the editor frame names and models
     editor_tables = {}
-
-    note.statusbar.update_idletasks()
-    note.update_idletasks()
-    note.text.update_idletasks()
+    #import threading
+    #sys.stdout = StdoutRedirector(root)
+    #mostrecent_stdout = StringVar()
+    #mostrecent_stdout.set('Dummy')
+    #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -342,9 +327,9 @@ def corpkit_gui():
                              'phrases': phras.get(),
                              'titlefilter': tit_fil.get(),
                              'case_sensitive': case_sensitive.get(),
-                             'convert_spelling': conv}
+                             'convert_spelling': conv,
+                             'root': root}
 
-        root.update()
         r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
                           selected_option, 
                           **interrogator_args)
@@ -377,7 +362,7 @@ def corpkit_gui():
         #Restore_stdout()
         ##Dbg_kill_topwin()
         # add button after first interrogation
-        Button(tab1, text = 'Update interrogation with manually altered data', command = lambda: update_interro_interrogations()).grid(row = 10, column = 2, sticky = E)
+        Button(tab1, text = 'Update interrogation', command = lambda: update_interro_interrogations()).grid(row = 10, column = 2, sticky = E)
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -408,6 +393,8 @@ def corpkit_gui():
         for k in subcorpora.keys():
             del subcorpora[k]
         subcorpora[fp] = subs
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Set corpus directory: %s' % (time, os.path.basename(fp))
     
     Label(tab1, text = 'Corpus directory: ').grid(row = 0, column = 0)
     Button(tab1, textvariable = basepath, command = getdir).grid(row = 0, column = 1, sticky=E)
@@ -486,13 +473,13 @@ def corpkit_gui():
     lem = IntVar()
     Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False).grid(column = 0, row = 6, sticky=W)
     phras = IntVar()
-    Checkbutton(tab1, text="Phrases (multiword results)", variable=phras, onvalue = True, offvalue = False).grid(column = 0, columnspan = 2, row = 6, sticky=E)
+    Checkbutton(tab1, text="Multiword results", variable=phras, onvalue = True, offvalue = False).grid(column = 1, columnspan = 2, row = 6, sticky=W)
     tit_fil = IntVar()
     Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid(row = 7, column = 0, sticky=W)
     case_sensitive = IntVar()
     Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 7, column = 1, sticky=W)
 
-    Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0)
+    Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0, sticky = W)
     spl = MyOptionMenu(tab1, 'Off','UK','US')
     spl.grid(row = 8, column = 1)
 
@@ -509,7 +496,7 @@ def corpkit_gui():
     # Interrogation name
     nametext = StringVar()
     nametext.set('untitled')
-    Label(tab1, text = 'Interrogation name:').grid(row = 10, column = 0)
+    Label(tab1, text = 'Interrogation name:').grid(row = 10, column = 0, sticky = W)
     Entry(tab1, textvariable = nametext).grid(row = 10, column = 1)
 
     def query_help():
@@ -622,14 +609,16 @@ def corpkit_gui():
         update_interrogation(o_editor_totals, id = 1, is_total = True)
         update_interrogation(n_editor_results, id = 2)
         update_interrogation(n_editor_totals, id = 2, is_total = True)
-        print 'Updated interrogations with manual data.'
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Updated interrogations with manual data.' % thetime
         the_data = all_interrogations[data1_pick.get()]
         newdata = all_interrogations[all_interrogations.keys()[-1]]
         update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70)
         update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70)
         update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100)
         update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70)
-        print 'Updated spreadsheet display in edit window.'
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Updated spreadsheet display in edit window.' % thetime
 
     def update_interro_interrogations():
         import pandas
@@ -637,12 +626,13 @@ def corpkit_gui():
         # to do: only if they are there
         update_interrogation(interro_results, id = 0)
         update_interrogation(interro_totals, id = 0, is_total = True)
-        print 'Updated interrogations with manual data'
+        thetime = strftime("%H:%M:%S", localtime())
+        print 'Updated interrogations with manual data.' % thetime
         tot = pandas.DataFrame(all_interrogations[all_interrogations.keys()[-1]].totals, dtype = object)
         update_spreadsheet(interro_results, all_interrogations[all_interrogations.keys()[-1]].results, height = 260, indexwidth = 70)
         update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70)
-        print 'Updated spreadsheet display in edit window.'
-
+        thetime = strftime("%H:%M:%S", localtime())
+        print 'Updated spreadsheet display in edit window.' % thetime
 
     def is_number(s):
         """check if str can be added for the below"""
@@ -749,7 +739,8 @@ def corpkit_gui():
 
         editor_args = {'operation': operation_text,
                        'dataframe2': data2,
-                       'spelling': spel}
+                       'spelling': spel,
+                       'print_info': False}
 
         if (do_with_subc.var).get() == 'Merge':
             editor_args['merge_subcorpora'] = subc_sel_vals
@@ -789,6 +780,9 @@ def corpkit_gui():
             editor_args['just_totals'] = True
         # do editing
         r = editor(data1, **editor_args)
+
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Result editing completed successfully.' % thetime
         
         # name the edit
         the_name = namer(edit_nametext.get(), type_of_data = 'edited')
@@ -812,7 +806,7 @@ def corpkit_gui():
         # add current subcorpora to editor menu
         subc_listbox.delete(0, 'end')
         for e in list(the_data.results.index):
-            if e != 'tkintertable-order':
+            if 'tkintertable-order' not in e:
                 subc_listbox.insert(END, e)
 
         # update spreadsheets
@@ -841,11 +835,12 @@ def corpkit_gui():
         subc_listbox.delete(0, 'end')
 
         for e in list(all_interrogations[data1_pick.get()].results.index):
-            subc_listbox.insert(END, e)        
+            if 'tkintertable-order' not in e:
+                subc_listbox.insert(END, e)        
 
     from collections import OrderedDict
     all_interrogations = OrderedDict()
-    all_interrogations['None'] = 'sorry'
+    all_interrogations['None'] = 'None'
 
     tup = tuple([i for i in all_interrogations.keys()])
     data1_pick = StringVar(root)
@@ -977,9 +972,9 @@ def corpkit_gui():
     Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 10, column = 2, sticky = E)
     # storage of edited results
     all_edited_results = OrderedDict()
-    all_edited_results['None'] = 'sorry'
+    all_edited_results['None'] = 'None'
 
-    Button(tab2, text = 'Update interrogation with manually altered data', command = lambda: update_all_interrogations()).grid(row = 12, column = 3, sticky = E)
+    Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations()).grid(row = 12, column = 3, sticky = E)
 
     # output
     resultname = StringVar()
@@ -1102,6 +1097,8 @@ def corpkit_gui():
             d['show_totals'] = 'both'
 
         f = plotter(plotnametext.get(), what_to_plot, **d)
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: %s plotted.' % (time, plotnametext.get())
         # a Tkinter.DrawingArea
         toolbar_frame = Tkinter.Frame(tab3)
         toolbar_frame.grid(row=12, column=2, columnspan = 3, sticky = N)
@@ -1136,6 +1133,8 @@ def corpkit_gui():
         #fo.write(f.gcf())
         #fo.close() # `()` was missing.
         thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: %s saved to %s.' % (time, fo, image_fullpath.get())
 
     def image_clear():
         thefig[0].get_tk_widget().grid_forget()
@@ -1273,8 +1272,14 @@ def corpkit_gui():
         d = {'window': int(wind_size.get()), 
              'random': random_conc_option.get(),
              'trees': show_trees.get(),
-             'n': 'all'}
+             'n': 'all',
+             'print_status': False,
+             'print_output': False}
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Concordancing in progress ... ' % (time, fo, image_fullpath.get())        
         r = conc(corpus, query, **d)
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Concordancing done ... ' % (time, fo, image_fullpath.get())
         return
 
     # SELECT SUBCORPUS
@@ -1316,7 +1321,7 @@ def corpkit_gui():
     def get_saved_results():
         from corpkit import load_all_results
         #Take_stdout()
-        r = load_all_results(data_dir = data_fullpath.get())
+        r = load_all_results(data_dir = data_fullpath.get(), root = root)
         Restore_stdout()
 
         for name, loaded in r.items():
@@ -1340,6 +1345,8 @@ def corpkit_gui():
         data_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Set data directory: %s' % (time, os.path.basename(fp))
     
     # corpus path setter
     image_fullpath = StringVar()
@@ -1353,6 +1360,8 @@ def corpkit_gui():
             return
         image_fullpath.set(fp)
         image_basepath.set('Images: "%s"' % os.path.basename(fp))
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Set image directory: %s' % (time, os.path.basename(fp))
 
     Label(tab5, text = 'Data directory: ').grid(sticky = W, row = 0, column = 0)
     Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 0, column = 1, sticky=E)
@@ -1363,11 +1372,13 @@ def corpkit_gui():
 
     def save_one_or_more():
         from corpkit import save_result
+        import os
         for i in sel_vals:
             if i + '.p' not in os.listdir(data_fullpath.get()):
                 save_result(all_interrogations[i], i + '.p', savedir = data_fullpath.get())
             else:
-                print 'File already exists.'
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: File already exists in %s.' % (thetime, os.path.basename(data_fullpath.get()))
         return
 
     def remove_one_or_more():
