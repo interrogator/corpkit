@@ -6,6 +6,8 @@
 ### Daniel McDonald
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
+> 
+> **Right now, I'm in the middle of putting together a GUI version of the tool, which resides in `corpkit/interface.py`. It works, but documentation is not yet available**
 
 <!-- MarkdownTOC -->
 
