@@ -264,18 +264,11 @@ def plotter(title,
     except:
         pass
 
-    # remove totals if there ... maybe redundant
+    # remove totals and tkinter order
     if not was_series:
-        try:
-            dataframe = dataframe.drop('Total', axis = 0)
-        except:
-            pass
-        # remove totals if there ... maybe redundant
-        try:
-            dataframe = dataframe.drop('Total', axis = 1)
-        except:
-            pass
-
+        for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+            dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+            
     # look at columns to see if all can be ints, in which case, set up figure
     # for depnumming
     if not was_series:
