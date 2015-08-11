@@ -36,6 +36,7 @@
 
 import Tkinter
 import sys,string
+import threading
 
 class DbgText:
     Dbgtopwin=None
@@ -51,7 +52,7 @@ class DbgText:
     def __init__(self,kind=''):
         self.kind=kind
         self.window=None
-        self.widget=Tkinter.Label()
+        self.widget=None
         self.called=0
         self.hide=0
         self.buffer=''
@@ -146,35 +147,36 @@ def Restore_all():
     Restore_stdout()
     Restore_stderr()
 
-class ConsoleText(Tkinter.Text):
-    '''A Tkinter Text widget that provides a scrolling display of console
+class ConsoleText(Tkinter.Label):
+    '''A Tkinter Label widget that provides a scrolling display of console
     stderr and stdout.'''
 
     class IORedirector(object):
-        '''A general class for redirecting I/O to this Text widget.'''
-        def __init__(self,text_area):
-            self.text_area = text_area
+        '''A general class for redirecting I/O to this Label widget.'''
+        def __init__(self,Label_area):
+            self.Label_area = Label_area
 
     class StdoutRedirector(IORedirector):
-        '''A class for redirecting stdout to this Text widget.'''
+        '''A class for redirecting stdout to this Label widget.'''
         def write(self,str):
-            self.text_area.write(str,False)
+            self.Label_area.write(str,False)
 
     class StderrRedirector(IORedirector):
-        '''A class for redirecting stderr to this Text widget.'''
+        '''A class for redirecting stderr to this Label widget.'''
         def write(self,str):
-            self.text_area.write(str,True)
+            self.Label_area.write(str,True)
 
     def __init__(self, master=None, cnf={}, **kw):
-        '''See the __init__ for Tkinter.Text for most of this stuff.'''
+        '''See the __init__ for Tkinter.Label for most of this stuff.'''
+        import threading
 
-        Tkinter.Text.__init__(self, master, cnf, **kw)
+        Tkinter.Label.__init__(self, master, cnf, **kw)
 
         self.started = False
         self.write_lock = threading.Lock()
 
-        self.tag_configure('STDOUT',background='white',foreground='black')
-        self.tag_configure('STDERR',background='white',foreground='red')
+        #self.tag_configure('STDOUT',background='white',foreground='black')
+        #self.tag_configure('STDERR',background='white',foreground='red')
 
         self.config(state=Tkinter.DISABLED)
 
@@ -314,13 +316,16 @@ class Notebook(Frame):
         self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
         self.noteBookFrame = Frame(parent)                                                 #Create a frame to hold everything together
-        self.BFrame = Frame(self.noteBookFrame)                                            #Create a frame to put the "tabs" in
+        self.BFrame = Frame(self.noteBookFrame)
+        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 30, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
-        self.noteBook.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
+        self.noteBook.grid_propagate(0)
+        #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
         self.noteBookFrame.grid()
-        self.BFrame.grid(row =0, sticky = W)
+        self.BFrame.grid(row = 0) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
+        self.statusbar.grid(row = 2)
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -338,7 +343,7 @@ class Notebook(Frame):
 
     def add_tab(self, width = 2, **kw):
         import Tkinter
-        """Creates a new tab, and returns it's corresponding frame
+        """Creates a new tab, and returns its corresponding frame
 
         """
         
@@ -384,6 +389,7 @@ def corpkit_gui():
     from Tkinter import StringVar, Listbox, Text
     import sys
     from tkintertable import TableCanvas, TableModel
+    import corpkit
     #from dictionaries.process_types import process_types
     #from dictionaries.roles import roles
     #from dictionaries.wordlists import wordlists
@@ -394,7 +400,8 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
-    note = Notebook(root, width= 1300, height =800, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    #HWHW
+    note = Notebook(root, width= 950, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
@@ -406,6 +413,16 @@ def corpkit_gui():
     ###################     ###################     ###################     ###################
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
+
+    # a dict of the editor frame names and models
+    editor_tables = {}
+    import threading
+    mostrecent_stdout = 
+    mostrecent_stdout = StringVar()
+    mostrecent_stdout.set('Dummy')
+    x = ConsoleText(note.statusbar)
+    x.start()
+    Label(note.statusbar, textvariable = mostrecent_stdout).grid()
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -419,7 +436,6 @@ def corpkit_gui():
         data_to_plot.set(all_interrogations.keys()[-1])
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
-
         try:
             del all_interrogations['None']
         except:
@@ -438,7 +454,26 @@ def corpkit_gui():
             if choice != 'None':
                 every_interro_listbox.insert(END, choice)
 
+    def add_tkt_index(df):
+        """add order to df for tkintertable"""
+        df = df.T
+        df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
+        df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
+        df = df.T
+        return df
 
+    def namer(name_box_text, type_of_data = 'interrogation'):
+        """returns a name to store interrogation/editor result as"""
+        
+        if name_box_text.lower() == 'untitled' or name_box_text == '':
+            c = 0
+            the_name = '%s-%s' % (type_of_data, str(c).zfill(2))
+            while the_name in all_interrogations.keys():
+                c += 1
+                the_name = '%s-%s' % (type_of_data, str(c).zfill(2))
+        else:
+            the_name = name_box_text
+        return the_name
 
     transdict = {
             'Get distance from root for regex match': 'a',
@@ -458,16 +493,17 @@ def corpkit_gui():
 
     def do_interrogation():
         """performs an interrogation"""
-
+        import pandas
         from corpkit import interrogator
-        #x.start()
-        Take_stdout()
-        #root.TEXT_INFO = Label(tab1, height=20, width=80, text="", justify = LEFT, font=("Courier New", 12))
-        #root.TEXT_INFO.grid(column=1, row = 1)
+        
+        #Take_stdout()
+
+        # spelling
         conv = (spl.var).get()
         if conv == 'Convert spelling' or conv == 'Off':
             conv = False
 
+        # special query
         if special_queries.get() != 'Off':
             spec_quer_translate = {'Participants': 'participants',
                                    'Any': 'any',
@@ -476,49 +512,55 @@ def corpkit_gui():
                                    'Entiries': 'entities'}
 
             query = spec_quer_translate[special_queries.get()]
+        
+        # if not special query, get normal query, turn list into list
         else:
             query = entrytext.get()
             # allow list queries
             if query.startswith('[') and query.endswith(']'):
                 query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
 
+        selected_option = transdict[datatype_chosen_option.get()]
         interrogator_args = {'query': query,
-                         'lemmatise': lem.get(),
-                         'phrases': phras.get(),
-                         'titlefilter': tit_fil.get(),
-                         'case_sensitive': case_sensitive.get(),
-                         'convert_spelling': conv}
-        #sys.stdout = StdoutRedirector(root.TEXT_INFO)
+                             'lemmatise': lem.get(),
+                             'phrases': phras.get(),
+                             'titlefilter': tit_fil.get(),
+                             'case_sensitive': case_sensitive.get(),
+                             'convert_spelling': conv}
+
         r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
-                          transdict[datatype_chosen_option.get()], 
+                          selected_option, 
                           **interrogator_args)
+    
         # when not testing:
         #r = interrogator(fullpath.get(), chosen_option.get(), **interrogator_args)
-        if nametext.get() == 'untitled' or nametext.get() == '':
-            c = 0
-            the_name = 'interrogation-%s' % str(c).zfill(2)
-            while the_name in all_interrogations.keys():
-                c += 1
-                the_name = 'interrogation-%s' % str(c).zfill(2)
-        else:
-            the_name = nametext.get()
+
+        # make name
+        the_name = namer(nametext.get(), type_of_data = 'interrogation')
+        
+        # remove dummy entry from master
         try:
             del all_interrogations['None']
         except KeyError:
             pass
-        all_interrogations[the_name] = r
-        import pandas
 
+        # add interrogation to master
+        all_interrogations[the_name] = r
+
+        # total in a way that tkintertable likes
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
-        if transdict[datatype_chosen_option.get()] != 'c':
-            longest = max([len(str(i)) for i in list(r.results.columns)]) 
+
+        # update spreadsheets
+        if selected_option != 'c':
             update_spreadsheet(interro_results, r.results, height = 260, indexwidth = 70)
-        else:
-            longest = 10
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70)
+        
+        i_resultname.set('Interrogation results: %s' % the_name)
         refresh()
-        Restore_stdout()
-        Dbg_kill_topwin()
+        #Restore_stdout()
+        #Dbg_kill_topwin()
+        # add button after first interrogation
+        Button(tab1, text = 'Update interrogation with manually altered data', command = lambda: update_interro_interrogations()).grid(row = 10, column = 2, sticky = E)
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -529,8 +571,6 @@ def corpkit_gui():
             self.config(font=('calibri',(12)),width=20)
             self['menu'].config(font=('calibri',(10)))
     
-    c = 0 # for naming unnamed interrogations
-
     # corpus path setter
     fullpath = StringVar()
     fullpath.set('/users/danielmcdonald/documents/work/risk/data/nyt/sample')
@@ -615,6 +655,8 @@ def corpkit_gui():
     q = Entry(tab1, textvariable = entrytext, width = 30)
     q.grid(row = 4, column = 0, columnspan = 2, sticky = E)
 
+  
+
     queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects'))
     special_queries = StringVar(root)
     special_queries.set('Off')
@@ -660,12 +702,16 @@ def corpkit_gui():
     Button(tab1, text = 'Query help', command = query_help).grid(row = 11, column = 0, sticky = W)
     Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 11, column = 1, sticky = E)
 
-    # output
-    Label(tab1, text = 'Interrogation results:', font = ("Helvetica", 12, "bold")).grid(row = 0, column = 2, sticky = W, padx=20, pady=0)
+    i_resultname = StringVar()
+    current_name = ''
+    i_resultname.set('Interrogation results: %s' % str(current_name))
+    Label(tab1, textvariable = i_resultname, 
+          font = ("Helvetica", 12, "bold")).grid(row = 0, 
+           column = 2, sticky = W, padx=20, pady=0)    
     interro_results = Frame(tab1, height = 28, width = 20, borderwidth = 2)
     interro_results.grid(column = 2, row = 1, rowspan=7, padx=20, pady=5)
 
-    Label(tab1, text = 'Interrogation totals:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 2, sticky = W, padx=20, pady=0)
+    #Label(tab1, text = 'Interrogation totals:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 2, sticky = W, padx=20, pady=0)
     interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
     interro_totals.grid(column = 2, row = 8, rowspan=2, padx=20, pady=5)
 
@@ -677,13 +723,10 @@ def corpkit_gui():
     # EDITOR TAB #    # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB # 
     ##############    ##############     ##############     ##############     ############## 
 
-    # a dict of the editor frame names and models
-    editor_tables = {}
-
     def exchange_interro_branch(namedtupname, newdata, branch = 'results'):
         """replaces a namedtuple results/totals with newdata
            --- such a hack, should upgrade to recordtype"""
-        newdata = newdata.T
+        
         namedtup = all_interrogations[namedtupname]
         if branch == 'results':
             the_branch = namedtup.results
@@ -702,8 +745,16 @@ def corpkit_gui():
         all_interrogations[namedtupname] = namedtup
 
     def update_interrogation(table_id, id, is_total = False):
-        """takes any changes made to spreadsheet and saves to the interrogation"""
-        model=editor_tables[table_id]
+        """takes any changes made to spreadsheet and saves to the interrogation
+
+        id: 0 = interrogator
+            1 = old editor window
+            2 = new editor window"""
+        # if table doesn't exist, forget about it
+        try:
+            model=editor_tables[table_id]
+        except:
+            return
         recs = model.getAllCells()
         colnames = model.columnNames
         collabels = model.columnlabels
@@ -722,13 +773,25 @@ def corpkit_gui():
         import pandas
         from StringIO import StringIO
         newdata = pandas.read_csv(StringIO(csv), index_col=0, header=0)
-        
+        newdata = pandas.DataFrame(newdata, dtype = object)
+        newdata = newdata.T
+        newdata = newdata.drop('Total', errors = 'ignore')
+        make_totals = True
+        if type(newdata.iloc[0,0]) == float:
+            make_totals = False
+        elif type(newdata.iloc[0,0]) == int:
+            make_totals = True
+        if make_totals:
+            newdata.ix['Total'] = newdata.drop('tkintertable-order', errors = 'ignore').sum().astype(object)
         # 0 id for the old data
         if id == 0:
+            name_of_interrogation = all_interrogations.keys()[-1]
+        if id == 1:
             name_of_interrogation = data1_pick.get()
         # 1 id for the new data
-        if id == 1:
+        if id == 2:
             name_of_interrogation = all_interrogations.keys()[-1]
+
         if not is_total:
             exchange_interro_branch(name_of_interrogation, newdata, branch = 'results')
         else:
@@ -737,17 +800,30 @@ def corpkit_gui():
     def update_all_interrogations():
         import pandas
         """update all_interrogations within spreadsheet data"""
-        update_interrogation(o_editor_results, id = 0)
-        update_interrogation(o_editor_totals, id = 0, is_total = True)
-        update_interrogation(n_editor_results, id = 1)
-        update_interrogation(n_editor_totals, id = 1, is_total = True)
-        print 'Updated interrogations with manual data'
+        # to do: only if they are there
+        update_interrogation(o_editor_results, id = 1)
+        update_interrogation(o_editor_totals, id = 1, is_total = True)
+        update_interrogation(n_editor_results, id = 2)
+        update_interrogation(n_editor_totals, id = 2, is_total = True)
+        print 'Updated interrogations with manual data.'
         the_data = all_interrogations[data1_pick.get()]
         newdata = all_interrogations[all_interrogations.keys()[-1]]
-        update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70, width = 500)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
-        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100, width = 500)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
+        update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70)
+        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70)
+        print 'Updated spreadsheet display in edit window.'
+
+    def update_interro_interrogations():
+        import pandas
+        """update all_interrogations within spreadsheet data"""
+        # to do: only if they are there
+        update_interrogation(interro_results, id = 0)
+        update_interrogation(interro_totals, id = 0, is_total = True)
+        print 'Updated interrogations with manual data'
+        tot = pandas.DataFrame(all_interrogations[all_interrogations.keys()[-1]].totals, dtype = object)
+        update_spreadsheet(interro_results, all_interrogations[all_interrogations.keys()[-1]].results, height = 260, indexwidth = 70)
+        update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70)
         print 'Updated spreadsheet display in edit window.'
 
 
@@ -771,16 +847,20 @@ def corpkit_gui():
             kwarg['width'] = width
         if df_to_show is not None:
             model = TableModel()
-
-            # sort df
+            # for abs freq, make total
             as_int = pandas.DataFrame(df_to_show, dtype = object)
+            make_totals = True
+            if type(as_int.iloc[0,0]) == float:
+                make_totals = False
+            elif type(as_int.iloc[0,0]) == int:
+                make_totals = True
+            if make_totals:
+                as_int = as_int.drop('Total', errors = 'ignore')
+                # add new totals
+                as_int.ix['Total'] = as_int.drop('tkintertable-order', errors = 'ignore').sum().astype(object)
+
             raw_data = as_int.to_dict()
-            raw_data = OrderedDict(sorted(raw_data.items(), 
-                key=lambda t: sum([int(i) for i in t[1].values() if is_number(i)]), 
-                reverse = True))
-            for name, val in raw_data.items():
-                raw_data[name] = OrderedDict(sorted(val.items(), key=lambda t: t[0]))
-            
+
             table = TableCanvas(frame_to_update, model=model, 
                                 showkeynamesinheader=True, 
                                 height = height,
@@ -789,6 +869,8 @@ def corpkit_gui():
             table.createTableFrame()
             model = table.model
             model.importDict(raw_data) #can import from a dictionary to populate model
+            for index, name in enumerate(list(as_int.index)):
+                model.moveColumn(model.getColumnIndex(name), index)
             table.createTableFrame()
             if 'tkintertable-order' in list(as_int.index):
                 table.sortTable(columnName = 'tkintertable-order')
@@ -797,6 +879,8 @@ def corpkit_gui():
                     model.deleteColumn(ind)
                 except:
                     pass
+            else:
+                table.sortTable(reverse = 1)
             table.redrawTable()
             editor_tables[frame_to_update] = model
         else:
@@ -807,7 +891,6 @@ def corpkit_gui():
 
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
-
 
     def do_editing():
         """what happens when you press edit"""
@@ -889,43 +972,52 @@ def corpkit_gui():
             editor_args['just_totals'] = True
         # do editing
         r = editor(data1, **editor_args)
+        
         # name the edit
-        c = 0
-        if edit_nametext.get() == 'untitled':
-            the_name = 'edited-%s' % str(c).zfill(2)
-            while the_name in all_edited_results.keys():
-                c += 1
-                the_name = 'edited-%s' % str(c).zfill(2)
-        else:
-            the_name = edit_nametext.get()
-        all_interrogations[the_name] = r
-        interroname = data1_pick.get()
-        resultname.set('Results to edit: %s' % str(interroname))        
-        update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70, width = 500)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
-        # update names above spreadsheets
+        the_name = namer(edit_nametext.get(), type_of_data = 'edited')
 
+        # add edit to master dict
+        all_interrogations[the_name] = r
+
+        # update label above spreadsheet
+        #interroname = the_name
+        #resultname.set('Results to edit: %s' % str(interroname))   
+
+        # update spreadsheets     
+        update_spreadsheet(o_editor_results, the_data.results, height = 100, width = 350)
+        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 350)
+
+        # new editor results
+        # update name above
         e_name = all_interrogations.keys()[-1]
         editoname.set('Edited results: %s' % str(e_name))
-        # add current subcorpora
+        
+        # add current subcorpora to editor menu
         subc_listbox.delete(0, 'end')
         for e in list(the_data.results.index):
-            subc_listbox.insert(END, e)
-        #longest = max([len(str(i)) for i in list(r.results.columns)])
-        update_spreadsheet(n_editor_results, r.results, indexwidth = 70, height = 100, width = 500)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, indexwidth = 70, width = 500)
+            if e != 'tkintertable-order':
+                subc_listbox.insert(END, e)
+
+        # update spreadsheets
+        update_spreadsheet(n_editor_results, r.results, height = 100, width = 350)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, width = 350)
+        
+        # add to edited results
         all_edited_results[the_name] = r
+        
+        # finish up
         refresh()
         Restore_stdout()
         Dbg_kill_topwin()
 
+
     def df_callback(*args):
-        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 500)
-        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 500)
+        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 350)
+        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 350)
         interroname = data1_pick.get()
         resultname.set('Results to edit: %s' % str(interroname))
-        update_spreadsheet(n_editor_results, None, height = 100, width = 500)
-        update_spreadsheet(n_editor_totals, None, height = 10, width = 500)
+        update_spreadsheet(n_editor_results, None, height = 100, width = 350)
+        update_spreadsheet(n_editor_totals, None, height = 10, width = 350)
         # update names above spreadsheets
         e_name = ''
         editoname.set('Edited results: %s' % str(e_name))
@@ -1070,7 +1162,7 @@ def corpkit_gui():
     all_edited_results = OrderedDict()
     all_edited_results['None'] = 'sorry'
 
-    Button(tab2, text = 'Update interrogation with manually altered data', command = lambda: update_all_interrogations()).grid(row = 10, column = 3, sticky = E)
+    Button(tab2, text = 'Update interrogation with manually altered data', command = lambda: update_all_interrogations()).grid(row = 12, column = 3, sticky = E)
 
     # output
     resultname = StringVar()
@@ -1079,27 +1171,27 @@ def corpkit_gui():
     Label(tab2, textvariable = resultname, 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 3, sticky = W, padx=20, pady=0)    
-    o_editor_results = Frame(tab2, height = 15, width = 40)
-    o_editor_results.grid(column = 3, row = 1, rowspan=3, padx=20)
+    o_editor_results = Frame(tab2, height = 15, width = 350)
+    o_editor_results.grid(column = 3, row = 1, rowspan=5, padx=20)
     #Label(tab2, text = 'Totals to edit:', 
           #font = ("Helvetica", 12, "bold")).grid(row = 4, 
            #column = 3, sticky = W, padx=20, pady=0)
-    o_editor_totals = Frame(tab2, height = 1, width = 40)
-    o_editor_totals.grid(column = 3, row = 4, rowspan=1, padx=20)
+    o_editor_totals = Frame(tab2, height = 1, width = 350)
+    o_editor_totals.grid(column = 3, row = 6, rowspan=1, padx=20)
     
     editoname = StringVar()
     e_name = ''
     editoname.set('Edited results: %s' % str(e_name))
     Label(tab2, textvariable = editoname, 
-          font = ("Helvetica", 12, "bold")).grid(row = 5, 
+          font = ("Helvetica", 12, "bold")).grid(row = 7, 
            column = 3, sticky = W, padx=20, pady=0)        
-    n_editor_results = Frame(tab2, height = 15, width = 40)
-    n_editor_results.grid(column = 3, row = 6, rowspan=3, padx=20)
+    n_editor_results = Frame(tab2, height = 15, width = 350)
+    n_editor_results.grid(column = 3, row = 8, rowspan=3, padx=20)
     #Label(tab2, text = 'Edited totals:', 
           #font = ("Helvetica", 12, "bold")).grid(row = 15, 
            #column = 3, sticky = W, padx=20, pady=0)
-    n_editor_totals = Frame(tab2, height = 1, width = 40)
-    n_editor_totals.grid(column = 3, row =9, rowspan=1, padx=20)
+    n_editor_totals = Frame(tab2, height = 1, width = 350)
+    n_editor_totals.grid(column = 3, row =11, rowspan=1, padx=20)
 
     # ????
     interrogation_name = StringVar()
@@ -1178,31 +1270,49 @@ def corpkit_gui():
         if chart_cols.get() != 'Default':
             d['colours'] = chart_cols.get()
 
+        legend_loc = legloc.get()
+        if legend_loc == 'None':
+            d['legend'] = False
+        else:
+            d['legend_pos'] = legend_loc
+
+        show_totals_in_plot = showtot.get()
+        if show_totals_in_plot == 'plot':
+            d['show_totals'] = 'plot'
+        if show_totals_in_plot == 'legend':
+            d['show_totals'] = 'legend'
+        if show_totals_in_plot == 'legend + plot':
+            d['show_totals'] = 'both'
+
         f = plotter(plotnametext.get(), what_to_plot, **d)
         # a Tkinter.DrawingArea
+        toolbar_frame = Tkinter.Frame(tab3)
+        toolbar_frame.grid(row=12, column=2, columnspan = 3, sticky = N)
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
-        canvas.get_tk_widget().grid(column = 2, row = 0, rowspan = 10, padx = 20, columnspan = 3)        
+        canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 10, padx = 20, columnspan = 3)
+        toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
+        toolbar.update()
         for i in thefig:
             thefig.pop()
         thefig.append(f.gcf())
 
     def save_current_image():
         import os
-        kwarg = {}
+        # figre out filename
+        filename = namer(plotnametext.get(), type_of_data = 'image') + '.png'
+        import sys
+        defaultextension = '.png' if sys.platform == 'darwin' else ''
+        kwarg = {'defaultextension': defaultextension,
+                 #'filetypes': [('all files', '.*'), 
+                               #('png file', '.png')],
+                 'initialfile': filename}
         imagedir = image_fullpath.get()
         if imagedir:
             kwarg['initialdir'] = imagedir
-        kwarg['defaultextension'] = '.png'
-        filename = plotnametext.get()
-        if filename.startswith('Untitled'):
-            c = 0
-            filename = 'Untitled-%s' % str(c).zfill(3) + '.png'
-            while filename in os.listdir(imagedir):
-                c += 1
-                filename = 'Untitled-%s' % str(c).zfill(3) + '.png'
 
         fo = tkFileDialog.asksaveasfilename(**kwarg)
+
         #fo = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
         if fo is None: # asksaveasfile return `None` if dialog closed with "cancel".
             return
@@ -1211,11 +1321,10 @@ def corpkit_gui():
         thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
 
     def image_clear():
-        canvas.destroy()
+        thefig[0].get_tk_widget().grid_forget()
 
     def reset_plotter_pane():
         return
-
 
     # title tab
     Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W')
@@ -1278,154 +1387,27 @@ def corpkit_gui():
     Label(tab3, text='Colour scheme:').grid(row = 9, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
-    schemes = tuple(('Default',
-    'Spectral',
-    'summer',
-    'coolwarm',
-    'Wistia_r',
-    'pink_r',
-    'Set1',
-    'Set2',
-    'Set3',
-    'brg_r',
-    'Dark2',
-    'prism',
-    'PuOr_r',
-    'afmhot_r',
-    'terrain_r',
-    'PuBuGn_r',
-    'RdPu',
-    'gist_ncar_r',
-    'gist_yarg_r',
-    'Dark2_r',
-    'YlGnBu',
-    'RdYlBu',
-    'hot_r',
-    'gist_rainbow_r',
-    'gist_stern',
-    'PuBu_r',
-    'cool_r',
-    'cool',
-    'gray',
-    'copper_r',
-    'Greens_r',
-    'GnBu',
-    'gist_ncar',
-    'spring_r',
-    'gist_rainbow',
-    'gist_heat_r',
-    'Wistia',
-    'OrRd_r',
-    'CMRmap',
-    'bone',
-    'gist_stern_r',
-    'RdYlGn',
-    'Pastel2_r',
-    'spring',
-    'terrain',
-    'YlOrRd_r',
-    'Set2_r',
-    'winter_r',
-    'PuBu',
-    'RdGy_r',
-    'spectral',
-    'rainbow',
-    'flag_r',
-    'jet_r',
-    'RdPu_r',
-    'gist_yarg',
-    'BuGn',
-    'Paired_r',
-    'hsv_r',
-    'bwr',
-    'cubehelix',
-    'Greens',
-    'PRGn',
-    'gist_heat',
-    'spectral_r',
-    'Paired',
-    'hsv',
-    'Oranges_r',
-    'prism_r',
-    'Pastel2',
-    'Pastel1_r',
-    'Pastel1',
-    'gray_r',
-    'jet',
-    'Spectral_r',
-    'gnuplot2_r',
-    'gist_earth',
-    'YlGnBu_r',
-    'copper',
-    'gist_earth_r',
-    'Set3_r',
-    'OrRd',
-    'gnuplot_r',
-    'ocean_r',
-    'brg',
-    'gnuplot2',
-    'PuRd_r',
-    'bone_r',
-    'BuPu',
-    'Oranges',
-    'RdYlGn_r',
-    'PiYG',
-    'CMRmap_r',
-    'YlGn',
-    'binary_r',
-    'gist_gray_r',
-    'Accent',
-    'BuPu_r',
-    'gist_gray',
-    'flag',
-    'bwr_r',
-    'RdBu_r',
-    'BrBG',
-    'Reds',
-    'Set1_r',
-    'summer_r',
-    'GnBu_r',
-    'BrBG_r',
-    'Reds_r',
-    'RdGy',
-    'PuRd',
-    'Accent_r',
-    'Blues',
-    'autumn_r',
-    'autumn',
-    'cubehelix_r',
-    'nipy_spectral_r',
-    'ocean',
-    'PRGn_r',
-    'Greys_r',
-    'pink',
-    'binary',
-    'winter',
-    'gnuplot',
-    'RdYlBu_r',
-    'hot',
-    'YlOrBr',
-    'coolwarm_r',
-    'rainbow_r',
-    'Purples_r',
-    'PiYG_r',
-    'YlGn_r',
-    'Blues_r',
-    'YlOrBr_r',
-    'seismic',
-    'Purples',
-    'seismic_r',
-    'RdBu',
-    'Greys',
-    'BuGn_r',
-    'YlOrRd',
-    'PuOr',
-    'PuBuGn',
-    'nipy_spectral',
-    'afmhot'))
+    schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'Wistia_r', 'pink_r', 'Set1', 'Set2', 
+        'Set3', 'brg_r', 'Dark2', 'prism', 'PuOr_r', 'afmhot_r', 'terrain_r', 'PuBuGn_r', 
+        'RdPu', 'gist_ncar_r', 'gist_yarg_r', 'Dark2_r', 'YlGnBu', 'RdYlBu', 'hot_r', 
+        'gist_rainbow_r', 'gist_stern', 'PuBu_r', 'cool_r', 'cool', 'gray', 'copper_r', 
+        'Greens_r', 'GnBu', 'gist_ncar', 'spring_r', 'gist_rainbow', 'gist_heat_r', 'Wistia', 
+        'OrRd_r', 'CMRmap', 'bone', 'gist_stern_r', 'RdYlGn', 'Pastel2_r', 'spring', 'terrain', 
+        'YlOrRd_r', 'Set2_r', 'winter_r', 'PuBu', 'RdGy_r', 'spectral', 'rainbow', 'flag_r', 
+        'jet_r', 'RdPu_r', 'gist_yarg', 'BuGn', 'Paired_r', 'hsv_r', 'bwr', 'cubehelix', 
+        'Greens', 'PRGn', 'gist_heat', 'spectral_r', 'Paired', 'hsv', 'Oranges_r', 'prism_r', 
+        'Pastel2', 'Pastel1_r', 'Pastel1', 'gray_r', 'jet', 'Spectral_r', 'gnuplot2_r', 
+        'gist_earth', 'YlGnBu_r', 'copper', 'gist_earth_r', 'Set3_r', 'OrRd', 'gnuplot_r', 
+        'ocean_r', 'brg', 'gnuplot2', 'PuRd_r', 'bone_r', 'BuPu', 'Oranges', 'RdYlGn_r', 'PiYG', 
+        'CMRmap_r', 'YlGn', 'binary_r', 'gist_gray_r', 'Accent', 'BuPu_r', 'gist_gray', 'flag', 
+        'bwr_r', 'RdBu_r', 'BrBG', 'Reds', 'Set1_r', 'summer_r', 'GnBu_r', 'BrBG_r', 'Reds_r', 
+        'RdGy', 'PuRd', 'Accent_r', 'Blues', 'autumn_r', 'autumn', 'cubehelix_r', 
+        'nipy_spectral_r', 'ocean', 'PRGn_r', 'Greys_r', 'pink', 'binary', 'winter', 'gnuplot', 
+        'RdYlBu_r', 'hot', 'YlOrBr', 'coolwarm_r', 'rainbow_r', 'Purples_r', 'PiYG_r', 'YlGn_r', 
+        'Blues_r', 'YlOrBr_r', 'seismic', 'Purples', 'seismic_r', 'RdBu', 'Greys', 'BuGn_r', 
+        'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot'))
     ch_col = OptionMenu(tab3, chart_cols, *schemes)
     ch_col.grid(row = 9, column = 1, sticky = E)
-
 
     stys = tuple(('ggplot', 'fivethirtyeights', 'bmh'))
     plot_style = StringVar(root)
@@ -1438,21 +1420,29 @@ def corpkit_gui():
     Label(tab3, text='Legend position:').grid(row = 11, column = 0, sticky = W)
     legloc = StringVar(root)
     legloc.set('best')
-    locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle'))
+    locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
     loc_options = OptionMenu(tab3, legloc, *locs)
     loc_options.grid(row = 11, column = 1, sticky = E)
 
+    # show_totals option
+    Label(tab3, text='Show totals: ').grid(row = 12, column = 0, sticky = W)
+    showtot = StringVar(root)
+    showtot.set('Off')
+    showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
+    show_tot_menu = OptionMenu(tab3, showtot, *showtot_options)
+    show_tot_menu.grid(row = 12, column = 1, sticky = E)
+
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 12, column = 1, sticky = E)
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 13, column = 1, sticky = E)
 
     # save image button
-    Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 11)
+    #Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 13)
 
     # clear image
-    Button(tab3, text = 'Clear image', command = lambda: do_plotting()).grid(column = 3, row = 11)
+    #Button(tab3, text = 'Clear image', command = lambda: do_plotting()).grid(column = 3, row = 13)
 
     # reset pane
-    Button(tab3, text = 'Reset plotter pane', command = lambda: reset_plotter_pane()).grid(column = 4, row = 11)
+    #Button(tab3, text = 'Reset plotter pane', command = lambda: reset_plotter_pane()).grid(column = 4, row = 13)
 
 
     ###################     ###################     ###################     ###################
@@ -1497,7 +1487,6 @@ def corpkit_gui():
 
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid()
 
-
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
     ##############     ##############     ##############     ##############     ############## 
@@ -1508,10 +1497,14 @@ def corpkit_gui():
     # rename results
 
     def get_saved_results():
-        from corpkit import load_result, load_all_results
+        from corpkit import load_all_results
+        Take_stdout()
         r = load_all_results(data_dir = data_fullpath.get())
+        Restore_stdout()
+
         for name, loaded in r.items():
             all_interrogations[name] = loaded
+        Dbg_kill_topwin()
         refresh()
 
     def renamer():
@@ -1609,8 +1602,6 @@ def corpkit_gui():
     #    df_var.set(all_interrogations[-1])
     #Label(tab2, textvariable = df_var).grid()
 
-
-    
     note.focus_on(tab5)
     root.mainloop()
 
