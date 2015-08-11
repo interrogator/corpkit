@@ -3,6 +3,7 @@
 def interrogator(path, 
                 option, 
                 query = 'any', 
+                case_sensitive = False,
                 lemmatise = False, 
                 reference_corpus = 'bnc.p', 
                 titlefilter = False, 
@@ -19,8 +20,8 @@ def interrogator(path,
                 custom_engine = False,
                 post_process = False,
                 printstatus = True,
+                root = False,
                 **kwargs):
-    
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
     keywords/ngrams
@@ -159,10 +160,9 @@ def interrogator(path,
                                               taglemma)
 
     tk = check_t_kinter()
-    if tk:
-        from corpkit.progressbar import ProgressBar as GuiProgressBar
         #from corpkit.interface import GuiProgressBar
     # determine if actually a multiquery
+
     is_multiquery = False
     if hasattr(path, '__iter__'):
         is_multiquery = True
@@ -827,21 +827,21 @@ def interrogator(path,
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line')
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('b') or option.startswith('B'):
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line')
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.startswith('w') or option.startswith('W'):
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
+                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif option.startswith('c') or option.startswith('C'):
@@ -850,7 +850,7 @@ def interrogator(path,
             translated_option = 'C'
             optiontext = 'Counts only.'
             if type(query) == list:
-                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line')
+                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
@@ -877,7 +877,7 @@ def interrogator(path,
             keywording = True
             optiontext = 'Keywords only.'
             if type(query) == list:
-                query = as_regex(query, boundaries = 'line')
+                query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
 
         elif option.startswith('n') or option.startswith('n'):
             translated_option = 'n'
@@ -885,7 +885,7 @@ def interrogator(path,
             phrases = True
             optiontext = 'n-grams only.'
             if type(query) == list:
-                query = as_regex(query, boundaries = 'word')
+                query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
 
         # dependency option:
         elif option.startswith('z') or option.startswith('Z'):
@@ -950,7 +950,7 @@ def interrogator(path,
 
     if dependency:
         if type(query) == list:
-            query = as_regex(query, boundaries = 'line')
+            query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             #query = r'(?i)^(' + '|'.join(query) + r')$' 
         if query == 'any':
             query = r'.*'
@@ -1050,9 +1050,9 @@ def interrogator(path,
     def filtermaker(filter):
         if type(filter) == list:
             from corpkit.other import as_regex
-            filter = as_regex(filter)
+            filter = as_regex(filter, case_sensitive = case_sensitive)
         try:
-            output = re.compile(filter)
+            output = re.compile(filter, case_sensitive = case_sensitive)
             is_valid = True
         except:
             is_valid = False
@@ -1202,18 +1202,11 @@ def interrogator(path,
         sorted_dirs = all_files
         c = 0
         
-        if tk:
-            gui_prog_bar = GuiProgressBar(total_files)
-        else:
-            p = ProgressBar(total_files)
+        p = ProgressBar(total_files)
 
-    
     # if tregex, make progress bar for each dir
     else:
-        if tk:
-            gui_prog_bar = GuiProgressBar(len(sorted_dirs))
-        else:
-            p = ProgressBar(len(sorted_dirs))
+        p = ProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     subcorpus_names = []
@@ -1269,17 +1262,15 @@ def interrogator(path,
         print ("\n%s: Beginning corpus interrogation: %s" \
            "\n          Query: '%s'\n          %s" \
            "\n          Interrogating corpus ... \n" % (time, os.path.basename(path), qtext, optiontext) )
-
+    if root and tk:
+        root.update()
     for index, d in enumerate(sorted_dirs):
         if not dependency and not plaintext:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
-            if tk:
-                gui_prog_bar.animate(index)
-            else:
-                p.animate(index)
-
-    
+            p.animate(index)
+            if root and tk:
+                root.update()
             # get path to corpus/subcorpus
             if len(sorted_dirs) == 1:
                 subcorpus = path
@@ -1336,10 +1327,9 @@ def interrogator(path,
             skipped_sents = 0
             for f in fileset:
                 # pass the x/y argument for more updates  
-                if tk:
-                    gui_prog_bar.animate(c, str(c) + '/' + str(total_files))
-                else:
-                    p.animate(c, str(c) + '/' + str(total_files))
+                p.animate(c, str(c) + '/' + str(total_files))
+                if root and tk:
+                    root.update()
                 c += 1
                 if one_big_corpus:
                     filepath = os.path.join(path, f)
@@ -1400,22 +1390,19 @@ def interrogator(path,
             dicts.append(Counter(processed_result))
 
     if not dependency and not plaintext:
-        if tk:
-            gui_prog_bar.animate(len(sorted_dirs))
-        else:
-            p.animate(len(sorted_dirs))
+        p.animate(len(sorted_dirs))
+        if root and tk:
+            root.update()
     else:
         # weird float div by 0 zero error here for plaintext
         try:
-            
-            if tk:
-                gui_prog_bar.animate(len(sorted_dirs))
-            else:
-                p.animate(total_files)
+            p.animate(total_files)
         except:
             pass
+    if root and tk:
+        root.update()
 
-    if not have_ipython:
+    if not have_ipython and not root and not tk:
         print '\n'
     
     # if only counting, get total total and finish up:
@@ -1461,7 +1448,9 @@ def interrogator(path,
         
         if printstatus:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: Finished! %d total occurrences.\n' % (time, stotals.sum())
+            print '%s: Finished! %d total occurrences.' % (time, stotals.sum())
+            if not tk:
+                print ''
 
         if add_to:
             d = add_to[0]
@@ -1505,6 +1494,12 @@ def interrogator(path,
         except:
             pass
         #df.name = query
+
+    # add sort info for tk
+    if tk:
+        df = df.T
+        df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
+        df = df.T
 
     # return pandas/csv table of most common results in each subcorpus
     if not depnum and not distance_mode:
@@ -1568,10 +1563,14 @@ def interrogator(path,
     time = strftime("%H:%M:%S", localtime())
     if not keywording:
         if printstatus:
-            print '%s: Finished! %d unique results, %d total.\n' % (time, num_diff_results, stotals.sum())
+            print '%s: Finished! %d unique results, %d total.' % (time, num_diff_results, stotals.sum())
+            if not tk:
+                print ''
     else:
         if printstatus:
-            print '%s: Finished! %d unique results.\n' % (time, num_diff_results)
+            print '%s: Finished! %d unique results.' % (time, num_diff_results)
+            if not tk:
+                print ''
     if num_diff_results == 0:
         print '' 
         warnings.warn('No results produced. Maybe your query needs work.')
