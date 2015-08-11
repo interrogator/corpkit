@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!usr/bin/python
 #tkNotebook
 #Created By: Patrick T. Cossette <cold_soul79078@yahoo.com>
 
@@ -33,16 +33,6 @@
     Created By: Patrick T. Cossette <cold_soul79078@yahoo.com>    
 
 """
-
-#!/usr/bin/ipython
-
-# progress bar for various corpling_tools
-
-# from http://nbviewer.ipython.org/github/ipython/ipython/blob/3607712653c66d63e0d7f13f073bde8c0f209ba8/docs/examples/notebooks/Animations_and_Progress.ipynb
-
-# there is dirname as a second arg, which will display the subcorpus in the progress bar
-
-# daniel mcdonald
 
 import Tkinter
 import sys,string
@@ -421,7 +411,7 @@ def corpkit_gui():
         """refreshes the list of dataframes in the editor and plotter panes"""
         # Reset data1_pick and delete all old options
         # get the latest only after first interrogation
-        if len(all_interrogations.keys()) < 3:
+        if len(all_interrogations.keys()) < 2:
             data1_pick.set(all_interrogations.keys()[-1])
         #data2_pick.set(all_interrogations.keys()[-1])
         dataframe1s['menu'].delete(0, 'end')
@@ -477,10 +467,26 @@ def corpkit_gui():
         conv = (spl.var).get()
         if conv == 'Convert spelling' or conv == 'Off':
             conv = False
-        interrogator_args = {'query': entrytext.get(),
+
+        if special_queries.get() != 'Off':
+            spec_quer_translate = {'Participants': 'participants',
+                                   'Any': 'any',
+                                   'Processes': 'processes',
+                                   'Subjects': 'subjects',
+                                   'Entiries': 'entities'}
+
+            query = spec_quer_translate[special_queries.get()]
+        else:
+            query = entrytext.get()
+            # allow list queries
+            if query.startswith('[') and query.endswith(']'):
+                query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+
+        interrogator_args = {'query': query,
                          'lemmatise': lem.get(),
                          'phrases': phras.get(),
                          'titlefilter': tit_fil.get(),
+                         'case_sensitive': case_sensitive.get(),
                          'convert_spelling': conv}
         #sys.stdout = StdoutRedirector(root.TEXT_INFO)
         r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
@@ -598,23 +604,24 @@ def corpkit_gui():
     datatype_listbox.select_set(0)
 
     def q_callback(*args):
-        if special_queries.get() == 'Custom':
+        if special_queries.get() == 'Off':
             q.configure(state=NORMAL)
-
-    # query: should be drop down, with custom option ...
-    queries = tuple(('Participants', 'Processes', 'Subjects', 'Custom'))
-    special_queries = StringVar(root)
-    special_queries.set('any')
-    Label(tab1, text = 'Preset query:').grid(row = 4, column = 0, sticky = W)
-    pick_a_query = OptionMenu(tab1, special_queries, *queries)
-    pick_a_query.grid(row = 4, column = 1, sticky=E)
-    special_queries.trace("w", q_callback)
+        else:
+            q.configure(state=DISABLED)
 
     entrytext = StringVar()
-    Label(tab1, text = 'Custom query:').grid(row = 5, column = 0, sticky = W)
-    entrytext.set('any')
-    q = Entry(tab1, textvariable = entrytext, width = 25, state = DISABLED)
-    q.grid(row = 5, column = 0, columnspan = 2, sticky = E)
+    Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = W)
+    entrytext.set(r'JJ > (NP <<# /\brisk/)')
+    q = Entry(tab1, textvariable = entrytext, width = 30)
+    q.grid(row = 4, column = 0, columnspan = 2, sticky = E)
+
+    queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects'))
+    special_queries = StringVar(root)
+    special_queries.set('Off')
+    Label(tab1, text = 'Preset query:').grid(row = 5, column = 0, sticky = W)
+    pick_a_query = OptionMenu(tab1, special_queries, *queries)
+    pick_a_query.grid(row = 5, column = 1, sticky=E)
+    special_queries.trace("w", q_callback)
 
     # boolean interrogation arguments
     lem = IntVar()
@@ -623,6 +630,8 @@ def corpkit_gui():
     Checkbutton(tab1, text="Phrases (multiword results)", variable=phras, onvalue = True, offvalue = False).grid(column = 0, columnspan = 2, row = 6, sticky=E)
     tit_fil = IntVar()
     Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid(row = 7, column = 0, sticky=W)
+    case_sensitive = IntVar()
+    Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 7, column = 1, sticky=W)
 
     Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0)
     spl = MyOptionMenu(tab1, 'Off','UK','US')
@@ -781,12 +790,21 @@ def corpkit_gui():
             model = table.model
             model.importDict(raw_data) #can import from a dictionary to populate model
             table.createTableFrame()
-            # sorts by total freq, ok for now
-            table.sortTable(reverse = 1)
+            if 'tkintertable-order' in list(as_int.index):
+                table.sortTable(columnName = 'tkintertable-order')
+                ind = model.columnNames.index('tkintertable-order')
+                try:
+                    model.deleteColumn(ind)
+                except:
+                    pass
             table.redrawTable()
             editor_tables[frame_to_update] = model
         else:
             table = TableCanvas(frame_to_update, height = height, width = width)
+            
+            #for index, c in enumerate(list(raw_data.columns)):
+                #model.moveColumn(model.getColumnIndex(c), index)
+
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
@@ -864,6 +882,11 @@ def corpkit_gui():
 
         editor_args['sort_by'] = sort_trans[sort_val.get()]
             
+        if keep_stats_setting.get() == 1:
+            editor_args['keep_stats'] = True
+
+        if just_tot_setting.get() == 1:
+            editor_args['just_totals'] = True
         # do editing
         r = editor(data1, **editor_args)
         # name the edit
@@ -979,7 +1002,7 @@ def corpkit_gui():
 
     # not hooked up yet
     just_tot_setting = IntVar()
-    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting)
+    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
     #just_tot_but.select()
     just_tot_but.grid(column = 0, row = 6)
 
@@ -1178,6 +1201,7 @@ def corpkit_gui():
             while filename in os.listdir(imagedir):
                 c += 1
                 filename = 'Untitled-%s' % str(c).zfill(3) + '.png'
+
         fo = tkFileDialog.asksaveasfilename(**kwarg)
         #fo = tkFileDialog.asksaveasfile(mode='w', defaultextension=".png")
         if fo is None: # asksaveasfile return `None` if dialog closed with "cancel".
@@ -1520,9 +1544,12 @@ def corpkit_gui():
         image_fullpath.set(fp)
         image_basepath.set('Images: "%s"' % os.path.basename(fp))
 
-    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(sticky=E)
-    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(sticky=E)
-    Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid(sticky=E)
+    Label(tab5, text = 'Data directory: ').grid(sticky = W, row = 0, column = 0)
+    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 0, column = 1, sticky=E)
+    Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
+    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 1, column = 1, sticky=E)
+    Label(tab5, text = 'Get saved interrogations: ').grid(sticky = W, row = 2, column = 0)
+    Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid(row = 2, column = 1, sticky=E)
 
     def save_one_or_more():
         from corpkit import save_result
@@ -1556,7 +1583,7 @@ def corpkit_gui():
                 sel_vals.append(value)
 
     every_interro_listbox = Listbox(tab5, selectmode = EXTENDED)
-    every_interro_listbox.grid()
+    every_interro_listbox.grid(sticky = E, column = 1, row = 3)
     # Set interrogation option
     ei_chosen_option = StringVar()
     #ei_chosen_option.set('w')
@@ -1564,10 +1591,11 @@ def corpkit_gui():
     # default: w option
     every_interro_listbox.select_set(0)
 
+    Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
     Button(tab5, text="Remove selected interrogation(s)", 
-           command=remove_one_or_more).grid()
-
-    Button(tab5, text = 'Save selected interrogation(s)', command = save_one_or_more).grid()
+           command=remove_one_or_more).grid(sticky = E, column = 1, row = 4)
+    Label(tab5, text = 'Save selected: ').grid(sticky = W, row = 5, column = 0)
+    Button(tab5, text = 'Save selected interrogation(s)', command = save_one_or_more).grid(sticky = E, column = 1, row = 5)
 
     #var = IntVar()
     #var.set(10)
