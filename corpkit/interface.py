@@ -39,6 +39,7 @@ from Tkinter import *
 import sys,string
 import threading
 import ScrolledText
+import Queue
 
 ########################################################################
 class RedirectText(object):
@@ -52,7 +53,10 @@ class RedirectText(object):
     #----------------------------------------------------------------------
     def write(self, string):
         """"""
-        self.output.insert(Tkinter.END, string)
+        import re
+        reg = re.compile(r'^\s*$')
+        if not re.match(reg, string):
+            self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
  
 
 class IORedirector(object):
@@ -89,6 +93,7 @@ class Notebook(Frame):
         self.deletedTabs = []        
         self.xpad = xpad
         self.ypad = ypad
+        self.queue = queue
         self.activerelief = activerelief
         self.inactiverelief = inactiverelief                                               
         self.kwargs = kw                                                                   
@@ -99,8 +104,13 @@ class Notebook(Frame):
         self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 30, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = ScrolledText.ScrolledText(self.statusbar)
+        self.text = ScrolledText.ScrolledText(self.statusbar, height = 1)
         self.text.grid()
+        self.text.update_idletasks()
+        def callback(*args):
+            self.text.see(END)
+            self.text.edit_modified(0)
+        self.text.bind('<<Modified>>', callback)
 
         self.redir = RedirectText(self.text)
         sys.stdout = self.redir
@@ -111,7 +121,23 @@ class Notebook(Frame):
         self.BFrame.grid(row = 0) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
         self.statusbar.grid(row = 2)
-        
+        self.statusbar.update_idletasks()
+        self.update_idletasks()
+        self.text.update_idletasks()
+
+    def processIncoming(self):
+        """Handle all messages currently in the queue, if any."""
+        while self.queue.qsize(  ):
+            try:
+                msg = self.queue.get(0)
+                # Check contents of message and do whatever is needed. As a
+                # simple test, print it (in real life, you would
+                # suitably update the GUI's display in a richer fashion).
+                print msg
+            except Queue.Empty:
+                # just on general principles, although we don't
+                # expect this branch to be taken in this case
+                pass
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -170,6 +196,9 @@ class Notebook(Frame):
                 break                                                                      #Job is done, exit the loop
             self.iteratedTabs += 1                                                         #Add one to the loop count
 
+
+
+
 def corpkit_gui():
     import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
     from Tkinter import StringVar, Listbox, Text
@@ -186,6 +215,7 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
+
     #HWHW
     note = Notebook(root, width= 950, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
@@ -196,17 +226,19 @@ def corpkit_gui():
     tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
     #Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
     
+    note.text.see(Tkinter.END)
+    note.text.yview_pickplace("end")
+    note.text.update_idletasks()
     ###################     ###################     ###################     ###################
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
 
     # a dict of the editor frame names and models
     editor_tables = {}
-    #import threading
-    #sys.stdout = StdoutRedirector(root)
-    #mostrecent_stdout = StringVar()
-    #mostrecent_stdout.set('Dummy')
-    #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
+
+    note.statusbar.update_idletasks()
+    note.update_idletasks()
+    note.text.update_idletasks()
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -312,6 +344,7 @@ def corpkit_gui():
                              'case_sensitive': case_sensitive.get(),
                              'convert_spelling': conv}
 
+        root.update()
         r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
                           selected_option, 
                           **interrogator_args)
@@ -342,7 +375,7 @@ def corpkit_gui():
         i_resultname.set('Interrogation results: %s' % the_name)
         refresh()
         #Restore_stdout()
-        #Dbg_kill_topwin()
+        ##Dbg_kill_topwin()
         # add button after first interrogation
         Button(tab1, text = 'Update interrogation with manually altered data', command = lambda: update_interro_interrogations()).grid(row = 10, column = 2, sticky = E)
 
@@ -678,7 +711,7 @@ def corpkit_gui():
 
     def do_editing():
         """what happens when you press edit"""
-        Take_stdout()
+        #Take_stdout()
         import pandas
         from corpkit import editor
         try:
@@ -791,8 +824,8 @@ def corpkit_gui():
         
         # finish up
         refresh()
-        Restore_stdout()
-        Dbg_kill_topwin()
+        #Restore_stdout()
+        #Dbg_kill_topwin()
 
 
     def df_callback(*args):
@@ -1282,13 +1315,13 @@ def corpkit_gui():
 
     def get_saved_results():
         from corpkit import load_all_results
-        Take_stdout()
+        #Take_stdout()
         r = load_all_results(data_dir = data_fullpath.get())
         Restore_stdout()
 
         for name, loaded in r.items():
             all_interrogations[name] = loaded
-        Dbg_kill_topwin()
+        #Dbg_kill_topwin()
         refresh()
 
     def renamer():
@@ -1386,7 +1419,7 @@ def corpkit_gui():
     #    df_var.set(all_interrogations[-1])
     #Label(tab2, textvariable = df_var).grid()
 
-    note.focus_on(tab5)
+    note.focus_on(tab1)
     root.mainloop()
 
 if __name__ == "__main__":
