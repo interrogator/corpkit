@@ -826,7 +826,7 @@ def tregex_engine(query = False,
         res = [(w, t.upper()) for w, t in res]
     return res
 
-def load_all_results(data_dir = 'data/saved_interrogations'):
+def load_all_results(data_dir = 'data/saved_interrogations', root = False):
     """load every saved interrogation in data_dir into a dict"""
     import os
     import time
@@ -835,12 +835,18 @@ def load_all_results(data_dir = 'data/saved_interrogations'):
     r = {}
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
     if len(fs) == 0:
-        raise ValueError('No results found in %s' % datadir)
+        if not root:
+            raise ValueError('No results found in %s' % datadir)
+        else:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No results found in %s' % (thetime, datadir)
     for finding in fs:
         try:
             r[os.path.splitext(finding)[0]] = load_result(finding, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
+            if root:
+                root.update()
         except:
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
