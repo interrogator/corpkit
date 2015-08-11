@@ -6,7 +6,9 @@ def conc(corpus, query,
         trees = False,
         plaintext = 'guess',
         add_links = False,
-        show_links = False): 
+        show_links = False,
+        print_status = True,
+        print_output = True): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
     import os
     import re
@@ -34,6 +36,8 @@ def conc(corpus, query,
         query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
     
     # lazy, daniel!
+    if n == 'all':
+        n = 9999
     if window == 'all':
         window = 9999
 
@@ -47,8 +51,9 @@ def conc(corpus, query,
         raise ValueError('Corpus file or folder not found: %s' % corpus)
 
     # welcome message
-    time = strftime("%H:%M:%S", localtime())
-    print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
+    if print_status:
+        time = strftime("%H:%M:%S", localtime())
+        print "\n%s: Getting concordances for %s ... \n          Query: %s\n" % (time, corpus, query)
     output = []
 
     if plaintext == 'guess':
@@ -100,8 +105,9 @@ def conc(corpus, query,
         # get longest middle column result, or discover no results and raise error
         maximum = len(max(middle_column_result, key=len))
     except ValueError:
-        time = strftime("%H:%M:%S", localtime())
-        print "\n%s: No matches found." % time
+        if print_status:
+            time = strftime("%H:%M:%S", localtime())
+            print "\n%s: No matches found." % time
         return
 
     zipped = zip(whole_results, middle_column_result)
@@ -162,11 +168,14 @@ def conc(corpus, query,
     pd.set_option('colheader_justify', 'left')
     if add_links:
         if not show_links:
-            print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+            if print_output:
+                print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
         else:
-            print HTML(df.to_html(escape=False))
+            if print_output:
+                print HTML(df.to_html(escape=False))
     else:
-        print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+        if print_output:
+            print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
 
     if not add_links:
         df.columns = ['l', 'm', 'r']
