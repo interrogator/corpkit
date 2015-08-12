@@ -37,9 +37,9 @@ def conc(corpus, query,
     
     # lazy, daniel!
     if n == 'all':
-        n = 9999
+        n = 99999
     if window == 'all':
-        window = 9999
+        window = 500
 
     # check query
     good_tregex_query = tregex_engine(query, check_query = True)
