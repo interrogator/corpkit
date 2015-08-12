@@ -1062,7 +1062,12 @@ def interrogator(path,
             is_valid = True
         except:
             is_valid = False
+
         while not is_valid:
+            if root:
+                time = strftime("%H:%M:%S", localtime())
+                print '%s: Invalid POS filter regular expression.' % time
+                return
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
                 '              a) rewrite it now\n' \

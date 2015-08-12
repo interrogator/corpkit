@@ -69,10 +69,12 @@ def conc(corpus, query,
     if not plaintext:
         whole_results = tregex_engine(query, 
                                   options = ['-o', '-w', options], 
-                                  corpus = corpus)
+                                  corpus = corpus,
+                                  preserve_case = True)
         middle_column_result = tregex_engine(query, 
                                   options = ['-o', options], 
-                                  corpus = corpus)
+                                  corpus = corpus,
+                                  preserve_case = True)
     
     if plaintext:
         import nltk
