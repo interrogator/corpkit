@@ -836,20 +836,26 @@ def load_all_results(data_dir = 'data/saved_interrogations', root = False):
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
     if len(fs) == 0:
         if not root:
-            raise ValueError('No results found in %s' % datadir)
+            raise ValueError('No interrogations found in %s' % datadir)
         else:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No results found in %s' % (thetime, datadir)
+            print '%s: No interrogations found in %s' % (thetime, datadir)
+    l = 0
     for finding in fs:
         try:
             r[os.path.splitext(finding)[0]] = load_result(finding, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
+            l += 1
             if root:
                 root.update()
         except:
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
+            if root:
+                root.update()
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir))
     return r
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
