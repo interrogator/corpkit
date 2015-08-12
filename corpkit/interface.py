@@ -201,8 +201,9 @@ def corpkit_gui():
     root.title("corpkit")
 
     #HWHW
-    note = Notebook(root, width= 980, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 1000, height = 550, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
+    tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
@@ -229,6 +230,18 @@ def corpkit_gui():
     #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
 
 
+    def convert_pandas_dict_to_ints(dict_obj):
+        vals = []
+        for a, b in dict_obj.items():
+            # c = year, d = count
+            for c, d in b.items():
+                vals.append(d)
+        if all([float(x).is_integer() for x in vals if is_number(x)]):
+            for a, b in dict_obj.items():
+                for c, d in b.items():
+                    b[c] = int(d)
+        return dict_obj
+
     def update_spreadsheet(frame_to_update, df_to_show = None, model = False, height = 100, width = False, indexwidth = 70, just_default_sort = False):
         """refresh a spreadsheet in the editor window"""
         from collections import OrderedDict
@@ -250,7 +263,10 @@ def corpkit_gui():
                 
                 # turn pandas into dict
                 raw_data = df_to_show.to_dict()
-
+                
+                # convert to int if possible
+                raw_data = convert_pandas_dict_to_ints(raw_data)
+                        
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
@@ -303,21 +319,56 @@ def corpkit_gui():
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
+    def remake_special_query(query):
+        lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:']
+        if any([special in query for special in lst_of_specials]):
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Special query detected. Loading wordlists ... '
+            from dictionaries.process_types import processes
+            from dictionaries.roles import roles
+            from dictionaries.wordlists import wordlists
+            dict_of_specials = {'PROCESSES:': processes, 'ROLES:': roles, 'WORDLISTS:': wordlists}
+            for special in lst_of_specials:
+                # temporary, to show off process type searching.
+                if special == 'PROCESSES:':
+                    lemmatag = 'v'
+                from corpkit import as_regex
+                if special in query:
+                    types = [k for k in dict_of_specials[special]._asdict().keys()]
+                    reg = re.compile('(^.*)(%s)(:)([A-Z]+)(.*$)' % special[:-1])
+                    divided = re.search(reg, query)
+                    try:
+                        lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
+                        asr = as_regex(lst_of_matches, 
+                                       boundaries = 'l', 
+                                       case_sensitive = case_sensitive.get(), 
+                                       inverse = False)
+                        query = divided.group(1) + asr + divided.group(5)
+                    except:
+                        thetime = strftime("%H:%M:%S", localtime())
+                        print '%s: "%s" must be: %s' % (thetime, divided.group(4), ', '.join(dict_of_specials[special]._asdict().keys()))
+                        return False
+        return query
+
 
     def need_make_totals(df):
         try:
             x = df.iloc[0,0]
         except:
             return False
-        if type(df.iloc[0,0]) == float:
+        vals = [i for i in list(df.iloc[0,].values) if is_number(i)]
+        if len(vals) == 0:
             return False
-        elif type(df.iloc[0,0]) == int:
+        if all([float(x).is_integer() for x in vals]):
             return True
+        else:
+            return False
 
     def make_df_totals(df):   
         df = df.drop('Total', errors = 'ignore')
         # add new totals
         df.ix['Total'] = df.drop('tkintertable-order', errors = 'ignore').sum().astype(object)
+
         return df
 
     def make_df_from_model(model):
@@ -449,14 +500,15 @@ def corpkit_gui():
         import pandas
         from corpkit import interrogator
         
-        #Take_stdout()
-
-        # spelling
+        # spelling conversion?
         conv = (spl.var).get()
         if conv == 'Convert spelling' or conv == 'Off':
             conv = False
+        
+        # lemmatag: do i need to add as button if trees?
+        lemmatag = False
 
-        # special query
+        # special query: add to this list!
         if special_queries.get() != 'Off':
             spec_quer_translate = {'Participants': 'participants',
                                    'Any': 'any',
@@ -466,12 +518,14 @@ def corpkit_gui():
 
             query = spec_quer_translate[special_queries.get()]
         
-        # if not special query, get normal query, turn list into list
         else:
             query = entrytext.get()
             # allow list queries
             if query.startswith('[') and query.endswith(']'):
                 query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+            else:
+                # convert special stuff
+                query = remake_special_query(query)
 
         selected_option = transdict[datatype_chosen_option.get()]
         interrogator_args = {'query': query,
@@ -480,17 +534,19 @@ def corpkit_gui():
                              'titlefilter': tit_fil.get(),
                              'case_sensitive': case_sensitive.get(),
                              'convert_spelling': conv,
-                             'root': root}
+                             'root': root,
+                             'function_filter': funfil.get(),
+                             'pos_filter': posfil.get()}
 
+        if lemmatag:
+            interrogator_args['lemmatag'] = lemmatag
         #r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
                           #selected_option, 
                           #**interrogator_args)
-    
+        
         # when not testing:
-        r = interrogator(fullpath.get(), selected_option, **interrogator_args)
+        r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         if not r:
-            # thetime = strftime("%H:%M:%S", localtime())
-            # print '%s: Message.' % thetime
             return
 
         # make name
@@ -520,9 +576,7 @@ def corpkit_gui():
         ##Dbg_kill_topwin()
         # add button after first interrogation
 
-
-        # to do, make these work again
-        Button(tab1, text = 'Sort data', command = lambda: data_sort(pane = 'interrogate', sort_direction = sort_direction)).grid(row = 10, column = 2, sticky = W)
+        #Button(tab1, text = 'Sort data', command = lambda: data_sort(pane = 'interrogate', sort_direction = sort_direction)).grid(row = 10, column = 2, sticky = W)
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 10, column = 2, sticky = E)
 
     class MyOptionMenu(OptionMenu):
@@ -535,20 +589,20 @@ def corpkit_gui():
             self['menu'].config(font=('calibri',(10)))
     
     # corpus path setter
-    fullpath = StringVar()
-    fullpath.set('/users/danielmcdonald/documents/work/risk/data/nyt/sample')
+    corpus_fullpath = StringVar()
+    corpus_fullpath.set('/users/danielmcdonald/documents/work/risk/data/nyt/sample')
     basepath = StringVar()
     basepath.set('Select corpus path')
 
     import os
-    subcorpora = {fullpath.get(): sorted([d for d in os.listdir(fullpath.get()) if os.path.isdir(os.path.join(fullpath.get(), d))])}
+    subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
     def getdir():
         import os
         fp = tkFileDialog.askdirectory()
         if not fp:
             return
-        fullpath.set(fp)
+        corpus_fullpath.set(fp)
         basepath.set('Corpus: "%s"' % os.path.basename(fp))
         subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
         for k in subcorpora.keys():
@@ -644,28 +698,40 @@ def corpkit_gui():
     spl = MyOptionMenu(tab1, 'Off','UK','US')
     spl.grid(row = 8, column = 1, sticky = E)
 
+    funfil = StringVar()
+    Label(tab1, text = 'Function filter:').grid(row = 9, column = 0, sticky = W)
+    funfil.set(r'(nsubj|nsubjpass)')
+    q = Entry(tab1, textvariable = funfil, width = 20)
+    q.grid(row = 9, column = 0, columnspan = 2, sticky = E)
+
+    posfil = StringVar()
+    Label(tab1, text = 'Function filter:').grid(row = 10, column = 0, sticky = W)
+    posfil.set(r'^n')
+    q = Entry(tab1, textvariable = posfil, width = 20)
+    q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'Collapsed, CC-processed'))
     kind_of_dep = StringVar(root)
     kind_of_dep.set('Basic')
-    Label(tab1, text = 'Dependency type:').grid(row = 9, column = 0, sticky = W)
+    Label(tab1, text = 'Dependency type:').grid(row = 11, column = 0, sticky = W)
     pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
     pick_dep_type.config(state = DISABLED)
-    pick_dep_type.grid(row = 9, column = 1, sticky=E)
+    pick_dep_type.grid(row = 11, column = 1, sticky=E)
     #kind_of_dep.trace("w", d_callback)
 
     # Interrogation name
     nametext = StringVar()
     nametext.set('untitled')
-    Label(tab1, text = 'Interrogation name:').grid(row = 10, column = 0, sticky = W)
-    Entry(tab1, textvariable = nametext).grid(row = 10, column = 1)
+    Label(tab1, text = 'Interrogation name:').grid(row = 12, column = 0, sticky = W)
+    Entry(tab1, textvariable = nametext).grid(row = 12, column = 1)
 
     def query_help():
         tkMessageBox.showwarning('Not yet implemented', 'Coming soon ...')
 
     # query help, interrogate button
-    Button(tab1, text = 'Query help', command = query_help).grid(row = 11, column = 0, sticky = W)
-    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 11, column = 1, sticky = E)
+    Button(tab1, text = 'Query help', command = query_help).grid(row = 13, column = 0, sticky = W)
+    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 13, column = 1, sticky = E)
 
     i_resultname = StringVar()
     name_of_interro_spreadsheet = StringVar()
@@ -746,21 +812,15 @@ def corpkit_gui():
         if pane == 'interrogate':
             update_interrogation(interro_results, id = 0)
             update_interrogation(interro_totals, id = 0, is_total = True)
-
-            #if name_of_interro_spreadsheet.get() == name_of_o_ed_spread.get():
-                #update_interrogation(o_editor_results, id = 1)
-                #update_interrogation(o_editor_totals, id = 1, is_total = True)
         if pane == 'edit':
             update_interrogation(o_editor_results, id = 1)
             update_interrogation(o_editor_totals, id = 1, is_total = True)
+            # update new editor sheet if it's there
             if name_of_n_ed_spread.get() != '':
                 update_interrogation(n_editor_results, id = 2)
                 update_interrogation(n_editor_totals, id = 2, is_total = True)
-            #if name_of_interro_spreadsheet.get() == name_of_o_ed_spread.get():
-                #update_interrogation(interro_results, id = 0)
-                #update_interrogation(interro_totals, id = 0, is_total = True)
         thetime = strftime("%H:%M:%S", localtime())
-        #print '%s: Updated interrogations with manual data.' % thetime
+        print '%s: Updated interrogations with manual data.' % thetime
         if pane == 'interrogate':
             the_data = all_interrogations[name_of_interro_spreadsheet.get()]
             tot = pandas.DataFrame(the_data.totals, dtype = object)
@@ -787,7 +847,7 @@ def corpkit_gui():
                 update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70)
         
         thetime = strftime("%H:%M:%S", localtime())
-        #print '%s: Updated spreadsheet display in edit window.' % thetime
+        print '%s: Updated spreadsheet display in edit window.' % thetime
 
     def is_number(s):
         """check if str can be added for the below"""
@@ -1087,9 +1147,6 @@ def corpkit_gui():
 
     # output
 
-
-
-
     resultname = StringVar()
     name_of_o_ed_spread = StringVar()
     name_of_o_ed_spread.set('')
@@ -1386,48 +1443,71 @@ def corpkit_gui():
     ###################     ###################     ###################     ###################
 
     def do_concordancing():
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Concordancing in progress ... ' % (time)       
         from corpkit import conc
-        corpus = os.path.join(fullpath.get(), subc_pick.get())
+        if subc_pick.get() == "Select subcorpus":
+            corpus = corpus_fullpath.get()
+        else:
+            corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
         query = query_text.get()
-        d = {'window': int(wind_size.get()), 
+        tree = show_trees.get()
+        if (wind_size.var).get() == "Window size":
+            w_size = 55
+            if tree:
+                w_size = w_size / 2
+        else:
+            w_size = (wind_size.var).get()
+        d = {'window': int(w_size), 
              'random': random_conc_option.get(),
-             'trees': show_trees.get(),
-             'n': 'all',
+             'trees': tree,
+             'n': 9999,
              'print_status': False,
              'print_output': False}
+
+
+        
+        r = conc(corpus, query, **d)        
+        lines = r.to_string().splitlines()[1:]
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Concordancing in progress ... ' % (time, fo, image_fullpath.get())        
-        r = conc(corpus, query, **d)
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Concordancing done ... ' % (time, fo, image_fullpath.get())
-        return
+        print '%s: Concordancing done: %d results.' % (time, len(lines))
+        conclistbox.delete(0, END)
+        for line in lines:
+            conclistbox.insert(END, str(line))
+        
+    # conc box
+    scrollbar = Scrollbar(tab4)
+    scrollbar.grid(row = 0, column = 0)
+    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 30, width = 142, font = ('Courier New', 12))
+    conclistbox.grid(column = 0, columnspan = 50, row = 0, sticky = N)
+    scrollbar.config(command=conclistbox.yview)
 
     # SELECT SUBCORPUS
-    subc_pick = StringVar(root)
-    subc_pick.set("Select subcorpus to concordance")
-    pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple([s for s in subcorpora[fullpath.get()]]))
-    pick_subcorpora.grid()
+    subc_pick = StringVar()
+    subc_pick.set("Select subcorpus")
+    pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple([s for s in subcorpora[corpus_fullpath.get()]]))
+    pick_subcorpora.grid(row = 1, column = 0)
 
     # query: should be drop down, with custom option ...
     query_text = StringVar()
-    query_text.set('any')
-    Entry(tab4, textvariable = query_text).grid()
+    query_text.set('/NN.?/ >># NP')
+    Entry(tab4, textvariable = query_text).grid(row = 1, column = 1)
     
     # WINDOW SIZE
-    window_sizes = ('20', '30', '40', '50', '60', '70', '80', '90', '100')
+    window_sizes = ('20', '30', '40', '50', '55', '60', '70', '80', '90', '100')
     l =  ['Window size'] + [i for i in window_sizes]
     wind_size = MyOptionMenu(tab4, 'Window size', *window_sizes)
-    wind_size.grid()
+    wind_size.grid(row = 1, column = 4)
 
     # RANDOM
     random_conc_option = IntVar()
-    Checkbutton(tab4, text="Random", variable=random_conc_option, onvalue = True, offvalue = False).grid()
+    Checkbutton(tab4, text="Random", variable=random_conc_option, onvalue = True, offvalue = False).grid(row = 1, column = 2)
 
     # RANDOM
     show_trees = IntVar()
-    Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False).grid()
+    Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False).grid(row = 1, column = 3)
 
-    Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid()
+    Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 1, column = 5)
 
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
@@ -1438,25 +1518,37 @@ def corpkit_gui():
     # delete results from memory
     # rename results
 
+    def make_new_project():
+        from corpkit import new_project
+        name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
+        if not name:
+            return
+        fp = tkFileDialog.askdirectory(title = 'New project location',
+                                       initialdir = '~/Documents',
+                                       message = 'Choose a directory in which to create your new project')
+        if not fp:
+            return
+        new_proj_basepath.set('New Project: "%s"' % name)
+        new_project(name = name, loc = fp, root = root)
+        load_project(path = fp)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Project "%s" created.' % (time, os.path.basename(fp))
+
     def get_saved_results():
         from corpkit import load_all_results
-        #Take_stdout()
         r = load_all_results(data_dir = data_fullpath.get(), root = root)
-        #Restore_stdout()
 
         for name, loaded in r.items():
             all_interrogations[name] = loaded
-        #Dbg_kill_topwin()
         refresh()
-
-    def renamer():
-        return
     
     # corpus path setter
     data_fullpath = StringVar()
     data_fullpath.set('/users/danielmcdonald/documents/work/risk/data/mini_saved')
     data_basepath = StringVar()
     data_basepath.set('Select data directory')
+    project_fullpath = StringVar()
+    project_fullpath.set('')
 
     def data_getdir():
         fp = tkFileDialog.askdirectory()
@@ -1474,7 +1566,7 @@ def corpkit_gui():
     image_basepath = StringVar()
     image_basepath.set('Select image directory')
 
-    def image_getdir():
+    def image_getdir(nodialog = False):
         fp = tkFileDialog.askdirectory()
         if not fp:
             return
@@ -1483,12 +1575,7 @@ def corpkit_gui():
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set image directory: %s' % (time, os.path.basename(fp))
 
-    #Label(tab5, text = 'Data directory: ').grid(sticky = W, row = 0, column = 0)
-    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 0, column = 0, sticky=E)
-    #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
-    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 1, column = 0, sticky=E)
-    #Label(tab5, text = 'Get saved interrogations: ').grid(sticky = W, row = 2, column = 0)
-    Button(tab5, text = 'Get saved interrogations', command = get_saved_results).grid(row = 2, column = 0, sticky=E)
+
 
     def save_one_or_more():
         if len(sel_vals) == 0:
@@ -1590,6 +1677,23 @@ def corpkit_gui():
 
     sel_vals = []
 
+    def load_project(path = False):
+        import os
+        if path is False:
+            fp = tkFileDialog.askdirectory(title = 'Open project',
+                                       message = 'Choose project directory')
+        else:
+            fp = path
+        if not fp:
+            return
+        project_fullpath.set(fp)
+        image_fullpath.set(os.path.join(fp, 'images'))
+        data_fullpath.set(os.path.join(fp, 'data', 'saved_interrogations'))
+        corpus_fullpath.set(os.path.join(fp, 'corpus'))
+        open_proj_basepath.set('Open project: "%s"' % os.path.basename(fp))
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Project "%s" opened.' % (time, os.path.basename(fp))
+
     # a list of every interrogation
     def onselect_interro(evt):
         # remove old vals
@@ -1603,7 +1707,7 @@ def corpkit_gui():
                 sel_vals.append(value)
 
     every_interro_listbox = Listbox(tab5, selectmode = EXTENDED)
-    every_interro_listbox.grid(sticky = E, column = 0, row = 3)
+    every_interro_listbox.grid(sticky = E, column = 1, row = 2, rowspan = 4)
     # Set interrogation option
     ei_chosen_option = StringVar()
     #ei_chosen_option.set('w')
@@ -1611,16 +1715,31 @@ def corpkit_gui():
     # default: w option
     every_interro_listbox.select_set(0)
 
+    new_proj_basepath = StringVar()
+    new_proj_basepath.set('New Project')
+    open_proj_basepath = StringVar()
+    open_proj_basepath.set('Open Project')
+
+    Label(tab5, text = 'Project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
+    Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
+    Button(tab5, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
+    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 3, column = 0, sticky=W)
+    #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
+    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 4, column = 0, sticky=W)
+
+    Label(tab5, text = 'Interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
+    Button(tab5, text = 'Get saved interrogations', command = get_saved_results).grid(row = 1, column = 1, sticky=E)
+
     #Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
     Button(tab5, text="Remove", 
-           command=remove_one_or_more).grid(sticky = E, column = 0, row = 4)
-    #Label(tab5, text = 'Delete selected: ').grid(sticky = E, row = 5, column = 0)
-    Button(tab5, text = 'Delete', command = del_one_or_more).grid(sticky = E, column = 0, row = 5)
-    #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 0)
-    Button(tab5, text = 'Save', command = save_one_or_more).grid(sticky = E, column = 0, row = 6)
-    Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 0, row = 7)
+           command=remove_one_or_more).grid(sticky = E, column = 1, row = 7)
+    #Label(tab5, text = 'Delete selected: ').grid(sticky = E, row = 5, column = 1)
+    Button(tab5, text = 'Delete', command = del_one_or_more).grid(sticky = E, column = 1, row = 8)
+    #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
+    Button(tab5, text = 'Save', command = save_one_or_more).grid(sticky = E, column = 1, row = 9)
+    Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 1, row = 10)
     perm = IntVar()
-    Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 0, row = 7, sticky=W)
+    Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky=W)
     #var = IntVar()
     #var.set(10)
     #scale = Scale(tab1, font = ("arial", 10), orient = 'horizontal', command = adjustCanvas, variable =var).grid()
