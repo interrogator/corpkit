@@ -839,7 +839,7 @@ def editor(dataframe1,
     if not df1_istotals:
         for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
             df = df.drop(name, axis = ax, errors = 'ignore')
-            if using_totals:
+            if using_totals and ax == 1 and not single_totals:
                 df2 = df2.drop(name, axis = ax, errors = 'ignore')
 
     # merging: make dicts if they aren't already, so we can iterate
@@ -1021,18 +1021,18 @@ def editor(dataframe1,
     except:
         pass
 
-    #def add_tkt_index(df):
-    #    df = df.T
-    #    df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
-    #    df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
-    #    df = df.T
-    #    return df
+    def add_tkt_index(df):
+        df = df.T
+        df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
+        df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
+        df = df.T
+        return df
 
     # while tkintertable can't sort rows
     from corpkit.tests import check_t_kinter
-    #tk = check_t_kinter()
-    #if tk:
-        #df = add_tkt_index(df)
+    tk = check_t_kinter()
+    if tk:
+        df = add_tkt_index(df)
 
     #make named_tuple
     the_operation = 'none'
