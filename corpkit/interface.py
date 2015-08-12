@@ -1522,7 +1522,6 @@ def corpkit_gui():
         for line in lines:
             conclistbox.insert(END, str(line))
         
-
     def delete_conc_lines(*args):
         items = conclistbox.curselection()
         pos = 0
@@ -1530,13 +1529,21 @@ def corpkit_gui():
             idx = int(i) - pos
             conclistbox.delete( idx,idx )
             pos = pos + 1
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: %d lines removed.' % (thetime, len(items))
 
     def delete_reverse_conc_lines(*args):
         items = [int(i) for i in conclistbox.curselection()]
         [conclistbox.delete(int(i)) for i in sorted(range(len(conclistbox.get(0, END))), reverse = True) if int(i) not in items]
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: %d lines removed.' % (thetime, len(conclistbox.get(0, END) - len(items)))
 
     def conc_export():
         lines = conclistbox.get(0, END)
+        if len(lines) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Nothing to export.' % (thetime)
+            return
         seplines = []
         import re
         #                     1          there        it           is
@@ -1551,8 +1558,12 @@ def corpkit_gui():
                                        message = 'Choose a name and place for your exported data.',
                                        defaultextension = '.csv',
                                        initialfile = 'data.csv')
+        if savepath == '':
+            return
         with open(savepath, "w") as fo:
             fo.write(csv)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Concordance lines exported.' % (thetime)
 
     def conc_sort(*args):
         lines = conclistbox.get(0, END)
@@ -1823,6 +1834,9 @@ def corpkit_gui():
             if project_fullpath.get() == '' or project_fullpath.get() is None:
                 fp = tkFileDialog.askdirectory(title = 'Choose save directory',
                     message = 'Choose save directory for exported interrogation')
+                if fp == '':
+                    return
+            
             else:
                 fp = project_fullpath.get()
             os.makedirs(os.path.join(fp, answer))
@@ -1843,7 +1857,7 @@ def corpkit_gui():
                                        message = 'Choose project directory')
         else:
             fp = path
-        if not fp:
+        if not fp or fp == '':
             return
         project_fullpath.set(fp)
         image_fullpath.set(os.path.join(fp, 'images'))
