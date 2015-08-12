@@ -957,10 +957,16 @@ def interrogator(path,
 
     if plaintext is True:
         try:
-            if tregex_engine(corpus = os.path.join(path, os.listdir(path)[-1]), check_for_trees = True):
-                decision = raw_input('\nIt appears that your corpus contains parse trees. If using a plaintext search option, your counts will likely be inaccurate.\n\nHit enter to continue, or type "exit" to start again: ')
-                if decision.startswith('e'):
-                    return
+            if tregex_engine(corpus = os.path.join(path, os.listdir(path)[-1]), check_for_trees = True, root = root):
+                if not root:
+                    decision = raw_input('\nIt appears that your corpus contains parse trees. If using a plaintext search option, your counts will likely be inaccurate.\n\nHit enter to continue, or type "exit" to start again: ')
+                    if decision.startswith('e'):
+                        return
+                else:
+                    time = strftime("%H:%M:%S", localtime())
+                    print '%s: Corpus "%s" contains parse trees. Use "Trees" option.' % (time, os.path.basename(path))
+                    root.update()
+                    return False
         except:
             pass
     
@@ -1180,7 +1186,7 @@ def interrogator(path,
     #     else:
     #         # horrible for large corpora
     #         subcorpus = path
-    #     if not tregex_engine(corpus = subcorpus, check_for_trees = True):
+    #     if not tregex_engine(corpus = subcorpus, check_for_trees = True, root = root):
     #         plaintext = True
     #     else:
     #         plaintext = False
@@ -1213,7 +1219,7 @@ def interrogator(path,
 
     # check for valid query. so ugly.
     if not dependency and not keywording and not n_gramming and not plaintext:
-        query = tregex_engine(query = query, check_query = True)
+        query = tregex_engine(query = query, check_query = True, root = root)
         if query is False:
             return
     
@@ -1233,6 +1239,10 @@ def interrogator(path,
                 is_valid = False
             while not is_valid:
                 time = strftime("%H:%M:%S", localtime())
+                if root:
+                    time = strftime("%H:%M:%S", localtime())
+                    print '%s: Regular expression in query contains an error.' % time
+                    return
                 selection = raw_input('\n%s: Regular expression " %s " contains an error. You can either:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
@@ -1309,6 +1319,8 @@ def interrogator(path,
                 op = ['-o', '-' + translated_option]
                 result = tregex_engine(query = query, options = op, 
                                        corpus = subcorpus)
+                if result is False:
+                    return
                 
                 # if just counting matches, just 
                 # add subcorpus name and count...
@@ -1448,7 +1460,7 @@ def interrogator(path,
         
         if printstatus:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: Finished! %d total occurrences.' % (time, stotals.sum())
+            print '%s: Interrogation finished! %d total occurrences.' % (time, stotals.sum())
             if not tk:
                 print ''
 
@@ -1563,12 +1575,12 @@ def interrogator(path,
     time = strftime("%H:%M:%S", localtime())
     if not keywording:
         if printstatus:
-            print '%s: Finished! %d unique results, %d total.' % (time, num_diff_results, stotals.sum())
+            print '%s: Interrogation finished! %d unique results, %d total.' % (time, num_diff_results, stotals.sum())
             if not tk:
                 print ''
     else:
         if printstatus:
-            print '%s: Finished! %d unique results.' % (time, num_diff_results)
+            print '%s: Interrogation finished! %d unique results.' % (time, num_diff_results)
             if not tk:
                 print ''
     if num_diff_results == 0:
