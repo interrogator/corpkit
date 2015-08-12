@@ -378,46 +378,53 @@ def pytoipy(inputfile):
     nbf.write(nb, open(output, 'w'), 'ipynb')
     print 'Done!\n'
 
-def new_project(name):
+def new_project(name, loc = '.', root = False):
     """make a new project in current directory"""
     import os
     import shutil
     import stat
     import platform
     import corpkit
+    from time import strftime, localtime
 
     path_to_corpkit = os.path.dirname(corpkit.__file__)
     thepath, corpkitname = os.path.split(path_to_corpkit)
     
     # make project directory
-    os.makedirs(name)
+    fullpath = os.path.join(loc, name)
+    os.makedirs(fullpath)
+
     # make other directories
     dirs_to_make = ['data', 'images']
     subdirs_to_make = ['dictionaries', 'saved_interrogations', 'corpus']
     for directory in dirs_to_make:
-        os.makedirs(os.path.join(name, directory))
+        os.makedirs(os.path.join(fullpath, directory))
     for subdir in subdirs_to_make:
-        os.makedirs(os.path.join(name, 'data', subdir))
+        os.makedirs(os.path.join(fullpath, 'data', subdir))
     # copy the bnc dictionary to data/dictionaries
-    shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(name, 'data', 'dictionaries'))
-    
-    # make a blank ish notebook
-    newnotebook_text = open(os.path.join(thepath, corpkitname, 'blanknotebook.ipynb')).read()
-    fixed_text = newnotebook_text.replace('blanknotebook', str(name))
-    with open(os.path.join(name, name + '.ipynb'), 'wb') as handle:
-        handle.write(fixed_text)
-        handle.close
-    if platform.system() == 'Darwin':
-        shtext = '#!/bin/bash\n\npath=$0\ncd ${path%%/*.*}\nipython notebook %s.ipynb\n' % name
-        with open(os.path.join(name, 'launcher.sh'), 'wb') as handle:
-            handle.write(shtext)
+    shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'data', 'dictionaries'))
+    # if not GUI
+    if not root:
+        # make a blank ish notebook
+        newnotebook_text = open(os.path.join(thepath, corpkitname, 'blanknotebook.ipynb')).read()
+        fixed_text = newnotebook_text.replace('blanknotebook', str(name))
+        with open(os.path.join(fullpath, name + '.ipynb'), 'wb') as handle:
+            handle.write(fixed_text)
             handle.close
-        # permissions for sh launcher
-        st = os.stat(os.path.join(name, 'launcher.sh'))
-        os.chmod(os.path.join(name, 'launcher.sh'), st.st_mode | 0111)
-        print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\nor run launcher.sh.\n\n' % (name, name)
+        if platform.system() == 'Darwin':
+            shtext = '#!/bin/bash\n\npath=$0\ncd ${path%%/*.*}\nipython notebook %s.ipynb\n' % name
+            with open(os.path.join(fullpath, 'launcher.sh'), 'wb') as handle:
+                handle.write(shtext)
+                handle.close
+            # permissions for sh launcher
+            st = os.stat(os.path.join(fullpath, 'launcher.sh'))
+            os.chmod(os.path.join(fullpath, 'launcher.sh'), st.st_mode | 0111)
+            print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\nor run launcher.sh.\n\n' % (name, name)
+        else:
+            print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
     else:
-        print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: New project created: "%s"' % (time, name)
 
 def searchtree(tree, query, options = ['-t', '-o']):
     "Searches a tree with Tregex and returns matching terminals"
