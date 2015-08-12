@@ -647,7 +647,8 @@ def tregex_engine(query = False,
                   check_for_trees = False,
                   lemmatise = False,
                   just_content_words = False,
-                  return_tuples = False):
+                  return_tuples = False,
+                  root = False):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
@@ -720,6 +721,10 @@ def tregex_engine(query = False,
             if re.match(tregex_error, res[0]):
                 tregex_error_output = ""
                 time = strftime("%H:%M:%S", localtime())
+                if root:
+                    time = strftime("%H:%M:%S", localtime())
+                    print '%s: Error parsing Tregex query.' % time
+                    return False
                 selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
@@ -731,6 +736,10 @@ def tregex_engine(query = False,
             
             # if regex error, try to help
             elif re.match(regex_error, res[0]):
+                if root:
+                    time = strftime("%H:%M:%S", localtime())
+                    print '%s: Regular expression in Tregex query contains an error.' % time
+                    return False
                 info = res[0].split(':')
                 index_of_error = re.findall(r'index [0-9]+', info[1])
                 justnum = index_of_error[0].split('dex ')
