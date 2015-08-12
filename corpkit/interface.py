@@ -203,7 +203,7 @@ def corpkit_gui():
     #HWHW
     note = Notebook(root, width= 1000, height = 550, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
-    tab0 = note.add_tab(text = "Build")
+    #tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
@@ -1204,8 +1204,13 @@ def corpkit_gui():
         # implement the default mpl key bindings
         from matplotlib.backend_bases import key_press_handler
         from matplotlib.figure import Figure
-
         from corpkit import plotter
+
+        if data_to_plot.get() == 'None':
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: No data selected to plot.' % (time)
+            return
+
         if plotbranch.get() == 'results':
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
@@ -1464,11 +1469,9 @@ def corpkit_gui():
              'n': 9999,
              'print_status': False,
              'print_output': False}
-
-
         
         r = conc(corpus, query, **d)        
-        lines = r.to_string().splitlines()[1:]
+        lines = r.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(r['r'].str.len().max()).format}).splitlines()
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing done: %d results.' % (time, len(lines))
         conclistbox.delete(0, END)
