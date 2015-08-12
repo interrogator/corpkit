@@ -132,6 +132,9 @@ def conc(corpus, query,
     mname = ' ' * (maximum/2-1) + 'm'
     rname = ' ' * (window/2-1) + 'r'
     for start, word, end in unique_results:
+        start = start.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll")
+        word = word.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll")
+        end = end.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll")
         #spaces = ' ' * (maximum / 2 - (len(word) / 2))
         #new_word = spaces + word + spaces
         series.append(pd.Series([start.encode('utf-8', errors = 'ignore'), word.encode('utf-8', errors = 'ignore'), end.encode('utf-8', errors = 'ignore')], index = [lname.encode('utf-8', errors = 'ignore'), mname.encode('utf-8', errors = 'ignore'), rname.encode('utf-8', errors = 'ignore')]))
