@@ -1,38 +1,8 @@
 #!usr/bin/python
-#tkNotebook
-#Created By: Patrick T. Cossette <cold_soul79078@yahoo.com>
 
-#tkNotebook allows users to make notebook widgets in Tk
-
-#This software may be modified and redistributed, as long as any and all changes made
-#From here on are stated, and ("Created By: Patrick T. Cossette <cold_soul79078@yahoo.com>") still remains somewhere
-#In the code.
-
-#This software is opensource, and free in hopes that it may be useful, and comes AS IS
-#With no warrenty.
-
-"""
-    Defines a Notebook class to be used with Tkinter. A Notebook instance
-    has the attributes change_tab, add_tab, destroy_tab, and focus_on.
-
-    change_tab:  Internal Function, I don't suggest you call this directly.
-    add_tab:     Creates a tab
-    destroy_tab: destroys the given tab
-    focus_on:    Focuses on the given tab
-
-    The __init__ function creates three frames. One to hold the tabs together,
-    one to create the base to parent each tab's children, and one to hold the
-    base frame and the tab frame together.
-
-    Each tab is a Label with a default relief of "GROOVE". Each label uses
-    event bindings so that change_tab is called with the tab's ID Number as
-    an argument. Each tab relief, when selected is set by default to "RAISED"
-    
-    For an exampe, view the source code, and run the module.
-
-    Created By: Patrick T. Cossette <cold_soul79078@yahoo.com>    
-
-"""
+# corpkit GUI
+# Daniel McDonald
+# Template created by: Patrick T. Cossette <cold_soul79078@yahoo.com>
 
 import Tkinter
 from Tkinter import *
@@ -43,6 +13,8 @@ import time
 from time import strftime, localtime
 
 ########################################################################
+
+# stdout to app
 class RedirectText(object):
     """"""
  
@@ -124,8 +96,6 @@ class Notebook(Frame):
         self.BFrame.grid(row = 0, column = 0, columnspan = 27, sticky = N) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
         self.statusbar.grid(row = 2)
-
-
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -1552,11 +1522,88 @@ def corpkit_gui():
         for line in lines:
             conclistbox.insert(END, str(line))
         
+
+    def delete_conc_lines(*args):
+        items = conclistbox.curselection()
+        pos = 0
+        for i in items:
+            idx = int(i) - pos
+            conclistbox.delete( idx,idx )
+            pos = pos + 1
+
+    def delete_reverse_conc_lines(*args):
+        items = [int(i) for i in conclistbox.curselection()]
+        [conclistbox.delete(int(i)) for i in sorted(range(len(conclistbox.get(0, END))), reverse = True) if int(i) not in items]
+
+    def conc_export():
+        lines = conclistbox.get(0, END)
+        seplines = []
+        import re
+        #                     1          there        it           is
+        reg = re.compile(r'^([0-9]+)( +)(.*?)(\s{2,})(.*?)(\s{2,})(.*$)')
+        for line in lines:
+            broken = re.search(reg, line)
+            seplines.append([i for i in broken.groups()])
+        tabbed = [''.join([l[0], '\t', l[2], '\t', l[4], '\t', l[6]]) for l in seplines]      
+        csv = '\n'.join(tabbed)
+        savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
+                                       initialdir = '~/Documents',
+                                       message = 'Choose a name and place for your exported data.',
+                                       defaultextension = '.csv',
+                                       initialfile = 'data.csv')
+        with open(savepath, "w") as fo:
+            fo.write(csv)
+
+    def conc_sort(*args):
+        lines = conclistbox.get(0, END)
+        seplines = []
+        import re
+        #                     1          there        it           is
+        reg = re.compile(r'^([0-9]+)( +)(.*?)(\s{2,})(.*?)(\s{2,})(.*$)')
+        for line in lines:
+            broken = re.search(reg, line)
+            seplines.append([i for i in broken.groups()])
+        if sortval.get() == 'M':
+            sorted_lines = sorted(seplines, key=lambda s: s[4].lower(), reverse = False)
+            conclistbox.delete(0, END)
+            for line in sorted_lines:
+                joined = ''.join(line)
+                conclistbox.insert(END, str(joined))
+            return
+        else:
+            from nltk import word_tokenize as tokenise
+            if sortval.get().startswith('L'):
+                entry = 2
+            if sortval.get().startswith('R'):
+                entry = 6
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Tokenising concordance lines ... ' % (thetime)
+            for line in seplines:
+                t = tokenise(line[entry])
+                if t == []:
+                    t = [''] * 5
+                line[entry] = t
+            num = int(sortval.get()[-1])
+            if entry == 2:
+                num = -num
+            if entry == 6:
+                num = num - 1
+            sorted_lines = sorted(seplines, key=lambda s: s[entry][num].lower(), reverse = False)
+            conclistbox.delete(0, END)
+            for line in sorted_lines:
+                line[entry] = ' '.join(line[entry])
+                joined = ''.join(line)
+                conclistbox.insert(END, str(joined))
+        
     # conc box
     scrollbar = Scrollbar(tab4)
     scrollbar.grid(row = 0, column = 0)
-    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 30, width = 177, font = ('Courier New', 12))
+    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 30, width = 177, font = ('Courier New', 12), selectmode = EXTENDED)
     conclistbox.grid(column = 0, columnspan = 60, row = 0)
+    conclistbox.bind("<BackSpace>", delete_conc_lines)
+    conclistbox.bind("<Shift-KeyPress-BackSpace>", delete_reverse_conc_lines)
+    conclistbox.bind("<Shift-KeyPress-Tab>", conc_sort)
+    
     scrollbar.config(command=conclistbox.yview)
 
     # SELECT SUBCORPUS
@@ -1586,10 +1633,16 @@ def corpkit_gui():
 
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 1, column = 5)
 
-    def conc_export():
-        return
+    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 1, column = 6)
+    Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 1, column = 7)
+    Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 1, column = 8)
+    Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 1, column = 10)
 
-    Button(tab4, text = 'Export', command = lambda: conc_export(), state = DISABLED).grid(row = 1, column = 6)
+    sort_vals = ('L5', 'L4', 'L3', 'L2', 'L1', 'M', 'R1', 'R2', 'R3', 'R4', 'R5')
+    sortval = StringVar()
+    sortval.set('M')
+    srtkind = OptionMenu(tab4, sortval, *sort_vals)
+    srtkind.grid(row = 1, column = 9)
 
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
@@ -1656,8 +1709,6 @@ def corpkit_gui():
         image_basepath.set('Images: "%s"' % os.path.basename(fp))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set image directory: %s' % (time, os.path.basename(fp))
-
-
 
     def save_one_or_more():
         if len(sel_vals) == 0:
@@ -1759,6 +1810,32 @@ def corpkit_gui():
 
     sel_vals = []
 
+    def export_interrogation():
+        """save dataframes and options to file"""
+        import os
+        import pandas
+        for i in sel_vals:
+            answer = tkSimpleDialog.askstring('Rename', 'Choose a save name for "%s":' % i)
+            if answer is None or answer == '':
+                continue
+            data = all_interrogations[i]
+            keys = data._asdict().keys()
+            if project_fullpath.get() == '' or project_fullpath.get() is None:
+                fp = tkFileDialog.askdirectory(title = 'Choose save directory',
+                    message = 'Choose save directory for exported interrogation')
+            else:
+                fp = project_fullpath.get()
+            os.makedirs(os.path.join(fp, answer))
+            for k in keys:
+                if k == 'results':
+                    data.results.to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
+                if k == 'totals':
+                    pandas.DataFrame(data.totals).to_csv(os.path.join(fp, answer, 'totals.csv'), sep ='\t')
+                if k == 'query':
+                    pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'query.csv'), sep ='\t')
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Results exported to %s' % (thetime, os.path.join(fp, answer))        
+
     def load_project(path = False):
         import os
         if path is False:
@@ -1774,7 +1851,7 @@ def corpkit_gui():
         corpus_fullpath.set(os.path.join(fp, 'corpus'))
         open_proj_basepath.set('Open project: "%s"' % os.path.basename(fp))
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project "%s" opened.' % (time, os.path.basename(fp))
+        print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
 
     # a list of every interrogation
     def onselect_interro(evt):
@@ -1822,6 +1899,7 @@ def corpkit_gui():
     Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 1, row = 10)
     perm = IntVar()
     Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky=W)
+    Button(tab5, text = 'Export', command = export_interrogation).grid(sticky = E, column = 1, row = 11)
     #var = IntVar()
     #var.set(10)
     #scale = Scale(tab1, font = ("arial", 10), orient = 'horizontal', command = adjustCanvas, variable =var).grid()
