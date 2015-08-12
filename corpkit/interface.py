@@ -104,7 +104,7 @@ class Notebook(Frame):
         self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'] / 2 + 30)                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 14))
+        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 15))
         self.text.grid()
         # alternative ...
         #self.text = Text(self.statusbar, height = 1, undo = True)
@@ -184,7 +184,7 @@ class Notebook(Frame):
             self.iteratedTabs += 1                                                         #Add one to the loop count
 
 def corpkit_gui():
-    import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
+    import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
     from Tkinter import StringVar, Listbox, Text
     import sys
     from tkintertable import TableCanvas, TableModel
@@ -201,7 +201,7 @@ def corpkit_gui():
     root.title("corpkit")
 
     #HWHW
-    note = Notebook(root, width= 970, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 980, height = 500, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
@@ -227,6 +227,10 @@ def corpkit_gui():
     #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
 
     def need_make_totals(df):
+        try:
+            x = df.iloc[0,0]
+        except:
+            return False
         if type(df.iloc[0,0]) == float:
             return False
         elif type(df.iloc[0,0]) == int:
@@ -269,12 +273,13 @@ def corpkit_gui():
         """refreshes the list of dataframes in the editor and plotter panes"""
         # Reset data1_pick and delete all old options
         # get the latest only after first interrogation
-        if len(all_interrogations.keys()) < 2:
+        if len(all_interrogations.keys()) == 1:
             data1_pick.set(all_interrogations.keys()[-1])
         #data2_pick.set(all_interrogations.keys()[-1])
         dataframe1s['menu'].delete(0, 'end')
         dataframe2s['menu'].delete(0, 'end')
-        data_to_plot.set(all_interrogations.keys()[-1])
+        if len(all_interrogations.keys()) > 0:
+            data_to_plot.set(all_interrogations.keys()[-1])
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
         try:
@@ -391,12 +396,12 @@ def corpkit_gui():
                              'convert_spelling': conv,
                              'root': root}
 
-        r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
-                          selected_option, 
-                          **interrogator_args)
+        #r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
+                          #selected_option, 
+                          #**interrogator_args)
     
         # when not testing:
-        #r = interrogator(fullpath.get(), chosen_option.get(), **interrogator_args)
+        r = interrogator(fullpath.get(), selected_option, **interrogator_args)
 
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
@@ -624,6 +629,8 @@ def corpkit_gui():
             return
 
         newdata = make_df_from_model(model)
+        if need_make_totals(newdata):
+            newdata = make_df_totals(newdata)
 
         if id == 0:
             name_of_interrogation = all_interrogations.keys()[-1]
@@ -644,11 +651,19 @@ def corpkit_gui():
         if pane == 'interrogate':
             update_interrogation(interro_results, id = 0)
             update_interrogation(interro_totals, id = 0, is_total = True)
-        else:
+            if data1_pick.get() == all_interrogations.keys()[-1]:
+                update_interrogation(o_editor_results, id = 1)
+                update_interrogation(o_editor_totals, id = 1, is_total = True)
+        if pane == 'edit':
+            the_data = all_interrogations[data1_pick.get()]
+            newdata = all_interrogations[all_interrogations.keys()[-1]]
             update_interrogation(o_editor_results, id = 1)
             update_interrogation(o_editor_totals, id = 1, is_total = True)
             update_interrogation(n_editor_results, id = 2)
             update_interrogation(n_editor_totals, id = 2, is_total = True)
+            if i_resultname.get() == ('Interrogation results: ' + data1_pick.get()):
+                update_interrogation(interro_results, id = 0)
+                update_interrogation(interro_totals, id = 0, is_total = True)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Updated interrogations with manual data.' % thetime
         if pane == 'interrogate':
@@ -874,13 +889,14 @@ def corpkit_gui():
 
 
     def df_callback(*args):
-        update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 350)
-        update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 350)
-        interroname = data1_pick.get()
-        resultname.set('Results to edit: %s' % str(interroname))
-        update_spreadsheet(n_editor_results, None, height = 100, width = 350)
-        update_spreadsheet(n_editor_totals, None, height = 10, width = 350)
-        # update names above spreadsheets
+        if data1_pick.get() != 'None':
+            update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 350)
+            update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 350)
+            interroname = data1_pick.get()
+            resultname.set('Results to edit: %s' % str(interroname))
+            #update_spreadsheet(n_editor_results, None, height = 100, width = 350)
+            #update_spreadsheet(n_editor_totals, None, height = 10, width = 350)
+            # update names above spreadsheets
         e_name = ''
         editoname.set('Edited results: %s' % str(e_name))
         subc_listbox.delete(0, 'end')
@@ -1374,7 +1390,7 @@ def corpkit_gui():
         from corpkit import load_all_results
         #Take_stdout()
         r = load_all_results(data_dir = data_fullpath.get(), root = root)
-        Restore_stdout()
+        #Restore_stdout()
 
         for name, loaded in r.items():
             all_interrogations[name] = loaded
@@ -1415,30 +1431,109 @@ def corpkit_gui():
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set image directory: %s' % (time, os.path.basename(fp))
 
-    Label(tab5, text = 'Data directory: ').grid(sticky = W, row = 0, column = 0)
-    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 0, column = 1, sticky=E)
-    Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
-    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 1, column = 1, sticky=E)
-    Label(tab5, text = 'Get saved interrogations: ').grid(sticky = W, row = 2, column = 0)
-    Button(tab5, text = 'Get all saved interrogations', command = get_saved_results).grid(row = 2, column = 1, sticky=E)
+    #Label(tab5, text = 'Data directory: ').grid(sticky = W, row = 0, column = 0)
+    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 0, column = 0, sticky=E)
+    #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
+    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 1, column = 0, sticky=E)
+    #Label(tab5, text = 'Get saved interrogations: ').grid(sticky = W, row = 2, column = 0)
+    Button(tab5, text = 'Get saved interrogations', command = get_saved_results).grid(row = 2, column = 0, sticky=E)
 
     def save_one_or_more():
+        if len(sel_vals) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No interrogations selected.' % thetime
+            return
         from corpkit import save_result
         import os
+        saved = 0
+        existing = 0
         for i in sel_vals:
             if i + '.p' not in os.listdir(data_fullpath.get()):
-                save_result(all_interrogations[i], i + '.p', savedir = data_fullpath.get())
+                save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get())
+                saved += 1
             else:
+                existing += 1
                 thetime = strftime("%H:%M:%S", localtime())
-                print '%s: File already exists in %s.' % (thetime, os.path.basename(data_fullpath.get()))
-        return
+                print '%s: File already exists in %s.' % (thetime, os.path.basename(data_fullpath.get()))   
+        thetime = strftime("%H:%M:%S", localtime())
+        if saved == 1 and existing == 0:
+            print '%s: %s saved.' % (thetime, sel_vals[0])
+        else:
+            if existing == 0:
+                print '%s: %d interrogations saved.' % (thetime, len(sel_vals))
+            else:
+                print '%s: %d interrogations saved, %d already existed' % (thetime, saved, existing)
+        refresh()
 
     def remove_one_or_more():
+        if len(sel_vals) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No interrogations selected.' % thetime
+            return
         for i in sel_vals:
             try:
                 del all_interrogations[i]
             except:
                 pass
+        thetime = strftime("%H:%M:%S", localtime())
+        if len(sel_vals) == 1:
+            print '%s: %s removed.' % (thetime, sel_vals[0])
+        else:
+            print '%s: %d interrogations removed.' % (thetime, len(sel_vals))
+        refresh()
+
+    def del_one_or_more():
+        if len(sel_vals) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No interrogations selected.' % thetime
+            return
+        import os
+        result = tkMessageBox.askquestion("Are You Sure?", "Permanently delete the following files:\n\n    %s" % '\n    '.join(sel_vals), icon='warning')
+        if result == 'yes':
+            for i in sel_vals:
+                try:
+                    del all_interrogations[i]
+                    os.remove(os.path.join(data_fullpath.get(), i + '.p'))
+                except:
+                    pass
+        thetime = strftime("%H:%M:%S", localtime())
+        if len(sel_vals) == 1:
+            print '%s: %s deleted.' % (thetime, sel_vals[0])
+        else:
+            print '%s: %d interrogations deleted.' % (thetime, len(sel_vals))
+        refresh()
+
+    def urlify(s):
+        "Turn title into filename"
+        import re
+        s = s.lower()
+        s = re.sub(r"[^\w\s-]", '', s)
+        s = re.sub(r"\s+", '-', s)
+        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+        return s
+
+    def rename_one_or_more():
+        if perm.get():
+            import os
+            perm_text = 'permanently '
+        else:
+            perm_text = ''
+        for i in sel_vals:
+            answer = tkSimpleDialog.askstring('Rename', 'Choose a new name for "%s":' % i)
+            if answer is None or answer == '':
+                continue
+            else:
+                all_interrogations[answer] = all_interrogations.pop(i)
+            if perm.get():
+                p = data_fullpath.get()
+                oldf = os.path.join(p, i + '.p')
+                if os.path.isfile(oldf):
+                    newf = os.path.join(p, urlify(answer) + '.p')
+                    os.rename(oldf, newf)
+        thetime = strftime("%H:%M:%S", localtime())
+        if len(sel_vals) == 1:
+            print '%s: %s %srenamed as %s.' % (thetime, sel_vals[0], perm_text, answer)
+        print '%s: %d interrogations %srenamed.' % (thetime, len(sel_vals), perm_text)
         refresh()
 
     sel_vals = []
@@ -1456,7 +1551,7 @@ def corpkit_gui():
                 sel_vals.append(value)
 
     every_interro_listbox = Listbox(tab5, selectmode = EXTENDED)
-    every_interro_listbox.grid(sticky = E, column = 1, row = 3)
+    every_interro_listbox.grid(sticky = E, column = 0, row = 3)
     # Set interrogation option
     ei_chosen_option = StringVar()
     #ei_chosen_option.set('w')
@@ -1464,12 +1559,16 @@ def corpkit_gui():
     # default: w option
     every_interro_listbox.select_set(0)
 
-    Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
-    Button(tab5, text="Remove selected interrogation(s)", 
-           command=remove_one_or_more).grid(sticky = E, column = 1, row = 4)
-    Label(tab5, text = 'Save selected: ').grid(sticky = W, row = 5, column = 0)
-    Button(tab5, text = 'Save selected interrogation(s)', command = save_one_or_more).grid(sticky = E, column = 1, row = 5)
-
+    #Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
+    Button(tab5, text="Remove", 
+           command=remove_one_or_more).grid(sticky = E, column = 0, row = 4)
+    #Label(tab5, text = 'Delete selected: ').grid(sticky = E, row = 5, column = 0)
+    Button(tab5, text = 'Delete', command = del_one_or_more).grid(sticky = E, column = 0, row = 5)
+    #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 0)
+    Button(tab5, text = 'Save', command = save_one_or_more).grid(sticky = E, column = 0, row = 6)
+    Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 0, row = 7)
+    perm = IntVar()
+    Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 0, row = 7, sticky=W)
     #var = IntVar()
     #var.set(10)
     #scale = Scale(tab1, font = ("arial", 10), orient = 'horizontal', command = adjustCanvas, variable =var).grid()
