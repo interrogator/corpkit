@@ -1572,6 +1572,25 @@ def interrogator(path,
     else:
         num_diff_results = len(df)
 
+    if num_diff_results == 0:
+        if not root:
+            print ''
+            warnings.warn('No results produced. Maybe your query needs work.')
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation produced no results, sorry.' % time
+        return False
+
+    if not keywording:
+        if stotals.sum() == 0:
+            if not root:
+                print ''
+                warnings.warn('No totals produced. Maybe your query needs work.')
+            else:
+                time = strftime("%H:%M:%S", localtime())
+                print '%s: Interrogation produced no results, sorry.' % time
+            return False
+
     time = strftime("%H:%M:%S", localtime())
     if not keywording:
         if printstatus:
@@ -1583,16 +1602,7 @@ def interrogator(path,
             print '%s: Interrogation finished! %d unique results.' % (time, num_diff_results)
             if not tk:
                 print ''
-    if num_diff_results == 0:
-        print '' 
-        warnings.warn('No results produced. Maybe your query needs work.')
-        return output
 
-    if not keywording:
-        if stotals.sum() == 0:
-            print '' 
-            warnings.warn('No totals produced. Maybe your query needs work.')
-            return output
     if quicksave:
         if not keywording:
             if stotals.sum() > 0 and num_diff_results > 0:
