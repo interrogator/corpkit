@@ -77,6 +77,7 @@ from other import pmultiquery
 from other import as_regex
 from other import show
 from context import sim
+from interface import *
 
 from build import dictmaker
 from build import correctspelling
