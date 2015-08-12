@@ -655,7 +655,8 @@ def tregex_engine(query = False,
                   lemmatise = False,
                   just_content_words = False,
                   return_tuples = False,
-                  root = False):
+                  root = False,
+                  preserve_case = False):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
@@ -801,7 +802,10 @@ def tregex_engine(query = False,
         res = make_tuples
                 
     if not filenaming:
-        res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
+        if preserve_case:
+            res = [unicode(w, 'utf-8', errors = 'ignore') for w in res]
+        else:
+            res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
     else:
         res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
 
