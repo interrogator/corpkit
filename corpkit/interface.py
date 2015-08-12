@@ -213,18 +213,96 @@ def corpkit_gui():
     note.text.see(Tkinter.END)
     note.text.yview_pickplace("end")
     note.text.update_idletasks()
+
     ###################     ###################     ###################     ###################
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
 
     # a dict of the editor frame names and models
     editor_tables = {}
+    currently_in_each_frame = {}
     sort_direction = True
     #import threading
     #sys.stdout = StdoutRedirector(root)
     #mostrecent_stdout = StringVar()
     #mostrecent_stdout.set('Dummy')
     #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
+
+
+    def update_spreadsheet(frame_to_update, df_to_show = None, model = False, height = 100, width = False, indexwidth = 70, just_default_sort = False):
+        """refresh a spreadsheet in the editor window"""
+        from collections import OrderedDict
+        import pandas
+        kwarg = {}
+        if width:
+            kwarg['width'] = width
+        if model and not df_to_show:
+            df_to_show = make_df_from_model(model)
+            if need_make_totals:
+                df_to_show = make_df_totals(df_to_show)
+        if df_to_show is not None:
+            if just_default_sort is False:    
+                # for abs freq, make total
+                model = TableModel()
+                df_to_show = pandas.DataFrame(df_to_show, dtype = object)
+                if need_make_totals(df_to_show):
+                    df_to_show = make_df_totals(df_to_show)
+                
+                # turn pandas into dict
+                raw_data = df_to_show.to_dict()
+
+                table = TableCanvas(frame_to_update, model=model, 
+                                    showkeynamesinheader=True, 
+                                    height = height,
+                                    rowheaderwidth=indexwidth,
+                                    **kwarg)
+                table.createTableFrame()
+                model = table.model
+                model.importDict(raw_data) #can import from a dictionary to populate model            
+                for index, name in enumerate(list(df_to_show.index)):
+                    model.moveColumn(model.getColumnIndex(name), index)
+                table.createTableFrame()
+                if 'tkintertable-order' in list(df_to_show.index):
+                    table.sortTable(columnName = 'tkintertable-order')
+                    ind = model.columnNames.index('tkintertable-order')
+                    try:
+                        model.deleteColumn(ind)
+                    except:
+                        pass
+                else:
+                    table.sortTable(reverse = 1)
+            else:
+                table = TableCanvas(frame_to_update, model=model, 
+                                    showkeynamesinheader=True, 
+                                    height = height,
+                                    rowheaderwidth=indexwidth,
+                                    **kwarg)
+                table.createTableFrame()
+                table.sortTable(columnName = 'Total', reverse = direct())
+
+            table.redrawTable()
+            editor_tables[frame_to_update] = model
+            currently_in_each_frame[frame_to_update] = df_to_show
+            return
+        if model:
+            table = TableCanvas(frame_to_update, model=model, 
+                                showkeynamesinheader=True, 
+                                height = height,
+                                rowheaderwidth=indexwidth,
+                                **kwarg)
+            table.createTableFrame()
+            try:
+                table.sortTable(columnName = 'Total', reverse = direct())
+            except:
+                direct()           
+                table.sortTable(reverse = direct())
+            table.createTableFrame()            # sorts by total freq, ok for now
+            table.redrawTable()
+        else:
+            table = TableCanvas(frame_to_update, height = height, width = width)
+            table.createTableFrame()            # sorts by total freq, ok for now
+            table.redrawTable()
+
 
     def need_make_totals(df):
         try:
@@ -271,10 +349,10 @@ def corpkit_gui():
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
-        # Reset data1_pick and delete all old options
+        # Reset name_of_o_ed_spread and delete all old options
         # get the latest only after first interrogation
         if len(all_interrogations.keys()) == 1:
-            data1_pick.set(all_interrogations.keys()[-1])
+            selected_to_edit.set(all_interrogations.keys()[-1])
         #data2_pick.set(all_interrogations.keys()[-1])
         dataframe1s['menu'].delete(0, 'end')
         dataframe2s['menu'].delete(0, 'end')
@@ -282,10 +360,10 @@ def corpkit_gui():
             data_to_plot.set(all_interrogations.keys()[-1])
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
-        try:
-            del all_interrogations['None']
-        except:
-            pass
+        #try:
+            #del all_interrogations['None']
+        #except:
+            #pass
 
         new_choices = []
         for interro in all_interrogations.keys():
@@ -293,7 +371,7 @@ def corpkit_gui():
         new_choices = tuple(new_choices)
         dataframe2s['menu'].add_command(label='Self', command=Tkinter._setit(data2_pick, 'Self'))
         for choice in new_choices:
-            dataframe1s['menu'].add_command(label=choice, command=Tkinter._setit(data1_pick, choice))
+            dataframe1s['menu'].add_command(label=choice, command=Tkinter._setit(selected_to_edit, choice))
             dataframe2s['menu'].add_command(label=choice, command=Tkinter._setit(data2_pick, choice))
             every_interrogation['menu'].add_command(label=choice, command=Tkinter._setit(data_to_plot, choice))
             #every_interro_listbox.delete(0, END)
@@ -344,17 +422,25 @@ def corpkit_gui():
     def data_sort(pane = 'interrogate', sort_direction = False):
         import pandas
         if pane == 'interrogate':
-            #update_all_interrogations(pane = 'interrogate')
-            #res = all_interrogations[all_interrogations.keys()[-1]].results
-            #tot = pandas.DataFrame(all_interrogations[all_interrogations.keys()[-1]].totals, dtype = object)
-            update_spreadsheet(interro_results, df_to_show = None, height = 260, indexwidth = 70, model = editor_tables[interro_results], just_default_sort = True)
-            update_spreadsheet(interro_totals, height = 10, indexwidth = 70, model = editor_tables[interro_totals], just_default_sort = True)
+            df = make_df_from_model(editor_tables[interro_results])
+            if need_make_totals(df):
+                df = make_df_totals(df)
+            df_tot = pandas.DataFrame(df.sum(), dtype = object)
+            update_spreadsheet(interro_results, df_to_show = df, height = 260, just_default_sort = True)
+            update_spreadsheet(interro_totals, df_to_show = df_tot, height = 10, just_default_sort = True)
         elif pane == 'edit':
-            #update_all_interrogations(pane = 'edit')
-            update_spreadsheet(o_editor_results, df_to_show = None, height = 260, indexwidth = 70, model = editor_tables[o_editor_results], just_default_sort = True)
-            update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, indexwidth = 70, model = editor_tables[o_editor_totals], just_default_sort = True)
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 260, indexwidth = 70, model = editor_tables[n_editor_results], just_default_sort = True)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, indexwidth = 70, model = editor_tables[n_editor_totals], just_default_sort = True)
+            df = make_df_from_model(editor_tables[o_editor_results])
+            if need_make_totals(df):
+                df = make_df_totals(df)
+            df_tot = pandas.DataFrame(df.sum(), dtype = object)
+            update_spreadsheet(o_editor_results, df_to_show = df, height = 260, model = editor_tables[o_editor_results], just_default_sort = True)
+            update_spreadsheet(o_editor_totals, df_to_show = df_tot, height = 10, model = editor_tables[o_editor_totals], just_default_sort = True)
+            df = make_df_from_model(editor_tables[n_editor_results])
+            if need_make_totals(df):
+                df = make_df_totals(df)
+            df_tot = pandas.DataFrame(df.sum(), dtype = object)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 260, model = editor_tables[n_editor_results], just_default_sort = True)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, model = editor_tables[n_editor_totals], just_default_sort = True)
         elif pane == 'plot':
             pass
 
@@ -402,6 +488,10 @@ def corpkit_gui():
     
         # when not testing:
         r = interrogator(fullpath.get(), selected_option, **interrogator_args)
+        if not r:
+            # thetime = strftime("%H:%M:%S", localtime())
+            # print '%s: Message.' % thetime
+            return
 
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
@@ -414,6 +504,8 @@ def corpkit_gui():
 
         # add interrogation to master
         all_interrogations[the_name] = r
+        name_of_interro_spreadsheet.set(the_name)
+        i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
 
         # total in a way that tkintertable likes
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
@@ -423,12 +515,13 @@ def corpkit_gui():
             update_spreadsheet(interro_results, r.results, height = 260, indexwidth = 70)
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70)
         
-        i_resultname.set('Interrogation results: %s' % the_name)
         refresh()
         #Restore_stdout()
         ##Dbg_kill_topwin()
         # add button after first interrogation
 
+
+        # to do, make these work again
         Button(tab1, text = 'Sort data', command = lambda: data_sort(pane = 'interrogate', sort_direction = sort_direction)).grid(row = 10, column = 2, sticky = W)
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 10, column = 2, sticky = E)
 
@@ -549,7 +642,7 @@ def corpkit_gui():
 
     Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0, sticky = W)
     spl = MyOptionMenu(tab1, 'Off','UK','US')
-    spl.grid(row = 8, column = 1)
+    spl.grid(row = 8, column = 1, sticky = E)
 
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'Collapsed, CC-processed'))
@@ -575,8 +668,9 @@ def corpkit_gui():
     Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 11, column = 1, sticky = E)
 
     i_resultname = StringVar()
-    current_name = ''
-    i_resultname.set('Interrogation results: %s' % str(current_name))
+    name_of_interro_spreadsheet = StringVar()
+    name_of_interro_spreadsheet.set('')
+    i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
     Label(tab1, textvariable = i_resultname, 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 2, sticky = W, padx=20, pady=0)    
@@ -587,6 +681,8 @@ def corpkit_gui():
     interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
     interro_totals.grid(column = 2, row = 8, rowspan=2, padx=20, pady=5)
 
+    update_spreadsheet(interro_results, df_to_show = None, height = 260, width = 300)
+    update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 300)
     #x = ConsoleText(tab1, width = 20)
     #x.grid(row = 15, column = 0)
 
@@ -623,22 +719,19 @@ def corpkit_gui():
             1 = old editor window
             2 = new editor window"""
         # if table doesn't exist, forget about it
-        try:
-            model=editor_tables[table_id]
-        except:
-            return
+        model=editor_tables[table_id]
 
         newdata = make_df_from_model(model)
         if need_make_totals(newdata):
             newdata = make_df_totals(newdata)
 
         if id == 0:
-            name_of_interrogation = all_interrogations.keys()[-1]
+            name_of_interrogation = name_of_interro_spreadsheet.get()
         if id == 1:
-            name_of_interrogation = data1_pick.get()
+            name_of_interrogation = name_of_o_ed_spread.get()
         # 1 id for the new data
         if id == 2:
-            name_of_interrogation = all_interrogations.keys()[-1]
+            name_of_interrogation = name_of_n_ed_spread.get()
         if not is_total:
             exchange_interro_branch(name_of_interrogation, newdata, branch = 'results')
         else:
@@ -646,39 +739,55 @@ def corpkit_gui():
 
     def update_all_interrogations(pane = 'interrogate'):
         import pandas
-        """update all_interrogations within spreadsheet data"""
+        """update all_interrogations within spreadsheet data
+
+        need a very serious cleanup!"""
         # to do: only if they are there
         if pane == 'interrogate':
             update_interrogation(interro_results, id = 0)
             update_interrogation(interro_totals, id = 0, is_total = True)
-            if data1_pick.get() == all_interrogations.keys()[-1]:
-                update_interrogation(o_editor_results, id = 1)
-                update_interrogation(o_editor_totals, id = 1, is_total = True)
+
+            #if name_of_interro_spreadsheet.get() == name_of_o_ed_spread.get():
+                #update_interrogation(o_editor_results, id = 1)
+                #update_interrogation(o_editor_totals, id = 1, is_total = True)
         if pane == 'edit':
-            the_data = all_interrogations[data1_pick.get()]
-            newdata = all_interrogations[all_interrogations.keys()[-1]]
             update_interrogation(o_editor_results, id = 1)
             update_interrogation(o_editor_totals, id = 1, is_total = True)
-            update_interrogation(n_editor_results, id = 2)
-            update_interrogation(n_editor_totals, id = 2, is_total = True)
-            if i_resultname.get() == ('Interrogation results: ' + data1_pick.get()):
-                update_interrogation(interro_results, id = 0)
-                update_interrogation(interro_totals, id = 0, is_total = True)
+            if name_of_n_ed_spread.get() != '':
+                update_interrogation(n_editor_results, id = 2)
+                update_interrogation(n_editor_totals, id = 2, is_total = True)
+            #if name_of_interro_spreadsheet.get() == name_of_o_ed_spread.get():
+                #update_interrogation(interro_results, id = 0)
+                #update_interrogation(interro_totals, id = 0, is_total = True)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Updated interrogations with manual data.' % thetime
+        #print '%s: Updated interrogations with manual data.' % thetime
         if pane == 'interrogate':
-            the_data = all_interrogations[data1_pick.get()]
-            newdata = all_interrogations[all_interrogations.keys()[-1]]
-            tot = pandas.DataFrame(all_interrogations[all_interrogations.keys()[-1]].totals, dtype = object)
-            update_spreadsheet(interro_results, all_interrogations[all_interrogations.keys()[-1]].results, height = 260, indexwidth = 70)
+            the_data = all_interrogations[name_of_interro_spreadsheet.get()]
+            tot = pandas.DataFrame(the_data.totals, dtype = object)
+            update_spreadsheet(interro_results, the_data.results, height = 260, indexwidth = 70)
             update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70)
-        else:
+        if pane == 'edit':
+            the_data = all_interrogations[name_of_o_ed_spread.get()]
+            there_is_new_data = False
+            try:
+                newdata = all_interrogations[name_of_n_ed_spread.get()]
+                there_is_new_data = True
+            except:
+                pass
             update_spreadsheet(o_editor_results, the_data.results, height = 100, indexwidth = 70)
             update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70)
-            update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100)
-            update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70)
+            if there_is_new_data:
+                if newdata != 'None' and newdata != '':
+                    update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 100)
+                    update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70)
+            if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
+                the_data = all_interrogations[name_of_interro_spreadsheet.get()]
+                tot = pandas.DataFrame(the_data.totals, dtype = object)
+                update_spreadsheet(interro_results, the_data.results, height = 260, indexwidth = 70)
+                update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70)
+        
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Updated spreadsheet display in edit window.' % thetime
+        #print '%s: Updated spreadsheet display in edit window.' % thetime
 
     def is_number(s):
         """check if str can be added for the below"""
@@ -690,79 +799,6 @@ def corpkit_gui():
             except ValueError:
                 return False
         return True
-
-    def update_spreadsheet(frame_to_update, df_to_show = None, model = False, height = 140, width = False, indexwidth = 70, just_default_sort = False):
-        """refresh a spreadsheet in the editor window"""
-        from collections import OrderedDict
-        import pandas
-        kwarg = {}
-        if width:
-            kwarg['width'] = width
-        if model:
-            df_to_show = make_df_from_model(model)
-            if need_make_totals:
-                df_to_show = make_df_totals(df_to_show)
-        else:
-            if just_default_sort is False:    
-                # for abs freq, make total
-                model = TableModel()
-                df_to_show = pandas.DataFrame(df_to_show, dtype = object)
-                if need_make_totals(df_to_show):
-                    df_to_show = make_df_totals(df_to_show)
-                
-                # turn pandas into dict
-                raw_data = df_to_show.to_dict()
-
-                table = TableCanvas(frame_to_update, model=model, 
-                                    showkeynamesinheader=True, 
-                                    height = height,
-                                    rowheaderwidth=indexwidth,
-                                    **kwarg)
-                table.createTableFrame()
-                model = table.model
-                model.importDict(raw_data) #can import from a dictionary to populate model            
-                for index, name in enumerate(list(df_to_show.index)):
-                    model.moveColumn(model.getColumnIndex(name), index)
-                table.createTableFrame()
-                if 'tkintertable-order' in list(df_to_show.index):
-                    table.sortTable(columnName = 'tkintertable-order')
-                    ind = model.columnNames.index('tkintertable-order')
-                    try:
-                        model.deleteColumn(ind)
-                    except:
-                        pass
-                else:
-                    table.sortTable(reverse = 1)
-            else:
-                table = TableCanvas(frame_to_update, model=model, 
-                                    showkeynamesinheader=True, 
-                                    height = height,
-                                    rowheaderwidth=indexwidth,
-                                    **kwarg)
-                table.createTableFrame()
-                table.sortTable(columnName = 'Total', reverse = direct())
-
-            table.redrawTable()
-            editor_tables[frame_to_update] = model
-            return
-        if model:
-            table = TableCanvas(frame_to_update, model=model, 
-                                showkeynamesinheader=True, 
-                                height = height,
-                                rowheaderwidth=indexwidth,
-                                **kwarg)
-            table.createTableFrame()
-            try:
-                table.sortTable(columnName = 'Total', reverse = direct())
-            except:
-                direct()           
-                table.sortTable(reverse = direct())
-            table.createTableFrame()            # sorts by total freq, ok for now
-            table.redrawTable()
-        else:
-            table = TableCanvas(frame_to_update, height = height, width = width)
-            table.createTableFrame()            # sorts by total freq, ok for now
-            table.redrawTable()
 
 
     def do_editing():
@@ -789,12 +825,11 @@ def corpkit_gui():
             elif df2branch.get() == 'totals':
                 data2 = all_interrogations[data2].totals
 
-        the_data = all_interrogations[data1_pick.get()]
+        the_data = all_interrogations[name_of_o_ed_spread.get()]
         if df1branch.get() == 'results':
-            data1 = all_interrogations[data1_pick.get()].results
-        # is this wrong?
+            data1 = the_data.results
         elif df1branch.get() == 'totals':
-            data1 = all_interrogations[data1_pick.get()].totals
+            data1 = the_data.totals
 
         if (spl_editor.var).get() == 'Off' or (spl_editor.var).get() == 'Convert spelling':
             spel = False
@@ -857,17 +892,18 @@ def corpkit_gui():
         all_interrogations[the_name] = r
 
         # update label above spreadsheet
-        #interroname = the_name
-        #resultname.set('Results to edit: %s' % str(interroname))   
+        #name_of_o_ed_spread = the_name
+        #resultname.set('Results to edit: %s' % str(name_of_o_ed_spread))   
 
         # update spreadsheets     
-        update_spreadsheet(o_editor_results, the_data.results, height = 100, width = 350)
-        update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 350)
+        # do we need to do this for the old set?
+        #update_spreadsheet(o_editor_results, the_data.results, height = 100, width = 350)
+        #update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 350)
 
         # new editor results
         # update name above
-        e_name = all_interrogations.keys()[-1]
-        editoname.set('Edited results: %s' % str(e_name))
+        name_of_n_ed_spread.set(all_interrogations.keys()[-1])
+        editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         
         # add current subcorpora to editor menu
         subc_listbox.delete(0, 'end')
@@ -876,8 +912,9 @@ def corpkit_gui():
                 subc_listbox.insert(END, e)
 
         # update spreadsheets
-        update_spreadsheet(n_editor_results, r.results, height = 100, width = 350)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(r.totals, dtype = object), height = 10, width = 350)
+        most_recent = all_interrogations[all_interrogations.keys()[-1]]
+        update_spreadsheet(n_editor_results, most_recent.results, height = 100, width = 350)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 350)
         
         # add to edited results
         all_edited_results[the_name] = r
@@ -889,19 +926,21 @@ def corpkit_gui():
 
 
     def df_callback(*args):
-        if data1_pick.get() != 'None':
-            update_spreadsheet(o_editor_results, all_interrogations[data1_pick.get()].results, height = 100, width = 350)
-            update_spreadsheet(o_editor_totals, all_interrogations[data1_pick.get()].totals, height = 10, width = 350)
-            interroname = data1_pick.get()
-            resultname.set('Results to edit: %s' % str(interroname))
+        if selected_to_edit.get() != 'None':
+            name_of_o_ed_spread.set(selected_to_edit.get())
+            update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 100, width = 350)
+            update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 350)
+            resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
             #update_spreadsheet(n_editor_results, None, height = 100, width = 350)
             #update_spreadsheet(n_editor_totals, None, height = 10, width = 350)
             # update names above spreadsheets
-        e_name = ''
-        editoname.set('Edited results: %s' % str(e_name))
+        name_of_n_ed_spread.set('')
+        editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
+        update_spreadsheet(n_editor_results, df_to_show = None, height = 100, width = 300)
+        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 300)
         subc_listbox.delete(0, 'end')
 
-        for e in list(all_interrogations[data1_pick.get()].results.index):
+        for e in list(all_interrogations[name_of_o_ed_spread.get()].results.index):
             if 'tkintertable-order' not in e:
                 subc_listbox.insert(END, e)        
 
@@ -910,12 +949,13 @@ def corpkit_gui():
     all_interrogations['None'] = 'None'
 
     tup = tuple([i for i in all_interrogations.keys()])
-    data1_pick = StringVar(root)
-    data1_pick.set(all_interrogations.keys()[0])
+    
+    selected_to_edit = StringVar(root)
+    selected_to_edit.set('None')
     Label(tab2, text = 'To edit:').grid(row = 0, column = 0, sticky = W)
-    dataframe1s = OptionMenu(tab2, data1_pick, *tup)
+    dataframe1s = OptionMenu(tab2, selected_to_edit, *tup)
     dataframe1s.grid(row = 0, column = 1, sticky=E)
-    data1_pick.trace("w", df_callback)
+    selected_to_edit.trace("w", df_callback)
 
     # DF1 branch selection
     df1branch = StringVar()
@@ -1041,13 +1081,19 @@ def corpkit_gui():
     all_edited_results = OrderedDict()
     all_edited_results['None'] = 'None'
 
-    Button(tab2, text = 'Sort data', command = lambda: data_sort(pane = 'edit', sort_direction = sort_direction)).grid(row = 12, column = 3, sticky = E)
-    Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 12, column = 3, sticky = E)
+    # to do: make these work again
+    #Button(tab2, text = 'Sort data', command = lambda: data_sort(pane = 'edit', sort_direction = sort_direction)).grid(row = 12, column = 3, sticky = E)
+    Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 11, column = 0, sticky = W)
 
     # output
+
+
+
+
     resultname = StringVar()
-    interroname = ''
-    resultname.set('Results to edit: %s' % str(interroname))
+    name_of_o_ed_spread = StringVar()
+    name_of_o_ed_spread.set('')
+    resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
     Label(tab2, textvariable = resultname, 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 3, sticky = W, padx=20, pady=0)    
@@ -1058,10 +1104,13 @@ def corpkit_gui():
            #column = 3, sticky = W, padx=20, pady=0)
     o_editor_totals = Frame(tab2, height = 1, width = 350)
     o_editor_totals.grid(column = 3, row = 6, rowspan=1, padx=20)
+    update_spreadsheet(o_editor_results, df_to_show = None, height = 100, width = 300)
+    update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 300)
     
     editoname = StringVar()
-    e_name = ''
-    editoname.set('Edited results: %s' % str(e_name))
+    name_of_n_ed_spread = StringVar()
+    name_of_n_ed_spread.set('')
+    editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
     Label(tab2, textvariable = editoname, 
           font = ("Helvetica", 12, "bold")).grid(row = 7, 
            column = 3, sticky = W, padx=20, pady=0)        
@@ -1072,6 +1121,8 @@ def corpkit_gui():
            #column = 3, sticky = W, padx=20, pady=0)
     n_editor_totals = Frame(tab2, height = 1, width = 350)
     n_editor_totals.grid(column = 3, row =11, rowspan=1, padx=20)
+    update_spreadsheet(n_editor_results, df_to_show = None, height = 100, width = 300)
+    update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 300)
 
     # ????
     interrogation_name = StringVar()
@@ -1221,7 +1272,8 @@ def corpkit_gui():
     Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
     data_to_plot = StringVar(root)
-    data_to_plot.set(all_interrogations[all_interrogations.keys()[-1]])
+    most_recent = all_interrogations[all_interrogations.keys()[-1]]
+    data_to_plot.set(most_recent)
     every_interrogation = OptionMenu(tab3, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
     every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
 
@@ -1448,13 +1500,13 @@ def corpkit_gui():
         saved = 0
         existing = 0
         for i in sel_vals:
-            if i + '.p' not in os.listdir(data_fullpath.get()):
-                save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get())
+            if urlify(i) + '.p' not in os.listdir(data_fullpath.get()):
+                save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get(), root = root)
                 saved += 1
             else:
                 existing += 1
                 thetime = strftime("%H:%M:%S", localtime())
-                print '%s: File already exists in %s.' % (thetime, os.path.basename(data_fullpath.get()))   
+                print '%s: %s already exists in %s.' % (thetime, urlify(i), os.path.basename(data_fullpath.get()))   
         thetime = strftime("%H:%M:%S", localtime())
         if saved == 1 and existing == 0:
             print '%s: %s saved.' % (thetime, sel_vals[0])
