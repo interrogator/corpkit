@@ -1532,7 +1532,7 @@ def corpkit_gui():
         query = query_text.get()
         tree = show_trees.get()
         if (wind_size.var).get() == "Window size":
-            w_size = 55
+            w_size = 75
             if tree:
                 w_size = w_size / 2
         else:
@@ -1571,7 +1571,7 @@ def corpkit_gui():
     Entry(tab4, textvariable = query_text).grid(row = 1, column = 1)
     
     # WINDOW SIZE
-    window_sizes = ('20', '30', '40', '50', '55', '60', '70', '80', '90', '100')
+    window_sizes = ('20', '30', '40', '50', '60', '70', '80', '90', '100')
     l =  ['Window size'] + [i for i in window_sizes]
     wind_size = MyOptionMenu(tab4, 'Window size', *window_sizes)
     wind_size.grid(row = 1, column = 4)
@@ -1585,6 +1585,11 @@ def corpkit_gui():
     Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False).grid(row = 1, column = 3)
 
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 1, column = 5)
+
+    def conc_export():
+        return
+
+    Button(tab4, text = 'Export', command = lambda: conc_export(), state = DISABLED).grid(row = 1, column = 6)
 
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
