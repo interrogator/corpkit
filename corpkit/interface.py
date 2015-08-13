@@ -1984,17 +1984,34 @@ def corpkit_gui():
     def create_parsed_corpus():
         unparsed_corpus_path = sel_corpus.get()
         import os
-        if not corenlp_exists:
+        if not corenlp_exists():
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
-                          "CoreNLP parser not found. Download and install it?")
+                          "CoreNLP parser not found. Download/install it?")
             if downstall_nlp:
-                stanpath, cnlp_zipfile = download(project_fullpath.get())
-                extract(cnlp_zipfile)
-        if not check_jdk:
-            downstall_jdk = tkMessageBox.askyesno("Your Java is not found.", "Open web browser with download link?")
+                stanpath, cnlp_zipfile = download(project_fullpath.get(), root = root)
+                extract(cnlp_zipfile, root = root)
+            else:
+                time = strftime("%H:%M:%S", localtime())
+                print '%s: Cannot parse data without Stanford CoreNLP.' % (time)
+                return
+        jdk = check_jdk()
+        if jdk is False:
+            downstall_jdk = tkMessageBox.askyesno("You need Java JDK 1.8 to use CoreNLP.", "Hit 'yes' to open web browser at download link. Once installed, corpkit should resume automatically")
             if downstall_jdk:
                 import webbrowser
                 webbrowser.open_new('http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html')
+                import time
+                time = strftime("%H:%M:%S", localtime())
+                print '%s: Waiting for Java JDK 1.8 installation to complete.' % (time)
+                while jdk is False:
+                    jdk = check_jdk()
+                    time = strftime("%H:%M:%S", localtime())
+                    print '%s: Waiting for Java JDK 1.8 installation to complete.' % (time)
+                    time.sleep(5)
+            else:
+                time = strftime("%H:%M:%S", localtime())
+                print '%s: Cannot parse data without Java JDK 1.8.' % (time)
+                return
         # creat file: corpus-filelist.txt
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout)
