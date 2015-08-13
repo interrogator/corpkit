@@ -490,26 +490,30 @@ def stanford_parse(data, corpus_name = 'corpus'):
 
 
 
-def download(proj_path):
+def download(proj_path, root = False):
     """download corenlp to proj_path"""
     import os
     import urllib2
     from time import localtime, strftime
     from corpkit.progressbar import ProgressBar
-
     url = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
     file_name = url.split('/')[-1]
-    u = urllib2.urlopen(url)
-
-    # for now:
-
-    stanpath = os.path.join(proj_path, 'corenlp')
-    os.markdirs(stanpath)
+    home = os.path.expanduser("~")
+    stanpath = os.path.join(home, 'corenlp')
     fullfile = os.path.join(stanpath, file_name)
+    u = urllib2.urlopen(url)
+    try:
+        os.makedirs(stanpath)
+    except:
+        if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(stanpath):
+            return stanpath, fullfile
+        pass
+    
     f = open(fullfile, 'wb')
     meta = u.info()
     file_size = int(meta.getheaders("Content-Length")[0])
-    print "Downloading: %s Bytes: %s" % (file_name, file_size)
+    if root:
+        root.update()
     p = ProgressBar(int(file_size))
 
     file_size_dl = 0
@@ -524,29 +528,40 @@ def download(proj_path):
         #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
         #status = status + chr(8)*(len(status)+1)
         p.animate(file_size_dl)
+        if root:
+            root.update()
 
     p.animate(int(file_size))
     time = strftime("%H:%M:%S", localtime())
-    print '%s: CoreNLP downloaded successully. Extracting ...' % time
+    print '%s: CoreNLP downloaded successully' % time
     f.close()
     return stanpath, fullfile
 
 #'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
-def extract(fullfilepath):
+def extract(fullfilepath, root = False):
     """extract corenlp"""
     import zipfile
+    import os
     from time import localtime, strftime
-    with zipfile.ZipFile(fullfilepath) as zf:
-        zf.extractall('corenlp')
     time = strftime("%H:%M:%S", localtime())
-    print '%s: CoreNLP extracted. Installing ...' % time
+    print '%s: Extracting CoreNLP files ...' % time
+    if root:
+        root.update()
+    home = os.path.expanduser("~")
+    stanpath = os.path.join(home, 'corenlp')
+    with zipfile.ZipFile(fullfilepath) as zf:
+        zf.extractall(stanpath)
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: CoreNLP extracted. ' % time
     
 def install(stanpath):
     import subprocess
     import os
     from time import localtime, strftime
     cwd = os.getcwd()
-    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))][0]
+    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
+    if len(find_install) > 0:
+        find_install = find_install[0]
     extracted_path = os.path.join(stanpath, find_install)
     os.chdir(extracted_path)
     time = strftime("%H:%M:%S", localtime())
@@ -617,10 +632,20 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
     new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
     if not os.path.isdir(new_corpus_path):
         os.makedirs(new_corpus_path)
+    else:
+        fs = os.listdir(new_corpus_path)
+        if any([f.endswith('.xml') for f in fs]):
+            print 'Folder containing xml already exists: "%s-parsed"' % basecp
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
-    stanpath = os.path.join(proj_path, 'corenlp')
-    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))][0]
+    home = os.path.expanduser("~")
+    stanpath = os.path.join(home, 'corenlp')
+    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
+    if len(find_install) > 0:
+        find_install = find_install[0]
+    else:
+        print 'Nothing in CoreNLP directory.'
+        return
     os.chdir(os.path.join(stanpath, find_install))
     root.update_idletasks()
     #root.statusbar.update_idletasks()
@@ -677,4 +702,22 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
 
 def corenlp_exists():
     import os
+    important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
+                       'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
+    home = os.path.expanduser("~")
+    stanpath = os.path.join(home, 'corenlp')
+    if os.path.isdir(stanpath):
+        find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
+        if len(find_install) > 0:
+            find_install = find_install[0]
+        else:
+            return False
+        javalib = os.path.join(stanpath, find_install)
+        if len(javalib) == 0:
+            return False
+        if not all([f in os.listdir(javalib) for f in important_files]):
+            return False
+        return True
+    else:
+        return False
     return True
