@@ -309,10 +309,16 @@ def corpkit_gui():
                     types = [k for k in dict_of_specials[special]._asdict().keys()]
                     reg = re.compile('(^.*)(%s)(:)([A-Z]+)(.*$)' % special[:-1])
                     divided = re.search(reg, query)
+                    if special == 'PROCESSES:':
+                        the_bound = 'w'
+                    if special == 'ROLES:':
+                        the_bound = False
+                    if special == 'WORDLISTS:':
+                        the_bound = 'w'
                     try:
                         lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
                         asr = as_regex(lst_of_matches, 
-                                       boundaries = False, 
+                                       boundaries = the_bound, 
                                        case_sensitive = case_sensitive.get(), 
                                        inverse = False)
                         query = divided.group(1) + asr + divided.group(5)
@@ -351,11 +357,11 @@ def corpkit_gui():
         csv_data = []
         for c in colnames:
             row.append(collabels[c])
-        csv_data.append(','.join([str(s) for s in row]))
+        csv_data.append(','.join([unicode(s, errors = 'ignore') for s in row]))
         #csv_data.append('\n')
         for row in recs.keys():
             rowname = model.getRecName(row)
-            csv_data.append(','.join([str(rowname)] + [str(s) for s in recs[row]]))
+            csv_data.append(','.join([unicode(rowname, errors = 'ignore')] + [unicode(s, errors = 'ignore') for s in recs[row]]))
             #csv_data.append('\n')
             #writer.writerow(recs[row])
         csv = '\n'.join(csv_data)
@@ -601,7 +607,7 @@ def corpkit_gui():
             del subcorpora[k]
         subcorpora[fp] = subs
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Set corpus directory: %s' % (time, os.path.basename(fp))
+        print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
     Label(tab1, text = 'Corpus directory: ').grid(row = 0, column = 0)
     Button(tab1, textvariable = basepath, command = getdir).grid(row = 0, column = 1, sticky=E)
@@ -1198,7 +1204,7 @@ def corpkit_gui():
     merge.grid(row = 15, column = 0, sticky = 'SW')
     
     edit_nametext = StringVar()
-    edit_nametext.set('')
+    edit_nametext.set('untitled')
     Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 16, column = 0, sticky = W)
     
     msn = Entry(tab2, textvariable = edit_nametext)
@@ -1634,6 +1640,8 @@ def corpkit_gui():
             conclistbox.delete(0, END)
             for line in lines:
                 conclistbox.insert(END, str(line))
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: %d concordance lines sorted.' % (thetime, len(len(conclistbox.get(0, END))))
         
     # conc box
     scrollbar = Scrollbar(tab4)
@@ -1687,11 +1695,6 @@ def corpkit_gui():
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
     ##############     ##############     ##############     ##############     ############## 
-
-    # save result(s) to file
-    # load result(s)
-    # delete results from memory
-    # rename results
 
     def make_new_project():
         from corpkit import new_project
@@ -1825,6 +1828,10 @@ def corpkit_gui():
         return s
 
     def rename_one_or_more():
+        if len(sel_vals) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No interrogations selected.' % thetime
+            return
         if perm.get():
             import os
             perm_text = 'permanently '
@@ -1842,6 +1849,17 @@ def corpkit_gui():
                 if os.path.isfile(oldf):
                     newf = os.path.join(p, urlify(answer) + '.p')
                     os.rename(oldf, newf)
+            if name_of_interro_spreadsheet.get() == i:
+                name_of_interro_spreadsheet.set(answer)
+                i_resultname.set('Interrogation results: %s' % str(answer))
+                #update_spreadsheet(interro_results, all_interrogations[answer].results)
+            if name_of_o_ed_spread.get() == i:
+                name_of_o_ed_spread.set(answer)
+                #update_spreadsheet(o_editor_results, all_interrogations[answer].results)
+            if name_of_n_ed_spread.get() == i:
+                name_of_n_ed_spread.set(answer)
+                #update_spreadsheet(n_editor_results, all_interrogations[answer].results)
+
         thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
             print '%s: %s %srenamed as %s.' % (thetime, sel_vals[0], perm_text, answer)
