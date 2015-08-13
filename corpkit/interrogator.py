@@ -406,7 +406,7 @@ def interrogator(path,
                 if re.match(regex, word):
                     if function_filter and not pos_filter:
                         role = dep.attrs.get('type')
-                        if not re.search(funfil_regex, role):
+                        if not re.match(funfil_regex, role):
                             continue
                     if pos_filter and not function_filter:
                         id = dependent.attrs.get('idx')
@@ -423,7 +423,7 @@ def interrogator(path,
                         result_pos = token_info[0].find_all('pos', limit = 1)[0].text
                         if not re.search(pos_regex, result_pos):
                             continue
-                        if not re.search(funfil_regex, role):
+                        if not re.match(funfil_regex, role):
                             continue
 
                     c = 0
@@ -465,26 +465,27 @@ def interrogator(path,
         """print funct:gov, using good lemmatisation"""
         # for each sentence
         result = []
-        if lemmatise:
-            # if lemmatise, we have to do something tricky.
-            just_good_deps = SoupStrainer('sentences')
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-            for s in soup.find_all('sentence'):
-                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                for dep in right_dependency_grammar[0].find_all('dep'):                
-                    for dependent in dep.find_all('dependent', limit = 1):
-                        word = dependent.get_text()
-                        if re.match(regex, word):
-                            role = dep.attrs.get('type')
-                            gov = dep.find_all('governor', limit = 1)
-                            #result_word = gov[0].get_text()
-                            result_word_id = gov[0].attrs.get('idx')
-                            if role != u'root':
+        just_good_deps = SoupStrainer('sentences')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+        for s in soup.find_all('sentence'):
+            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+            for dep in right_dependency_grammar[0].find_all('dep'):                
+                for dependent in dep.find_all('dependent', limit = 1):
+                    result_word = dependent.get_text()
+                    if re.match(regex, result_word):
+                        role = dep.attrs.get('type')
+                        gov = dep.find_all('governor', limit = 1)
+                        #result_word = gov[0].get_text()
+                        result_word_id = gov[0].attrs.get('idx')
+                        if role != u'root':
+                            if lemmatise or pos_filter or function_filter: 
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
-                                result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                                if lemmatise:
+                                    result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                                if add_pos_to_g_d_option or pos_filter:
+                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text
                                 if function_filter and not pos_filter:
-                                    if re.search(funfil_regex, role):
+                                    if re.match(funfil_regex, role):
                                         result.append(result_word)
                                     else:
                                         continue
@@ -494,7 +495,7 @@ def interrogator(path,
                                     else:
                                         continue
                                 if pos_filter and function_filter:
-                                    if re.search(funfil_regex, role):
+                                    if re.match(funfil_regex, role):
                                         if re.search(pos_regex, result_pos):
                                             result.append(result_word)
                                             continue
@@ -505,46 +506,7 @@ def interrogator(path,
                                         colsep = role + u':' + result_word
                                     result.append(colsep)
                             else:
-                                result.append(u'root:root')
-
-        else:
-            just_good_deps = SoupStrainer('dependencies', type=dep_type)
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
-            for dep in soup.find_all('dep'):
-                for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text()
-                    if re.match(regex, word):
-                        role = dep.attrs.get('type')
-                        if role != u'root':
-                            gov = dep.find_all('governor', limit = 1)
-                            result_word = gov[0].get_text()
-                            if function_filter:
-                                if re.search(funfil_regex, role):
-                                    result.append(result_word)
-                                    continue
-                            if pos_filter:
-                                result_word_id = gov[0].attrs.get('idx')
-                                token_info = s.find_all('token', id=result_word_id, limit = 1)
-                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                                if re.search(pos_regex, result_pos):
-                                    result.append(result_word)
-                                else:
-                                    continue
-                            if function_filter and pos_filter:
-                                if re.search(funfil_regex, role):
-                                    result_word_id = gov[0].attrs.get('idx')
-                                    token_info = s.find_all('token', id=result_word_id, limit = 1)
-                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                                    if re.search(pos_regex, result_pos):
-                                        result.append(result_word)
-                                    else:
-                                        continue
-                                else:
-                                    continue
-
-                            if not function_filter and not pos_filter:
-                                colsep = role + u':' + result_word
-                                result.append(colsep)
+                                result.append(u'%s:%s' % (role, gov))
                         else:
                             result.append(u'root:root')
 
@@ -626,7 +588,7 @@ def interrogator(path,
                             result_word = token_info[0].find_all('lemma', limit = 1)[0].text
                             result_pos = token_info[0].find_all('pos', limit = 1)[0].text
                             if function_filter and not pos_filter:
-                                if re.search(funfil_regex, role):
+                                if re.match(funfil_regex, role):
                                     result.append(result_word)
                                 else:
                                     continue
@@ -636,7 +598,7 @@ def interrogator(path,
                                 else:
                                     continue
                             if pos_filter and function_filter:
-                                if re.search(funfil_regex, role):
+                                if re.match(funfil_regex, role):
                                     if re.search(pos_regex, result_pos):
                                         result.append(result_word)
                                         continue
@@ -657,7 +619,7 @@ def interrogator(path,
                         deppy = dep.find_all('dependent', limit = 1)
                         result_word = deppy[0].get_text()
                         if function_filter:
-                            if re.search(funfil_regex, role):
+                            if re.match(funfil_regex, role):
                                 result.append(result_word)
                         else:
                             colsep = role + u':' + result_word
@@ -1058,16 +1020,16 @@ def interrogator(path,
             from corpkit.other import as_regex
             filter = as_regex(filter, case_sensitive = case_sensitive)
         try:
-            output = re.compile(filter, case_sensitive = case_sensitive)
+            output = re.compile(filter)
             is_valid = True
         except:
             is_valid = False
-
         while not is_valid:
             if root:
                 time = strftime("%H:%M:%S", localtime())
-                print '%s: Invalid POS filter regular expression.' % time
-                return
+                print filter
+                print '%s: Invalid filter regular expression.' % time
+                return False
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
                 '              a) rewrite it now\n' \
