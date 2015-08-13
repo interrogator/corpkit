@@ -174,7 +174,7 @@ def corpkit_gui():
     #HWHW
     note = Notebook(root, width= 1250, height = 550, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
-    #tab0 = note.add_tab(text = "Build")
+    tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
     tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
@@ -1216,7 +1216,6 @@ def corpkit_gui():
     all_edited_results['None'] = 'None'
 
     # output
-
     resultname = StringVar()
     name_of_o_ed_spread = StringVar()
     name_of_o_ed_spread.set('')
@@ -1541,7 +1540,9 @@ def corpkit_gui():
              'print_status': False,
              'print_output': False}
         
-        r = conc(corpus, query, **d)        
+        r = conc(corpus, query, **d)  
+        if r is False:
+            return      
         lines = r.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(r['r'].str.len().max()).format}).splitlines()
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing done: %d results.' % (time, len(lines))
@@ -1913,6 +1914,7 @@ def corpkit_gui():
         open_proj_basepath.set('Open project: "%s"' % os.path.basename(fp))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
+        os.chdir(fp)
 
     # a list of every interrogation
     def onselect_interro(evt):
@@ -1938,7 +1940,7 @@ def corpkit_gui():
     new_proj_basepath = StringVar()
     new_proj_basepath.set('New Project')
     open_proj_basepath = StringVar()
-    open_proj_basepath.set('Open Project')
+    open_proj_basepath.set('Open project')
 
     Label(tab5, text = 'Project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
     Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
@@ -1974,8 +1976,96 @@ def corpkit_gui():
     #Label(tab2, textvariable = df_var).grid()
 
     # this dummy funct is just here so that first funct prints properly.
+    
+    from corpkit.build import download, extract, install, install_corenlp, \
+                              rename_duplicates, get_corpus_filepaths, check_jdk, \
+                              parse_corpus, move_parsed_files, corenlp_exists
+
+    def create_parsed_corpus():
+        unparsed_corpus_path = sel_corpus.get()
+        import os
+        if not corenlp_exists:
+            downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
+                          "CoreNLP parser not found. Download and install it?")
+            if downstall_nlp:
+                stanpath, cnlp_zipfile = download(project_fullpath.get())
+                extract(cnlp_zipfile)
+        if not check_jdk:
+            downstall_jdk = tkMessageBox.askyesno("Your Java is not found.", "Open web browser with download link?")
+            if downstall_jdk:
+                import webbrowser
+                webbrowser.open_new('http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html')
+        # creat file: corpus-filelist.txt
+        filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
+        parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout)
+        new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
+        corpus_fullpath.set(new_corpus_path)
+        basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
+
+
+    get_text_corpus = StringVar()
+
+    parse_button_text = StringVar()
+    parse_button_text.set('Parse corpus')
+
+    sel_corpus = StringVar()
+    sel_corpus.set('')
+    sel_corpus_button = StringVar()
+    sel_corpus_button.set('Select corpus to parse%s' % sel_corpus.get())
+
+    add_corpus = StringVar()
+    add_corpus.set('')
+    add_corpus_button = StringVar()
+    add_corpus_button.set('Add corpus%s' % add_corpus.get())
+
+    def select_corpus_to_parse():
+        unparsed_corpus_path = tkFileDialog.askdirectory(title = 'Path to unparsed corpus',
+                                       initialdir = os.path.join(project_fullpath.get(), 'data'),
+                                       message = 'Select your corpus of unparsed text files for parsing.')
+        if unparsed_corpus_path is False or unparsed_corpus_path == '':    
+            return
+        sel_corpus.set(unparsed_corpus_path)
+        sel_corpus_button.set('Corpus to parse: "%s"' % os.path.basename(unparsed_corpus_path))
+        parse_button_text.set('Parse corpus: %s' % os.path.basename(unparsed_corpus_path))
+        #subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
+        #for k in subcorpora.keys():
+            #del subcorpora[k]
+        #subcorpora[fp] = subs
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Selected corpus for parsing: "%s"' % (time, os.path.basename(unparsed_corpus_path))
+
+    def getcorpus():
+        import shutil
+        import os
+        fp = tkFileDialog.askdirectory(title = 'Path to unparsed corpus',
+                                       initialdir = '~/Documents',
+                                       message = 'Select your corpus of unparsed text files.')
+        where_to_put_corpus = os.path.join(project_fullpath.get(), 'data')
+        try:
+            shutil.copytree(fp, os.path.join(where_to_put_corpus, os.path.basename(fp)))
+        except OSError:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: "%s" already exists in project.' % (thetime, os.path.basename(fp)) 
+            return 
+        get_text_corpus.set(fp)
+        add_corpus_button.set('Added: %s' % os.path.basename(fp))
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Corpus copied to project folder.' % (thetime)  
+
+    # duplicate of one in 'manage'
+    Label(tab0, text = 'Open project: ').grid(row = 0, column = 0, sticky=W)
+    Button(tab0, textvariable = open_proj_basepath, command = load_project).grid(row = 0, column = 1, sticky=W)
+    Label(tab0, text = 'Add corpus to project: ').grid(row = 1, column = 0, sticky=W)
+    Button(tab0, textvariable = add_corpus_button, command=getcorpus).grid(row = 1, column = 1, sticky=W)
+    Label(tab0, text = 'Corpus to parse: ').grid(row = 2, column = 0, sticky=W)
+    Button(tab0, textvariable = sel_corpus_button, command=select_corpus_to_parse).grid(row = 2, column = 1, sticky=W)
+    Label(tab0, text = 'Parse corpus: ').grid(row = 3, column = 0, sticky=W)
+    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 3, column = 1, sticky=W)
+
     do_plotting()
-    note.focus_on(tab1)
+    note.focus_on(tab0)
     root.mainloop()
 
 if __name__ == "__main__":
