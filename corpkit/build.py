@@ -625,6 +625,7 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
     from subprocess import PIPE, STDOUT, Popen
     import os
     import sys
+    from time import localtime, strftime
     if not check_jdk():
         print 'Need latest Java.'
         return
@@ -650,8 +651,9 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
     root.update_idletasks()
     #root.statusbar.update_idletasks()
     #root.text.update_idletasks()
-
-    subprocess.call(['java', '-cp', 
+    reload(sys)
+    num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
+    proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
                      '-Xmx2g', 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
@@ -660,7 +662,24 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
                      '-filelist', filelist,
                      '-noClobber',
                      '-outputDirectory', new_corpus_path, 
-                     '--parse.flags', ' -makeCopulaHead'])
+                     '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
+
+    import time
+    from corpkit.progressbar import ProgressBar
+    p = ProgressBar(num_files_to_parse)
+    while proc.poll() is None:
+        sys.stdout = stdout
+        #stdoutx, stderrx = proc.communicate()
+        #print stdoutx
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Initialising parser ... ' % (thetime)
+        num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])
+        if num_parsed > 0:
+            p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
+        root.update()
+        time.sleep(2)
+    p.animate(num_files_to_parse)
+    sys.stdout = stdout
     print 'Parsing finished. Moving parsed files into place ...'
     os.chdir(proj_path)
     return new_corpus_path
