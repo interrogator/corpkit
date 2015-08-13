@@ -8,7 +8,8 @@ def conc(corpus, query,
         add_links = False,
         show_links = False,
         print_status = True,
-        print_output = True): 
+        print_output = True,
+        root = False): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
     import os
     import re
@@ -48,7 +49,12 @@ def conc(corpus, query,
 
     # make sure there's a corpus
     if not os.path.exists(corpus):
-        raise ValueError('Corpus file or folder not found: %s' % corpus)
+        if root:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Corpus directory not found: %s' %(time, corpus)
+            return
+        else:
+            raise ValueError('Corpus file or folder not found: %s' % corpus)
 
     # welcome message
     if print_status:
