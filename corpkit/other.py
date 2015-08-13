@@ -1211,3 +1211,4 @@ def show(lines, index, show = 'thread'):
     """show lines.ix[index][link] as frame"""
     url = lines.ix[index]['link'].replace('<a href=', '').replace('>link</a>', '')
     return HTML('<iframe src=%s width=1000 height=500></iframe>' % url)
+
