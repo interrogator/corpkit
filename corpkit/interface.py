@@ -2015,7 +2015,7 @@ def corpkit_gui():
         # creat file: corpus-filelist.txt
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout)
-        sys.stdout = self.redir
+        sys.stdout = note.redir
         new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
         corpus_fullpath.set(new_corpus_path)
         basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
