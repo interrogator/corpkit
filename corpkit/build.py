@@ -487,3 +487,194 @@ def stanford_parse(data, corpus_name = 'corpus'):
         fo.close()
     p.animate(len(data))
     print 'Done!'
+
+
+
+def download(proj_path):
+    """download corenlp to proj_path"""
+    import os
+    import urllib2
+    from time import localtime, strftime
+    from corpkit.progressbar import ProgressBar
+
+    url = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
+    file_name = url.split('/')[-1]
+    u = urllib2.urlopen(url)
+
+    # for now:
+
+    stanpath = os.path.join(proj_path, 'corenlp')
+    os.markdirs(stanpath)
+    fullfile = os.path.join(stanpath, file_name)
+    f = open(fullfile, 'wb')
+    meta = u.info()
+    file_size = int(meta.getheaders("Content-Length")[0])
+    print "Downloading: %s Bytes: %s" % (file_name, file_size)
+    p = ProgressBar(int(file_size))
+
+    file_size_dl = 0
+    block_sz = 8192
+    while True:
+        buffer = u.read(block_sz)
+        if not buffer:
+            break
+
+        file_size_dl += len(buffer)
+        f.write(buffer)
+        #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+        #status = status + chr(8)*(len(status)+1)
+        p.animate(file_size_dl)
+
+    p.animate(int(file_size))
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: CoreNLP downloaded successully. Extracting ...' % time
+    f.close()
+    return stanpath, fullfile
+
+#'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
+def extract(fullfilepath):
+    """extract corenlp"""
+    import zipfile
+    from time import localtime, strftime
+    with zipfile.ZipFile(fullfilepath) as zf:
+        zf.extractall('corenlp')
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: CoreNLP extracted. Installing ...' % time
+    
+def install(stanpath):
+    import subprocess
+    import os
+    from time import localtime, strftime
+    cwd = os.getcwd()
+    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))][0]
+    extracted_path = os.path.join(stanpath, find_install)
+    os.chdir(extracted_path)
+    time = strftime("%H:%M:%S", localtime())
+    print '%s: CoreNLP installed.' % time
+    subprocess.call(['ant'])
+    os.chdir(cwd)
+
+def install_corenlp(proj_path = False):
+    import os
+    from time import localtime, strftime
+    if not proj_path:
+        proj_path = '/users/danielmcdonald/documents/work/risk'
+    st, ff = download(proj_path)
+    extract(ff)
+    install(st)
+
+def rename_duplicates(corpuspath):
+    """rename any duplicate filenames in the corpus
+
+    skipping for now, sorry"""
+    matches = []
+    basenames_only = []
+    for root, dirnames, filenames in os.walk(corpuspath):
+        for filename in fnmatch.filter(filenames, '*.txt'):
+            matches.append(os.path.join(root, filename))
+            basenames_only.append(filename)
+
+    from collections import defaultdict
+    d = defaultdict(list)
+    for i, (full, base) in enumerate(zip(matches, basenames_only)):
+        d[base].append(i)
+    for base, lst in d.items():
+        if len(lst) > 1:
+            d = {k:v for k,v in d.items() if len(v)>1}
+
+def get_corpus_filepaths(proj_path, corpuspath):
+    import fnmatch
+    import os
+    matches = []
+    for root, dirnames, filenames in os.walk(corpuspath):
+        for filename in fnmatch.filter(filenames, '*.txt'):
+            matches.append(os.path.join(root, filename))
+    matchstring = '\n'.join(matches)
+    with open(os.path.join(proj_path, 'data', 'corpus-filelist.txt'), "w") as f:
+        f.write(matchstring)
+    return os.path.join(proj_path, 'data', 'corpus-filelist.txt')
+
+def check_jdk():
+    import subprocess
+    from subprocess import PIPE, STDOUT, Popen
+    p = Popen(["java", "-version"], stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    if 'java version "1.8' in stderr:
+        return True
+    else:
+        #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
+        return False
+
+def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
+    import subprocess
+    from subprocess import PIPE, STDOUT, Popen
+    import os
+    import sys
+    if not check_jdk():
+        print 'Need latest Java.'
+        return
+    basecp = os.path.basename(corpuspath)
+    new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
+    if not os.path.isdir(new_corpus_path):
+        os.makedirs(new_corpus_path)
+    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
+    cwd = os.getcwd()
+    stanpath = os.path.join(proj_path, 'corenlp')
+    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))][0]
+    os.chdir(os.path.join(stanpath, find_install))
+    root.update_idletasks()
+    #root.statusbar.update_idletasks()
+    #root.text.update_idletasks()
+
+    subprocess.call(['java', '-cp', 
+                     'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     '-Xmx2g', 
+                     'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
+                     '-annotators', 
+                     'tokenize,ssplit,pos,lemma,ner,parse,dcoref', 
+                     '-filelist', filelist,
+                     '-noClobber',
+                     '-outputDirectory', new_corpus_path, 
+                     '--parse.flags', ' -makeCopulaHead'])
+    print 'Parsing finished. Moving parsed files into place ...'
+    os.chdir(proj_path)
+    return new_corpus_path
+
+def move_parsed_files(proj_path, corpuspath, new_corpus_path):
+    import shutil
+    import os
+    import fnmatch
+    cwd = os.getcwd()
+    basecp = os.path.basename(corpuspath)
+    dir_list = []
+
+    # go through old path, make file list
+    for path, dirs, files in os.walk(corpuspath):
+        for bit in dirs:
+            dir_list.append(os.path.join(path, bit).replace(corpuspath, '')[1:])
+
+    os.chdir(new_corpus_path)
+    for d in dir_list:
+        os.makedirs(d)
+    os.chdir(cwd)
+    parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.xml')]
+    # make a dictionary of the right paths
+    pathdict = {}
+    for rootd, dirnames, filenames in os.walk(corpuspath):
+        for filename in fnmatch.filter(filenames, '*.txt'):
+            pathdict[filename] = rootd
+
+    # move each file
+    for f in parsed_fs:
+        noxml = f.replace('.xml', '')
+
+        right_dir = pathdict[noxml].replace(corpuspath, new_corpus_path)
+
+        os.rename(os.path.join(new_corpus_path, f), 
+                  os.path.join(new_corpus_path, right_dir, f))
+    return new_corpus_path
+
+
+def corenlp_exists():
+    import os
+    return True
