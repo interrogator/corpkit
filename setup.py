@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='corpkit',
-      version='1.5',
+      version='1.9',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
@@ -18,7 +18,7 @@ setup(name='corpkit',
                         "pandas >= 0.16.1",
                         "mpld3 >= 0.2", 
                         "beautifulsoup4>=4.3.2",
-                        "pattern>=2.6"
+                        "pattern>=2.6",
                         "tkintertable>=1.2"
                         # add bs4, what else? ipython?
                        ],
