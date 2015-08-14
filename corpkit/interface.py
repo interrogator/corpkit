@@ -73,10 +73,10 @@ class Notebook(Frame):
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
         self.noteBookFrame = Frame(parent)                                                 #Create a frame to hold everything together
         self.BFrame = Frame(self.noteBookFrame)
-        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'] / 2 + 30)                                            #Create a frame to put the "tabs" in
+        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 15))
+        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 15), width = 135)
         self.text.grid()
         # alternative ...
         #self.text = Text(self.statusbar, height = 1, undo = True)
@@ -1768,7 +1768,7 @@ def corpkit_gui():
     
     # corpus path setter
     data_fullpath = StringVar()
-    data_fullpath.set('/users/danielmcdonald/documents/work/risk/data/mini_saved')
+    data_fullpath.set('')
     data_basepath = StringVar()
     data_basepath.set('Select data directory')
     project_fullpath = StringVar()
@@ -1786,7 +1786,7 @@ def corpkit_gui():
     
     # corpus path setter
     image_fullpath = StringVar()
-    image_fullpath.set('/users/danielmcdonald/documents/work/risk/images')
+    image_fullpath.set('')
     image_basepath = StringVar()
     image_basepath.set('Select image directory')
 
@@ -2025,8 +2025,10 @@ def corpkit_gui():
             texuse.set(conmap("Visualise")['use tex'])
             x_axis_l.set(conmap("Visualise")['x axis title'])
             chart_cols.set(conmap("Visualise")['colour scheme'])
-
-        load_config()
+            corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+        f = os.path.join(project_fullpath.get(), 'settings.ini')
+        if os.path.isfile(f):
+            load_config()
 
 
     def view_query():
@@ -2387,10 +2389,6 @@ def corpkit_gui():
     realquit = IntVar()
     realquit.set(0)
 
-    def quitfunc():
-        realquit.set(1)
-        root.quit()
-
     def clear_all():
         import sys
         python = sys.executable
@@ -2418,6 +2416,7 @@ def corpkit_gui():
         cfgfile = open(os.path.join(project_fullpath.get(), 'settings.ini') ,'w')
         Config.add_section('Build')
         Config.add_section('Interrogate')
+        Config.set('Interrogate','Corpus path', corpus_fullpath.get())
         Config.add_section('Edit')
         Config.add_section('Visualise')
         Config.set('Visualise','Plot style', plot_style.get())
@@ -2430,6 +2429,15 @@ def corpkit_gui():
         Config.write(cfgfile)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project settings saved to settings.ini ... ' % thetime
+
+    def quitfunc():
+        if project_fullpath.get() != '':
+            save_ask = tkMessageBox.askyesno("Save project settings.", 
+                          "Save settings before quitting?")
+            if save_ask:
+                save_config()
+        realquit.set(1)
+        root.quit()
 
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
