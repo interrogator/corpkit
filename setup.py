@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='corpkit',
-      version='1.9',
+      version='1.10',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
