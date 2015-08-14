@@ -26,10 +26,8 @@ class ProgressBar:
         self.fill_char = '*'
         self.width = 60
         self.__update_amount(0)
-        if have_ipython:
-            self.animate = self.animate_ipython
-        else:
-            self.animate = self.animate_noipython
+        self.animate = self.animate_ipython
+
 
     def animate_ipython(self, iter, dirname = None):
         from time import localtime, strftime
