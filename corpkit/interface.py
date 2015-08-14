@@ -166,14 +166,14 @@ def corpkit_gui():
     #from dictionaries.wordlists import wordlists
     #from corpkit import interrogator, editor, plotter
 
+    def adjustCanvas(someVariable = None):
+        fontLabel["font"] = ("arial", var.get())
+
     # key binding
     if sys.platform == 'darwin':
         key = 'Mod1'
     else:
         key = 'Control'
-
-    def adjustCanvas(someVariable = None):
-        fontLabel["font"] = ("arial", var.get())
     
     root = Tk()
     root.title("corpkit")
@@ -572,11 +572,18 @@ def corpkit_gui():
         if not r:
             return
 
+
         # remove dummy entry from master
         try:
             del all_interrogations['None']
         except KeyError:
             pass
+
+        if r == 'Bad query':
+            record = entrytext.get() + '   (invalid)'
+        else:
+            record = entrytext.get()
+        query_dict[the_name] = record
 
         # add interrogation to master
         all_interrogations[the_name] = r
@@ -912,6 +919,8 @@ def corpkit_gui():
                 data2 = all_interrogations[data2].results
             elif df2branch.get() == 'totals':
                 data2 = all_interrogations[data2].totals
+            if transpose.get():
+                data2 = data2.T
 
         the_data = all_interrogations[name_of_o_ed_spread.get()]
         if df1branch.get() == 'results':
@@ -968,6 +977,10 @@ def corpkit_gui():
             editor_args['just_totals'] = True
         
         # do editing
+
+        if transpose.get():
+            data1 = data1.T
+
         r = editor(data1, **editor_args)
 
         thetime = strftime("%H:%M:%S", localtime())
@@ -1106,7 +1119,10 @@ def corpkit_gui():
     #rem_abv_p_but.select()
     rem_abv_p_but.grid(column = 0, row = 7, sticky = W)
 
-    # another option here!
+    # transpose
+    transpose = IntVar()
+    trans_but = Checkbutton(tab2, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
+    trans_but.grid(column = 1, row = 7, sticky = E)
 
     subc_sel_vals = []
     # entries + entry field for regex, off, skip, keep, merge
@@ -1263,9 +1279,12 @@ def corpkit_gui():
         elif plotbranch.get() == 'totals':
             what_to_plot = all_interrogations[data_to_plot.get()].totals
         
+        if transpose_vis.get():
+            if plotbranch.get() != 'totals':
+                what_to_plot = what_to_plot.T
         # determine num to plot
-        def determine_num_to_plot(input):
-            """translate input to num_to_plot"""
+        def determine_num_to_plot(num):
+            """translate num to num_to_plot"""
             try:
                 num = int(num)
             except:
@@ -1285,16 +1304,8 @@ def corpkit_gui():
              'kind': the_kind}
 
         d['style'] = plot_style.get()
-
-        if texuse.get() == 1:
-            d['tex'] = True
-        else:
-            d['tex'] = False
-
-        if bw.get() == 1:
-            d['black_and_white'] = True
-        else:
-            d['black_and_white'] = False
+        d['tex'] = texuse.get()
+        d['black_and_white'] = bw.get()
 
         if log_x.get() == 1 and log_y.get() == 1:
             d['log'] = 'x,y'
@@ -1399,44 +1410,49 @@ def corpkit_gui():
     #plotbox.config(state = DISABLED)
     plotbox.grid(row = 2, column = 0, sticky = E, columnspan = 2)
 
+    # transpose
+    transpose_vis = IntVar()
+    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False)
+    trans_but_vis.grid(column = 1, row = 3, sticky = E)
+
     # num_to_plot
-    Label(tab3, text = 'Results to show:').grid(row = 3, column = 0, sticky = W)
+    Label(tab3, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
     number_to_plot = StringVar()
     number_to_plot.set('7')
-    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 3, column = 1, sticky = E)
+    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 4, column = 1, sticky = E)
 
     # chart type
-    Label(tab3, text='Kind of chart').grid(row = 4, column = 0, sticky = W)
+    Label(tab3, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
     charttype = StringVar(root)
     charttype.set('line')
     kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
     chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
-    chart_kind.grid(row = 4, column = 1, sticky = E)
+    chart_kind.grid(row = 5, column = 1, sticky = E)
 
     # axes
-    Label(tab3, text = 'x axis label:').grid(row = 5, column = 0, sticky = W)
+    Label(tab3, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
     x_axis_l = StringVar()
     x_axis_l.set('')
-    Entry(tab3, textvariable = x_axis_l).grid(row = 5, column = 1, sticky = W)
+    Entry(tab3, textvariable = x_axis_l).grid(row = 6, column = 1, sticky = W)
 
-    Label(tab3, text = 'y axis label:').grid(row = 6, column = 0, sticky = W)
+    Label(tab3, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
     y_axis_l = StringVar()
     y_axis_l.set('')
-    Entry(tab3, textvariable = y_axis_l).grid(row = 6, column = 1)
+    Entry(tab3, textvariable = y_axis_l).grid(row = 7, column = 1)
 
     # log options
     log_x = IntVar()
-    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 7, sticky = W)
+    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 8, sticky = W)
     log_y = IntVar()
-    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 7, sticky = E)
+    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 8, sticky = E)
 
     bw = IntVar()
-    Checkbutton(tab3, text="Black and white", variable=bw).grid(column = 0, row = 8, sticky = W)
+    Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 9, sticky = W)
     texuse = IntVar()
-    Checkbutton(tab3, text="Use TeX", variable=texuse).grid(column = 1, row = 8, sticky = E)
+    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 9, sticky = E)
 
     # chart type
-    Label(tab3, text='Colour scheme:').grid(row = 9, column = 0, sticky = W)
+    Label(tab3, text='Colour scheme:').grid(row = 10, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
     schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'pink_r', 'Set1', 'Set2', 
@@ -1459,34 +1475,34 @@ def corpkit_gui():
         'Blues_r', 'YlOrBr_r', 'seismic', 'Purples', 'seismic_r', 'RdBu', 'Greys', 'BuGn_r', 
         'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot'))
     ch_col = OptionMenu(tab3, chart_cols, *schemes)
-    ch_col.grid(row = 9, column = 1, sticky = E)
+    ch_col.grid(row = 10, column = 1, sticky = E)
 
     # style
     stys = tuple(('ggplot', 'fivethirtyeight', 'bmh'))
     plot_style = StringVar(root)
     plot_style.set('ggplot')
-    Label(tab3, text = 'Plot style:').grid(row = 10, column = 0, sticky = W)
+    Label(tab3, text = 'Plot style:').grid(row = 11, column = 0, sticky = W)
     pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
-    pick_a_datatype.grid(row = 10, column = 1, sticky=E)
+    pick_a_datatype.grid(row = 11, column = 1, sticky=E)
 
     # legend pos
-    Label(tab3, text='Legend position:').grid(row = 11, column = 0, sticky = W)
+    Label(tab3, text='Legend position:').grid(row = 12, column = 0, sticky = W)
     legloc = StringVar(root)
     legloc.set('best')
     locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
     loc_options = OptionMenu(tab3, legloc, *locs)
-    loc_options.grid(row = 11, column = 1, sticky = E)
+    loc_options.grid(row = 12, column = 1, sticky = E)
 
     # show_totals option
-    Label(tab3, text='Show totals: ').grid(row = 12, column = 0, sticky = W)
+    Label(tab3, text='Show totals: ').grid(row = 13, column = 0, sticky = W)
     showtot = StringVar(root)
     showtot.set('Off')
     showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
     show_tot_menu = OptionMenu(tab3, showtot, *showtot_options)
-    show_tot_menu.grid(row = 12, column = 1, sticky = E)
+    show_tot_menu.grid(row = 13, column = 1, sticky = E)
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 13, column = 1, sticky = E)
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 14, column = 1, sticky = E)
 
     # save image button
     #Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 13)
@@ -1726,6 +1742,7 @@ def corpkit_gui():
     ##############     ##############     ##############     ##############     ############## 
 
     def make_new_project():
+        import os
         from corpkit import new_project
         name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
         if not name:
@@ -1737,9 +1754,9 @@ def corpkit_gui():
             return
         new_proj_basepath.set('New project: "%s"' % name)
         new_project(name = name, loc = fp, root = root)
-        load_project(path = fp)
+        load_project(path = os.path.join(fp, name))
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project "%s" created.' % (time, os.path.basename(fp))
+        print '%s: Project "%s" created.' % (thetime, name)
 
     def get_saved_results():
         from corpkit import load_all_results
@@ -1912,7 +1929,6 @@ def corpkit_gui():
                     message = 'Choose save directory for exported interrogation')
                 if fp == '':
                     return
-            
             else:
                 fp = project_fullpath.get()
             os.makedirs(os.path.join(fp, answer))
@@ -1963,16 +1979,16 @@ def corpkit_gui():
             return
         project_fullpath.set(fp)
         image_fullpath.set(os.path.join(fp, 'images'))
-        data_fullpath.set(os.path.join(fp, 'data', 'saved_interrogations'))
+        data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
         #corpus_fullpath.set(os.path.join(fp, 'corpus'))
-        open_proj_basepath.set('Open project: "%s"' % os.path.basename(fp))
+        open_proj_basepath.set('Loaded project: "%s"' % os.path.basename(fp))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         os.chdir(fp)
         # reset tool:
+        root.title("corpkit: %s" % os.path.basename(fp))
         reset_everything()
-        already_there = ['saved_interrogations', 'dictionaries']
-        all_corpora = [d for d in os.listdir(os.path.join(fp, 'data')) if os.path.isdir(os.path.join(fp, 'data', d)) and d not in already_there]
+        all_corpora = [d for d in os.listdir(os.path.join(fp, 'data')) if os.path.isdir(os.path.join(fp, 'data', d))]
         parsed_corp = [d for d in all_corpora if d.endswith('-parsed')]
         first = False
         if len(parsed_corp) > 0:
@@ -1985,6 +2001,75 @@ def corpkit_gui():
             basepath.set('Corpus: "%s"' % first)
             subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
+        # settings
+        def load_config():
+            import ConfigParser
+            Config = ConfigParser.ConfigParser()
+            f = os.path.join(project_fullpath.get(), 'settings.ini')
+            Config.read(f)
+
+            def conmap(section):
+                dict1 = {}
+                options = Config.options(section)
+                for option in options:
+                    try:
+                        dict1[option] = Config.get(section, option)
+                        if dict1[option] == -1:
+                            DebugPrint("skip: %s" % option)
+                    except:
+                        print("exception on %s!" % option)
+                        dict1[option] = None
+                return dict1
+
+            plot_style.set(conmap("Visualise")['plot style'])
+            texuse.set(conmap("Visualise")['use tex'])
+            x_axis_l.set(conmap("Visualise")['x axis title'])
+            chart_cols.set(conmap("Visualise")['colour scheme'])
+
+        load_config()
+
+
+    def view_query():
+        Label(tab5, text = 'Query option', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 4, padx = 40)
+        show_query_keys = Listbox(tab5, selectmode = EXTENDED, height = 20)
+        show_query_keys.grid(sticky = W, column = 4, row = 2, rowspan = 20, padx = 40)
+        
+        Label(tab5, text = 'Query value', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 5, padx = 5)
+        show_query_vals = Listbox(tab5, selectmode = EXTENDED, height = 20)
+        show_query_vals.grid(sticky = E, column = 5, row = 2, rowspan = 20, padx = 5)
+
+        #Label(tab5, text = 'Queries', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 2, padx = 40)
+
+        if len(sel_vals) > 1:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Can only view one interrogation at a time.' % (thetime)
+            return
+        q_dict = dict(all_interrogations[sel_vals[0]].query)
+        show_query_keys.delete(0, 'end')
+        show_query_vals.delete(0, 'end')
+        flipped_trans = {v: k for k, v in transdict.items()}
+        
+        # flip options dict, make 'kind of search'
+        if 'option' in q_dict.keys():
+            flipped_opt = {}
+            for nm, lst in option_dict.items():
+                for i in lst:
+                    flipped_opt[i] = nm
+            the_opt = flipped_opt[flipped_trans[q_dict['option']]]
+            q_dict['kind_of_search'] = the_opt
+
+        for i, k in enumerate(sorted(q_dict.keys())):
+            if k.startswith('dataframe'):
+                continue
+            v = q_dict[k]
+            if v is False:
+                v = 'False'
+            if v is True:
+                v = 'True'
+            if k == 'option':
+                v = flipped_trans[v]
+            show_query_keys.insert(END, '%d. %s' % (i, str(k)))
+            show_query_vals.insert(END, '%d. %s' % (i, str(v)))
 
     # a list of every interrogation
     def onselect_interro(evt):
@@ -1999,7 +2084,7 @@ def corpkit_gui():
                 sel_vals.append(value)
 
     every_interro_listbox = Listbox(tab5, selectmode = EXTENDED, height = 20)
-    every_interro_listbox.grid(sticky = E, column = 1, row = 2, rowspan = 10)
+    every_interro_listbox.grid(sticky = E, column = 1, row = 2, rowspan = 20)
     # Set interrogation option
     ei_chosen_option = StringVar()
     #ei_chosen_option.set('w')
@@ -2022,18 +2107,17 @@ def corpkit_gui():
     Label(tab5, text = 'Interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
     Button(tab5, text = 'Get saved interrogations', command = get_saved_results).grid(row = 1, column = 1, sticky=E)
 
-    #Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
-    Button(tab5, text="Remove", 
-           command=remove_one_or_more).grid(sticky = E, column = 1, row = 13)
-    #Label(tab5, text = 'Delete selected: ').grid(sticky = E, row = 5, column = 1)
-    Button(tab5, text = 'Delete', command = del_one_or_more).grid(sticky = E, column = 1, row = 14)
     #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
-    Button(tab5, text = 'Save', command = save_one_or_more).grid(sticky = E, column = 1, row = 15)
-    Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 1, row = 16)
+    Button(tab5, text = 'Save', command = save_one_or_more).grid(sticky = E, column = 1, row = 22)
+    Button(tab5, text = 'View query', command = view_query).grid(sticky = E, column = 1, row = 23)
+    Button(tab5, text = 'Rename', command = rename_one_or_more).grid(sticky = E, column = 1, row = 24)
     perm = IntVar()
-    Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 16, sticky=W)
-    Button(tab5, text = 'Export', command = export_interrogation).grid(sticky = E, column = 1, row = 17)
-
+    #Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 16, sticky=W)
+    Button(tab5, text = 'Export', command = export_interrogation).grid(sticky = E, column = 1, row = 25)
+    #Label(tab5, text = 'Remove selected: ').grid(sticky = W, row = 4, column = 0)
+    Button(tab5, text="Remove", command=remove_one_or_more).grid(sticky = E, column = 1, row = 26)
+    #Label(tab5, text = 'Delete selected: ').grid(sticky = E, row = 5, column = 1)
+    Button(tab5, text = 'Delete', command = del_one_or_more).grid(sticky = E, column = 1, row = 27)
 
     ##############     ##############     ##############     ##############     ############## 
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
@@ -2115,7 +2199,7 @@ def corpkit_gui():
             return
         #sel_corpus.set(unparsed_corpus_path)
         #sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(unparsed_corpus_path))
-        parse_button_text.set('Parse corpus: %s' % os.path.basename(unparsed_corpus_path))
+        parse_button_text.set('Parse corpus: "%s"' % os.path.basename(unparsed_corpus_path))
         path_to_new_unparsed_corpus.set(unparsed_corpus_path)
         #add_corpus_button.set('Added: %s' % os.path.basename(unparsed_corpus_path))
         where_to_put_corpus = os.path.join(project_fullpath.get(), 'data')
@@ -2125,7 +2209,7 @@ def corpkit_gui():
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Corpus copied to project folder.' % (thetime)
         
-        parse_button_text.set('Parse corpus: %s' % os.path.basename(newc))
+        parse_button_text.set('Parse corpus: "%s"' % os.path.basename(newc))
         
         subc_listbox_build.configure(state = NORMAL)
         subc_listbox_build.delete(0, 'end')        
@@ -2158,7 +2242,7 @@ def corpkit_gui():
 
         get_text_corpus.set(fp)
         path_to_new_unparsed_corpus.set(fp)
-        add_corpus_button.set('Added: %s' % os.path.basename(fp))
+        add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
         sel_corpus.set(newc)
         sel_corpus_button.set('Corpus to parse: "%s"' % os.path.basename(newc))
         thetime = strftime("%H:%M:%S", localtime())
@@ -2175,7 +2259,7 @@ def corpkit_gui():
         # unlock editing  
 
     # duplicate of one in 'manage
-    Label(tab0, text = 'Create corpus', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
+    Label(tab0, text = 'Create project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
     #Label(tab0, text = 'New project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
     Button(tab0, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
     #Label(tab0, text = 'Open project: ').grid(row = 2, column = 0, sticky=W)
@@ -2295,10 +2379,87 @@ def corpkit_gui():
     #Label(tab0, text = 'Corpus directory: ').grid(row = 22, column = 3, columnspan = 8)
     Button(tab0, text = 'Save changes', command = savebuttonaction).grid(row = 22, column = 3, columnspan = 8, sticky = 'N')
 
-    
+
+    ############ ############ ############ ############ ############ 
+    # MENU BAR # # MENU BAR # # MENU BAR # # MENU BAR # # MENU BAR # 
+    ############ ############ ############ ############ ############ 
+
+    realquit = IntVar()
+    realquit.set(0)
+
+    def quitfunc():
+        realquit.set(1)
+        root.quit()
+
+    def clear_all():
+        import sys
+        python = sys.executable
+        os.execl(python, python, * sys.argv)
+
+    def save_config():
+        #settings = [corpus_fullpath, basepath, funfil, posfil, lemtag, kind_of_dep, 
+        #       entrytext, datatype_picked, datatype_chosen_option, special_queries, 
+        #       lem, phras, tit_fil, case_sensitive, nametext, i_resultname, 
+        #       name_of_interro_spreadsheet, selected_to_edit, df1branch, opp, 
+        #       data2_pick, df2branch, sort_val, just_tot_setting, keep_stats_setting, 
+        #       rem_abv_p_set, entry_regex, newname_var, do_with_entries, do_sub, 
+        #       new_subc_name, edit_nametext, resultname, name_of_o_ed_spread, 
+        #       editoname, name_of_n_ed_spread, plotnametext, data_to_plot, plotbranch, 
+        #       number_to_plot, charttype, x_axis_l, y_axis_l, log_x, log_y, bw, texuse, 
+        #       chart_cols, plot_style, legloc, showtot, subc_pick, query_text, 
+        #       random_conc_option, show_trees, sortval, data_fullpath, data_basepath, 
+        #       project_fullpath, image_fullpath, image_basepath, ei_chosen_option, 
+        #       new_proj_basepath, open_proj_basepath, perm, get_text_corpus, 
+        #       parse_button_text, sel_corpus, sel_corpus_button, 
+        #       path_to_new_unparsed_corpus, add_corpus, add_corpus_button, f_in_s, editf, 
+        #       filename, fullpath_to_file, realquit]
+        import ConfigParser
+        Config = ConfigParser.ConfigParser()
+        cfgfile = open(os.path.join(project_fullpath.get(), 'settings.ini') ,'w')
+        Config.add_section('Build')
+        Config.add_section('Interrogate')
+        Config.add_section('Edit')
+        Config.add_section('Visualise')
+        Config.set('Visualise','Plot style', plot_style.get())
+        Config.set('Visualise','Use TeX', texuse.get())
+        Config.set('Visualise','x axis title', x_axis_l.get())
+        Config.set('Visualise','Colour scheme', chart_cols.get())
+        Config.add_section('Concordance')
+        Config.add_section('Manage')
+        Config.set('Manage','Project path',project_fullpath.get())
+        Config.write(cfgfile)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Project settings saved to settings.ini ... ' % thetime
+
+    menubar = Menu(root)
+    filemenu = Menu(menubar, tearoff=0)
+    filemenu.add_command(label="New project", command=make_new_project)
+    filemenu.add_command(label="Open project", command=load_project)
+    filemenu.add_command(label="Save project settings", command=save_config)
+    filemenu.add_separator()
+    filemenu.add_command(label="Restart tool", command=clear_all)
+    #filemenu.add_command(label="Save project settings", command=hello)
+    filemenu.add_separator()
+    filemenu.add_command(label="Exit", command=quitfunc)
+    menubar.add_cascade(label="File", menu=filemenu)
+
+    def about_box():
+        import pkg_resources
+        ver = pkg_resources.get_distribution("corpkit").version
+        tkMessageBox.showinfo('About', 'corpkit v.%s\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
+                              'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
+
+    helpmenu = Menu(menubar, tearoff=0)
+    helpmenu.add_command(label="Query help", command=query_help)
+    helpmenu.add_command(label="About", command=about_box)
+    menubar.add_cascade(label="Help", menu=helpmenu)
+
+    root.config(menu=menubar)
     print '\n\n\n'
     note.focus_on(tab1)
-    root.mainloop()
+
+    while realquit.get() is 0:
+        root.mainloop()
 
 if __name__ == "__main__":
     corpkit_gui()
