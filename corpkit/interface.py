@@ -171,8 +171,8 @@ def corpkit_gui():
     root = Tk()
     root.title("corpkit")
 
-    #HWHW
-    note = Notebook(root, width= 1250, height = 550, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    #HWHW h 550
+    note = Notebook(root, width= 1250, height = 600, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
@@ -2083,7 +2083,7 @@ def corpkit_gui():
     Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 3, column = 1, sticky=W)
 
     do_plotting()
-    note.focus_on(tab0)
+    note.focus_on(tab1)
     root.mainloop()
 
 if __name__ == "__main__":
