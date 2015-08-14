@@ -10,8 +10,8 @@ def quickview(results, n = 25):
     import os
 
     # handle dictionaries too:
-    dictpath = 'data/dictionaries'
-    savedpath = 'data/saved_interrogations'
+    dictpath = 'dictionaries'
+    savedpath = 'saved_interrogations'
 
     # too lazy to code this properly for every possible data type:
     if n == 'all':
@@ -33,7 +33,7 @@ def quickview(results, n = 25):
             print '\n%s loaded temporarily from file:\n' % results
             results = load_result(results)
         else:
-            raise ValueError('File %s not found in data/saved_interrogations or data/dictionaries')
+            raise ValueError('File %s not found in saved_interrogations or dictionaries')
 
     if 'interrogation' in str(type(results)):
         clas = results.query['function']
@@ -146,7 +146,7 @@ def concprinter(df, kind = 'string', n = 100):
         print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
 
-def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
+def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     """Save an interrogation as pickle to savedir"""
     import collections
     from collections import namedtuple, Counter
@@ -219,7 +219,7 @@ def save_result(interrogation, savename, savedir = 'data/saved_interrogations'):
     print '\n%s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
-def load_result(savename, loaddir = 'data/saved_interrogations'):
+def load_result(savename, loaddir = 'saved_interrogations'):
     """Reloads a save_result as namedtuple"""
     import collections
     import pickle
@@ -392,16 +392,24 @@ def new_project(name, loc = '.', root = False):
     
     # make project directory
     fullpath = os.path.join(loc, name)
-    os.makedirs(fullpath)
+    try:
+        os.makedirs(fullpath)
+    except:
+        if root:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Directory already exists: "%s"' %( time, fullpath)
+            return
+        else:
+            raise
 
     # make other directories
-    dirs_to_make = ['data', 'images']
-    subdirs_to_make = ['dictionaries', 'saved_interrogations', 'corpus']
+    dirs_to_make = ['data', 'images', 'saved_interrogations', 'dictionaries']
+    #subdirs_to_make = ['dictionaries', 'saved_interrogations']
     for directory in dirs_to_make:
         os.makedirs(os.path.join(fullpath, directory))
-    for subdir in subdirs_to_make:
-        os.makedirs(os.path.join(fullpath, 'data', subdir))
-    # copy the bnc dictionary to data/dictionaries
+    #for subdir in subdirs_to_make:
+        #os.makedirs(os.path.join(fullpath, 'data', subdir))
+    # copy the bnc dictionary to dictionaries
     shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'data', 'dictionaries'))
     # if not GUI
     if not root:
@@ -501,7 +509,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     from corpkit.editor import editor
 
     if quicksave:
-        savedir = 'data/saved_interrogations'
+        savedir = 'saved_interrogations'
         if not quicksave.endswith('.p'):
             quicksave = quicksave + '.p'
         fullpath = os.path.join(savedir, quicksave)
@@ -846,7 +854,7 @@ def tregex_engine(query = False,
         res = [(w, t.upper()) for w, t in res]
     return res
 
-def load_all_results(data_dir = 'data/saved_interrogations', root = False):
+def load_all_results(data_dir = 'saved_interrogations', root = False):
     """load every saved interrogation in data_dir into a dict"""
     import os
     import time
@@ -1145,7 +1153,7 @@ def pmultiquery(path,
         print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
         if quicksave:
             for k, v in out.items():
-                save_result(v, k, savedir = 'data/saved_interrogations/%s' % quicksave)
+                save_result(v, k, savedir = 'saved_interrogations/%s' % quicksave)
         return out
     # make query and total branch, save, return
     else:
