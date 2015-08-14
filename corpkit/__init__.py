@@ -26,7 +26,29 @@ __all__ = ["interrogator",
            "pmultiquery",
            "as_regex",
            "sim",
-           "show"]
+           "show",
+           "dictmaker",
+           "tokener",
+           "get_urls",
+           "downloader",
+           "simple_text_extractor",
+           "practice_run",
+           "souper",
+           "correctspelling",
+           "stanford_parse",
+           "structure_corpus",
+           "edit_metadata",
+           "stanford_parse",
+           "download",
+           "extract",
+           "install",
+           "install_corenlp",
+           "rename_duplicates",
+           "get_corpus_filepaths",
+           "check_jdk",
+           "parse_corpus",
+           "move_parsed_files",
+           "corenlp_exist"]
 
 import os
 import sys
@@ -77,10 +99,28 @@ from other import pmultiquery
 from other import as_regex
 from other import show
 from context import sim
-from interface import *
 
+from build import download
 from build import dictmaker
+from build import tokener
+from build import get_urls
+from build import downloader
+from build import simple_text_extractor
+from build import practice_run
+from build import souper
 from build import correctspelling
+from build import stanford_parse
+from build import structure_corpus
+from build import edit_metadata
+from build import extract
+from build import install
+from build import install_corenlp
+from build import rename_duplicates
+from build import get_corpus_filepaths
+from build import check_jdk
+from build import parse_corpus
+from build import move_parsed_files
+from build import corenlp_exist
 
 from dictionaries.process_types import processes
 from dictionaries.wordlists import wordlists
