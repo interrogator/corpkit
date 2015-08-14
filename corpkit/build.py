@@ -1,3 +1,4 @@
+#!/usr/bin/python
 
 #   Building parsed corpora for discourse analysis
 #   Author: Daniel McDonald
