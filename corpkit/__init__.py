@@ -47,24 +47,6 @@ __all__ = ["interrogator",
            "move_parsed_files",
            "corenlp_exists"]
 
-import os
-import sys
-
-# these lines here are to let ipython find tregex and potentially
-# anything in 'dictionaries'
-
-import corpkit
-path_to_corpkit = os.path.dirname(corpkit.__file__)
-thepath, corpkitname = os.path.split(path_to_corpkit)
-import dictionaries
-os.environ["PATH"] += os.pathsep + path_to_corpkit + os.pathsep + os.path.join(thepath, 'dictionaries')
-
-# these add to pythonpath, mostly so we can find dictionaries
-# doesn't seem to be working at the moment, though.
-sys.path.append(path_to_corpkit)
-sys.path.append(os.path.join(thepath, 'dictionaries'))
-sys.path.append(thepath)
-
 from interrogator import interrogator
 from editor import editor
 from plotter import plotter

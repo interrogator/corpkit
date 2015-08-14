@@ -410,16 +410,16 @@ def turn_input_into_counter(data, **kwargs):
                     dict_found = True
                     return ref_corp_dict
                 except IOError:
-                    try:
-                        import corpkit
-                        path_to_corpkit = os.path.dirname(corpkit.__file__)
-                        thepath, corpkitname = os.path.split(path_to_corpkit)
-                        dictionaries_path = os.path.join(thepath, 'dictionaries')
-                        ref_corp_dict = pickle.load( open( os.path.join(dictionaries_path, data), "rb" ) )
-                        dict_found = True
-                        return ref_corp_dict
-                    except:
-                        pass
+                    #try:
+                    #    import corpkit
+                    #    path_to_corpkit = os.path.dirname(corpkit.__file__)
+                    #    thepath, corpkitname = os.path.split(path_to_corpkit)
+                    #    dictionaries_path = os.path.join(thepath, 'dictionaries')
+                    #    ref_corp_dict = pickle.load( open( os.path.join(dictionaries_path, data), "rb" ) )
+                    #    dict_found = True
+                    #    return ref_corp_dict
+                    #except:
+                    pass
 
             dict_of_dicts = {}
             d_for_print = []

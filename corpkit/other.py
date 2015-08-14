@@ -4,7 +4,6 @@ def quickview(results, n = 25):
     Ideally, pass it interrogator() or plotter output. It will also accept DatFrames
     or Series (i.e. .results or .totals branches."""
 
-    import corpkit
     import pandas
     import numpy
     import os
@@ -384,7 +383,6 @@ def new_project(name, loc = '.', root = False):
     import shutil
     import stat
     import platform
-    import corpkit
     from time import strftime, localtime
 
     path_to_corpkit = os.path.dirname(corpkit.__file__)
