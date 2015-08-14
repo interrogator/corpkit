@@ -864,10 +864,10 @@ def load_all_results(data_dir = 'saved_interrogations', root = False):
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
     if len(fs) == 0:
         if not root:
-            raise ValueError('No interrogations found in %s' % datadir)
+            raise ValueError('No interrogations found in %s' % data_dir)
         else:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No interrogations found in %s' % (thetime, datadir)
+            print '%s: No interrogations found in %s' % (thetime, data_dir)
     l = 0
     for finding in fs:
         try:
