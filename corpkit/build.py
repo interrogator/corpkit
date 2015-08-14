@@ -491,7 +491,7 @@ def stanford_parse(data, corpus_name = 'corpus'):
 
 
 
-def download(proj_path, root = False):
+def download_cnlp(proj_path, root = False):
     """download corenlp to proj_path"""
     import os
     import urllib2
@@ -539,7 +539,7 @@ def download(proj_path, root = False):
     return stanpath, fullfile
 
 #'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
-def extract(fullfilepath, root = False):
+def extract_cnlp(fullfilepath, root = False):
     """extract corenlp"""
     import zipfile
     import os
@@ -554,30 +554,6 @@ def extract(fullfilepath, root = False):
         zf.extractall(stanpath)
     time = strftime("%H:%M:%S", localtime())
     print '%s: CoreNLP extracted. ' % time
-    
-def install(stanpath):
-    import subprocess
-    import os
-    from time import localtime, strftime
-    cwd = os.getcwd()
-    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
-    if len(find_install) > 0:
-        find_install = find_install[0]
-    extracted_path = os.path.join(stanpath, find_install)
-    os.chdir(extracted_path)
-    time = strftime("%H:%M:%S", localtime())
-    print '%s: CoreNLP installed.' % time
-    subprocess.call(['ant'])
-    os.chdir(cwd)
-
-def install_corenlp(proj_path = False):
-    import os
-    from time import localtime, strftime
-    if not proj_path:
-        proj_path = '/users/danielmcdonald/documents/work/risk'
-    st, ff = download(proj_path)
-    extract(ff)
-    install(st)
 
 def rename_duplicates(corpuspath):
     """rename any duplicate filenames in the corpus
