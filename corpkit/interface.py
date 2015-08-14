@@ -82,10 +82,10 @@ class Notebook(Frame):
         #self.text = Text(self.statusbar, height = 1, undo = True)
         self.text.update_idletasks()
 
-        def callback(*args):
+        def xcallback(*args):
             self.text.see(END)
             self.text.edit_modified(0)
-        self.text.bind('<<Modified>>', callback)
+        self.text.bind('<<Modified>>', xcallback)
 
         self.redir = RedirectText(self.text)
         sys.stdout = self.redir
@@ -489,7 +489,7 @@ def corpkit_gui():
             pass
 
     # one day, allow previous queries to be stored here!
-    query_dict = {}
+    query_dict = {}  
 
     def do_interrogation():
         """performs an interrogation"""
@@ -595,10 +595,10 @@ def corpkit_gui():
     
     # corpus path setter
     corpus_fullpath = StringVar()
-    corpus_fullpath.set('/users/danielmcdonald/documents/work/risk/data/nyt/sample')
+    corpus_fullpath.set('')
     basepath = StringVar()
     basepath.set('Select corpus path')
-    subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
+    subcorpora = {corpus_fullpath.get(): ['None']}
 
     def getdir():
         import os
@@ -611,6 +611,9 @@ def corpkit_gui():
         for k in subcorpora.keys():
             del subcorpora[k]
         subcorpora[fp] = subs
+        pick_subcorpora['menu'].delete(0, 'end')
+        for choice in subs:
+            pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
@@ -914,7 +917,7 @@ def corpkit_gui():
         editor_args = {'operation': operation_text,
                        'dataframe2': data2,
                        'spelling': spel,
-                       'sort_by' = sort_trans[sort_val.get()],
+                       'sort_by': sort_trans[sort_val.get()],
                        'print_info': False}
 
         if do_sub.get() == 'Merge':
@@ -972,7 +975,7 @@ def corpkit_gui():
         # add current subcorpora to editor menu
         subc_listbox.configure(state = NORMAL)
         subc_listbox.delete(0, 'end')
-        for e in list(the_data.results.index):
+        for e in list(r.results.index):
             if 'tkintertable-order' not in e:
                 subc_listbox.insert(END, e)
         subc_listbox.configure(state = DISABLED)
@@ -1003,6 +1006,7 @@ def corpkit_gui():
         subc_listbox.configure(state = NORMAL)
         subc_listbox.delete(0, 'end')
 
+        subc_listbox.configure(state = NORMAL)
         for e in list(all_interrogations[name_of_o_ed_spread.get()].results.index):
             if 'tkintertable-order' not in e:
                 subc_listbox.insert(END, e) 
@@ -1116,7 +1120,7 @@ def corpkit_gui():
             mergen.configure(state = NORMAL)
         else:
             edit_box.configure(state = DISABLED)
-            mergen.configure(state = NORMAL)
+            mergen.configure(state = DISABLED)
 
     # options for editing entries
     do_with_entries = StringVar(root)
@@ -1144,10 +1148,11 @@ def corpkit_gui():
             merge.configure(state = NORMAL)
         else:
            subc_listbox.configure(state = DISABLED)
-           merge.configure(state = NORMAL)
+           merge.configure(state = DISABLED)
 
     # subcorpora + optionmenu off, skip, keep
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 12, column = 0, sticky = W)
+    
     subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, state = DISABLED)
     subc_listbox.grid(row = 12, column = 1, rowspan = 5, sticky = E)
     subc_chosen_option = StringVar()
@@ -1159,7 +1164,7 @@ def corpkit_gui():
     do_sub.set('Off')
     do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
     do_with_subc.grid(row = 13, column = 0, sticky = W)
-    do_with_entries.trace("w", do_s_callback)
+    do_sub.trace("w", do_s_callback)
 
     # subcorpora merge name    
     Label(tab2, text = 'Merge name:').grid(row = 14, column = 0, sticky = 'NW')
@@ -1908,6 +1913,31 @@ def corpkit_gui():
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Results exported to %s' % (thetime, os.path.join(fp, answer))        
 
+    def reset_everything():
+        # result names
+        i_resultname.set('Interrogation results:')
+        resultname.set('Results to edit:')
+        editoname.set('Edited results:')
+        # spreadsheets
+        update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
+        update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 720)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 720)
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 720)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 720)
+        # interrogations
+        for e in all_interrogations.keys():
+            del all_interrogations[e]
+        # subcorpora listbox
+        subc_listbox.delete(0, END)
+        conclistbox.delete(0, END)
+        every_interro_listbox.delete(0, END)
+        every_interrogation['menu'].delete(0, 'end')
+        pick_subcorpora['menu'].delete(0, 'end')
+        for k in subcorpora.keys():
+            del subcorpora[k]
+        refresh()
+
     def load_project(path = False):
         import os
         if path is False:
@@ -1920,11 +1950,26 @@ def corpkit_gui():
         project_fullpath.set(fp)
         image_fullpath.set(os.path.join(fp, 'images'))
         data_fullpath.set(os.path.join(fp, 'data', 'saved_interrogations'))
-        corpus_fullpath.set(os.path.join(fp, 'corpus'))
+        #corpus_fullpath.set(os.path.join(fp, 'corpus'))
         open_proj_basepath.set('Open project: "%s"' % os.path.basename(fp))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         os.chdir(fp)
+        # reset tool:
+        reset_everything()
+        already_there = ['saved_interrogations', 'dictionaries']
+        all_corpora = [d for d in os.listdir(os.path.join(fp, 'data')) if os.path.isdir(os.path.join(fp, 'data', d)) and d not in already_there]
+        parsed_corp = [d for d in all_corpora if d.endswith('-parsed')]
+        if len(parsed_corp) > 0:
+            first = parsed_corp[0]
+        else:
+            if len(all_corpora) > 0:
+                first = all_corpora[0]
+        if first:
+            corpus_fullpath.set(os.path.join(fp, 'data', first))
+            basepath.set('Corpus: "%s"' % first)
+        subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
+
 
     # a list of every interrogation
     def onselect_interro(evt):
