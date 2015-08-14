@@ -1188,7 +1188,10 @@ def interrogator(path,
     if not dependency and not keywording and not n_gramming and not plaintext:
         query = tregex_engine(query = query, check_query = True, root = root)
         if query is False:
-            return
+            if root:
+                return 'Bad query'
+            else:
+                return
     
     else:
         if dependency or translated_option == 'r':
@@ -1209,7 +1212,7 @@ def interrogator(path,
                 if root:
                     time = strftime("%H:%M:%S", localtime())
                     print '%s: Regular expression in query contains an error.' % time
-                    return
+                    return 'Bad query'
                 selection = raw_input('\n%s: Regular expression " %s " contains an error. You can either:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
@@ -1647,7 +1650,7 @@ if __name__ == '__main__':
         if ready.startswith('e') or ready.startswith('E'):
             print '\n    OK ... come back soon!\n'
             import sys
-            sys.exit()
+            sys.exit(0)
 
     all_args = {}
 
@@ -1683,7 +1686,7 @@ if __name__ == '__main__':
         all_args['option'] = raw_input('\nQuery option: ')
         if 'x' in all_args['option']:
             import sys
-            sys.exit()
+            sys.exit(0)
 
     for entry in vars(args).keys():
         if entry not in all_args.keys():
@@ -1693,7 +1696,7 @@ if __name__ == '__main__':
     if conf:
         if conf.startswith('e'):
             import sys
-            sys.exit()
+            sys.exit(0)
 
     res = interrogator(**all_args)
     # what to do with it!?
