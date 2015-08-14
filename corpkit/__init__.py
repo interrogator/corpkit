@@ -28,7 +28,6 @@ __all__ = ["interrogator",
            "sim",
            "show",
            "dictmaker",
-           "tokener",
            "get_urls",
            "downloader",
            "simple_text_extractor",
@@ -39,16 +38,14 @@ __all__ = ["interrogator",
            "structure_corpus",
            "edit_metadata",
            "stanford_parse",
-           "download",
-           "extract",
-           "install",
-           "install_corenlp",
+           "download_cnlp",
+           "extract_cnlp",
            "rename_duplicates",
            "get_corpus_filepaths",
            "check_jdk",
            "parse_corpus",
            "move_parsed_files",
-           "corenlp_exist"]
+           "corenlp_exists"]
 
 import os
 import sys
@@ -100,9 +97,8 @@ from other import as_regex
 from other import show
 from context import sim
 
-from build import download
+from build import download_cnlp
 from build import dictmaker
-from build import tokener
 from build import get_urls
 from build import downloader
 from build import simple_text_extractor
@@ -112,15 +108,12 @@ from build import correctspelling
 from build import stanford_parse
 from build import structure_corpus
 from build import edit_metadata
-from build import extract
-from build import install
-from build import install_corenlp
-from build import rename_duplicates
+from build import extract_cnlp
 from build import get_corpus_filepaths
 from build import check_jdk
 from build import parse_corpus
 from build import move_parsed_files
-from build import corenlp_exist
+from build import corenlp_exists
 
 from dictionaries.process_types import processes
 from dictionaries.wordlists import wordlists
