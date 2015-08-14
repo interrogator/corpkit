@@ -160,6 +160,7 @@ def corpkit_gui():
     import sys
     from tkintertable import TableCanvas, TableModel
     import corpkit
+    import os
     #from dictionaries.process_types import process_types
     #from dictionaries.roles import roles
     #from dictionaries.wordlists import wordlists
@@ -194,12 +195,6 @@ def corpkit_gui():
     editor_tables = {}
     currently_in_each_frame = {}
     sort_direction = True
-    #import threading
-    #sys.stdout = StdoutRedirector(root)
-    #mostrecent_stdout = StringVar()
-    #mostrecent_stdout.set('Dummy')
-    #Label(note.statusbar, textvariable = mostrecent_stdout).grid()
-
 
     def convert_pandas_dict_to_ints(dict_obj):
         vals = []
@@ -346,10 +341,11 @@ def corpkit_gui():
         df = df.drop('Total', errors = 'ignore')
         # add new totals
         df.ix['Total'] = df.drop('tkintertable-order', errors = 'ignore').sum().astype(object)
-
         return df
 
     def make_df_from_model(model):
+        import pandas
+        from StringIO import StringIO
         recs = model.getAllCells()
         colnames = model.columnNames
         collabels = model.columnlabels
@@ -365,8 +361,6 @@ def corpkit_gui():
             #csv_data.append('\n')
             #writer.writerow(recs[row])
         csv = '\n'.join(csv_data)
-        import pandas
-        from StringIO import StringIO
         newdata = pandas.read_csv(StringIO(csv), index_col=0, header=0)
         newdata = pandas.DataFrame(newdata, dtype = object)
         newdata = newdata.T
@@ -382,18 +376,12 @@ def corpkit_gui():
         # get the latest only after first interrogation
         if len(all_interrogations.keys()) == 1:
             selected_to_edit.set(all_interrogations.keys()[-1])
-        #data2_pick.set(all_interrogations.keys()[-1])
         dataframe1s['menu'].delete(0, 'end')
         dataframe2s['menu'].delete(0, 'end')
         if len(all_interrogations.keys()) > 0:
             data_to_plot.set(all_interrogations.keys()[-1])
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
-        #try:
-            #del all_interrogations['None']
-        #except:
-            #pass
-
         new_choices = []
         for interro in all_interrogations.keys():
             new_choices.append(interro)
@@ -445,10 +433,37 @@ def corpkit_gui():
             'Match tokens via dependencies': 't',
             'Get words': 'w'}
 
+    option_dict = {'Trees': ['Get words', 
+                             'Get tag and word of match', 
+                             'Count matches', 
+                             'Get part-of-speech tag'],
+                   'Dependencies':
+                            ['Get "role:dependent", matching governor',
+                             'Get semantic role of match',
+                             'Get "role:governor", matching dependent',
+                             'Get lemmata via dependencies',
+                             'Get tokens by dependency role',
+                             'Match tokens via dependencies',
+                             'Get distance from root for regex match'],
+                   'Plaintext': 
+                            ['Regular expression search', 
+                             'Simple search string search']}
+
+    sort_trans = {'None': False,
+                  'Total': 'total',
+                  'Inverse total': 'infreq',
+                  'Name': 'name',
+                  'Increase': 'increase',
+                  'Decrease': 'decrease',
+                  'Static': 'static',
+                  'Turbulent': 'turbulent'}
+
+    # not currently using this sort feature---should use in conc though
     import itertools
     direct = itertools.cycle([0,1]).next
 
     def data_sort(pane = 'interrogate', sort_direction = False):
+        """sort spreadsheets ... not currently used"""
         import pandas
         if pane == 'interrogate':
             df = make_df_from_model(editor_tables[interro_results])
@@ -473,6 +488,7 @@ def corpkit_gui():
         elif pane == 'plot':
             pass
 
+    # one day, allow previous queries to be stored here!
     query_dict = {}
 
     def do_interrogation():
@@ -520,9 +536,8 @@ def corpkit_gui():
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
         
-
+        # add to databae of queries
         query_dict[the_name] = query
-
 
         selected_option = transdict[datatype_chosen_option.get()]
         interrogator_args = {'query': query,
@@ -541,11 +556,7 @@ def corpkit_gui():
         pf = posfil.get()
         if pf is not False and pf != '':
             interrogator_args['pos_filter'] = pf
-        #r = interrogator('/users/danielmcdonald/documents/work/risk/data/nyt/sample', 
-                          #selected_option, 
-                          #**interrogator_args)
         
-        # when not testing:
         r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         if not r:
             return
@@ -570,11 +581,7 @@ def corpkit_gui():
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         refresh()
-        #Restore_stdout()
-        ##Dbg_kill_topwin()
-        # add button after first interrogation
 
-        #Button(tab1, text = 'Sort data', command = lambda: data_sort(pane = 'interrogate', sort_direction = sort_direction)).grid(row = 10, column = 2, sticky = W)
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 14, column = 2, sticky = E)
 
     class MyOptionMenu(OptionMenu):
@@ -591,8 +598,6 @@ def corpkit_gui():
     corpus_fullpath.set('/users/danielmcdonald/documents/work/risk/data/nyt/sample')
     basepath = StringVar()
     basepath.set('Select corpus path')
-
-    import os
     subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
     def getdir():
@@ -612,19 +617,21 @@ def corpkit_gui():
     Label(tab1, text = 'Corpus directory: ').grid(row = 0, column = 0)
     Button(tab1, textvariable = basepath, command = getdir).grid(row = 0, column = 1, sticky=E)
 
+    # function filter
     funfil = StringVar()
     Label(tab1, text = 'Function filter:').grid(row = 9, column = 0, sticky = W)
     funfil.set(r'(nsubj|nsubjpass)')
     q = Entry(tab1, textvariable = funfil, width = 20, state = DISABLED)
     q.grid(row = 9, column = 0, columnspan = 2, sticky = E)
 
+    # pos filter
     posfil = StringVar()
     Label(tab1, text = 'POS filter:').grid(row = 10, column = 0, sticky = W)
     posfil.set(r'^n')
     qr = Entry(tab1, textvariable = posfil, width = 20, state = DISABLED)
     qr.grid(row = 10, column = 0, columnspan = 2, sticky = E)
 
-    # dep type
+    # lemma tags
     lemtags = tuple(('Noun', 'Verb', 'Adjective', 'Adverb'))
     lemtag = StringVar(root)
     lemtag.set('Noun')
@@ -644,6 +651,7 @@ def corpkit_gui():
     pick_dep_type.grid(row = 12, column = 1, sticky=E)
     #kind_of_dep.trace("w", d_callback)
 
+    # query
     entrytext = StringVar()
     Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = W)
     entrytext.set(r'JJ > (NP <<# /\brisk/)')
@@ -657,24 +665,8 @@ def corpkit_gui():
         callback()
         datatype_chosen_option.set(value)
 
-
     def callback(*args):
         """if the drop down list for data type changes, fill options"""
-        option_dict = {'Trees': ['Get words', 
-                                 'Get tag and word of match', 
-                                 'Count matches', 
-                                 'Get part-of-speech tag'],
-                        'Dependencies':
-                                ['Get "role:dependent", matching governor',
-                                 'Get semantic role of match',
-                                 'Get "role:governor", matching dependent',
-                                 'Get lemmata via dependencies',
-                                 'Get tokens by dependency role',
-                                 'Match tokens via dependencies',
-                                 'Get distance from root for regex match'],
-                        'Plaintext': 
-                                ['Regular expression search', 
-                                 'Simple search string search']}
         datatype_listbox.delete(0, 'end')
         chosen = datatype_picked.get()
         lst = option_dict[chosen]
@@ -764,6 +756,7 @@ def corpkit_gui():
     Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
     Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 14, column = 1, sticky = E)
 
+    # name to show above spreadsheet 0
     i_resultname = StringVar()
     name_of_interro_spreadsheet = StringVar()
     name_of_interro_spreadsheet.set('')
@@ -771,13 +764,15 @@ def corpkit_gui():
     Label(tab1, textvariable = i_resultname, 
           font = ("Helvetica", 12, "bold")).grid(row = 0, 
            column = 2, sticky = W, padx=20, pady=0)    
+    
+    # make spreadsheet frames for interrogate pane
     interro_results = Frame(tab1, height = 28, width = 20, borderwidth = 2)
     interro_results.grid(column = 2, row = 1, rowspan=10, padx=20, pady=5)
 
-    #Label(tab1, text = 'Interrogation totals:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 2, sticky = W, padx=20, pady=0)
     interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
     interro_totals.grid(column = 2, row = 11, rowspan=2, padx=20, pady=5)
 
+    # show nothing in them yet
     update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
     update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
 
@@ -788,7 +783,6 @@ def corpkit_gui():
     def exchange_interro_branch(namedtupname, newdata, branch = 'results'):
         """replaces a namedtuple results/totals with newdata
            --- such a hack, should upgrade to recordtype"""
-        
         namedtup = all_interrogations[namedtupname]
         if branch == 'results':
             the_branch = namedtup.results
@@ -803,18 +797,15 @@ def corpkit_gui():
             the_branch.drop(the_branch.index, inplace = True)
             for index, datum in zip(newdata.index, newdata.iloc[:,0].values):
                 the_branch.set_value(index, datum)
-
         all_interrogations[namedtupname] = namedtup
 
     def update_interrogation(table_id, id, is_total = False):
         """takes any changes made to spreadsheet and saves to the interrogation
-
         id: 0 = interrogator
             1 = old editor window
             2 = new editor window"""
-        # if table doesn't exist, forget about it
-        model=editor_tables[table_id]
 
+        model=editor_tables[table_id]
         newdata = make_df_from_model(model)
         if need_make_totals(newdata):
             newdata = make_df_totals(newdata)
@@ -823,7 +814,6 @@ def corpkit_gui():
             name_of_interrogation = name_of_interro_spreadsheet.get()
         if id == 1:
             name_of_interrogation = name_of_o_ed_spread.get()
-        # 1 id for the new data
         if id == 2:
             name_of_interrogation = name_of_n_ed_spread.get()
         if not is_total:
@@ -834,7 +824,6 @@ def corpkit_gui():
     def update_all_interrogations(pane = 'interrogate'):
         import pandas
         """update all_interrogations within spreadsheet data
-
         need a very serious cleanup!"""
         # to do: only if they are there
         if pane == 'interrogate':
@@ -890,13 +879,9 @@ def corpkit_gui():
 
     def do_editing():
         """what happens when you press edit"""
-        #Take_stdout()
         import pandas
         from corpkit import editor
-        try:
-            del all_edited_results['None']
-        except KeyError:
-            pass
+
         # translate operation into interrogator input
         operation_text = opp.get()
         if operation_text == 'None' or operation_text == 'Select an operation':
@@ -924,12 +909,12 @@ def corpkit_gui():
             spel = False
         else:
             spel = (spl_editor.var).get()
-        
-        # dictionary of all arguments for editor
 
+        # editor kwargs
         editor_args = {'operation': operation_text,
                        'dataframe2': data2,
                        'spelling': spel,
+                       'sort_by' = sort_trans[sort_val.get()],
                        'print_info': False}
 
         if do_sub.get() == 'Merge':
@@ -958,23 +943,16 @@ def corpkit_gui():
             editor_args['new_subcorpus_name'] = new_subc_name.get()
         if newname_var.get() != '':
             editor_args['new_subcorpus_name'] = newname_var.get()
-
-        sort_trans = {'None': False,
-                      'Total': 'total',
-                      'Inverse total': 'infreq',
-                      'Name': 'name',
-                      'Increase': 'increase',
-                      'Decrease': 'decrease',
-                      'Static': 'static',
-                      'Turbulent': 'turbulent'}
-
-        editor_args['sort_by'] = sort_trans[sort_val.get()]
             
         if keep_stats_setting.get() == 1:
             editor_args['keep_stats'] = True
 
+        if rem_abv_p_set.get() == 1:
+            editor_args['remove_above_p'] = True
+
         if just_tot_setting.get() == 1:
             editor_args['just_totals'] = True
+        
         # do editing
         r = editor(data1, **editor_args)
 
@@ -987,17 +965,7 @@ def corpkit_gui():
         # add edit to master dict
         all_interrogations[the_name] = r
 
-        # update label above spreadsheet
-        #name_of_o_ed_spread = the_name
-        #resultname.set('Results to edit: %s' % str(name_of_o_ed_spread))   
-
-        # update spreadsheets     
-        # do we need to do this for the old set?
-        #update_spreadsheet(o_editor_results, the_data.results, height = 140, width = 350, width = 720)
-        #update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 350, width = 720)
-
-        # new editor results
-        # update name above
+        # update edited results speadsheet name
         name_of_n_ed_spread.set(all_interrogations.keys()[-1])
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         
@@ -1009,31 +977,25 @@ def corpkit_gui():
                 subc_listbox.insert(END, e)
         subc_listbox.configure(state = DISABLED)
 
-        # update spreadsheets
+        # update edited spreadsheets
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
         update_spreadsheet(n_editor_results, most_recent.results, height = 140, width = 720)
         update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 720)
         
-        # add to edited results
-        all_edited_results[the_name] = r
-
         # add button to update
         Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 18, column = 2, sticky = E)
         
         # finish up
         refresh()
-        #Restore_stdout()
-        #Dbg_kill_topwin()
 
     def df_callback(*args):
+        """show names and spreadsheets for what is selected as result to edit
+           also, hide the edited results section"""
         if selected_to_edit.get() != 'None':
             name_of_o_ed_spread.set(selected_to_edit.get())
             update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 140, width = 720)
             update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 720)
             resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
-            #update_spreadsheet(n_editor_results, None, height = 140, width = 720)
-            #update_spreadsheet(n_editor_totals, None, height = 10, width = 720)
-            # update names above spreadsheets
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 720)
@@ -1051,6 +1013,7 @@ def corpkit_gui():
     all_interrogations = OrderedDict()
     all_interrogations['None'] = 'None'
 
+    # result to edit
     tup = tuple([i for i in all_interrogations.keys()])    
     selected_to_edit = StringVar(root)
     selected_to_edit.set('None')
@@ -1064,7 +1027,6 @@ def corpkit_gui():
     df1branch = StringVar()
     df1branch.set('results')
     df1box = OptionMenu(tab2, df1branch, 'results', 'totals')
-    #df1box.select()
     df1box.grid(row = 1, column = 1, sticky = E)
 
     def op_callback(*args):
@@ -1100,29 +1062,29 @@ def corpkit_gui():
     df2box.config(state = DISABLED)
     df2box.grid(row = 3, column = 1, sticky = E)
 
+    # sort by
     Label(tab2, text = 'Sort results by:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 0, sticky = W)
     sort_val = StringVar(root)
     sort_val.set('None')
     sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
-    #sorts.config(state = DISABLED)
     sorts.grid(row = 4, column = 1, sticky = E)
 
+    # spelling again
     Label(tab2, text = 'Spelling:', font = ("Helvetica", 12, "bold")).grid(row = 5, column = 0, sticky = W)
     spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
     spl_editor.grid(row = 5, column = 1, sticky = E)
 
+    # currently broken: just totals button
     just_tot_setting = IntVar()
     just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
     #just_tot_but.select()
     just_tot_but.grid(column = 0, row = 6, sticky = W)
 
-    # not hooked up yet
     keep_stats_setting = IntVar()
     keep_stat_but = Checkbutton(tab2, text="Keep stats", variable=keep_stats_setting)
     #keep_stat_but.select()
     keep_stat_but.grid(column = 1, row = 6, sticky = E)
 
-    # not hooked up yet
     rem_abv_p_set = IntVar()
     rem_abv_p_but = Checkbutton(tab2, text="Remove above p", variable=rem_abv_p_set)
     #rem_abv_p_but.select()
@@ -1134,11 +1096,13 @@ def corpkit_gui():
     # entries + entry field for regex, off, skip, keep, merge
     Label(tab2, text = 'Edit entries:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 0, sticky = W)
     
+    # edit entries regex box
     entry_regex = StringVar()
     entry_regex.set(r'.*ing$')
     edit_box = Entry(tab2, textvariable = entry_regex, state = DISABLED)
     edit_box.grid(row = 9, column = 1, sticky = E)
 
+    # merge entries newname
     Label(tab2, text = 'Merge name:').grid(row = 10, column = 0, sticky = W)
     newname_var = StringVar()
     newname_var.set('')
@@ -1146,6 +1110,7 @@ def corpkit_gui():
     mergen.grid(row = 11, column = 0)
     
     def do_w_callback(*args):
+        """if not merging entries, diable input fields"""
         if do_with_entries.get() != 'Off':
             edit_box.configure(state = NORMAL)
             mergen.configure(state = NORMAL)
@@ -1153,6 +1118,7 @@ def corpkit_gui():
             edit_box.configure(state = DISABLED)
             mergen.configure(state = NORMAL)
 
+    # options for editing entries
     do_with_entries = StringVar(root)
     do_with_entries.set('Off')
     edit_ent_op = ('Off', 'Skip', 'Keep', 'Merge')
@@ -1161,7 +1127,7 @@ def corpkit_gui():
     do_with_entries.trace("w", do_w_callback)
 
     def onselect_subc(evt):
-        # remove old vals
+        """get selected subcorpora"""
         for i in subc_sel_vals:
             subc_sel_vals.pop()
         wx = evt.widget
@@ -1171,8 +1137,8 @@ def corpkit_gui():
             if value not in subc_sel_vals:
                 subc_sel_vals.append(value)
 
-
     def do_s_callback(*args):
+        """hide subcorpora edit options if off"""
         if do_sub.get() != 'Off':
             subc_listbox.configure(state = NORMAL)
             merge.configure(state = NORMAL)
@@ -1184,38 +1150,35 @@ def corpkit_gui():
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 12, column = 0, sticky = W)
     subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, state = DISABLED)
     subc_listbox.grid(row = 12, column = 1, rowspan = 5, sticky = E)
-    # Set interrogation option
     subc_chosen_option = StringVar()
-    #ei_chosen_option.set('w')
     xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
-    # default: w option
     subc_listbox.select_set(0)
 
+    # subcorpora edit options
     do_sub = StringVar(root)
     do_sub.set('Off')
     do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
     do_with_subc.grid(row = 13, column = 0, sticky = W)
     do_with_entries.trace("w", do_s_callback)
-    
+
+    # subcorpora merge name    
     Label(tab2, text = 'Merge name:').grid(row = 14, column = 0, sticky = 'NW')
     new_subc_name = StringVar()
     new_subc_name.set('')
     merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED)
     merge.grid(row = 15, column = 0, sticky = 'SW')
     
+    # name the edit
     edit_nametext = StringVar()
     edit_nametext.set('untitled')
     Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 16, column = 0, sticky = W)
-    
     msn = Entry(tab2, textvariable = edit_nametext)
     msn.grid(row = 17, column = 0)
 
+    # edit button
     Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 17, column = 1, sticky = E)
-    # storage of edited results
-    all_edited_results = OrderedDict()
-    all_edited_results['None'] = 'None'
 
-    # output
+    # show spreadsheets
     resultname = StringVar()
     name_of_o_ed_spread = StringVar()
     name_of_o_ed_spread.set('')
@@ -1250,20 +1213,20 @@ def corpkit_gui():
     update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 720)
 
     # ????
-    interrogation_name = StringVar()
-    interrogation_name.set('waiting')
-    Label(tab1, textvariable = interrogation_name.get()).grid()
+    #interrogation_name = StringVar()
+    #interrogation_name.set('waiting')
+    #Label(tab1, textvariable = interrogation_name.get()).grid()
     #root.TEXT_INFO = Label(tab1, height=20, width=80, text="", justify = LEFT, font=("Courier New", 12))
 
     #################       #################      #################      #################  
     # VISUALISE TAB #       # VISUALISE TAB #      # VISUALISE TAB #      # VISUALISE TAB #  
     #################       #################      #################      #################  
 
-
+    # where to put the current figure
     thefig = []
 
     def do_plotting():
-
+        """when you press plot"""
         # junk for showing the plot in tkinter
         import matplotlib
         matplotlib.use('TkAgg')
@@ -1283,15 +1246,20 @@ def corpkit_gui():
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
             what_to_plot = all_interrogations[data_to_plot.get()].totals
+        
         # determine num to plot
-        num = number_to_plot.get()
-        try:
-            num = int(num)
-        except:
-            if num.lower() == 'any':
-                num = 'any'
-            else:
-                num = 7
+        def determine_num_to_plot(input):
+            """translate input to num_to_plot"""
+            try:
+                num = int(num)
+            except:
+                if num.lower() == 'all':
+                    num = 'all'
+                else:
+                    num = 7
+            return num
+
+        num = determine_num_to_plot(number_to_plot.get())
 
         the_kind = charttype.get()
         if the_kind == 'Type of chart':
@@ -1387,6 +1355,7 @@ def corpkit_gui():
         time = strftime("%H:%M:%S", localtime())
         print '%s: %s saved to %s.' % (time, fo, image_fullpath.get())
 
+    # not working
     def image_clear():
         thefig[0].get_tk_widget().grid_forget()
 
@@ -1398,8 +1367,6 @@ def corpkit_gui():
     plotnametext = StringVar()
     plotnametext.set('Untitled')
     Entry(tab3, textvariable = plotnametext).grid(row = 0, column = 1)
-
-    #Label(tab3, text = 'Image:').grid(row = 0, column = 2, padx = 20)
 
     Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
@@ -1430,6 +1397,7 @@ def corpkit_gui():
     chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
     chart_kind.grid(row = 4, column = 1, sticky = E)
 
+    # axes
     Label(tab3, text = 'x axis label:').grid(row = 5, column = 0, sticky = W)
     x_axis_l = StringVar()
     x_axis_l.set('')
@@ -1455,9 +1423,9 @@ def corpkit_gui():
     Label(tab3, text='Colour scheme:').grid(row = 9, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
-    schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'Wistia_r', 'pink_r', 'Set1', 'Set2', 
+    schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'pink_r', 'Set1', 'Set2', 
         'Set3', 'brg_r', 'Dark2', 'prism', 'PuOr_r', 'afmhot_r', 'terrain_r', 'PuBuGn_r', 
-        'RdPu', 'gist_ncar_r', 'gist_yarg_r', 'Dark2_r', 'YlGnBu', 'RdYlBu', 'hot_r', 
+        'RdPu', 'gist_ncar_r', 'gist_yarg_r', 'Dark2_r', 'YlGnBu', 'RdYlBu', 'hot_r', 'Wistia_r',
         'gist_rainbow_r', 'gist_stern', 'PuBu_r', 'cool_r', 'cool', 'gray', 'copper_r', 
         'Greens_r', 'GnBu', 'gist_ncar', 'spring_r', 'gist_rainbow', 'gist_heat_r', 'Wistia', 
         'OrRd_r', 'CMRmap', 'bone', 'gist_stern_r', 'RdYlGn', 'Pastel2_r', 'spring', 'terrain', 
@@ -1477,7 +1445,8 @@ def corpkit_gui():
     ch_col = OptionMenu(tab3, chart_cols, *schemes)
     ch_col.grid(row = 9, column = 1, sticky = E)
 
-    stys = tuple(('ggplot', 'fivethirtyeights', 'bmh'))
+    # style
+    stys = tuple(('ggplot', 'fivethirtyeight', 'bmh'))
     plot_style = StringVar(root)
     plot_style.set('ggplot')
     Label(tab3, text = 'Plot style:').grid(row = 10, column = 0, sticky = W)
@@ -1518,6 +1487,7 @@ def corpkit_gui():
     ###################     ###################     ###################     ###################
 
     def do_concordancing():
+        """when you press 'run'"""
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing in progress ... ' % (time)       
         from corpkit import conc
@@ -1567,6 +1537,7 @@ def corpkit_gui():
         print '%s: %d lines removed.' % (thetime, len(conclistbox.get(0, END) - len(items)))
 
     def conc_export():
+        """export conc lines to csv ... this could use pandas, eh?"""
         lines = conclistbox.get(0, END)
         if len(lines) == 0:
             thetime = strftime("%H:%M:%S", localtime())
@@ -1594,6 +1565,12 @@ def corpkit_gui():
         print '%s: Concordance lines exported.' % (thetime)
 
     def conc_sort(*args):
+        """various sorting for conc. basically, get columns by regex,
+        tokenise the l or r if needed, sort by tokens, turn back to df,
+        back to string, show.
+
+        current fail when match is first word in sent"""
+
         lines = conclistbox.get(0, END)
         seplines = []
         import re
@@ -1603,6 +1580,8 @@ def corpkit_gui():
         for line in lines:
             broken = re.search(reg, line)
             seplines.append([i for i in broken.groups()])
+
+        # sorting by first column is easy, so we don't need pandas
         if sortval.get() == 'M':
             sorted_lines = sorted(seplines, key=lambda s: s[4].lower(), reverse = False)
             conclistbox.delete(0, END)
@@ -1610,33 +1589,52 @@ def corpkit_gui():
                 joined = ''.join(line)
                 conclistbox.insert(END, str(joined))
             return
+        # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
+            # pick the col with words in it to sort by
             if sortval.get().startswith('L'):
                 entry = 2
             if sortval.get().startswith('R'):
                 entry = 6
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Tokenising concordance lines ... ' % (thetime)
+            # tokenise the right part of each line
             for line in seplines:
                 t = tokenise(line[entry])
+                # if there aren't enough tokens, add blank ones
                 for i in range(6 - len(t)):
                     t.append('')
                 line[entry] = t
+            # get 1-5 and convert it
             num = int(sortval.get()[-1])
             if entry == 2:
                 num = -num
             if entry == 6:
                 num = num - 1
+            # perform sort
             sorted_lines = sorted(seplines, key=lambda s: s[entry][num].lower(), reverse = False)
             series = []
+            important_bits = [2, 4, 6]
             for line in sorted_lines:
+                # rejoin the tokenised part of the line
                 line[entry] = ' '.join(line[entry]).replace('  ', ' ')
-                series.append(pandas.Series([line[2].replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ').strip().encode('utf-8', errors = 'ignore'), 
-                                         line[4].replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ').strip().encode('utf-8', errors = 'ignore'), 
-                                         line[6].replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ').strip().encode('utf-8', errors = 'ignore')], 
-                                         index = ['l', 'm', 'r']))
+                # make into series, fixing formatting
+                replace_tups = [('$ ', '$'), ('`` ', '``'), (' ,', ','), (' .', '.'), 
+                                ("'' ", "''"), (" n't", "n't"), (" 're","'re"), 
+                                (" 'm","'m"), (" 's","'s"), (" 'd","'d"), (" 'll","'ll"), ('  ', ' ')]
+                # do each replace
+                for b in important_bits:
+                    for old, new in replace_tups:
+                        line[b] = line[b].replace(old, new)
+                    # encode each
+                    line[b] = line[b].strip().encode('utf-8', errors = 'ignore')
+                # make into series and append
+                ser = pandas.Series([line[x] for x in important_bits], index = ['l', 'm', 'r'])
+                series.append(ser)
+            # turn into df
             r = pandas.concat(series, axis = 1).T
+            # print into tkintertable
             lines = r.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(r['r'].str.len().max()).format}).splitlines()
             conclistbox.delete(0, END)
             for line in lines:
@@ -1655,43 +1653,55 @@ def corpkit_gui():
     
     scrollbar.config(command=conclistbox.yview)
 
-    # SELECT SUBCORPUS
+    # select subcorpus
     subc_pick = StringVar()
     subc_pick.set("Select subcorpus")
     pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple([s for s in subcorpora[corpus_fullpath.get()]]))
     pick_subcorpora.grid(row = 1, column = 0)
+
+    # to do: query type
+    # tregex
+    # deps
+    # plaintext...
+    #
+    #
 
     # query: should be drop down, with custom option ...
     query_text = StringVar()
     query_text.set('/NN.?/ >># NP')
     Entry(tab4, textvariable = query_text).grid(row = 1, column = 1)
     
-    # WINDOW SIZE
+    # window size
     window_sizes = ('20', '30', '40', '50', '60', '70', '80', '90', '100')
     l =  ['Window size'] + [i for i in window_sizes]
     wind_size = MyOptionMenu(tab4, 'Window size', *window_sizes)
     wind_size.grid(row = 1, column = 4)
 
-    # RANDOM
+    # random
     random_conc_option = IntVar()
     Checkbutton(tab4, text="Random", variable=random_conc_option, onvalue = True, offvalue = False).grid(row = 1, column = 2)
 
-    # RANDOM
+    # trees
     show_trees = IntVar()
     Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False).grid(row = 1, column = 3)
 
+    # run button
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 1, column = 5)
 
+    # edit conc lines
     Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 1, column = 6)
     Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 1, column = 7)
     Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 1, column = 8)
-    Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 1, column = 10)
 
+    # possible sort
     sort_vals = ('L5', 'L4', 'L3', 'L2', 'L1', 'M', 'R1', 'R2', 'R3', 'R4', 'R5')
     sortval = StringVar()
     sortval.set('M')
     srtkind = OptionMenu(tab4, sortval, *sort_vals)
     srtkind.grid(row = 1, column = 9)
+
+    # export to csv
+    Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 1, column = 10)
 
     ##############     ##############     ##############     ##############     ############## 
     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
@@ -1963,25 +1973,18 @@ def corpkit_gui():
     perm = IntVar()
     Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky=W)
     Button(tab5, text = 'Export', command = export_interrogation).grid(sticky = E, column = 1, row = 11)
-    #var = IntVar()
-    #var.set(10)
-    #scale = Scale(tab1, font = ("arial", 10), orient = 'horizontal', command = adjustCanvas, variable =var).grid()
-    #fontLabel = Label(tab1, text = "TEXT", font = ("Arial", 10))
-    #fontLabel.grid()
-    #df_var = StringVar()
-    #try:
-    #    df_var.set(all_interrogations[-1].results.head(5).T.head(5).T.to_string)
-    #except:
-    #    df_var.set(all_interrogations[-1])
-    #Label(tab2, textvariable = df_var).grid()
 
-    # this dummy funct is just here so that first funct prints properly.
+
+    ##############     ##############     ##############     ##############     ############## 
+    # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
+    ##############     ##############     ##############     ##############     ############## 
     
     from corpkit.build import download, extract, install, install_corenlp, \
                               rename_duplicates, get_corpus_filepaths, check_jdk, \
                               parse_corpus, move_parsed_files, corenlp_exists
 
     def create_parsed_corpus():
+        """make sure things are installed, then parse, then structure"""
         unparsed_corpus_path = sel_corpus.get()
         import os
         if not corenlp_exists():
@@ -2012,7 +2015,6 @@ def corpkit_gui():
                 time = strftime("%H:%M:%S", localtime())
                 print '%s: Cannot parse data without Java JDK 1.8.' % (time)
                 return
-        # creat file: corpus-filelist.txt
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout)
         sys.stdout = note.redir
@@ -2021,7 +2023,6 @@ def corpkit_gui():
         basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
-
 
     get_text_corpus = StringVar()
 
