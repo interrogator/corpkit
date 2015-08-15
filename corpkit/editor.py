@@ -83,6 +83,7 @@ def editor(dataframe1,
     calc_all:           when keywording, calculate words that appear in either corpus
     """
 
+    import corpkit
     import pandas
     import pandas as pd
     import numpy as np
@@ -107,7 +108,7 @@ def editor(dataframe1,
     
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
-    from corpkit.tests import check_pytex
+    from tests import check_pytex
     if check_pytex():
         print_info = False
 
@@ -937,7 +938,7 @@ def editor(dataframe1,
     
     # if doing keywording...
     if operation.startswith('k'):
-        from corpkit.keys import keywords
+        from keys import keywords
 
         # allow saved dicts to be df2, etc
         try:
@@ -1026,7 +1027,7 @@ def editor(dataframe1,
         return df
 
     # while tkintertable can't sort rows
-    from corpkit.tests import check_t_kinter
+    from tests import check_t_kinter
     tk = check_t_kinter()
     if tk:
         df = add_tkt_index(df)

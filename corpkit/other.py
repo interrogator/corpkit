@@ -1,4 +1,5 @@
 def quickview(results, n = 25):
+    import corpkit
     """view top n results of results.
 
     Ideally, pass it interrogator() or plotter output. It will also accept DatFrames
@@ -122,6 +123,7 @@ def quickview(results, n = 25):
 
 
 def concprinter(df, kind = 'string', n = 100):
+    import corpkit
     """print conc lines nicely, to string, latex or csv"""
     if n > len(df):
         n = len(df)
@@ -146,6 +148,7 @@ def concprinter(df, kind = 'string', n = 100):
     print ''
 
 def save_result(interrogation, savename, savedir = 'saved_interrogations'):
+    import corpkit
     """Save an interrogation as pickle to savedir"""
     import collections
     from collections import namedtuple, Counter
@@ -162,6 +165,7 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
         savename = savename[:-2]
 
     def urlify(s):
+        import corpkit
         "Turn savename into filename"
         import re
         s = s.lower()
@@ -219,6 +223,7 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     f.close()
 
 def load_result(savename, loaddir = 'saved_interrogations'):
+    import corpkit
     """Reloads a save_result as namedtuple"""
     import collections
     import pickle
@@ -231,6 +236,7 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     notfound = True
     
     def namesuggester(entered_name, searched_dir):
+        import corpkit
         import nltk
         from itertools import groupby
         from operator import itemgetter
@@ -294,18 +300,23 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     return output
 
 def report_display():
+    import corpkit
     """Displays/downloads the risk report, depending on your browser settings"""
     class PDF(object):
         def __init__(self, pdf, size=(200,200)):
+            import corpkit
             self.pdf = pdf
             self.size = size
         def _repr_html_(self):
+            import corpkit
             return '<iframe src={0} width={1[0]} height={1[1]}></iframe>'.format(self.pdf, self.size)
         def _repr_latex_(self):
+            import corpkit
             return r'\includegraphics[width=1.0\textwidth]{{{0}}}'.format(self.pdf)
     return PDF('report/risk_report.pdf',size=(800,650))
 
 def ipyconverter(inputfile, outextension):
+    import corpkit
     """ipyconverter converts ipynb files to various formats.
 
     This function calls a shell script, rather than using an API. 
@@ -332,6 +343,7 @@ def ipyconverter(inputfile, outextension):
     os.system(shellscript)
 
 def conv(inputfile, loadme = True):
+    import corpkit
     """A .py to .ipynb converter that relies on old code from IPython.
 
     You shouldn't use this: I only am while I'm on a deadline.
@@ -354,6 +366,7 @@ def conv(inputfile, loadme = True):
     print 'Done!\n'
 
 def pytoipy(inputfile):
+    import corpkit
     """A .py to .ipynb converter.
 
     This function converts .py files to ipynb.
@@ -378,6 +391,7 @@ def pytoipy(inputfile):
     print 'Done!\n'
 
 def new_project(name, loc = '.', root = False):
+    import corpkit
     """make a new project in current directory"""
     import os
     import shutil
@@ -433,10 +447,11 @@ def new_project(name, loc = '.', root = False):
         print '%s: New project created: "%s"' % (time, name)
 
 def searchtree(tree, query, options = ['-t', '-o']):
+    import corpkit
     "Searches a tree with Tregex and returns matching terminals"
     import os
-    from corpkit.other import tregex_engine
-    from corpkit.tests import check_dit
+    from other import tregex_engine
+    from tests import check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -453,6 +468,7 @@ def searchtree(tree, query, options = ['-t', '-o']):
     return result
 
 def quicktree(sentence):
+    import corpkit
     """Parse a sentence and return a visual representation in IPython"""
     import os
     from nltk import Tree
@@ -492,6 +508,7 @@ def quicktree(sentence):
     os.remove("tree.png")
 
 def multiquery(corpus, query, sort_by = 'total', quicksave = False):
+    import corpkit
     """Creates a named tuple for a list of named queries to count.
 
     Pass in something like:
@@ -503,8 +520,8 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     import pandas
     import pandas as pd
     from time import strftime, localtime
-    from corpkit.interrogator import interrogator
-    from corpkit.editor import editor
+    from interrogator import interrogator
+    from editor import editor
 
     if quicksave:
         savedir = 'saved_interrogations'
@@ -528,7 +545,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     time = strftime("%H:%M:%S", localtime())
     print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
     if quicksave:
-        from corpkit.other import save_result
+        from other import save_result
         save_result(results, quicksave)
     return results
 
@@ -536,6 +553,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
     # if nothing, the query's fine! 
 
 def interroplot(path, query):
+    import corpkit
     """Interrogates path with Tregex query, gets relative frequencies, and plots the top seven results"""
     from corpkit import interrogator, editor, plotter
     quickstart = interrogator(path, 'words', query)
@@ -543,6 +561,7 @@ def interroplot(path, query):
     plotter(str(path), edited.results)
 
 def datareader(data, plaintext = False, **kwargs):
+    import corpkit
     """
     Returns a string of plain text from a number of kinds of data.
 
@@ -556,8 +575,8 @@ def datareader(data, plaintext = False, **kwargs):
     """
     import os
     import pandas
-    from corpkit.other import tregex_engine
-    from corpkit.tests import check_dit
+    from other import tregex_engine
+    from tests import check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -669,15 +688,20 @@ def tregex_engine(query = False,
     corpus: place to search
     check_query: just make sure query ok
     check_for_trees: find out if corpus contains parse trees"""
+    import corpkit
+    from other import add_corpkit_to_path
+    add_corpkit_to_path()
     import subprocess 
     import re
     from time import localtime, strftime
-    from corpkit.tests import check_dit
+    from tests import check_dit
     from dictionaries.word_transforms import wordlist
+    import os
 
     on_cloud = check_dit()
 
     def find_wordnet_tag(tag):
+        import corpkit
         if tag.startswith('j'):
             tag = 'a'
         elif tag.startswith('v') or tag.startswith('m'):
@@ -696,8 +720,12 @@ def tregex_engine(query = False,
     while an_error_occurred:
         if on_cloud:
             tregex_command = ["sh", "tregex.sh"]
-        else:
+        if not on_cloud:
             tregex_command = ["tregex.sh"]
+        if root:
+            corpath = os.path.dirname(corpkit.__file__)
+            corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
+            tregex_command = [os.path.join(corpath, "tregex.sh")]
         if not query:
             query = 'NP'
         # if checking for trees, use the -T option
@@ -853,10 +881,11 @@ def tregex_engine(query = False,
     return res
 
 def load_all_results(data_dir = 'saved_interrogations', root = False):
+    import corpkit
     """load every saved interrogation in data_dir into a dict"""
     import os
     import time
-    from corpkit.other import load_result
+    from other import load_result
     from time import localtime, strftime
     r = {}
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
@@ -885,6 +914,7 @@ def load_all_results(data_dir = 'saved_interrogations', root = False):
     return r
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
+    import corpkit
     """turn a series into a latex table"""
     import pandas as pd
     if sort_by:
@@ -919,7 +949,7 @@ def make_nltk_text(directory,
     """turn a lot of trees into an nltk style text"""
     import nltk
     import os
-    from corpkit.other import tregex_engine
+    from other import tregex_engine
     if type(directory) == str:
         dirs = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
         if len(dirs) == 0:
@@ -968,6 +998,7 @@ def make_nltk_text(directory,
     return textx
 
 def get_synonyms(word, pos = False):
+    import corpkit
     import nltk
     from nltk.corpus import wordnet
     if pos:
@@ -977,6 +1008,7 @@ def get_synonyms(word, pos = False):
     return list(set([l.name().replace('_', ' ').lower() for s in syns for l in s.lemmas()]))
 
 def synonym_dictmaker(df):
+    import corpkit
     syn_dict = {}
     text = make_nltk_text(d)
     for w in list(df.columns):
@@ -1014,9 +1046,9 @@ def pmultiquery(path,
     import pandas as pd
     from collections import namedtuple
     from time import strftime, localtime
-    from corpkit.interrogator import interrogator
-    from corpkit.editor import editor
-    from corpkit.other import save_result
+    from interrogator import interrogator
+    from editor import editor
+    from other import save_result
     try:
         from joblib import Parallel, delayed
     except:
@@ -1026,6 +1058,7 @@ def pmultiquery(path,
     num_cores = multiprocessing.cpu_count()
 
     def best_num_parallel(num_cores, num_queries):
+        import corpkit
         """decide how many parallel processes to run
 
         the idea, more or less, is to """
@@ -1160,11 +1193,12 @@ def pmultiquery(path,
         time = strftime("%H:%M:%S", localtime())
         print '\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
         if quicksave:
-            from corpkit.other import save_result
+            from other import save_result
             save_result(out, quicksave)
         return out
 
 def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
+    import corpkit
     """turns a wordlist into an uncompiled regular expression"""
     import re
     if case_sensitive:
@@ -1214,7 +1248,21 @@ def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
 
 
 def show(lines, index, show = 'thread'):
+    import corpkit
     """show lines.ix[index][link] as frame"""
     url = lines.ix[index]['link'].replace('<a href=', '').replace('>link</a>', '')
     return HTML('<iframe src=%s width=1000 height=500></iframe>' % url)
 
+
+def add_corpkit_to_path():
+    import sys
+    import os
+    import inspect
+    corpath = inspect.getfile(inspect.currentframe())
+    baspat = os.path.dirname(corpath)
+    dicpath = os.path.join(baspat, 'dictionaries')
+    for p in [corpath, baspat, dicpath]:
+        if p not in sys.path:
+            sys.path.append(p)
+        if p not in os.environ["PATH"].split(':'): 
+            os.environ["PATH"] += os.pathsep + p

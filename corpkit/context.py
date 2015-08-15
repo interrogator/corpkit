@@ -25,8 +25,8 @@ def eugener(path,
     import re
     from collections import Counter
     import pandas as pd
-    from corpkit.progressbar import ProgressBar
-    from corpkit.other import tregex_engine
+    from progressbar import ProgressBar
+    from other import tregex_engine
 
     # manual lemmatisation here:
     from dictionaries.word_transforms import wordlist
@@ -38,7 +38,7 @@ def eugener(path,
     except NameError:
         import subprocess
         have_ipython = False
-    from corpkit.tests import check_dit # probably never needed
+    from tests import check_dit # probably never needed
     
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -298,7 +298,7 @@ def sim(corpus, words, permissive = False, regex = True):
     import re
     import operator
 
-    #from corpkit.context import get_result
+    #from context import get_result
     from collections import Counter
 
     try:

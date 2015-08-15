@@ -7,8 +7,8 @@ def collocates(data, nbest = 30, window = 5):
     import os
     import time
     from time import localtime, strftime
-    from corpkit.other import datareader
-    from corpkit.tests import check_dit
+    from other import datareader
+    from tests import check_dit
     try:
         from IPython.display import display, clear_output
     except ImportError:

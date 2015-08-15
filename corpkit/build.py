@@ -12,6 +12,7 @@ def dictmaker(path,
               just_content_words = False,
               use_dependencies = False):
     """makes a pickle wordlist named dictname in dictpath"""
+    import corpkit
     import os
     import pickle
     import re
@@ -20,8 +21,8 @@ def dictmaker(path,
     from StringIO import StringIO
     import shutil
     from collections import Counter
-    from corpkit.progressbar import ProgressBar
-    from corpkit.other import tregex_engine
+    from progressbar import ProgressBar
+    from other import tregex_engine
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -110,6 +111,7 @@ def dictmaker(path,
         p = ProgressBar(len(sorted_dirs))
 
     def tokener(xmldata):
+        import corpkit
         """print word, using good lemmatisation"""
         from bs4 import BeautifulSoup
         import gc
@@ -217,6 +219,7 @@ def dictmaker(path,
     print '\n\n' + time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
 
 def get_urls(url, criteria = False, remove = True):
+    import corpkit
     """Get a list of all urls within an html document"""
     from bs4 import BeautifulSoup
     configure_ipython_beautifulsoup(show_html=True, show_css=True, show_js=False)
@@ -247,12 +250,13 @@ def get_urls(url, criteria = False, remove = True):
 
 
 def downloader(url_list, new_path = 'html', wait = 5):
+    import corpkit
     """download a bunch of urls and store in a local folder"""
     import urllib
     import time
     import os
     from time import localtime, strftime
-    from corpkit.progressbar import ProgressBar
+    from progressbar import ProgressBar
     thetime = strftime("%H:%M:%S", localtime())
     print "\n%s: Attempting to download %d URLs with %d seconds wait-time ... \n" % (thetime, len(url_list), wait)
     p = ProgressBar(len(urls))
@@ -273,6 +277,7 @@ def downloader(url_list, new_path = 'html', wait = 5):
     return paths
 
 def simple_text_extractor(html, stopwords = 'English'):
+    import corpkit
     """extract text from html/xml files using justext"""
     import requests
     import justext
@@ -310,6 +315,7 @@ def simple_text_extractor(html, stopwords = 'English'):
 
 
 def practice_run(path_to_html_file):
+    import corpkit
     import os
     import warnings
     from bs4 import BeautifulSoup
@@ -322,7 +328,7 @@ def practice_run(path_to_html_file):
         text = get_text(soup)
     except:
         function_defined = False
-        from corpkit.build import simple_text_extractor
+        from build import simple_text_extractor
         simple_text_extractor(path_to_html_file)
     try:
         metadata = get_metadata(soup)
@@ -333,6 +339,7 @@ def practice_run(path_to_html_file):
 
 
 def souper(corpus_path):
+    import corpkit
     """The aim is to make a tuple of (text, metadata)"""
     import os
     from bs4 import BeautifulSoup
@@ -345,6 +352,7 @@ def souper(corpus_path):
 
 
 def correctspelling(path, newpath):
+    import corpkit
     """Feed this function an unstructured corpus and get a version with corrected spelling"""
     import enchant
     import codecs
@@ -394,6 +402,7 @@ def correctspelling(path, newpath):
 
 
 def stanford_parse(corpus_path):
+    import corpkit
     """Parse a directory (recursively) with the Stanford parser..."""
     import os
     import ast
@@ -423,6 +432,7 @@ def stanford_parse(corpus_path):
 
 
 def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
+    import corpkit
     """structure a corpus in some kind of sequence"""
     import os
     import shutil
@@ -444,9 +454,11 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
     print 'Done!'
 
 def edit_metadata():
+    import corpkit
     return edited
 
 def stanford_parse(data, corpus_name = 'corpus'):
+    import corpkit
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
     print "\n%s: Initialising CoreNLP... \n" % thetime
@@ -456,7 +468,7 @@ def stanford_parse(data, corpus_name = 'corpus'):
         from corenlp import StanfordCoreNLP
     except:
         raise ValueError("CoreNLP not installed.")
-    from corpkit.progressbar import ProgressBar
+    from progressbar import ProgressBar
     corenlp = StanfordCoreNLP()
     if not os.path.exists(corpus_name):
         os.makedirs(corpus_name)
@@ -492,11 +504,12 @@ def stanford_parse(data, corpus_name = 'corpus'):
 
 
 def download_cnlp(proj_path, root = False):
+    import corpkit
     """download corenlp to proj_path"""
     import os
     import urllib2
     from time import localtime, strftime
-    from corpkit.progressbar import ProgressBar
+    from progressbar import ProgressBar
     url = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
@@ -540,6 +553,7 @@ def download_cnlp(proj_path, root = False):
 
 #'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
 def extract_cnlp(fullfilepath, root = False):
+    import corpkit
     """extract corenlp"""
     import zipfile
     import os
@@ -556,6 +570,7 @@ def extract_cnlp(fullfilepath, root = False):
     print '%s: CoreNLP extracted. ' % time
 
 def rename_duplicates(corpuspath):
+    import corpkit
     """rename any duplicate filenames in the corpus
 
     skipping for now, sorry"""
@@ -575,6 +590,7 @@ def rename_duplicates(corpuspath):
             d = {k:v for k,v in d.items() if len(v)>1}
 
 def get_corpus_filepaths(proj_path, corpuspath):
+    import corpkit
     import fnmatch
     import os
     matches = []
@@ -587,6 +603,7 @@ def get_corpus_filepaths(proj_path, corpuspath):
     return os.path.join(proj_path, 'data', 'corpus-filelist.txt')
 
 def check_jdk():
+    import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
     p = Popen(["java", "-version"], stdout=PIPE, stderr=PIPE)
@@ -598,6 +615,7 @@ def check_jdk():
         return False
 
 def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
+    import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
     import os
@@ -642,7 +660,7 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
                      '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
 
     import time
-    from corpkit.progressbar import ProgressBar
+    from progressbar import ProgressBar
     p = ProgressBar(num_files_to_parse)
     while proc.poll() is None:
         sys.stdout = stdout
@@ -662,6 +680,7 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
     return new_corpus_path
 
 def move_parsed_files(proj_path, corpuspath, new_corpus_path):
+    import corpkit
     import shutil
     import os
     import fnmatch
@@ -697,6 +716,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
 
 
 def corenlp_exists():
+    import corpkit
     import os
     important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
                        'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']

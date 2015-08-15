@@ -33,9 +33,13 @@ def plotter(title,
 
     """
 
+    import corpkit
     import os
     import matplotlib as mpl
-    import matplotlib.pyplot as plt, mpld3
+    if interactive:
+        import matplotlib.pyplot as plt, mpld3
+    else:
+        import matplotlib.pyplot as plt
     from matplotlib import rc
     import pandas
     import pandas as pd
@@ -43,14 +47,14 @@ def plotter(title,
 
     import numpy
     from time import localtime, strftime
-    from corpkit.tests import check_pytex, check_spider, check_t_kinter
+    from tests import check_pytex, check_spider, check_t_kinter
     import signal
 
     if interactive:
         import mpld3
         import collections
         from mpld3 import plugins, utils
-        from corpkit.plugins import InteractiveLegendPlugin, HighlightLines
+        from plugins import InteractiveLegendPlugin, HighlightLines
 
     tk = check_t_kinter()
 
