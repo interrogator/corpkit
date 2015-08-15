@@ -31,7 +31,7 @@ def keywords(data,
     except ImportError:
         pass
 
-    from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
+    from keys import keywords_and_ngrams, turn_input_into_counter
 
     the_threshold = False
 
@@ -213,8 +213,8 @@ def ngrams(data,
     except ImportError:
         pass
 
-    from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
-    from corpkit.other import datareader
+    from keys import keywords_and_ngrams, turn_input_into_counter
+    from other import datareader
 
     loaded_ref_corpus = turn_input_into_counter(reference_corpus)
 
@@ -355,7 +355,7 @@ def turn_input_into_counter(data, **kwargs):
     import collections
     import pickle
     import pandas
-    from corpkit.other import datareader
+    from other import datareader
     
     dict_found = False
 

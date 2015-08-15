@@ -11,6 +11,7 @@ def conc(corpus, query,
         print_output = True,
         root = False): 
     """A concordancer for Tregex queries over trees or regexes over plain text"""
+    import corpkit
     import os
     import re
     import pandas as pd
@@ -21,8 +22,8 @@ def conc(corpus, query,
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    from corpkit.other import tregex_engine
-    from corpkit.tests import check_pytex, check_dit
+    from other import tregex_engine
+    from tests import check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -33,7 +34,7 @@ def conc(corpus, query,
     
     # convert list to query
     if type(query) == list:
-        from corpkit.other import as_regex
+        from other import as_regex
         query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
     
     # lazy, daniel!
@@ -43,7 +44,7 @@ def conc(corpus, query,
         window = 500
 
     # check query
-    good_tregex_query = tregex_engine(query, check_query = True)
+    good_tregex_query = tregex_engine(query, check_query = True, root = root)
     if good_tregex_query is False:
         return
 
@@ -63,7 +64,7 @@ def conc(corpus, query,
     output = []
 
     if plaintext == 'guess':
-        if not tregex_engine(corpus = corpus, check_for_trees = True):
+        if not tregex_engine(corpus = corpus, check_for_trees = True, root = root):
             plaintext = True
         else:
             plaintext = False
@@ -76,11 +77,13 @@ def conc(corpus, query,
         whole_results = tregex_engine(query, 
                                   options = ['-o', '-w', options], 
                                   corpus = corpus,
-                                  preserve_case = True)
+                                  preserve_case = True,
+                                  root = root)
         middle_column_result = tregex_engine(query, 
                                   options = ['-o', options], 
                                   corpus = corpus,
-                                  preserve_case = True)
+                                  preserve_case = True,
+                                  root = root)
     
     if plaintext:
         import nltk

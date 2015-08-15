@@ -126,7 +126,9 @@ def interrogator(path,
     <matplotlib figure>
 
     """
-    
+    import corpkit
+    from other import add_corpkit_to_path
+    add_corpkit_to_path()
     import os
     import re
     import signal
@@ -149,18 +151,19 @@ def interrogator(path,
     except ImportError:
         pass
 
-
-
-    from corpkit.tests import check_pytex, check_t_kinter
-    from corpkit.progressbar import ProgressBar
-    from corpkit.other import tregex_engine
+    from tests import check_pytex, check_t_kinter
+    from progressbar import ProgressBar
+    from other import tregex_engine
     import dictionaries
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
                                               taglemma)
+    from other import add_corpkit_to_path
+
+    add_corpkit_to_path()
 
     tk = check_t_kinter()
-        #from corpkit.interface import GuiProgressBar
+        #from interface import GuiProgressBar
     # determine if actually a multiquery
 
     is_multiquery = False
@@ -180,7 +183,7 @@ def interrogator(path,
 
     # run pmultiquery if so
     if is_multiquery:
-        from corpkit.other import pmultiquery
+        from other import pmultiquery
         d = { 'path': path, 
               'option': option, 
               'query': query , 
@@ -783,7 +786,7 @@ def interrogator(path,
     
     # Tregex option:
     translated_option = False
-    from corpkit.other import as_regex
+    from other import as_regex
     while not translated_option:
         if option.startswith('p') or option.startswith('P'):
             optiontext = 'Part-of-speech tags only.'
@@ -1017,7 +1020,7 @@ def interrogator(path,
 
     def filtermaker(filter):
         if type(filter) == list:
-            from corpkit.other import as_regex
+            from other import as_regex
             filter = as_regex(filter, case_sensitive = case_sensitive)
         try:
             output = re.compile(filter)
@@ -1107,7 +1110,7 @@ def interrogator(path,
             try:
                 dic = pickle.load( open( os.path.join(dictpath, reference_corpus), "rb" ) )
             except:
-                from corpkit.build import dictmaker
+                from build import dictmaker
                 time = strftime("%H:%M:%S", localtime())
                 print '\n%s: Making reference corpus ...' % time
                 dictmaker(path, reference_corpus, query, lemmatise = lemmatise, just_content_words = jcw)
@@ -1288,7 +1291,7 @@ def interrogator(path,
             else:
                 op = ['-o', '-' + translated_option]
                 result = tregex_engine(query = query, options = op, 
-                                       corpus = subcorpus)
+                                       corpus = subcorpus, root = root)
                 if result is False:
                     return
                 
@@ -1425,7 +1428,7 @@ def interrogator(path,
             clear_output()
         if quicksave:
             if stotals.sum() > 0:
-                from corpkit.other import save_result
+                from other import save_result
                 save_result(output, quicksave)
         
         if printstatus:
@@ -1576,11 +1579,11 @@ def interrogator(path,
     if quicksave:
         if not keywording:
             if stotals.sum() > 0 and num_diff_results > 0:
-                from corpkit.other import save_result
+                from other import save_result
                 save_result(output, quicksave)
         else:
             if num_diff_results > 0:
-                from corpkit.other import save_result
+                from other import save_result
                 save_result(output, quicksave)
 
     if add_to:
