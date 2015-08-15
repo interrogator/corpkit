@@ -291,7 +291,39 @@ def process_types(regex = False):
         """makes a regex from the list of words passed to it"""
         # add alternative spellings
         from dictionaries.word_transforms import usa_convert
-        from pattern.en import lexeme
+        # try doing with pattern again one more time.
+        
+        def find_lexeme(verb):
+            """ For a regular verb (base form), returns the forms using a rule-based approach.
+            taken from pattern
+            """
+            vowels = ['a', 'e', 'i', 'o', 'u']
+            v = verb.lower()
+            if len(v) > 1 and v.endswith("e") and v[-2] not in vowels:
+                # Verbs ending in a consonant followed by "e": dance, save, devote, evolve.
+                return [v, v, v, v+"s", v, v[:-1]+"ing"] + [v+"d"]*6
+            if len(v) > 1 and v.endswith("y") and v[-2] not in vowels:
+                # Verbs ending in a consonant followed by "y": comply, copy, magnify.
+                return [v, v, v, v[:-1]+"ies", v, v+"ing"] + [v[:-1]+"ied"]*6
+            if v.endswith(("ss", "sh", "ch", "x")):
+                # Verbs ending in sibilants: kiss, bless, box, polish, preach.
+                return [v, v, v, v+"es", v, v+"ing"] + [v+"ed"]*6
+            if v.endswith("ic"):
+                # Verbs ending in -ic: panic, mimic.
+                return [v, v, v, v+"es", v, v+"king"] + [v+"ked"]*6
+            if len(v) > 1 and v[-1] not in vowels and v[-2] not in vowels:
+                # Verbs ending in a consonant cluster: delight, clamp.
+                return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+            if (len(v) > 1 and v.endswith(("y", "w")) and v[-2] in vowels) \
+            or (len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] in vowels) \
+            or (len(v) > 3 and v[-1] not in vowels and v[-3] in vowels and v[-4] in vowels):
+                # Verbs ending in a long vowel or diphthong followed by a consonant: paint, devour, play.
+                return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+            if len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] not in vowels:
+                # Verbs ending in a short vowel followed by a consonant: chat, chop, or compel.
+                return [v, v, v, v+"s", v, v+v[-1]+"ing"] + [v+v[-1]+"ed"]*6
+            return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+        
         uk_convert = {v: k for k, v in usa_convert.items()}
         to_add_to_verb_list = []
         for w in verb_list:
@@ -304,7 +336,7 @@ def process_types(regex = False):
 
         verbforms = []
         for w in verb_list:
-          forms = [form.replace("n't", "").replace(" not", "") for form in lexeme(w)]
+          forms = list(set([form.replace("n't", "").replace(" not", "") for form in find_lexeme(w)]))
           for f in forms:
               verbforms.append(f)
           # deal with contractions
