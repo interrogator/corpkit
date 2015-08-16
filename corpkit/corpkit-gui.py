@@ -2441,9 +2441,9 @@ def corpkit_gui():
     menubar.add_cascade(label="File", menu=filemenu)
 
     def about_box():
-        import pkg_resources
-        ver = pkg_resources.get_distribution("corpkit").version
-        tkMessageBox.showinfo('About', 'corpkit v.%s\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
+        import corpkit
+        ver = corpkit.__version__
+        tkMessageBox.showinfo('About', 'corpkit\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                               'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
 
     helpmenu = Menu(menubar, tearoff=0)
@@ -2451,6 +2451,10 @@ def corpkit_gui():
     helpmenu.add_command(label="About", command=about_box)
     menubar.add_cascade(label="Help", menu=helpmenu)
 
+    if sys.platform == 'darwin':
+        import corpkit
+        ver = corpkit.__version__
+        os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "corpkit-%s" to true' ''' % ver)
     root.config(menu=menubar)
     print '\n\n\n'
     note.focus_on(tab1)
