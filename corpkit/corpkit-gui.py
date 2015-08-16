@@ -1588,10 +1588,14 @@ def corpkit_gui():
         print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
 
     def conc_export():
-        """export conc lines to csv ... this could use pandas, eh?"""
+        """export conc lines to csv"""
+        import os
+        import pandas
+        home = os.path.expanduser("~")
+        docpath = os.path.join(home, 'Documents')
         csv = current_conc[0].to_csv(header = False, sep = '\t')
         savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
-                                       initialdir = '~/Documents',
+                                       initialdir = docpath,
                                        message = 'Choose a name and place for your exported data.',
                                        defaultextension = '.csv',
                                        initialfile = 'data.csv')
@@ -1737,8 +1741,10 @@ def corpkit_gui():
         name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
         if not name:
             return
+        home = os.path.expanduser("~")
+        docpath = os.path.join(home, 'Documents')
         fp = tkFileDialog.askdirectory(title = 'New project location',
-                                       initialdir = '~/Documents',
+                                       initialdir = docpath,
                                        message = 'Choose a directory in which to create your new project')
         if not fp:
             return
@@ -2180,7 +2186,9 @@ def corpkit_gui():
     def select_corpus_to_parse():
         """clean this up!"""
         if project_fullpath.get() == '':
-            init = '~/Documents'
+            import os
+            home = os.path.expanduser("~")
+            docpath = os.path.join(home, 'Documents')
         else:
             init = os.path.join(project_fullpath.get(), 'data')
         unparsed_corpus_path = tkFileDialog.askdirectory(title = 'Path to unparsed corpus',
@@ -2199,15 +2207,7 @@ def corpkit_gui():
         sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(newc))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Corpus copied to project folder.' % (thetime)
-        
         parse_button_text.set('Parse corpus: "%s"' % os.path.basename(newc))
-        
-        subc_listbox_build.configure(state = NORMAL)
-        subc_listbox_build.delete(0, 'end')        
-        #subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
-        #for k in subcorpora.keys():
-            #del subcorpora[k]
-        #subcorpora[fp] = subs
         subc_listbox_build.configure(state = NORMAL)
         subc_listbox_build.delete(0, 'end')
         for e in list([d for d in os.listdir(unparsed_corpus_path) if os.path.isdir(os.path.join(unparsed_corpus_path, d))]):
@@ -2219,8 +2219,10 @@ def corpkit_gui():
     def getcorpus():
         import shutil
         import os
+        home = os.path.expanduser("~")
+        docpath = os.path.join(home, 'Documents')
         fp = tkFileDialog.askdirectory(title = 'Path to unparsed corpus',
-                                       initialdir = '~/Documents',
+                                       initialdir = docpath,
                                        message = 'Select your corpus of unparsed text files.')
         where_to_put_corpus = os.path.join(project_fullpath.get(), 'data')
         newc = os.path.join(where_to_put_corpus, os.path.basename(fp))
