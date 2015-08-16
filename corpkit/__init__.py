@@ -8,7 +8,7 @@ __all__ = ["interrogator",
            "load_all_results",
            "as_regex"]
 
-__version__ = "1.11"
+__version__ = "1.13"
 __author__    = "Daniel McDonald"
 __license__   = "MIT"
 
