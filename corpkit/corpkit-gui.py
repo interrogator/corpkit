@@ -507,9 +507,6 @@ def corpkit_gui():
         elif pane == 'plot':
             pass
 
-    # one day, allow previous queries to be stored here!
-    query_dict = {}  
-
     def do_interrogation():
         """performs an interrogation"""
         import pandas
@@ -555,9 +552,6 @@ def corpkit_gui():
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
         
-        # add to databae of queries
-        query_dict[the_name] = query
-
         selected_option = transdict[datatype_chosen_option.get()]
         interrogator_args = {'query': query,
                              'lemmatise': lem.get(),
@@ -591,12 +585,6 @@ def corpkit_gui():
             del all_interrogations['None']
         except KeyError:
             pass
-
-        if r == 'Bad query':
-            record = entrytext.get() + '   (invalid)'
-        else:
-            record = entrytext.get()
-        query_dict[the_name] = record
 
         # add interrogation to master
         all_interrogations[the_name] = r
@@ -1543,6 +1531,7 @@ def corpkit_gui():
         print '%s: Concordancing done: %d results.' % (time, len(lines))
 
     def do_concordancing():
+        import os
         """when you press 'run'"""
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing in progress ... ' % (time)       
@@ -1771,6 +1760,7 @@ def corpkit_gui():
     project_fullpath.set('')
 
     def data_getdir():
+        import os
         fp = tkFileDialog.askdirectory()
         if not fp:
             return
@@ -1787,6 +1777,7 @@ def corpkit_gui():
     image_basepath.set('Select image directory')
 
     def image_getdir(nodialog = False):
+        import os
         fp = tkFileDialog.askdirectory()
         if not fp:
             return
@@ -1874,8 +1865,8 @@ def corpkit_gui():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: No interrogations selected.' % thetime
             return
+        import os
         if perm.get():
-            import os
             perm_text = 'permanently '
         else:
             perm_text = ''
@@ -1999,6 +1990,7 @@ def corpkit_gui():
 
         # settings
         def load_config():
+            import os
             import ConfigParser
             Config = ConfigParser.ConfigParser()
             f = os.path.join(project_fullpath.get(), 'settings.ini')
@@ -2022,6 +2014,7 @@ def corpkit_gui():
             x_axis_l.set(conmap("Visualise")['x axis title'])
             chart_cols.set(conmap("Visualise")['colour scheme'])
             corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+        
         f = os.path.join(project_fullpath.get(), 'settings.ini')
         if os.path.isfile(f):
             load_config()
@@ -2185,8 +2178,8 @@ def corpkit_gui():
 
     def select_corpus_to_parse():
         """clean this up!"""
+        import os
         if project_fullpath.get() == '':
-            import os
             home = os.path.expanduser("~")
             docpath = os.path.join(home, 'Documents')
         else:
@@ -2268,6 +2261,7 @@ def corpkit_gui():
 
     # a list of every interrogation
     def onselect_subc_build(evt):
+        import os
         """get selected subcorpora"""
         # should only be one
         for i in subc_sel_vals_build:
@@ -2300,6 +2294,7 @@ def corpkit_gui():
 
     # a list of every interrogation
     def onselect_f(evt):
+        import os
         """get selected subcorpora"""
         # should only be one
         for i in chosen_f:
@@ -2381,6 +2376,7 @@ def corpkit_gui():
     realquit.set(0)
 
     def clear_all():
+        import os
         import sys
         python = sys.executable
         os.execl(python, python, * sys.argv)
@@ -2403,6 +2399,7 @@ def corpkit_gui():
         #       path_to_new_unparsed_corpus, add_corpus, add_corpus_button, f_in_s, editf, 
         #       filename, fullpath_to_file, realquit]
         import ConfigParser
+        import os
         Config = ConfigParser.ConfigParser()
         cfgfile = open(os.path.join(project_fullpath.get(), 'settings.ini') ,'w')
         Config.add_section('Build')
