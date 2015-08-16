@@ -2427,14 +2427,26 @@ def corpkit_gui():
         realquit.set(1)
         root.quit()
 
-    def check_updates():
+    def check_updates(showfalse = True):
         import corpkit
         ver = corpkit.__version__
         ver = float(ver)
         import re
         import urllib2
-        response = urllib2.urlopen('https://www.github.com/interrogator/corpkit')
-        html = response.read()
+        from time import strftime, localtime
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Checking for updates ... ' % thetime
+        try:
+            response = urllib2.urlopen('https://www.github.com/interrogator/corpkit')
+            html = response.read()
+        except:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Checking for updates not performed.' % thetime
+            if showfalse:
+                tkMessageBox.showinfo(
+                "No connection to remote server",
+                "Could not connect to remote server.")
+            return
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         vnum = float(re.search(reg, str(html)).group(1))
         if vnum > ver:
@@ -2443,13 +2455,26 @@ def corpkit_gui():
             if download_update:
                 import webbrowser
                 webbrowser.open_new('https://raw.githubusercontent.com/interrogator/corpkit/master/corpkit-%s.tar.gz' % str(vnum))
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Update found: corpkit %s' % (thetime, str(vnum))
             else:
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Update found: corpkit %s. Not downloaded.' % (thetime, str(vnum))
                 return
         else:
-            tkMessageBox.showinfo(
-            "Up to date!",
-            "corpkit version (%s) up to date!" % ver)
-            return
+            if showfalse:
+                tkMessageBox.showinfo(
+                "Up to date!",
+                "corpkit (version %s) up to date!" % ver)
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: corpkit (version %s) up to date.' % (thetime, str(vnum))
+                return
+            else:
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: No updates found.' % thetime
+
+
+    check_updates(showfalse = False)
 
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
