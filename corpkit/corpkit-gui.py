@@ -2427,11 +2427,37 @@ def corpkit_gui():
         realquit.set(1)
         root.quit()
 
+    def check_updates():
+        import corpkit
+        ver = corpkit.__version__
+        ver = float(ver)
+        import re
+        import urllib2
+        response = urllib2.urlopen('https://www.github.com/interrogator/corpkit')
+        html = response.read()
+        reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
+        vnum = float(re.search(reg, str(html)).group(1))
+        if vnum > ver:
+            download_update = tkMessageBox.askyesno("Update available: corpkit %s." % str(vnum), 
+                          "Download corpkit %s now?" % str(vnum))
+            if download_update:
+                import webbrowser
+                webbrowser.open_new('https://raw.githubusercontent.com/interrogator/corpkit/master/corpkit-%s.tar.gz' % str(vnum))
+            else:
+                return
+        else:
+            tkMessageBox.showinfo(
+            "Up to date!",
+            "corpkit version (%s) up to date!" % ver)
+            return
+
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="New project", command=make_new_project)
     filemenu.add_command(label="Open project", command=load_project)
     filemenu.add_command(label="Save project settings", command=save_config)
+    filemenu.add_separator()
+    filemenu.add_command(label="Check for updates", command=check_updates)
     filemenu.add_separator()
     filemenu.add_command(label="Restart tool", command=clear_all)
     #filemenu.add_command(label="Save project settings", command=hello)
