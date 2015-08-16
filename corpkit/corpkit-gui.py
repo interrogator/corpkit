@@ -1531,6 +1531,17 @@ def corpkit_gui():
     # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #
     ###################     ###################     ###################     ###################
 
+    current_conc = ['None']
+
+    def add_conc_lines_to_window(data):
+        current_conc[0] = data
+        lines = data.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(data['r'].str.len().max()).format}).splitlines()
+        conclistbox.delete(0, END)
+        for line in lines:
+            conclistbox.insert(END, str(line))
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Concordancing done: %d results.' % (time, len(lines))
+
     def do_concordancing():
         """when you press 'run'"""
         time = strftime("%H:%M:%S", localtime())
@@ -1558,46 +1569,27 @@ def corpkit_gui():
         
         r = conc(corpus, query, **d)  
         if r is False:
-            return      
-        lines = r.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(r['r'].str.len().max()).format}).splitlines()
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Concordancing done: %d results.' % (time, len(lines))
-        conclistbox.delete(0, END)
-        for line in lines:
-            conclistbox.insert(END, str(line))
+            return
+        add_conc_lines_to_window(r)
         
     def delete_conc_lines(*args):
         items = conclistbox.curselection()
-        pos = 0
-        for i in items:
-            idx = int(i) - pos
-            conclistbox.delete( idx,idx )
-            pos = pos + 1
+        #current_conc[0].results.drop(current_conc[0].results.iloc[1,].name)
+        r = current_conc[0].drop([current_conc[0].iloc[int(n),].name for n in items])
+        add_conc_lines_to_window(r)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: %d lines removed.' % (thetime, len(items))
 
     def delete_reverse_conc_lines(*args):
         items = [int(i) for i in conclistbox.curselection()]
-        [conclistbox.delete(int(i)) for i in sorted(range(len(conclistbox.get(0, END))), reverse = True) if int(i) not in items]
+        r = current_conc[0].iloc[items,]
+        add_conc_lines_to_window(r)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: %d lines removed.' % (thetime, len(conclistbox.get(0, END) - len(items)))
+        print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
 
     def conc_export():
         """export conc lines to csv ... this could use pandas, eh?"""
-        lines = conclistbox.get(0, END)
-        if len(lines) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Nothing to export.' % (thetime)
-            return
-        seplines = []
-        import re
-        #                     1          there        it           is
-        reg = re.compile(r'^([0-9]+)( +)(.*?)(\s{2,})(.*?)(\s{2,})(.*$)')
-        for line in lines:
-            broken = re.search(reg, line)
-            seplines.append([i for i in broken.groups()])
-        tabbed = [''.join([l[0], '\t', l[2], '\t', l[4], '\t', l[6]]) for l in seplines]      
-        csv = '\n'.join(tabbed)
+        csv = current_conc[0].to_csv(header = False, sep = '\t')
         savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
                                        initialdir = '~/Documents',
                                        message = 'Choose a name and place for your exported data.',
@@ -1609,6 +1601,9 @@ def corpkit_gui():
             fo.write(csv)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Concordance lines exported.' % (thetime)
+
+    import itertools
+    toggle = itertools.cycle([True, False]).next
 
     def conc_sort(*args):
         """various sorting for conc. basically, get columns by regex,
@@ -1623,72 +1618,52 @@ def corpkit_gui():
         seplines = []
         import re
         import pandas
-        #                     1          there        it           is
-        reg = re.compile(r'^([0-9]+)( +)(.*?)(\s{2,})(.*?)(\s{2,})(.*$)')
-        for line in lines:
-            broken = re.search(reg, line)
-            seplines.append([i for i in broken.groups()])
+        import itertools
+        sort_way = True
+        if prev_sortval[0] == sortval.get():
+            # if subcorpus is the same, etc, as well
+            sort_way = toggle()
+        df = current_conc[0]
+        prev_sortval[0] = sortval.get()
 
         # sorting by first column is easy, so we don't need pandas
         if sortval.get() == 'M':
-            sorted_lines = sorted(seplines, key=lambda s: s[4].lower(), reverse = False)
-            conclistbox.delete(0, END)
-            for line in sorted_lines:
-                joined = ''.join(line)
-                conclistbox.insert(END, str(joined))
-            return
+            low = [l.lower() for l in df['m']]
+            df['tosorton'] = low
         # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
-            # pick the col with words in it to sort by
-            if sortval.get().startswith('L'):
-                entry = 2
-            if sortval.get().startswith('R'):
-                entry = 6
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Tokenising concordance lines ... ' % (thetime)
             # tokenise the right part of each line
-            for line in seplines:
-                t = tokenise(line[entry])
-                # if there aren't enough tokens, add blank ones
-                for i in range(6 - len(t)):
-                    t.append('')
-                line[entry] = t
+            # get l or r column
+            col = sortval.get()[0].lower()
+            tokenised = [tokenise(s) for s in list(df[col].values)]
+            for line in tokenised:
+                for i in range(6 - len(line)):
+                    if col == 'l':
+                        line.insert(0, '')
+                    if col == 'r':
+                        line.append('')
+
             # get 1-5 and convert it
             num = int(sortval.get()[-1])
-            if entry == 2:
+            if col == 'l':
                 num = -num
-            if entry == 6:
+            if col == 'r':
                 num = num - 1
-            # perform sort
-            sorted_lines = sorted(seplines, key=lambda s: s[entry][num].lower(), reverse = False)
-            series = []
-            important_bits = [2, 4, 6]
-            for line in sorted_lines:
-                # rejoin the tokenised part of the line
-                line[entry] = ' '.join(line[entry]).replace('  ', ' ')
-                # make into series, fixing formatting
-                replace_tups = [('$ ', '$'), ('`` ', '``'), (' ,', ','), (' .', '.'), 
-                                ("'' ", "''"), (" n't", "n't"), (" 're","'re"), 
-                                (" 'm","'m"), (" 's","'s"), (" 'd","'d"), (" 'll","'ll"), ('  ', ' ')]
-                # do each replace
-                for b in important_bits:
-                    for old, new in replace_tups:
-                        line[b] = line[b].replace(old, new)
-                    # encode each
-                    line[b] = line[b].strip().encode('utf-8', errors = 'ignore')
-                # make into series and append
-                ser = pandas.Series([line[x] for x in important_bits], index = ['l', 'm', 'r'])
-                series.append(ser)
-            # turn into df
-            r = pandas.concat(series, axis = 1).T
-            # print into tkintertable
-            lines = r.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(r['r'].str.len().max()).format}).splitlines()
-            conclistbox.delete(0, END)
-            for line in lines:
-                conclistbox.insert(END, str(line))
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: %d concordance lines sorted.' % (thetime, len(len(conclistbox.get(0, END))))
+
+            just_sortword = []
+            for l in tokenised:
+                just_sortword.append(l[num].lower())
+
+            # append list to df
+            df['tosorton'] = just_sortword
+
+        df = df.sort(['tosorton'], ascending = sort_way).drop(['tosorton'], axis = 1)
+        add_conc_lines_to_window(df)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: %d concordance lines sorted.' % (thetime, len(conclistbox.get(0, END)))
         
     # conc box
     scrollbar = Scrollbar(tab4)
@@ -1745,6 +1720,7 @@ def corpkit_gui():
     sort_vals = ('L5', 'L4', 'L3', 'L2', 'L1', 'M', 'R1', 'R2', 'R3', 'R4', 'R5')
     sortval = StringVar()
     sortval.set('M')
+    prev_sortval = ['None']
     srtkind = OptionMenu(tab4, sortval, *sort_vals)
     srtkind.grid(row = 1, column = 9)
 
