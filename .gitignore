@@ -61,3 +61,8 @@ orientation/.ipynb_checkpoints/
 orientation/data/nyt/
 add_tregex.pth
 sigrid_sfl.py
+corpkit/testingground.py
+corpkit/testinggroundthree.py
+corpkit/testinggroundtwo.py
+corpkit-1.10.app/
+corpkit-1.10.tar.gz
