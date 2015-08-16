@@ -424,9 +424,23 @@ def new_project(name, loc = '.', root = False):
     # copy the bnc dictionary to dictionaries
     if root:
         import corpkit
+
+        def resource_path(relative):
+            import os
+            return os.path.join(
+                os.environ.get(
+                    "_MEIPASS2",
+                    os.path.abspath(".")
+                ),
+                relative
+            )
+
         corpath = os.path.dirname(corpkit.__file__)
         corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
-        shutil.copy(os.path.join(corpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
+        try:
+            shutil.copy(os.path.join(corpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
+        except:
+            shutil.copy(resource_path('bnc.p'), os.path.join(fullpath, 'dictionaries'))
     # if not GUI
     if not root:
         shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
@@ -728,9 +742,21 @@ def tregex_engine(query = False,
         if not on_cloud:
             tregex_command = ["tregex.sh"]
         if root:
+            #for py2app
             corpath = os.path.dirname(corpkit.__file__)
             corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
             tregex_command = [os.path.join(corpath, "tregex.sh")]
+            # for pyinstaller
+            if not os.path.isfile(os.path.join(corpath, "tregex.sh")):            
+                def resource_path(relative):
+                    return os.path.join(
+                        os.environ.get(
+                            "_MEIPASS2",
+                            os.path.abspath(".")
+                        ),
+                        relative
+                    )
+                tregex_command = [resource_path("tregex.sh")]
         if not query:
             query = 'NP'
         # if checking for trees, use the -T option
