@@ -30,17 +30,20 @@ class TextProgressBar:
 
 
     def animate_ipython(self, iter, dirname = None):
+        try:
+            from IPython.display import display, clear_output
+            have_ipython = True
+        except ImportError:
+            have_ipython = False
         from time import localtime, strftime
         import sys
         print '\r', self,
-        try:
-            sys.stdout.flush()
-        except:
-            pass
-        if dirname:
-            self.update_iteration(iter + 1, dirname)
-        else:
-            self.update_iteration(iter + 1, dirname)
+        if have_ipython:
+            try:
+                sys.stdout.flush()
+            except:
+                pass
+        self.update_iteration(iter + 1, dirname)
 
     def update_iteration(self, elapsed_iter, dirname = None):
         from time import localtime, strftime
