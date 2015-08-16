@@ -422,9 +422,14 @@ def new_project(name, loc = '.', root = False):
     #for subdir in subdirs_to_make:
         #os.makedirs(os.path.join(fullpath, 'data', subdir))
     # copy the bnc dictionary to dictionaries
-    shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'data', 'dictionaries'))
+    if root:
+        import corpkit
+        corpath = os.path.dirname(corpkit.__file__)
+        corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
+        shutil.copy(os.path.join(corpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
     # if not GUI
     if not root:
+        shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
         # make a blank ish notebook
         newnotebook_text = open(os.path.join(thepath, corpkitname, 'blanknotebook.ipynb')).read()
         fixed_text = newnotebook_text.replace('blanknotebook', str(name))

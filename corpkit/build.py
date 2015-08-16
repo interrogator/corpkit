@@ -21,7 +21,7 @@ def dictmaker(path,
     from StringIO import StringIO
     import shutil
     from collections import Counter
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     from other import tregex_engine
     try:
         from IPython.display import display, clear_output
@@ -106,9 +106,9 @@ def dictmaker(path,
             counts.append(len(files))
         num_files = sum(counts)
         c = 0
-        p = ProgressBar(num_files)
+        p = TextProgressBar(num_files)
     else:
-        p = ProgressBar(len(sorted_dirs))
+        p = TextProgressBar(len(sorted_dirs))
 
     def tokener(xmldata):
         import corpkit
@@ -256,10 +256,10 @@ def downloader(url_list, new_path = 'html', wait = 5):
     import time
     import os
     from time import localtime, strftime
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     thetime = strftime("%H:%M:%S", localtime())
     print "\n%s: Attempting to download %d URLs with %d seconds wait-time ... \n" % (thetime, len(url_list), wait)
-    p = ProgressBar(len(urls))
+    p = TextProgressBar(len(urls))
     if not os.path.exists(new_path):
         os.makedirs(new_path)
     paths = []
@@ -468,11 +468,11 @@ def stanford_parse(data, corpus_name = 'corpus'):
         from corenlp import StanfordCoreNLP
     except:
         raise ValueError("CoreNLP not installed.")
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     corenlp = StanfordCoreNLP()
     if not os.path.exists(corpus_name):
         os.makedirs(corpus_name)
-    p = ProgressBar(len(data))
+    p = TextProgressBar(len(data))
     for index, datum in enumerate(data):
         p.animate(index)
         text = datum[0]
@@ -509,7 +509,7 @@ def download_cnlp(proj_path, root = False):
     import os
     import urllib2
     from time import localtime, strftime
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     url = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
@@ -528,7 +528,7 @@ def download_cnlp(proj_path, root = False):
     file_size = int(meta.getheaders("Content-Length")[0])
     if root:
         root.update()
-    p = ProgressBar(int(file_size))
+    p = TextProgressBar(int(file_size))
 
     file_size_dl = 0
     block_sz = 8192
@@ -660,8 +660,8 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
                      '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
 
     import time
-    from progressbar import ProgressBar
-    p = ProgressBar(num_files_to_parse)
+    from textprogressbar import TextProgressBar
+    p = TextProgressBar(num_files_to_parse)
     while proc.poll() is None:
         sys.stdout = stdout
         #stdoutx, stderrx = proc.communicate()
