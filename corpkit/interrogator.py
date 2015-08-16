@@ -152,7 +152,7 @@ def interrogator(path,
         pass
 
     from tests import check_pytex, check_t_kinter
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     from other import tregex_engine
     import dictionaries
     from dictionaries.word_transforms import (wordlist, 
@@ -163,7 +163,7 @@ def interrogator(path,
     add_corpkit_to_path()
 
     tk = check_t_kinter()
-        #from interface import GuiProgressBar
+        #from interface import GuiTextProgressBar
     # determine if actually a multiquery
 
     is_multiquery = False
@@ -1178,11 +1178,11 @@ def interrogator(path,
         sorted_dirs = all_files
         c = 0
         
-        p = ProgressBar(total_files)
+        p = TextProgressBar(total_files)
 
     # if tregex, make progress bar for each dir
     else:
-        p = ProgressBar(len(sorted_dirs))
+        p = TextProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     subcorpus_names = []

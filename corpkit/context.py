@@ -25,7 +25,7 @@ def eugener(path,
     import re
     from collections import Counter
     import pandas as pd
-    from progressbar import ProgressBar
+    from textprogressbar import TextProgressBar
     from other import tregex_engine
 
     # manual lemmatisation here:
@@ -55,7 +55,7 @@ def eugener(path,
     # define risk word
     # place for our output
     dfs = {}
-    p = ProgressBar(len(sorted_dirs))
+    p = TextProgressBar(len(sorted_dirs))
     for index, corpus in enumerate(sorted_dirs):
         p.animate(index)
         # search the corpus for whole sents containing risk word
