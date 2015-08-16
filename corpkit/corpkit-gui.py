@@ -1417,43 +1417,43 @@ def corpkit_gui():
     trans_but_vis.grid(column = 1, row = 3, sticky = E)
 
     # num_to_plot
-    Label(tab3, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
+    Label(tab3, text = 'Results to show:').grid(row = 5, column = 0, sticky = W)
     number_to_plot = StringVar()
     number_to_plot.set('7')
-    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 4, column = 1, sticky = E)
+    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 5, column = 1, sticky = E)
 
     # chart type
-    Label(tab3, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
+    Label(tab3, text='Kind of chart').grid(row = 6, column = 0, sticky = W)
     charttype = StringVar(root)
     charttype.set('line')
     kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
     chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
-    chart_kind.grid(row = 5, column = 1, sticky = E)
+    chart_kind.grid(row = 6, column = 1, sticky = E)
 
     # axes
-    Label(tab3, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
+    Label(tab3, text = 'x axis label:').grid(row = 7, column = 0, sticky = W)
     x_axis_l = StringVar()
     x_axis_l.set('')
-    Entry(tab3, textvariable = x_axis_l).grid(row = 6, column = 1, sticky = W)
+    Entry(tab3, textvariable = x_axis_l).grid(row = 7, column = 1, sticky = W)
 
-    Label(tab3, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
+    Label(tab3, text = 'y axis label:').grid(row = 8, column = 0, sticky = W)
     y_axis_l = StringVar()
     y_axis_l.set('')
-    Entry(tab3, textvariable = y_axis_l).grid(row = 7, column = 1)
+    Entry(tab3, textvariable = y_axis_l).grid(row = 8, column = 1)
 
     # log options
     log_x = IntVar()
-    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 8, sticky = W)
+    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 9, sticky = W)
     log_y = IntVar()
-    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 8, sticky = E)
+    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 9, sticky = E)
 
     bw = IntVar()
-    Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 9, sticky = W)
+    Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 10, sticky = W)
     texuse = IntVar()
-    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 9, sticky = E)
+    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky = E)
 
     # chart type
-    Label(tab3, text='Colour scheme:').grid(row = 10, column = 0, sticky = W)
+    Label(tab3, text='Colour scheme:').grid(row = 11, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
     schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'pink_r', 'Set1', 'Set2', 
@@ -1476,34 +1476,34 @@ def corpkit_gui():
         'Blues_r', 'YlOrBr_r', 'seismic', 'Purples', 'seismic_r', 'RdBu', 'Greys', 'BuGn_r', 
         'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot'))
     ch_col = OptionMenu(tab3, chart_cols, *schemes)
-    ch_col.grid(row = 10, column = 1, sticky = E)
+    ch_col.grid(row = 11, column = 1, sticky = E)
 
     # style
     stys = tuple(('ggplot', 'fivethirtyeight', 'bmh'))
     plot_style = StringVar(root)
     plot_style.set('ggplot')
-    Label(tab3, text = 'Plot style:').grid(row = 11, column = 0, sticky = W)
+    Label(tab3, text = 'Plot style:').grid(row = 12, column = 0, sticky = W)
     pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
-    pick_a_datatype.grid(row = 11, column = 1, sticky=E)
+    pick_a_datatype.grid(row = 12, column = 1, sticky=E)
 
     # legend pos
-    Label(tab3, text='Legend position:').grid(row = 12, column = 0, sticky = W)
+    Label(tab3, text='Legend position:').grid(row = 13, column = 0, sticky = W)
     legloc = StringVar(root)
     legloc.set('best')
     locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
     loc_options = OptionMenu(tab3, legloc, *locs)
-    loc_options.grid(row = 12, column = 1, sticky = E)
+    loc_options.grid(row = 13, column = 1, sticky = E)
 
     # show_totals option
-    Label(tab3, text='Show totals: ').grid(row = 13, column = 0, sticky = W)
+    Label(tab3, text='Show totals: ').grid(row = 14, column = 0, sticky = W)
     showtot = StringVar(root)
     showtot.set('Off')
     showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
     show_tot_menu = OptionMenu(tab3, showtot, *showtot_options)
-    show_tot_menu.grid(row = 13, column = 1, sticky = E)
+    show_tot_menu.grid(row = 14, column = 1, sticky = E)
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 14, column = 1, sticky = E)
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
 
     # save image button
     #Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 13)
@@ -1726,7 +1726,7 @@ def corpkit_gui():
 
     def make_new_project():
         import os
-        from other import new_project
+        from corpkit import new_project
         name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
         if not name:
             return
@@ -2115,7 +2115,7 @@ def corpkit_gui():
     ##############     ##############     ##############     ##############     ############## 
     
 
-    from build import download_cnlp, extract_cnlp, rename_duplicates, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
+    from corpkit import download_cnlp, extract_cnlp, rename_duplicates, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_parsed_corpus():
         """make sure things are installed, then parse, then structure"""
