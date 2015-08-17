@@ -21,6 +21,7 @@ def interrogator(path,
                 post_process = False,
                 printstatus = True,
                 root = False,
+                df1_always_df = False,
                 **kwargs):
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -1461,11 +1462,12 @@ def interrogator(path,
     df = DataFrame(the_big_dict, index = subcorpus_names)
 
     try:
-        df.ix['Total'] = df.sum()
-        tot = df.ix['Total']
-        if not depnum and not distance_mode:
-            df = df[tot.argsort()[::-1]]
-        df = df.drop('Total', axis = 0)
+        if not one_big_corpus:
+            df.ix['Total'] = df.sum()
+            tot = df.ix['Total']
+            if not depnum and not distance_mode:
+                df = df[tot.argsort()[::-1]]
+            df = df.drop('Total', axis = 0)
     except:
         pass
 
@@ -1474,7 +1476,7 @@ def interrogator(path,
     stotals.name = 'Total'
 
     # make result into series if only one subcorpus
-    if one_big_corpus:
+    if one_big_corpus and not df1_always_df:
         try:
             df = df.T[subcorpus_names[0]]
         except:
@@ -1507,7 +1509,10 @@ def interrogator(path,
     the_options['function'] = 'interrogator'
     the_options['path'] = path
     the_options['option'] = option
-    the_options['datatype'] = df.iloc[0].dtype
+    try:
+        the_options['datatype'] = df.iloc[0].dtype
+    except:
+        the_options['datatype'] = int
     try:
         the_options['translated_option'] = translated_option
     except:

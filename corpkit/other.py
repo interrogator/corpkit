@@ -156,7 +156,7 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     import os
     import pandas
     from time import localtime, strftime
-    import nltk
+    # import nltk
 
     if type(interrogation) == str or type(interrogation) == unicode:
         raise TypeError('First argument (i.e. the thing to save) cannot be a string.')
@@ -200,8 +200,9 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     if type(interrogation) == pandas.core.frame.DataFrame or \
         type(interrogation) == pandas.core.series.Series or \
         type(interrogation) == dict or \
-        type(interrogation) == collections.Counter or \
-        type(interrogation) == nltk.text.Text:
+        type(interrogation) == collections.Counter:
+        # removing this nltk support for now
+        # or \ type(interrogation) == nltk.text.Text:
         temp_list = [interrogation]
     elif len(interrogation) == 2:
         temp_list = [interrogation.query, interrogation.totals]
@@ -229,7 +230,6 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     import pickle
     import os
     import pandas
-    import nltk
     if not savename.endswith('.p'):
         savename = savename + '.p'
     
@@ -237,13 +237,13 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     
     def namesuggester(entered_name, searched_dir):
         import corpkit
-        import nltk
+        from nltk.metrics.distance import edit_distance
         from itertools import groupby
         from operator import itemgetter
         names = os.listdir(searched_dir)
         res = {}
         for n in names:
-            sim = nltk.metrics.distance.edit_distance(entered_name, n, transpositions=False)
+            sim = edit_distance(entered_name, n, transpositions=False)
             res[n] = sim
         possibles = sorted([v.replace('.p', '') for k,v in groupby(sorted((v,k) for k,v in res.iteritems()), key=itemgetter(0)).next()[1]])
         sel = raw_input('\n"%s" not found. Enter one of the below, or "e" to exit:\n\n%s\n\n' % (entered_name.replace('.p', ''), '\n'.join(['    %d) "%s"' % (index + 1, sug) for index, sug in enumerate(possibles[:10])])))
@@ -270,16 +270,18 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     if type(unpickled) == pandas.core.frame.DataFrame or \
     type(unpickled) == pandas.core.series.Series or \
     type(unpickled) == dict or \
-    type(unpickled) == collections.Counter or \
-    type(unpickled) == nltk.text.Text:
+    type(unpickled) == collections.Counter:
+    # or \
+    #type(unpickled) == nltk.text.Text:
         output = unpickled
 
     if len(unpickled) == 1:
         if type(unpickled[0]) == pandas.core.frame.DataFrame or \
         type(unpickled[0]) == pandas.core.series.Series or \
         type(unpickled[0]) == dict or \
-        type(unpickled[0]) == collections.Counter or \
-        type(unpickled[0]) == nltk.text.Text:
+        type(unpickled[0]) == collections.Counter:
+        # or \
+        #type(unpickled[0]) == nltk.text.Text:
             output = unpickled[0]
     elif len(unpickled) == 4:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
@@ -793,7 +795,6 @@ def tregex_engine(query = False,
             # if tregex error, give general error message
             if re.match(tregex_error, res[0]):
                 tregex_error_output = ""
-                time = strftime("%H:%M:%S", localtime())
                 if root:
                     time = strftime("%H:%M:%S", localtime())
                     print '%s: Error parsing Tregex query.' % time

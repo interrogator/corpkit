@@ -217,16 +217,25 @@ def corpkit_gui():
     sort_direction = True
 
     def convert_pandas_dict_to_ints(dict_obj):
+        """try to turn pandas as_dict into ints, for tkintertable
+
+           the huge try statement is to stop errors when there
+           is a single corpus --- need to find source of problem
+           earlier, though"""
         vals = []
-        for a, b in dict_obj.items():
-            # c = year, d = count
-            for c, d in b.items():
-                vals.append(d)
-        if all([float(x).is_integer() for x in vals if is_number(x)]):
+        try:
             for a, b in dict_obj.items():
+                # c = year, d = count
                 for c, d in b.items():
-                    if is_number(d):
-                        b[c] = int(d)
+                    vals.append(d)
+            if all([float(x).is_integer() for x in vals if is_number(x)]):
+                for a, b in dict_obj.items():
+                    for c, d in b.items():
+                        if is_number(d):
+                            b[c] = int(d)
+        except TypeError:
+            pass
+
         return dict_obj
 
     def update_spreadsheet(frame_to_update, df_to_show = None, model = False, height = 140, width = False, indexwidth = 70, just_default_sort = False):
@@ -241,6 +250,7 @@ def corpkit_gui():
             if need_make_totals:
                 df_to_show = make_df_totals(df_to_show)
         if df_to_show is not None:
+
             if just_default_sort is False:    
                 # for abs freq, make total
                 model = TableModel()
@@ -257,14 +267,17 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth,
+                                    rowheaderwidth=indexwidth, cellwidth=80,
                                     **kwarg)
                 table.createTableFrame()
                 model = table.model
-                model.importDict(raw_data) #can import from a dictionary to populate model            
+                model.importDict(raw_data)
+                # move columns into correct positions
+                print df_to_show
                 for index, name in enumerate(list(df_to_show.index)):
                     model.moveColumn(model.getColumnIndex(name), index)
                 table.createTableFrame()
+                # sort the rows
                 if 'tkintertable-order' in list(df_to_show.index):
                     table.sortTable(columnName = 'tkintertable-order')
                     ind = model.columnNames.index('tkintertable-order')
@@ -273,12 +286,14 @@ def corpkit_gui():
                     except:
                         pass
                 else:
-                    table.sortTable(reverse = 1)
+                    #nm = os.path.basename(corpus_fullpath.get().rstrip('/'))
+                    #table.sortTable(columnIndex = 0, reverse = 1)
+                    pass
             else:
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth,
+                                    rowheaderwidth=indexwidth, cellwidth=80,
                                     **kwarg)
                 table.createTableFrame()
                 table.sortTable(columnName = 'Total', reverse = direct())
@@ -291,7 +306,7 @@ def corpkit_gui():
             table = TableCanvas(frame_to_update, model=model, 
                                 showkeynamesinheader=True, 
                                 height = height,
-                                rowheaderwidth=indexwidth,
+                                rowheaderwidth=indexwidth, cellwidth=80,
                                 **kwarg)
             table.createTableFrame()
             try:
@@ -302,7 +317,7 @@ def corpkit_gui():
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
         else:
-            table = TableCanvas(frame_to_update, height = height, width = width)
+            table = TableCanvas(frame_to_update, height = height, width = width, cellwidth=80,)
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
@@ -345,11 +360,18 @@ def corpkit_gui():
 
 
     def need_make_totals(df):
+        # because there is tkinter-order, the min is 2
+        if len(list(df.index)) < 3:
+            return False
         try:
             x = df.iloc[0,0]
         except:
             return False
-        vals = [i for i in list(df.iloc[0,].values) if is_number(i)]
+        # if was_series, basically
+        try:
+            vals = [i for i in list(df.iloc[0,].values) if is_number(i)]
+        except TypeError:
+            return False
         if len(vals) == 0:
             return False
         if all([float(x).is_integer() for x in vals]):
@@ -561,6 +583,7 @@ def corpkit_gui():
                              'case_sensitive': case_sensitive.get(),
                              'convert_spelling': conv,
                              'root': root,
+                             'df1_always_df': True,
                              'function_filter': ff,
                              'dep_type': depdict[kind_of_dep.get()]}
 
@@ -581,8 +604,13 @@ def corpkit_gui():
             return
 
         # drop over 1000?
-        large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
-        r.results.drop(large, axis = 1, inplace = True)
+        # type check probably redundant now
+        if type(r.results) == pandas.core.frame.DataFrame:
+            large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+            r.results.drop(large, axis = 1, inplace = True)
+
+        r.results.drop('Total', errors = 'ignore', inplace = True)
+        r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
 
         # remove dummy entry from master
         try:
@@ -598,9 +626,13 @@ def corpkit_gui():
         # total in a way that tkintertable likes
         totals_as_df = pandas.DataFrame(r.totals, dtype = object)
 
+        # check if no subcorpora
+        sorted_dirs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+
         # update spreadsheets
         if selected_option != 'c':
             update_spreadsheet(interro_results, r.results, height = 340, indexwidth = 70, width = 650)
+
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         refresh()
@@ -629,6 +661,9 @@ def corpkit_gui():
         if not fp:
             return
         corpus_fullpath.set(fp)
+        subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+        if len(subdrs) == 0:
+            charttype.set('bar')
         basepath.set('Corpus: "%s"' % os.path.basename(fp))
         subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
         for k in subcorpora.keys():
@@ -1011,8 +1046,9 @@ def corpkit_gui():
             return
 
         # drop over 1000?
-        large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
-        r.results.drop(large, axis = 1, inplace = True)
+        if type(r.results) == pandas.core.frame.DataFrame:
+            large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+            r.results.drop(large, axis = 1, inplace = True)
 
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Result editing completed successfully.' % thetime
@@ -2028,6 +2064,10 @@ def corpkit_gui():
                 first = all_corpora[0]
         if first:
             corpus_fullpath.set(os.path.join(fp, 'data', first))
+            subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+            if len(subdrs) == 0:
+                charttype.set('bar')
+
             basepath.set('Corpus: "%s"' % first)
             subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
@@ -2057,6 +2097,9 @@ def corpkit_gui():
             x_axis_l.set(conmap("Visualise")['x axis title'])
             chart_cols.set(conmap("Visualise")['colour scheme'])
             corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+            subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+            if len(subdrs) == 0:
+                charttype.set('bar')
         
         f = os.path.join(project_fullpath.get(), 'settings.ini')
         if os.path.isfile(f):
@@ -2203,6 +2246,9 @@ def corpkit_gui():
         sys.stdout = note.redir
         new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
         corpus_fullpath.set(new_corpus_path)
+        subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+        if len(subdrs) == 0:
+            charttype.set('bar')
         basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
