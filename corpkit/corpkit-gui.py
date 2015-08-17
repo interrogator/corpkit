@@ -477,6 +477,12 @@ def corpkit_gui():
                   'Static': 'static',
                   'Turbulent': 'turbulent'}
 
+    spec_quer_translate = {'Participants': 'participants',
+                           'Any': 'any',
+                           'Processes': 'processes',
+                           'Subjects': 'subjects',
+                           'Entities': 'entities'}
+
     # not currently using this sort feature---should use in conc though
     import itertools
     direct = itertools.cycle([0,1]).next
@@ -522,12 +528,6 @@ def corpkit_gui():
 
         # special query: add to this list!
         if special_queries.get() != 'Off':
-            spec_quer_translate = {'Participants': 'participants',
-                                   'Any': 'any',
-                                   'Processes': 'processes',
-                                   'Subjects': 'subjects',
-                                   'Entities': 'entities'}
-
             query = spec_quer_translate[special_queries.get()]
         
         else:
@@ -579,6 +579,9 @@ def corpkit_gui():
         if not r:
             return
 
+        # drop over 1000?
+        large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+        r.results.drop(large, axis = 1, inplace = True)
 
         # remove dummy entry from master
         try:
@@ -950,8 +953,20 @@ def corpkit_gui():
         elif do_sub.get() == 'Skip':
             editor_args['skip_subcorpora'] = subc_sel_vals
 
+        # special query: add to this list!
+        #if special_queries.get() != 'Off':
+            #query = spec_quer_translate[special_queries.get()]
+        
+        entry_do_with = entry_regex.get()
+        # allow list queries
+        if entry_do_with.startswith('[') and entry_do_with.endswith(']'):
+            entry_do_with = entry_do_with.lower().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+        else:
+            # convert special stuff
+            entry_do_with = remake_special_query(entry_do_with)
+
         if do_with_entries.get() == 'Merge':
-            editor_args['merge_entries'] = entry_regex.get()
+            editor_args['merge_entries'] = entry_do_with
             nn = newname_var.get()
             if nn == '':
                 editor_args['newname'] = False
@@ -960,9 +975,10 @@ def corpkit_gui():
             else:
                 editor_args['newname'] = nn
         elif do_with_entries.get() == 'Keep':
-            editor_args['just_entries'] = entry_regex.get()
+            editor_args['just_entries'] = entry_do_with
         elif do_with_entries.get() == 'Skip':
-            editor_args['skip_entries'] = entry_regex.get()
+            editor_args['skip_entries'] = entry_do_with
+        
         if new_subc_name.get() != '':
             editor_args['new_subcorpus_name'] = new_subc_name.get()
         if newname_var.get() != '':
@@ -976,13 +992,26 @@ def corpkit_gui():
 
         if just_tot_setting.get() == 1:
             editor_args['just_totals'] = True
-        
-        # do editing
 
         if transpose.get():
             data1 = data1.T
-
+        
+        # do editing
         r = editor(data1, **editor_args)
+        
+        if not r:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Editing caused an error.' % thetime
+            return
+
+        if len(list(r.results.columns)) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Editing removed all results.' % thetime
+            return
+
+        # drop over 1000?
+        large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+        r.results.drop(large, axis = 1, inplace = True)
 
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Result editing completed successfully.' % thetime
@@ -1146,9 +1175,11 @@ def corpkit_gui():
         """if not merging entries, diable input fields"""
         if do_with_entries.get() != 'Off':
             edit_box.configure(state = NORMAL)
-            mergen.configure(state = NORMAL)
         else:
             edit_box.configure(state = DISABLED)
+        if do_with_entries.get() == 'Merge':
+            mergen.configure(state = NORMAL)
+        else:
             mergen.configure(state = DISABLED)
 
     # options for editing entries
@@ -1174,10 +1205,12 @@ def corpkit_gui():
         """hide subcorpora edit options if off"""
         if do_sub.get() != 'Off':
             subc_listbox.configure(state = NORMAL)
+        else:
+            subc_listbox.configure(state = DISABLED)
+        if do_sub.get() == 'Merge':
             merge.configure(state = NORMAL)
         else:
-           subc_listbox.configure(state = DISABLED)
-           merge.configure(state = DISABLED)
+            merge.configure(state = DISABLED)
 
     # subcorpora + optionmenu off, skip, keep
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 12, column = 0, sticky = W)
@@ -1556,6 +1589,12 @@ def corpkit_gui():
              'print_output': False,
              'root': root}
         
+        # special kinds of query
+        if query.startswith('[') and query.endswith(']'):
+                query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+        else:
+            query = remake_special_query(query)
+
         r = conc(corpus, query, **d)  
         if r is False:
             return
@@ -2049,9 +2088,15 @@ def corpkit_gui():
             the_opt = flipped_opt[flipped_trans[q_dict['option']]]
             q_dict['kind_of_search'] = the_opt
 
+        try:
+            del k['dataframe1']
+        except:
+            pass
+        try:
+            del k['dataframe2']
+        except:
+            pass
         for i, k in enumerate(sorted(q_dict.keys())):
-            if k.startswith('dataframe'):
-                continue
             v = q_dict[k]
             if v is False:
                 v = 'False'
@@ -2428,6 +2473,11 @@ def corpkit_gui():
         root.quit()
 
     def check_updates(showfalse = True):
+        """check for updates, showing a window if there is one, and if showfalse, 
+           even if not. This works by simply downloading the html of the GitHub main
+           page, and searching for the .tar.gz file. This avoids extra dependencies
+           on (e.g.) PythonGit. Not sure if this should unzip and overwrite the
+           existing file or not."""
         import corpkit
         ver = corpkit.__version__
         ver = float(ver)
@@ -2440,13 +2490,12 @@ def corpkit_gui():
             response = urllib2.urlopen('https://www.github.com/interrogator/corpkit')
             html = response.read()
         except:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Checking for updates not performed.' % thetime
             if showfalse:
                 tkMessageBox.showinfo(
                 "No connection to remote server",
                 "Could not connect to remote server.")
             return
+
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         vnum = float(re.search(reg, str(html)).group(1))
         if vnum > ver:
@@ -2469,11 +2518,11 @@ def corpkit_gui():
                 thetime = strftime("%H:%M:%S", localtime())
                 print '%s: corpkit (version %s) up to date.' % (thetime, str(vnum))
                 return
-            else:
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: No updates found.' % thetime
+            #else:
+                #thetime = strftime("%H:%M:%S", localtime())
+                #print '%s: No updates available.' % thetime
 
-
+    # check for updates on launch
     check_updates(showfalse = False)
 
     menubar = Menu(root)
@@ -2483,8 +2532,9 @@ def corpkit_gui():
     filemenu.add_command(label="Save project settings", command=save_config)
     filemenu.add_separator()
     filemenu.add_command(label="Check for updates", command=check_updates)
-    filemenu.add_separator()
-    filemenu.add_command(label="Restart tool", command=clear_all)
+    # broken on deployed version ... path to self stuff
+    #filemenu.add_separator()
+    #filemenu.add_command(label="Restart tool", command=clear_all)
     #filemenu.add_command(label="Save project settings", command=hello)
     filemenu.add_separator()
     filemenu.add_command(label="Exit", command=quitfunc)
@@ -2493,7 +2543,7 @@ def corpkit_gui():
     def about_box():
         import corpkit
         ver = corpkit.__version__
-        tkMessageBox.showinfo('About', 'corpkit\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
+        tkMessageBox.showinfo('About', 'corpkit %s\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                               'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
 
     helpmenu = Menu(menubar, tearoff=0)
@@ -2503,8 +2553,11 @@ def corpkit_gui():
 
     if sys.platform == 'darwin':
         import corpkit
+        import subprocess
         ver = corpkit.__version__
-        os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "corpkit-%s" to true' ''' % ver)
+        corpath = os.path.dirname(corpkit.__file__)
+        if not corpath.startswith('/Library/Python') and not 'corpkit/corpkit/corpkit' in corpath:
+            subprocess.call('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "corpkit-%s" to true' ''' % ver, shell = True)
     root.config(menu=menubar)
     print '\n\n\n'
     note.focus_on(tab1)
