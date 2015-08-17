@@ -294,7 +294,6 @@ def editor(dataframe1,
 
     def synonymise(df, pos = 'n'):
         """pass a df and a pos and convert df columns to most common synonyms"""
-        import nltk
         from nltk.corpus import wordnet as wn
         #from dictionaries.taxonomies import taxonomies
         from collections import Counter
@@ -497,7 +496,11 @@ def editor(dataframe1,
 
     def do_stats(df):
         """do linregress and add to df"""
+        #try: 
         from scipy.stats import linregress
+        #except:
+        #from stats.stats import linregress
+
         entries = []
         slopes = []
         intercepts = []
