@@ -31,7 +31,6 @@ class RedirectText(object):
         if not re.match(reg, string):
             self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
  
-
 class IORedirector(object):
     '''A general class for redirecting I/O to this Text widget.'''
     def __init__(self,text_area):
@@ -76,7 +75,7 @@ class Notebook(Frame):
         self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = ScrolledText.ScrolledText(self.statusbar, height = 0.5, font = ("Courier New", 15), width = 135)
+        self.text = Text(self.statusbar, height = 0.5, font = ("Courier New", 15), width = 135)
         self.text.grid()
         # alternative ...
         #self.text = Text(self.statusbar, height = 1, undo = True)
@@ -89,6 +88,7 @@ class Notebook(Frame):
 
         self.redir = RedirectText(self.text)
         sys.stdout = self.redir
+        sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -190,6 +190,7 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
+    root.resizable(FALSE,FALSE)
 
     #HWHW h 550
     note = Notebook(root, width= 1250, height = 600, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
@@ -454,7 +455,7 @@ def corpkit_gui():
 
     option_dict = {'Trees': ['Get words', 
                              'Get tag and word of match', 
-                             'Count matches', 
+                             #'Count matches', 
                              'Get part-of-speech tag'],
                    'Dependencies':
                             ['Get "role:dependent", matching governor',
@@ -576,7 +577,7 @@ def corpkit_gui():
             return
     
         r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
-        if not r:
+        if not r or r == 'Bad query':
             return
 
         # drop over 1000?
@@ -1619,8 +1620,11 @@ def corpkit_gui():
         """export conc lines to csv"""
         import os
         import pandas
-        home = os.path.expanduser("~")
-        docpath = os.path.join(home, 'Documents')
+        if project_fullpath.get() ==  '':
+            home = os.path.expanduser("~")
+            docpath = os.path.join(home, 'Documents')
+        else:
+            docpath = project_fullpath.get()
         csv = current_conc[0].to_csv(header = False, sep = '\t')
         savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
                                        initialdir = docpath,
@@ -2526,7 +2530,10 @@ def corpkit_gui():
     check_updates(showfalse = False)
 
     menubar = Menu(root)
-    filemenu = Menu(menubar, tearoff=0)
+    if sys.platform == 'darwin':
+        filemenu = Menu(menubar, tearoff=0, name='apple')
+    else:
+        filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="New project", command=make_new_project)
     filemenu.add_command(label="Open project", command=load_project)
     filemenu.add_command(label="Save project settings", command=save_config)
@@ -2535,10 +2542,22 @@ def corpkit_gui():
     # broken on deployed version ... path to self stuff
     #filemenu.add_separator()
     #filemenu.add_command(label="Restart tool", command=clear_all)
-    #filemenu.add_command(label="Save project settings", command=hello)
     filemenu.add_separator()
     filemenu.add_command(label="Exit", command=quitfunc)
     menubar.add_cascade(label="File", menu=filemenu)
+    if sys.platform == 'darwin':
+        windowmenu = Menu(menubar, name='window')
+        menubar.add_cascade(menu=windowmenu, label='Window')
+    else:
+        sysmenu = Menu(menubar, name='system')
+        menubar.add_cascade(menu=sysmenu)
+
+    # prefrences section
+    if sys.platform == 'darwin':
+        def showMyPreferencesDialog():
+            tkMessageBox.showinfo("Preferences",
+                    "Preferences here.")
+        root.createcommand('tk::mac::ShowPreferences', showMyPreferencesDialog)
 
     def about_box():
         import corpkit
@@ -2546,8 +2565,34 @@ def corpkit_gui():
         tkMessageBox.showinfo('About', 'corpkit %s\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                               'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
 
+    def show_log():
+        import os
+        from time import strftime, localtime
+        if project_fullpath.get() == '':
+            home = os.path.expanduser("~")
+            docpath = os.path.join(home, 'Documents')
+        else:
+            docpath = project_fullpath.get()
+        input = note.text.get("1.0",END)
+        c = 0
+        logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
+        while os.path.isfile(logpath):
+            logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
+            c += 1
+        with open(logpath, "w") as fo:
+            fo.write(input)
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Log saved to "%s".' % (thetime, logpath)
+        import sys
+        if sys.platform == 'darwin':
+            import subprocess
+            subprocess.call(['open', logpath])
+        else:
+            os.startfile(logpath)
+
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="Query help", command=query_help)
+    helpmenu.add_command(label="Save log", command=show_log)
     helpmenu.add_command(label="About", command=about_box)
     menubar.add_cascade(label="Help", menu=helpmenu)
 
