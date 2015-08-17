@@ -11,6 +11,7 @@
 
 <!-- MarkdownTOC -->
 
+- [Interface](#interface)
 - [What's in here?](#whats-in-here)
   - [Key features](#key-features)
 - [Installation](#installation)
@@ -31,9 +32,12 @@
 
 <!-- /MarkdownTOC -->
 
+## Interface
+
+
 ## What's in here?
 
-Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. Thee most important of them are:
+Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
@@ -53,6 +57,8 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### `interrogator()`
 
+<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/interrogate.png" />
+
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
@@ -64,6 +70,8 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
 #### `editor()`
+
+<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/edit.png" />
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -79,6 +87,8 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### `plotter()` 
 
+<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/visualise.png" />
+
 * Plot using *Pandas*/*Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
@@ -91,6 +101,8 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Save images to file, as `.pdf` or `.png`
 
 #### Other stuff
+
+<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/conc.png" />
 
 * View top results as a table via `Pandas`
 * Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
