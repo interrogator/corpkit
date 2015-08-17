@@ -145,7 +145,6 @@ def interrogator(path,
     except:
         have_pandas = False
 
-    import nltk
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -291,7 +290,8 @@ def interrogator(path,
         
         # tokenise if multiword:
         if phrases:
-            list_of_matches = [nltk.word_tokenize(i) for i in list_of_matches]
+            from nltk import word_tokenize
+            list_of_matches = [word_tokenize(i) for i in list_of_matches]
         if lemmatise:
             tag = gettag(query, lemmatag = lemmatag)
             list_of_matches = lemmatiser(list_of_matches, tag)
@@ -717,7 +717,8 @@ def interrogator(path,
             pattern = [pattern]
         result = []
         # this slows things down significantly ...
-        tokenized = nltk.word_tokenize(plaintext_data)
+        from nltk import word_tokenize
+        tokenized = word_tokenize(plaintext_data)
         # consider saving tokenised corpus and then opening it when needed
         for p in pattern:
             if not any_plaintext_word:
