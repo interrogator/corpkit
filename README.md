@@ -11,7 +11,6 @@
 
 <!-- MarkdownTOC -->
 
-- [Interface](#interface)
 - [What's in here?](#whats-in-here)
   - [Key features](#key-features)
 - [Installation](#installation)
@@ -31,9 +30,6 @@
 - [IPython Notebook usability](#ipython-notebook-usability)
 
 <!-- /MarkdownTOC -->
-
-## Interface
-
 
 ## What's in here?
 
