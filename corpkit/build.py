@@ -597,6 +597,8 @@ def get_corpus_filepaths(proj_path, corpuspath):
     for root, dirnames, filenames in os.walk(corpuspath):
         for filename in fnmatch.filter(filenames, '*.txt'):
             matches.append(os.path.join(root, filename))
+    if len(matches) == 0:
+        return False
     matchstring = '\n'.join(matches)
     with open(os.path.join(proj_path, 'data', 'corpus-filelist.txt'), "w") as f:
         f.write(matchstring)
@@ -614,7 +616,7 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
+def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False, **kwargs):
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
@@ -661,7 +663,7 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
 
     import time
     from textprogressbar import TextProgressBar
-    p = TextProgressBar(num_files_to_parse)
+    #p = TextProgressBar(num_files_to_parse)
     while proc.poll() is None:
         sys.stdout = stdout
         #stdoutx, stderrx = proc.communicate()
@@ -670,10 +672,14 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False):
         print '%s: Initialising parser ... ' % (thetime)
         num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])
         if num_parsed > 0:
-            p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
+            if 'note' in kwargs.keys():
+                kwargs['note'].progvar.set((num_parsed - 1) * 100.0 / len(num_files_to_parse))
+            #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
         root.update()
         time.sleep(2)
-    p.animate(num_files_to_parse)
+    #p.animate(num_files_to_parse)
+    if 'note' in kwargs.keys():
+        kwargs['note'].progvar.set(100)
     sys.stdout = stdout
     print 'Parsing finished. Moving parsed files into place ...'
     os.chdir(proj_path)
