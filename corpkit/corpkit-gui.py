@@ -19,27 +19,34 @@ class RedirectText(object):
     """"""
  
     #----------------------------------------------------------------------
-    def __init__(self, text_ctrl):
+    def __init__(self, text_ctrl, log_text):
         """Constructor"""
         self.output = text_ctrl
+        self.log = log_text
  
     #----------------------------------------------------------------------
     def write(self, string):
         """"""
+
+         
+        import re
+        # remove all non 100% progbar
+        log_reg = re.compile(r'\*\s+\]')
+        if not re.match(log_reg, string):
+            self.log.append(string)
+        # remove blank lines
+        show_reg = re.compile(r'^\s*$')
+        if not re.match(show_reg, string):
+            self.output.set(string)
+            #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
+
+    def writelog(self, string):
+        """"""
         import re
         reg = re.compile(r'^\s*$')
         if not re.match(reg, string):
-            self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
- 
-class IORedirector(object):
-    '''A general class for redirecting I/O to this Text widget.'''
-    def __init__(self,text_area):
-        self.text_area = text_area
-
-class StdoutRedirector(IORedirector):
-    '''A class for redirecting stdout to this Text widget.'''
-    def write(self,str):
-        self.text_area.write(str,False)
+            self.log_text.append(string)
+            #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
 
 class Notebook(Frame):
 
@@ -75,20 +82,22 @@ class Notebook(Frame):
         self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, width = kw['width'])                                            #Create a frame to put the "tabs" in
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        self.text = Text(self.statusbar, height = 0.5, font = ("Courier New", 15), width = 135)
-        self.text.grid()
+        self.status_text = StringVar()
+        self.log_stream = []
+        self.text = Label(self.statusbar, textvariable = self.status_text, height = 1, font = ("Courier New", 13), width = 135, anchor = W)
+        self.text.grid(sticky = W)
         # alternative ...
         #self.text = Text(self.statusbar, height = 1, undo = True)
-        self.text.update_idletasks()
+        #self.text.update_idletasks()
 
-        def xcallback(*args):
-            self.text.see(END)
-            self.text.edit_modified(0)
-        self.text.bind('<<Modified>>', xcallback)
+        #def xcallback(*args):
+        #    self.text.see(END)
+        #    self.text.edit_modified(0)
+        #self.text.bind('<<Modified>>', xcallback)
 
-        self.redir = RedirectText(self.text)
+        self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
-        sys.stderr = self.redir
+        #sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -203,8 +212,8 @@ def corpkit_gui():
     tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
     #Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
     
-    note.text.see(Tkinter.END)
-    note.text.yview_pickplace("end")
+    #note.text.see(Tkinter.END)
+    #note.text.yview_pickplace("end")
     note.text.update_idletasks()
 
     ###################     ###################     ###################     ###################
@@ -267,13 +276,12 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth, cellwidth=80,
+                                    rowheaderwidth=indexwidth, cellwidth=60,
                                     **kwarg)
                 table.createTableFrame()
                 model = table.model
                 model.importDict(raw_data)
                 # move columns into correct positions
-                print df_to_show
                 for index, name in enumerate(list(df_to_show.index)):
                     model.moveColumn(model.getColumnIndex(name), index)
                 table.createTableFrame()
@@ -293,7 +301,7 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth, cellwidth=80,
+                                    rowheaderwidth=indexwidth, cellwidth=60,
                                     **kwarg)
                 table.createTableFrame()
                 table.sortTable(columnName = 'Total', reverse = direct())
@@ -306,7 +314,7 @@ def corpkit_gui():
             table = TableCanvas(frame_to_update, model=model, 
                                 showkeynamesinheader=True, 
                                 height = height,
-                                rowheaderwidth=indexwidth, cellwidth=80,
+                                rowheaderwidth=indexwidth, cellwidth=60,
                                 **kwarg)
             table.createTableFrame()
             try:
@@ -317,7 +325,7 @@ def corpkit_gui():
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
         else:
-            table = TableCanvas(frame_to_update, height = height, width = width, cellwidth=80,)
+            table = TableCanvas(frame_to_update, height = height, width = width, cellwidth=60)
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
@@ -637,6 +645,9 @@ def corpkit_gui():
         
         refresh()
 
+        #reset name
+        nametext.set('untitled')
+
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 14, column = 2, sticky = E)
 
     class MyOptionMenu(OptionMenu):
@@ -716,7 +727,7 @@ def corpkit_gui():
     entrytext = StringVar()
     Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = W)
     entrytext.set(r'JJ > (NP <<# /\brisk/)')
-    qa = Entry(tab1, textvariable = entrytext, width = 30)
+    qa = Entry(tab1, textvariable = entrytext, width = 43)
     qa.grid(row = 4, column = 0, columnspan = 2, sticky = E)
 
     def onselect(evt):
@@ -2135,14 +2146,12 @@ def corpkit_gui():
             the_opt = flipped_opt[flipped_trans[q_dict['option']]]
             q_dict['kind_of_search'] = the_opt
 
-        try:
-            del k['dataframe1']
-        except:
-            pass
-        try:
-            del k['dataframe2']
-        except:
-            pass
+        for d in ['dataframe1', 'dataframe2']:
+            try:
+                del q_dict[d]
+            except KeyError:
+                pass
+
         for i, k in enumerate(sorted(q_dict.keys())):
             v = q_dict[k]
             if v is False:
@@ -2522,7 +2531,7 @@ def corpkit_gui():
         realquit.set(1)
         root.quit()
 
-    def check_updates(showfalse = True):
+    def check_updates(showfalse = True, lateprint = False):
         """check for updates, showing a window if there is one, and if showfalse, 
            even if not. This works by simply downloading the html of the GitHub main
            page, and searching for the .tar.gz file. This avoids extra dependencies
@@ -2545,7 +2554,6 @@ def corpkit_gui():
                 "No connection to remote server",
                 "Could not connect to remote server.")
             return
-
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         vnum = float(re.search(reg, str(html)).group(1))
         if vnum > ver:
@@ -2568,12 +2576,19 @@ def corpkit_gui():
                 thetime = strftime("%H:%M:%S", localtime())
                 print '%s: corpkit (version %s) up to date.' % (thetime, str(vnum))
                 return
-            #else:
-                #thetime = strftime("%H:%M:%S", localtime())
-                #print '%s: No updates available.' % thetime
-
-    # check for updates on launch
-    check_updates(showfalse = False)
+            else:
+                def pup():
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: No updates available.' % thetime
+                if lateprint:
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: Checking for updates ... ' % thetime
+                    root.after(1000, pup)
+                else:
+                    pup()
+    
+    def start_update_check():
+        check_updates(showfalse = False, lateprint = True)
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
@@ -2619,7 +2634,8 @@ def corpkit_gui():
             docpath = os.path.join(home, 'Documents')
         else:
             docpath = project_fullpath.get()
-        input = note.text.get("1.0",END)
+        input = '\n'.join(note.log_stream)
+        #input = note.text.get("1.0",END)
         c = 0
         logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
         while os.path.isfile(logpath):
@@ -2652,7 +2668,7 @@ def corpkit_gui():
     root.config(menu=menubar)
     print '\n\n\n'
     note.focus_on(tab1)
-
+    root.after(500, start_update_check)
     root.mainloop()
 
 if __name__ == "__main__":
