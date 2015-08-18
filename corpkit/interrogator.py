@@ -1180,11 +1180,13 @@ def interrogator(path,
         sorted_dirs = all_files
         c = 0
         
-        p = TextProgressBar(total_files)
+        if not root:
+            p = TextProgressBar(total_files)
 
     # if tregex, make progress bar for each dir
     else:
-        p = TextProgressBar(len(sorted_dirs))
+        if not root:
+            p = TextProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     subcorpus_names = []
@@ -1247,15 +1249,25 @@ def interrogator(path,
         print ("\n%s: Beginning corpus interrogation: %s" \
            "\n          Query: '%s'\n          %s" \
            "\n          Interrogating corpus ... \n" % (time, os.path.basename(path), qtext, optiontext) )
+    if root:
+        print '%s: Interrogating corpus ...' % time
     if root and tk:
         root.update()
     for index, d in enumerate(sorted_dirs):
         if not dependency and not plaintext:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
-            p.animate(index)
+            if not root:
+                p.animate(index)
             if root and tk:
+                time = strftime("%H:%M:%S", localtime())
+                if not one_big_corpus:
+                    print '%s: Interrogating subcorpus: %s' % (time, subcorpus_name)
+                else:
+                    print '%s: Interrogating corpus ... ' % time
                 root.update()
+                if 'note' in kwargs.keys():
+                    kwargs['note'].progvar.set((index + 1) * 100.0 / len(sorted_dirs))
             # get path to corpus/subcorpus
             if len(sorted_dirs) == 1:
                 subcorpus = path
@@ -1313,10 +1325,18 @@ def interrogator(path,
             result = []
             skipped_sents = 0
             for f in fileset:
-                # pass the x/y argument for more updates  
-                p.animate(c, str(c) + '/' + str(total_files))
+                # pass the x/y argument for more updates 
+                if not root:
+                    p.animate(c, str(c) + '/' + str(total_files))
                 if root and tk:
                     root.update()
+                    if 'note' in kwargs.keys():
+                        kwargs['note'].progvar.set((c + 1) * 100.0 / total_files)
+                        time = strftime("%H:%M:%S", localtime())
+                        if not one_big_corpus:
+                            print '%s: Interrogating subcorpus: %s' % (time, subcorpus_name)
+                        else:
+                            print '%s: Interrogating corpus ...' % (time)
                 c += 1
                 if one_big_corpus:
                     filepath = os.path.join(path, f)
@@ -1377,13 +1397,19 @@ def interrogator(path,
             dicts.append(Counter(processed_result))
 
     if not dependency and not plaintext:
-        p.animate(len(sorted_dirs))
+        if not root:
+            p.animate(len(sorted_dirs))
+        if 'note' in kwargs.keys():
+            kwargs['note'].progvar.set(100)
         if root and tk:
             root.update()
     else:
         # weird float div by 0 zero error here for plaintext
         try:
-            p.animate(total_files)
+            if not root:
+                p.animate(total_files)
+            if 'note' in kwargs.keys():
+                kwargs['note'].progvar.set(100)
         except:
             pass
     if root and tk:
