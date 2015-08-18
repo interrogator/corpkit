@@ -926,7 +926,8 @@ def load_all_results(data_dir = 'saved_interrogations', root = False):
             raise ValueError('No interrogations found in %s' % data_dir)
         else:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No interrogations found in %s' % (thetime, data_dir)
+            print '%s: No saved interrogations found in %s' % (thetime, data_dir)
+            return
     l = 0
     for finding in fs:
         try:
