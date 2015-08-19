@@ -122,6 +122,8 @@ class Notebook(Frame):
                     self.tabVars[i][1].grid()                                              #Re-grid the frame that corresponds to the tab                      
                     self.tabVars[IDNum][0]['relief'] = self.activerelief                   #Change the relief to "Raised" to show the tab is selected
                     self.tabVars[i][0]['fg'] = self.activefg                               #Set the fg of the tab, showing it is not selected, default is black
+        # prog to zero
+        self.progvar.set(0)
 
     def add_tab(self, width = 2, **kw):
         import Tkinter
@@ -473,12 +475,16 @@ def corpkit_gui():
             'Regular expression search': 'r',
             'Simple search string search': 's',
             'Match tokens via dependencies': 't',
-            'Get words': 'w'}
+            'Get words': 'w',
+            'Get tokens matching regular expression': 'h',
+            'Get tokens matching list': 'e'}
 
     option_dict = {'Trees': ['Get words', 
                              'Get tag and word of match', 
                              #'Count matches', 
                              'Get part-of-speech tag'],
+                   'Tokens': ['Get tokens matching regular expression', 
+                             'Get tokens matching list'], 
                    'Dependencies':
                             ['Get "role:dependent", matching governor',
                              'Get semantic role of match',
@@ -588,7 +594,17 @@ def corpkit_gui():
                              'function_filter': ff,
                              'dep_type': depdict[kind_of_dep.get()]}
 
-        if lemmatag:
+        lemmatag = False
+        if lemtag.get() != 'None':
+            if lemtag.get() == 'Noun':
+                lemmatag = 'N'
+            if lemtag.get() == 'Adjective':
+                lemmatag = 'A'
+            if lemtag.get() == 'Verb':
+                lemmatag = 'V'
+            if lemtag.get() == 'Adverb':
+                lemmatag = 'R'
+        if lemmatag is not False:
             interrogator_args['lemmatag'] = lemmatag
 
         pf = posfil.get()
@@ -676,6 +692,12 @@ def corpkit_gui():
         pick_subcorpora['menu'].delete(0, 'end')
         for choice in subs:
             pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
+        path_to_new_unparsed_corpus.set(fp)
+        add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
+        sel_corpus.set(fp)        
+        parse_button_text.set('Parse corpus: %s' % os.path.basename(fp))
+        add_subcorpora_to_build_box(fp)
+        sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(fp))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
@@ -697,9 +719,9 @@ def corpkit_gui():
     qr.grid(row = 10, column = 0, columnspan = 2, sticky = E)
 
     # lemma tags
-    lemtags = tuple(('Noun', 'Verb', 'Adjective', 'Adverb'))
+    lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
     lemtag = StringVar(root)
-    lemtag.set('Noun')
+    lemtag.set('')
     Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 11, column = 0, sticky = W)
     lmt = OptionMenu(tab1, lemtag, *lemtags)
     lmt.config(state = NORMAL)
@@ -763,6 +785,12 @@ def corpkit_gui():
                 entrytext.set(r'[cat,cats,mouse,mice,cheese]')
             elif datatype_chosen_option.get() == 'Regular expression search':
                 entrytext.set(r'(m.n|wom.n|child(ren)?)')
+        if chosen == 'Tokens':
+            entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
+            if datatype_chosen_option.get() == 'Get tokens matching regular expression':
+                entrytext.set(r'(m.n|wom.n|child(ren)?)')
+            elif datatype_chosen_option.get() == 'Get tokens matching list':
+                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
         if curselect is not False:
             datatype_listbox.select_set(curselect)
 
@@ -771,7 +799,7 @@ def corpkit_gui():
     datatype_picked = StringVar(root)
     datatype_picked.set('Dependencies')
     Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0)
-    pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Plaintext')))
+    pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
     pick_a_datatype.grid(row = 1, column = 1, sticky=E)
     datatype_picked.trace("w", callback)
 
@@ -1112,9 +1140,10 @@ def corpkit_gui():
             subcl.configure(state = NORMAL)
             subcl.delete(0, 'end')
             subcl.configure(state = NORMAL)
-            for e in list(all_interrogations[name_of_o_ed_spread.get()].results.index):
-                if 'tkintertable-order' not in e:
-                    subcl.insert(END, e) 
+            if name_of_o_ed_spread.get() != '':
+                for e in list(all_interrogations[name_of_o_ed_spread.get()].results.index):
+                    if 'tkintertable-order' not in e:
+                        subcl.insert(END, e) 
             subcl.configure(state = DISABLED)       
 
     # all interrogations here
@@ -1859,8 +1888,9 @@ def corpkit_gui():
     def get_saved_results():
         from corpkit import load_all_results
         r = load_all_results(data_dir = data_fullpath.get(), root = root)
-        for name, loaded in r.items():
-            all_interrogations[name] = loaded
+        if r is not None:
+            for name, loaded in r.items():
+                all_interrogations[name] = loaded
         refresh()
     
     # corpus path setter
@@ -1878,6 +1908,7 @@ def corpkit_gui():
             return
         data_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
+        sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set data directory: %s' % (time, os.path.basename(fp))
@@ -1909,7 +1940,7 @@ def corpkit_gui():
         existing = 0
         for i in sel_vals:
             if urlify(i) + '.p' not in os.listdir(data_fullpath.get()):
-                save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get(), root = root)
+                save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get())
                 saved += 1
             else:
                 existing += 1
@@ -2248,10 +2279,24 @@ def corpkit_gui():
 
     from corpkit import download_cnlp, extract_cnlp, rename_duplicates, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
+    def create_tokenised_text():
+        unparsed_corpus_path = sel_corpus.get()
+        filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
+        outdir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, 
+                              root = root, stdout = sys.stdout, note = note, only_tokenise = True)
+        corpus_fullpath.set(outdir)
+        subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+        if len(subdrs) == 0:
+            charttype.set('bar')
+        basepath.set('Corpus: "%s"' % os.path.basename(outdir))
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+
     def create_parsed_corpus():
         """make sure things are installed, then parse, then structure"""
         unparsed_corpus_path = sel_corpus.get()
         import os
+        from time import strftime, localtime
         if not corenlp_exists():
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                           "CoreNLP parser not found. Download/install it?")
@@ -2298,10 +2343,11 @@ def corpkit_gui():
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
 
-    get_text_corpus = StringVar()
-
     parse_button_text = StringVar()
     parse_button_text.set('Parse corpus')
+
+    tokenise_button_text = StringVar()
+    tokenise_button_text.set('Just tokenise corpus')
 
     sel_corpus = StringVar()
     sel_corpus.set('')
@@ -2318,6 +2364,22 @@ def corpkit_gui():
 
     selected_corpus_has_no_subcorpora = IntVar()
     selected_corpus_has_no_subcorpora.set(0)
+
+    def add_subcorpora_to_build_box(path_to_corpus):
+        import os
+        subc_listbox_build.configure(state = NORMAL)
+        subc_listbox_build.delete(0, 'end')
+        sub_corpora = [d for d in os.listdir(path_to_corpus) if os.path.isdir(os.path.join(path_to_corpus, d))]
+        if len(sub_corpora) == 0:
+            selected_corpus_has_no_subcorpora.set(1)
+            subc_listbox_build.bind('<<Modified>>', onselect_subc_build)
+            subc_listbox_build.insert(END, 'No subcorpora found.')
+            subc_listbox_build.configure(state = DISABLED)
+        else:
+            selected_corpus_has_no_subcorpora.set(0)
+            for e in sub_corpora:
+                subc_listbox_build.insert(END, e)
+        onselect_subc_build()
 
     def select_corpus():
         """selects corpus for viewing/parsing
@@ -2343,22 +2405,9 @@ def corpkit_gui():
         sel_corpus.set(newc)
         sel_corpus_button.set('Corpus selected: "%s"' % bn(newc))
         parse_button_text.set('Parse corpus: "%s"' % bn(newc))
-        subc_listbox_build.configure(state = NORMAL)
-        subc_listbox_build.delete(0, 'end')
-        sub_corpora = list([d for d in os.listdir(unparsed_corpus_path) if os.path.isdir(pjoin(unparsed_corpus_path, d))])
-        if len(sub_corpora) > 0:
-            subc_listbox_build.configure(state = NORMAL)
-            selected_corpus_has_no_subcorpora.set(1)
-            for e in sub_corpora:
-                subc_listbox_build.insert(END, e)
-        else:
-            subc_listbox_build.bind('<<Modified>>', onselect_subc_build)
-            subc_listbox_build.insert(END, 'No subcorpora found.')
-            subc_listbox_build.configure(state = DISABLED)
-            onselect_subc_build()
+        add_subcorpora_to_build_box(newc)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus: "%s"' % (time, bn(unparsed_corpus_path))
-
 
     def getcorpus():
         """copy unparsed texts to project folder"""
@@ -2378,24 +2427,25 @@ def corpkit_gui():
         except OSError:
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: "%s" already exists in project.' % (thetime, os.path.basename(fp)) 
-            return 
-
-        get_text_corpus.set(fp)
-        path_to_new_unparsed_corpus.set(fp)
+            return
+        # put dir in filenames so there is no ambiguity when reconstructing
+        # could remove later ...
+        for (rootdir, d, fs) in os.walk(newc):
+            for f in fs:
+                fpath = os.path.join(rootdir, f)
+                dname = '-' + os.path.basename(rootdir)
+                newname = fpath.replace('.txt', dname + '.txt')
+                shutil.move(fpath, newname)
+        path_to_new_unparsed_corpus.set(newc)
         add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
         sel_corpus.set(newc)
-        sel_corpus_button.set('Corpus to parse: "%s"' % os.path.basename(newc))
+        sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Corpus copied to project folder.' % (thetime)
-        
         parse_button_text.set('Parse corpus: %s' % os.path.basename(newc))
-        
-        subc_listbox_build.configure(state = NORMAL)
-        subc_listbox_build.delete(0, 'end')
-        for e in list([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))]):
-            subc_listbox_build.insert(END, e)
+        add_subcorpora_to_build_box(newc)
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Selected corpus for parsing: "%s"' % (time, os.path.basename(newc))
+        print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
         # unlock editing  
 
     # duplicate of one in 'manage
@@ -2410,6 +2460,8 @@ def corpkit_gui():
     Button(tab0, textvariable = sel_corpus_button, command=select_corpus).grid(row = 4, column = 0, sticky=W)
     #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
     Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
+    #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
+    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
 
     subc_sel_vals_build = []
 
@@ -2428,25 +2480,29 @@ def corpkit_gui():
                 if value not in subc_sel_vals_build:
                     subc_sel_vals_build.append(value)
 
+        # return for false click
+        if len(subc_sel_vals_build) == 0 and selected_corpus_has_no_subcorpora.get() == 0:
+            return
+        
         f_view.configure(state = NORMAL)
         f_view.delete(0, 'end')
         newp = path_to_new_unparsed_corpus.get()
-        if selected_corpus_has_no_subcorpora.get() == 1:
+        if selected_corpus_has_no_subcorpora.get() == 0:
             newsub = os.path.join(newp, subc_sel_vals_build[0])
         else:
             newsub = newp
         fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml')]
         for e in fs:
             f_view.insert(END, e)
-        if selected_corpus_has_no_subcorpora.get() == 1:      
+        if selected_corpus_has_no_subcorpora.get() == 0:      
             f_in_s.set('Files in subcorpus: %s' % subc_sel_vals_build[0])
         else:
             f_in_s.set('Files in corpus: %s' % os.path.basename(path_to_new_unparsed_corpus.get()))
 
     # a listbox of subcorpora
-    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 6, column = 0, sticky=W)
+    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 7, column = 0, sticky=W)
     subc_listbox_build = Listbox(tab0, selectmode = SINGLE, height = 20, state = DISABLED)
-    subc_listbox_build.grid(row = 7, column = 0, sticky = W)
+    subc_listbox_build.grid(row = 8, column = 0, sticky = W)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
 
@@ -2504,14 +2560,21 @@ def corpkit_gui():
             if value not in chosen_f:
                 chosen_f.append(value)
 
-        if chosen_f[0].endswith('.txt'):
+        if len(chosen_f) == 0:
+            return
 
+        if chosen_f[0].endswith('.txt'):
             newp = path_to_new_unparsed_corpus.get()
-            if selected_corpus_has_no_subcorpora.get() == 1:
+            if selected_corpus_has_no_subcorpora.get() == 0:
                 fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
             else:
                 fp = os.path.join(newp, chosen_f[0])
-            text = open(fp).read()
+            try:
+                text = open(fp).read()
+            except IOError:
+                fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
+                text = open(fp).read()
+
             editor = Text(tab0, height = 27)
             the_editor['editor'] = editor
             editor.grid(row = 1, column = 2, rowspan = 10)
@@ -2547,11 +2610,15 @@ def corpkit_gui():
             import re
             parsematch = re.compile(r'^\s*<parse>(.*)<.parse>')
             newp = path_to_new_unparsed_corpus.get()
-            if selected_corpus_has_no_subcorpora.get() == 1:
+            if selected_corpus_has_no_subcorpora.get() == 0:
                 fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
             else:
                 fp = os.path.join(newp, chosen_f[0])
-            text = open(fp).read()
+            try:
+                text = open(fp).read()
+            except IOError:
+                fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
+                text = open(fp).read()
             lines = text.splitlines()
             editf.set('View trees: %s' % chosen_f[0])
             vieweditxml = Label(tab0, textvariable = editf, font = ("Helvetica", 12, "bold"))
@@ -2736,7 +2803,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(500, start_update_check) # 500
+    #root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':

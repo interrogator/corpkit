@@ -439,8 +439,10 @@ def new_project(name, loc = '.', root = False):
 
         corpath = os.path.dirname(corpkit.__file__)
         corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
+        baspat = os.path.dirname(corpath)
+        dicpath = os.path.join(baspat, 'dictionaries')
         try:
-            shutil.copy(os.path.join(corpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
+            shutil.copy(os.path.join(dicpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
         except:
             shutil.copy(resource_path('bnc.p'), os.path.join(fullpath, 'dictionaries'))
     # if not GUI
@@ -715,7 +717,7 @@ def tregex_engine(query = False,
     import subprocess 
     import re
     from time import localtime, strftime
-    from tests import check_dit
+    from corpkit.tests import check_dit
     from dictionaries.word_transforms import wordlist
     import os
 

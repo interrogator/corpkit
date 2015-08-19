@@ -151,7 +151,7 @@ def interrogator(path,
     except ImportError:
         pass
 
-    from tests import check_pytex, check_t_kinter
+    from corpkit.tests import check_pytex, check_t_kinter
     from textprogressbar import TextProgressBar
     from other import tregex_engine
     import dictionaries
@@ -701,6 +701,20 @@ def interrogator(path,
         gc.collect()
         return result
 
+    def tok_by_list(pattern, list_of_toks):
+        """search for regex in plaintext corpora"""
+        if type(pattern) == str:
+            pattern = [pattern]
+        result = []
+        matches = [m for m in list_of_toks if m in pattern]
+        for m in matches:
+            result.append(m)
+        return result
+
+    def tok_by_reg(pattern, list_of_toks):
+        """search for regex in plaintext corpora"""
+        return [m for m in list_of_toks if re.search(pattern, m)]
+
     def plaintext_regex_search(pattern, plaintext_data):
         """search for regex in plaintext corpora"""
         if type(pattern) == str:
@@ -772,6 +786,7 @@ def interrogator(path,
     dependency = False
     distance_mode = False
     plaintext = False
+    tokens = False
     depnum = False
 
     # some empty lists we'll need
@@ -893,6 +908,14 @@ def interrogator(path,
             translated_option = 'd'
             dependency = True
             optiontext = 'Dependent and its role.'
+        elif option.startswith('h') or option.startswith('H'):
+            translated_option = 'h'
+            tokens = True
+            optiontext = 'Tokens via regular expression.'
+        elif option.startswith('e') or option.startswith('E'):
+            translated_option = 'e'
+            tokens = True
+            optiontext = 'Tokens via list.'
         else:
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
@@ -900,8 +923,10 @@ def interrogator(path,
                           '              b) Get tag and word of Tregex match\n' \
                           '              c) count Tregex matches\n' \
                           '              d) Get dependent of regular expression match and the r/ship\n' \
+                          '              e) Get tokens from tokenised text by list\n' \
                           '              f) Get dependency function of regular expression match\n' \
                           '              g) get governor of regular expression match and the r/ship\n' \
+                          '              h) get tokens from tokenised text by regular expression\n' \
                           '              l) get lemmata via dependencies\n'
                           '              m) get tokens by dependency role \n' \
                           '              n) get dependency index of regular expression match\n' \
@@ -1140,8 +1165,9 @@ def interrogator(path,
     if len(sorted_dirs) == 0:
         warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         one_big_corpus = True
+        # fails if in wrong dir!
         sorted_dirs = [os.path.basename(path)]
-    
+
     # numerically sort subcorpora if the first can be an int
     else:
         try:
@@ -1149,6 +1175,7 @@ def interrogator(path,
             sorted_dirs.sort(key=int)
         except:
             pass
+
 
     # plaintext guessing
     # if plaintext == 'guess':
@@ -1164,7 +1191,7 @@ def interrogator(path,
     #         plaintext = False
 
     # if doing dependencies, make list of all files, and a progress bar
-    if dependency or plaintext:
+    if dependency or plaintext or tokens:
         all_files = []
         for d in sorted_dirs:
             if not one_big_corpus:
@@ -1179,10 +1206,8 @@ def interrogator(path,
         total_files = len([item for sublist in all_files for item in sublist[1]])
         sorted_dirs = all_files
         c = 0
-        
         if not root:
             p = TextProgressBar(total_files)
-
     # if tregex, make progress bar for each dir
     else:
         if not root:
@@ -1192,7 +1217,7 @@ def interrogator(path,
     subcorpus_names = []
 
     # check for valid query. so ugly.
-    if not dependency and not keywording and not n_gramming and not plaintext:
+    if not dependency and not keywording and not n_gramming and not plaintext and not tokens:
         query = tregex_engine(query = query, check_query = True, root = root)
         if query is False:
             if root:
@@ -1201,7 +1226,7 @@ def interrogator(path,
                 return
     
     else:
-        if dependency or translated_option == 'r':
+        if dependency or translated_option == 'r' or translated_option == 'h':
             is_valid = True
             try:
                 if translated_option == 'r':
@@ -1254,7 +1279,7 @@ def interrogator(path,
     if root and tk:
         root.update()
     for index, d in enumerate(sorted_dirs):
-        if not dependency and not plaintext:
+        if not dependency and not plaintext and not tokens:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
             if not root:
@@ -1317,7 +1342,7 @@ def interrogator(path,
 
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
-        if dependency or plaintext:
+        if dependency or plaintext or tokens:
             subcorpus_name = d[0]
             subcorpus_names.append(subcorpus_name)
             fileset = d[1]
@@ -1342,31 +1367,40 @@ def interrogator(path,
                     filepath = os.path.join(path, f)
                 else:
                     filepath = os.path.join(path, subcorpus_name, f)
-                with open(filepath, "rb") as text:
-                    data = text.read()
-                    if translated_option == 'z':
-                        result_from_file = custom_engine(data)
-                    if translated_option == 'g':
-                        result_from_file = govrole(data)
-                    if translated_option == 'm':
-                        result_from_file = words_by_function(data)
-                    if translated_option == 'd':
-                        result_from_file = deprole(data)
-                    if translated_option == 'f':
-                        result_from_file = funct(data)
-                    if translated_option == 'q':
-                        result_from_file = tokener(data)
-                    if translated_option == 'l':
-                        result_from_file = get_lemmata(data)
-                    if translated_option == 'i':
-                        result_from_file = depnummer(data)
-                    if translated_option == 'a':
-                        result_from_file, skipcount = distancer(data, f)
-                        skipped_sents += skipcount
-                    if translated_option == 'r':
-                        result_from_file = plaintext_regex_search(regex, data)
-                    if translated_option == 's':
-                        result_from_file = plaintext_simple_search(query, data)
+                if not tokens:
+                    with open(filepath, "rb") as text:
+                        data = text.read()
+                        if translated_option == 'z':
+                            result_from_file = custom_engine(data)
+                        if translated_option == 'g':
+                            result_from_file = govrole(data)
+                        if translated_option == 'm':
+                            result_from_file = words_by_function(data)
+                        if translated_option == 'd':
+                            result_from_file = deprole(data)
+                        if translated_option == 'f':
+                            result_from_file = funct(data)
+                        if translated_option == 'q':
+                            result_from_file = tokener(data)
+                        if translated_option == 'l':
+                            result_from_file = get_lemmata(data)
+                        if translated_option == 'i':
+                            result_from_file = depnummer(data)
+                        if translated_option == 'a':
+                            result_from_file, skipcount = distancer(data, f)
+                            skipped_sents += skipcount
+                        if translated_option == 'r':
+                            result_from_file = plaintext_regex_search(regex, data)
+                        if translated_option == 's':
+                            result_from_file = plaintext_simple_search(query, data)
+                else:
+                    import pickle
+                    data = pickle.load(open(filepath, "rb"))
+                    if translated_option == 'h':
+                        result_from_file = tok_by_reg(regex, data)
+                    if translated_option == 'e':
+                        result_from_file = tok_by_list(query, data)
+
                 if 'result_from_file' in locals():
                     for entry in result_from_file:
                         result.append(entry)
@@ -1396,7 +1430,7 @@ def interrogator(path,
         else:
             dicts.append(Counter(processed_result))
 
-    if not dependency and not plaintext:
+    if not dependency and not plaintext and not tokens:
         if not root:
             p.animate(len(sorted_dirs))
         if 'note' in kwargs.keys():
@@ -1572,10 +1606,12 @@ def interrogator(path,
         clear_output()
 
     # warnings if nothing generated...
-    if not one_big_corpus:
+    if not one_big_corpus and not df1_always_df:
         num_diff_results = len(list(df.columns))
     else:
         num_diff_results = len(df)
+    if df1_always_df:
+        num_diff_results = len(list(df.index))
 
     if num_diff_results == 0:
         if not root:

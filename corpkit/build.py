@@ -616,7 +616,8 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False, **kwargs):
+def parse_corpus(proj_path, corpuspath, filelist, 
+                 only_tokenise = False, root = False, stdout = False, **kwargs):
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
@@ -627,13 +628,20 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False, 
         print 'Need latest Java.'
         return
     basecp = os.path.basename(corpuspath)
-    new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
+    if only_tokenise:
+        new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
+    else:
+        new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
     if not os.path.isdir(new_corpus_path):
         os.makedirs(new_corpus_path)
     else:
         fs = os.listdir(new_corpus_path)
-        if any([f.endswith('.xml') for f in fs]):
-            print 'Folder containing xml already exists: "%s-parsed"' % basecp
+        if not only_tokenise:
+            if any([f.endswith('.xml') for f in fs]):
+                print 'Folder containing xml already exists: "%s-parsed"' % basecp
+        else:
+            if any([f.endswith('.txt') for f in fs]):
+                print 'Folder containing tokens already exists: "%s-tokenised"' % basecp            
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
     home = os.path.expanduser("~")
@@ -644,13 +652,12 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False, 
     else:
         print 'Nothing in CoreNLP directory.'
         return
-    os.chdir(os.path.join(stanpath, find_install))
-    root.update_idletasks()
-    #root.statusbar.update_idletasks()
-    #root.text.update_idletasks()
-    reload(sys)
-    num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
-    proc = subprocess.Popen(['java', '-cp', 
+    if not only_tokenise:
+        os.chdir(os.path.join(stanpath, find_install))
+        root.update_idletasks()
+        reload(sys)
+        num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
+        proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
                      '-Xmx2g', 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
@@ -660,23 +667,55 @@ def parse_corpus(proj_path, corpuspath, filelist, root = False, stdout = False, 
                      '-noClobber',
                      '-outputDirectory', new_corpus_path, 
                      '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
-
-    import time
-    from textprogressbar import TextProgressBar
-    #p = TextProgressBar(num_files_to_parse)
-    while proc.poll() is None:
-        sys.stdout = stdout
-        #stdoutx, stderrx = proc.communicate()
-        #print stdoutx
+        #p = TextProgressBar(num_files_to_parse)
+        while proc.poll() is None:
+            sys.stdout = stdout
+            #stdoutx, stderrx = proc.communicate()
+            #print stdoutx
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Initialising parser ... ' % (thetime)
+            num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])
+            if num_parsed > 0:
+                print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
+                if 'note' in kwargs.keys():
+                    kwargs['note'].progvar.set((num_parsed - 1) * 100.0 / num_files_to_parse)
+                #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
+            root.update()
+            time.sleep(2)
+    else:
+        import chardet
+        # tokenise each file
+        from nltk import word_tokenize as tokenise
+        import pickle
+        fs = open(filelist).read().splitlines()
+        dirs = sorted(list(set([os.path.basename(os.path.dirname(f)) for f in fs])))
+        if len(dirs) == 0:
+            one_big_corpus = True
+        else:
+            one_big_corpus = False
+        for d in dirs:
+            os.makedirs(os.path.join(new_corpus_path, d))
+        nfiles = len(fs)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Initialising parser ... ' % (thetime)
-        num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])
-        if num_parsed > 0:
+        print '%s: Tokenising ... ' % (thetime)
+        for index, f in enumerate(fs):
+            data = open(f).read()
+            enc = chardet.detect(data)
+            enc_text = unicode(data, enc['encoding'], errors = 'ignore')
+            tokens = tokenise(enc_text)
+            thedir = os.path.basename(os.path.dirname(f))
+            newname = os.path.basename(f).replace('.txt', '-tokenised.p')
+            if one_big_corpus:
+                pth = os.path.join(new_corpus_path, newname)
+            else:
+                pth = os.path.join(new_corpus_path, thedir, newname)
+            with open(pth, "w") as fo:
+                pickle.dump(tokens, fo)
             if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set((num_parsed - 1) * 100.0 / len(num_files_to_parse))
-            #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
-        root.update()
-        time.sleep(2)
+                kwargs['note'].progvar.set((index + 1) * 100.0 / nfiles)
+            if root:
+                root.update()
+
     #p.animate(num_files_to_parse)
     if 'note' in kwargs.keys():
         kwargs['note'].progvar.set(100)
@@ -743,3 +782,7 @@ def corenlp_exists():
     else:
         return False
     return True
+
+
+def tokenise_corpus():
+    return
