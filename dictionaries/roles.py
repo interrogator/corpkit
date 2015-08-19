@@ -4,25 +4,25 @@ def translator():
     from collections import namedtuple
     # currently not getting finite!
     roledict = {
-            'acomp': ['participant', 'goal', 'complement'],
+            'acomp': ['participant', 'goal', 'complement', 'participant2'],
             'advcl': ['adjunct', 'circumstance'],
             'advmod': ['adjunct', 'circumstance'],
             'amod': ['epithet'],
             'appos': ['thing', 'participant'],
             'aux': ['auxiliary', 'modal'],
-            'agent': ['actor', 'adjunct', 'participant', 'thing'],
+            'agent': ['actor', 'participant1', 'adjunct', 'participant', 'thing'],
             'auxpass': ['auxiliary', 'modal'],
             'ccomp': ['process', 'event'],
             'cop': ['process', 'event'],
-            'csubj': ['participant', 'thing', 'subject', 'actor'],
-            'csubjpass': ['participant', 'thing', 'subject', 'goal'],
+            'csubj': ['participant', 'thing', 'subject', 'actor', 'participant1'],
+            'csubjpass': ['participant', 'thing', 'subject', 'goal', 'participant2'],
             'det': ['deictic'],
-            'dobj': ['participant', 'thing', 'complement', 'goal'],
-            'iobj': ['participant', 'thing', 'complement', 'goal'],
+            'dobj': ['participant', 'thing', 'complement', 'goal', 'participant2'],
+            'iobj': ['participant', 'thing', 'complement', 'goal', 'participant2'],
             'neg': ['polarity'],
             'nn': ['classifier'],
-            'nsubj': ['participant', 'thing', 'subject', 'actor'],
-            'nsubjpass': ['participant', 'thing', 'subject', 'goal'],
+            'nsubj': ['participant', 'thing', 'subject', 'actor', 'participant1'],
+            'nsubjpass': ['participant', 'thing', 'subject', 'goal', 'participant2'],
             'predet': ['deictic'],
             # 'prep': ['thing', 'circumstance', 'adjunct'], # must be as regex
             'quantmod': ['numerative'],
@@ -199,6 +199,8 @@ def translator():
     modals = []
     numeratives = []
     participants = []
+    participant1s = []
+    participant2s = []
     polaritys = []
     predicators = []
     processs = []
@@ -238,6 +240,10 @@ def translator():
                 numeratives.append(k)
             if v == 'participant':
                 participants.append(k)
+            if v == 'participant1':
+                participant1s.append(k)
+            if v == 'participant2':
+                participant2s.append(k)
             if v == 'polarity':
                 polaritys.append(k)
             if v == 'predicator':
@@ -257,12 +263,12 @@ def translator():
                 #roles.append(v)
     #roles.sort()
     #closedclass = sorted(list(set(pronouns + articles + determiners + prepositions + connectors + modals)))
-    outputnames = namedtuple('roles', ['actor', 'adjunct', 'auxiliary', 'circumstance', 'classifier', 'complement', 'deictic', 'epithet', 'event', 'existential', 'goal', 'modal', 'numerative', 'participant', 'polarity', 'predicator', 'process', 'qualifier', 'subject', 'textual', 'thing'])
+    outputnames = namedtuple('roles', ['actor', 'adjunct', 'auxiliary', 'circumstance', 'classifier', 'complement', 'deictic', 'epithet', 'event', 'existential', 'goal', 'modal', 'numerative', 'participant', 'participant1', 'participant2', 'polarity', 'predicator', 'process', 'qualifier', 'subject', 'textual', 'thing'])
     output = outputnames(sorted(actors), sorted(adjuncts), sorted(auxiliarys), 
                          sorted(circumstances), sorted(classifiers), sorted(complements), 
                          sorted(deictics), sorted(epithets), sorted(events), 
                          sorted(existentials), sorted(goals), sorted(modals), 
-                         sorted(numeratives), sorted(participants), sorted(polaritys), 
+                         sorted(numeratives), sorted(participants), sorted(participant1s), sorted(participant2s), sorted(polaritys), 
                          sorted(predicators), sorted(processs), sorted(qualifiers), 
                          sorted(subjects), sorted(textuals), sorted(things))
     return output
