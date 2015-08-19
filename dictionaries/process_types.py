@@ -291,7 +291,26 @@ def process_types(regex = False):
         """makes a regex from the list of words passed to it"""
         # add alternative spellings
         from dictionaries.word_transforms import usa_convert
-        # try doing with pattern again one more time.
+
+        def resource_path(relative):
+            import os
+            return os.path.join(
+                os.environ.get(
+                    "_MEIPASS2",
+                    os.path.abspath(".")
+                ),
+                relative
+            )
+        import pickle
+        try:
+            lexemes = pickle.load(open(resource_path('eng_verb_lexicon.p'), 'rb'))
+        except:
+            import os
+            import corpkit
+            corpath = os.path.dirname(corpkit.__file__)
+            baspat = os.path.dirname(corpath)
+            dicpath = os.path.join(baspat, 'dictionaries')
+            lexemes = pickle.load(open(os.path.join(dicpath, 'eng_verb_lexicon.p'), 'rb'))
         
         def find_lexeme(verb):
             """ For a regular verb (base form), returns the forms using a rule-based approach.
@@ -336,7 +355,11 @@ def process_types(regex = False):
 
         verbforms = []
         for w in verb_list:
-          forms = list(set([form.replace("n't", "").replace(" not", "") for form in find_lexeme(w)]))
+          try:
+            wforms = lexemes[w]
+          except KeyError:
+            wforms = find_lexeme(w)
+          forms = list(set([form.replace("n't", "").replace(" not", "") for form in wforms]))
           for f in forms:
               verbforms.append(f)
           # deal with contractions
