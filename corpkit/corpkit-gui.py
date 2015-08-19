@@ -732,7 +732,7 @@ def corpkit_gui():
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
     kind_of_dep = StringVar(root)
-    kind_of_dep.set('Basic')
+    kind_of_dep.set('CC-processed')
     Label(tab1, text = 'Dependency type:').grid(row = 12, column = 0, sticky = W)
     pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
     pick_dep_type.config(state = DISABLED)
