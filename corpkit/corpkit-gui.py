@@ -96,17 +96,6 @@ class Notebook(Frame):
         self.text.grid(sticky = W)
         self.progbar = Progressbar(self.progbarspace, orient = 'horizontal', length = 500, mode = 'determinate', variable = self.progvar, style="TProgressbar")
         self.progbar.grid(sticky = E)
-        #self.log_stream = []
-        #self.text = Label(self.statusbar, textvariable = self.status_text, height = 1, font = ("Courier New", 13), width = 135, justify = LEFT)
-        #self.text.grid(sticky = W)
-        # alternative ...
-        #self.text = Text(self.statusbar, height = 1, undo = True)
-        #self.text.update_idletasks()
-
-        #def xcallback(*args):
-        #    self.text.see(END)
-        #    self.text.edit_modified(0)
-        #self.text.bind('<<Modified>>', xcallback)
 
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
@@ -195,14 +184,6 @@ def corpkit_gui():
     sys.path.append(dicpath)
     sys.path.append(baspat)
 
-# these add to pythonpath, mostly so we can find dictionaries
-# doesn't seem to be working at the moment, though.
-
-    #from dictionaries.process_types import process_types
-    #from dictionaries.roles import roles
-    #from dictionaries.wordlists import wordlists
-    #from corpkit import interrogator, editor, plotter
-
     def adjustCanvas(someVariable = None):
         fontLabel["font"] = ("arial", var.get())
 
@@ -225,10 +206,6 @@ def corpkit_gui():
     tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
     tab4 = note.add_tab(text = "Concordance")                                                 #Create a tab with the text "Tab Four"
     tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
-    #Label(tab1, text = 'Tab one').grid(row = 0, column = 0)                                #Use each created tab as a parent, etc etc...
-    
-    #note.text.see(Tkinter.END)
-    #note.text.yview_pickplace("end")
     note.text.update_idletasks()
 
     ###################     ###################     ###################     ###################
@@ -755,11 +732,16 @@ def corpkit_gui():
 
     def callback(*args):
         """if the drop down list for data type changes, fill options"""
+        try:
+            curselect = int(datatype_listbox.curselection()[0])
+        except IndexError:
+            curselect = False
         datatype_listbox.delete(0, 'end')
         chosen = datatype_picked.get()
         lst = option_dict[chosen]
         for e in lst:
             datatype_listbox.insert(END, e)
+
         if chosen == 'Dependencies':
             pick_dep_type.configure(state = NORMAL)
             q.configure(state = NORMAL)
@@ -781,6 +763,10 @@ def corpkit_gui():
                 entrytext.set(r'[cat,cats,mouse,mice,cheese]')
             elif datatype_chosen_option.get() == 'Regular expression search':
                 entrytext.set(r'(m.n|wom.n|child(ren)?)')
+        if curselect is not False:
+            datatype_listbox.select_set(curselect)
+
+
 
     datatype_picked = StringVar(root)
     datatype_picked.set('Dependencies')
@@ -797,7 +783,7 @@ def corpkit_gui():
     x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
     # hack: change it now to populate below 
     datatype_picked.set('Trees')
-    datatype_listbox.select_set(0)
+    #datatype_listbox.select_set(0)
 
     def q_callback(*args):
         if special_queries.get() == 'Off':
@@ -838,7 +824,8 @@ def corpkit_gui():
     Entry(tab1, textvariable = nametext).grid(row = 13, column = 1)
 
     def query_help():
-        tkMessageBox.showwarning('Not yet implemented', 'Coming soon ...')
+        import webbrowser
+        webbrowser.open_new('https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
 
     # query help, interrogate button
     Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
@@ -2749,7 +2736,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(500, start_update_check) # 500
+    #root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
@@ -2758,6 +2745,7 @@ def corpkit_gui():
         filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="New project", command=make_new_project)
     filemenu.add_command(label="Open project", command=load_project)
+    filemenu.add_separator()
     filemenu.add_command(label="Save project settings", command=save_config)
     filemenu.add_separator()
     filemenu.add_command(label="Check for updates", command=check_updates)

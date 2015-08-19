@@ -861,17 +861,16 @@ body .markdown-body
   margin: 0.3em 0 0.25em -1.6em;
   vertical-align: middle;
 }</style><title>USERGUIDE</title></head><body><article class="markdown-body"><h1>
-<a id="user-content-corpkit-graphical-interface" class="anchor" href="#corpkit-graphical-interface" aria-hidden="true"><span class="octicon octicon-link"></span></a>corpkit graphical interface:</h1>
+<a id="user-content-corpkit-user-guide-for-graphical-interface" class="anchor" href="#corpkit-user-guide-for-graphical-interface" aria-hidden="true"><span class="octicon octicon-link"></span></a>corpkit: user guide for graphical interface</h1>
 
-<h3>
-<a id="user-content-users-guide-under-construction" class="anchor" href="#users-guide-under-construction" aria-hidden="true"><span class="octicon octicon-link"></span></a>users' guide (under construction)</h3>
-
-<h3>
-<a id="user-content-daniel-mcdonald" class="anchor" href="#daniel-mcdonald" aria-hidden="true"><span class="octicon octicon-link"></span></a>Daniel McDONALD</h3>
+<h4>
+<a id="user-content-daniel-mcdonald" class="anchor" href="#daniel-mcdonald" aria-hidden="true"><span class="octicon octicon-link"></span></a>Daniel McDonald</h4>
 
 
 
 <ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#the-graphical-interface">The graphical interface</a></li>
 <li>
 <a href="#build">Build</a>
 
@@ -924,9 +923,17 @@ body .markdown-body
 
 
 
-<blockquote>
-<p>This work-in-progress document outlines the basic functionality of the <code>corpkit</code> graphical interface. More information coming soon.</p>
-</blockquote>
+<h2>
+<a id="user-content-overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<p><code>corpkit</code> is a tool for doing corpus linguistics. It does a lot of the usual things, like parsing, concordancing and keywording, but also extends their potential significantly: you can concordance by searching for combinations of lexical and grammatical features, and can do keywording of lemmas, of subcorpora compared to corpora, or of words in certain positions within clauses. Interrogations can be quickly edited and visualised in complex ways, or saved and loaded within projects, or exported to formats that can be handled by other tools.</p>
+
+<p>In contrast to most current corpus linguistic software (<em>AntConc</em>, <em>WMatrix</em>, <em>Sketch Engine</em>, <em>UAM Corpus Tool</em>, <em>Wordsmith Tools</em>, etc.) <code>corpkit</code> is free and open-source, hackable, and provides both graphical and command-line interfaces. If you're interested in the command line interface, head to the <a href="https://www.github.com/interrogator/corpkit"><code>corpkit repository</code></a> for documentation. If you're interested in the graphical interface, you're in the right place.</p>
+
+<h2>
+<a id="user-content-the-graphical-interface" class="anchor" href="#the-graphical-interface" aria-hidden="true"><span class="octicon octicon-link"></span></a>The graphical interface</h2>
+
+<p>Like many corpus linguistic tools, <code>corpkit</code> provides a series of tabs for doing various corpus linguistic tasks, such as building corpora and searching corpora. The sections below outline the major components of each tab.</p>
 
 <h2>
 <a id="user-content-build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h2>
@@ -976,7 +983,7 @@ body .markdown-body
 <h3>
 <a id="user-content-selecting-a-corpus" class="anchor" href="#selecting-a-corpus" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selecting a corpus</h3>
 
-<p>If the corpus you want to analyse is not already selected, you can select it now.</p>
+<p>If you were working in the <code>Build</code> tab, <code>corpkit</code> will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now.</p>
 
 <h3>
 <a id="user-content-selecting-a-kind-of-data" class="anchor" href="#selecting-a-kind-of-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selecting a kind of data</h3>
@@ -989,9 +996,7 @@ body .markdown-body
 <li>Plain text</li>
 </ol>
 
-<p>The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus.</p>
-
-<p>When you select a kind of data, the kinds of search that are available to you change.</p>
+<p>The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. When you select a kind of data, the kinds of search that are available to you change. These will be explained in the next seciton.</p>
 
 <h3>
 <a id="user-content-writing-queries" class="anchor" href="#writing-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Writing queries</h3>
@@ -1001,15 +1006,67 @@ body .markdown-body
 <h4>
 <a id="user-content-trees" class="anchor" href="#trees" aria-hidden="true"><span class="octicon octicon-link"></span></a>Trees</h4>
 
-<p>If you want to search for information in <code>trees</code>, you need to write a Tregex query. Tregex is a language for searching syntax trees.</p>
+<p>If you want to search for information in <code>trees</code>, you need to write a Tregex query. Tregex is a language for searching syntax trees like this one:</p>
 
 <p align="center">
 <a href="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png" target="_blank"><img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png" height="400" width="400" style="max-width:100%;"></a>
 </p>
 
-<p>Tregex queries also rely on <a href="http://www.regular-expressions.info"><em>Regular Expressions</em></a>: a kind of extended search language. Though it is unfortunately beyond the scope of this guide to teach Regular Expressions, it is important to note that Regular Expressions are extremely powerful </p>
+<p>To write a Tregex query, you specify <strong>words and/or tags</strong> you want to match, in combination with <strong>operators</strong> that link them together.</p>
 
-<p>Detailed documentation for Tregex usage can be found <a href="http://nlp.stanford.edu/%7Emanning/courses/ling289/Tregex.html">here</a>.</p>
+<p>To match any adjective, you can simply write:</p>
+
+<blockquote>
+<p><code>JJ</code></p>
+</blockquote>
+
+<p>If you want to get NPs containing adjectives, you might use:</p>
+
+<blockquote>
+<p><code>NP &lt; JJ</code></p>
+</blockquote>
+
+<p>Where <code>&lt;</code> means <code>with a child/immediately below</code>. These operators can be reversed: If we wanted to show the adjectives within these NPs only, we could use:</p>
+
+<blockquote>
+<p><code>JJ &gt; NP</code></p>
+</blockquote>
+
+<p>It's good to remember that the output will always be the left-most part of your query.</p>
+
+<p>If you only want to match Subject NPs, you can use bracketting, and the <code>$</code> operator, which means <code>sister/directly to the left/right of</code>:</p>
+
+<blockquote>
+<p><code>JJ &gt; (NP $ VP)</code></p>
+</blockquote>
+
+<p>In this way, you build more complex queries. The query below finds adjectives modifying <code>book</code>:</p>
+
+<blockquote>
+<p><code>JJ &gt; (NP &lt;&lt;# /book/)</code></p>
+</blockquote>
+
+<p>Notice that here, we have a different kind of operator. The <code>&lt;&lt;</code> operator means that the node on the right does not need to be a child, but can be a descendent. the <code>#</code> means <code>head</code>---that is, in SFL, it matches the <code>Thing</code> in a Nominal Group.</p>
+
+<p>If we wanted to also match <code>magazine</code> or <code>newspaper</code>, there are a few different approaches. One way would be to use <code>|</code> as an operator meaning <code>or</code>:</p>
+
+<blockquote>
+<p><code>JJ &gt; (NP ( &lt;&lt;# /book/ | &lt;&lt;# /magazine/ | &lt;&lt;# /newspaper/))</code></p>
+</blockquote>
+
+<p>This can be cumbersome, however. Instead, we could use a <a href="http://www.regular-expressions.info"><em>Regular Expression</em></a>:</p>
+
+<blockquote>
+<p><code>JJ &gt; (NP &lt;&lt;# /^(book|newspaper|magazine)s*$/)</code></p>
+</blockquote>
+
+<p>Though it is unfortunately beyond the scope of this guide to teach Regular Expressions, it is important to note that Regular Expressions are extremely powerful ways of searching text, and are invaluable for any linguist interested in digital datasets.</p>
+
+<p>Detailed documentation for Tregex usage (with more complex queries and operators) can be found <a href="http://nlp.stanford.edu/%7Emanning/courses/ling289/Tregex.html">here</a>. If you want to learn Regular Expressions, there are hundreds of free resources online, including <a href="http://regexcrossword.com/">Regular Expression Crosswords</a>!</p>
+
+<blockquote>
+<p>More specific documentation coming soon</p>
+</blockquote>
 
 <h4>
 <a id="user-content-dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h4>
@@ -1017,8 +1074,14 @@ body .markdown-body
 <p>In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the <code>root</code> of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.</p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" target="_blank"><img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" height="400" width="400" style="max-width:100%;"></a>
+<a href="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" target="_blank"><img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" height="60" width="400" style="max-width:100%;"></a>
 </p>
+
+<p>The different kinds of interrogation search the dependency parses for governors, dependents and relationships. In each case, the kind of query you'll write is a Regular Expression.</p>
+
+<blockquote>
+<p>More specific documentation coming soon</p>
+</blockquote>
 
 <h4>
 <a id="user-content-plain-text" class="anchor" href="#plain-text" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plain text</h4>
@@ -1188,7 +1251,7 @@ body .markdown-body
 <h3>
 <a id="user-content-operations-and-denominators" class="anchor" href="#operations-and-denominators" aria-hidden="true"><span class="octicon octicon-link"></span></a>Operations and denominators</h3>
 
-<p>A common task is to turn absolute into relative frequencies. To do this, you simply select '%' as the operation, and <code>self</code> <code>totals</code> as the denominator. To calculate a radio, you could use '/'.</p>
+<p>A common task is to turn absolute into relative frequencies. To do this, you simply select '%' as the operation, and <code>self</code>-<code>totals</code> as the denominator. To calculate a radio, you could use '/'.</p>
 
 <p>Because you can use any result/total as the denominator (provided it has the same subcorpora), you can calculate almost anything in your data. To figure out the ratio of nouns/clauses, you would perform two interrogations, and combine them here.</p>
 
@@ -1204,7 +1267,7 @@ body .markdown-body
 
 <p>If you select the <code>'keywords'</code> option, you can get log-likelihood keyness scores for the the dataset of interest, compared with the denominator as a reference corpus. When doing keywording, the reference corpus can be either a results branch of an interrogation, or the BNC, <code>'bnc.p'</code>.</p>
 
-<p>Using <code>Self</code> <code>results</code> as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.</p>
+<p>Using <code>Self</code>-<code>results</code> as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.</p>
 
 <blockquote>
 <p>Negative keywords exist, too: try sorting by inverse total to find out which words are uncommon in the target data.</p>
@@ -1269,7 +1332,7 @@ body .markdown-body
 <a id="user-content-concordance" class="anchor" href="#concordance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concordance</h2>
 
 <blockquote>
-<p>Concordance provides a concordancer for constituency trees, dependency parses, or plain text.</p>
+<p>Currently, <code>Concordance</code> provides a concordancer for constituency trees. Concordancing for plaintext and dependencies is forthcoming.</p>
 </blockquote>
 
 <p>Most features here are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns (other options are in development). This can be a good way to check that a query used to interrogate the corpus is finding what it's supposed to. <code>Trees</code> will output bracketted trees instead of plain text, which can be useful in learning how to make Tregex queries.</p>
@@ -1277,7 +1340,7 @@ body .markdown-body
 <h3>
 <a id="user-content-editing-concordance-lines" class="anchor" href="#editing-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing concordance lines</h3>
 
-<p>You can use <code>backspace</code> to delete selected lines, or <code>shift+backspace</code> to inverse-delete.</p>
+<p>You can use <code>backspace</code> to delete selected lines, or <code>shift+backspace</code> to inverse-delete. Alternatively, buttons are provided.</p>
 
 <h3>
 <a id="user-content-sorting-1" class="anchor" href="#sorting-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
@@ -1359,14 +1422,16 @@ python</pre></div>
 <span class="pl-k">&gt;&gt;&gt;</span> q <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# NP<span class="pl-pds">'</span></span>
 <span class="pl-k">&gt;&gt;&gt;</span> result <span class="pl-k">=</span> interrogator(<span class="pl-s"><span class="pl-pds">'</span>path/to/corpus<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>word<span class="pl-pds">'</span></span>, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)</pre></div>
 
-<p>Because <code>corpkit</code> data is generally stored as <a href="Pandas">http://pandas.pydata.org/</a> objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of <code>MATLAB</code> or <code>R</code>.</p>
+<p>Because <code>corpkit</code> data is generally stored as <a href="http://pandas.pydata.org/">Pandas</a> objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of <code>MATLAB</code> or <code>R</code>.</p>
 
-<p>Command line operation of <code>corpkit</code> is presented in more detail at <a href="">https://www.github.com/interrogator/corpkit</a>.</p>
+<p>Command line operation of <code>corpkit</code> is presented in more detail at the <a href="https://www.github.com/interrogator/corpkit"><code>corpkit GitHub repostitory</code></a>.</p>
 
 <h2>
 <a id="user-content-helping-out" class="anchor" href="#helping-out" aria-hidden="true"><span class="octicon octicon-link"></span></a>Helping out</h2>
 
-<p><code>corpkit</code> is free and open-source. If you find bugs, want to request features, or have questions, you can visit the main repository at <a href="">https://github.com/interrogator/corpkit</a> and interact with developers there via the <code>Issues</code> page. A <em>Gitter</em> chatroom is also available at <a href="">https://gitter.im/interrogator/corpkit</a>. If you're using <code>corpkit</code> in your research, feel free to cite it, share it, and tell the developers what you're working on.</p>
+<p><code>corpkit</code> is free and open-source. If you find bugs, want to request features, or have questions, you can visit [the main repository](<a href="https://github.com/interrogator/corpkit%5D(https://github.com/interrogator/corpkit)">https://github.com/interrogator/corpkit](https://github.com/interrogator/corpkit)</a> and interact with developers there via the <code>Issues</code> page. A <a href="https://gitter.im/interrogator/corpkit"><em>Gitter</em> chatroom</a> is also available.</p>
+
+<p>If you're using <code>corpkit</code> in your research, feel free to cite it, share it, and tell the developers what you're working on.</p>
 
 <p>If you know how to code, you're more than welcome to hack away at the tools however you wish.</p>
 </article></body></html>
