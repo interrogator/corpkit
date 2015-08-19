@@ -1,0 +1,1372 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>body {
+  width: 45em;
+  border: 1px solid #ddd;
+  outline: 1300px solid #fff;
+  margin: 16px auto;
+}
+
+body .markdown-body
+{
+  padding: 30px;
+}
+
+@font-face {
+  font-family: octicons-anchor;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+.markdown-body {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  color: #333;
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.markdown-body a {
+  background: transparent;
+}
+
+.markdown-body a:active,
+.markdown-body a:hover {
+  outline: 0;
+}
+
+.markdown-body strong {
+  font-weight: bold;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.markdown-body img {
+  border: 0;
+}
+
+.markdown-body hr {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  height: 0;
+}
+
+.markdown-body pre {
+  overflow: auto;
+}
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+.markdown-body input {
+  color: inherit;
+  font: inherit;
+  margin: 0;
+}
+
+.markdown-body html input[disabled] {
+  cursor: default;
+}
+
+.markdown-body input {
+  line-height: normal;
+}
+
+.markdown-body input[type="checkbox"] {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.markdown-body td,
+.markdown-body th {
+  padding: 0;
+}
+
+.markdown-body * {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body input {
+  font: 13px/1.4 Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+.markdown-body a {
+  color: #4183c4;
+  text-decoration: none;
+}
+
+.markdown-body a:hover,
+.markdown-body a:focus,
+.markdown-body a:active {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  height: 0;
+  margin: 15px 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.markdown-body hr:before {
+  display: table;
+  content: "";
+}
+
+.markdown-body hr:after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  line-height: 1.1;
+}
+
+.markdown-body h1 {
+  font-size: 30px;
+}
+
+.markdown-body h2 {
+  font-size: 21px;
+}
+
+.markdown-body h3 {
+  font-size: 16px;
+}
+
+.markdown-body h4 {
+  font-size: 14px;
+}
+
+.markdown-body h5 {
+  font-size: 12px;
+}
+
+.markdown-body h6 {
+  font-size: 11px;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+
+.markdown-body ul ul ol,
+.markdown-body ul ol ol,
+.markdown-body ol ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.markdown-body dd {
+  margin-left: 0;
+}
+
+.markdown-body code {
+  font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 0;
+  font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.markdown-body .octicon {
+  font: normal normal 16px octicons-anchor;
+  line-height: 1;
+  display: inline-block;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.markdown-body .octicon-link:before {
+  content: '\f05c';
+}
+
+.markdown-body>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body .anchor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  padding-right: 6px;
+  padding-left: 30px;
+  margin-left: -30px;
+}
+
+.markdown-body .anchor:focus {
+  outline: none;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  position: relative;
+  margin-top: 1em;
+  margin-bottom: 16px;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+  display: none;
+  color: #000;
+  vertical-align: middle;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+  padding-left: 8px;
+  margin-left: -30px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+  display: inline-block;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2.25em;
+  line-height: 1.2;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h2 {
+  padding-bottom: 0.3em;
+  font-size: 1.75em;
+  line-height: 1.225;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h3 {
+  font-size: 1.5em;
+  line-height: 1.43;
+}
+
+.markdown-body h4 {
+  font-size: 1.25em;
+}
+
+.markdown-body h5 {
+  font-size: 1em;
+}
+
+.markdown-body h6 {
+  font-size: 1em;
+  color: #777;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body hr {
+  height: 4px;
+  padding: 0;
+  margin: 16px 0;
+  background-color: #e7e7e7;
+  border: 0 none;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body li>p {
+  margin-top: 16px;
+}
+
+.markdown-body dl {
+  padding: 0;
+}
+
+.markdown-body dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.markdown-body dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+  padding: 0 15px;
+  color: #777;
+  border-left: 4px solid #ddd;
+}
+
+.markdown-body blockquote>:first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  word-break: normal;
+  word-break: keep-all;
+}
+
+.markdown-body table th {
+  font-weight: bold;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #ddd;
+}
+
+.markdown-body table tr {
+  background-color: #fff;
+  border-top: 1px solid #ccc;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body code {
+  padding: 0;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(0,0,0,0.04);
+  border-radius: 3px;
+}
+
+.markdown-body code:before,
+.markdown-body code:after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
+
+.markdown-body pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body .highlight {
+  margin-bottom: 16px;
+}
+
+.markdown-body .highlight pre,
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f7f7f7;
+  border-radius: 3px;
+}
+
+.markdown-body .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.markdown-body pre {
+  word-wrap: normal;
+}
+
+.markdown-body pre code {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.markdown-body pre code:before,
+.markdown-body pre code:after {
+  content: normal;
+}
+
+.markdown-body .highlight {
+  background: #fff;
+}
+
+.markdown-body .highlight .h {
+  color: #333;
+  font-style: normal;
+  font-weight: normal;
+}
+
+.markdown-body .highlight .mf,
+.markdown-body .highlight .mh,
+.markdown-body .highlight .mi,
+.markdown-body .highlight .mo,
+.markdown-body .highlight .il,
+.markdown-body .highlight .m {
+  color: #945277;
+}
+
+.markdown-body .highlight .s,
+.markdown-body .highlight .sb,
+.markdown-body .highlight .sc,
+.markdown-body .highlight .sd,
+.markdown-body .highlight .s2,
+.markdown-body .highlight .se,
+.markdown-body .highlight .sh,
+.markdown-body .highlight .si,
+.markdown-body .highlight .sx,
+.markdown-body .highlight .s1 {
+  color: #df5000;
+}
+
+.markdown-body .highlight .kc,
+.markdown-body .highlight .kd,
+.markdown-body .highlight .kn,
+.markdown-body .highlight .kp,
+.markdown-body .highlight .kr,
+.markdown-body .highlight .kt,
+.markdown-body .highlight .k,
+.markdown-body .highlight .o {
+  font-weight: bold;
+}
+
+.markdown-body .highlight .kt {
+  color: #458;
+}
+
+.markdown-body .highlight .c,
+.markdown-body .highlight .cm,
+.markdown-body .highlight .c1 {
+  color: #998;
+  font-style: italic;
+}
+
+.markdown-body .highlight .cp,
+.markdown-body .highlight .cs,
+.markdown-body .highlight .cp .h {
+  color: #999;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .cs {
+  font-style: italic;
+}
+
+.markdown-body .highlight .n {
+  color: #333;
+}
+
+.markdown-body .highlight .na,
+.markdown-body .highlight .nv,
+.markdown-body .highlight .vc,
+.markdown-body .highlight .vg,
+.markdown-body .highlight .vi {
+  color: #008080;
+}
+
+.markdown-body .highlight .nb {
+  color: #0086B3;
+}
+
+.markdown-body .highlight .nc {
+  color: #458;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .no {
+  color: #094e99;
+}
+
+.markdown-body .highlight .ni {
+  color: #800080;
+}
+
+.markdown-body .highlight .ne {
+  color: #990000;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .nf {
+  color: #945277;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .nn {
+  color: #555;
+}
+
+.markdown-body .highlight .nt {
+  color: #000080;
+}
+
+.markdown-body .highlight .err {
+  color: #a61717;
+  background-color: #e3d2d2;
+}
+
+.markdown-body .highlight .gd {
+  color: #000;
+  background-color: #fdd;
+}
+
+.markdown-body .highlight .gd .x {
+  color: #000;
+  background-color: #faa;
+}
+
+.markdown-body .highlight .ge {
+  font-style: italic;
+}
+
+.markdown-body .highlight .gr {
+  color: #aa0000;
+}
+
+.markdown-body .highlight .gh {
+  color: #999;
+}
+
+.markdown-body .highlight .gi {
+  color: #000;
+  background-color: #dfd;
+}
+
+.markdown-body .highlight .gi .x {
+  color: #000;
+  background-color: #afa;
+}
+
+.markdown-body .highlight .go {
+  color: #888;
+}
+
+.markdown-body .highlight .gp {
+  color: #555;
+}
+
+.markdown-body .highlight .gs {
+  font-weight: bold;
+}
+
+.markdown-body .highlight .gu {
+  color: #800080;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .gt {
+  color: #aa0000;
+}
+
+.markdown-body .highlight .ow {
+  font-weight: bold;
+}
+
+.markdown-body .highlight .w {
+  color: #bbb;
+}
+
+.markdown-body .highlight .sr {
+  color: #017936;
+}
+
+.markdown-body .highlight .ss {
+  color: #8b467f;
+}
+
+.markdown-body .highlight .bp {
+  color: #999;
+}
+
+.markdown-body .highlight .gc {
+  color: #999;
+  background-color: #EAF2F5;
+}
+
+.markdown-body kbd {
+  background-color: #e7e7e7;
+  background-image: -webkit-linear-gradient(#fefefe, #e7e7e7);
+  background-image: linear-gradient(#fefefe, #e7e7e7);
+  background-repeat: repeat-x;
+  display: inline-block;
+  padding: 3px 5px;
+  font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  line-height: 10px;
+  color: #000;
+  border: 1px solid #cfcfcf;
+  border-radius: 2px;
+}
+
+.markdown-body .highlight .pl-coc,
+.markdown-body .highlight .pl-entm,
+.markdown-body .highlight .pl-eoa,
+.markdown-body .highlight .pl-mai .pl-sf,
+.markdown-body .highlight .pl-pdv,
+.markdown-body .highlight .pl-sc,
+.markdown-body .highlight .pl-sr,
+.markdown-body .highlight .pl-v,
+.markdown-body .highlight .pl-vpf {
+  color: #0086b3;
+}
+
+.markdown-body .highlight .pl-eoac,
+.markdown-body .highlight .pl-mdht,
+.markdown-body .highlight .pl-mi1,
+.markdown-body .highlight .pl-mri,
+.markdown-body .highlight .pl-va,
+.markdown-body .highlight .pl-vpu {
+  color: #008080;
+}
+
+.markdown-body .highlight .pl-c,
+.markdown-body .highlight .pl-pdc {
+  color: #b4b7b4;
+  font-style: italic;
+}
+
+.markdown-body .highlight .pl-k,
+.markdown-body .highlight .pl-ko,
+.markdown-body .highlight .pl-kolp,
+.markdown-body .highlight .pl-mc,
+.markdown-body .highlight .pl-mr,
+.markdown-body .highlight .pl-ms,
+.markdown-body .highlight .pl-s,
+.markdown-body .highlight .pl-sok,
+.markdown-body .highlight .pl-st {
+  color: #6e5494;
+}
+
+.markdown-body .highlight .pl-ef,
+.markdown-body .highlight .pl-enf,
+.markdown-body .highlight .pl-enm,
+.markdown-body .highlight .pl-entc,
+.markdown-body .highlight .pl-eoi,
+.markdown-body .highlight .pl-sf,
+.markdown-body .highlight .pl-smc {
+  color: #d12089;
+}
+
+.markdown-body .highlight .pl-ens,
+.markdown-body .highlight .pl-eoai,
+.markdown-body .highlight .pl-kos,
+.markdown-body .highlight .pl-mh .pl-pdh,
+.markdown-body .highlight .pl-mp,
+.markdown-body .highlight .pl-pde,
+.markdown-body .highlight .pl-stp {
+  color: #458;
+}
+
+.markdown-body .highlight .pl-enti {
+  color: #d12089;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .pl-cce,
+.markdown-body .highlight .pl-enc,
+.markdown-body .highlight .pl-kou,
+.markdown-body .highlight .pl-mq {
+  color: #f93;
+}
+
+.markdown-body .highlight .pl-mp1 .pl-sf {
+  color: #458;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .pl-cos,
+.markdown-body .highlight .pl-ent,
+.markdown-body .highlight .pl-md,
+.markdown-body .highlight .pl-mdhf,
+.markdown-body .highlight .pl-ml,
+.markdown-body .highlight .pl-pdc1,
+.markdown-body .highlight .pl-pds,
+.markdown-body .highlight .pl-s1,
+.markdown-body .highlight .pl-scp,
+.markdown-body .highlight .pl-sol {
+  color: #df5000;
+}
+
+.markdown-body .highlight .pl-c1,
+.markdown-body .highlight .pl-cn,
+.markdown-body .highlight .pl-pse,
+.markdown-body .highlight .pl-pse .pl-s2,
+.markdown-body .highlight .pl-vi {
+  color: #a31515;
+}
+
+.markdown-body .highlight .pl-mb,
+.markdown-body .highlight .pl-pdb {
+  color: #df5000;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .pl-mi,
+.markdown-body .highlight .pl-pdi {
+  color: #6e5494;
+  font-style: italic;
+}
+
+.markdown-body .highlight .pl-ms1 {
+  background-color: #f5f5f5;
+}
+
+.markdown-body .highlight .pl-mdh,
+.markdown-body .highlight .pl-mdi {
+  font-weight: bold;
+}
+
+.markdown-body .highlight .pl-mdr {
+  color: #0086b3;
+  font-weight: bold;
+}
+
+.markdown-body .highlight .pl-s2 {
+  color: #333;
+}
+
+.markdown-body .highlight .pl-ii {
+  background-color: #df5000;
+  color: #fff;
+}
+
+.markdown-body .highlight .pl-ib {
+  background-color: #f93;
+}
+
+.markdown-body .highlight .pl-id {
+  background-color: #a31515;
+  color: #fff;
+}
+
+.markdown-body .highlight .pl-iu {
+  background-color: #b4b7b4;
+}
+
+.markdown-body .highlight .pl-mo {
+  color: #969896;
+}
+
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-body .task-list-item+.task-list-item {
+  margin-top: 3px;
+}
+
+.markdown-body .task-list-item input {
+  float: left;
+  margin: 0.3em 0 0.25em -1.6em;
+  vertical-align: middle;
+}</style><title>USERGUIDE</title></head><body><article class="markdown-body"><h1>
+<a id="user-content-corpkit-graphical-interface" class="anchor" href="#corpkit-graphical-interface" aria-hidden="true"><span class="octicon octicon-link"></span></a>corpkit graphical interface:</h1>
+
+<h3>
+<a id="user-content-users-guide-under-construction" class="anchor" href="#users-guide-under-construction" aria-hidden="true"><span class="octicon octicon-link"></span></a>users' guide (under construction)</h3>
+
+<h3>
+<a id="user-content-daniel-mcdonald" class="anchor" href="#daniel-mcdonald" aria-hidden="true"><span class="octicon octicon-link"></span></a>Daniel McDONALD</h3>
+
+
+
+<ul>
+<li>
+<a href="#build">Build</a>
+
+<ul>
+<li><a href="#creating-a-project">Creating a project</a></li>
+<li><a href="#editing-your-data">Editing your data</a></li>
+<li><a href="#parsing">Parsing</a></li>
+</ul>
+</li>
+<li>
+<a href="#interrogate">Interrogate</a>
+
+<ul>
+<li><a href="#selecting-a-corpus">Selecting a corpus</a></li>
+<li><a href="#selecting-a-kind-of-data">Selecting a kind of data</a></li>
+<li><a href="#writing-queries">Writing queries</a></li>
+<li><a href="#search-options">Search options</a></li>
+<li><a href="#running-interrogations">Running interrogations</a></li>
+<li><a href="#editing-spreadsheets">Editing spreadsheets</a></li>
+</ul>
+</li>
+<li>
+<a href="#edit">Edit</a>
+
+<ul>
+<li><a href="#selecting-data-to-edit">Selecting data to edit</a></li>
+<li><a href="#operations-and-denominators">Operations and denominators</a></li>
+<li><a href="#skipping-keeping-merging">Skipping, keeping, merging</a></li>
+<li><a href="#sorting">Sorting</a></li>
+</ul>
+</li>
+<li><a href="#visualise">Visualise</a></li>
+<li>
+<a href="#concordance">Concordance</a>
+
+<ul>
+<li><a href="#editing-concordance-lines">Editing concordance lines</a></li>
+<li><a href="#sorting-1">Sorting</a></li>
+<li><a href="#exporting-concordance-lines">Exporting concordance lines</a></li>
+</ul>
+</li>
+<li><a href="#manage">Manage</a></li>
+<li><a href="#help">Help</a></li>
+<li><a href="#settings">Settings</a></li>
+<li><a href="#updates">Updates</a></li>
+<li><a href="#forthcoming-features">Forthcoming features</a></li>
+<li><a href="#where-to-go-from-here">Where to go from here</a></li>
+<li><a href="#helping-out">Helping out</a></li>
+</ul>
+
+
+
+<blockquote>
+<p>This work-in-progress document outlines the basic functionality of the <code>corpkit</code> graphical interface. More information coming soon.</p>
+</blockquote>
+
+<h2>
+<a id="user-content-build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h2>
+
+<blockquote>
+<p>This tab is for starting projects, and building corpora from plain text files.</p>
+</blockquote>
+
+<h3>
+<a id="user-content-creating-a-project" class="anchor" href="#creating-a-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating a project</h3>
+
+<p>The best way to begin is by creating a project---that is, a folder, with subfolders for saved interrogations, images, dictionaries and data.</p>
+
+<p>Once you have created a new project, you can use <code>Add corpus</code> to copy your corpus into the project directory.</p>
+
+<p>Much of the power of <code>corpkit</code> is its ability to handle <em>structured corpora</em>---that is, folders containing subfolders, representing points in time, speaker names, topics, etc. Ideally, the corpora you add to your project have some kind of structure, but if not, the tool will still work.</p>
+
+<p>Once you have added a corpus to the project, it is automatically selected. If you want to add another corpus, or select a previously added corpus, you can.</p>
+
+<h3>
+<a id="user-content-editing-your-data" class="anchor" href="#editing-your-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing your data</h3>
+
+<p>With a corpus selected, you can view and edit the text files in your collection. You can make last-minute changes to the corpus now: after the texts are parsed, they are very difficult to change.</p>
+
+<blockquote>
+<p>This interface is not designed for a serious amount of editing work. For large amounts of editing, use a good text editor, like <a href="http://www.sublimetext.com"><em>Sublime Text</em></a> or <a href="www.barebones.com/products/textwrangler"><em>TextWrangler</em></a>.</p>
+</blockquote>
+
+<h3>
+<a id="user-content-parsing" class="anchor" href="#parsing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parsing</h3>
+
+<p>Parsing requires the one-time installation of a parser, as well as some things needed to run the parser. Follow the prompts to download and install it. If you want to remove it at any stage, it can be found in your <code>home</code> directory as <code>corenlp</code>.</p>
+
+<p>Once texts are parsed, there is one more feature you might like to use. If you use <code>Select corpus in project</code> to select a corpus of parsed texts, rather than editing the file contents, you can look at visualisations of the parse trees. This can be helpful in learning how to write a Tregex query (see below).</p>
+
+<blockquote>
+<p>Some features of <code>corpkit</code> work without parsing, but parsing is the best way to find complex and interesting things in your data.</p>
+</blockquote>
+
+<h2>
+<a id="user-content-interrogate" class="anchor" href="#interrogate" aria-hidden="true"><span class="octicon octicon-link"></span></a>Interrogate</h2>
+
+<blockquote>
+<p><code>Interrogate</code> will iterate over subcorpora in a corpus, searching for the same thing, and tabulating the results.</p>
+</blockquote>
+
+<h3>
+<a id="user-content-selecting-a-corpus" class="anchor" href="#selecting-a-corpus" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selecting a corpus</h3>
+
+<p>If the corpus you want to analyse is not already selected, you can select it now.</p>
+
+<h3>
+<a id="user-content-selecting-a-kind-of-data" class="anchor" href="#selecting-a-kind-of-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selecting a kind of data</h3>
+
+<p><code>corpkit</code> can presently work with three kinds of data:</p>
+
+<ol>
+<li>Constituency parse trees</li>
+<li>Dependency parses</li>
+<li>Plain text</li>
+</ol>
+
+<p>The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus.</p>
+
+<p>When you select a kind of data, the kinds of search that are available to you change.</p>
+
+<h3>
+<a id="user-content-writing-queries" class="anchor" href="#writing-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Writing queries</h3>
+
+<p>Depending on the kind of data you want to search, you need to write different kinds of queries.</p>
+
+<h4>
+<a id="user-content-trees" class="anchor" href="#trees" aria-hidden="true"><span class="octicon octicon-link"></span></a>Trees</h4>
+
+<p>If you want to search for information in <code>trees</code>, you need to write a Tregex query. Tregex is a language for searching syntax trees.</p>
+
+<p align="center">
+<a href="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png" target="_blank"><img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png" height="400" width="400" style="max-width:100%;"></a>
+</p>
+
+<p>Tregex queries also rely on <a href="http://www.regular-expressions.info"><em>Regular Expressions</em></a>: a kind of extended search language. Though it is unfortunately beyond the scope of this guide to teach Regular Expressions, it is important to note that Regular Expressions are extremely powerful </p>
+
+<p>Detailed documentation for Tregex usage can be found <a href="http://nlp.stanford.edu/%7Emanning/courses/ling289/Tregex.html">here</a>.</p>
+
+<h4>
+<a id="user-content-dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h4>
+
+<p>In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the <code>root</code> of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.</p>
+
+<p align="center">
+<a href="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" target="_blank"><img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png" height="400" width="400" style="max-width:100%;"></a>
+</p>
+
+<h4>
+<a id="user-content-plain-text" class="anchor" href="#plain-text" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plain text</h4>
+
+<p>Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:</p>
+
+<blockquote>
+<p><code>[cat,dog,fish]</code></p>
+</blockquote>
+
+<p>Using regular expressions, you could do something more complex, like get both the singular and plural forms:</p>
+
+<blockquote>
+<p><code>(cats?|dogs?|fish)</code></p>
+</blockquote>
+
+<p>This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because <code>corpkit</code> won't know the word classes of the words you're finding.</p>
+
+<h4>
+<a id="user-content-special-queries" class="anchor" href="#special-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Special queries</h4>
+
+<p><code>corpkit</code> also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar.</p>
+
+<h5>
+<a id="user-content-preset-queries" class="anchor" href="#preset-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Preset queries</h5>
+
+<p><code>'Any'</code> will match any word, tag or function, depending on the search type.</p>
+
+<h5>
+<a id="user-content-query-parts" class="anchor" href="#query-parts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Query parts</h5>
+
+<p>There are also some things you can type into your query that <code>corpkit</code> recognises and handles differently. You can, for example, enter</p>
+
+<blockquote>
+<p><code>PROCESSES:VERBAL</code></p>
+</blockquote>
+
+<p>to match any token corresponding to a verbal process (including all possible inflections). This can be powerful when used in conjunction with Tregex or dependency queries:</p>
+
+<blockquote>
+<p><code>VP &lt;&lt;# /PROCESSES:MENTAL/ $ NP</code></p>
+</blockquote>
+
+<p>will get verbal groups that contain mental process types.</p>
+
+<p>Currently, the special query types are:</p>
+
+<table>
+<thead>
+<tr>
+<th>Special query kind</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PROCESSES:</code></td>
+<td>Tokens</td>
+</tr>
+<tr>
+<td><code>ROLES:</code></td>
+<td>CoreNLP functions</td>
+</tr>
+<tr>
+<td><code>WORDLISTS:</code></td>
+<td>Tokens</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>
+<code>WORDLISTS:</code> recognises <code>PRONOUNS</code>, <code>ARTICLES</code>, <code>CONJUNCTIONS</code>, <code>DETERMINERS</code>, <code>PREPOSITIONS</code>, <code>CONNECTORS</code>, <code>MODALS</code>, <code>CLOSEDCLASS</code> and <code>TITLES</code>.</li>
+<li>
+<code>ROLES:</code> recognises <code>ACTOR</code>, <code>ADJUNCT</code>, <code>AUXILIARY</code>, <code>CIRCUMSTANCE</code>, <code>CLASSIFIER</code>, <code>COMPLEMENT</code>, <code>DEICTIC</code>, <code>EPITHET</code>, <code>EVENT</code>, <code>EXISTENTIAL</code>, <code>GOAL</code>, <code>MODAL</code>, <code>NUMERATIVE</code>, <code>PARTICIPANT</code>, <code>PARTICIPANT1</code>, <code>PARTICIPANT2</code>, <code>POLARITY</code>, <code>PREDICATOR</code>, <code>PROCESS</code>, <code>QUALIFIER</code>, <code>SUBJECT</code>, <code>TEXTUAL</code> and <code>THING</code>.</li>
+<li>
+<code>PROCESSES:</code> recognises <code>MENTAL</code>, <code>VERBAL</code> and <code>RELATIONAL</code>.</li>
+</ul>
+
+<p>When using dependencies, you could get <em>Sensers</em> by searching for the role and dependent of <code>PROCESSES:MENTAL</code>, and then by using a function filter for <code>ROLES:PARTICIPANT1</code>.</p>
+
+<h3>
+<a id="user-content-search-options" class="anchor" href="#search-options" aria-hidden="true"><span class="octicon octicon-link"></span></a>Search options</h3>
+
+<p>The <code>Interrogate</code> tab has many options.</p>
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filter titles</td>
+<td>Remove <code>Mr</code>, <code>Mrs</code>, <code>Dr</code>, etc. to help normalise and count references to specific people</td>
+</tr>
+<tr>
+<td>Multiword results</td>
+<td>If each result can be more than one word, this tokenises the results for better processing</td>
+</tr>
+<tr>
+<td>Function filter</td>
+<td>Match only words filling specific dependency roles (regular expression)</td>
+</tr>
+<tr>
+<td>POS filter</td>
+<td>Match only words with specific POS in dependency queries (regex)</td>
+</tr>
+<tr>
+<td>Normalise spelling</td>
+<td>Convert between UK and US English</td>
+</tr>
+<tr>
+<td>Dependency type</td>
+<td>Which dependency grammar to use (see <a href="http://nlp.stanford.edu/software/example.xml">here</a> for info)</td>
+</tr>
+</tbody>
+</table>
+
+<h4>
+<a id="user-content-lemmatisation" class="anchor" href="#lemmatisation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Lemmatisation</h4>
+
+<p>When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.</p>
+
+<p>If searching trees and using lemmatisation, <code>corpkit</code> will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:</p>
+
+<blockquote>
+<p><code>/VB.?/ &gt;&gt; VP</code></p>
+</blockquote>
+
+<p>then <code>corpkit</code> will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the <code>Result word class</code> option to force <code>corpkit</code> to treat all results as a given part of speech.</p>
+
+<h3>
+<a id="user-content-running-interrogations" class="anchor" href="#running-interrogations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running interrogations</h3>
+
+<p>On large datasets, interrogations can take some time, especially for dependency searches with many options. Be patient!</p>
+
+<p>Be sure to name your interrogation, via the <code>Name interrogation</code> box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.</p>
+
+<h3>
+<a id="user-content-editing-spreadsheets" class="anchor" href="#editing-spreadsheets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing spreadsheets</h3>
+
+<p>Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora.</p>
+
+<p>Once you've changed the results, you can hit <code>'Update interrogation'</code> to update the version of the data that is stored in memory.</p>
+
+<p>It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. </p>
+
+<p>Sorting the result order is performed in the edit window (see below).</p>
+
+<h2>
+<a id="user-content-edit" class="anchor" href="#edit" aria-hidden="true"><span class="octicon octicon-link"></span></a>Edit</h2>
+
+<blockquote>
+<p><code>Edit</code> allows you to manipulate results generated in the <code>interrogate</code> window, or to re-edit results generated with <code>edit</code></p>
+</blockquote>
+
+<h3>
+<a id="user-content-selecting-data-to-edit" class="anchor" href="#selecting-data-to-edit" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selecting data to edit</h3>
+
+<p>You can select any interrogation or edited result to edit.</p>
+
+<p>After this, you need to select a <code>branch</code>, either <code>results</code> or <code>totals</code>. These correspond to the two spreadsheets in the <code>Interrogate</code> tab.</p>
+
+<h3>
+<a id="user-content-operations-and-denominators" class="anchor" href="#operations-and-denominators" aria-hidden="true"><span class="octicon octicon-link"></span></a>Operations and denominators</h3>
+
+<p>A common task is to turn absolute into relative frequencies. To do this, you simply select '%' as the operation, and <code>self</code> <code>totals</code> as the denominator. To calculate a radio, you could use '/'.</p>
+
+<p>Because you can use any result/total as the denominator (provided it has the same subcorpora), you can calculate almost anything in your data. To figure out the ratio of nouns/clauses, you would perform two interrogations, and combine them here.</p>
+
+<p>If you use a <code>results</code> branch as a denominator, things get a little more complex still. Rather than being divided by the total from that subcorpus, each entry will be divided by the total occurrences of that particular entry in the denominator data.</p>
+
+<p>You could use this kind of edit to answer a question like:</p>
+
+<pre><code>When sports are mentioned, what percentage of the time do the sports occur in subject position?
+</code></pre>
+
+<h4>
+<a id="user-content-keywording" class="anchor" href="#keywording" aria-hidden="true"><span class="octicon octicon-link"></span></a>Keywording</h4>
+
+<p>If you select the <code>'keywords'</code> option, you can get log-likelihood keyness scores for the the dataset of interest, compared with the denominator as a reference corpus. When doing keywording, the reference corpus can be either a results branch of an interrogation, or the BNC, <code>'bnc.p'</code>.</p>
+
+<p>Using <code>Self</code> <code>results</code> as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.</p>
+
+<blockquote>
+<p>Negative keywords exist, too: try sorting by inverse total to find out which words are uncommon in the target data.</p>
+</blockquote>
+
+<h3>
+<a id="user-content-skipping-keeping-merging" class="anchor" href="#skipping-keeping-merging" aria-hidden="true"><span class="octicon octicon-link"></span></a>Skipping, keeping, merging</h3>
+
+<p>You can easily skip, keep or merge particular entries and subcorpora. For entries, you need to to write out some criteria. For subcorpora, you can select from the list.</p>
+
+<p>When writing out entries to keep/remove/merge, you can supply either:</p>
+
+<ol>
+<li>A regular expression to match: <code>^fr*iends?$</code> will match <code>fiend</code>, <code>fiends</code>, <code>friend</code> and <code>friends</code>.</li>
+<li>A list: <code>[fiend,fiends,friend,friends]</code>
+</li>
+</ol>
+
+<blockquote>
+<p>Special queries work here, too. If you searched for process, you could keep only <code>PROCCESSES:VERBAL</code>.</p>
+</blockquote>
+
+<p>If merging either subcorpora or entries, you may want to provide a new name for the merged item. By default, the first few entry names are joined together with slashes.</p>
+
+<p>Merging entries is a powerful way to do thematic categorisation: you could merge the names of illnesses as <code>'Illnesses'</code>, and the names of treatments as <code>Treatments</code>. You could then edit the edited results, keeping only those two.</p>
+
+<h3>
+<a id="user-content-sorting" class="anchor" href="#sorting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
+
+<p>When working with multiple subcorpora, sorting becomes a very powerful feature of <code>corpkit</code>. Aside from very normal kinds of sorting (by total, by name), you can also sort by <em>increase</em>, <em>decrease</em>, <em>static</em> or <em>turbulent</em>. </p>
+
+<p><code>corpkit</code> does this using <a href="http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.linregress.html"><code>Scipy</code>'s <em>linear regression</em> function</a>. Essentially, a straight trend line is calculated for each entry in the data. By measuring the angle of this line, we can find out which results are increasingly or decreasingly used across the dataset.</p>
+
+<p>If you tick <code>Keep stats</code>, you'll be able to see the <code>slope</code>, <code>intercept</code>, <code>stderr</code> and <code>p value</code>, where the null hypothesis is that there is no upward or downward slope. <code>Remove above p</code> will automatically exclude results not meeting the standard.</p>
+
+<blockquote>
+<p>You can use <code>Help --&gt; Save log</code> after performing an edit to get some information about what was performed.</p>
+</blockquote>
+
+<h2>
+<a id="user-content-visualise" class="anchor" href="#visualise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualise</h2>
+
+<blockquote>
+<p><code>Visualise</code> is all about representing your results graphically</p>
+</blockquote>
+
+<p>Most options here are self-explanatory. Pick the results you want to plot, play with some options, and hit <code>Plot</code>. This can be a great way to identify salient linguistic features in your dataset.</p>
+
+<p>Note that <code>Number to plot</code> takes the top <code>n</code> entries from the results of interest. If you don't want these, go back to the <code>Edit</code> tab and remove/sort the results some more. You can type in 'all' to get every result---but be warned, this often won't look so good!</p>
+
+<blockquote>
+<p>Checking the <code>TeX</code> option will mean that the plotter will try to use <code>LaTeX</code> to typeset the text in the chart. If you have a TeX distribution, but this option isn't working for you, you may need to use the command-line version of <code>corpkit</code>.</p>
+</blockquote>
+
+<p>Once you've plotted something, a navigation pane appears under the figure, allowing scrolling, zooming, saving and so forth.</p>
+
+<blockquote>
+<p>If you're more confortable generating visualisations in another tool, you can head to the <code>Manage</code> tab to export a CSV version of any interrogations or edited results. This can be imported into Excel, for example.</p>
+</blockquote>
+
+<h2>
+<a id="user-content-concordance" class="anchor" href="#concordance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concordance</h2>
+
+<blockquote>
+<p>Concordance provides a concordancer for constituency trees, dependency parses, or plain text.</p>
+</blockquote>
+
+<p>Most features here are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns (other options are in development). This can be a good way to check that a query used to interrogate the corpus is finding what it's supposed to. <code>Trees</code> will output bracketted trees instead of plain text, which can be useful in learning how to make Tregex queries.</p>
+
+<h3>
+<a id="user-content-editing-concordance-lines" class="anchor" href="#editing-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing concordance lines</h3>
+
+<p>You can use <code>backspace</code> to delete selected lines, or <code>shift+backspace</code> to inverse-delete.</p>
+
+<h3>
+<a id="user-content-sorting-1" class="anchor" href="#sorting-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
+
+<p>Sorting is always by the first character. <code>L1</code> sorts by the rightmost word in the left-hand column; <code>L2</code> sorts by the second rightmost. This is similar for the other columns. Sorting by <code>M-1</code> will sort by the last word in the middle column, and <code>M-2</code> by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.</p>
+
+<p>Clicking <code>Sort</code> again without making any other changes will invert the sort order.</p>
+
+<h3>
+<a id="user-content-exporting-concordance-lines" class="anchor" href="#exporting-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exporting concordance lines</h3>
+
+<p><code>Export</code> allows you to save results to CSV files, which can be loaded into Excel, or similar.</p>
+
+<blockquote>
+<p>Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to LaTeX tables, and all kinds of other cool things.</p>
+</blockquote>
+
+<h2>
+<a id="user-content-manage" class="anchor" href="#manage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Manage</h2>
+
+<blockquote>
+<p><code>Manage</code> allows you to manipulate your interrogations and edited data.</p>
+</blockquote>
+
+<p>With <code>load saved interrogations</code>, you can load into memory any findings you saved in the project earlier. </p>
+
+<p><code>Load project</code> will automatically set the path to data, dictionaries, images and saved interrogations. You can still select custom locations for these if you like.</p>
+
+<p>If you select an interrogation and hit <code>View</code>, you can see all the options used to generate the result.</p>
+
+<p><code>Export</code> will create CSV files of results, totals and query options in a user-specified directory.</p>
+
+<p>You can use <code>Remove</code> to remove one or more interrogations from memory, or <code>Delete</code> to remove saved results from the <code>saved_interrogations</code> directory of your project.</p>
+
+<h2>
+<a id="user-content-help" class="anchor" href="#help" aria-hidden="true"><span class="octicon octicon-link"></span></a>Help</h2>
+
+<p><code>corpkit</code> is still missing a lot of documentation. For now, when things go wrong, you can select <code>Help --&gt; Save log</code> to generate a log file for your session. You can send this to developers to help diagnose the source of a problem.</p>
+
+<h2>
+<a id="user-content-settings" class="anchor" href="#settings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Settings</h2>
+
+<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project.</p>
+
+<h2>
+<a id="user-content-updates" class="anchor" href="#updates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Updates</h2>
+
+<p>When you're connected to the web, <code>corpkit</code> will look for software updates, and prompt the user to download them. Major changes will be explicated when this occurs. You can also check for updates manually via the <code>file</code> menu.</p>
+
+<h2>
+<a id="user-content-forthcoming-features" class="anchor" href="#forthcoming-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Forthcoming features</h2>
+
+<ul>
+<li>More preset queries</li>
+<li>More systemic functional grammar</li>
+<li>Ability to easy edit special query lists</li>
+<li>User suggestions!</li>
+</ul>
+
+<h2>
+<a id="user-content-where-to-go-from-here" class="anchor" href="#where-to-go-from-here" aria-hidden="true"><span class="octicon octicon-link"></span></a>Where to go from here</h2>
+
+<p><code>corpkit</code> has a lot of functionality, and could probably keep you busy for a long time. If you ever find that the tools aren't intuitive, it is useful to remember that the major functions at work in the interface can also be called via the command line. Generally speaking, command line operation makes it possible to do far more complicated things with your data.</p>
+
+<ul>
+<li>When interrogating, you can quickly make lists of corpora or queries and perform each simultaneously. </li>
+<li>When editing, you can create lists of entries to rename or merge.</li>
+<li>When plotting, you can generate HTML based visuals that are clickable, highlightable, embeddable, and so on.</li>
+</ul>
+
+<p>If you're interested in trying out the command line interface, on OSX, you could simply enter <code>Terminal</code> and do:</p>
+
+<div class="highlight highlight-shell"><pre>sudo easy_install corpkit
+python</pre></div>
+
+<p>to download and install <code>corpkit</code>, and then to enter Python. From there, you can import the main functions, and begin:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> interrogator, editor, plotter, conc
+<span class="pl-k">&gt;&gt;&gt;</span> q <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# NP<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> result <span class="pl-k">=</span> interrogator(<span class="pl-s"><span class="pl-pds">'</span>path/to/corpus<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>word<span class="pl-pds">'</span></span>, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)</pre></div>
+
+<p>Because <code>corpkit</code> data is generally stored as <a href="Pandas">http://pandas.pydata.org/</a> objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of <code>MATLAB</code> or <code>R</code>.</p>
+
+<p>Command line operation of <code>corpkit</code> is presented in more detail at <a href="">https://www.github.com/interrogator/corpkit</a>.</p>
+
+<h2>
+<a id="user-content-helping-out" class="anchor" href="#helping-out" aria-hidden="true"><span class="octicon octicon-link"></span></a>Helping out</h2>
+
+<p><code>corpkit</code> is free and open-source. If you find bugs, want to request features, or have questions, you can visit the main repository at <a href="">https://github.com/interrogator/corpkit</a> and interact with developers there via the <code>Issues</code> page. A <em>Gitter</em> chatroom is also available at <a href="">https://gitter.im/interrogator/corpkit</a>. If you're using <code>corpkit</code> in your research, feel free to cite it, share it, and tell the developers what you're working on.</p>
+
+<p>If you know how to code, you're more than welcome to hack away at the tools however you wish.</p>
+</article></body></html>
