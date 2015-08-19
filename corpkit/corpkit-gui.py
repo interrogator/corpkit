@@ -825,7 +825,7 @@ def corpkit_gui():
 
     def query_help():
         import webbrowser
-        webbrowser.open_new('https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
+        webbrowser.open_new('http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
 
     # query help, interrogate button
     Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
@@ -2736,7 +2736,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    #root.after(500, start_update_check) # 500
+    root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
