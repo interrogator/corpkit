@@ -828,7 +828,7 @@ def corpkit_gui():
         webbrowser.open_new('http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
 
     # query help, interrogate button
-    Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
+    #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
     Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 14, column = 1, sticky = E)
 
     # name to show above spreadsheet 0
@@ -2802,7 +2802,7 @@ def corpkit_gui():
             os.startfile(logpath)
 
     helpmenu = Menu(menubar, tearoff=0)
-    helpmenu.add_command(label="Query help", command=query_help)
+    helpmenu.add_command(label="Help", command=query_help)
     helpmenu.add_command(label="Save log", command=show_log)
     helpmenu.add_command(label="About", command=about_box)
     menubar.add_cascade(label="Help", menu=helpmenu)
