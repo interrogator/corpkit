@@ -13,7 +13,7 @@
     - [Selecting a corpus](#selecting-a-corpus)
     - [Selecting a kind of data](#selecting-a-kind-of-data)
     - [Writing queries](#writing-queries)
-    - [Options](#options)
+    - [Search ptions](#search-ptions)
     - [Running interrogations](#running-interrogations)
     - [Editing spreadsheets](#editing-spreadsheets)
 - [Edit](#edit)
@@ -30,6 +30,7 @@
 - [Help](#help)
 - [Settings](#settings)
 - [Updates](#updates)
+- [Forthcoming features](#forthcoming-features)
 - [Where to go from here](#where-to-go-from-here)
 - [Helping out](#helping-out)
 
@@ -109,11 +110,11 @@ In dependency grammar, words in sentences are connected in a series of governor-
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
 
-    `[cat,dog,fish]`
+> `[cat,dog,fish]`
 
 Using regular expressions, you could do something more complex, like get both the singular and plural forms:
 
-    `(cats?|dogs?|fish)`
+> `(cats?|dogs?|fish)`
 
 This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because `corpkit` won't know the word classes of the words you're finding.
 
@@ -127,19 +128,50 @@ This kind of search has drawbacks, though. Lemmatisation, for example, will not 
 
 ##### Query parts
 
-> Table here
+There are also some things you can type into your query that `corpkit` recognises and handles differently. You can, for example, enter
 
-### Options
+> `PROCESSES:VERBAL`
+
+to match any token corresponding to a verbal process (including all possible inflections). This can be powerful when used in conjunction with Tregex or dependency queries:
+
+> `VP <<# /PROCESSES:MENTAL/ $ NP`
+ 
+will get verbal groups that contain mental process types.
+
+Currently, the special query types are:
+
+| Special query kind | Matches           |
+|--------------------|-------------------|
+| `PROCESSES:`        | Tokens            |
+| `ROLES:`            | CoreNLP functions |
+| `WORDLISTS:`        | Tokens            |
+
+* `WORDLISTS:` recognises `PRONOUNS`, `ARTICLES`, `CONJUNCTIONS`, `DETERMINERS`, `PREPOSITIONS`, `CONNECTORS`, `MODALS`, `CLOSEDCLASS` and `TITLES`.
+* `ROLES:` recognises `ACTOR`, `ADJUNCT`, `AUXILIARY`, `CIRCUMSTANCE`, `CLASSIFIER`, `COMPLEMENT`, `DEICTIC`, `EPITHET`, `EVENT`, `EXISTENTIAL`, `GOAL`, `MODAL`, `NUMERATIVE`, `PARTICIPANT`, `PARTICIPANT1`, `PARTICIPANT2`, `POLARITY`, `PREDICATOR`, `PROCESS`, `QUALIFIER`, `SUBJECT`, `TEXTUAL` and `THING`.
+* `PROCESSES:` recognises `MENTAL`, `VERBAL` and `RELATIONAL`.
+
+When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
+
+### Search ptions
 
 The `Interrogate` tab has many options.
 
-> TABLE HERE
+| Option             | Purpose                                                                            |
+|--------------------|------------------------------------------------------------------------------------|
+| Filter titles      | Remove Mr, Mrs, Dr, etc. to help normalise and count references to specific people |
+| Multiword results  |    If each result can be more than one word, this tokenises the results for better processing     |
+| Function filter    | Match only words filling specific dependency roles (regular expression)                                                      |
+| POS filter         | Match only words with specific POS in dependency queries (regex)   |
+| Normalise spelling | Convert between UK and US English     |
+| Dependency type    | Which dependency grammar to use (see [here](http://nlp.stanford.edu/software/example.xml) for info)     |
+
+#### Lemmatisation
 
 When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.
 
 If searching trees and using lemmatisation, `corpkit` will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:
 
-    `/VB.?/ >> VP`
+> `/VB.?/ >> VP`
 
 then `corpkit` will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force `corpkit` to treat all results as a given part of speech.
 
@@ -275,6 +307,13 @@ You can use `File --> Save project settings` to save some settings of your proje
 ## Updates
 
 When you're connected to the web, `corpkit` will look for software updates, and prompt the user to download them. Major changes will be explicated when this occurs. You can also check for updates manually via the `file` menu.
+
+## Forthcoming features
+
+* More preset queries
+* More systemic functional grammar
+* Ability to easy edit special query lists
+* User suggestions!
 
 ## Where to go from here
 
