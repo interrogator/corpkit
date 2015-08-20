@@ -105,8 +105,8 @@ class Notebook(Frame):
         self.noteBookFrame.grid()
         self.BFrame.grid(row = 0, column = 0, columnspan = 27, sticky = N) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
-        self.statusbar.grid(row = 2, column = 0, padx = (0, 150))
-        self.progbarspace.grid(row = 2, column = 0, padx = (150, 0), sticky = E)
+        self.statusbar.grid(row = 2, column = 0, padx = (0, 265))
+        self.progbarspace.grid(row = 2, column = 0, padx = (265, 0), sticky = E)
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -203,7 +203,7 @@ def corpkit_gui():
     root.resizable(FALSE,FALSE)
 
     #HWHW h 550
-    note = Notebook(root, width= 1250, height = 600, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 1365, height = 660, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
     note.grid()
     tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
@@ -217,6 +217,8 @@ def corpkit_gui():
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
 
+
+    tab1.grid_columnconfigure(2, weight=5)
     # a dict of the editor frame names and models
     editor_tables = {}
     currently_in_each_frame = {}
@@ -620,10 +622,12 @@ def corpkit_gui():
         if corpus_fullpath.get() == '':
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: You need to select a corpus.' % thetime
+            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
             return
     
         r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         if not r or r == 'Bad query':
+            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
             return
 
         # drop over 1000?
@@ -712,36 +716,36 @@ def corpkit_gui():
 
     # function filter
     funfil = StringVar()
-    Label(tab1, text = 'Function filter:').grid(row = 9, column = 0, sticky = W)
+    Label(tab1, text = 'Function filter:').grid(row = 10, column = 0, sticky = W)
     funfil.set(r'(nsubj|nsubjpass)')
-    q = Entry(tab1, textvariable = funfil, width = 20, state = DISABLED)
-    q.grid(row = 9, column = 0, columnspan = 2, sticky = E)
+    q = Entry(tab1, textvariable = funfil, width = 25, state = DISABLED)
+    q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
 
     # pos filter
     posfil = StringVar()
-    Label(tab1, text = 'POS filter:').grid(row = 10, column = 0, sticky = W)
+    Label(tab1, text = 'POS filter:').grid(row = 11, column = 0, sticky = W)
     posfil.set(r'^n')
-    qr = Entry(tab1, textvariable = posfil, width = 20, state = DISABLED)
-    qr.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+    qr = Entry(tab1, textvariable = posfil, width = 25, state = DISABLED)
+    qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
 
     # lemma tags
     lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
     lemtag = StringVar(root)
     lemtag.set('')
-    Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 11, column = 0, sticky = W)
+    Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 12, column = 0, columnspan = 2, sticky = W)
     lmt = OptionMenu(tab1, lemtag, *lemtags)
     lmt.config(state = NORMAL)
-    lmt.grid(row = 11, column = 1, sticky=E)
+    lmt.grid(row = 12, column = 1, sticky=E)
     #lemtag.trace("w", d_callback)
 
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
     kind_of_dep = StringVar(root)
     kind_of_dep.set('CC-processed')
-    Label(tab1, text = 'Dependency type:').grid(row = 12, column = 0, sticky = W)
+    Label(tab1, text = 'Dependency type:').grid(row = 13, column = 0, sticky = W)
     pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
     pick_dep_type.config(state = DISABLED)
-    pick_dep_type.grid(row = 12, column = 1, sticky=E)
+    pick_dep_type.grid(row = 13, column = 1, sticky=E)
     #kind_of_dep.trace("w", d_callback)
 
     # query
@@ -749,9 +753,9 @@ def corpkit_gui():
 
     Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW')
     entrytext.set(r'JJ > (NP <<# /\brisk/)')
-    qa = Text(tab1, width = 44, height = 3, borderwidth = 0.5, 
+    qa = Text(tab1, width = 44, height = 4, borderwidth = 0.5, 
               font = ("Courier New", 14), undo = True, relief = SUNKEN)
-    qa.grid(row = 4, column = 0, columnspan = 2, sticky = E)
+    qa.grid(row = 5, column = 0, columnspan = 2, sticky = E)
 
     def entry_callback(*args):
         qa.delete(1.0, END)
@@ -822,8 +826,8 @@ def corpkit_gui():
     pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
     datatype_picked.trace("w", callback)
 
-    Label(tab1, text = 'Kind of search:').grid(row = 3, column = 0, sticky = 'NW')
-    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 35, exportselection = False)
+    Label(tab1, text = 'Search type:').grid(row = 3, column = 0, sticky = 'NW')
+    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 33, exportselection = False)
     datatype_listbox.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     datatype_chosen_option = StringVar()
     datatype_chosen_option.set('Get words')
@@ -846,30 +850,30 @@ def corpkit_gui():
     queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects'))
     special_queries = StringVar(root)
     special_queries.set('Off')
-    Label(tab1, text = 'Preset query:').grid(row = 5, column = 0, sticky = W)
+    Label(tab1, text = 'Preset query:').grid(row = 6, column = 0, sticky = W)
     pick_a_query = OptionMenu(tab1, special_queries, *queries)
-    pick_a_query.grid(row = 5, column = 1, sticky=E)
+    pick_a_query.grid(row = 6, column = 1, sticky=E)
     special_queries.trace("w", q_callback)
 
     # boolean interrogation arguments
     lem = IntVar()
-    Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False).grid(column = 0, row = 6, sticky=W)
+    Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False).grid(column = 0, row = 7, sticky=W)
     phras = IntVar()
-    Checkbutton(tab1, text="Multiword results", variable=phras, onvalue = True, offvalue = False).grid(column = 1, columnspan = 2, row = 6, sticky=W)
+    Checkbutton(tab1, text="Multiword results", variable=phras, onvalue = True, offvalue = False).grid(column = 1, row = 7, sticky=E)
     tit_fil = IntVar()
-    Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid(row = 7, column = 0, sticky=W)
+    Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False).grid(row = 8, column = 0, sticky=W)
     case_sensitive = IntVar()
-    Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 7, column = 1, sticky=W)
+    Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 8, column = 1, sticky=E)
 
-    Label(tab1, text = 'Normalise spelling:').grid(row = 8, column = 0, sticky = W)
+    Label(tab1, text = 'Normalise spelling:').grid(row = 9, column = 0, sticky = W)
     spl = MyOptionMenu(tab1, 'Off','UK','US')
-    spl.grid(row = 8, column = 1, sticky = E)
+    spl.grid(row = 9, column = 1, sticky = E)
 
     # Interrogation name
     nametext = StringVar()
     nametext.set('untitled')
-    Label(tab1, text = 'Interrogation name:').grid(row = 13, column = 0, sticky = W)
-    Entry(tab1, textvariable = nametext).grid(row = 13, column = 1)
+    Label(tab1, text = 'Interrogation name:').grid(row = 14, column = 0, sticky = W)
+    Entry(tab1, textvariable = nametext).grid(row = 14, column = 1, sticky = E)
 
     def query_help():
         import webbrowser
@@ -878,7 +882,7 @@ def corpkit_gui():
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
-    Button(tab1, text = 'Interrogate!', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
+    Button(tab1, text = 'Interrogate!', command = do_interrogation).grid(row = 15, column = 1, sticky = E)
 
     # name to show above spreadsheet 0
     i_resultname = StringVar()
@@ -1006,7 +1010,7 @@ def corpkit_gui():
         return True
 
     def do_editing():
-        Button(tab2, text = 'Edit', command = ignore).grid(row = 18, column = 1, sticky = E)
+        Button(tab2, text = 'Edit', command = ignore).grid(row = 20, column = 1, sticky = E)
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
@@ -1017,7 +1021,7 @@ def corpkit_gui():
             operation_text = None
         else:
             operation_text = opp.get()[0]
-            
+
         # translate dataframe2 into interrogator input
         data2 = data2_pick.get()
         if data2 == 'None' or data2 == '' or data2 == 'Self':
@@ -1063,6 +1067,13 @@ def corpkit_gui():
             editor_args['span_subcorpora'] = subc_sel_vals
         elif do_sub.get() == 'Skip':
             editor_args['skip_subcorpora'] = subc_sel_vals
+
+        if toreplace_string.get() != '':
+            if replacewith_string.get() == '':
+                replacetup = toreplace_string.get()
+            else:
+                replacetup = (toreplace_string.get(), replacewith_string.get())
+            editor_args['replace_names'] = replacetup
 
         # special query: add to this list!
         #if special_queries.get() != 'Off':
@@ -1112,6 +1123,7 @@ def corpkit_gui():
                 numtokeep = int(keeptopnum.get())
             except ValueError:
                 print 'Keep top n results value must be number.'
+                Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
                 return
             editor_args['keep_top'] = numtokeep
         
@@ -1121,11 +1133,13 @@ def corpkit_gui():
         if not r:
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Editing caused an error.' % thetime
+            Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
             return
 
         if len(list(r.results.columns)) == 0:
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Editing removed all results.' % thetime
+            Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
             return
 
         # drop over 1000?
@@ -1163,12 +1177,12 @@ def corpkit_gui():
         update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 720)
         
         # add button to update
-        Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 18, column = 2, sticky = E)
+        Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 20, column = 2, sticky = E)
         
         # finish up
         refresh()
         # restore button
-        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 18, column = 1, sticky = E)
+        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
 
     def df_callback(*args):
         """show names and spreadsheets for what is selected as result to edit
@@ -1259,7 +1273,7 @@ def corpkit_gui():
     sorts.grid(row = 4, column = 1, sticky = E)
 
     # spelling again
-    Label(tab2, text = 'Spelling:', font = ("Helvetica", 12, "bold")).grid(row = 5, column = 0, sticky = W)
+    Label(tab2, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
     spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
     spl_editor.grid(row = 5, column = 1, sticky = E)
 
@@ -1288,8 +1302,8 @@ def corpkit_gui():
     Label(tab2, text = 'Keep top results:').grid(row = 8, column = 0, sticky = W)
     keeptopnum = StringVar()
     keeptopnum.set('all')
-    keeptopbox = Entry(tab2, textvariable = keeptopnum)
-    trans_but.grid(column = 1, row = 8, sticky = E)
+    keeptopbox = Entry(tab2, textvariable = keeptopnum, width = 5)
+    keeptopbox.grid(column = 1, row = 8, sticky = E)
 
     subc_sel_vals = []
     # entries + entry field for regex, off, skip, keep, merge
@@ -1306,7 +1320,17 @@ def corpkit_gui():
     newname_var = StringVar()
     newname_var.set('')
     mergen = Entry(tab2, textvariable = newname_var, state = DISABLED)
-    mergen.grid(row = 12, column = 0)
+    mergen.grid(row = 11, column = 1, sticky = E)
+
+    Label(tab2, text = 'Replace in entry names:').grid(row = 12, column = 0, sticky = W)
+    toreplace_string = StringVar()
+    toreplace_string.set('')
+    replacewith_string = StringVar()
+    replacewith_string.set('')
+    toreplace = Entry(tab2, textvariable = toreplace_string, state = DISABLED)
+    toreplace.grid(row = 13, column = 0, sticky = W)
+    replacewith = Entry(tab2, textvariable = replacewith_string, state = DISABLED)
+    replacewith.grid(row = 13, column = 1, sticky = E)    
     
     def do_w_callback(*args):
         """if not merging entries, diable input fields"""
@@ -1350,10 +1374,10 @@ def corpkit_gui():
             merge.configure(state = DISABLED)
 
     # subcorpora + optionmenu off, skip, keep
-    Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 12, column = 0, sticky = W)
+    Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 14, column = 0, sticky = W)
     
     subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, state = DISABLED)
-    subc_listbox.grid(row = 13, column = 1, rowspan = 5, sticky = E)
+    subc_listbox.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
     xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
     subc_listbox.select_set(0)
 
@@ -1361,25 +1385,25 @@ def corpkit_gui():
     do_sub = StringVar(root)
     do_sub.set('Off')
     do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
-    do_with_subc.grid(row = 14, column = 0, sticky = W)
+    do_with_subc.grid(row = 16, column = 0, sticky = W)
     do_sub.trace("w", do_s_callback)
 
     # subcorpora merge name    
-    Label(tab2, text = 'Merge name:').grid(row = 15, column = 0, sticky = 'NW')
+    Label(tab2, text = 'Merge name:').grid(row = 17, column = 0, sticky = 'NW')
     new_subc_name = StringVar()
     new_subc_name.set('')
     merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED)
-    merge.grid(row = 16, column = 0, sticky = 'SW')
+    merge.grid(row = 17, column = 0, sticky = 'SW')
     
     # name the edit
     edit_nametext = StringVar()
     edit_nametext.set('untitled')
-    Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 17, column = 0, sticky = W)
+    Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 19, column = 0, sticky = W)
     msn = Entry(tab2, textvariable = edit_nametext)
-    msn.grid(row = 18, column = 0)
+    msn.grid(row = 20, column = 0)
 
     # edit button
-    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 18, column = 1, sticky = E)
+    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
 
     # show spreadsheets
     resultname = StringVar()
@@ -1442,24 +1466,28 @@ def corpkit_gui():
         from corpkit import plotter
 
         if data_to_plot.get() == 'None':
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: No data selected to plot.' % (time)
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No data selected to plot.' % (thetime)
+            Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
             return
 
         if plotbranch.get() == 'results':
             if not 'results' in all_interrogations[data_to_plot.get()]._asdict().keys():
                 print 'No results branch to plot.'
+                Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
             if not 'totals' in all_interrogations[data_to_plot.get()]._asdict().keys():
                 print 'No totals branch to plot.'
+                Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].totals
         
         if transpose_vis.get():
             if plotbranch.get() != 'totals':
                 what_to_plot = what_to_plot.T
+
         # determine num to plot
         def determine_num_to_plot(num):
             """translate num to num_to_plot"""
@@ -1501,6 +1529,9 @@ def corpkit_gui():
         if y_axis_l.get() == 'None':
             d['y_label'] = False
 
+        if cumul.get():
+            d['cumulative'] = True
+
         if chart_cols.get() != 'Default':
             d['colours'] = chart_cols.get()
 
@@ -1518,17 +1549,17 @@ def corpkit_gui():
         if show_totals_in_plot == 'legend + plot':
             d['show_totals'] = 'both'
 
-        d['figsize'] = (11.4, 5.7)
+        d['figsize'] = (12.6, 6.3)
 
         f = plotter(plotnametext.get(), what_to_plot, **d)
         time = strftime("%H:%M:%S", localtime())
         print '%s: %s plotted.' % (time, plotnametext.get())
         # a Tkinter.DrawingArea
         toolbar_frame = Tkinter.Frame(tab3)
-        toolbar_frame.grid(row=17, column=2, columnspan = 3, sticky = N)
+        toolbar_frame.grid(row=18, column=2, columnspan = 3, sticky = N)
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
-        canvas.get_tk_widget().grid(column = 2, row = 0, rowspan = 16, padx = 20, columnspan = 3)
+        canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 16, padx = 20, columnspan = 3)
         toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
         toolbar.update()
         for i in thefig:
@@ -1589,46 +1620,53 @@ def corpkit_gui():
     #plotbox.config(state = DISABLED)
     plotbox.grid(row = 2, column = 0, sticky = E, columnspan = 2)
 
-    # transpose
-    transpose_vis = IntVar()
-    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False)
-    trans_but_vis.grid(column = 1, row = 3, sticky = E)
 
     # num_to_plot
-    Label(tab3, text = 'Results to show:').grid(row = 5, column = 0, sticky = W)
+    Label(tab3, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
     number_to_plot = StringVar()
     number_to_plot.set('7')
-    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 5, column = 1, sticky = E)
+    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 4, column = 1, sticky = E)
 
     # chart type
-    Label(tab3, text='Kind of chart').grid(row = 6, column = 0, sticky = W)
+    Label(tab3, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
     charttype = StringVar(root)
     charttype.set('line')
     kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
     chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
-    chart_kind.grid(row = 6, column = 1, sticky = E)
+    chart_kind.grid(row = 5, column = 1, sticky = E)
 
     # axes
-    Label(tab3, text = 'x axis label:').grid(row = 7, column = 0, sticky = W)
+    Label(tab3, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
     x_axis_l = StringVar()
     x_axis_l.set('')
-    Entry(tab3, textvariable = x_axis_l).grid(row = 7, column = 1, sticky = W)
+    Entry(tab3, textvariable = x_axis_l).grid(row = 6, column = 1, sticky = W)
 
-    Label(tab3, text = 'y axis label:').grid(row = 8, column = 0, sticky = W)
+    Label(tab3, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
     y_axis_l = StringVar()
     y_axis_l.set('')
-    Entry(tab3, textvariable = y_axis_l).grid(row = 8, column = 1)
+    Entry(tab3, textvariable = y_axis_l).grid(row = 7, column = 1)
 
     # log options
     log_x = IntVar()
-    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 9, sticky = W)
+    Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 8, sticky = W)
     log_y = IntVar()
-    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 9, sticky = E)
+    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 8, sticky = E)
+
+    # transpose
+    transpose_vis = IntVar()
+    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False)
+    trans_but_vis.grid(column = 1, row = 9, sticky = E)
+
+    cumul = IntVar()
+    cumulbutton = Checkbutton(tab3, text="Cumulative", variable=cumul, onvalue = True, offvalue = False)
+    cumulbutton.grid(column = 0, row = 9, sticky = W)
 
     bw = IntVar()
     Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 10, sticky = W)
     texuse = IntVar()
     Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky = E)
+
+
 
     # chart type
     Label(tab3, text='Colour scheme:').grid(row = 11, column = 0, sticky = W)
@@ -1867,7 +1905,7 @@ def corpkit_gui():
     # conc box
     scrollbar = Scrollbar(tab4)
     scrollbar.grid(row = 0, column = 0)
-    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 30, width = 177, font = ('Courier New', 12), selectmode = EXTENDED)
+    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 35, width = 194, font = ('Courier New', 12), selectmode = EXTENDED)
     conclistbox.grid(column = 0, columnspan = 60, row = 0)
     conclistbox.bind("<BackSpace>", delete_conc_lines)
     conclistbox.bind("<Shift-KeyPress-BackSpace>", delete_reverse_conc_lines)
@@ -1915,7 +1953,7 @@ def corpkit_gui():
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
 
     # edit conc lines
-    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0))
+    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (350, 0))
     Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10)
     Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11)
 
