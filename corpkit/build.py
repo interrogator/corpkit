@@ -569,26 +569,6 @@ def extract_cnlp(fullfilepath, root = False):
     time = strftime("%H:%M:%S", localtime())
     print '%s: CoreNLP extracted. ' % time
 
-def rename_duplicates(corpuspath):
-    import corpkit
-    """rename any duplicate filenames in the corpus
-
-    skipping for now, sorry"""
-    matches = []
-    basenames_only = []
-    for root, dirnames, filenames in os.walk(corpuspath):
-        for filename in fnmatch.filter(filenames, '*.txt'):
-            matches.append(os.path.join(root, filename))
-            basenames_only.append(filename)
-
-    from collections import defaultdict
-    d = defaultdict(list)
-    for i, (full, base) in enumerate(zip(matches, basenames_only)):
-        d[base].append(i)
-    for base, lst in d.items():
-        if len(lst) > 1:
-            d = {k:v for k,v in d.items() if len(v)>1}
-
 def get_corpus_filepaths(proj_path, corpuspath):
     import corpkit
     import fnmatch
@@ -623,6 +603,7 @@ def parse_corpus(proj_path, corpuspath, filelist,
     from subprocess import PIPE, STDOUT, Popen
     import os
     import sys
+    import chardet
     from time import localtime, strftime
     if not check_jdk():
         print 'Need latest Java.'
@@ -683,7 +664,7 @@ def parse_corpus(proj_path, corpuspath, filelist,
             root.update()
             time.sleep(2)
     else:
-        import chardet
+
         # tokenise each file
         from nltk import word_tokenize as tokenise
         import pickle
