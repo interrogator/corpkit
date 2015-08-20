@@ -1035,6 +1035,11 @@ def editor(dataframe1,
     if tk:
         df = add_tkt_index(df)
 
+    if 'df1_always_df' in kwargs.keys():
+        if kwargs['df1_always_df'] is True:
+            if type(df) == pandas.core.series.Series:
+                df = pandas.DataFrame(df)
+
     #make named_tuple
     the_operation = 'none'
     if using_totals:
