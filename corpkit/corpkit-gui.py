@@ -1017,6 +1017,7 @@ def corpkit_gui():
             operation_text = None
         else:
             operation_text = opp.get()[0]
+            
         # translate dataframe2 into interrogator input
         data2 = data2_pick.get()
         if data2 == 'None' or data2 == '' or data2 == 'Self':
@@ -1228,7 +1229,7 @@ def corpkit_gui():
     # operation for editor
     opp = StringVar(root)
     opp.set('None')
-    operations = ('None', '%', '*', '/', '-', '+', 'a', 'd', 'keywords')
+    operations = ('None', '%', '*', '/', '-', '+', 'combine', 'keywords', 'a', 'd')
     Label(tab2, text='Operation and demonominator:', font = ("Helvetica", 12, "bold")).grid(row = 2, column = 0, sticky = W)
     ops = OptionMenu(tab2, opp, *operations)
     ops.grid(row = 3, column = 0, sticky = W)
