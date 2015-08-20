@@ -605,6 +605,7 @@ def parse_corpus(proj_path, corpuspath, filelist,
     import sys
     import chardet
     from time import localtime, strftime
+    import time
     if not check_jdk():
         print 'Need latest Java.'
         return
@@ -637,6 +638,8 @@ def parse_corpus(proj_path, corpuspath, filelist,
         os.chdir(os.path.join(stanpath, find_install))
         root.update_idletasks()
         reload(sys)
+        import os
+        import time
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
         proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
@@ -651,18 +654,17 @@ def parse_corpus(proj_path, corpuspath, filelist,
         #p = TextProgressBar(num_files_to_parse)
         while proc.poll() is None:
             sys.stdout = stdout
-            #stdoutx, stderrx = proc.communicate()
-            #print stdoutx
             thetime = strftime("%H:%M:%S", localtime())
+            num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
             print '%s: Initialising parser ... ' % (thetime)
-            num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])
             if num_parsed > 0:
                 print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
                 if 'note' in kwargs.keys():
-                    kwargs['note'].progvar.set((num_parsed - 1) * 100.0 / num_files_to_parse)
+                    kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
                 #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
-            root.update()
-            time.sleep(2)
+            if root:
+                root.update()
+                time.sleep(1)
     else:
 
         # tokenise each file
