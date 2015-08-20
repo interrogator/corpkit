@@ -177,6 +177,10 @@ def corpkit_gui():
     import corpkit
     from nltk.draw.table import MultiListbox, Table
 
+    def resource_path(relative):
+        import os
+        return os.path.join(os.environ.get("_MEIPASS2",os.path.abspath(".")),relative)
+
     # add tregex to path
     corpath = os.path.dirname(corpkit.__file__)
     baspat = os.path.dirname(os.path.dirname(corpkit.__file__))
@@ -853,7 +857,8 @@ def corpkit_gui():
 
     def query_help():
         import webbrowser
-        webbrowser.open_new('http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
+        webbrowser.open('file://' + resource_path('user_guide.html').replace('corpkit/corpkit/corpkit', 'corpkit/corpkit'), new = 0)
+        #webbrowser.open_new('http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
@@ -2803,7 +2808,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    #root.after(500, start_update_check) # 500
+    root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':

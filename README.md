@@ -7,7 +7,7 @@
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Right now, I'm in the middle of putting together a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in `./-corpkit-v.v.tar.gz`. These are undocumented and probably fairly unstable. For now, some screenshots can be seen in the [Key features](#key-features) section.**
+> **Right now, I'm in the middle of putting together a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in `./-corpkit-v.v.tar.gz`. For now, there's a user guide over [here](http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html), and some screenshots can be seen in the [Key features](#key-features) section.**
 
 <!-- MarkdownTOC -->
 
