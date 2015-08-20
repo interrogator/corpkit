@@ -281,7 +281,7 @@ def plotter(title,
                 try:
                     a = float(x)
                     b = int(a)
-                except ValueError:
+                except ValueError or OverflowError:
                     return False
                 else:
                     return a == b

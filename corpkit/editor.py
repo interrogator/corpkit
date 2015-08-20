@@ -108,7 +108,7 @@ def editor(dataframe1,
     
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
-    from tests import check_pytex
+    from corpkit.tests import check_pytex
     if check_pytex():
         print_info = False
 
@@ -165,7 +165,6 @@ def editor(dataframe1,
                 totals = df.sum() * 100.0 / float(df.sum().sum())
                 df = df * 100.0
                 df = df.div(denom, axis = 0)
-                
             elif operation == '+':
                 df = df.add(denom, axis = 0)
             elif operation == '-':
@@ -212,6 +211,9 @@ def editor(dataframe1,
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
                 df = df.sum(axis = 1) / df2
+            
+            elif operation.startswith('c'):
+                df = pandas.concat([df, df2], axis = 1)
             return df, totals
 
         elif not single_totals:
@@ -223,6 +225,8 @@ def editor(dataframe1,
                     totals = df.sum() * float(df2.sum().sum())
                 if operation == '/':
                     totals = df.sum() / float(df2.sum().sum())
+                if operation.startswith('c'):
+                    df = pandas.concat([df, df2], axis = 1)
 
                 for index, entry in enumerate(list(df.columns)):
                     #p.animate(index)
@@ -253,6 +257,7 @@ def editor(dataframe1,
                             df[entry] = df[entry] / df2[entry]
                         except:
                             continue
+
             else:
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
@@ -1030,7 +1035,7 @@ def editor(dataframe1,
         return df
 
     # while tkintertable can't sort rows
-    from tests import check_t_kinter
+    from corpkit.tests import check_t_kinter
     tk = check_t_kinter()
     if tk:
         df = add_tkt_index(df)
