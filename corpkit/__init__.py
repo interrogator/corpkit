@@ -9,12 +9,11 @@ __all__ = ["interrogator",
            "as_regex",
            "new_project",
            "download_cnlp", 
-            "extract_cnlp", 
-            "rename_duplicates", 
-            "get_corpus_filepaths", 
-            "check_jdk", 
-            "parse_corpus", 
-            "move_parsed_files", 
+           "extract_cnlp", 
+           "get_corpus_filepaths", 
+           "check_jdk", 
+           "parse_corpus", 
+           "move_parsed_files", 
             "corenlp_exists"]
 
 __version__ = "1.27"
@@ -48,7 +47,6 @@ from other import as_regex
 from other import new_project
 from build import download_cnlp
 from build import extract_cnlp
-from build import rename_duplicates
 from build import get_corpus_filepaths
 from build import check_jdk
 from build import parse_corpus
