@@ -88,7 +88,6 @@ class Notebook(Frame):
         self.progbarspace = Frame(self.noteBookFrame, relief = RAISED, bd = 2, height = 25)
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
-        
         # status bar text and log
         self.status_text = StringVar()
         self.log_stream = []
@@ -274,8 +273,7 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth, cellwidth=60,
-                                    **kwarg)
+                                    rowheaderwidth=indexwidth, cellwidth=50)
                 table.createTableFrame()
                 model = table.model
                 model.importDict(raw_data)
@@ -364,6 +362,8 @@ def corpkit_gui():
                         return False
         return query
 
+    def ignore():
+        return "break"
 
     def need_make_totals(df):
         # because there is tkinter-order, the min is 2
@@ -469,33 +469,33 @@ def corpkit_gui():
             'Get distance from root for regex match': 'a',
             'Get tag and word of match': 'b',
             'Count matches': 'c',
+            'Get role of match': 'f',
             'Get "role:dependent", matching governor': 'd',
-            'Get semantic role of match': 'f',
             'Get "role:governor", matching dependent': 'g',
-            'Get lemmata via dependencies': 'l',
-            'Get tokens by dependency role': 'm',
+            'Get lemmata': 'l',
+            'Get tokens by role': 'm',
             'Get dependency index of regular expression match': 'n',
             'Get part-of-speech tag': 'p',
             'Regular expression search': 'r',
             'Simple search string search': 's',
-            'Match tokens via dependencies': 't',
+            'Get tokens': 't',
             'Get words': 'w',
             'Get tokens matching regular expression': 'h',
             'Get tokens matching list': 'e'}
 
     option_dict = {'Trees': ['Get words', 
                              'Get tag and word of match', 
-                             #'Count matches', 
+                             'Count matches', 
                              'Get part-of-speech tag'],
                    'Tokens': ['Get tokens matching regular expression', 
                              'Get tokens matching list'], 
                    'Dependencies':
-                            ['Get "role:dependent", matching governor',
-                             'Get semantic role of match',
+                            ['Get role of match',
+                             'Get lemmata',
+                             'Get tokens',
+                             'Get tokens by role',
+                             'Get "role:dependent", matching governor',
                              'Get "role:governor", matching dependent',
-                             'Get lemmata via dependencies',
-                             'Get tokens by dependency role',
-                             'Match tokens via dependencies',
                              'Get distance from root for regex match'],
                    'Plaintext': 
                             ['Regular expression search', 
@@ -547,6 +547,8 @@ def corpkit_gui():
             pass
 
     def do_interrogation():
+        Button(tab1, text = 'Interrogate', command = ignore).grid(row = 14, column = 1, sticky = E)
+        note.progvar.set(0)
         """performs an interrogation"""
         import pandas
         from corpkit import interrogator
@@ -564,7 +566,7 @@ def corpkit_gui():
             query = spec_quer_translate[special_queries.get()]
         
         else:
-            query = entrytext.get()
+            query = qa.get(1.0, END)
             # allow list queries
             if query.startswith('[') and query.endswith(']'):
                 query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
@@ -626,12 +628,11 @@ def corpkit_gui():
 
         # drop over 1000?
         # type check probably redundant now
-        if type(r.results) == pandas.core.frame.DataFrame:
+        if 'results' in r._asdict().keys():
             large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
             r.results.drop(large, axis = 1, inplace = True)
-
-        r.results.drop('Total', errors = 'ignore', inplace = True)
-        r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
+            r.results.drop('Total', errors = 'ignore', inplace = True)
+            r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
 
         # remove dummy entry from master
         try:
@@ -651,9 +652,8 @@ def corpkit_gui():
         sorted_dirs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
 
         # update spreadsheets
-        if selected_option != 'c':
+        if 'results' in r._asdict().keys():
             update_spreadsheet(interro_results, r.results, height = 340, indexwidth = 70, width = 650)
-
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         refresh()
@@ -662,6 +662,7 @@ def corpkit_gui():
         nametext.set('untitled')
 
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 14, column = 2, sticky = E)
+        Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -688,7 +689,7 @@ def corpkit_gui():
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
-        basepath.set('Corpus: "%s"' % os.path.basename(fp))
+        basepath.set(os.path.basename(fp))
         subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
         for k in subcorpora.keys():
             del subcorpora[k]
@@ -702,11 +703,12 @@ def corpkit_gui():
         parse_button_text.set('Parse corpus: %s' % os.path.basename(fp))
         add_subcorpora_to_build_box(fp)
         sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(fp))
+        note.progvar.set(0)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
-    Label(tab1, text = 'Corpus directory: ').grid(row = 0, column = 0)
-    Button(tab1, textvariable = basepath, command = getdir).grid(row = 0, column = 1, sticky=E)
+    Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
+    Button(tab1, textvariable = basepath, command = getdir, width = 24).grid(row = 0, column = 0, columnspan = 2, sticky = E)
 
     # function filter
     funfil = StringVar()
@@ -744,10 +746,18 @@ def corpkit_gui():
 
     # query
     entrytext = StringVar()
-    Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = W)
+
+    Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW')
     entrytext.set(r'JJ > (NP <<# /\brisk/)')
-    qa = Entry(tab1, textvariable = entrytext, width = 43)
+    qa = Text(tab1, width = 44, height = 3, borderwidth = 0.5, 
+              font = ("Courier New", 14), undo = True, relief = SUNKEN)
     qa.grid(row = 4, column = 0, columnspan = 2, sticky = E)
+
+    def entry_callback(*args):
+        qa.delete(1.0, END)
+        qa.insert(END, entrytext.get())
+
+    entrytext.trace("w", entry_callback)
 
     def onselect(evt):
         w = evt.widget
@@ -755,18 +765,21 @@ def corpkit_gui():
         value = w.get(index)
         callback()
         datatype_chosen_option.set(value)
+        datatype_listbox.select_set(index)
 
     def callback(*args):
         """if the drop down list for data type changes, fill options"""
-        try:
-            curselect = int(datatype_listbox.curselection()[0])
-        except IndexError:
-            curselect = False
+        #try:
+        #    curselect = int(datatype_listbox.curselection()[0])
+        #except IndexError:
+        #    curselect = False
         datatype_listbox.delete(0, 'end')
         chosen = datatype_picked.get()
         lst = option_dict[chosen]
         for e in lst:
             datatype_listbox.insert(END, e)
+
+        #datatype_listbox.select_set(0)
 
         if chosen == 'Dependencies':
             pick_dep_type.configure(state = NORMAL)
@@ -774,7 +787,7 @@ def corpkit_gui():
             qr.configure(state = NORMAL)
             lmt.configure(state = DISABLED)
             entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-            if datatype_chosen_option.get() == 'Get tokens by dependency role':
+            if datatype_chosen_option.get() == 'Get tokens by role':
                 entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
         else:
             pick_dep_type.configure(state = DISABLED)
@@ -795,27 +808,30 @@ def corpkit_gui():
                 entrytext.set(r'(m.n|wom.n|child(ren)?)')
             elif datatype_chosen_option.get() == 'Get tokens matching list':
                 entrytext.set(r'[cat,cats,mouse,mice,cheese]')
-        if curselect is not False:
-            datatype_listbox.select_set(curselect)
-
+        #if curselect is not False:
+        #    datatype_listbox.select_set(curselect)
+        #else:
+        #    datatype_listbox.select_set(0)
 
 
     datatype_picked = StringVar(root)
-    datatype_picked.set('Dependencies')
-    Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0)
+    datatype_picked.set('Trees')
+    Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
     pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
-    pick_a_datatype.grid(row = 1, column = 1, sticky=E)
+    pick_a_datatype.configure(width = 26, justify = CENTER)
+    pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
     datatype_picked.trace("w", callback)
 
-    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 40)
-    datatype_listbox.grid(row = 3, column = 0, columnspan = 2)
+    Label(tab1, text = 'Kind of search:').grid(row = 3, column = 0, sticky = 'NW')
+    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 35, exportselection = False)
+    datatype_listbox.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     datatype_chosen_option = StringVar()
     datatype_chosen_option.set('Get words')
     #datatype_chosen_option.set('w')
     x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
     # hack: change it now to populate below 
     datatype_picked.set('Trees')
-    #datatype_listbox.select_set(0)
+    datatype_listbox.select_set(0)
 
     def q_callback(*args):
         if special_queries.get() == 'Off':
@@ -862,7 +878,7 @@ def corpkit_gui():
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
-    Button(tab1, text = 'Interrogate!', command = lambda: do_interrogation()).grid(row = 14, column = 1, sticky = E)
+    Button(tab1, text = 'Interrogate!', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
 
     # name to show above spreadsheet 0
     i_resultname = StringVar()
@@ -892,7 +908,7 @@ def corpkit_gui():
         """replaces a namedtuple results/totals with newdata
            --- such a hack, should upgrade to recordtype"""
         namedtup = all_interrogations[namedtupname]
-        if branch == 'results':
+        if branch == 'results' and 'results' in namedtup._asdict().keys():
             the_branch = namedtup.results
             the_branch.drop(the_branch.index, inplace = True)
             the_branch.drop(the_branch.columns, axis = 1, inplace = True)
@@ -900,7 +916,7 @@ def corpkit_gui():
                 the_branch[i] = i
             for index, i in enumerate(list(newdata.index)):
                 the_branch.loc[i] = newdata.ix[index]
-        elif branch == 'totals':
+        elif branch == 'totals' and 'totals' in namedtup._asdict().keys():
             the_branch = namedtup.totals
             the_branch.drop(the_branch.index, inplace = True)
             for index, datum in zip(newdata.index, newdata.iloc[:,0].values):
@@ -933,7 +949,7 @@ def corpkit_gui():
         import pandas
         """update all_interrogations within spreadsheet data
         need a very serious cleanup!"""
-        # to do: only if they are there
+        # to do: only if they are there!
         if pane == 'interrogate':
             update_interrogation(interro_results, id = 0)
             update_interrogation(interro_totals, id = 0, is_total = True)
@@ -949,7 +965,8 @@ def corpkit_gui():
         if pane == 'interrogate':
             the_data = all_interrogations[name_of_interro_spreadsheet.get()]
             tot = pandas.DataFrame(the_data.totals, dtype = object)
-            update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
+            if 'results' in the_data._asdict().keys():
+                update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
             update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70, width = 650)
         if pane == 'edit':
             the_data = all_interrogations[name_of_o_ed_spread.get()]
@@ -959,16 +976,19 @@ def corpkit_gui():
                 there_is_new_data = True
             except:
                 pass
-            update_spreadsheet(o_editor_results, the_data.results, height = 140, indexwidth = 70, width = 720)
+            if 'results' in the_data._asdict().keys():
+                update_spreadsheet(o_editor_results, the_data.results, height = 140, indexwidth = 70, width = 720)
             update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 720)
             if there_is_new_data:
                 if newdata != 'None' and newdata != '':
-                    update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 140, width = 720)
+                    if 'results' in the_data._asdict().keys():
+                        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 140, width = 720)
                     update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 720)
             if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
                 the_data = all_interrogations[name_of_interro_spreadsheet.get()]
                 tot = pandas.DataFrame(the_data.totals, dtype = object)
-                update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
+                if 'results' in the_data._asdict().keys():
+                    update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
                 update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70, width = 650)
         
         thetime = strftime("%H:%M:%S", localtime())
@@ -986,6 +1006,7 @@ def corpkit_gui():
         return True
 
     def do_editing():
+        Button(tab2, text = 'Edit', command = ignore).grid(row = 18, column = 1, sticky = E)
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
@@ -1003,7 +1024,10 @@ def corpkit_gui():
 
         if data2:
             if df2branch.get() == 'results':
-                data2 = all_interrogations[data2].results
+                try:
+                    data2 = all_interrogations[data2].results
+                except AttributeError:
+                    print 'Interrogation has no results branch.'
             elif df2branch.get() == 'totals':
                 data2 = all_interrogations[data2].totals
             if transpose.get():
@@ -1011,7 +1035,10 @@ def corpkit_gui():
 
         the_data = all_interrogations[name_of_o_ed_spread.get()]
         if df1branch.get() == 'results':
-            data1 = the_data.results
+            try:
+                data1 = the_data.results
+            except AttributeError:
+                print 'Interrogation has no results branch.'
         elif df1branch.get() == 'totals':
             data1 = the_data.totals
 
@@ -1024,7 +1051,8 @@ def corpkit_gui():
         editor_args = {'operation': operation_text,
                        'dataframe2': data2,
                        'spelling': spel,
-                       'sort_by': sort_trans[sort_val.get()]}
+                       'sort_by': sort_trans[sort_val.get()],
+                       'df1_always_df': True}
 
         if do_sub.get() == 'Merge':
             editor_args['merge_subcorpora'] = subc_sel_vals
@@ -1077,6 +1105,14 @@ def corpkit_gui():
 
         if transpose.get():
             data1 = data1.T
+
+        if keeptopnum.get() != 'all':
+            try:
+                numtokeep = int(keeptopnum.get())
+            except ValueError:
+                print 'Keep top n results value must be number.'
+                return
+            editor_args['keep_top'] = numtokeep
         
         # do editing
         r = editor(data1, **editor_args)
@@ -1092,6 +1128,7 @@ def corpkit_gui():
             return
 
         # drop over 1000?
+        # results should now always be dataframes, so this if is redundant
         if type(r.results) == pandas.core.frame.DataFrame:
             large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
             r.results.drop(large, axis = 1, inplace = True)
@@ -1120,7 +1157,8 @@ def corpkit_gui():
 
         # update edited spreadsheets
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
-        update_spreadsheet(n_editor_results, most_recent.results, height = 140, width = 720)
+        if 'results' in most_recent._asdict().keys():
+            update_spreadsheet(n_editor_results, most_recent.results, height = 140, width = 720)
         update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 720)
         
         # add button to update
@@ -1128,13 +1166,16 @@ def corpkit_gui():
         
         # finish up
         refresh()
+        # restore button
+        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 18, column = 1, sticky = E)
 
     def df_callback(*args):
         """show names and spreadsheets for what is selected as result to edit
            also, hide the edited results section"""
         if selected_to_edit.get() != 'None':
             name_of_o_ed_spread.set(selected_to_edit.get())
-            update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 140, width = 720)
+            if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
+                update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 140, width = 720)
             update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 720)
             resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
         name_of_n_ed_spread.set('')
@@ -1146,9 +1187,13 @@ def corpkit_gui():
             subcl.delete(0, 'end')
             subcl.configure(state = NORMAL)
             if name_of_o_ed_spread.get() != '':
-                for e in list(all_interrogations[name_of_o_ed_spread.get()].results.index):
-                    if 'tkintertable-order' not in e:
-                        subcl.insert(END, e) 
+                if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
+                    cols = list(all_interrogations[name_of_o_ed_spread.get()].results.index)
+                else:
+                    cols = list(all_interrogations[name_of_o_ed_spread.get()].totals.index)
+                    for e in cols:
+                        if 'tkintertable-order' not in e:
+                            subcl.insert(END, e) 
             subcl.configure(state = DISABLED)       
 
     # all interrogations here
@@ -1238,22 +1283,29 @@ def corpkit_gui():
     trans_but = Checkbutton(tab2, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
     trans_but.grid(column = 1, row = 7, sticky = E)
 
+    # keep_top
+    Label(tab2, text = 'Keep top results:').grid(row = 8, column = 0, sticky = W)
+    keeptopnum = StringVar()
+    keeptopnum.set('all')
+    keeptopbox = Entry(tab2, textvariable = keeptopnum)
+    trans_but.grid(column = 1, row = 8, sticky = E)
+
     subc_sel_vals = []
     # entries + entry field for regex, off, skip, keep, merge
-    Label(tab2, text = 'Edit entries:', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 0, sticky = W)
+    Label(tab2, text = 'Edit entries:', font = ("Helvetica", 12, "bold")).grid(row = 9, column = 0, sticky = W)
     
     # edit entries regex box
     entry_regex = StringVar()
     entry_regex.set(r'.*ing$')
     edit_box = Entry(tab2, textvariable = entry_regex, state = DISABLED)
-    edit_box.grid(row = 9, column = 1, sticky = E)
+    edit_box.grid(row = 10, column = 1, sticky = E)
 
     # merge entries newname
-    Label(tab2, text = 'Merge name:').grid(row = 10, column = 0, sticky = W)
+    Label(tab2, text = 'Merge name:').grid(row = 11, column = 0, sticky = W)
     newname_var = StringVar()
     newname_var.set('')
     mergen = Entry(tab2, textvariable = newname_var, state = DISABLED)
-    mergen.grid(row = 11, column = 0)
+    mergen.grid(row = 12, column = 0)
     
     def do_w_callback(*args):
         """if not merging entries, diable input fields"""
@@ -1271,7 +1323,7 @@ def corpkit_gui():
     do_with_entries.set('Off')
     edit_ent_op = ('Off', 'Skip', 'Keep', 'Merge')
     ed_op = OptionMenu(tab2, do_with_entries, *edit_ent_op)
-    ed_op.grid(row = 9, column = 0, sticky = W)
+    ed_op.grid(row = 10, column = 0, sticky = W)
     do_with_entries.trace("w", do_w_callback)
 
     def onselect_subc(evt):
@@ -1300,7 +1352,7 @@ def corpkit_gui():
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 12, column = 0, sticky = W)
     
     subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, state = DISABLED)
-    subc_listbox.grid(row = 12, column = 1, rowspan = 5, sticky = E)
+    subc_listbox.grid(row = 13, column = 1, rowspan = 5, sticky = E)
     xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
     subc_listbox.select_set(0)
 
@@ -1308,25 +1360,25 @@ def corpkit_gui():
     do_sub = StringVar(root)
     do_sub.set('Off')
     do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
-    do_with_subc.grid(row = 13, column = 0, sticky = W)
+    do_with_subc.grid(row = 14, column = 0, sticky = W)
     do_sub.trace("w", do_s_callback)
 
     # subcorpora merge name    
-    Label(tab2, text = 'Merge name:').grid(row = 14, column = 0, sticky = 'NW')
+    Label(tab2, text = 'Merge name:').grid(row = 15, column = 0, sticky = 'NW')
     new_subc_name = StringVar()
     new_subc_name.set('')
     merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED)
-    merge.grid(row = 15, column = 0, sticky = 'SW')
+    merge.grid(row = 16, column = 0, sticky = 'SW')
     
     # name the edit
     edit_nametext = StringVar()
     edit_nametext.set('untitled')
-    Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 16, column = 0, sticky = W)
+    Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 17, column = 0, sticky = W)
     msn = Entry(tab2, textvariable = edit_nametext)
-    msn.grid(row = 17, column = 0)
+    msn.grid(row = 18, column = 0)
 
     # edit button
-    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 17, column = 1, sticky = E)
+    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 18, column = 1, sticky = E)
 
     # show spreadsheets
     resultname = StringVar()
@@ -1377,6 +1429,7 @@ def corpkit_gui():
 
     def do_plotting():
         """when you press plot"""
+        Button(tab3, text = 'Plot', command = ignore).grid(row = 15, column = 1, sticky = E)
         # junk for showing the plot in tkinter
         import matplotlib
         matplotlib.use('TkAgg')
@@ -1393,8 +1446,14 @@ def corpkit_gui():
             return
 
         if plotbranch.get() == 'results':
+            if not 'results' in all_interrogations[data_to_plot.get()]._asdict().keys():
+                print 'No results branch to plot.'
+                return
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
+            if not 'totals' in all_interrogations[data_to_plot.get()]._asdict().keys():
+                print 'No totals branch to plot.'
+                return
             what_to_plot = all_interrogations[data_to_plot.get()].totals
         
         if transpose_vis.get():
@@ -1474,6 +1533,7 @@ def corpkit_gui():
         for i in thefig:
             thefig.pop()
         thefig.append(f.gcf())
+        Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
 
     def save_current_image():
         import os
@@ -1648,6 +1708,7 @@ def corpkit_gui():
         print '%s: Concordancing done: %d results.' % (time, len(lines))
 
     def do_concordancing():
+        Button(tab4, text = 'Run', command = ignore).grid(row = 3, column = 4, sticky = E)
         import os
         """when you press 'run'"""
         time = strftime("%H:%M:%S", localtime())
@@ -1683,6 +1744,7 @@ def corpkit_gui():
         if r is False:
             return
         add_conc_lines_to_window(r)
+        Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
         items = conclistbox.curselection()
@@ -2069,11 +2131,17 @@ def corpkit_gui():
             os.makedirs(os.path.join(fp, answer))
             for k in keys:
                 if k == 'results':
-                    data.results.to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
+                    if 'results' in data._asdict().keys():
+                        data.results.to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
                 if k == 'totals':
-                    pandas.DataFrame(data.totals).to_csv(os.path.join(fp, answer, 'totals.csv'), sep ='\t')
+                    if 'totals' in data._asdict().keys():
+                        pandas.DataFrame(data.totals).to_csv(os.path.join(fp, answer, 'totals.csv'), sep ='\t')
                 if k == 'query':
-                    pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'query.csv'), sep ='\t')
+                    if 'query' in data._asdict().keys():
+                        pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'query.csv'), sep ='\t')
+                if k == 'table':
+                    if 'table' in data._asdict().keys():
+                        pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'table.csv'), sep ='\t')
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Results exported to %s' % (thetime, "answer")        
 
@@ -2138,7 +2206,7 @@ def corpkit_gui():
             if len(subdrs) == 0:
                 charttype.set('bar')
 
-            basepath.set('Corpus: "%s"' % first)
+            basepath.set(first)
             subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
         # settings
@@ -2177,7 +2245,7 @@ def corpkit_gui():
 
 
     def view_query():
-        Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 4, padx = 40)
+        #Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 4, padx = 40)
         mlb = Table(tab5, ['Option', 'Value'],
                   column_weights=[1, 1], height = 50)
         mlb.grid(sticky = N, column = 0, row = 5, rowspan = 40)
@@ -2224,6 +2292,9 @@ def corpkit_gui():
             v = q_dict[k]
             if k == 'option':
                 v = flipped_trans[v]
+            if v is False:
+                v = 'False'
+
             #mlb.insert(END, (str(k), str(v)))
             mlb.append([k, v])
             #show_query_vals.insert(END, '%d. %s' % (i, str(v)))
@@ -2282,9 +2353,10 @@ def corpkit_gui():
     ##############     ##############     ##############     ##############     ############## 
     
 
-    from corpkit import download_cnlp, extract_cnlp, rename_duplicates, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
+    from corpkit import download_cnlp, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_tokenised_text():
+        Button(tab0, textvariable = tokenise_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         outdir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, 
@@ -2296,9 +2368,11 @@ def corpkit_gui():
         basepath.set('Corpus: "%s"' % os.path.basename(outdir))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+        Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
 
     def create_parsed_corpus():
         """make sure things are installed, then parse, then structure"""
+        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
         import os
         from time import strftime, localtime
@@ -2416,6 +2490,7 @@ def corpkit_gui():
 
     def getcorpus():
         """copy unparsed texts to project folder"""
+        Button(tab0, textvariable = add_corpus_button, command=ignore).grid(row = 3, column = 0, sticky=W)
         import shutil
         import os
         home = os.path.expanduser("~")
@@ -2433,11 +2508,20 @@ def corpkit_gui():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: "%s" already exists in project.' % (thetime, os.path.basename(fp)) 
             return
-        # put dir in filenames so there is no ambiguity when reconstructing
-        # could remove later ...
+        # encode and rename files
         for (rootdir, d, fs) in os.walk(newc):
             for f in fs:
                 fpath = os.path.join(rootdir, f)
+                # reencode files
+                import chardet
+                with open(fpath) as f:
+                    data = fpath.read()
+                    enc = chardet.detect(data)
+                    encdata = data.decode(enc['encoding'])
+                    encdata = data.encode('utf-8', errors = 'ignore')
+                with open(fpath, "w") as f:
+                    f.write(encdata)
+                # rename file
                 dname = '-' + os.path.basename(rootdir)
                 newname = fpath.replace('.txt', dname + '.txt')
                 shutil.move(fpath, newname)
@@ -2451,7 +2535,7 @@ def corpkit_gui():
         add_subcorpora_to_build_box(newc)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
-        # unlock editing  
+        Button(tab0, textvariable = add_corpus_button, command=getcorpus).grid(row = 3, column = 0, sticky=W)
 
     # duplicate of one in 'manage
     Label(tab0, text = 'Create project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
@@ -2808,7 +2892,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(500, start_update_check) # 500
+    #root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
