@@ -2356,6 +2356,7 @@ def corpkit_gui():
     from corpkit import download_cnlp, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_tokenised_text():
+        note.progvar.set(0)
         Button(tab0, textvariable = tokenise_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
@@ -2371,8 +2372,12 @@ def corpkit_gui():
         Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
 
     def create_parsed_corpus():
+        note.progvar.set(0)
+        from time import strftime, localtime
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Initialising parser ... ' % (thetime)
         """make sure things are installed, then parse, then structure"""
-        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
+        Button(tab0, textvariable = parse_button_text, command=ignore).grid(row = 5, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
         import os
         from time import strftime, localtime
@@ -2515,12 +2520,11 @@ def corpkit_gui():
                 # reencode files
                 import chardet
                 with open(fpath) as f:
-                    data = fpath.read()
+                    data = f.read()
                     enc = chardet.detect(data)
-                    encdata = data.decode(enc['encoding'])
-                    encdata = data.encode('utf-8', errors = 'ignore')
+                    encdata = data.decode(enc['encoding'], 'ignore')
                 with open(fpath, "w") as f:
-                    f.write(encdata)
+                    f.write(encdata.encode('utf-8'))
                 # rename file
                 dname = '-' + os.path.basename(rootdir)
                 newname = fpath.replace('.txt', dname + '.txt')
