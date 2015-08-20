@@ -2424,6 +2424,7 @@ def corpkit_gui():
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
+        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
 
