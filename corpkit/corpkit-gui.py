@@ -549,7 +549,7 @@ def corpkit_gui():
             pass
 
     def do_interrogation():
-        Button(tab1, text = 'Interrogate', command = ignore).grid(row = 14, column = 1, sticky = E)
+        Button(tab1, text = 'Interrogate', command = ignore).grid(row = 17, column = 1, sticky = E)
         note.progvar.set(0)
         """performs an interrogation"""
         import pandas
@@ -566,9 +566,9 @@ def corpkit_gui():
         # special query: add to this list!
         if special_queries.get() != 'Off':
             query = spec_quer_translate[special_queries.get()]
-        
         else:
             query = qa.get(1.0, END)
+            query = query.replace('\n', '')
             # allow list queries
             if query.startswith('[') and query.endswith(']'):
                 query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
@@ -602,6 +602,13 @@ def corpkit_gui():
                              'function_filter': ff,
                              'dep_type': depdict[kind_of_dep.get()]}
 
+        if speakseg.get():
+            ids = [int(i) for i in speaker_listbox.curselection()]
+            jspeak = [speaker_listbox.get(i) for i in ids]
+            if 'All' in jspeak:
+                jspeak = False
+            interrogator_args['just_speakers'] = jspeak
+
         lemmatag = False
         if lemtag.get() != 'None':
             if lemtag.get() == 'Noun':
@@ -622,12 +629,16 @@ def corpkit_gui():
         if corpus_fullpath.get() == '':
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: You need to select a corpus.' % thetime
-            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
+            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             return
+
+        print corpus_fullpath.get()
+        print selected_option
+        print interrogator_args
     
         r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         if not r or r == 'Bad query':
-            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
+            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             return
 
         # drop over 1000?
@@ -666,7 +677,7 @@ def corpkit_gui():
         nametext.set('untitled')
 
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 14, column = 2, sticky = E)
-        Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 14, column = 1, sticky = E)
+        Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -738,14 +749,49 @@ def corpkit_gui():
     lmt.grid(row = 12, column = 1, sticky=E)
     #lemtag.trace("w", d_callback)
 
+    def togglespeaker(*args):
+        """this adds names to the speaker listbox"""
+        if len(names) == 0:
+            from corpkit.build import get_list_of_speaker_names
+            # try to get the unparsed corpus
+            corp = corpus_fullpath.get().replace('-parsed', '').replace('-stripped', '')
+            try:
+                ns = get_list_of_speaker_names(corp)
+            except:
+                return
+            for n in ns:
+                names.append(n)
+        if int(only_sel_speakers.get()) == 1:
+            speaker_listbox.configure(state = NORMAL)
+            speaker_listbox.delete(0, END)
+            speaker_listbox.insert(END, 'All')
+            for id in names:
+                speaker_listbox.insert(END, id)
+        else:
+            speaker_listbox.configure(state = NORMAL)
+            speaker_listbox.delete(0, END)
+            speaker_listbox.configure(state = DISABLED)
+
+    # speaker names
+    # save these with project!
+    only_sel_speakers = IntVar()
+    speakcheck = Checkbutton(tab1, text="Speakers:", variable=only_sel_speakers, command = togglespeaker)
+    speakcheck.grid(column = 0, row = 13, sticky=W)
+    only_sel_speakers.trace("w", togglespeaker)
+
+    speaker_listbox = Listbox(tab1, selectmode = EXTENDED, width = 33, height = 4, exportselection = False)
+    speaker_listbox.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
+    speaker_listbox.configure(state = DISABLED)
+
+
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
     kind_of_dep = StringVar(root)
     kind_of_dep.set('CC-processed')
-    Label(tab1, text = 'Dependency type:').grid(row = 13, column = 0, sticky = W)
+    Label(tab1, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
     pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
     pick_dep_type.config(state = DISABLED)
-    pick_dep_type.grid(row = 13, column = 1, sticky=E)
+    pick_dep_type.grid(row = 15, column = 1, sticky=E)
     #kind_of_dep.trace("w", d_callback)
 
     # query
@@ -827,7 +873,7 @@ def corpkit_gui():
     datatype_picked.trace("w", callback)
 
     Label(tab1, text = 'Search type:').grid(row = 3, column = 0, sticky = 'NW')
-    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 33, exportselection = False)
+    datatype_listbox = Listbox(tab1, selectmode = BROWSE, width = 33, height = 5, exportselection = False)
     datatype_listbox.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     datatype_chosen_option = StringVar()
     datatype_chosen_option.set('Get words')
@@ -872,8 +918,8 @@ def corpkit_gui():
     # Interrogation name
     nametext = StringVar()
     nametext.set('untitled')
-    Label(tab1, text = 'Interrogation name:').grid(row = 14, column = 0, sticky = W)
-    Entry(tab1, textvariable = nametext).grid(row = 14, column = 1, sticky = E)
+    Label(tab1, text = 'Interrogation name:').grid(row = 16, column = 0, sticky = W)
+    Entry(tab1, textvariable = nametext).grid(row = 16, column = 1, sticky = E)
 
     def query_help():
         import webbrowser
@@ -882,7 +928,7 @@ def corpkit_gui():
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
-    Button(tab1, text = 'Interrogate!', command = do_interrogation).grid(row = 15, column = 1, sticky = E)
+    Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
 
     # name to show above spreadsheet 0
     i_resultname = StringVar()
@@ -1834,7 +1880,6 @@ def corpkit_gui():
 
         the new idea is to simply edit and reshow the dataframe!"""
 
-        lines = conclistbox.get(0, END)
         seplines = []
         import re
         import pandas
@@ -2398,6 +2443,8 @@ def corpkit_gui():
         note.progvar.set(0)
         Button(tab0, textvariable = tokenise_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
+        if speakseg.get():
+            unparsed_corpus_path = unparsed_corpus_path + '-stripped'
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         outdir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, 
                               root = root, stdout = sys.stdout, note = note, only_tokenise = True)
@@ -2406,20 +2453,41 @@ def corpkit_gui():
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set('Corpus: "%s"' % os.path.basename(outdir))
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+        if len([f for f in os.listdir(outdir) if f.endswith('xml')]) > 0:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Error: no files created in "%s"' % (time, os.path.basename(outdir))
         Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
 
+    names = []
+
     def create_parsed_corpus():
+        """make sure things are installed, do speaker id work, then parse, then structure"""
         note.progvar.set(0)
-        from time import strftime, localtime
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Initialising parser ... ' % (thetime)
-        """make sure things are installed, then parse, then structure"""
-        Button(tab0, textvariable = parse_button_text, command=ignore).grid(row = 5, column = 0, sticky=W)
-        unparsed_corpus_path = sel_corpus.get()
         import os
+        import re
         from time import strftime, localtime
+
+        Button(tab0, textvariable = parse_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
+        unparsed_corpus_path = sel_corpus.get()
+
+        if speakseg.get():
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Processing speaker names ... ' % (thetime)
+            from corpkit.build import make_no_id_corpus, get_list_of_speaker_names, add_ids_to_xml
+            corpus_names = get_list_of_speaker_names(unparsed_corpus_path)
+            for name in names:
+                names.pop()
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Names found: %s' % (thetime, ', '.join(corpus_names))           
+            for name in corpus_names:
+                names.append(name)
+
+            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
+            unparsed_corpus_path = unparsed_corpus_path + '-stripped'
+            
         if not corenlp_exists():
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                           "CoreNLP parser not found. Download/install it?")
@@ -2448,22 +2516,30 @@ def corpkit_gui():
                 time = strftime("%H:%M:%S", localtime())
                 print '%s: Cannot parse data without Java JDK 1.8.' % (time)
                 return
+
+        # there are two functions doing the same thing: this and get_filepaths!
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
+        
         if filelist is False:
             # zero files...
             from time import localtime, strftime
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Error: no text files found in "%s"' % (time, unparsed_corpus_path)
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Error: no text files found in "%s"' % (thetime, unparsed_corpus_path)
             return
+
         parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout, note = note)
         sys.stdout = note.redir
         new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
         corpus_fullpath.set(new_corpus_path)
+
+        if speakseg.get():
+            add_ids_to_xml(new_corpus_path, root = root, note = note)
+
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set('Corpus: "%s"' % os.path.basename(new_corpus_path))
-        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
+        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 6, column = 0, sticky=W)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
 
@@ -2550,6 +2626,8 @@ def corpkit_gui():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Corpus copied to project folder.' % (thetime)
         except OSError:
+            if os.path.basename(fp) == '':
+                return
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: "%s" already exists in project.' % (thetime, os.path.basename(fp)) 
             return
@@ -2557,14 +2635,15 @@ def corpkit_gui():
         for (rootdir, d, fs) in os.walk(newc):
             for f in fs:
                 fpath = os.path.join(rootdir, f)
-                # reencode files
-                import chardet
                 with open(fpath) as f:
                     data = f.read()
-                    enc = chardet.detect(data)
-                    encdata = data.decode(enc['encoding'], 'ignore')
                 with open(fpath, "w") as f:
-                    f.write(encdata.encode('utf-8'))
+                    try:
+                        f.write(data)
+                    except UnicodeEncodeError:
+                        import chardet
+                        enc = chardet.detect(data)
+                        f.write(data.decode(enc['encoding'], 'ignore'))
                 # rename file
                 dname = '-' + os.path.basename(rootdir)
                 newname = fpath.replace('.txt', dname + '.txt')
@@ -2592,9 +2671,12 @@ def corpkit_gui():
     #Label(tab0, text = 'Corpus to parse: ').grid(row = 6, column = 0, sticky=W)
     Button(tab0, textvariable = sel_corpus_button, command=select_corpus).grid(row = 4, column = 0, sticky=W)
     #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
-    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 5, column = 0, sticky=W)
+    speakseg = IntVar()
+    speakcheck = Checkbutton(tab0, text="Attempt speaker segmentation", variable=speakseg, onvalue = True, offvalue = False)
+    speakcheck.grid(column = 0, row = 5, sticky=W)
+    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 6, column = 0, sticky=W)
     #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
-    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
+    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 7, column = 0, sticky=W)
 
     subc_sel_vals_build = []
 
@@ -2633,9 +2715,9 @@ def corpkit_gui():
             f_in_s.set('Files in corpus: %s' % os.path.basename(path_to_new_unparsed_corpus.get()))
 
     # a listbox of subcorpora
-    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 7, column = 0, sticky=W)
+    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 0, sticky=W)
     subc_listbox_build = Listbox(tab0, selectmode = SINGLE, height = 20, state = DISABLED)
-    subc_listbox_build.grid(row = 8, column = 0, sticky = W)
+    subc_listbox_build.grid(row = 9, column = 0, sticky = W)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
 
@@ -2793,7 +2875,7 @@ def corpkit_gui():
     # a listbox of files
     Label(tab0, textvariable = f_in_s, font = ("Helvetica", 12, "bold")).grid(row = 0, column = 1, sticky=N, padx = 30)
     f_view = Listbox(tab0, selectmode = EXTENDED, height = 32, state = DISABLED)
-    f_view.grid(row = 1, column = 1, rowspan = 8, padx = 30)
+    f_view.grid(row = 1, column = 1, rowspan = 12, padx = 30)
     xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
     f_view.select_set(0)
 
@@ -2936,7 +3018,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    #root.after(500, start_update_check) # 500
+    root.after(500, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':

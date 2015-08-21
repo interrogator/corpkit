@@ -772,13 +772,13 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
 
         # open the unparsed version of the file, read into memory
         # fix this soon
-        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '-stripped').replace('-stripped-stripped', '-stripped')
+        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '')
         old_txt = open(stripped_txtfile)
         stripped_txtdata = old_txt.read()
         old_txt.close()
 
         # open the unparsed version with speaker ids
-        id_txtfile = f.replace('.xml', '').replace('-parsed', '')
+        id_txtfile = f.replace('.xml', '').replace('-stripped-parsed', '')
         idttxt = open(id_txtfile)
         id_txtdata = idttxt.read()
 
@@ -796,15 +796,13 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
             # sever at start of match
             cut_old_text = stripped_txtdata[:start]
             line_index = cut_old_text.count('\n')
-            # lookup this text in the
+            # lookup this text
             with_id = id_txtdata.splitlines()[line_index]
             split_line = with_id.split(': ', 1)
             if len(split_line) > 1:
                 speakerid = split_line[0]
             else:
                 speakerid = 'UNIDENTIFIED'
-            print speakerid
-            print sent
             new_tag = soup.new_tag("speakername")
             s.append(new_tag)
             new_tag.string = speakerid
