@@ -22,6 +22,7 @@ def interrogator(path,
                 printstatus = True,
                 root = False,
                 df1_always_df = False,
+                just_speakers = False,
                 **kwargs):
     """
     Interrogate a parsed corpus using Tregex queries, dependencies, or for
@@ -459,7 +460,7 @@ def interrogator(path,
 
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -516,7 +517,7 @@ def interrogator(path,
 
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -533,7 +534,7 @@ def interrogator(path,
             word = token.lemma.text
             if re.match(query, word):
                 result.append(word)
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -563,7 +564,7 @@ def interrogator(path,
                 result.append(word)
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -631,7 +632,7 @@ def interrogator(path,
         
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -641,38 +642,35 @@ def interrogator(path,
         """print match by function, using good lemmatisation"""
         # for each sentence
         result = []
-        if lemmatise:
-            # if lemmatise, we have to do something tricky.
-            just_good_deps = SoupStrainer('sentences')
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-            #print soup
-            for s in soup.find_all('sentence'):
-                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                for dep in right_dependency_grammar[0].find_all('dep'):
-                    for dependent in dep.find_all('dependent', limit = 1):
-                        if re.match(query, dep.attrs.get('type')):
-                            deppy = dep.find_all('dependent', limit = 1)
-                            result_word_id = deppy[0].attrs.get('idx')
-                            # find this id
-                            token_info = s.find_all('token', id=result_word_id, limit = 1)
-                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                            # damn copula
-                            if result_word != u'be':
-                                #result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                                result.append(result_word)
-        else:
-            just_good_deps = SoupStrainer('dependencies', type=dep_type)
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
-            for dep in soup.find_all('dep'):
-                for dependent in dep.find_all('dependent', limit = 1):
-                    if re.match(regex, dep.attrs.get('type')):
-                        result_word = dependent.get_text()
-                        if result_word != u'be':
-                            result.append(result_word)
-    
+        # if lemmatise, we have to do something tricky.
+        just_good_deps = SoupStrainer('sentences')
+        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
+        #print soup
+        for s in soup.find_all('sentence'):
+            if just_speakers:
+                #print just_speakers
+                if just_speakers != 'all':
+                    nm = s.speakername.text.lstrip().rstrip()
+                    if nm not in just_speakers:
+                        continue
+            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+            for dep in right_dependency_grammar[0].find_all('dep'):
+                if re.match(query, dep.attrs.get('type')):
+                    deppy = dep.find_all('dependent', limit = 1)
+                    result_word = deppy[0].get_text()
+                    if lemmatise:
+                        result_word_id = deppy[0].attrs.get('idx')
+                        # find this id
+                        token_info = s.find_all('token', id=result_word_id, limit = 1)
+                        result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                        if pos_filter:
+                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                            if not re.search(pos_regex, result_pos):
+                                continue
+                    result.append(result_word.lstrip().rstrip())    
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -688,14 +686,15 @@ def interrogator(path,
                 word = dependent.get_text()
                 if re.match(regex, word):
                     role = dep.attrs.get('type')
-                    # can do automatic categorisation of functions here, 
-                    # i.e. convert to more basic type
-                    #if lemmatise:
+                    if function_filter:
+                        if re.search(funfil_regex, role):
+                            continue
+                    # pos filter not working here!                      
                     result.append(role)
         
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -763,7 +762,7 @@ def interrogator(path,
         
         # attempt to stop memory problems. 
         # not sure if this helps, though:
-        soup.decompose()
+        #soup.decompose()
         soup = None
         data = None
         gc.collect()
@@ -1521,6 +1520,9 @@ def interrogator(path,
     # turn master dict into dataframe, sorted
     df = DataFrame(the_big_dict, index = subcorpus_names)
 
+    if one_big_corpus:
+        df = df.T.sort(list(df.T.columns)[0], ascending = False)
+
     try:
         if not one_big_corpus:
             df.ix['Total'] = df.sum()
@@ -1538,10 +1540,11 @@ def interrogator(path,
     # make result into series if only one subcorpus
     if one_big_corpus and not df1_always_df:
         try:
-            df = df.T[subcorpus_names[0]]
+            df = df.ix[subcorpus_names[0]]
         except:
             pass
         #df.name = query
+        df.sort(ascending = False)
 
     # add sort info for tk
     if tk:
