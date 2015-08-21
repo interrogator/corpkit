@@ -400,37 +400,6 @@ def correctspelling(path, newpath):
             fo.close()
     return
 
-
-def stanford_parse(corpus_path):
-    import corpkit
-    """Parse a directory (recursively) with the Stanford parser..."""
-    import os
-    import ast
-    try:
-        from corenlp import StanfordCoreNLP
-    except:
-        raise ValueError("CoreNLP not installed.")
-    path_part, corpus_name = os.path.split(corpus_path)
-    new_corpus_folder = 'parsed_%s' % corpus_name
-    new_corpus_path = os.path.join(path_part, new_corpus_folder)
-    if not os.path.exists(new_corpus_path):
-        os.makedirs(new_corpus_path)
-    corenlp = StanfordCoreNLP()
-    files = os.listdir(corpus_path)
-    for root, dirs, files in os.walk(corpus_path, topdown=True):
-        for name in files:
-            filepath = os.path.join(root, name)
-            f = open(filepath)
-            raw = f.read()
-            parsed_text = ast.literal_eval(corenlp.parse(raw))
-            for index, sent in enumerate(parsed_text['sentences']):
-                syntax_tree = sent['parsetree']
-                plain_text = sent['text']
-            subcorpus_path = os.path.join(new_corpus_path, subcorpus_name)
-            if not os.path.exists(subcorpus_path):
-                os.makedirs(subcorpus_path)
-
-
 def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
     import corpkit
     """structure a corpus in some kind of sequence"""
@@ -452,56 +421,6 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
             os.makedirs(subcorpus_path)
         shutil.copy(filepath, subcorpus_path)
     print 'Done!'
-
-def edit_metadata():
-    import corpkit
-    return edited
-
-def stanford_parse(data, corpus_name = 'corpus'):
-    import corpkit
-    from time import localtime, strftime
-    thetime = strftime("%H:%M:%S", localtime())
-    print "\n%s: Initialising CoreNLP... \n" % thetime
-    import os
-    import ast
-    try:
-        from corenlp import StanfordCoreNLP
-    except:
-        raise ValueError("CoreNLP not installed.")
-    from textprogressbar import TextProgressBar
-    corenlp = StanfordCoreNLP()
-    if not os.path.exists(corpus_name):
-        os.makedirs(corpus_name)
-    p = TextProgressBar(len(data))
-    for index, datum in enumerate(data):
-        p.animate(index)
-        text = datum[0]
-        metadata = datum[1]
-        number_of_zeroes = len(str(len(data))) - 1
-        filename = str(index).zfill(number_of_zeroes) + '.txt' 
-        file_data = []
-        parsed_text = ast.literal_eval(corenlp.parse(text))
-        trees = []
-        raw_texts = []
-        for index, sent in enumerate(parsed_text['sentences']):
-            syntax_tree = sent['parsetree']
-            plain_text = sent['text']
-            trees.append(syntax_tree)
-            raw_texts.append(plain_text)
-                    #subcorpus_path = os.path.join(new_corpus_path, subcorpus_name)
-        file_data = ['<raw>' + '\n'.join(raw_texts) + '\n</raw>', '<parse>' + '\n'.join(trees) + '\n</parse>', ]
-        if not os.path.exists(os.path.join(corpus_name, metadata)):
-            os.makedirs(os.path.join(corpus_name, metadata))
-        try:
-            fo=open(os.path.join(corpus_name, metadata, filename),"w")
-        except IOError:
-            print "Error writing file."
-        fo.write('\n'.join(file_data))
-        fo.close()
-    p.animate(len(data))
-    print 'Done!'
-
-
 
 def download_cnlp(proj_path, root = False):
     import corpkit
@@ -656,7 +575,8 @@ def parse_corpus(proj_path, corpuspath, filelist,
             sys.stdout = stdout
             thetime = strftime("%H:%M:%S", localtime())
             num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
-            print '%s: Initialising parser ... ' % (thetime)
+            if num_parsed == 0:
+                print '%s: Initialising parser ... ' % (thetime)
             if num_parsed > 0:
                 print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
                 if 'note' in kwargs.keys():
@@ -719,6 +639,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
     # go through old path, make file list
     for path, dirs, files in os.walk(corpuspath):
         for bit in dirs:
+            # is the last bit of the line below windows safe?
             dir_list.append(os.path.join(path, bit).replace(corpuspath, '')[1:])
 
     os.chdir(new_corpus_path)
@@ -766,6 +687,131 @@ def corenlp_exists():
         return False
     return True
 
+def get_filepaths(a_path, ext = 'txt'):
+    """make list of txt files in a_path and remove non txt files"""
+    import os
+    files = []
+    for (root, dirs, fs) in os.walk(a_path):
+        for f in fs:
+            if f.endswith('.' + ext) \
+            and 'Unidentified' not in f \
+            and 'unknown' not in f:
+                files.append(os.path.join(root, f))
+            if not f.endswith('.' + ext):
+                os.remove(os.path.join(root, f))
+    return files
 
-def tokenise_corpus():
-    return
+def get_list_of_speaker_names(corpuspath):
+    """return a list of speaker names in a pre-processed corpus"""
+    import os
+    import re
+    from corpkit.build import get_filepaths
+    files = get_filepaths(corpuspath)
+    names = []
+    idregex = re.compile('^([A-Z0-9]+): *')
+    for f in files:
+        data = open(f).read().splitlines()
+        for l in data:
+            m = re.search(idregex, l)
+            if m:
+                if m.group(1) not in names:
+                    names.append(m.group(1))
+    return sorted(list(set(names)))
+
+def make_no_id_corpus(pth, newpth):
+    """make version of pth without ids"""
+    import os
+    import re
+    import shutil
+    from corpkit.build import get_filepaths
+    idregex = re.compile('^([A-Z0-9]+): *(.*)$')
+    shutil.copytree(pth, newpth)
+    files = get_filepaths(newpth)
+    for f in files:
+        good_data = []
+        with open(f) as fo:
+            data = fo.read().splitlines()
+            for datum in data:
+                matched = re.search(idregex, datum)
+                if matched:
+                    good_data.append(matched.group(2))
+        with open(f, "w") as fo:
+            fo.write('\n'.join(good_data))
+
+def add_ids_to_xml(corpuspath, root = False, note = False):
+    """add ids to the xml in corpuspath
+
+    needs the raw files to be in the same dir as corpuspath, without
+    '-parsed' in the dir name
+    also needs the id files to be in the dir, with '-parsed' changed 
+    to -cleaned"""
+    import os
+    import re
+    from bs4 import BeautifulSoup, SoupStrainer
+    from corpkit.build import get_filepaths
+    from time import strftime, localtime
+
+    files = get_filepaths(corpuspath, ext = 'xml')
+    if note:
+        note.progvar.set(0)
+    if root:
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Processing speaker IDs ...' % thetime
+        root.update()
+
+    for i, f in enumerate(files):
+        if note:
+            note.progvar.set(i * 100.0 / len(files))
+        if root:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files))
+            root.update()
+        xmlf = open(f)
+        data = xmlf.read()
+        xmlf.close()
+
+        # open the unparsed version of the file, read into memory
+        # fix this soon
+        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '-stripped').replace('-stripped-stripped', '-stripped')
+        old_txt = open(stripped_txtfile)
+        stripped_txtdata = old_txt.read()
+        old_txt.close()
+
+        # open the unparsed version with speaker ids
+        id_txtfile = f.replace('.xml', '').replace('-parsed', '')
+        idttxt = open(id_txtfile)
+        id_txtdata = idttxt.read()
+
+        idttxt.close()
+        # get the offsets for each sentence
+        just_sents = SoupStrainer('sentences')
+        soup = BeautifulSoup(data, parse_only=just_sents)
+        for s in soup.find_all('sentence'):
+            tokens = s.find_all('token')
+            start = int(tokens[0].find_all('characteroffsetbegin', limit = 1)[0].text)
+            end = int(tokens[-1].find_all('characteroffsetend', limit = 1)[0].text)
+            # extract this sentence from the unparsed version
+            sent = stripped_txtdata[start:end]
+            # find out line number
+            # sever at start of match
+            cut_old_text = stripped_txtdata[:start]
+            line_index = cut_old_text.count('\n')
+            # lookup this text in the
+            with_id = id_txtdata.splitlines()[line_index]
+            split_line = with_id.split(': ', 1)
+            if len(split_line) > 1:
+                speakerid = split_line[0]
+            else:
+                speakerid = 'UNIDENTIFIED'
+            print speakerid
+            print sent
+            new_tag = soup.new_tag("speakername")
+            s.append(new_tag)
+            new_tag.string = speakerid
+        html = soup.prettify(soup.original_encoding)
+        # make changes
+        with open(f, "wb") as fopen:
+            fopen.write(html)
+    if note:
+        note.progvar.set(100)
+
