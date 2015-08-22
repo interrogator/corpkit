@@ -22,8 +22,8 @@ def conc(corpus, query,
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    from other import tregex_engine
-    from tests import check_pytex, check_dit
+    from corpkit.other import tregex_engine
+    from corpkit.tests import check_pytex, check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -74,8 +74,8 @@ def conc(corpus, query,
     else:
         options = '-t'
     if not plaintext:
-        whole_results = tregex_engine(query, 
-                                  options = ['-o', '-w', options], 
+        path_whole = tregex_engine(query, 
+                                  options = ['-o', '-w', '-f', options], 
                                   corpus = corpus,
                                   preserve_case = True,
                                   root = root)
@@ -84,6 +84,11 @@ def conc(corpus, query,
                                   corpus = corpus,
                                   preserve_case = True,
                                   root = root)
+        whole_results = []
+        fnames = []
+        for pth, entry in path_whole:
+            fnames.append(os.path.basename(pth[2:]))
+            whole_results.append(entry)
     
     if plaintext:
         import nltk
@@ -121,34 +126,39 @@ def conc(corpus, query,
             print "\n%s: No matches found." % time
         return
 
-    zipped = zip(whole_results, middle_column_result)
+    zipped = zip(whole_results, middle_column_result, fnames)
     unique_results = []
 
-    for whole_result, middle_part in zipped:
+    for whole_result, middle_part, fname in zipped:
         if not trees:
             regex = re.compile(r"(\b[^\s]{0,1}.{," + re.escape(str(window)) + r"})(\b" + re.escape(middle_part) + r"\b)(.{," + re.escape(str(window)) + r"}[^\s]\b)")
         else:
             regex = re.compile(r"(.{,%s})(%s)(.{,%s})" % (window, re.escape(middle_part), window ))
         search = re.findall(regex, whole_result)
         for result in search:
+            result = result + (fname,)
             unique_results.append(result)
     unique_results = set(sorted(unique_results)) # make unique
     
     #make into series
     series = []
 
+    findex = 'filename'
     lname = ' ' * (window/2-1) + 'l'
     # centering middle column
     #mname = ' ' * (maximum/2+1) + 'm'
     mname = ' ' * (maximum/2-1) + 'm'
     rname = ' ' * (window/2-1) + 'r'
-    for start, word, end in unique_results:
+    for start, word, end, fname in unique_results:
+        import os
+        fname = os.path.basename(fname)
         start = start.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         word = word.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         end = end.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         #spaces = ' ' * (maximum / 2 - (len(word) / 2))
         #new_word = spaces + word + spaces
-        series.append(pd.Series([start.encode('utf-8', errors = 'ignore'), word.encode('utf-8', errors = 'ignore'), end.encode('utf-8', errors = 'ignore')], index = [lname.encode('utf-8', errors = 'ignore'), mname.encode('utf-8', errors = 'ignore'), rname.encode('utf-8', errors = 'ignore')]))
+        series.append(pd.Series([fname.encode('utf-8', errors = 'ignore'), start.encode('utf-8', errors = 'ignore'), word.encode('utf-8', errors = 'ignore'), end.encode('utf-8', errors = 'ignore')], \
+                                index = [findex, lname.encode('utf-8', errors = 'ignore'), mname.encode('utf-8', errors = 'ignore'), rname.encode('utf-8', errors = 'ignore')]))
 
     # randomise results...
     if random:
@@ -192,9 +202,9 @@ def conc(corpus, query,
             print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
 
     if not add_links:
-        df.columns = ['l', 'm', 'r']
+        df.columns = ['f', 'l', 'm', 'r']
     else:
-        df.columns = ['l', 'm', 'r', 'link']
+        df.columns = ['f', 'l', 'm', 'r', 'link']
     return df
 
 # r'/NN.?/ < /(?i)\brisk/ $ (/NN.?/ < /(?i)factor >># NP)' 
