@@ -176,6 +176,12 @@ def interrogator(path,
         is_multiquery = True
     if hasattr(function_filter, '__iter__'):
         is_multiquery = True
+    if just_speakers:
+        if just_speakers == 'each':
+            is_multiquery = True
+        if type(just_speakers) == list:
+            if len(just_speakers) > 1:
+                is_multiquery = True
 
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
@@ -184,7 +190,7 @@ def interrogator(path,
 
     # run pmultiquery if so
     if is_multiquery:
-        from other import pmultiquery
+        from corpkit.other import pmultiquery
         d = { 'path': path, 
               'option': option, 
               'query': query , 
@@ -200,7 +206,9 @@ def interrogator(path,
               'quicksave': quicksave , 
               'add_to': add_to , 
               'add_pos_to_g_d_option': add_pos_to_g_d_option, 
-              'custom_engine': custom_engine , 
+              'custom_engine': custom_engine ,
+              'df1_always_df': df1_always_df ,
+              'just_speakers': just_speakers , 
               'post_process': post_process }
         return pmultiquery(**d)
 
@@ -645,11 +653,75 @@ def interrogator(path,
                     result.append(m)
         return result
 
-    def depnummer(xmldata):
+    def get_speaker_names_from_xml_corpus(path):
+        import os
+        import re
+        from bs4 import BeautifulSoup
+        names = []
+        # parsing html with regular expression! :)
+        speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
+        for (root, dirs, fs) in os.walk(path):
+            for f in fs:
+                with open(os.path.join(root, f), 'r') as fo:
+                    txt = fo.read()
+                    res = re.findall(speakid, txt)
+                    if res:
+                        res = [i.strip() for i in res]
+                        for i in res:
+                            if i not in names:
+                                names.append(i)
+        return list(sorted(set(names)))
+
+    def get_stats(sents):
+        """get a bunch of frequencies on interpersonal phenomena"""
+        import os
+        import re
+        import bs4
+    
+        # first, put the relevant trees into temp file
+        if 'outname' in kwargs.keys():
+            to_open = 'tmp-%s.txt' % kwargs['outname']
+        else:
+            to_open = 'tmp.txt'
+        with open(to_open, "w") as fo:
+            for sent in sents:
+                statsmode_results['Sentences'] += 1
+                fo.write(sent.parse.text + '\n')
+            # add number of passives
+            right_dependency_grammar = sent.find_all('dependencies', type=dep_type, limit = 1)
+            for dep in right_dependency_grammar[0].find_all('dep'):
+                if re.match(r'(nsubjpass|csubjpass)', dep.attrs.get('type').strip()):
+                    statsmode_results['Passives'] += 1
+
+        # count moods via trees          (/\?/ !< __)
+        from dictionaries.process_types import processes
+        from corpkit.other import as_regex
+        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                     #'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                     #'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                     'Open class words': r'/^(NN|JJ|VB|RB)/ < __',
+                     'Closed class words': r'__ !< __ !> /^(NN|JJ|VB|RB)/',
+                     'Clauses': r'/^S/ < __',
+                     'Interrogative': r'ROOT << (/\?/ !< __)',
+                     'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.mental, boundaries = 'w'),
+                     'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.verbal, boundaries = 'w'),
+                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w')}
+
+        for name, q in sorted(tregex_qs.items()):
+            res = tregex_engine(query = q, 
+                  options = ['-o', '-C'], 
+                  corpus = to_open,  
+                  root = root)
+            statsmode_results[name] += int(res)
+            if root:
+                root.update()
+
+    def depnummer(sents):
         """get index of word in sentence?"""
-        soup = BeautifulSoup(xmldata)
         result = []
-        for sent in soup.find_all('sentence'):
+        for sent in sents:
             right_deps = sent.find("dependencies", {"type":dep_type})
             for index, dep in enumerate(right_deps.find_all('dep')):
                 for dependent in dep.find_all('dependent', limit = 1):
@@ -670,6 +742,7 @@ def interrogator(path,
 
     # a few things are off by default:
     only_count = False
+    using_tregex = False
     keywording = False
     n_gramming = False
     dependency = False
@@ -677,6 +750,7 @@ def interrogator(path,
     plaintext = False
     tokens = False
     depnum = False
+    statsmode = False
 
     # some empty lists we'll need
     dicts = []
@@ -695,6 +769,7 @@ def interrogator(path,
     from other import as_regex
     while not translated_option:
         if option.lower().startswith('p'):
+            using_tregex = True
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
@@ -702,6 +777,7 @@ def interrogator(path,
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.lower().startswith('b'):
+            using_tregex = True
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
@@ -709,6 +785,7 @@ def interrogator(path,
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.lower().startswith('w'):
+            using_tregex = True
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
@@ -716,6 +793,7 @@ def interrogator(path,
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif option.lower().startswith('c'):
+            using_tregex = True
             count_results = {}
             only_count = True
             translated_option = 'C'
@@ -806,6 +884,12 @@ def interrogator(path,
             dependency = True
             optiontext = 'Dependent and its role.'
             dep_funct = deprole
+        elif option.lower().startswith('v'):
+            translated_option = 'v'
+            dependency = True
+            statsmode = True
+            optiontext = 'Getting general stats.'
+            dep_funct = get_stats
 
         elif option.lower().startswith('h'):
             translated_option = 'h'
@@ -826,9 +910,12 @@ def interrogator(path,
                           '              f) Get dependency function of regular expression match\n' \
                           '              g) get governor of regular expression match and the r/ship\n' \
                           '              h) get tokens from tokenised text by regular expression\n' \
+                          '              i) get dependency index\n '\
+                          '              k) get keywords\n' \
                           '              l) get lemmata via dependencies\n'
                           '              m) get tokens by dependency role \n' \
-                          '              n) get dependency index of regular expression match\n' \
+                          '              n) get ngrams\n' \
+                          '              n) get \n' \
                           '              p) get part-of-speech tag with Tregex\n' \
                           '              r) regular expression, for plaintext corpora\n' \
                           '              s) simple search string, for plaintext corpora\n' \
@@ -987,6 +1074,9 @@ def interrogator(path,
     if dependency:
         import gc
         from bs4 import BeautifulSoup, SoupStrainer
+        if translated_option == 'v':
+            names = get_speaker_names_from_xml_corpus(path)
+        
         phrases = False
 
         if function_filter:
@@ -1062,7 +1152,7 @@ def interrogator(path,
     # treat as one large corpus if no subdirs found
     one_big_corpus = False
     if len(sorted_dirs) == 0:
-        warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
+        #warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         one_big_corpus = True
         # fails if in wrong dir!
         sorted_dirs = [os.path.basename(path)]
@@ -1116,7 +1206,7 @@ def interrogator(path,
     subcorpus_names = []
 
     # check for valid query. so ugly.
-    if not dependency and not keywording and not n_gramming and not plaintext and not tokens:
+    if using_tregex:
         query = tregex_engine(query = query, check_query = True, root = root)
         if query is False:
             if root:
@@ -1181,7 +1271,7 @@ def interrogator(path,
     if root and tk:
         root.update()
     for index, d in enumerate(sorted_dirs):
-        if not dependency and not plaintext and not tokens:
+        if using_tregex or keywording or n_gramming:
             subcorpus_name = d
             subcorpus_names.append(subcorpus_name)
             if not root:
@@ -1242,10 +1332,12 @@ def interrogator(path,
                     count_results[d] = result
                     continue
 
-
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
         if dependency or plaintext or tokens:
+            from collections import Counter
+            statsmode_results = Counter({'Sentences': 0, 'Passives': 0})
+
             subcorpus_name = d[0]
             subcorpus_names.append(subcorpus_name)
             fileset = d[1]
@@ -1276,11 +1368,10 @@ def interrogator(path,
                         soup = BeautifulSoup(data, parse_only=justsents)  
                         if just_speakers:  
                             sents = [s for s in soup.find_all('sentence') \
-                            if s.speakername.text.strip() in just_speakers \
-                            or just_speakers.lower() == 'all']
+                            if s.speakername.text.strip() in just_speakers]
                         else:
                             sents = [s for s in soup.find_all('sentence')]
-
+                        # run whichever function has been called
                         result_from_file = dep_funct(sents)
 
                         # memory problems
@@ -1304,15 +1395,16 @@ def interrogator(path,
                         result_from_file = tok_by_list(query, data)
 
                 if 'result_from_file' in locals():
-                    for entry in result_from_file:
-                        result.append(entry)
+                    if not statsmode:
+                        for entry in result_from_file:
+                            result.append(entry)
 
         if not keywording:
             result.sort()
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not keywording and not depnum and not distance_mode:
+        if not keywording and not depnum and not distance_mode and not statsmode:
             processed_result = processwords(result)
         if depnum or distance_mode:
             processed_result = result
@@ -1320,7 +1412,10 @@ def interrogator(path,
         if keywording:
             allwords_list.append([w for w, score in result])
         else:
-            allwords_list.append(processed_result)
+            if not statsmode:
+                allwords_list.append(processed_result)
+            else:
+                allwords_list.append([w for w in statsmode_results.keys()])
 
             # add results master list and to results list
         
@@ -1329,8 +1424,10 @@ def interrogator(path,
             for word, score in result:
                 little_dict[word] = score
             dicts.append(Counter(little_dict))
-        else:
+        if not keywording and not statsmode:
             dicts.append(Counter(processed_result))
+        if statsmode:
+            dicts.append(statsmode_results)
 
     if not dependency and not plaintext and not tokens:
         if not root:
@@ -1348,6 +1445,7 @@ def interrogator(path,
                 kwargs['note'].progvar.set(100)
         except:
             pass
+
     if root and tk:
         root.update()
 
@@ -1416,7 +1514,8 @@ def interrogator(path,
     #make master reference_corpus
     the_big_dict = {}
 
-    #calculate results
+    # calculate results
+    # for every unique entry, find out how many times it appears per subcorpus
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
     
