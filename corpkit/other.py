@@ -768,11 +768,11 @@ def tregex_engine(query = False,
             options = ['-T']
 
         filenaming = False
-        #try:
-        #    if '-f' in options:
-        #        filenaming = True
-        #except:
-        #    pass
+        try:
+            if '-f' in options:
+                filenaming = True
+        except:
+            pass
 
         if return_tuples or lemmatise:
             options = ['-o']
@@ -1065,13 +1065,16 @@ def pmultiquery(path,
     quicksave = False,
     num_proc = 'default', 
     function_filter = False,
+    just_speakers = False,
     **kwargs):
     """Parallel process multiple queries or corpora.
 
     This function is used by interrogator if:
 
         a) path is a list of paths
-        b) query is a dict of named queries.
+        b) query is a dict of named queries
+        c) function_filter is iterable
+        d) just speakers == 'each'
     
     This function needs joblib 0.8.4 or above in order to run properly."""
     
@@ -1079,6 +1082,7 @@ def pmultiquery(path,
     import os
     import pandas
     import pandas as pd
+    import collections
     from collections import namedtuple
     from time import strftime, localtime
     from interrogator import interrogator
@@ -1115,18 +1119,29 @@ def pmultiquery(path,
     # are we processing multiple queries or corpora?
     # find out optimal number of cores to use.
     multiple_option = False
+    multiple_queries = False
+    multiple_speakers = False
     multiple_corpora = False
 
     if type(path) != str:
         multiple_corpora = True
         num_cores = best_num_parallel(num_cores, len(path))
     elif type(query) != str:
-        multiple_corpora = False
+        multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
-    elif type(function_filter) != str:
+    elif type(function_filter) != str and function_filter is not False:
         multiple_option = True
         num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
-
+    elif just_speakers:
+        from corpkit.build import get_speaker_names_from_xml_corpus
+        multiple_speakers = True
+        if just_speakers == 'each':
+            just_speakers = get_speaker_names_from_xml_corpus(path)
+        if len(just_speakers) == 0:
+            print 'No speaker name data found.'
+            return
+        num_cores = best_num_parallel(num_cores, len(just_speakers))
+        
     if num_proc != 'default':
         num_cores = num_proc
 
@@ -1146,7 +1161,7 @@ def pmultiquery(path,
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
     ds = []
-    if multiple_corpora and not multiple_option:
+    if multiple_corpora:
         path = sorted(path)
         for index, p in enumerate(path):
             name = os.path.basename(p)
@@ -1154,27 +1169,40 @@ def pmultiquery(path,
             a_dict['path'] = p
             a_dict['query'] = query
             a_dict['outname'] = name
+            a_dict['just_speakers'] = just_speakers
             a_dict['printstatus'] = False
             ds.append(a_dict)
-    elif not multiple_corpora and not multiple_option:
-        import collections
+    elif multiple_queries:
         for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
             a_dict['path'] = path
             a_dict['query'] = q
             a_dict['outname'] = name
+            a_dict['just_speakers'] = just_speakers
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_option:
-        import collections
         for index, (name, q) in enumerate(function_filter.items()):
             a_dict = dict(d)
             a_dict['path'] = path
             a_dict['query'] = query
             a_dict['outname'] = name
+            a_dict['just_speakers'] = just_speakers
             a_dict['function_filter'] = q
             a_dict['printstatus'] = False
             ds.append(a_dict)
+    elif multiple_speakers:
+        for index, name in enumerate(just_speakers):
+            a_dict = dict(d)
+            a_dict['path'] = path
+            a_dict['query'] = query
+            a_dict['outname'] = name
+            a_dict['just_speakers'] = [name]
+            a_dict['function_filter'] = function_filter
+            a_dict['printstatus'] = False
+            ds.append(a_dict)
+
+    print ds
 
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
@@ -1182,7 +1210,7 @@ def pmultiquery(path,
            "\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, "\n              ".join(path), query) )
 
-    elif not multiple_corpora and not multiple_option:
+    elif multiple_queries:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n          Queries: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, path, "', '".join(query.values())) )
@@ -1192,10 +1220,16 @@ def pmultiquery(path,
            "\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, path, query) )
 
+    elif multiple_speakers:
+        print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
+           "\n          Query: '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, num_cores, path, query) )
+
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
     res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
     res = sorted(res)
+    print res
 
     # turn list into dict of results, make query and total branches,
     # save and return
@@ -1205,8 +1239,12 @@ def pmultiquery(path,
         for (name, data), d in zip(res, ds):
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-                stotal = data.sum(axis = 1)
-                stotal.name = u'Total'
+                
+                try:
+                    stotal = data.sum(axis = 1)
+                    stotal.name = u'Total'
+                except ValueError:
+                    stotal = data.sum()
                 output = outputnames(d, data, stotal)
             else:
                 outputnames = collections.namedtuple('interrogation', ['query', 'results'])
@@ -1214,12 +1252,11 @@ def pmultiquery(path,
             out[name] = output
     
         # could be wrong for unstructured corpora?
-        num_diff_results = len(data)
         time = strftime("%H:%M:%S", localtime())
         print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
         if quicksave:
             for k, v in out.items():
-                save_result(v, k, savedir = 'saved_interrogations/%s' % quicksave)
+                save_result(v, k, savedir = os.path.join('saved_interrogations', quicksave))
         return out
     # make query and total branch, save, return
     else:
