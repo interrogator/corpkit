@@ -213,7 +213,10 @@ def editor(dataframe1,
                 df = df.sum(axis = 1) / df2
             
             elif operation.startswith('c'):
-                df = pandas.concat([df, df2], axis = 1)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df = pandas.concat([df, df2], axis = 1)
             return df, totals
 
         elif not single_totals:
@@ -226,7 +229,10 @@ def editor(dataframe1,
                 if operation == '/':
                     totals = df.sum() / float(df2.sum().sum())
                 if operation.startswith('c'):
-                    df = pandas.concat([df, df2], axis = 1)
+                    import warnings
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        df = pandas.concat([df, df2], axis = 1)
 
                 for index, entry in enumerate(list(df.columns)):
                     #p.animate(index)
