@@ -456,11 +456,11 @@ def interrogator(path,
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):                
                 for dependent in dep.find_all('dependent', limit = 1):
-                    result_word = dependent.get_text()
-                    if re.match(regex, result_word):
+                    matchdep = dependent.get_text()
+                    if re.match(regex, matchdep):
                         role = dep.attrs.get('type')
                         gov = dep.find_all('governor', limit = 1)
-                        #result_word = gov[0].get_text()
+                        result_word = gov[0].get_text()
                         result_word_id = gov[0].attrs.get('idx')
                         if role != u'root':
                             if lemmatise or pos_filter or function_filter: 
@@ -491,7 +491,7 @@ def interrogator(path,
                                         colsep = role + u':' + result_word
                                     result.append(colsep)
                             else:
-                                result.append(u'%s:%s' % (role, gov))
+                                result.append(u'%s:%s' % (role, result_word))
                         else:
                             result.append(u'root:root')
         return result
@@ -541,38 +541,26 @@ def interrogator(path,
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):
                 for governor in dep.find_all('governor', limit = 1):
-                    result_word = governor.get_text().strip()
-                    if re.match(regex, result_word):
+                    matchgov = governor.get_text().strip()
+                    if re.match(regex, matchgov):
                         role = dep.attrs.get('type').strip()
+                        deppy = dep.find_all('dependent', limit = 1)
+                        result_word = deppy[0].get_text().strip()
                         if lemmatise or pos_filter:
-                            deppy = dep.find_all('dependent', limit = 1)
-                            #result_word = deppy[0].get_text()
                             result_word_id = deppy[0].attrs.get('idx')
-                            # find this idea
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
-                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
-                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                        if function_filter and not pos_filter:
-                            if re.match(funfil_regex, role):
-                                result.append(result_word)
-                            else:
+                            if lemmatise:
+                                result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
+                            if pos_filter:
+                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
+                        if function_filter:
+                            if not re.match(funfil_regex, role):
                                 continue
-                        if pos_filter and not function_filter:
-                            if re.search(pos_regex, result_pos):
-                                result.append(result_word)
-                            else:
+                        if pos_filter:
+                            if not re.match(pos_regex, result_pos):
                                 continue
-                        if pos_filter and function_filter:
-                            if re.match(funfil_regex, role):
-                                if re.search(pos_regex, result_pos):
-                                    result.append(result_word)
-                                    continue
-                        if not pos_filter and not function_filter:
-                            if add_pos_to_g_d_option:
-                                colsep = role + u':' + result_pos + u':' + result_word
-                            else:
-                                colsep = role + u':' + result_word
-                            result.append(colsep)
+                        colsep = role + u':' + result_word
+                        result.append(colsep)
         return result
 
     def words_by_function(sents):
