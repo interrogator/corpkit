@@ -403,11 +403,18 @@ def corpkit_gui():
         csv_data = []
         for c in colnames:
             row.append(collabels[c])
-        csv_data.append(','.join([unicode(s, errors = 'ignore') for s in row]))
+        try:
+            csv_data.append(','.join([unicode(s, errors = 'ignore') for s in row]))
+        except TypeError:
+            csv_data.append(','.join([str(s) for s in row]))
         #csv_data.append('\n')
         for row in recs.keys():
             rowname = model.getRecName(row)
-            csv_data.append(','.join([unicode(rowname, errors = 'ignore')] + [unicode(s, errors = 'ignore') for s in recs[row]]))
+            try:
+                csv_data.append(','.join([unicode(rowname, errors = 'ignore')] + [unicode(s, errors = 'ignore') for s in recs[row]]))
+            except TypeError:
+                csv_data.append(','.join([str(rowname)] + [str(s) for s in recs[row]]))
+
             #csv_data.append('\n')
             #writer.writerow(recs[row])
         csv = '\n'.join(csv_data)
@@ -564,8 +571,9 @@ def corpkit_gui():
         lemmatag = False
 
         # special query: add to this list!
-        if special_queries.get() != 'Off':
+        if special_queries.get() != 'Off' and special_queries.get() != 'Stats':
             query = spec_quer_translate[special_queries.get()]
+
         else:
             query = qa.get(1.0, END)
             query = query.replace('\n', '')
@@ -602,10 +610,10 @@ def corpkit_gui():
                              'function_filter': ff,
                              'dep_type': depdict[kind_of_dep.get()]}
 
-        if speakseg.get():
+        if only_sel_speakers.get():
             ids = [int(i) for i in speaker_listbox.curselection()]
             jspeak = [speaker_listbox.get(i) for i in ids]
-            if 'All' in jspeak:
+            if 'ALL' in jspeak:
                 jspeak = False
             interrogator_args['just_speakers'] = jspeak
 
@@ -632,10 +640,9 @@ def corpkit_gui():
             Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             return
 
-        print corpus_fullpath.get()
-        print selected_option
-        print interrogator_args
-    
+        if special_queries.get() == 'Stats':
+            selected_option == 'v'
+
         r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         if not r or r == 'Bad query':
             Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
@@ -752,11 +759,11 @@ def corpkit_gui():
     def togglespeaker(*args):
         """this adds names to the speaker listbox"""
         if len(names) == 0:
-            from corpkit.build import get_list_of_speaker_names
+            from corpkit.build import get_speaker_names_from_xml_corpus
             # try to get the unparsed corpus
-            corp = corpus_fullpath.get().replace('-parsed', '').replace('-stripped', '')
+            corp = corpus_fullpath.get() # .replace('-parsed', '').replace('-stripped', '')
             try:
-                ns = get_list_of_speaker_names(corp)
+                ns = get_speaker_names_from_xml_corpus(corp)
             except:
                 return
             for n in ns:
@@ -764,9 +771,11 @@ def corpkit_gui():
         if int(only_sel_speakers.get()) == 1:
             speaker_listbox.configure(state = NORMAL)
             speaker_listbox.delete(0, END)
-            speaker_listbox.insert(END, 'All')
+            speaker_listbox.insert(END, 'ALL')
             for id in names:
                 speaker_listbox.insert(END, id)
+            #speaker_listbox.insert(END, 'UNIDENTIFIED')
+
         else:
             speaker_listbox.configure(state = NORMAL)
             speaker_listbox.delete(0, END)
@@ -782,7 +791,6 @@ def corpkit_gui():
     speaker_listbox = Listbox(tab1, selectmode = EXTENDED, width = 33, height = 4, exportselection = False)
     speaker_listbox.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
     speaker_listbox.configure(state = DISABLED)
-
 
     # dep type
     dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
@@ -893,7 +901,7 @@ def corpkit_gui():
             qa.configure(state=DISABLED)
             qr.configure(state=DISABLED)
 
-    queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects'))
+    queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
     special_queries = StringVar(root)
     special_queries.set('Off')
     Label(tab1, text = 'Preset query:').grid(row = 6, column = 0, sticky = W)
@@ -1373,9 +1381,9 @@ def corpkit_gui():
     toreplace_string.set('')
     replacewith_string = StringVar()
     replacewith_string.set('')
-    toreplace = Entry(tab2, textvariable = toreplace_string, state = DISABLED)
+    toreplace = Entry(tab2, textvariable = toreplace_string)
     toreplace.grid(row = 13, column = 0, sticky = W)
-    replacewith = Entry(tab2, textvariable = replacewith_string, state = DISABLED)
+    replacewith = Entry(tab2, textvariable = replacewith_string)
     replacewith.grid(row = 13, column = 1, sticky = E)    
     
     def do_w_callback(*args):
@@ -1895,6 +1903,14 @@ def corpkit_gui():
         if sortval.get() == 'M1':
             low = [l.lower() for l in df['m']]
             df['tosorton'] = low
+
+        elif sortval.get() == 'Filename':
+            low = [l.lower() for l in df['f']]
+            df['tosorton'] = low
+
+        elif sortval.get() == 'Speaker':
+            low = [l.lower() for l in df['s']]
+            df['tosorton'] = low
         # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
@@ -2003,7 +2019,7 @@ def corpkit_gui():
     Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11)
 
     # possible sort
-    sort_vals = ('L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
+    sort_vals = ('Filename', 'Speaker', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
     sortval = StringVar()
     sortval.set('M1')
     prev_sortval = ['None']
@@ -2476,14 +2492,7 @@ def corpkit_gui():
         if speakseg.get():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Processing speaker names ... ' % (thetime)
-            from corpkit.build import make_no_id_corpus, get_list_of_speaker_names, add_ids_to_xml
-            corpus_names = get_list_of_speaker_names(unparsed_corpus_path)
-            for name in names:
-                names.pop()
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Names found: %s' % (thetime, ', '.join(corpus_names))           
-            for name in corpus_names:
-                names.append(name)
+            from corpkit.build import make_no_id_corpus, get_speaker_names_from_xml_corpus, add_ids_to_xml
 
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             unparsed_corpus_path = unparsed_corpus_path + '-stripped'
@@ -2534,6 +2543,13 @@ def corpkit_gui():
 
         if speakseg.get():
             add_ids_to_xml(new_corpus_path, root = root, note = note)
+            corpus_names = get_speaker_names_from_xml_corpus(new_corpus_path)
+            for name in names:
+                names.pop()
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Names found: %s' % (thetime, ', '.join(corpus_names))           
+            for name in corpus_names:
+                names.append(name)
 
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
@@ -2600,12 +2616,11 @@ def corpkit_gui():
         parse_button_text.set('Parse corpus: "%s"' % bn(unparsed_corpus_path))
         path_to_new_unparsed_corpus.set(unparsed_corpus_path)
         #add_corpus_button.set('Added: %s' % bn(unparsed_corpus_path))
-        where_to_put_corpus = pjoin(project_fullpath.get(), 'data')
-        newc = pjoin(where_to_put_corpus, bn(unparsed_corpus_path))        
-        sel_corpus.set(newc)
-        sel_corpus_button.set('Corpus selected: "%s"' % bn(newc))
-        parse_button_text.set('Parse corpus: "%s"' % bn(newc))
-        add_subcorpora_to_build_box(newc)
+        where_to_put_corpus = pjoin(project_fullpath.get(), 'data')       
+        sel_corpus.set(unparsed_corpus_path)
+        sel_corpus_button.set('Corpus selected: "%s"' % bn(unparsed_corpus_path))
+        parse_button_text.set('Parse corpus: "%s"' % bn(unparsed_corpus_path))
+        add_subcorpora_to_build_box(unparsed_corpus_path)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus: "%s"' % (time, bn(unparsed_corpus_path))
 
@@ -2672,7 +2687,7 @@ def corpkit_gui():
     Button(tab0, textvariable = sel_corpus_button, command=select_corpus).grid(row = 4, column = 0, sticky=W)
     #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
     speakseg = IntVar()
-    speakcheck = Checkbutton(tab0, text="Attempt speaker segmentation", variable=speakseg, onvalue = True, offvalue = False)
+    speakcheck = Checkbutton(tab0, text="Attempt speaker segmentation", variable=speakseg)
     speakcheck.grid(column = 0, row = 5, sticky=W)
     Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 6, column = 0, sticky=W)
     #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
