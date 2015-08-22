@@ -388,22 +388,16 @@ def interrogator(path,
             return output
 
 
-    def distancer(xmldata, f):
+    def distancer(sents):
         import re
         """return distance from root for words matching query (root = 0)"""
         # for each sentence
         result = []
-        # if lemmatise, we have to do something tricky.
-        just_good_deps = SoupStrainer('sentences')
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-        skipcount = 0
-        for sindex, s in enumerate(soup.find_all('sentence')):
+        for sindex, s in enumerate(sents):
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             deps = right_dependency_grammar[0].find_all('dep')
             if len(deps) > 99:
-                skipcount += 1
-                #import warnings
-                #warnings.warn('%d word sentence (index = %d) skipped in %s\n' % (len(deps) + 1, sindex, f))
+                skipped_sents += 1
                 continue
             for index, dep in enumerate(deps):            
                 dependent = dep.find_all('dependent', limit = 1)[0]
@@ -450,29 +444,15 @@ def interrogator(path,
                             if c > 29:
                                 root_found = True
                                 break
-
-                    # temporary: output info for a few files
-                    #import re
-                    #flat = re.sub(r' +', ' ', re.sub('\([^ ]+', '', s.parse.text).replace(')', ''))
-                    #print '\n\n%s: sentence %d: %d:\n\n %s\n\n' % (f, sindex + 1, c, flat) 
                     if c < 30:
                         result.append(c)
+        return result
 
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
-        return result, skipcount
-
-    def govrole(xmldata):
+    def govrole(sents):
         """print funct:gov, using good lemmatisation"""
         # for each sentence
         result = []
-        just_good_deps = SoupStrainer('sentences')
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-        for s in soup.find_all('sentence'):
+        for s in sents:
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):                
                 for dependent in dep.find_all('dependent', limit = 1):
@@ -514,13 +494,6 @@ def interrogator(path,
                                 result.append(u'%s:%s' % (role, gov))
                         else:
                             result.append(u'root:root')
-
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
         return result
 
     def get_lemmata(xmldata):
@@ -534,10 +507,6 @@ def interrogator(path,
             word = token.lemma.text
             if re.match(query, word):
                 result.append(word)
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
         return result
 
     def tokener(xmldata):
@@ -562,142 +531,86 @@ def interrogator(path,
                             if not token.pos.text[0] in open_classes:
                                 continue
                 result.append(word)
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
         return result
 
-    def deprole(xmldata):
+    def deprole(sents):
         """print funct:dep, using good lemmatisation"""
         # for each sentence
         result = []
-        if lemmatise:
-            # if lemmatise, we have to do something tricky.
-            just_good_deps = SoupStrainer('sentences')
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-            for s in soup.find_all('sentence'):
-                right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                for dep in right_dependency_grammar[0].find_all('dep'):
-                    for governor in dep.find_all('governor', limit = 1):
-                        word = governor.get_text()
-                        if re.match(regex, word):
-                            role = dep.attrs.get('type')
+        for s in sents:
+            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+            for dep in right_dependency_grammar[0].find_all('dep'):
+                for governor in dep.find_all('governor', limit = 1):
+                    result_word = governor.get_text().strip()
+                    if re.match(regex, result_word):
+                        role = dep.attrs.get('type').strip()
+                        if lemmatise or pos_filter:
                             deppy = dep.find_all('dependent', limit = 1)
                             #result_word = deppy[0].get_text()
                             result_word_id = deppy[0].attrs.get('idx')
                             # find this idea
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
-                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text
-                            if function_filter and not pos_filter:
-                                if re.match(funfil_regex, role):
-                                    result.append(result_word)
-                                else:
-                                    continue
-                            if pos_filter and not function_filter:
-                                if re.search(pos_regex, result_pos):
-                                    result.append(result_word)
-                                else:
-                                    continue
-                            if pos_filter and function_filter:
-                                if re.match(funfil_regex, role):
-                                    if re.search(pos_regex, result_pos):
-                                        result.append(result_word)
-                                        continue
-                            if not pos_filter and not function_filter:
-                                if add_pos_to_g_d_option:
-                                    colsep = role + u':' + result_pos + u':' + result_word
-                                else:
-                                    colsep = role + u':' + result_word
-                                result.append(colsep)
-        else:
-            just_good_deps = SoupStrainer('dependencies', type=dep_type)
-            soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
-            for dep in soup.find_all('dep'):
-                for governor in dep.find_all('governor', limit = 1):
-                    word = governor.get_text()
-                    if re.match(regex, word):
-                        role = dep.attrs.get('type')
-                        deppy = dep.find_all('dependent', limit = 1)
-                        result_word = deppy[0].get_text()
-                        if function_filter:
+                            result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
+                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
+                        if function_filter and not pos_filter:
                             if re.match(funfil_regex, role):
                                 result.append(result_word)
-                        else:
-                            colsep = role + u':' + result_word
+                            else:
+                                continue
+                        if pos_filter and not function_filter:
+                            if re.search(pos_regex, result_pos):
+                                result.append(result_word)
+                            else:
+                                continue
+                        if pos_filter and function_filter:
+                            if re.match(funfil_regex, role):
+                                if re.search(pos_regex, result_pos):
+                                    result.append(result_word)
+                                    continue
+                        if not pos_filter and not function_filter:
+                            if add_pos_to_g_d_option:
+                                colsep = role + u':' + result_pos + u':' + result_word
+                            else:
+                                colsep = role + u':' + result_word
                             result.append(colsep)
-        
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
         return result
 
-    def words_by_function(xmldata):
+    def words_by_function(sents):
         """print match by function, using good lemmatisation"""
-        # for each sentence
         result = []
-        # if lemmatise, we have to do something tricky.
-        just_good_deps = SoupStrainer('sentences')
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)    
-        #print soup
-        for s in soup.find_all('sentence'):
-            if just_speakers:
-                #print just_speakers
-                if just_speakers != 'all':
-                    nm = s.speakername.text.lstrip().rstrip()
-                    if nm not in just_speakers:
-                        continue
+        for s in sents:
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):
                 if re.match(query, dep.attrs.get('type')):
                     deppy = dep.find_all('dependent', limit = 1)
-                    result_word = deppy[0].get_text()
+                    result_word = deppy[0].get_text().strip()
                     if lemmatise:
                         result_word_id = deppy[0].attrs.get('idx')
                         # find this id
                         token_info = s.find_all('token', id=result_word_id, limit = 1)
-                        result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                        result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
                         if pos_filter:
-                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
                             if not re.search(pos_regex, result_pos):
                                 continue
-                    result.append(result_word.lstrip().rstrip())    
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
+                    result.append(result_word)    
         return result
 
     def funct(xmldata):
         """"print functional role"""
-        just_good_deps = SoupStrainer('dependencies', type=dep_type)
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
         result = []
-        for dep in soup.find_all('dep'):
-            for dependent in dep.find_all('dependent', limit = 1):
-                word = dependent.get_text()
-                if re.match(regex, word):
-                    role = dep.attrs.get('type')
-                    if function_filter:
-                        if re.search(funfil_regex, role):
-                            continue
-                    # pos filter not working here!                      
-                    result.append(role)
-        
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
+        for s in sents:
+            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+            for dep in right_dependency_grammar[0].find_all('dep'):
+                for dependent in dep.find_all('dependent', limit = 1):
+                    word = dependent.get_text()
+                    if re.match(regex, word):
+                        role = dep.attrs.get('type')
+                        if function_filter:
+                            if re.search(funfil_regex, role):
+                                continue
+                        # pos filter not working here!                      
+                        result.append(role)
         return result
 
     def tok_by_list(pattern, list_of_toks):
@@ -755,17 +668,6 @@ def interrogator(path,
                     word = dependent.get_text()
                     if re.match(regex, word):
                         result.append(index + 1)
-
-                    # old method used on risk project
-                    # get just the number
-                    #result.append(int(dependent.attrs.get('idx')))
-        
-        # attempt to stop memory problems. 
-        # not sure if this helps, though:
-        #soup.decompose()
-        soup = None
-        data = None
-        gc.collect()
         return result
 
     def tabler(subcorpus_names, list_of_dicts, num_rows):
@@ -804,28 +706,28 @@ def interrogator(path,
     translated_option = False
     from other import as_regex
     while not translated_option:
-        if option.startswith('p') or option.startswith('P'):
+        if option.lower().startswith('p'):
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-        elif option.startswith('b') or option.startswith('B'):
+        elif option.lower().startswith('b'):
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-        elif option.startswith('w') or option.startswith('W'):
+        elif option.lower().startswith('w'):
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
-        elif option.startswith('c') or option.startswith('C'):
+        elif option.lower().startswith('c'):
             count_results = {}
             only_count = True
             translated_option = 'C'
@@ -836,14 +738,14 @@ def interrogator(path,
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
         #plaintext options
-        elif option.startswith('r') or option.startswith('R'):
+        elif option.lower().startswith('r'):
             plaintext = True
             optiontext = 'Regular expression matches only.'
             translated_option = 'r'
             if query == 'any':
                 query = r'.*'
 
-        elif option.startswith('s') or option.startswith('S'):
+        elif option.lower().startswith('s'):
             plaintext = True
             optiontext = 'Simple plain-text search.'
             translated_option = 's'
@@ -853,14 +755,14 @@ def interrogator(path,
                 any_plaintext_word = False
 
         #keywording and n_gramming options
-        elif option.startswith('k') or option.startswith('K'):
+        elif option.lower().startswith('k'):
             translated_option = 'k'
             keywording = True
             optiontext = 'Keywords only.'
             if type(query) == list:
                 query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
 
-        elif option.startswith('n') or option.startswith('n'):
+        elif option.lower().startswith('n'):
             translated_option = 'n'
             n_gramming = True
             phrases = True
@@ -869,49 +771,59 @@ def interrogator(path,
                 query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
 
         # dependency option:
-        elif option.startswith('z') or option.startswith('Z'):
+        elif option.lower().startswith('z'):
             translated_option = 'z'
             dependency = True
             optiontext = 'Using custom dependency query engine.'
-        elif option.startswith('i') or option.startswith('I'):
+            dep_funct = custom_engine
+        elif option.lower().startswith('i'):
             translated_option = 'i'
             depnum = True
             dependency = True
             optiontext = 'Dependency index number only.'
-        elif option.startswith('a') or option.startswith('A'):
+            dep_funct = depnummer
+        elif option.lower().startswith('a'):
             translated_option = 'a'
             distance_mode = True
             dependency = True
             optiontext = 'Distance from root.'
-        elif option.startswith('f') or option.startswith('F'):
+            dep_funct = distancer
+        elif option.lower().startswith('f'):
             translated_option = 'f'
             dependency = True
             optiontext = 'Functional role only.'
-        elif option.startswith('m') or option.startswith('M'):
+            dep_funct = funct
+        elif option.lower().startswith('m'):
             translated_option = 'm'
             dependency = True
             optiontext = 'Matching tokens by function label.'
-        elif option.startswith('g') or option.startswith('G'):
+            dep_funct = words_by_function
+        elif option.lower().startswith('g'):
             translated_option = 'g'
             dependency = True
             optiontext = 'Role and governor.'
-        elif option.startswith('l') or option.startswith('L'):
+            dep_funct = govrole
+        elif option.lower().startswith('l'):
             translated_option = 'l'
             dependency = True
             optiontext = 'Lemmata only.'
-        elif option.startswith('t') or option.startswith('T'):
+            dep_funct = get_lemmata
+        elif option.lower().startswith('t'):
             translated_option = 'q' # dummy
             dependency = True
             optiontext = 'Tokens only.'
-        elif option.startswith('d') or option.startswith('D'):
+            dep_funct = tokener
+        elif option.lower().startswith('d'):
             translated_option = 'd'
             dependency = True
             optiontext = 'Dependent and its role.'
-        elif option.startswith('h') or option.startswith('H'):
+            dep_funct = deprole
+
+        elif option.lower().startswith('h'):
             translated_option = 'h'
             tokens = True
             optiontext = 'Tokens via regular expression.'
-        elif option.startswith('e') or option.startswith('E'):
+        elif option.lower().startswith('e'):
             translated_option = 'e'
             tokens = True
             optiontext = 'Tokens via list.'
@@ -1267,6 +1179,9 @@ def interrogator(path,
         else:
             qtext = query
 
+    global skipped_sents
+    skipped_sents = 0
+
     # begin interrogation
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
@@ -1339,6 +1254,7 @@ def interrogator(path,
                     count_results[d] = result
                     continue
 
+
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
         if dependency or plaintext or tokens:
@@ -1347,7 +1263,6 @@ def interrogator(path,
             fileset = d[1]
             #for f in read_files:
             result = []
-            skipped_sents = 0
             for f in fileset:
                 # pass the x/y argument for more updates 
                 if not root:
@@ -1366,33 +1281,33 @@ def interrogator(path,
                     filepath = os.path.join(path, f)
                 else:
                     filepath = os.path.join(path, subcorpus_name, f)
-                if not tokens:
+                if dependency:
                     with open(filepath, "rb") as text:
                         data = text.read()
-                        if translated_option == 'z':
-                            result_from_file = custom_engine(data)
-                        if translated_option == 'g':
-                            result_from_file = govrole(data)
-                        if translated_option == 'm':
-                            result_from_file = words_by_function(data)
-                        if translated_option == 'd':
-                            result_from_file = deprole(data)
-                        if translated_option == 'f':
-                            result_from_file = funct(data)
-                        if translated_option == 'q':
-                            result_from_file = tokener(data)
-                        if translated_option == 'l':
-                            result_from_file = get_lemmata(data)
-                        if translated_option == 'i':
-                            result_from_file = depnummer(data)
-                        if translated_option == 'a':
-                            result_from_file, skipcount = distancer(data, f)
-                            skipped_sents += skipcount
+                        justsents = SoupStrainer('sentences')
+                        soup = BeautifulSoup(data, parse_only=justsents)  
+                        if just_speakers:  
+                            sents = [s for s in soup.find_all('sentence') \
+                            if s.speakername.text.strip() in just_speakers \
+                            or just_speakers.lower() == 'all']
+                        else:
+                            sents = [s for s in soup.find_all('sentence')]
+
+                        result_from_file = dep_funct(sents)
+
+                        # memory problems
+                        soup = None
+                        data = None
+                        gc.collect()
+
+                if plaintext:
+                    with open(filepath, "rb") as text:
+                        data = text.read()
                         if translated_option == 'r':
                             result_from_file = plaintext_regex_search(regex, data)
                         if translated_option == 's':
                             result_from_file = plaintext_simple_search(query, data)
-                else:
+                if tokens:
                     import pickle
                     data = pickle.load(open(filepath, "rb"))
                     if translated_option == 'h':
@@ -1521,7 +1436,7 @@ def interrogator(path,
     df = DataFrame(the_big_dict, index = subcorpus_names)
 
     if one_big_corpus:
-        df = df.T.sort(list(df.T.columns)[0], ascending = False)
+        df = df.T.sort(list(df.T.columns)[0], ascending = False).T
 
     try:
         if not one_big_corpus:
@@ -1544,7 +1459,10 @@ def interrogator(path,
         except:
             pass
         #df.name = query
-        df.sort(ascending = False)
+        if not distance_mode:
+            df.sort(ascending = False)
+        else:
+            df = df.sort_index()
 
     # add sort info for tk
     if tk:
@@ -1611,10 +1529,12 @@ def interrogator(path,
     # warnings if nothing generated...
     if not one_big_corpus and not df1_always_df:
         num_diff_results = len(list(df.columns))
-    else:
-        num_diff_results = len(df)
-    if df1_always_df:
+    elif df1_always_df and not one_big_corpus:
+        num_diff_results = len(list(df.columns))
+    elif not df1_always_df and one_big_corpus:
         num_diff_results = len(list(df.index))
+    elif df1_always_df and one_big_corpus:
+        num_diff_results = len(list(df.columns))
 
     if num_diff_results == 0:
         if not root:
