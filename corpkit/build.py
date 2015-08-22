@@ -813,3 +813,21 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
     if note:
         note.progvar.set(100)
 
+def get_speaker_names_from_xml_corpus(path):
+    import os
+    import re
+    from bs4 import BeautifulSoup
+    names = []
+    # parsing html with regular expression! :)
+    speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
+    for (root, dirs, fs) in os.walk(path):
+        for f in fs:
+            with open(os.path.join(root, f), 'r') as fo:
+                txt = fo.read()
+                res = re.findall(speakid, txt)
+                if res:
+                    res = [i.strip() for i in res]
+                    for i in res:
+                        if i not in names:
+                            names.append(i)
+    return list(sorted(set(names)))
