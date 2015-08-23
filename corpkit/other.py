@@ -715,6 +715,7 @@ def tregex_engine(query = False,
     from other import add_corpkit_to_path
     add_corpkit_to_path()
     import subprocess 
+    from subprocess import Popen, PIPE, STDOUT
     import re
     from time import localtime, strftime
     from corpkit.tests import check_dit
@@ -761,6 +762,7 @@ def tregex_engine(query = False,
                         relative
                     )
                 tregex_command = [resource_path("tregex.sh")]
+
         if not query:
             query = 'NP'
         # if checking for trees, use the -T option
@@ -782,10 +784,19 @@ def tregex_engine(query = False,
         if query:
             tregex_command.append(query)
         if corpus:
-            tregex_command.append(corpus)
+            if os.path.isdir(corpus) or os.path.isfile(corpus):
+                if '-filter' not in options:
+                    tregex_command.append(corpus)
+
         # do query
         try:
-            res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+            if not '-filter' in options:
+                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+            else:
+                p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+                p.stdin.write(corpus)
+                res = p.communicate()[0].splitlines()
+                p.stdin.close()
         # exception handling for regex error
         except Exception, e:
             res = str(e.output).split('\n')
@@ -846,10 +857,18 @@ def tregex_engine(query = False,
     # remove errors and blank lines
     res = [s for s in res if not s.startswith('PennTreeReader:') and s]
     # find end of stderr
-    regex = re.compile('(Reading trees from file|using default tree)')
+    if '-filter' not in options:
+        regex = re.compile('(Reading trees from file|using default tree|)')
+        n = 1
+    else:
+
+        regex = re.compile('Parsed representation:')
+        n = 2
+
     # remove stderr at start
     std_last_index = res.index(next(s for s in res if re.search(regex, s)))
-    res = res[std_last_index + 1:]
+    res = res[std_last_index + n:]
+
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
         if res[0].startswith('1:Next tree read:'):
@@ -875,7 +894,10 @@ def tregex_engine(query = False,
         else:
             res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
     else:
-        res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
+        if preserve_case:
+            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
+        else:
+            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore')) for t, w in res]
 
     if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
@@ -1213,17 +1235,17 @@ def pmultiquery(path,
     elif multiple_queries:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, path, "', '".join(query.values())) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), "', '".join(query.values())) )
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
            "\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, path, query) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, path, query) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
