@@ -717,6 +717,7 @@ def interrogator(path,
             statsmode_results[name] += int(res)
             if root:
                 root.update()
+        os.remove(to_open)
 
     def depnummer(sents):
         """get index of word in sentence?"""
