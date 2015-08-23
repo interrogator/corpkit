@@ -98,7 +98,7 @@ class Notebook(Frame):
 
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
-        sys.stderr = self.redir
+        #sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -121,8 +121,8 @@ class Notebook(Frame):
                     self.tabVars[i][1].grid()                                              #Re-grid the frame that corresponds to the tab                      
                     self.tabVars[IDNum][0]['relief'] = self.activerelief                   #Change the relief to "Raised" to show the tab is selected
                     self.tabVars[i][0]['fg'] = self.activefg                               #Set the fg of the tab, showing it is not selected, default is black
-        # prog to zero
-        self.progvar.set(0)
+        # prog to zero on change tab?
+        # self.progvar.set(0)
 
     def add_tab(self, width = 2, **kw):
         import Tkinter
@@ -525,6 +525,22 @@ def corpkit_gui():
                            'Subjects': 'subjects',
                            'Entities': 'entities'}
 
+    from dictionaries.process_types import processes
+    from corpkit.other import as_regex
+    tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                     'Unmodalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                     'Modalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                     'Interrogative': r'ROOT << (/\?/ !< __)',
+                     'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.mental, boundaries = 'w'),
+                     'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.verbal, boundaries = 'w'),
+                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w')}
+
+    # dep type
+    depdict = {'Basic': 'basic-dependencies', 
+                   'Collapsed': 'collapsed-dependencies', 
+                   'CC-processed': 'collapsed-ccprocessed-dependencies'}
+
+
     # not currently using this sort feature---should use in conc though
     import itertools
     direct = itertools.cycle([0,1]).next
@@ -588,11 +604,6 @@ def corpkit_gui():
             ff = remake_special_query(funfil.get())
         else:
             ff = False
-
-        # dep type
-        depdict = {'Basic': 'basic-dependencies', 
-                   'Collapsed': 'collapsed-dependencies', 
-                   'CC-processed': 'collapsed-ccprocessed-dependencies'}
 
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
@@ -717,8 +728,14 @@ def corpkit_gui():
             del subcorpora[k]
         subcorpora[fp] = subs
         pick_subcorpora['menu'].delete(0, 'end')
-        for choice in subs:
-            pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
+        if len(subs) > 0:
+            pick_subcorpora.config(state = NORMAL)
+            for choice in subs:
+                pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
+        else:
+            pick_subcorpora.config(state = NORMAL)
+            pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
+            pick_subcorpora.config(state = DISABLED)
         path_to_new_unparsed_corpus.set(fp)
         add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
         sel_corpus.set(fp)        
@@ -726,17 +743,18 @@ def corpkit_gui():
         add_subcorpora_to_build_box(fp)
         sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
+        lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
     Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
-    Button(tab1, textvariable = basepath, command = getdir, width = 24).grid(row = 0, column = 0, columnspan = 2, sticky = E)
+    Button(tab1, textvariable = basepath, command = getdir, width = 30).grid(row = 0, column = 0, columnspan = 2, sticky = E)
 
     # function filter
     funfil = StringVar()
     Label(tab1, text = 'Function filter:').grid(row = 10, column = 0, sticky = W)
     funfil.set(r'(nsubj|nsubjpass)')
-    q = Entry(tab1, textvariable = funfil, width = 25, state = DISABLED)
+    q = Entry(tab1, textvariable = funfil, width = 31, state = DISABLED)
     q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
 
     # pos filter
@@ -768,23 +786,31 @@ def corpkit_gui():
                 return
             for n in ns:
                 names.append(n)
+        lbs = []
+        delfrom = []
         if int(only_sel_speakers.get()) == 1:
-            speaker_listbox.configure(state = NORMAL)
-            speaker_listbox.delete(0, END)
-            speaker_listbox.insert(END, 'ALL')
-            for id in names:
-                speaker_listbox.insert(END, id)
-            #speaker_listbox.insert(END, 'UNIDENTIFIED')
-
+            lbs.append(speaker_listbox)
         else:
-            speaker_listbox.configure(state = NORMAL)
-            speaker_listbox.delete(0, END)
-            speaker_listbox.configure(state = DISABLED)
+            delfrom.append(speaker_listbox)
+        if int(only_sel_speakers_conc.get()) == 1:
+            lbs.append(speaker_listbox_conc)
+        else:
+            delfrom.append(speaker_listbox_conc)
+        for lb in lbs:
+            lb.configure(state = NORMAL)
+            lb.delete(0, END)
+            lb.insert(END, 'ALL')
+            for id in names:
+                lb.insert(END, id)
+        for lb in delfrom:
+            lb.configure(state = NORMAL)
+            lb.delete(0, END)
+            lb.configure(state = DISABLED)
 
     # speaker names
     # save these with project!
     only_sel_speakers = IntVar()
-    speakcheck = Checkbutton(tab1, text="Speakers:", variable=only_sel_speakers, command = togglespeaker)
+    speakcheck = Checkbutton(tab1, text="Speakers", variable=only_sel_speakers, command = togglespeaker)
     speakcheck.grid(column = 0, row = 13, sticky=W)
     only_sel_speakers.trace("w", togglespeaker)
 
@@ -1721,7 +1747,6 @@ def corpkit_gui():
     Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky = E)
 
 
-
     # chart type
     Label(tab3, text='Colour scheme:').grid(row = 11, column = 0, sticky = W)
     chart_cols = StringVar(root)
@@ -1792,8 +1817,18 @@ def corpkit_gui():
     current_conc = ['None']
 
     def add_conc_lines_to_window(data):
+        import re
         current_conc[0] = data
-        lines = data.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(data['r'].str.len().max()).format}).splitlines()
+        if win.get() == 'Window size':
+            window = 60
+        else:
+            window = int(win.get())
+        formatl = lambda x: "{0}".format(x[-window:])
+        #formatf = lambda x: "{0}".format(x[-20:])
+        formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
+        lines = data.to_string(header = False, formatters={'l': formatl,
+                                                           'r': formatr}).splitlines()
+        lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
         conclistbox.delete(0, END)
         for line in lines:
             conclistbox.insert(END, str(line))
@@ -1806,32 +1841,55 @@ def corpkit_gui():
         """when you press 'run'"""
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing in progress ... ' % (time)       
-        from corpkit import conc
+        from corpkit.conc import conc
         if subc_pick.get() == "Subcorpus":
             corpus = corpus_fullpath.get()
         else:
             corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
+
+        option = corpus_search_type.get()
+        if option == 'Trees':
+            option = 't'
+        elif option == 'Dependencies':
+            option = 'd'
+        elif option == 'Plaintext':
+            option = 'p'
+        elif option == 'Tokens':
+            option == 'l'
+
         query = query_text.get()
         tree = show_trees.get()
-        if (wind_size.var).get() == "Window size":
-            w_size = 75
-            if tree:
-                w_size = w_size / 2
-        else:
-            w_size = (wind_size.var).get()
-        d = {'window': int(w_size), 
-             'random': random_conc_option.get(),
+
+        d = {'random': random_conc_option.get(),
              'trees': tree,
              'n': 9999,
-             'print_status': False,
              'print_output': False,
-             'root': root}
+             'root': root,
+             'note': note,
+             'option': option,
+             'dep_type': depdict[conc_kind_of_dep.get()]}
+
+        if justdep.get() != '':
+            d['dep_function'] = justdep.get()
+
+        if only_sel_speakers_conc.get():
+            ids = [int(i) for i in speaker_listbox_conc.curselection()]
+            jspeak_conc = [speaker_listbox_conc.get(i) for i in ids]
+            if 'ALL' in jspeak_conc:
+                jspeak_conc = False
+            d['just_speakers'] = jspeak_conc
         
         # special kinds of query
         if query.startswith('[') and query.endswith(']'):
                 query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
         else:
             query = remake_special_query(query)
+
+        if conc_special_queries.get() != 'Preset query':
+            from dictionaries.process_types import processes
+            from corpkit.other import as_regex
+            query = tregex_qs[conc_special_queries.get()]
+            d['option'] = 't'
 
         r = conc(corpus, query, **d)  
         if r is False:
@@ -1888,7 +1946,6 @@ def corpkit_gui():
 
         the new idea is to simply edit and reshow the dataframe!"""
 
-        seplines = []
         import re
         import pandas
         import itertools
@@ -1959,14 +2016,17 @@ def corpkit_gui():
             df['tosorton'] = just_sortword
 
         df = df.sort(['tosorton'], ascending = sort_way).drop(['tosorton'], axis = 1)
-        add_conc_lines_to_window(df)
+        if show_filenames.get() == 0:
+            add_conc_lines_to_window(df.drop('f', axis = 1))
+        else:
+            add_conc_lines_to_window(df)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: %d concordance lines sorted.' % (thetime, len(conclistbox.get(0, END)))
         
     # conc box
     scrollbar = Scrollbar(tab4)
     scrollbar.grid(row = 0, column = 0)
-    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 35, width = 194, font = ('Courier New', 12), selectmode = EXTENDED)
+    conclistbox = Listbox(tab4, yscrollcommand=scrollbar.set, height = 31, width = 194, font = ('Courier New', 12), selectmode = EXTENDED)
     conclistbox.grid(column = 0, columnspan = 60, row = 0)
     conclistbox.bind("<BackSpace>", delete_conc_lines)
     conclistbox.bind("<Shift-KeyPress-BackSpace>", delete_reverse_conc_lines)
@@ -1974,49 +2034,179 @@ def corpkit_gui():
     scrollbar.config(command=conclistbox.yview)
 
     # these were 'generate' and 'edit', but they look ugly right now. the spaces are nice though.
-    Label(tab4, text = ' ', font = ("Helvetica", 12, "bold")).grid(row = 1, column = 0, columnspan = 4)
+    lab = StringVar()
+    lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
+    Label(tab4, textvariable = lab, font = ("Helvetica", 12, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
     Label(tab4, text = ' ', font = ("Helvetica", 12, "bold")).grid(row = 1, column = 9, columnspan = 2)
 
     # select subcorpus
     # add whole corpus option
     subc_pick = StringVar()
-    subc_pick.set("Subcorpus")
-    pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple([s for s in subcorpora[corpus_fullpath.get()]]))
+    subc_pick.set('Subcorpus')
+    pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple(['All'] + [s for s in subcorpora[corpus_fullpath.get()]]))
+    pick_subcorpora.configure(width = 22)
     pick_subcorpora.grid(row = 2, column = 0, sticky = W)
+
+    def conc_search_t(*args):
+        """turn things on and off based on conc search type"""
+        if corpus_search_type.get() == 'Dependencies':
+            conc_pick_dep_type.config(state = NORMAL)
+            speakcheck_conc.config(state = NORMAL)
+            speaker_listbox_conc.config(state = NORMAL)
+            query_text.set(r'(garbage|rubbish|trash)')
+            ebox.config(state = NORMAL)
+        else:
+            ebox.config(state = DISABLED)
+
+        if corpus_search_type.get() == 'Trees':
+            speakcheck_conc.config(state = NORMAL)
+            speaker_listbox_conc.config(state = NORMAL)
+            query_text.set('/NN.?/ >># NP')
+        else:
+            trs.config(state = DISABLED)
+
+        if corpus_search_type.get() == 'Tokens':
+            speakcheck_conc.config(state = DISABLED)
+            speaker_listbox_conc.config(state = DISABLED)
+            query_text.set(r'(garbage|rubbish|trash)')
+
+        if corpus_search_type.get() == 'Plaintext':
+            conc_pick_dep_type.config(state = NORMAL)
+            query_text.set(r'(garbage|rubbish|trash)')
+        
+
+
+
 
     # kind of data
     corpus_search_type = StringVar()
     corpus_search_type.set('Trees')
-    pick_a_conc_datatype = OptionMenu(tab4, corpus_search_type, *tuple(('Trees', 'Dependencies', 'Plaintext')))
-    pick_a_conc_datatype.configure(state = DISABLED)
-    pick_a_conc_datatype.grid(row = 3, column = 0, sticky=W)
+    pick_a_conc_datatype = OptionMenu(tab4, corpus_search_type, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
+    #pick_a_conc_datatype.configure(state = DISABLED)
+    pick_a_conc_datatype.configure(width = 22)
+    pick_a_conc_datatype.grid(row = 4, column = 0, sticky=W)
+    corpus_search_type.trace("w", conc_search_t)
 
-    # query: should be drop down, with custom option ...
+
+    conc_dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
+    conc_kind_of_dep = StringVar(root)
+    conc_kind_of_dep.set('CC-processed')
+    Label(tab1, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
+    conc_pick_dep_type = OptionMenu(tab4, conc_kind_of_dep, *dep_types)
+    conc_pick_dep_type.config(state = DISABLED, width = 22)
+    conc_pick_dep_type.grid(row = 5, column = 0, sticky=W)
+
+
+    # query:
     query_text = StringVar()
     query_text.set('/NN.?/ >># NP')
-    Entry(tab4, textvariable = query_text, width = 50).grid(row = 2, column = 1, columnspan = 4)
+    cqb = Entry(tab4, textvariable = query_text, width = 50)
+    cqb.grid(row = 2, column = 1, columnspan = 4)
+
+    Label(tab4, text = 'Limit results to function:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 3)
+    justdep = StringVar()
+    justdep.set('nsubj(pass)?')
+    ebox = Entry(tab4, textvariable = justdep, width = 22)
+    ebox.config(state = DISABLED)
+    ebox.grid(row = 5, column = 3, columnspan = 2)
     
-    # window size
-    window_sizes = ('20', '30', '40', '50', '60', '70', '80', '90', '100')
-    l =  ['Window size'] + [i for i in window_sizes]
-    wind_size = MyOptionMenu(tab4, 'Window size', *window_sizes)
-    wind_size.grid(row = 3, column = 1, sticky = W)
+    # window size: change to dynamic!
+    win = StringVar()
+    win.set('Window size')
+    wind_size = OptionMenu(tab4, win, *tuple(('Window size', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+    wind_size.grid(row = 3, column = 12, columnspan = 2, sticky = E)
+    win.trace("w", conc_sort)
+
+    def conc_preset_callback(*args):
+        if conc_special_queries.get() != 'Preset query':
+            cqb.config(state = NORMAL)
+            query_text.set(tregex_qs[conc_special_queries.get()])
+            cqb.config(state = DISABLED)
+            
+            pick_a_conc_datatype.config(state = NORMAL)
+            pick_a_conc_datatype.set('Trees')
+            pick_a_conc_datatype.config(state = DISABLED)
+
+            conc_pick_dep_type.config(state = DISABLED)
+            ebox.config(state = DISABLED)
+            conc_pick_dep_type.config(state = DISABLED)
+            conc_pick_dep_type.config(state = DISABLED)
+        else:
+            cqb.config(state = NORMAL)
+            conc_pick_dep_type.config(state = NORMAL)
+            ebox.config(state = NORMAL)
+            conc_pick_dep_type.config(state = NORMAL)
+            conc_pick_dep_type.config(state = NORMAL)
+
+    conc_queries = tuple(('Preset query', 'Imperatives', 'Modalised declaratives', 'Unmodalised declaratives', 'Interrogatives', 'Mental processes', 'Verbal processes', 'Relational processes'))
+    conc_special_queries = StringVar(root)
+    conc_special_queries.set('Preset query')
+    #Label(tab1, text = 'Preset query:').grid(row = 3, column = 0, sticky = W, columnspan = 2)
+    conc_pick_a_query = OptionMenu(tab4, conc_special_queries, *conc_queries)
+    conc_pick_a_query.grid(row = 3, column = 0, sticky=W)
+    conc_pick_a_query.configure(width = 22)
+    conc_special_queries.trace("w", conc_preset_callback)
+
+    only_sel_speakers_conc = IntVar()
+    speakcheck_conc = Checkbutton(tab4, text="Speakers", variable=only_sel_speakers_conc, command = togglespeaker)
+    speakcheck_conc.grid(column = 1, row = 3, sticky=W)
+    only_sel_speakers_conc.trace("w", togglespeaker)
+
+    speaker_listbox_conc = Listbox(tab4, selectmode = EXTENDED, width = 25, height = 4, exportselection = False)
+    speaker_listbox_conc.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W)
+    speaker_listbox_conc.configure(state = DISABLED)
 
     # random
     random_conc_option = IntVar()
-    Checkbutton(tab4, text="Random", variable=random_conc_option, onvalue = True, offvalue = False).grid(row = 3, column = 2)
+    Checkbutton(tab4, text="Random", variable=random_conc_option, onvalue = True, offvalue = False).grid(row = 3, column = 3, sticky = E)
 
     # trees
     show_trees = IntVar()
-    Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False).grid(row = 3, column = 3)
+    trs = Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False)
+    trs.grid(row = 3, column = 1, columnspan = 3)
 
     # run button
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
 
     # edit conc lines
-    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (350, 0))
+    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0))
     Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10)
     Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11)
+
+
+    def toggle_filenames(*args):
+        import re
+        if win.get() == 'Window size':
+            window = 60
+        else:
+            window = int(win.get())
+        data = current_conc[0]
+        formatl = lambda x: "{0}".format(x[-window:])
+        formatf = lambda x: "{0}".format(x[-20:])
+        #formatr = lambda x: 
+        formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
+        if show_filenames.get() == 0:
+            lines = data.drop('f', axis = 1).to_string(header = False, formatters={'l': formatl,
+                                                              'r': formatr}).splitlines()
+        else:
+            lines = data.to_string(header = False, formatters={'l': formatl,
+                                                              'r': formatr}).splitlines()
+    
+        lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
+        import pandas
+        
+        conclistbox.delete(0, END)
+        for line in lines:
+            conclistbox.insert(END, str(line))
+        #time = strftime("%H:%M:%S", localtime())
+        #print '%s: Concordancing done: %d results.' % (time, len(lines))
+        return
+
+    show_filenames = IntVar()
+    fnbut = Checkbutton(tab4, text="Show filenames", variable=show_filenames, command=toggle_filenames)
+    fnbut.grid(row = 3, column = 10, columnspan = 2, sticky = E)
+    fnbut.select()
+    show_filenames.trace("w", toggle_filenames)
 
     # possible sort
     sort_vals = ('Filename', 'Speaker', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
@@ -2283,6 +2473,10 @@ def corpkit_gui():
         project_fullpath.set(fp)
         image_fullpath.set(os.path.join(fp, 'images'))
         data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
+        if not os.path.isdir(data_fullpath.get()):
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Selected folder does not contain corpkit project.' % (thetime)    
+            return    
         get_saved_results()
         #corpus_fullpath.set(os.path.join(fp, 'corpus'))
         open_proj_basepath.set('Loaded project: "%s"' % os.path.basename(fp))
@@ -2309,6 +2503,21 @@ def corpkit_gui():
             basepath.set(first)
             subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
 
+        lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
+        subs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])
+        for k in subcorpora.keys():
+            del subcorpora[k]
+        subcorpora[corpus_fullpath.get()] = subs
+        pick_subcorpora['menu'].delete(0, 'end')
+        if len(subs) > 0:
+            pick_subcorpora.config(state = NORMAL)
+            for choice in subs:
+                pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
+        else:
+            pick_subcorpora.config(state = NORMAL)
+            pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
+            pick_subcorpora.config(state = DISABLED)
+        
         # settings
         def load_config():
             import os
@@ -3033,7 +3242,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(500, start_update_check) # 500
+    root.after(0, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
