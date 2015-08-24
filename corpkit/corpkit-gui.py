@@ -705,6 +705,16 @@ def corpkit_gui():
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         refresh()
+        
+        # add current subcorpora to editor menu
+        #subc_listbox.configure(state = NORMAL)
+        subc_listbox.delete(0, 'end')
+        for e in list(r.results.index):
+            if e != 'tkintertable-order':
+                subc_listbox.insert(END, e)
+        #subc_listbox.configure(state = DISABLED)
+
+
 
         #reset name
         nametext.set('untitled')
@@ -1291,13 +1301,13 @@ def corpkit_gui():
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         
         # add current subcorpora to editor menu
-        for subcl in [subc_listbox, subc_listbox_build]:
-            subcl.configure(state = NORMAL)
+        for subcl in [subc_listbox]:
+            #subcl.configure(state = NORMAL)
             subcl.delete(0, 'end')
             for e in list(r.results.index):
-                if 'tkintertable-order' not in e:
+                if e != 'tkintertable-order':
                     subcl.insert(END, e)
-            subcl.configure(state = DISABLED)
+            #subcl.configure(state = DISABLED)
 
         # update edited spreadsheets
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
@@ -1306,7 +1316,7 @@ def corpkit_gui():
         update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 720)
         
         # add button to update
-        Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 20, column = 2, sticky = E)
+        Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 21, column = 1, sticky = E)
         
         # finish up
         refresh()
@@ -1326,19 +1336,21 @@ def corpkit_gui():
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 720)
         update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 720)
-        for subcl in [subc_listbox, subc_listbox_build]:
+        for subcl in [subc_listbox]:
             subcl.configure(state = NORMAL)
             subcl.delete(0, 'end')
-            subcl.configure(state = NORMAL)
             if name_of_o_ed_spread.get() != '':
                 if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
                     cols = list(all_interrogations[name_of_o_ed_spread.get()].results.index)
                 else:
                     cols = list(all_interrogations[name_of_o_ed_spread.get()].totals.index)
-                    for e in cols:
-                        if 'tkintertable-order' not in e:
-                            subcl.insert(END, e) 
-            subcl.configure(state = DISABLED)       
+                for e in cols:
+                    if e != 'tkintertable-order':
+                        subcl.insert(END, e) 
+        do_sub.set('Off')
+        do_with_entries.set('Off')
+            #subcl.configure(state = DISABLED)    
+
 
     # all interrogations here
     from collections import OrderedDict
@@ -1495,9 +1507,11 @@ def corpkit_gui():
     def do_s_callback(*args):
         """hide subcorpora edit options if off"""
         if do_sub.get() != 'Off':
-            subc_listbox.configure(state = NORMAL)
+            pass
+            #subc_listbox.configure(state = NORMAL)
         else:
-            subc_listbox.configure(state = DISABLED)
+            pass
+            #subc_listbox.configure(state = DISABLED)
         if do_sub.get() == 'Merge':
             merge.configure(state = NORMAL)
         else:
@@ -1506,7 +1520,7 @@ def corpkit_gui():
     # subcorpora + optionmenu off, skip, keep
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 14, column = 0, sticky = W)
     
-    subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, state = DISABLED)
+    subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, exportselection = False)
     subc_listbox.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
     xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
     subc_listbox.select_set(0)
@@ -1885,7 +1899,7 @@ def corpkit_gui():
         lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
         conclistbox.delete(0, END)
         for line in lines:
-            conclistbox.insert(END, str(line))
+            conclistbox.insert(END, unicode(line, errors = 'ignore'))
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing done: %d results.' % (time, len(lines))
 
@@ -2038,6 +2052,7 @@ def corpkit_gui():
         # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
+            from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Tokenising concordance lines ... ' % (thetime)
             # tokenise the right part of each line
@@ -2289,7 +2304,7 @@ def corpkit_gui():
         
         conclistbox.delete(0, END)
         for line in lines:
-            conclistbox.insert(END, str(line))
+            conclistbox.insert(END, unicode(line, errors = 'ignore'))
         #time = strftime("%H:%M:%S", localtime())
         #print '%s: Concordancing done: %d results.' % (time, len(lines))
         return
@@ -3510,7 +3525,7 @@ def corpkit_gui():
             docpath = os.path.join(home, 'Documents')
         else:
             docpath = project_fullpath.get()
-        input = '\n'.join(note.log_stream)
+        input = '\n'.join([unicode(x, errors = 'ignore') for x in note.log_stream])
         #input = note.text.get("1.0",END)
         c = 0
         logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
