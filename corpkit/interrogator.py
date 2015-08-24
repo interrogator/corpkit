@@ -168,25 +168,31 @@ def interrogator(path,
     # determine if actually a multiquery
 
     is_multiquery = False
-    if hasattr(path, '__iter__'):
-        is_multiquery = True
-        if 'postounts' in path[0]:
-            spelling = 'UK'
-    if type(query) == dict or type(query) == collections.OrderedDict:
-        is_multiquery = True
-    if hasattr(function_filter, '__iter__'):
-        is_multiquery = True
-    if just_speakers:
-        if just_speakers == 'each':
+    if not root:
+        if hasattr(path, '__iter__'):
             is_multiquery = True
-        if type(just_speakers) == list:
-            if len(just_speakers) > 1:
+            if 'postounts' in path[0]:
+                spelling = 'UK'
+        if type(query) == dict or type(query) == collections.OrderedDict:
+            is_multiquery = True
+        if hasattr(function_filter, '__iter__'):
+            is_multiquery = True
+        if just_speakers:
+            if just_speakers == 'each':
                 is_multiquery = True
+            if type(just_speakers) == list:
+                if len(just_speakers) > 1:
+                    is_multiquery = True
 
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
         if 'postcounts' in path:
             spelling = 'UK'
+
+    if root:
+        shouldprint = False
+    else:
+        shouldprint = True
 
     # run pmultiquery if so
     if is_multiquery:
@@ -198,6 +204,7 @@ def interrogator(path,
               'reference_corpus': reference_corpus , 
               'titlefilter': titlefilter , 
               'lemmatag': lemmatag , 
+              'print_info': shouldprint, 
               'spelling': spelling , 
               'phrases': phrases , 
               'dep_type': dep_type , 
@@ -209,6 +216,7 @@ def interrogator(path,
               'custom_engine': custom_engine ,
               'df1_always_df': df1_always_df ,
               'just_speakers': just_speakers , 
+              'root': root , 
               'post_process': post_process }
         return pmultiquery(**d)
 
@@ -409,25 +417,25 @@ def interrogator(path,
                 continue
             for index, dep in enumerate(deps):            
                 dependent = dep.find_all('dependent', limit = 1)[0]
-                word = dependent.get_text()
+                word = dependent.get_text().strip()
                 if re.match(regex, word):
                     if function_filter and not pos_filter:
-                        role = dep.attrs.get('type')
+                        role = dep.attrs.get('type').strip()
                         if not re.match(funfil_regex, role):
                             continue
                     if pos_filter and not function_filter:
-                        id = dependent.attrs.get('idx')
+                        id = dependent.attrs.get('idx').strip()
                         token_info = s.find_all('token', id=id, limit = 1)
                         #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
                         if not re.search(pos_regex, result_pos):
                             continue
                     if pos_filter and function_filter:
-                        role = dep.attrs.get('type')
-                        id = dependent.attrs.get('idx')
+                        role = dep.attrs.get('type').strip()
+                        id = dependent.attrs.get('idx').strip()
                         token_info = s.find_all('token', id=id, limit = 1)
                         #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
                         if not re.search(pos_regex, result_pos):
                             continue
                         if not re.match(funfil_regex, role):
@@ -464,19 +472,19 @@ def interrogator(path,
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):                
                 for dependent in dep.find_all('dependent', limit = 1):
-                    matchdep = dependent.get_text()
+                    matchdep = dependent.get_text().strip()
                     if re.match(regex, matchdep):
-                        role = dep.attrs.get('type')
+                        role = dep.attrs.get('type').strip()
                         gov = dep.find_all('governor', limit = 1)
-                        result_word = gov[0].get_text()
-                        result_word_id = gov[0].attrs.get('idx')
+                        result_word = gov[0].get_text().strip()
+                        result_word_id = gov[0].attrs.get('idx').strip()
                         if role != u'root':
                             if lemmatise or pos_filter or function_filter: 
                                 token_info = s.find_all('token', id=result_word_id, limit = 1)
                                 if lemmatise:
-                                    result_word = token_info[0].find_all('lemma', limit = 1)[0].text
+                                    result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
                                 if add_pos_to_g_d_option or pos_filter:
-                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text
+                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
                                 if function_filter and not pos_filter:
                                     if re.match(funfil_regex, role):
                                         result.append(result_word)
@@ -504,41 +512,41 @@ def interrogator(path,
                             result.append(u'root:root')
         return result
 
-    def get_lemmata(xmldata):
+    def get_lemmata(sents):
         """search for lemmata to count"""
         from bs4 import BeautifulSoup
         import gc
         result = []
-        just_good_deps = SoupStrainer('token')
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
-        for token in soup:
-            word = token.lemma.text
-            if re.match(query, word):
-                result.append(word)
+        for sent in sents: 
+            for token in sent.find_all('token'):
+                word = token.lemma.text.strip()
+                if re.match(query, word):
+                    result.append(word)
         return result
 
-    def tokener(xmldata):
+    def tokener(sents):
         """get tokens or lemmata from dependencies"""
         from bs4 import BeautifulSoup
         import gc
         open_classes = ['N', 'V', 'R', 'J']
         result = []
-        just_good_deps = SoupStrainer('tokens')
-        soup = BeautifulSoup(xmldata, parse_only=just_good_deps)   
-        for token in soup.find_all('token'):
-            word = token.word.text
-            if query == 'any':
-                regex = re.compile(r'.*')
-            else:
-                regex = re.compile(query)
-            if re.match(regex, word):
-                if lemmatise:
-                    word = token.lemma.text
-                    if 'just_content_words' in kwargs:
-                        if kwargs['just_content_words'] is True:
-                            if not token.pos.text[0] in open_classes:
-                                continue
-                result.append(word)
+        #just_good_deps = SoupStrainer('tokens')
+        #soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
+        for sent in sents: 
+            for token in sent.find_all('token'):
+                word = token.word.text.strip()
+                if query == 'any':
+                    regex = re.compile(r'.*')
+                else:
+                    regex = re.compile(query)
+                if re.match(regex, word):
+                    if lemmatise:
+                        word = token.lemma.text.strip()
+                        if 'just_content_words' in kwargs:
+                            if kwargs['just_content_words'] is True:
+                                if not token.pos.text[0] in open_classes:
+                                    continue
+                    result.append(word)
         return result
 
     def deprole(sents):
@@ -555,7 +563,7 @@ def interrogator(path,
                         deppy = dep.find_all('dependent', limit = 1)
                         result_word = deppy[0].get_text().strip()
                         if lemmatise or pos_filter:
-                            result_word_id = deppy[0].attrs.get('idx')
+                            result_word_id = deppy[0].attrs.get('idx').strip()
                             token_info = s.find_all('token', id=result_word_id, limit = 1)
                             if lemmatise:
                                 result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
@@ -592,16 +600,16 @@ def interrogator(path,
                     result.append(result_word)    
         return result
 
-    def funct(xmldata):
+    def funct(sents):
         """"print functional role"""
         result = []
         for s in sents:
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
             for dep in right_dependency_grammar[0].find_all('dep'):
                 for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text()
+                    word = dependent.get_text().strip()
                     if re.match(regex, word):
-                        role = dep.attrs.get('type')
+                        role = dep.attrs.get('type').strip()
                         if function_filter:
                             if re.search(funfil_regex, role):
                                 continue
@@ -686,12 +694,14 @@ def interrogator(path,
         with open(to_open, "w") as fo:
             for sent in sents:
                 statsmode_results['Sentences'] += 1
-                fo.write(sent.parse.text + '\n')
-            # add number of passives
-            right_dependency_grammar = sent.find_all('dependencies', type=dep_type, limit = 1)
-            for dep in right_dependency_grammar[0].find_all('dep'):
-                if re.match(r'(nsubjpass|csubjpass)', dep.attrs.get('type').strip()):
-                    statsmode_results['Passives'] += 1
+                fo.write(sent.parse.text.encode("UTF-8") + '\n')
+                # add number of passives
+                right_dependency_grammar = sent.find_all('dependencies', type=dep_type, limit = 1)
+                for dep in right_dependency_grammar[0].find_all('dep'):
+                    if re.search(r'(nsubjpass|csubjpass)', dep.attrs.get('type').strip()):
+                        statsmode_results['Passives'] += 1
+                toks = sent.find_all('token')
+                statsmode_results['Tokens'] += len(toks)
 
         # count moods via trees          (/\?/ !< __)
         from dictionaries.process_types import processes
@@ -715,8 +725,17 @@ def interrogator(path,
                   corpus = to_open,  
                   root = root)
             statsmode_results[name] += int(res)
+            global numdone
+            numdone += 1
             if root:
                 root.update()
+            if not root:
+                p.animate(numdone, str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys())))
+            if root and tk:
+                root.update()
+            # this should show progress more often
+            if 'note' in kwargs.keys():
+                kwargs['note'].progvar.set(numdone * 100.0 / (total_files * len(tregex_qs.keys())))
         os.remove(to_open)
 
     def depnummer(sents):
@@ -726,7 +745,7 @@ def interrogator(path,
             right_deps = sent.find("dependencies", {"type":dep_type})
             for index, dep in enumerate(right_deps.find_all('dep')):
                 for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text()
+                    word = dependent.get_text().strip()
                     if re.match(regex, word):
                         result.append(index + 1)
         return result
@@ -1197,7 +1216,10 @@ def interrogator(path,
         sorted_dirs = all_files
         c = 0
         if not root:
-            p = TextProgressBar(total_files)
+            if translated_option != 'v':
+                p = TextProgressBar(total_files)
+            else:
+                p = TextProgressBar(total_files * 10)
     # if tregex, make progress bar for each dir
     else:
         if not root:
@@ -1208,12 +1230,13 @@ def interrogator(path,
 
     # check for valid query. so ugly.
     if using_tregex:
-        query = tregex_engine(query = query, check_query = True, root = root)
-        if query is False:
-            if root:
-                return 'Bad query'
-            else:
-                return
+        if query:
+            query = tregex_engine(query = query, options = '-t', check_query = True, root = root)
+            if query is False:
+                if root:
+                    return 'Bad query'
+                else:
+                    return
     
     else:
         if dependency or translated_option == 'r' or translated_option == 'h':
@@ -1271,6 +1294,10 @@ def interrogator(path,
         print '%s: Interrogating corpus ...' % time
     if root and tk:
         root.update()
+
+    global numdone
+    numdone = 0
+    
     for index, d in enumerate(sorted_dirs):
         if using_tregex or keywording or n_gramming:
             subcorpus_name = d
@@ -1321,24 +1348,26 @@ def interrogator(path,
 
             #if tregex, search
             else:
-                op = ['-o', '-' + translated_option]
-                result = tregex_engine(query = query, options = op, 
+                if not statsmode:
+                    op = ['-o', '-' + translated_option]
+                    result = tregex_engine(query = query, options = op, 
                                        corpus = subcorpus, root = root)
-                if result is False:
-                    return
+                    if result is False:
+                        return
                 
-                # if just counting matches, just 
-                # add subcorpus name and count...
-                if only_count:
-                    count_results[d] = result
-                    continue
+                    # if just counting matches, just 
+                    # add subcorpus name and count...
+                    if only_count:
+                        count_results[d] = result
+                        continue
 
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
-        if dependency or plaintext or tokens:
-            from collections import Counter
-            statsmode_results = Counter({'Sentences': 0, 'Passives': 0})
 
+        if dependency or plaintext or tokens:
+            p.animate(-1, str(0) + '/' + str(total_files))
+            from collections import Counter
+            statsmode_results = Counter({'Sentences': 0, 'Passives': 0, 'Tokens': 0})
             subcorpus_name = d[0]
             subcorpus_names.append(subcorpus_name)
             fileset = d[1]
@@ -1346,8 +1375,8 @@ def interrogator(path,
             result = []
             for f in fileset:
                 # pass the x/y argument for more updates 
-                if not root:
-                    p.animate(c, str(c) + '/' + str(total_files))
+                if not root and translated_option != 'v':
+                    p.animate((c), str(c + 1) + '/' + str(total_files))
                 if root and tk:
                     root.update()
                     if 'note' in kwargs.keys():
@@ -1441,7 +1470,10 @@ def interrogator(path,
         # weird float div by 0 zero error here for plaintext
         try:
             if not root:
-                p.animate(total_files)
+                if translated_option != v:
+                    p.animate(total_files)
+                else:
+                    p.animate(total_files * 10)
             if 'note' in kwargs.keys():
                 kwargs['note'].progvar.set(100)
         except:
