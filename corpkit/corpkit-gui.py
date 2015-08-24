@@ -94,8 +94,8 @@ class Notebook(Frame):
         self.progbar.grid(sticky = E)
 
         self.redir = RedirectText(self.status_text, self.log_stream)
-        #sys.stdout = self.redir
-        #sys.stderr = self.redir
+        sys.stdout = self.redir
+        sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -3461,7 +3461,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    #root.after(0, start_update_check) # 500
+    root.after(0, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
