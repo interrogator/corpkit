@@ -867,8 +867,6 @@ def editor(dataframe1,
                 df2 = merge_these_entries(df2, parse_input(df2, input), the_newname, prinf = False)
     
     if merge_subcorpora:
-        print merge_subcorpora
-        print new_subcorpus_name
         if type(merge_subcorpora) != dict:
             if type(merge_subcorpora) == list:
                 if type(merge_subcorpora[0]) == tuple:
