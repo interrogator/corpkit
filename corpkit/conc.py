@@ -47,101 +47,132 @@ def conc(corpus,
         else:
             query = as_regex(query, boundaries = 'w')
 
-    fs_to_conc = [f for f in os.listdir(corpus) if os.path.isfile(os.path.join(corpus, f))]
-    fs_to_conc = [f for f in fs_to_conc if f.endswith('.txt') or f.endswith('.xml')]
+    can_do_fast = False
+    if option.startswith('t'):
+        if just_speakers is False:
+            can_do_fast = True
 
-    def normalise(concline):
-        import re
-        reg = re.compile(r'\([^ ]+')
-        spaces = re.compile(r'\s+')
-        concline = re.sub(reg, '', concline)
-        concline = re.sub(spaces, ' ', concline)
-        concline = concline.replace(')', '').replace('  ', ' ')
-        return concline.strip()
+    just_speakers_is_list = False
+    if type(just_speakers) == list:
+        just_speakers_is_list = True
+
+    if type(just_speakers) == str:
+        if just_speakers.lower() != 'all':
+            just_speakers = [just_speakers]
 
     conc_lines = []
+    if option.startswith('t'):
+        if trees:
+            options = '-s'
+        else:
+            options = '-t'
+    if can_do_fast:
+        speakr = ''
+        wholes = tregex_engine(query, 
+                                options = ['-o', '-w', '-f', options], 
+                                corpus = corpus,
+                                preserve_case = True,
+                                root = root)
+        middle_column_result = tregex_engine(query, 
+                                options = ['-o', options], 
+                                corpus = corpus,
+                                preserve_case = True,
+                                root = root)
+        for (f, whole), mid in zip(wholes, middle_column_result):
+            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
+            start, middle, end = re.split(reg, whole, 1)
+            conc_lines.append([os.path.basename(f), speakr, start, middle, end])
+    else:
 
-    # if tregex, i could make a dict of filepaths, speakernames, trees
-    # i could pass in all trees to tregex as stdin, then i could
-    # look 
-    num_fs = len(fs_to_conc)
-    for index, f in enumerate(fs_to_conc):
-        if num_fs > 1:
-            if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set((index) * 100.0 / num_fs)
+        fs_to_conc = [f for f in os.listdir(corpus) if os.path.isfile(os.path.join(corpus, f))]
+        fs_to_conc = [f for f in fs_to_conc if f.endswith('.txt') or f.endswith('.xml')]
 
-        from time import localtime, strftime
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Extracting data from %s ...' % (thetime, f)
-        if root:
-            root.update()
-        filepath = os.path.join(corpus, f)
-        with open(filepath, "rb") as text:
-            data = text.read()
-            if option.startswith('p') or option.startswith('l'):
-                if option.startswith('l'):
-                    lstokens = pickle.load(open(filepath, 'rb'))
-                    data = ' '.join(tokens)
-                    data = data.split(' . ')
-                else:
-                    lines = data.splitlines()
-                for l in lines:
-                    mat = re.search(r'^(.*?)(' + query + r')(.*)$', l)
-                    if mat:
-                        conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(3)])
-                
-            justsents = SoupStrainer('sentences')
-            soup = BeautifulSoup(data, parse_only=justsents)  
-            if just_speakers:  
-                sents = [s for s in soup.find_all('sentence') \
-                if s.speakername.text.strip() in just_speakers]
-            else:
-                sents = [s for s in soup.find_all('sentence')]
-            nsents = len(sents)
-            for i, s in enumerate(sents):
-                if num_fs == 1:
-                    if 'note' in kwargs.keys():
-                        kwargs['note'].progvar.set((index) * 100.0 / nsents)
-                        if root:
-                            root.update()
-                try:
-                    speakr = s.speakername.text.strip()
-                except:
-                    speakr = '' 
-                parsetree = s.parse.text
-                if option.startswith('t'):
-                    if trees:
-                        options = '-s'
+        def normalise(concline):
+            import re
+            reg = re.compile(r'\([^ ]+')
+            spaces = re.compile(r'\s+')
+            concline = re.sub(reg, '', concline)
+            concline = re.sub(spaces, ' ', concline)
+            concline = concline.replace(')', '').replace('  ', ' ')
+            return concline.strip()
+
+        num_fs = len(fs_to_conc)
+        for index, f in enumerate(fs_to_conc):
+            if num_fs > 1:
+                if 'note' in kwargs.keys():
+                    kwargs['note'].progvar.set((index) * 100.0 / num_fs)
+            from time import localtime, strftime
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Extracting data from %s ...' % (thetime, f)
+            if root:
+                root.update()
+            filepath = os.path.join(corpus, f)
+            with open(filepath, "rb") as text:
+                data = text.read()
+                if option.startswith('p') or option.startswith('l'):
+                    if option.startswith('l'):
+                        lstokens = pickle.load(open(filepath, 'rb'))
+                        data = ' '.join(tokens)
+                        data = data.split(' . ')
                     else:
-                        options = '-t'
-
-                    wholes = tregex_engine(query, 
-                                options = ['-o', '-w', '-filter', options], 
-                                corpus = parsetree,
-                                preserve_case = True,
-                                root = root)
-                    middle_column_result = tregex_engine(query, 
-                                options = ['-o', '-filter', options], 
-                                corpus = parsetree,
-                                preserve_case = True,
-                                root = root)
-                    for whole, mid in zip(wholes, middle_column_result):
-                        reg = re.compile(r'(' + re.escape(mid) + r')')
-                        start, middle, end = re.split(reg, whole, 1)
-                        conc_lines.append([f, speakr, start, middle, end])
-                elif option.startswith('d'):
-                    right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                    for dep in right_dependency_grammar[0].find_all('dep'):
-                        for dependent in dep.find_all('dependent', limit = 1):
-                            matchdep = dependent.get_text().strip()
-                            if re.match(query, matchdep):
-                                role = dep.attrs.get('type').strip()
-                                if dep_function != 'any':
-                                    if not re.match(dep_function, role):
-                                        continue
-                                line = normalise(s.parse.text)
-                                start, middle, end = re.split(r'(' + query + r')', line, 1)
-                                conc_lines.append([f, speakr, start, middle, end])
+                        lines = data.splitlines()
+                    for l in lines:
+                        mat = re.search(r'^(.*?)(' + query + r')(.*)$', l)
+                        if mat:
+                            conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(3)])
+                    continue
+                    
+                justsents = SoupStrainer('sentences')
+                soup = BeautifulSoup(data, parse_only=justsents)  
+                if just_speakers_is_list:  
+                    sents = [s for s in soup.find_all('sentence') \
+                    if s.speakername.text.strip() in just_speakers]
+                else:
+                    sents = [s for s in soup.find_all('sentence')]
+                nsents = len(sents)
+                for i, s in enumerate(sents):
+                    if num_fs == 1:
+                        if 'note' in kwargs.keys():
+                            kwargs['note'].progvar.set((index) * 100.0 / nsents)
+                            if root:
+                                root.update()
+                    try:
+                        speakr = s.speakername.text.strip()
+                    except:
+                        speakr = '' 
+                    parsetree = s.parse.text.strip()
+                    if option.startswith('t'):
+                        if trees:
+                            options = '-s'
+                        else:
+                            options = '-t'
+                        wholes = tregex_engine(query, 
+                                    options = ['-o', '-w', '-filter', options], 
+                                    corpus = parsetree,
+                                    preserve_case = True,
+                                    root = root)
+                        middle_column_result = tregex_engine(query, 
+                                    options = ['-o', '-filter', options], 
+                                    corpus = parsetree,
+                                    preserve_case = True,
+                                    root = root)
+                        for whole, mid in zip(wholes, middle_column_result):
+                            reg = re.compile(r'(' + re.escape(mid) + r')')
+                            start, middle, end = re.split(reg, whole, 1)
+                            conc_lines.append([f, speakr, start, middle, end])
+                    elif option.startswith('d'):
+                        right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                        for dep in right_dependency_grammar[0].find_all('dep'):
+                            for dependent in dep.find_all('dependent', limit = 1):
+                                matchdep = dependent.get_text().strip()
+                                if re.match(query, matchdep):
+                                    role = dep.attrs.get('type').strip()
+                                    if dep_function != 'any':
+                                        if not re.match(dep_function, role):
+                                            continue
+                                    line = normalise(s.parse.text.strip())
+                                    start, middle, end = re.split(r'(' + query + r')', line, 1)
+                                    conc_lines.append([f, speakr, start, middle, end])
 
     # does not keep results ordered!
     unique_results = [list(x) for x in set(tuple(x) for x in conc_lines)]
