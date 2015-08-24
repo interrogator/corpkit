@@ -658,9 +658,10 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
         noxml = f.replace('.xml', '')
 
         right_dir = pathdict[noxml].replace(corpuspath, new_corpus_path)
-
+        # get rid of the temp adding of dirname to fname
+        short_name = f.replace('-%s' % right_dir, '')
         os.rename(os.path.join(new_corpus_path, f), 
-                  os.path.join(new_corpus_path, right_dir, f))
+                  os.path.join(new_corpus_path, right_dir, short_name))
     return new_corpus_path
 
 
@@ -727,6 +728,7 @@ def make_no_id_corpus(pth, newpth):
     idregex = re.compile('^([A-Z0-9]+): *(.*)$')
     shutil.copytree(pth, newpth)
     files = get_filepaths(newpth)
+    names = []
     for f in files:
         good_data = []
         with open(f) as fo:
@@ -734,9 +736,15 @@ def make_no_id_corpus(pth, newpth):
             for datum in data:
                 matched = re.search(idregex, datum)
                 if matched:
+                    names.append(matched.group(1))
                     good_data.append(matched.group(2))
         with open(f, "w") as fo:
             fo.write('\n'.join(good_data))
+    if len(names) == 0:
+        from time import localtime, strftime
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: No speaker names found. Turn off speaker segmentation.' % thetime
+        shutil.rmtree(newpth)
 
 def add_ids_to_xml(corpuspath, root = False, note = False):
     """add ids to the xml in corpuspath
@@ -831,3 +839,7 @@ def get_speaker_names_from_xml_corpus(path):
                         if i not in names:
                             names.append(i)
     return list(sorted(set(names)))
+
+def get_speakers(path):
+    from corpkit.build import get_speaker_names_from_xml_corpus
+    return get_speaker_names_from_xml_corpus(path)
