@@ -223,7 +223,7 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     print '\n%s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
-def load_result(savename, loaddir = 'saved_interrogations'):
+def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
     import corpkit
     """Reloads a save_result as namedtuple"""
     import collections
@@ -912,7 +912,7 @@ def tregex_engine(query = False,
             res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
     else:
         if preserve_case:
-            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore')) for t, w in res]
+            res = [(unicode(t, 'utf-8', errors = 'ignore'), unicode(w, 'utf-8', errors = 'ignore')) for t, w in res]
         else:
             res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
 
