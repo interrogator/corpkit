@@ -299,7 +299,17 @@ def load_result(savename, loaddir = 'saved_interrogations'):
     elif len(unpickled) == 2:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
         output = outputnames(unpickled[0], unpickled[1])
-    return output
+    if not only_concs:
+        return output
+    else:
+        try:
+            cols = list(output.columns)
+            if 'l' in cols:
+                return output
+            else:
+                return
+        except:
+            return
 
 def report_display():
     import corpkit
@@ -417,7 +427,7 @@ def new_project(name, loc = '.', root = False):
             raise
 
     # make other directories
-    dirs_to_make = ['data', 'images', 'saved_interrogations', 'dictionaries']
+    dirs_to_make = ['data', 'images', 'saved_interrogations', 'saved_concordances', 'dictionaries']
     #subdirs_to_make = ['dictionaries', 'saved_interrogations']
     for directory in dirs_to_make:
         os.makedirs(os.path.join(fullpath, directory))
@@ -789,9 +799,16 @@ def tregex_engine(query = False,
                     tregex_command.append(corpus)
 
         # do query
+
         try:
-            if not '-filter' in options:
-                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+            if type(options) != bool:
+                if not '-filter' in options:
+                    res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+                else:
+                    p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+                    p.stdin.write(corpus)
+                    res = p.communicate()[0].splitlines()
+                    p.stdin.close()
             else:
                 p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
                 p.stdin.write(corpus)
@@ -856,17 +873,17 @@ def tregex_engine(query = False,
 
     # remove errors and blank lines
     res = [s for s in res if not s.startswith('PennTreeReader:') and s]
-    # find end of stderr
+
+    # find and remove stderr lines
     if '-filter' not in options:
-        regex = re.compile('(Reading trees from file|using default tree|)')
         n = 1
+        std_last_index = res.index(next(s for s in res \
+                        if s.startswith('Reading trees from file') \
+                        or s.startswith('using default tree')))
     else:
-
-        regex = re.compile('Parsed representation:')
         n = 2
-
-    # remove stderr at start
-    std_last_index = res.index(next(s for s in res if re.search(regex, s)))
+        std_last_index = res.index(next(s for s in res \
+                        if s.startswith('Parsed representation:')))
     res = res[std_last_index + n:]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
@@ -895,9 +912,9 @@ def tregex_engine(query = False,
             res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
     else:
         if preserve_case:
-            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
-        else:
             res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore')) for t, w in res]
+        else:
+            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
 
     if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
@@ -936,7 +953,7 @@ def tregex_engine(query = False,
         res = [(w, t.upper()) for w, t in res]
     return res
 
-def load_all_results(data_dir = 'saved_interrogations', root = False):
+def load_all_results(data_dir = 'saved_interrogations', root = False, only_concs = False):
     import corpkit
     """load every saved interrogation in data_dir into a dict"""
     import os
@@ -955,7 +972,10 @@ def load_all_results(data_dir = 'saved_interrogations', root = False):
     l = 0
     for finding in fs:
         try:
-            r[os.path.splitext(finding)[0]] = load_result(finding, loaddir = data_dir)
+            tmp = load_result(finding, loaddir = data_dir, only_concs = only_concs)
+            if not tmp:
+                continue
+            r[os.path.splitext(finding)[0]] = tmp
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
             l += 1
@@ -1088,6 +1108,8 @@ def pmultiquery(path,
     num_proc = 'default', 
     function_filter = False,
     just_speakers = False,
+    root = False,
+    print_info = True,
     **kwargs):
     """Parallel process multiple queries or corpora.
 
@@ -1145,13 +1167,13 @@ def pmultiquery(path,
     multiple_speakers = False
     multiple_corpora = False
 
-    if type(path) != str:
+    if hasattr(path, '__iter__'):
         multiple_corpora = True
         num_cores = best_num_parallel(num_cores, len(path))
-    elif type(query) != str:
+    elif hasattr(query, '__iter__'):
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
-    elif type(function_filter) != str and function_filter is not False:
+    elif hasattr(function_filter, '__iter__'):
         multiple_option = True
         num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
     elif just_speakers:
@@ -1174,7 +1196,8 @@ def pmultiquery(path,
     # the options that don't change
     d = {'option': option,
          'paralleling': True,
-         'function': 'interrogator'}
+         'function': 'interrogator',
+         'root': root}
 
     # add kwargs to query
     for k, v in kwargs.items():
@@ -1224,8 +1247,6 @@ def pmultiquery(path,
             a_dict['printstatus'] = False
             ds.append(a_dict)
 
-    print ds
-
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations:\n              %s" \
@@ -1249,15 +1270,17 @@ def pmultiquery(path,
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
+    import sys
+    reload(sys)
+    stdout=sys.stdout
     res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
     res = sorted(res)
-    print res
 
     # turn list into dict of results, make query and total branches,
     # save and return
     if not option.startswith('c'):
         out = {}
-        print ''
+        #print ''
         for (name, data), d in zip(res, ds):
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
