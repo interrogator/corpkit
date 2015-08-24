@@ -229,6 +229,8 @@ def editor(dataframe1,
                 if operation == '/':
                     totals = df.sum() / float(df2.sum().sum())
                 if operation.startswith('c'):
+                    # add here the info that merging will not work 
+                    # with identical colnames
                     import warnings
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
