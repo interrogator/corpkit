@@ -2381,7 +2381,7 @@ def corpkit_gui():
         print '%s: Project "%s" created.' % (thetime, name)
 
     def get_saved_results(kind = 'interrogation'):
-        from corpkit import load_all_results]
+        from corpkit import load_all_results
         from time import strftime, localtime
         if kind == 'interrogation':
             datad = data_fullpath.get()
@@ -2722,28 +2722,27 @@ def corpkit_gui():
 
             basepath.set(first)
             subcorpora = {corpus_fullpath.get(): sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])}
-
-        lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
-        subs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])
-        for k in subcorpora.keys():
-            del subcorpora[k]
-        subcorpora[corpus_fullpath.get()] = subs
-        pick_subcorpora['menu'].delete(0, 'end')
-        if len(subs) > 0:
-            pick_subcorpora.config(state = NORMAL)
-            for choice in subs:
-                pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
-        else:
-            pick_subcorpora.config(state = NORMAL)
-            pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
-            pick_subcorpora.config(state = DISABLED)
-                
+            lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
+            subs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(), d))])
+            for k in subcorpora.keys():
+                del subcorpora[k]
+            subcorpora[corpus_fullpath.get()] = subs
+            pick_subcorpora['menu'].delete(0, 'end')
+            if len(subs) > 0:
+                pick_subcorpora.config(state = NORMAL)
+                for choice in subs:
+                    pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
+            else:
+                pick_subcorpora.config(state = NORMAL)
+                pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
+                pick_subcorpora.config(state = DISABLED)
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         f = os.path.join(project_fullpath.get(), 'settings.ini')
         if os.path.isfile(f):
             load_config()
         getdir(ask = False)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
+
 
 
     def view_query():
@@ -2835,7 +2834,7 @@ def corpkit_gui():
     #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
     Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 5, column = 0, sticky=W)
 
-    Label(tab5, text = 'Interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
+    Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
     Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 20).grid(row = 1, column = 1)
 
     #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
