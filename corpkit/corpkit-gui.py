@@ -1908,6 +1908,9 @@ def corpkit_gui():
 
     current_conc = ['None']
 
+    global conc_saved
+    conc_saved = False
+
     def add_conc_lines_to_window(data, loading = False):
         import pandas as pd
         #pd.set_option('display.height', 1000)
@@ -1998,6 +2001,8 @@ def corpkit_gui():
         r = conc(corpus, query, **d)  
         if r is not None and r is not False:
             add_conc_lines_to_window(r)
+        global conc_saved
+        conc_saved = False
         Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
@@ -2012,6 +2017,8 @@ def corpkit_gui():
             print '%s: %d line removed.' % (thetime, len(items))
         if len(items) > 1:
             print '%s: %d lines removed.' % (thetime, len(items))
+        global conc_saved
+        conc_saved = False
 
     def delete_reverse_conc_lines(*args):
         if type(current_conc[0]) == str:
@@ -2025,6 +2032,8 @@ def corpkit_gui():
             print '%s: %d line removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
         if len(conclistbox.get(0, END)) - len(items) > 1:
             print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
+        global conc_saved
+        conc_saved = False
 
     def conc_export(data = 'default'):
         """export conc lines to csv"""
@@ -2055,6 +2064,8 @@ def corpkit_gui():
             fo.write(csv)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Concordance lines exported.' % (thetime)
+        global conc_saved
+        conc_saved = False
 
     import itertools
     toggle = itertools.cycle([True, False]).next
@@ -2153,6 +2164,8 @@ def corpkit_gui():
         from time import localtime, strftime
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: %d concordance lines sorted.' % (thetime, len(conclistbox.get(0, END)))
+        global conc_saved
+        conc_saved = False
         
     # conc box
     fsize = IntVar()
@@ -2395,9 +2408,45 @@ def corpkit_gui():
         
         df = make_df_matching_screen()
         all_conc[name] = df
+        global conc_saved
+        conc_saved = True
+
         refresh()
 
-    Button(tab4, text = 'Save as ... ', command = concsave).grid(row = 5, column = 9, sticky = E, padx = (260,0))
+    def merge_conclines():
+        should_continue = True
+        global conc_saved
+        if not conc_saved:
+            should_continue = tkMessageBox.askyesno("Unsaved data", 
+                          "Unsaved concordance lines will be forgotten. Continue?")
+        if not should_continue:
+            return
+        import pandas
+        toget = prev_conc_listbox.curselection()
+        dfs = []
+        if toget != ():
+            if len(toget) < 2:
+                from time import strftime, localtime
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Need multiple concordances to merge.' % (thetime, name)
+                return
+            for item in toget:
+                nm = prev_conc_listbox.get(item)
+                dfs.append(all_conc[nm])
+        else:
+            from time import strftime, localtime
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Nothing selected to merge.' % (thetime, name)
+            return
+        df = pandas.concat(dfs, ignore_index = True)
+        should_drop = tkMessageBox.askyesno("Remove duplicates", 
+                          "Remove duplicate concordance lines?")
+        if should_drop:
+            df = df.drop_duplicates(subset = ['l', 'm', 'r'])
+        add_conc_lines_to_window(df)
+
+    Button(tab4, text = 'Save as ... ', command = concsave).grid(row = 5, column = 9, columnspan = 2, padx = (215,0))
+    Button(tab4, text = 'Merge', command = merge_conclines).grid(row = 5, column = 10, sticky = E)
 
     show_filenames = IntVar()
     fnbut = Checkbutton(tab4, text="Toggle filenames", variable=show_filenames, command=toggle_filenames)
@@ -2419,18 +2468,31 @@ def corpkit_gui():
     Label(tab4, text = 'Saved concordances:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 9, columnspan = 2, padx = (260,0))
 
     def load_saved_conc():
-        toget = prev_conc_listbox.curselection()
-        if toget != ():
-            nm = prev_conc_listbox.get(toget[0])
-            df = all_conc[nm]
-            add_conc_lines_to_window(df, loading = True)
+        should_continue = True
+        global conc_saved
+        if not conc_saved:
+            should_continue = tkMessageBox.askyesno("Unsaved data", 
+                          "Unsaved concordance lines will be forgotten. Continue?")
+        if should_continue:
+            toget = prev_conc_listbox.curselection()
+            if len(toget) > 1:
+                from time import strftime, localtime
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Only one selection allowed for load.' % (thetime, name)
+                return
+            if toget != ():
+                nm = prev_conc_listbox.get(toget[0])
+                df = all_conc[nm]
+                add_conc_lines_to_window(df, loading = True)
+        else:
+            return
 
-    Button(tab4, text = 'Load', command = load_saved_conc).grid(row = 5, column = 10, columnspan = 2, padx = (0, 40))
+    Button(tab4, text = 'Load', command = load_saved_conc).grid(row = 5, column = 11)
     prev_conc = Frame(tab4)
-    prev_conc.grid(row = 4, column = 10, rowspan = 2, columnspan = 4, sticky = E)
+    prev_conc.grid(row = 4, column = 12, rowspan = 2, columnspan = 3, sticky = E)
     prevcbar = Scrollbar(prev_conc)
     prevcbar.pack(side=RIGHT, fill=Y)
-    prev_conc_listbox = Listbox(prev_conc, selectmode = SINGLE, width = 25, height = 4, 
+    prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 25, height = 4, 
                                 yscrollcommand=prevcbar.set, exportselection = False)
     prev_conc_listbox.pack()
     cscrollbar.config(command=speaker_listbox.yview)
