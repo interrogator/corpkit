@@ -229,6 +229,10 @@ def conc(corpus,
     rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
     if print_output:
         print rem
+
+    if 'note' in kwargs.keys():
+        kwargs['note'].progvar.set(100)
+
     return df
 
     if add_links:
