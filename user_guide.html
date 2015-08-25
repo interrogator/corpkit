@@ -76,6 +76,7 @@
 <li><a href="#selecting-a-kind-of-data">Selecting a kind of data</a></li>
 <li><a href="#writing-queries">Writing queries</a></li>
 <li><a href="#search-options">Search options</a></li>
+<li><a href="#speaker-ids">Speaker IDs</a></li>
 <li><a href="#running-interrogations">Running interrogations</a></li>
 <li><a href="#editing-spreadsheets">Editing spreadsheets</a></li>
 </ul>
@@ -162,6 +163,20 @@
 </blockquote>
 
 <p>You can then choose to parse your files, or simply tokenise them. Why not do both?</p>
+
+<h4>
+<a id="user-content-speaker-segmentation" class="anchor" href="#speaker-segmentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Speaker segmentation</h4>
+
+<p>If you select the speaker segmentation option, parsing will also involve labelling the speaker ID of each sentence.</p>
+
+<p>For this option to work, each text file in your corpus must be formatted with speaker names in capital letters (with no spaces), followed by a colon, like so:</p>
+
+<pre><code>`JOHN: Why did they change the signs above all the bins?
+SPEAKER23: I know why. But I'm not telling.`
+...
+</code></pre>
+
+<p>This will allow you to restrict your interrogations and concordances to specific interlocutors.</p>
 
 <h2>
 <a id="user-content-interrogate" class="anchor" href="#interrogate" aria-hidden="true"><span class="octicon octicon-link"></span></a>Interrogate</h2>
@@ -293,12 +308,14 @@
 <h4>
 <a id="user-content-special-queries" class="anchor" href="#special-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Special queries</h4>
 
-<p><code>corpkit</code> also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar.</p>
+<p><code>corpkit</code> also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar. </p>
 
 <h5>
 <a id="user-content-preset-queries" class="anchor" href="#preset-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Preset queries</h5>
 
-<p><code>'Any'</code> will match any word, tag or function, depending on the search type.</p>
+<p><code>'Any'</code> will match any word, tag or function, depending on the search type. <code>Participants</code> and <code>Processes</code> approximate notions from systemic functional grammar. </p>
+
+<p><code>Stats</code> will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.</p>
 
 <h5>
 <a id="user-content-query-parts" class="anchor" href="#query-parts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Query parts</h5>
@@ -407,9 +424,14 @@
 <p>then <code>corpkit</code> will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the <code>Result word class</code> option to force <code>corpkit</code> to treat all results as a given part of speech.</p>
 
 <h3>
+<a id="user-content-speaker-ids" class="anchor" href="#speaker-ids" aria-hidden="true"><span class="octicon octicon-link"></span></a>Speaker IDs</h3>
+
+<p>If you have used the <code>speaker segmentation</code> option, you can restrict your searches to specific speakers. You can use <code>shift+click</code> or <code>ctrl+click</code> to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as <code>False</code>, rather than <code>ALL</code>.</p>
+
+<h3>
 <a id="user-content-running-interrogations" class="anchor" href="#running-interrogations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running interrogations</h3>
 
-<p>On large datasets, interrogations can take some time, especially for dependency searches with many options. Be patient!</p>
+<p>On large datasets, interrogations can take some time, especially for dependency searches with many options. Speaker IDs also come at the cost of speed. Be patient!</p>
 
 <p>Be sure to name your interrogation, via the <code>Name interrogation</code> box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.</p>
 
@@ -423,6 +445,10 @@
 <p>It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. </p>
 
 <p>Sorting the result order is performed in the edit window (see below).</p>
+
+<blockquote>
+<p>If you're trying to compare speakers within a corpus, a simple way to do this is to perform two (or more) speaker-restricted interrogations, manually edit the column name(s) of the spreadsheet to include information about the speaker. You can then use the <code>combine</code> operation in <code>edit</code> to put the two interrogations together</p>
+</blockquote>
 
 <h2>
 <a id="user-content-edit" class="anchor" href="#edit" aria-hidden="true"><span class="octicon octicon-link"></span></a>Edit</h2>
@@ -441,7 +467,7 @@
 <h3>
 <a id="user-content-operations-and-denominators" class="anchor" href="#operations-and-denominators" aria-hidden="true"><span class="octicon octicon-link"></span></a>Operations and denominators</h3>
 
-<p>A common task is to turn absolute into relative frequencies. To do this, you simply select '%' as the operation, and <code>self</code>-<code>totals</code> as the denominator. To calculate a radio, you could use '/'.</p>
+<p>A common task is to turn absolute into relative frequencies. To do this, you simply select <code>'%'</code> as the operation, and <code>self</code>-<code>totals</code> as the denominator. To calculate a radio, you could use <code>'/'</code>.</p>
 
 <p>Because you can use any result/total as the denominator (provided it has the same subcorpora), you can calculate almost anything in your data. To figure out the ratio of nouns/clauses, you would perform two interrogations, and combine them here.</p>
 
@@ -451,6 +477,8 @@
 
 <pre><code>When sports are mentioned, what percentage of the time do the sports occur in subject position?
 </code></pre>
+
+<p>You can use the <code>combine</code> operation to add two results together. By default, this happens on the y axis. If you have multiple columns with the same names, results may be merged. If you want to merge on the x-axis, use the <code>transpose</code> option for each dataset, and then <code>combine</code>.</p>
 
 <h4>
 <a id="user-content-keywording" class="anchor" href="#keywording" aria-hidden="true"><span class="octicon octicon-link"></span></a>Keywording</h4>
@@ -522,10 +550,18 @@
 <a id="user-content-concordance" class="anchor" href="#concordance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concordance</h2>
 
 <blockquote>
-<p>Currently, <code>Concordance</code> provides a concordancer for constituency trees. Concordancing for plaintext and dependencies is forthcoming.</p>
+<p><code>corpkit</code>'s concordancer is unique, in that it handles constituency and dependency queries.</p>
 </blockquote>
 
-<p>Most features here are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns (other options are in development). This can be a good way to check that a query used to interrogate the corpus is finding what it's supposed to. <code>Trees</code> will output bracketted trees instead of plain text, which can be useful in learning how to make Tregex queries.</p>
+<p>Most features this pane are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns (other options are in development). This can be a good way to check that a query used to interrogate the corpus is finding what it's supposed to. <code>Trees</code> will output bracketted trees instead of plain text, which can be useful in learning how to make Tregex queries.</p>
+
+<p>Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words.</p>
+
+<p>As with <code>interrogate</code>, you can use special queries, like <code>ROLES:ACTOR</code>, or select some preset queries.</p>
+
+<p>Concordancing using speaker IDs is often very slow. If you want to concordance your data faster, and you don't care if you don't get speaker ID information, leave the <code>Speakers</code> option unchecked.</p>
+
+<p>If you select <code>'ALL'</code> as the speaker, you'll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.</p>
 
 <h3>
 <a id="user-content-editing-concordance-lines" class="anchor" href="#editing-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing concordance lines</h3>
@@ -536,6 +572,8 @@
 <a id="user-content-sorting-1" class="anchor" href="#sorting-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
 
 <p>Sorting is always by the first character. <code>L1</code> sorts by the rightmost word in the left-hand column; <code>L2</code> sorts by the second rightmost. This is similar for the other columns. Sorting by <code>M-1</code> will sort by the last word in the middle column, and <code>M-2</code> by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.</p>
+
+<p>You can also sort by filename or speaker (if available).</p>
 
 <p>Clicking <code>Sort</code> again without making any other changes will invert the sort order.</p>
 
@@ -573,7 +611,7 @@
 <h2>
 <a id="user-content-settings" class="anchor" href="#settings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Settings</h2>
 
-<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project.</p>
+<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project. These will be loaded when you open the project in the future.</p>
 
 <h2>
 <a id="user-content-updates" class="anchor" href="#updates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Updates</h2>
