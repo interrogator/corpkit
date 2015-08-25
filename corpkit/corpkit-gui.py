@@ -636,7 +636,7 @@ def corpkit_gui():
             jspeak = [speaker_listbox.get(i) for i in ids]
             # in the gui, we can't do 'each' queries (right now)
             if 'ALL' in jspeak:
-                jspeak = False
+                jspeak = 'each'
                 #get_speaker_names_from_xml_corpus(corpus_fullpath.get())
             interrogator_args['just_speakers'] = jspeak
 
@@ -667,20 +667,21 @@ def corpkit_gui():
             selected_option = 'v'
             interrogator_args['query'] = 'any'
 
-        r = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
-        if not r or r == 'Bad query':
+        interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
+
+        if not interrodata or interrodata == 'Bad query':
             Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
             update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)            
             return
 
-        # drop over 1000?
-        # type check probably redundant now
-        if 'results' in r._asdict().keys():
-            large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
-            r.results.drop(large, axis = 1, inplace = True)
-            r.results.drop('Total', errors = 'ignore', inplace = True)
-            r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
+        # make non-dict results into dict, so we can iterate
+        interrogation_returned_dict = False
+        if type(interrodata) != dict:
+            dict_of_results = {the_name: interrodata}
+        else:
+            dict_of_results = interrodata
+            interrogation_returned_dict = True
 
         # remove dummy entry from master
         try:
@@ -688,20 +689,35 @@ def corpkit_gui():
         except KeyError:
             pass
 
-        # add interrogation to master
-        all_interrogations[the_name] = r
-        name_of_interro_spreadsheet.set(the_name)
+        # post-process each result and add to master list
+        for nm, r in sorted(dict_of_results.items()):
+            # drop over 1000?
+            # type check probably redundant now
+            if 'results' in r._asdict().keys():
+                large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+                r.results.drop(large, axis = 1, inplace = True)
+                r.results.drop('Total', errors = 'ignore', inplace = True)
+                r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
+
+            # add interrogation to master
+            if interrogation_returned_dict:
+                all_interrogations[the_name + '-' + nm] = r
+            else:
+                all_interrogations[nm] = r
+
+        # show most recent (alphabetically last) interrogation spreadsheet
+        recent_interrogation_name = all_interrogations.keys()[-1]
+        recent_interrogation_data = all_interrogations[recent_interrogation_name]
+
+        name_of_interro_spreadsheet.set(recent_interrogation_name)
         i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
 
         # total in a way that tkintertable likes
-        totals_as_df = pandas.DataFrame(r.totals, dtype = object)
-
-        # check if no subcorpora
-        sorted_dirs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+        totals_as_df = pandas.DataFrame(recent_interrogation_data.totals, dtype = object)
 
         # update spreadsheets
-        if 'results' in r._asdict().keys():
-            update_spreadsheet(interro_results, r.results, height = 340, indexwidth = 70, width = 650)
+        if 'results' in recent_interrogation_data._asdict().keys():
+            update_spreadsheet(interro_results, recent_interrogation_data.results, height = 340, indexwidth = 70, width = 650)
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         refresh()
@@ -855,7 +871,8 @@ def corpkit_gui():
     spk_scrl.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
     spk_sbar = Scrollbar(spk_scrl)
     spk_sbar.pack(side=RIGHT, fill=Y)
-    speaker_listbox = Listbox(spk_scrl, selectmode = SINGLE, width = 32, height = 4, exportselection = False)
+    speaker_listbox = Listbox(spk_scrl, selectmode = SINGLE, width = 32, height = 4, 
+                              yscrollcommand=spk_sbar.set, exportselection = False)
     speaker_listbox.pack()
     speaker_listbox.configure(state = DISABLED)
     spk_sbar.config(command=speaker_listbox.yview)
@@ -1528,7 +1545,8 @@ def corpkit_gui():
     edit_sub_f.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
     edsub_scbr = Scrollbar(edit_sub_f)
     edsub_scbr.pack(side=RIGHT, fill=Y)
-    subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height = 5, exportselection = False)
+    subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height = 5, 
+                           yscrollcommand=edsub_scbr.set, exportselection = False)
     subc_listbox.pack(fill=BOTH)
     edsub_scbr.config(command=subc_listbox.yview)
 
@@ -1890,7 +1908,7 @@ def corpkit_gui():
 
     current_conc = ['None']
 
-    def add_conc_lines_to_window(data):
+    def add_conc_lines_to_window(data, loading = False):
         import pandas as pd
         #pd.set_option('display.height', 1000)
         #pd.set_option('display.width', 1000)
@@ -1909,9 +1927,12 @@ def corpkit_gui():
         lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
         conclistbox.delete(0, END)
         for line in lines:
-            conclistbox.insert(END, unicode(line, errors = 'ignore'))
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Concordancing done: %d results.' % (time, len(lines))
+            conclistbox.insert(END, line)
+        thetime = strftime("%H:%M:%S", localtime())
+        if loading:
+            print '%s: Concordances loaded.' % (thetime)
+        else:
+            print '%s: Concordancing done: %d results.' % (thetime, len(lines))
 
     def do_concordancing():
         Button(tab4, text = 'Run', command = ignore).grid(row = 3, column = 4, sticky = E)
@@ -1980,25 +2001,40 @@ def corpkit_gui():
         Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
+        if type(current_conc[0]) == str:
+            return
         items = conclistbox.curselection()
         #current_conc[0].results.drop(current_conc[0].results.iloc[1,].name)
         r = current_conc[0].drop([current_conc[0].iloc[int(n),].name for n in items])
         add_conc_lines_to_window(r)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: %d lines removed.' % (thetime, len(items))
+        if len(items) == 1:
+            print '%s: %d line removed.' % (thetime, len(items))
+        if len(items) > 1:
+            print '%s: %d lines removed.' % (thetime, len(items))
 
     def delete_reverse_conc_lines(*args):
+        if type(current_conc[0]) == str:
+            return
         items = [int(i) for i in conclistbox.curselection()]
         r = current_conc[0].iloc[items,]
         add_conc_lines_to_window(r)
         conclistbox.select_set(0, END)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
+        if len(conclistbox.get(0, END)) - len(items) == 1:
+            print '%s: %d line removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
+        if len(conclistbox.get(0, END)) - len(items) > 1:
+            print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
 
     def conc_export(data = 'default'):
         """export conc lines to csv"""
         import os
         import pandas
+        if type(current_conc[0]) == str:
+            from time import localtime, strftime
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Nothing to export.' % (thetime)
+            return
         if project_fullpath.get() ==  '':
             home = os.path.expanduser("~")
             docpath = os.path.join(home, 'Documents')
@@ -2036,12 +2072,13 @@ def corpkit_gui():
         import pandas
         import itertools
         sort_way = True
+        if type(current_conc[0]) == str:
+            return
         if prev_sortval[0] == sortval.get():
             # if subcorpus is the same, etc, as well
             sort_way = toggle()
         df = current_conc[0]
         prev_sortval[0] = sortval.get()
-
         # sorting by first column is easy, so we don't need pandas
         if sortval.get() == 'M1':
             low = [l.lower() for l in df['m']]
@@ -2126,7 +2163,10 @@ def corpkit_gui():
     cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
     cscrollbar.pack(side=RIGHT, fill=Y)
     cscrollbarx.pack(side=BOTTOM, fill=X)
-    conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, xscrollcommand=cscrollbarx.set, height = 450, width = 1050, font = ('Courier New', fsize.get()), selectmode = EXTENDED)
+    conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, 
+                          xscrollcommand=cscrollbarx.set, height = 450, 
+                          width = 1050, font = ('Courier New', fsize.get()), 
+                          selectmode = EXTENDED)
     conclistbox.pack(fill=BOTH)
     cscrollbar.config(command=conclistbox.yview)
     cscrollbarx.config(command=conclistbox.xview)
@@ -2143,11 +2183,18 @@ def corpkit_gui():
         fsize.set(size + 1)
         conclistbox.configure(font = ('Courier New', fsize.get()))
 
+    def select_all_conclines(*args):
+        conclistbox.select_set(0, END)
+
     conclistbox.bind("<BackSpace>", delete_conc_lines)
     conclistbox.bind("<Shift-KeyPress-BackSpace>", delete_reverse_conc_lines)
     conclistbox.bind("<Shift-KeyPress-Tab>", conc_sort)
     conclistbox.bind("<%s-minus>" % key, dec_concfont)
     conclistbox.bind("<%s-equal>" % key, inc_concfont)
+    conclistbox.bind("<%s-a>" % key, select_all_conclines)
+    conclistbox.bind("<%s-s>" % key, lambda x: concsave())
+    conclistbox.bind("<%s-e>" % key, lambda x: conc_export())
+    conclistbox.bind("<%s-t>" % key, lambda x: toggle_filenames())
 
     # these were 'generate' and 'edit', but they look ugly right now. the spaces are nice though.
     lab = StringVar()
@@ -2269,7 +2316,8 @@ def corpkit_gui():
     scfrm.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W)
     scscrollbar = Scrollbar(scfrm)
     scscrollbar.pack(side=RIGHT, fill=Y)
-    speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 25, height = 4, exportselection = False)
+    speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 25, height = 4, 
+                                   yscrollcommand=scscrollbar.set, exportselection = False)
     speaker_listbox_conc.pack()
     cscrollbar.config(command=speaker_listbox_conc.yview)
     speaker_listbox_conc.configure(state = DISABLED)
@@ -2294,6 +2342,8 @@ def corpkit_gui():
 
     def toggle_filenames(*args):
         import re
+        if type(current_conc[0]) == str:
+            return
         if win.get() == 'Window size':
             window = 70
         else:
@@ -2315,14 +2365,17 @@ def corpkit_gui():
         
         conclistbox.delete(0, END)
         for line in lines:
-            conclistbox.insert(END, unicode(line, errors = 'ignore'))
+            conclistbox.insert(END, line)
         #time = strftime("%H:%M:%S", localtime())
         #print '%s: Concordancing done: %d results.' % (time, len(lines))
         return
 
     def make_df_matching_screen():
         import re
+        if type(current_conc[0]) == str:
+            return
         df = current_conc[0]
+
         if show_filenames.get() == 0:
             df = df.drop('f')
         ix_to_keep = []
@@ -2347,7 +2400,7 @@ def corpkit_gui():
     Button(tab4, text = 'Save as ... ', command = concsave).grid(row = 5, column = 9, sticky = E, padx = (260,0))
 
     show_filenames = IntVar()
-    fnbut = Checkbutton(tab4, text="Show filenames", variable=show_filenames, command=toggle_filenames)
+    fnbut = Checkbutton(tab4, text="Toggle filenames", variable=show_filenames, command=toggle_filenames)
     fnbut.grid(row = 3, column = 10, columnspan = 2, sticky = E)
     fnbut.select()
     show_filenames.trace("w", toggle_filenames)
@@ -2370,15 +2423,15 @@ def corpkit_gui():
         if toget != ():
             nm = prev_conc_listbox.get(toget[0])
             df = all_conc[nm]
-            print df
-            add_conc_lines_to_window(df)
+            add_conc_lines_to_window(df, loading = True)
 
     Button(tab4, text = 'Load', command = load_saved_conc).grid(row = 5, column = 10, columnspan = 2, padx = (0, 40))
     prev_conc = Frame(tab4)
     prev_conc.grid(row = 4, column = 10, rowspan = 2, columnspan = 4, sticky = E)
     prevcbar = Scrollbar(prev_conc)
     prevcbar.pack(side=RIGHT, fill=Y)
-    prev_conc_listbox = Listbox(prev_conc, selectmode = SINGLE, width = 25, height = 4, exportselection = False)
+    prev_conc_listbox = Listbox(prev_conc, selectmode = SINGLE, width = 25, height = 4, 
+                                yscrollcommand=prevcbar.set, exportselection = False)
     prev_conc_listbox.pack()
     cscrollbar.config(command=speaker_listbox.yview)
 
@@ -2703,7 +2756,8 @@ def corpkit_gui():
         chart_cols.set(conmap("Visualise")['colour scheme'])
         corpus_fullpath.set(conmap("Interrogate")['corpus path'])
         fsize.set(conmap('Concordance')['font size'])
-        win.set(conmap('Concordance')['window'])
+        # window setting causes conc_sort to run, causing problems.
+        #win.set(conmap('Concordance')['window'])
         kind_of_dep.set(conmap('Interrogate')['dependency type'])
         conc_kind_of_dep.set(conmap('Concordance')['dependency type'])
 
@@ -2847,7 +2901,8 @@ def corpkit_gui():
     ev_int_box.grid(sticky = E, column = 1, row = 2, rowspan = 20)
     ev_int_sb = Scrollbar(ev_int_box)
     ev_int_sb.pack(side=RIGHT, fill=Y)
-    every_interro_listbox = Listbox(ev_int_box, selectmode = EXTENDED, height = 20, width = 23)
+    every_interro_listbox = Listbox(ev_int_box, selectmode = EXTENDED, height = 20, width = 23, 
+                                    yscrollcommand=ev_int_sb.set, exportselection=False)
     every_interro_listbox.pack(fill=BOTH)
     every_interro_listbox.select_set(0)
     ev_int_sb.config(command=every_interro_listbox.yview)   
@@ -2903,7 +2958,8 @@ def corpkit_gui():
     ev_conc_box.grid(sticky = E, column = 2, row = 2, rowspan = 20, padx = 50)
     ev_conc_sb = Scrollbar(ev_conc_box)
     ev_conc_sb.pack(side=RIGHT, fill=Y)
-    ev_conc_listbox = Listbox(ev_conc_box, selectmode = EXTENDED, height = 20, width = 23)
+    ev_conc_listbox = Listbox(ev_conc_box, selectmode = EXTENDED, height = 20, width = 23,
+                              yscrollcommand=ev_conc_sb.set, exportselection = False)
     ev_conc_listbox.pack(fill=BOTH)
     ev_conc_listbox.select_set(0)
     ev_conc_sb.config(command=ev_conc_listbox.yview)   
@@ -3210,7 +3266,8 @@ def corpkit_gui():
     build_sub_f.grid(row = 9, column = 0, sticky = W)
     build_sub_sb = Scrollbar(build_sub_f)
     build_sub_sb.pack(side=RIGHT, fill=Y)
-    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED)
+    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED,
+                                 yscrollcommand=build_sub_sb.set, exportselection=False)
     subc_listbox_build.pack(fill=BOTH)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
@@ -3372,7 +3429,8 @@ def corpkit_gui():
     build_f_box.grid(row = 1, column = 1, rowspan = 12, padx = 30)
     build_f_sb = Scrollbar(build_f_box)
     build_f_sb.pack(side=RIGHT, fill=Y)
-    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED)
+    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED, 
+                     exportselection = False, yscrollcommand=build_f_sb.set)
     f_view.pack(fill=BOTH)
     xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
     f_view.select_set(0)
@@ -3420,7 +3478,7 @@ def corpkit_gui():
         Config.add_section('Build')
         Config.add_section('Interrogate')
         Config.set('Interrogate','Corpus path', corpus_fullpath.get())
-        Config.set('Interrogate','dependency type', depdict[kind_of_dep.get()])  
+        Config.set('Interrogate','dependency type', kind_of_dep.get())  
         Config.add_section('Edit')
         Config.add_section('Visualise')
         Config.set('Visualise','Plot style', plot_style.get())
@@ -3429,7 +3487,7 @@ def corpkit_gui():
         Config.set('Visualise','Colour scheme', chart_cols.get())
         Config.add_section('Concordance')
         Config.set('Concordance','font size', fsize.get())
-        Config.set('Concordance','dependency type', depdict[conc_kind_of_dep.get()])
+        Config.set('Concordance','dependency type', conc_kind_of_dep.get())
         if win.get() == 'Window size':
             window = 70
         else:
