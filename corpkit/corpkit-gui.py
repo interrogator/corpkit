@@ -1372,6 +1372,7 @@ def corpkit_gui():
     df1branch = StringVar()
     df1branch.set('results')
     df1box = OptionMenu(tab2, df1branch, 'results', 'totals')
+    df1box.config(width = 19)
     df1box.grid(row = 1, column = 1, sticky = E)
 
     def op_callback(*args):
@@ -1397,7 +1398,7 @@ def corpkit_gui():
     data2_pick.set('Self')
     #Label(tab2, text = 'Denominator:').grid(row = 3, column = 0, sticky = W)
     dataframe2s = OptionMenu(tab2, data2_pick, *tups)
-    dataframe2s.config(state = DISABLED)
+    dataframe2s.config(state = DISABLED, width = 9)
     dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = N)
 
     # DF2 branch selection
@@ -1412,6 +1413,7 @@ def corpkit_gui():
     sort_val = StringVar(root)
     sort_val.set('None')
     sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
+    sorts.config(width = 9)
     sorts.grid(row = 4, column = 1, sticky = E)
 
     # spelling again
@@ -1421,7 +1423,7 @@ def corpkit_gui():
 
     # currently broken: just totals button
     just_tot_setting = IntVar()
-    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
+    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting)
     #just_tot_but.select()
     just_tot_but.grid(column = 0, row = 6, sticky = W)
 
@@ -1465,6 +1467,7 @@ def corpkit_gui():
     mergen.grid(row = 11, column = 1, sticky = E)
 
     Label(tab2, text = 'Replace in entry names:').grid(row = 12, column = 0, sticky = W)
+    Label(tab2, text = 'Replace with:').grid(row = 12, column = 1, sticky = W)
     toreplace_string = StringVar()
     toreplace_string.set('')
     replacewith_string = StringVar()
@@ -1494,7 +1497,8 @@ def corpkit_gui():
     do_with_entries.trace("w", do_w_callback)
 
     def onselect_subc(evt):
-        """get selected subcorpora"""
+        """get selected subcorpora: this probably doesn't need to be
+           a callback, as they are only needed during do_edit"""
         for i in subc_sel_vals:
             subc_sel_vals.pop()
         wx = evt.widget
@@ -1520,8 +1524,14 @@ def corpkit_gui():
     # subcorpora + optionmenu off, skip, keep
     Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 14, column = 0, sticky = W)
     
-    subc_listbox = Listbox(tab2, selectmode = EXTENDED, height = 5, exportselection = False)
-    subc_listbox.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
+    edit_sub_f = Frame(tab2)
+    edit_sub_f.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
+    edsub_scbr = Scrollbar(edit_sub_f)
+    edsub_scbr.pack(side=RIGHT, fill=Y)
+    subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height = 5, exportselection = False)
+    subc_listbox.pack(fill=BOTH)
+    edsub_scbr.config(command=subc_listbox.yview)
+
     xx = subc_listbox.bind('<<ListboxSelect>>', onselect_subc)
     subc_listbox.select_set(0)
 
@@ -1981,6 +1991,7 @@ def corpkit_gui():
         items = [int(i) for i in conclistbox.curselection()]
         r = current_conc[0].iloc[items,]
         add_conc_lines_to_window(r)
+        conclistbox.select_set(0, END)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
 
@@ -2691,6 +2702,11 @@ def corpkit_gui():
         x_axis_l.set(conmap("Visualise")['x axis title'])
         chart_cols.set(conmap("Visualise")['colour scheme'])
         corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+        fsize.set(conmap('Concordance')['font size'])
+        win.set(conmap('Concordance')['window'])
+        kind_of_dep.set(conmap('Interrogate')['dependency type'])
+        conc_kind_of_dep.set(conmap('Concordance')['dependency type'])
+
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
@@ -2714,6 +2730,7 @@ def corpkit_gui():
             print '%s: Selected folder does not contain corpkit project.' % (thetime)    
             return    
         get_saved_results()
+        get_saved_results(kind = 'concordance')
         #corpus_fullpath.set(os.path.join(fp, 'corpus'))
         open_proj_basepath.set('Loaded project: "%s"' % os.path.basename(fp))
 
@@ -2757,8 +2774,6 @@ def corpkit_gui():
         if os.path.isfile(f):
             load_config()
         getdir(ask = False)
-
-
 
     def view_query():
         #Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 4, padx = 40)
@@ -2827,14 +2842,20 @@ def corpkit_gui():
             if value not in sel_vals_interro:
                 sel_vals_interro.append(value)
 
-    every_interro_listbox = Listbox(tab5, selectmode = EXTENDED, height = 20, width = 23)
-    every_interro_listbox.grid(sticky = E, column = 1, row = 2, rowspan = 20)
-    # Set interrogation option
-    ei_chosen_option = StringVar()
-    #ei_chosen_option.set('w')
+
+    ev_int_box = Frame(tab5)
+    ev_int_box.grid(sticky = E, column = 1, row = 2, rowspan = 20)
+    ev_int_sb = Scrollbar(ev_int_box)
+    ev_int_sb.pack(side=RIGHT, fill=Y)
+    every_interro_listbox = Listbox(ev_int_box, selectmode = EXTENDED, height = 20, width = 23)
+    every_interro_listbox.pack(fill=BOTH)
+    every_interro_listbox.select_set(0)
+    ev_int_sb.config(command=every_interro_listbox.yview)   
     xx = every_interro_listbox.bind('<<ListboxSelect>>', onselect_interro)
     # default: w option
     every_interro_listbox.select_set(0)
+
+    # Set interrogation option
 
     new_proj_basepath = StringVar()
     new_proj_basepath.set('New project')
@@ -2845,9 +2866,9 @@ def corpkit_gui():
     Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
     Button(tab5, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
     Button(tab5, textvariable = basepath, command = getdir).grid(row = 3, column = 0, sticky=W)
-    Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 4, column = 0, sticky=W)
+    #Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 4, column = 0, sticky=W)
     #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
-    Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 5, column = 0, sticky=W)
+    #Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 5, column = 0, sticky=W)
 
     Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
     Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 20).grid(row = 1, column = 1)
@@ -2878,13 +2899,15 @@ def corpkit_gui():
             if value not in sel_vals_conc:
                 sel_vals_conc.append(value)
 
-    ev_conc_listbox = Listbox(tab5, selectmode = EXTENDED, height = 20, width = 23)
-    ev_conc_listbox.grid(sticky = E, column = 2, row = 2, rowspan = 20, padx = 50)
-    # Set interrogation option
-    ec_chosen_option = StringVar()
-    #ei_chosen_option.set('w')
-    xxa = ev_conc_listbox.bind('<<ListboxSelect>>', onselect_conc)
+    ev_conc_box = Frame(tab5)
+    ev_conc_box.grid(sticky = E, column = 2, row = 2, rowspan = 20, padx = 50)
+    ev_conc_sb = Scrollbar(ev_conc_box)
+    ev_conc_sb.pack(side=RIGHT, fill=Y)
+    ev_conc_listbox = Listbox(ev_conc_box, selectmode = EXTENDED, height = 20, width = 23)
+    ev_conc_listbox.pack(fill=BOTH)
     ev_conc_listbox.select_set(0)
+    ev_conc_sb.config(command=ev_conc_listbox.yview)   
+    xxa = ev_conc_listbox.bind('<<ListboxSelect>>', onselect_conc)
 
     Button(tab5, text = 'Get saved concordances', command = lambda: get_saved_results(kind = 'concordance'), width = 20).grid(row = 1, column = 2, padx = (50, 50))
 
@@ -3181,10 +3204,17 @@ def corpkit_gui():
 
     # a listbox of subcorpora
     Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 0, sticky=W)
-    subc_listbox_build = Listbox(tab0, selectmode = SINGLE, height = 20, state = DISABLED)
-    subc_listbox_build.grid(row = 9, column = 0, sticky = W)
+
+
+    build_sub_f = Frame(tab0)
+    build_sub_f.grid(row = 9, column = 0, sticky = W)
+    build_sub_sb = Scrollbar(build_sub_f)
+    build_sub_sb.pack(side=RIGHT, fill=Y)
+    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED)
+    subc_listbox_build.pack(fill=BOTH)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
+    build_sub_sb.config(command=subc_listbox_build.yview)
 
     chosen_f = []
     sentdict = {}
@@ -3221,7 +3251,6 @@ def corpkit_gui():
         tc.bind_click_trees(tc.toggle_collapsed)
         #tc.bind_click_nodes(color, 3)
 
-        
     def onselect_f(evt):
         for box in boxes:
             try:
@@ -3339,10 +3368,15 @@ def corpkit_gui():
 
     # a listbox of files
     Label(tab0, textvariable = f_in_s, font = ("Helvetica", 12, "bold")).grid(row = 0, column = 1, sticky=N, padx = 30)
-    f_view = Listbox(tab0, selectmode = EXTENDED, height = 32, state = DISABLED)
-    f_view.grid(row = 1, column = 1, rowspan = 12, padx = 30)
+    build_f_box = Frame(tab0)
+    build_f_box.grid(row = 1, column = 1, rowspan = 12, padx = 30)
+    build_f_sb = Scrollbar(build_f_box)
+    build_f_sb.pack(side=RIGHT, fill=Y)
+    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED)
+    f_view.pack(fill=BOTH)
     xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
     f_view.select_set(0)
+    build_f_sb.config(command=f_view.yview)    
 
     editf = StringVar()
     editf.set('Edit file: ')
@@ -3379,22 +3413,6 @@ def corpkit_gui():
         os.execl(python, python, * sys.argv)
 
     def save_config():
-        #settings = [corpus_fullpath, basepath, funfil, posfil, lemtag, kind_of_dep, 
-        #       entrytext, datatype_picked, datatype_chosen_option, special_queries, 
-        #       lem, phras, tit_fil, case_sensitive, nametext, i_resultname, 
-        #       name_of_interro_spreadsheet, selected_to_edit, df1branch, opp, 
-        #       data2_pick, df2branch, sort_val, just_tot_setting, keep_stats_setting, 
-        #       rem_abv_p_set, entry_regex, newname_var, do_with_entries, do_sub, 
-        #       new_subc_name, edit_nametext, resultname, name_of_o_ed_spread, 
-        #       editoname, name_of_n_ed_spread, plotnametext, data_to_plot, plotbranch, 
-        #       number_to_plot, charttype, x_axis_l, y_axis_l, log_x, log_y, bw, texuse, 
-        #       chart_cols, plot_style, legloc, showtot, subc_pick, query_text, 
-        #       random_conc_option, show_trees, sortval, data_fullpath, data_basepath, 
-        #       project_fullpath, image_fullpath, image_basepath, ei_chosen_option, 
-        #       new_proj_basepath, open_proj_basepath, perm, get_text_corpus, 
-        #       parse_button_text, sel_corpus, sel_corpus_button, 
-        #       path_to_new_unparsed_corpus, add_corpus, add_corpus_button, f_in_s, editf, 
-        #       filename, fullpath_to_file, realquit]
         import ConfigParser
         import os
         Config = ConfigParser.ConfigParser()
@@ -3402,6 +3420,7 @@ def corpkit_gui():
         Config.add_section('Build')
         Config.add_section('Interrogate')
         Config.set('Interrogate','Corpus path', corpus_fullpath.get())
+        Config.set('Interrogate','dependency type', depdict[kind_of_dep.get()])  
         Config.add_section('Edit')
         Config.add_section('Visualise')
         Config.set('Visualise','Plot style', plot_style.get())
@@ -3409,6 +3428,13 @@ def corpkit_gui():
         Config.set('Visualise','x axis title', x_axis_l.get())
         Config.set('Visualise','Colour scheme', chart_cols.get())
         Config.add_section('Concordance')
+        Config.set('Concordance','font size', fsize.get())
+        Config.set('Concordance','dependency type', depdict[conc_kind_of_dep.get()])
+        if win.get() == 'Window size':
+            window = 70
+        else:
+            window = int(win.get())
+        Config.set('Concordance','window', window)
         Config.add_section('Manage')
         Config.set('Manage','Project path',project_fullpath.get())
         Config.write(cfgfile)
@@ -3476,7 +3502,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(0, start_update_check) # 500
+    #root.after(0, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
