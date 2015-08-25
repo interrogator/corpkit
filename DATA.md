@@ -6,11 +6,11 @@ Upon unzipping orientation/data/nyt.tar.gz one can discover two collections of t
 
 One collection is organised by year. The other collection is organised first by topic (economics, health or politics) and then by year (from 1987 to 2014).
 
-The text files are essentially sets of trees. Each line is a parse tree for a sentence from the original corpus. The encoding used for the trees looks a lot like Lisp code. I think the style is called Penn Treebank. Though I am not sure.
+The text files are essentially lists of trees. Each line is a parse tree for a sentence from the original corpus. The encoding used for the trees looks a lot like Lisp code, it's the format used for the Penn Treebank project: http://www.cis.upenn.edu/~treebank/.
 
 **Interrogation Format**
 
-It seems that sessions can be saved in some kind of file format called an interrogation. An interrogation is a directory of CSV files that are actually TSV files.
+Interrogation sessions can be serialized to directories of CSV files. See the load_result function, defined in corpkit/other.py.
 
 **Dictionaries**
 
