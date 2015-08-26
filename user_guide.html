@@ -58,6 +58,7 @@
 
 <ul>
 <li><a href="#overview">Overview</a></li>
+<li><a href="#installation">Installation</a></li>
 <li><a href="#the-graphical-interface">The graphical interface</a></li>
 <li>
 <a href="#build">Build</a>
@@ -87,18 +88,29 @@
 <ul>
 <li><a href="#selecting-data-to-edit">Selecting data to edit</a></li>
 <li><a href="#operations-and-denominators">Operations and denominators</a></li>
-<li><a href="#skipping-keeping-merging">Skipping, keeping, merging</a></li>
 <li><a href="#sorting">Sorting</a></li>
+<li><a href="#skipping-keeping-merging">Skipping, keeping, merging</a></li>
+<li><a href="#replacing-names">Replacing names</a></li>
+<li><a href="#other-options">Other options</a></li>
 </ul>
 </li>
-<li><a href="#visualise">Visualise</a></li>
+<li>
+<a href="#visualise">Visualise</a>
+
+<ul>
+<li><a href="#tex">TeX</a></li>
+<li><a href="#exporting">Exporting</a></li>
+</ul>
+</li>
 <li>
 <a href="#concordance">Concordance</a>
 
 <ul>
+<li><a href="#speaker-ids-1">Speaker IDs</a></li>
 <li><a href="#editing-concordance-lines">Editing concordance lines</a></li>
 <li><a href="#sorting-1">Sorting</a></li>
 <li><a href="#exporting-concordance-lines">Exporting concordance lines</a></li>
+<li><a href="#saving-loading-and-mering">Saving, loading and mering</a></li>
 </ul>
 </li>
 <li><a href="#manage">Manage</a></li>
@@ -117,12 +129,23 @@
 
 <p><code>corpkit</code> is a tool for doing corpus linguistics. It does a lot of the usual things, like parsing, concordancing and keywording, but also extends their potential significantly: you can concordance by searching for combinations of lexical and grammatical features, and can do keywording of lemmas, of subcorpora compared to corpora, or of words in certain positions within clauses. Interrogations can be quickly edited and visualised in complex ways, or saved and loaded within projects, or exported to formats that can be handled by other tools.</p>
 
-<p>In contrast to most current corpus linguistic software (<em>AntConc</em>, <em>WMatrix</em>, <em>Sketch Engine</em>, <em>UAM Corpus Tool</em>, <em>Wordsmith Tools</em>, etc.) <code>corpkit</code> is free and open-source, hackable, and provides both graphical and command-line interfaces. If you're interested in the command line interface, head to the <a href="https://www.github.com/interrogator/corpkit"><code>corpkit repository</code></a> for documentation. If you're interested in the graphical interface, you're in the right place.</p>
+<p>In contrast to most current corpus linguistic software (<em>AntConc</em>, <em>WMatrix</em>, <em>Sketch Engine</em>, <em>UAM Corpus Tool</em>, <em>Wordsmith Tools</em>, etc.) <code>corpkit</code> is free and open-source, hackable, and provides both graphical and command-line interfaces. If you're interested in the command line interface, head to the <a href="https://www.github.com/interrogator/corpkit"><code>corpkit repository</code></a> for documentation. If you're interested in the graphical interface, you're in the right place. <strong>From here on out, this document focusses on the graphical, not the command-line version of the tool.</strong></p>
+
+<h2>
+<a id="user-content-installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Currently, <code>corpkit</code> can be installed on OSX and Linux machines, with a Windows release scheduled for the near future.</p>
+
+<p>The easiest way to get the software up and runnning is to head <a href="here">https://github.com/interrogator/corpkit</a>, and do <code>Download Zip</code>. Extract that folder, and then the <code>corpkit-v-vv.tar.gz</code> file within that. In there is <code>corpkit-v-vv.app</code>, the OSX application. Move it into your Applications directory if you like.</p>
+
+<p>If you want to use <code>corpkit</code> to parse files, you'll also need <em>Stanford CoreNLP</em>. The first time you try to parse files, <code>corpkit</code> will help you get the  parser installed. </p>
+
+<p>Once you've installed <code>corpkit</code>, you can delete the zip files you originally downloaded to save space.</p>
 
 <h2>
 <a id="user-content-the-graphical-interface" class="anchor" href="#the-graphical-interface" aria-hidden="true"><span class="octicon octicon-link"></span></a>The graphical interface</h2>
 
-<p>Like many corpus linguistic tools, <code>corpkit</code> provides a series of tabs for doing various corpus linguistic tasks, such as building corpora and searching corpora. The sections below outline the major components of each tab.</p>
+<p>Like many corpus linguistic tools, <code>corpkit</code> provides a series of tabs for doing various corpus linguistic tasks, such as building corpora and searching corpora. The features of these tabs are outlined in the sections below</p>
 
 <h2>
 <a id="user-content-build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h2>
@@ -480,6 +503,15 @@ SPEAKER23: I know why. But I'm not telling.`
 
 <p>You can use the <code>combine</code> operation to add two results together. By default, this happens on the y axis. If you have multiple columns with the same names, results may be merged. If you want to merge on the x-axis, use the <code>transpose</code> option for each dataset, and then <code>combine</code>.</p>
 
+<h3>
+<a id="user-content-sorting" class="anchor" href="#sorting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
+
+<p>When working with multiple subcorpora, sorting becomes a very powerful feature of <code>corpkit</code>. Aside from very normal kinds of sorting (by total, by name), you can also sort by <em>increase</em>, <em>decrease</em>, <em>static</em> or <em>turbulent</em>. </p>
+
+<p><code>corpkit</code> does this using <a href="http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.linregress.html"><code>Scipy</code>'s <em>linear regression</em> function</a>. Essentially, a straight trend line is calculated for each entry in the data. By measuring the angle of this line, we can find out which results are increasingly or decreasingly used across the dataset.</p>
+
+<p>If you tick <code>Keep stats</code>, you'll be able to see the <code>slope</code>, <code>intercept</code>, <code>stderr</code> and <code>p value</code>, where the null hypothesis is that there is no upward or downward slope. <code>Remove above p</code> will automatically exclude results not meeting the standard.</p>
+
 <h4>
 <a id="user-content-keywording" class="anchor" href="#keywording" aria-hidden="true"><span class="octicon octicon-link"></span></a>Keywording</h4>
 
@@ -512,61 +544,103 @@ SPEAKER23: I know why. But I'm not telling.`
 
 <p>Merging entries is a powerful way to do thematic categorisation: you could merge the names of illnesses as <code>'Illnesses'</code>, and the names of treatments as <code>Treatments</code>. You could then edit the edited results, keeping only those two.</p>
 
-<h3>
-<a id="user-content-sorting" class="anchor" href="#sorting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
-
-<p>When working with multiple subcorpora, sorting becomes a very powerful feature of <code>corpkit</code>. Aside from very normal kinds of sorting (by total, by name), you can also sort by <em>increase</em>, <em>decrease</em>, <em>static</em> or <em>turbulent</em>. </p>
-
-<p><code>corpkit</code> does this using <a href="http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.linregress.html"><code>Scipy</code>'s <em>linear regression</em> function</a>. Essentially, a straight trend line is calculated for each entry in the data. By measuring the angle of this line, we can find out which results are increasingly or decreasingly used across the dataset.</p>
-
-<p>If you tick <code>Keep stats</code>, you'll be able to see the <code>slope</code>, <code>intercept</code>, <code>stderr</code> and <code>p value</code>, where the null hypothesis is that there is no upward or downward slope. <code>Remove above p</code> will automatically exclude results not meeting the standard.</p>
-
 <blockquote>
 <p>You can use <code>Help --&gt; Save log</code> after performing an edit to get some information about what was performed.</p>
 </blockquote>
+
+<h3>
+<a id="user-content-replacing-names" class="anchor" href="#replacing-names" aria-hidden="true"><span class="octicon octicon-link"></span></a>Replacing names</h3>
+
+<p>You can change the names of entries after they appear. One way to do this is to click the spreadsheet, make changes, and click <code>Update interrogation(s)</code>. Another way is to use the <code>Replace names</code> boxes. The box on the left takes a regular expression as a search pattern. It will look in every entry name matching the expression, and replace it with whatever is in the box on the right (leave blank to simply delete the found pattern). Duplicate entry names are then merged.</p>
+
+<h3>
+<a id="user-content-other-options" class="anchor" href="#other-options" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other options</h3>
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Keep stats</code></td>
+<td>When calculating slopes, keep these in the edited data, and show them in the spreadsheet windows</td>
+</tr>
+<tr>
+<td><code>Remove above p</code></td>
+<td>A null hypothesis is that entries are equally frequent in each subcorpus. When calculating slopes, remove any entries with <code>p</code> above <code>0.05</code>
+</td>
+</tr>
+<tr>
+<td><code>Just totals</code></td>
+<td>Combine every entry before processing</td>
+</tr>
+<tr>
+<td><code>Transpose</code></td>
+<td>Flip rows and columns (subcorpora become entries, etc.)</td>
+</tr>
+<tr>
+<td><code>Spelling</code></td>
+<td>Convert or normalise English</td>
+</tr>
+<tr>
+<td><code>Keep top results</code></td>
+<td>After all other editing and sorting, return only the top n results</td>
+</tr>
+</tbody>
+</table>
 
 <h2>
 <a id="user-content-visualise" class="anchor" href="#visualise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualise</h2>
 
 <blockquote>
-<p><code>Visualise</code> is all about representing your results graphically</p>
+<p><code>Visualise</code> is all about representing your results graphically. You should be able to generate publication-quality figures without needing to export the data from the tool.</p>
 </blockquote>
 
-<p>Most options here are self-explanatory. Pick the results you want to plot, play with some options, and hit <code>Plot</code>. This can be a great way to identify salient linguistic features in your dataset.</p>
+<p>Most options here are self-explanatory. Pick the results you want to plot, play with some options, and hit <code>Plot</code>. This can be a great way to identify salient linguistic features in your dataset. Once you've plotted something, a navigation pane appears under the figure, allowing scrolling, zooming, saving and so forth.</p>
 
 <p>Note that <code>Number to plot</code> takes the top <code>n</code> entries from the results of interest. If you don't want these, go back to the <code>Edit</code> tab and remove/sort the results some more. You can type in 'all' to get every result---but be warned, this often won't look so good!</p>
 
-<blockquote>
+<h3>
+<a id="user-content-tex" class="anchor" href="#tex" aria-hidden="true"><span class="octicon octicon-link"></span></a>TeX</h3>
+
 <p>Checking the <code>TeX</code> option will mean that the plotter will try to use <code>LaTeX</code> to typeset the text in the chart. If you have a TeX distribution, but this option isn't working for you, you may need to use the command-line version of <code>corpkit</code>.</p>
-</blockquote>
 
-<p>Once you've plotted something, a navigation pane appears under the figure, allowing scrolling, zooming, saving and so forth.</p>
+<h3>
+<a id="user-content-exporting" class="anchor" href="#exporting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exporting</h3>
 
-<blockquote>
 <p>If you're more confortable generating visualisations in another tool, you can head to the <code>Manage</code> tab to export a CSV version of any interrogations or edited results. This can be imported into Excel, for example.</p>
-</blockquote>
 
 <h2>
 <a id="user-content-concordance" class="anchor" href="#concordance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concordance</h2>
 
 <blockquote>
-<p><code>corpkit</code>'s concordancer is unique, in that it handles constituency and dependency queries.</p>
+<p><code>corpkit</code>'s concordancer does the basics, but also unique, as it allows searching of constituency and dependency parses, as well as saving and loading of concordance lines.</p>
 </blockquote>
 
-<p>Most features this pane are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns (other options are in development). This can be a good way to check that a query used to interrogate the corpus is finding what it's supposed to. <code>Trees</code> will output bracketted trees instead of plain text, which can be useful in learning how to make Tregex queries.</p>
+<p>Most features this pane are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns, or by dependency function.</p>
 
-<p>Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words.</p>
+<p>When searching Trees, you can use the <code>Trees</code> option to output bracketted trees instead of plain text. This can be useful in understanding phrase structure grammar, or how to write Tregex queries.</p>
 
-<p>As with <code>interrogate</code>, you can use special queries, like <code>ROLES:ACTOR</code>, or select some preset queries.</p>
+<p>Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words. As with <code>Interrogate</code>, you can use special queries, like <code>ROLES:ACTOR</code>, or select some preset queries.</p>
+
+<blockquote>
+<p>You can use <code>ctrl/cmd-minus</code> <code>ctrl/cmd-plus</code> to change the concordance window font size.</p>
+</blockquote>
+
+<h3>
+<a id="user-content-speaker-ids-1" class="anchor" href="#speaker-ids-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Speaker IDs</h3>
 
 <p>Concordancing using speaker IDs is often very slow. If you want to concordance your data faster, and you don't care if you don't get speaker ID information, leave the <code>Speakers</code> option unchecked.</p>
 
-<p>If you select <code>'ALL'</code> as the speaker, you'll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.</p>
+<p>If you select <code>ALL</code> as the speaker, you'll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.</p>
 
 <h3>
 <a id="user-content-editing-concordance-lines" class="anchor" href="#editing-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing concordance lines</h3>
 
-<p>You can use <code>backspace</code> to delete selected lines, or <code>shift+backspace</code> to inverse-delete. Alternatively, buttons are provided.</p>
+<p>You can use <code>backspace</code> to delete selected lines, or <code>shift-backspace</code> to inverse-delete. Alternatively, buttons are provided.</p>
 
 <h3>
 <a id="user-content-sorting-1" class="anchor" href="#sorting-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sorting</h3>
@@ -586,27 +660,32 @@ SPEAKER23: I know why. But I'm not telling.`
 <p>Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to LaTeX tables, and all kinds of other cool things.</p>
 </blockquote>
 
+<h3>
+<a id="user-content-saving-loading-and-mering" class="anchor" href="#saving-loading-and-mering" aria-hidden="true"><span class="octicon octicon-link"></span></a>Saving, loading and mering</h3>
+
+<p>Unlike corpus interrogations, concordance lines aren't stored by default. Once you're happy with the data on screen, however, you can hit <code>Save as ...</code> and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the <code>Manage</code> pane.</p>
+
+<p>You can use <code>Load</code> to show saved concordance lines, or <code>Merge</code> to combine multiple saved lines into the current window. If your current concordance is unsaved, you'll be asked if you want to save it first.</p>
+
 <h2>
 <a id="user-content-manage" class="anchor" href="#manage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Manage</h2>
 
 <blockquote>
-<p><code>Manage</code> allows you to manipulate your interrogations and edited data.</p>
+<p><code>Manage</code> allows you to manipulate your interrogations, edited data and concordances.</p>
 </blockquote>
 
-<p>With <code>load saved interrogations</code>, you can load into memory any findings you saved in the project earlier. </p>
+<p><code>Load project</code> will automatically set the path to data, dictionaries, images and saved interrogations. You can still select custom locations for these if you like. It's also available via the menu bar.</p>
 
-<p><code>Load project</code> will automatically set the path to data, dictionaries, images and saved interrogations. You can still select custom locations for these if you like.</p>
+<p>With <code>Get saved interrogations</code>, you can load into memory any findings you saved in the project earlier. <code>Get saved concordances</code> does the same with previously stored concordance lines.</p>
+
+<p>For both interrogations and concordances, you can then export to CSV, remove from memory, or save or delete from your hard drive.</p>
 
 <p>If you select an interrogation and hit <code>View</code>, you can see all the options used to generate the result.</p>
-
-<p><code>Export</code> will create CSV files of results, totals and query options in a user-specified directory.</p>
-
-<p>You can use <code>Remove</code> to remove one or more interrogations from memory, or <code>Delete</code> to remove saved results from the <code>saved_interrogations</code> directory of your project.</p>
 
 <h2>
 <a id="user-content-help" class="anchor" href="#help" aria-hidden="true"><span class="octicon octicon-link"></span></a>Help</h2>
 
-<p><code>corpkit</code> is still missing a lot of documentation. For now, when things go wrong, you can select <code>Help --&gt; Save log</code> to generate a log file for your session. You can send this to developers to help diagnose the source of a problem.</p>
+<p><code>corpkit</code> is still missing documentation. For now, when things go wrong, you can select <code>Help --&gt; Save log</code> to generate a log file for your session. You can send this to developers to help diagnose the source of a problem.</p>
 
 <h2>
 <a id="user-content-settings" class="anchor" href="#settings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Settings</h2>
@@ -616,7 +695,7 @@ SPEAKER23: I know why. But I'm not telling.`
 <h2>
 <a id="user-content-updates" class="anchor" href="#updates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Updates</h2>
 
-<p>When you're connected to the web, <code>corpkit</code> will look for software updates, and prompt the user to download them. Major changes will be explicated when this occurs. You can also check for updates manually via the <code>file</code> menu.</p>
+<p>If you're connected to the web when you open <code>corpkit</code>, it will look for software updates, and prompt you to download them if available. Major changes will be explicated when this occurs. You can also check for updates manually via the menu bar.</p>
 
 <h2>
 <a id="user-content-forthcoming-features" class="anchor" href="#forthcoming-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Forthcoming features</h2>
@@ -635,7 +714,7 @@ SPEAKER23: I know why. But I'm not telling.`
 
 <ul>
 <li>When interrogating, you can quickly make lists of corpora or queries and perform each simultaneously. </li>
-<li>When editing, you can create lists of entries to rename or merge.</li>
+<li>When editing, you can create lists of entries to rename or merge, and iterate over them.</li>
 <li>When plotting, you can generate HTML based visuals that are clickable, highlightable, embeddable, and so on.</li>
 </ul>
 
@@ -659,9 +738,7 @@ python</pre></div>
 
 <p><code>corpkit</code> is free and open-source. If you find bugs, want to request features, or have questions, you can visit <a href="https://github.com/interrogator/corpkit">the main repository</a> and interact with developers there via the <code>Issues</code> page. A <a href="https://gitter.im/interrogator/corpkit"><em>Gitter</em> chatroom</a> is also available.</p>
 
-<p>If you're using <code>corpkit</code> in your research, feel free to cite it, share it, and tell the developers what you're working on.</p>
-
-<p>If you know how to code, you're more than welcome to hack away at the tools however you wish.</p>
+<p>If you're using <code>corpkit</code> in your research, feel free to cite it, share it, and tell the developers what you're working on. If you know how to code, you're more than welcome to hack away at the tools however you wish.</p>
 
               </div>
             </div>
