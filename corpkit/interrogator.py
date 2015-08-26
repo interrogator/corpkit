@@ -139,14 +139,8 @@ def interrogator(path,
     import warnings
     from collections import Counter
     from time import localtime, strftime
-    try:
-        import pandas as pd
-        from pandas import read_csv, DataFrame, Series
-        from StringIO import StringIO
-        have_pandas = True
-    except:
-        have_pandas = False
-
+    import pandas as pd
+    from pandas import DataFrame, Series
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -160,6 +154,8 @@ def interrogator(path,
                                               usa_convert, 
                                               taglemma)
     from other import add_corpkit_to_path
+    import gc
+    from bs4 import BeautifulSoup, SoupStrainer
 
     add_corpkit_to_path()
 
@@ -168,21 +164,23 @@ def interrogator(path,
     # determine if actually a multiquery
 
     is_multiquery = False
-    if not root:
-        if hasattr(path, '__iter__'):
+    if hasattr(path, '__iter__'):
+        is_multiquery = True
+        if 'postounts' in path[0]:
+            spelling = 'UK'
+    if type(query) == dict or type(query) == collections.OrderedDict:
+        is_multiquery = True
+    if hasattr(function_filter, '__iter__'):
+        is_multiquery = True
+    if just_speakers:
+        if just_speakers == 'each':
             is_multiquery = True
-            if 'postounts' in path[0]:
-                spelling = 'UK'
-        if type(query) == dict or type(query) == collections.OrderedDict:
-            is_multiquery = True
-        if hasattr(function_filter, '__iter__'):
-            is_multiquery = True
-        if just_speakers:
-            if just_speakers == 'each':
+        if type(just_speakers) == str:
+            if just_speakers != 'each':
+                just_speakers = [just_speakers]
+        if type(just_speakers) == list:
+            if len(just_speakers) > 1:
                 is_multiquery = True
-            if type(just_speakers) == list:
-                if len(just_speakers) > 1:
-                    is_multiquery = True
 
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
@@ -216,7 +214,7 @@ def interrogator(path,
               'custom_engine': custom_engine ,
               'df1_always_df': df1_always_df ,
               'just_speakers': just_speakers , 
-              'root': root , 
+              #'root': root ,
               'post_process': post_process }
         return pmultiquery(**d)
 
@@ -403,7 +401,6 @@ def interrogator(path,
                     output.append(result)
             return output
 
-
     def distancer(sents):
         import re
         """return distance from root for words matching query (root = 0)"""
@@ -440,7 +437,6 @@ def interrogator(path,
                             continue
                         if not re.match(funfil_regex, role):
                             continue
-
                     c = 0
                     root_found = False
                     while not root_found:
@@ -530,8 +526,6 @@ def interrogator(path,
         import gc
         open_classes = ['N', 'V', 'R', 'J']
         result = []
-        #just_good_deps = SoupStrainer('tokens')
-        #soup = BeautifulSoup(xmldata, parse_only=just_good_deps)
         for sent in sents: 
             for token in sent.find_all('token'):
                 word = token.word.text.strip()
@@ -551,7 +545,6 @@ def interrogator(path,
 
     def deprole(sents):
         """print funct:dep, using good lemmatisation"""
-        # for each sentence
         result = []
         for s in sents:
             right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
@@ -680,12 +673,33 @@ def interrogator(path,
                                 names.append(i)
         return list(sorted(set(names)))
 
+    def slow_tregex(sents):
+        """do the speaker-specific version of tregex queries"""
+        import os
+        import bs4
+        # first, put the relevant trees into temp file
+        if 'outname' in kwargs.keys():
+            to_open = 'tmp-%s.txt' % kwargs['outname']
+        else:
+            to_open = 'tmp.txt'
+        with open(to_open, "w") as fo:
+            for sent in sents:
+                fo.write(sent.parse.text.encode("UTF-8") + '\n')
+
+        res = tregex_engine(query = query, 
+                            options = ['-o', '-%s' % translated_option], 
+                            corpus = to_open,
+                            root = root)
+        if root:
+            root.update()
+        os.remove(to_open)
+        return res
+
     def get_stats(sents):
         """get a bunch of frequencies on interpersonal phenomena"""
         import os
         import re
-        import bs4
-    
+        import bs4    
         # first, put the relevant trees into temp file
         if 'outname' in kwargs.keys():
             to_open = 'tmp-%s.txt' % kwargs['outname']
@@ -731,8 +745,6 @@ def interrogator(path,
                 root.update()
             if not root:
                 p.animate(numdone, str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys())))
-            if root and tk:
-                root.update()
             # this should show progress more often
             if 'note' in kwargs.keys():
                 kwargs['note'].progvar.set(numdone * 100.0 / (total_files * len(tregex_qs.keys())))
@@ -790,6 +802,7 @@ def interrogator(path,
     while not translated_option:
         if option.lower().startswith('p'):
             using_tregex = True
+            dep_funct = slow_tregex
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
@@ -798,6 +811,7 @@ def interrogator(path,
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.lower().startswith('b'):
             using_tregex = True
+            dep_funct = slow_tregex
             optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
@@ -806,6 +820,7 @@ def interrogator(path,
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif option.lower().startswith('w'):
             using_tregex = True
+            dep_funct = slow_tregex
             optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
@@ -814,6 +829,7 @@ def interrogator(path,
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif option.lower().startswith('c'):
             using_tregex = True
+            dep_funct = slow_tregex
             count_results = {}
             only_count = True
             translated_option = 'C'
@@ -906,11 +922,10 @@ def interrogator(path,
             dep_funct = deprole
         elif option.lower().startswith('v'):
             translated_option = 'v'
-            dependency = True
+            using_tregex = True
             statsmode = True
             optiontext = 'Getting general stats.'
             dep_funct = get_stats
-
         elif option.lower().startswith('h'):
             translated_option = 'h'
             tokens = True
@@ -952,6 +967,12 @@ def interrogator(path,
             #query = r'(?i)^(' + '|'.join(query) + r')$' 
         if query == 'any':
             query = r'.*'
+
+    # see if fast tregex can be done instead of temp file slow way
+    can_do_fast = False
+    if using_tregex:
+        if just_speakers is False:
+            can_do_fast = True
 
     if plaintext is True:
         try:
@@ -1092,8 +1113,6 @@ def interrogator(path,
     # check if regex valid
     # check if dep_type valid
     if dependency:
-        import gc
-        from bs4 import BeautifulSoup, SoupStrainer
         if translated_option == 'v':
             names = get_speaker_names_from_xml_corpus(path)
         
@@ -1185,7 +1204,6 @@ def interrogator(path,
         except:
             pass
 
-
     # plaintext guessing
     # if plaintext == 'guess':
     #     if not one_big_corpus:
@@ -1200,7 +1218,7 @@ def interrogator(path,
     #         plaintext = False
 
     # if doing dependencies, make list of all files, and a progress bar
-    if dependency or plaintext or tokens:
+    if dependency or plaintext or tokens or can_do_fast is False:
         all_files = []
         for d in sorted_dirs:
             if not one_big_corpus:
@@ -1300,72 +1318,74 @@ def interrogator(path,
     
     for index, d in enumerate(sorted_dirs):
         if using_tregex or keywording or n_gramming:
-            subcorpus_name = d
-            subcorpus_names.append(subcorpus_name)
-            if not root:
-                p.animate(index)
-            if root and tk:
-                time = strftime("%H:%M:%S", localtime())
-                if not one_big_corpus:
-                    print '%s: Interrogating subcorpus: %s' % (time, subcorpus_name)
-                else:
-                    print '%s: Interrogating corpus ... ' % time
-                root.update()
-                if 'note' in kwargs.keys():
-                    kwargs['note'].progvar.set((index + 1) * 100.0 / len(sorted_dirs))
-            # get path to corpus/subcorpus
-            if len(sorted_dirs) == 1:
-                subcorpus = path
-            else:
-                subcorpus = os.path.join(path,subcorpus_name)
-    
-            if keywording:
-                result = []
-                from corpkit import keywords
-                spindle_out = keywords(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
-                                        printstatus = False, clear = False, lemmatise = lemmatise)
-                for w in list(spindle_out.index):
-
-                    if query != 'any':
-                        if re.search(query, w):
-                            result.append([w, spindle_out[w]])
+            if can_do_fast:
+                subcorpus_name = d
+                subcorpus_names.append(subcorpus_name)
+                if not root:
+                    p.animate(index)
+                if root and tk:
+                    time = strftime("%H:%M:%S", localtime())
+                    if not one_big_corpus:
+                        print '%s: Interrogating subcorpus: %s' % (time, subcorpus_name)
                     else:
-                        result.append([w, spindle_out[w]])
+                        print '%s: Interrogating corpus ... ' % time
+                    root.update()
+                    if 'note' in kwargs.keys():
+                        kwargs['note'].progvar.set((index + 1) * 100.0 / len(sorted_dirs))
+                # get path to corpus/subcorpus
+                if len(sorted_dirs) == 1:
+                    subcorpus = path
+                else:
+                    subcorpus = os.path.join(path,subcorpus_name)
+        
+                if keywording:
+                    result = []
+                    from corpkit import keywords
+                    spindle_out = keywords(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
+                                            printstatus = False, clear = False, lemmatise = lemmatise)
+                    for w in list(spindle_out.index):
 
-            elif n_gramming:
-                result = []
-                from corpkit import ngrams
-                spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
-                                        printstatus = False, clear = False, lemmatise = lemmatise)
-                for w in list(spindle_out.index):
-                    if query != 'any':
-                        if re.search(query, w):
+                        if query != 'any':
+                            if re.search(query, w):
+                                result.append([w, spindle_out[w]])
+                        else:
+                            result.append([w, spindle_out[w]])
+
+                elif n_gramming:
+                    result = []
+                    from corpkit import ngrams
+                    spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
+                                            printstatus = False, clear = False, lemmatise = lemmatise)
+                    for w in list(spindle_out.index):
+                        if query != 'any':
+                            if re.search(query, w):
+                                for _ in range(spindle_out[w]):
+                                    result.append(w)
+                        else:
                             for _ in range(spindle_out[w]):
                                 result.append(w)
-                    else:
-                        for _ in range(spindle_out[w]):
-                            result.append(w)
 
-            #if tregex, search
-            else:
-                if not statsmode:
-                    op = ['-o', '-' + translated_option]
-                    result = tregex_engine(query = query, options = op, 
-                                       corpus = subcorpus, root = root)
-                    if result is False:
-                        return
-                
-                    # if just counting matches, just 
-                    # add subcorpus name and count...
-                    if only_count:
-                        count_results[d] = result
-                        continue
+                #if tregex, search
+                else:
+                    if not statsmode:
+                        op = ['-o', '-' + translated_option]
+                        result = tregex_engine(query = query, options = op, 
+                                           corpus = subcorpus, root = root)
+                        if result is False:
+                            return
+                    
+                        # if just counting matches, just 
+                        # add subcorpus name and count...
+                        if only_count:
+                            count_results[d] = result
+                            continue
 
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
 
-        if dependency or plaintext or tokens:
-            p.animate(-1, str(0) + '/' + str(total_files))
+        if dependency or plaintext or tokens or can_do_fast is False:
+            if not root:
+                p.animate(-1, str(0) + '/' + str(total_files))
             from collections import Counter
             statsmode_results = Counter({'Sentences': 0, 'Passives': 0, 'Tokens': 0})
             subcorpus_name = d[0]
@@ -1391,9 +1411,10 @@ def interrogator(path,
                     filepath = os.path.join(path, f)
                 else:
                     filepath = os.path.join(path, subcorpus_name, f)
-                if dependency:
+                if dependency or can_do_fast is False:
                     with open(filepath, "rb") as text:
                         data = text.read()
+                        from bs4 import SoupStrainer, BeautifulSoup
                         justsents = SoupStrainer('sentences')
                         soup = BeautifulSoup(data, parse_only=justsents)  
                         if just_speakers:  
