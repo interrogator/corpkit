@@ -1017,6 +1017,7 @@ def editor(dataframe1,
         # might be wrong if using division or something...
         total = df.T.sum()
 
+    
     if type(tots) != pandas.core.frame.DataFrame and type(tots) != pandas.core.series.Series:
         total = df.sum(axis = 1)
     else:
@@ -1034,10 +1035,11 @@ def editor(dataframe1,
         pass
 
     def add_tkt_index(df):
-        df = df.T
-        df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
-        df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
-        df = df.T
+        if type(df) != pandas.core.series.Series:
+            df = df.T
+            df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
+            df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
+            df = df.T
         return df
 
     # while tkintertable can't sort rows

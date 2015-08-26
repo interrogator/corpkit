@@ -95,7 +95,7 @@ class Notebook(Frame):
 
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
-        #sys.stderr = self.redir
+        sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -640,6 +640,8 @@ def corpkit_gui():
                 #get_speaker_names_from_xml_corpus(corpus_fullpath.get())
             interrogator_args['just_speakers'] = jspeak
 
+        # warn the user that they get no feedback during this!
+
         lemmatag = False
         if lemtag.get() != 'None':
             if lemtag.get() == 'Noun':
@@ -668,7 +670,8 @@ def corpkit_gui():
             interrogator_args['query'] = 'any'
 
         interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
-
+        
+        sys.stdout = note.redir
         if not interrodata or interrodata == 'Bad query':
             Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
@@ -740,6 +743,8 @@ def corpkit_gui():
             tkMessageBox.showinfo(
             "Multiple results returned",
             "Your query returned multiple spreadsheets. Only one is shown here, but each can be accessed by the editing and plotting tools.")
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation finished, with multiple results.' % thetime
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -1437,7 +1442,7 @@ def corpkit_gui():
 
     # currently broken: just totals button
     just_tot_setting = IntVar()
-    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting)
+    just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
     #just_tot_but.select()
     just_tot_but.grid(column = 0, row = 6, sticky = W)
 
@@ -2596,7 +2601,7 @@ def corpkit_gui():
             sel_vals = sel_vals_conc
         if len(sel_vals) == 0:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Nothing selected to save' % thetime
+            print '%s: Nothing selected to save.' % thetime
             return
         from corpkit import save_result
         import os
@@ -2618,7 +2623,7 @@ def corpkit_gui():
             print '%s: %s saved.' % (thetime, sel_vals[0])
         else:
             if existing == 0:
-                print '%s: %d %ss saved.' % (thetime, kind, len(sel_vals))
+                print '%s: %d %ss saved.' % (thetime, len(sel_vals), kind)
             else:
                 print '%s: %d %ss saved, %d already existed' % (thetime, saved, kind, existing)
         refresh()
@@ -2695,7 +2700,9 @@ def corpkit_gui():
             print '%s: No interrogations selected.' % thetime
             return
         import os
-        if perm.get():
+        permanently = True
+
+        if permanently:
             perm_text = 'permanently '
         else:
             perm_text = ''
@@ -2705,7 +2712,7 @@ def corpkit_gui():
                 continue
             else:
                 all_interrogations[answer] = all_interrogations.pop(i)
-            if perm.get():
+            if permanently:
                 p = data_fullpath.get()
                 oldf = os.path.join(p, i + '.p')
                 if os.path.isfile(oldf):
@@ -2740,10 +2747,12 @@ def corpkit_gui():
         import os
         import pandas
 
+        fp = False
+
         for i in sel_vals:
-            answer = tkSimpleDialog.askstring('Rename', 'Choose a save name for "%s":' % i)
+            answer = tkSimpleDialog.askstring('Export data', 'Choose a save name for "%s":' % i, initialvalue = i)
             if answer is None or answer == '':
-                continue
+                return
             if kind != 'interrogation':
                 conc_export(data = i)
             else:  
@@ -2760,7 +2769,7 @@ def corpkit_gui():
                 for k in keys:
                     if k == 'results':
                         if 'results' in data._asdict().keys():
-                            data.results.to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
+                            data.results.drop('tkintertable-order', errors = 'ignore').to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
                     if k == 'totals':
                         if 'totals' in data._asdict().keys():
                             pandas.DataFrame(data.totals).to_csv(os.path.join(fp, answer, 'totals.csv'), sep ='\t')
@@ -2770,8 +2779,9 @@ def corpkit_gui():
                     if k == 'table':
                         if 'table' in data._asdict().keys():
                             pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'table.csv'), sep ='\t')
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Results exported to %s' % (thetime, "answer")        
+        if fp:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Results exported to %s' % (thetime, os.path.join(os.path.basename(fp), answer))        
 
     def reset_everything():
         # result names
@@ -2843,6 +2853,7 @@ def corpkit_gui():
             fp = path
         if not fp or fp == '':
             return
+        reset_everything()
 
         image_fullpath.set(os.path.join(fp, 'images'))
         data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
@@ -2859,14 +2870,15 @@ def corpkit_gui():
         if os.path.isfile(f):
             load_config()
 
+
+        os.chdir(fp)
+
         get_saved_results()
         get_saved_results(kind = 'concordance')
         open_proj_basepath.set('Loaded project: "%s"' % os.path.basename(fp))
 
-        os.chdir(fp)
         # reset tool:
         root.title("corpkit: %s" % os.path.basename(fp))
-        reset_everything()
 
         if not corpus_fullpath.get() or corpus_fullpath.get() == '':
 
@@ -2882,16 +2894,11 @@ def corpkit_gui():
                     first = all_corpora[0]
             if first:
                 corpus_fullpath.set(os.path.join(fp, 'data', first))
-            subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+            
+        subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
 
         basepath.set(os.path.basename(corpus_fullpath.get()))
 
-        # add subcorpora where they need to go
-        
-        
-        if len(subdrs) == 0:
-            charttype.set('bar')
-            
         lab.set('Concordancing: %s' % basepath.get())
 
         pick_subcorpora['menu'].delete(0, 'end')
@@ -2981,7 +2988,7 @@ def corpkit_gui():
     ev_int_box.grid(sticky = E, column = 1, row = 2, rowspan = 20)
     ev_int_sb = Scrollbar(ev_int_box)
     ev_int_sb.pack(side=RIGHT, fill=Y)
-    every_interro_listbox = Listbox(ev_int_box, selectmode = EXTENDED, height = 20, width = 23, 
+    every_interro_listbox = Listbox(ev_int_box, selectmode = SINGLE, height = 20, width = 23, 
                                     yscrollcommand=ev_int_sb.set, exportselection=False)
     every_interro_listbox.pack(fill=BOTH)
     every_interro_listbox.select_set(0)
@@ -3038,7 +3045,7 @@ def corpkit_gui():
     ev_conc_box.grid(sticky = E, column = 2, row = 2, rowspan = 20, padx = 50)
     ev_conc_sb = Scrollbar(ev_conc_box)
     ev_conc_sb.pack(side=RIGHT, fill=Y)
-    ev_conc_listbox = Listbox(ev_conc_box, selectmode = EXTENDED, height = 20, width = 23,
+    ev_conc_listbox = Listbox(ev_conc_box, selectmode = SINGLE, height = 20, width = 23,
                               yscrollcommand=ev_conc_sb.set, exportselection = False)
     ev_conc_listbox.pack(fill=BOTH)
     ev_conc_listbox.select_set(0)
@@ -3521,7 +3528,7 @@ def corpkit_gui():
         text = editor.get(1.0, END)
         try:
             # normalize trailing whitespace
-            f.write(text.rstrip())
+            f.write(text.rstrip().encode("utf-8"))
             f.write("\n")
         finally:
             f.close()
@@ -3573,7 +3580,7 @@ def corpkit_gui():
         Config.set('Manage','Project path',project_fullpath.get())
         Config.write(cfgfile)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project settings saved to settings.ini ... ' % thetime
+        print '%s: Project settings saved to settings.ini.' % thetime
 
     def quitfunc():
         if project_fullpath.get() != '':
@@ -3636,7 +3643,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    #root.after(0, start_update_check) # 500
+    root.after(0, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':

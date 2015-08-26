@@ -1278,6 +1278,7 @@ def pmultiquery(path,
     stdout=sys.stdout
     res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
     res = sorted(res)
+    # 
 
     # turn list into dict of results, make query and total branches,
     # save and return

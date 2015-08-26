@@ -779,7 +779,6 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         xmlf.close()
 
         # open the unparsed version of the file, read into memory
-        # fix this soon
         stripped_txtfile = f.replace('.xml', '').replace('-parsed', '')
         old_txt = open(stripped_txtfile)
         stripped_txtdata = old_txt.read()
@@ -789,8 +788,8 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         id_txtfile = f.replace('.xml', '').replace('-stripped-parsed', '')
         idttxt = open(id_txtfile)
         id_txtdata = idttxt.read()
-
         idttxt.close()
+
         # get the offsets for each sentence
         just_sents = SoupStrainer('sentences')
         soup = BeautifulSoup(data, parse_only=just_sents)
@@ -814,6 +813,9 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
             new_tag = soup.new_tag("speakername")
             s.append(new_tag)
             new_tag.string = speakerid
+        # because of this prettifying, we have to do 'strip' on everything
+        # later on. it'd probably be better if just left ugly.
+        # also, this means that any parent of 'sentences' doesn't go in!
         html = soup.prettify(soup.original_encoding)
         # make changes
         with open(f, "wb") as fopen:
