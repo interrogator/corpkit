@@ -964,10 +964,13 @@ def load_all_results(data_dir = 'saved_interrogations', root = False, only_concs
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
     if len(fs) == 0:
         if not root:
-            raise ValueError('No interrogations found in %s' % data_dir)
-        else:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No saved interrogations found in %s' % (thetime, data_dir)
+            raise ValueError('No saved data found in %s' % data_dir)
+        #else:
+            #thetime = strftime("%H:%M:%S", localtime())
+            #if not only_concs:
+            #    print '%s: No saved interrogations found in %s' % (thetime, data_dir)
+            #else:
+            #    print '%s: No saved concordances found in %s' % (thetime, data_dir)
             return
     l = 0
     for finding in fs:
@@ -1196,8 +1199,8 @@ def pmultiquery(path,
     # the options that don't change
     d = {'option': option,
          'paralleling': True,
-         'function': 'interrogator',
-         'root': root}
+         'function': 'interrogator'}
+         #'root': root}
 
     # add kwargs to query
     for k, v in kwargs.items():
