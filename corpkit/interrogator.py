@@ -1384,8 +1384,8 @@ def interrogator(path,
         # and d[1] is its file list ... 
 
         if dependency or plaintext or tokens or can_do_fast is False:
-            if not root:
-                p.animate(-1, str(0) + '/' + str(total_files))
+            #if not root:
+                #p.animate(-1, str(0) + '/' + str(total_files))
             from collections import Counter
             statsmode_results = Counter({'Sentences': 0, 'Passives': 0, 'Tokens': 0})
             subcorpus_name = d[0]
@@ -1397,7 +1397,7 @@ def interrogator(path,
                 # pass the x/y argument for more updates 
                 if not root and translated_option != 'v':
                     p.animate((c), str(c + 1) + '/' + str(total_files))
-                if root and tk:
+                if root and tk and not statsmode:
                     root.update()
                     if 'note' in kwargs.keys():
                         kwargs['note'].progvar.set((c + 1) * 100.0 / total_files)
