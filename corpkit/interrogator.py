@@ -155,13 +155,22 @@ def interrogator(path,
                                               taglemma)
     from other import add_corpkit_to_path
     import gc
-    from bs4 import BeautifulSoup, SoupStrainer
+    #from bs4 import BeautifulSoup, SoupStrainer
 
     add_corpkit_to_path()
 
     tk = check_t_kinter()
         #from interface import GuiTextProgressBar
     # determine if actually a multiquery
+
+    if 'denominator' in kwargs.keys():
+        denom = kwargs['denominator']
+    else:
+        denom = 1
+    if 'startnum' in kwargs.keys():
+        startnum = kwargs['startnum']
+    else:
+        startnum = 0
 
     is_multiquery = False
     if hasattr(path, '__iter__'):
@@ -214,8 +223,12 @@ def interrogator(path,
               'custom_engine': custom_engine ,
               'df1_always_df': df1_always_df ,
               'just_speakers': just_speakers , 
-              #'root': root ,
+              'root': root ,
               'post_process': post_process }
+        
+        if 'note' in kwargs.keys():
+            d['note'] = kwargs['note']
+
         return pmultiquery(**d)
 
     if 'paralleling' in kwargs:
@@ -404,58 +417,41 @@ def interrogator(path,
     def distancer(sents):
         import re
         """return distance from root for words matching query (root = 0)"""
-        # for each sentence
         result = []
         for sindex, s in enumerate(sents):
-            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-            deps = right_dependency_grammar[0].find_all('dep')
-            if len(deps) > 99:
+            deps = get_deps(s, dep_type)
+            # skip really long sents
+            if len([i for i in deps.links]) > 99:
                 skipped_sents += 1
                 continue
-            for index, dep in enumerate(deps):            
-                dependent = dep.find_all('dependent', limit = 1)[0]
-                word = dependent.get_text().strip()
-                if re.match(regex, word):
-                    if function_filter and not pos_filter:
-                        role = dep.attrs.get('type').strip()
+
+            lks = [l for l in deps.links]
+            for lk in lks:
+                if re.match(regex, lk.dependent.text):
+                    role = lk.type
+                    # stop if role is bad
+                    if function_filter:
                         if not re.match(funfil_regex, role):
                             continue
-                    if pos_filter and not function_filter:
-                        id = dependent.attrs.get('idx').strip()
-                        token_info = s.find_all('token', id=id, limit = 1)
-                        #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                        if not re.search(pos_regex, result_pos):
-                            continue
-                    if pos_filter and function_filter:
-                        role = dep.attrs.get('type').strip()
-                        id = dependent.attrs.get('idx').strip()
-                        token_info = s.find_all('token', id=id, limit = 1)
-                        #result_word = token_info[0].find_all('lemma', limit = 1)[0].text
-                        result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                        if not re.search(pos_regex, result_pos):
-                            continue
-                        if not re.match(funfil_regex, role):
+                    if pos_filter:
+                        pos = s.get_token_by_id(lk.governor.idx).pos
+                        if re.match(pos_regex, pos):
                             continue
                     c = 0
+                    # get the gov index, stop when it's zero
                     root_found = False
                     while not root_found:
                         if c == 0:
-                            dep_to_check = dep
-                        gov = dep_to_check.find_all('governor', limit = 1)
-                        gov_index = gov[0].attrs.get('idx')
-                        if gov_index == "0":
+                            link_to_check = lk
+                        gov_index = link_to_check.governor.idx
+                        if gov_index == 0:
                             root_found = True
                         else:
-                            for d in deps:
-                                if d.dependent.attrs.get('idx') == gov_index:
-                                    dep_to_check = d
-                                    break
-                            c += 1
-                            # stop some kind of infinite loop
                             if c > 29:
                                 root_found = True
                                 break
+                            link_to_check = [l for l in lks if l.dependent.idx == gov_index][0]
+                            c += 1
                     if c < 30:
                         result.append(c)
         return result
@@ -465,47 +461,35 @@ def interrogator(path,
         # for each sentence
         result = []
         for s in sents:
-            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-            for dep in right_dependency_grammar[0].find_all('dep'):                
-                for dependent in dep.find_all('dependent', limit = 1):
-                    matchdep = dependent.get_text().strip()
-                    if re.match(regex, matchdep):
-                        role = dep.attrs.get('type').strip()
-                        gov = dep.find_all('governor', limit = 1)
-                        result_word = gov[0].get_text().strip()
-                        result_word_id = gov[0].attrs.get('idx').strip()
-                        if role != u'root':
-                            if lemmatise or pos_filter or function_filter: 
-                                token_info = s.find_all('token', id=result_word_id, limit = 1)
-                                if lemmatise:
-                                    result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
-                                if add_pos_to_g_d_option or pos_filter:
-                                    result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                                if function_filter and not pos_filter:
-                                    if re.match(funfil_regex, role):
-                                        result.append(result_word)
-                                    else:
-                                        continue
-                                if pos_filter and not function_filter:
-                                    if re.search(pos_regex, result_pos):
-                                        result.append(result_word)
-                                    else:
-                                        continue
-                                if pos_filter and function_filter:
-                                    if re.match(funfil_regex, role):
-                                        if re.search(pos_regex, result_pos):
-                                            result.append(result_word)
-                                            continue
-                                if not function_filter and not pos_filter:
-                                    if add_pos_to_g_d_option:
-                                        colsep = role + u':' + result_pos + u':' + result_word
-                                    else:
-                                        colsep = role + u':' + result_word
-                                    result.append(colsep)
-                            else:
-                                result.append(u'%s:%s' % (role, result_word))
-                        else:
-                            result.append(u'root:root')
+            deps = get_deps(s, dep_type)
+            # get links matching gov
+            lks = [l for l in deps.links if re.match(regex, l.dependent.text)]
+            for lk in lks:
+                # get role
+                role = lk.type
+                if role == 'root':
+                    result.append(u'root:root')
+                    continue
+                # stop if role is bad
+                if function_filter:
+                    if not re.match(funfil_regex, role):
+                        continue
+                # get word or lemma
+                if not lemmatise:
+                    word = lk.governor.text
+                else:
+                    word = s.get_token_by_id(lk.governor.idx).lemma
+                # stop if pos_filtering
+                if pos_filter:
+                    pos = s.get_token_by_id(lk.governor.idx).pos
+                    if re.match(pos_regex, pos):
+                        continue
+                # make result
+                if not function_filter:
+                    res = role + u':' + word
+                else:
+                    res = word
+                result.append(res)
         return result
 
     def get_lemmata(sents):
@@ -513,11 +497,10 @@ def interrogator(path,
         from bs4 import BeautifulSoup
         import gc
         result = []
-        for sent in sents: 
-            for token in sent.find_all('token'):
-                word = token.lemma.text.strip()
-                if re.match(query, word):
-                    result.append(word)
+        for sent in sents:
+            res = [w.lemma for w in sent.tokens if re.match(regex, w.lemma)]
+            for w in res:
+                result.append(w)
         return result
 
     def tokener(sents):
@@ -526,88 +509,84 @@ def interrogator(path,
         import gc
         open_classes = ['N', 'V', 'R', 'J']
         result = []
-        for sent in sents: 
-            for token in sent.find_all('token'):
-                word = token.word.text.strip()
-                if query == 'any':
-                    regex = re.compile(r'.*')
-                else:
-                    regex = re.compile(query)
-                if re.match(regex, word):
-                    if lemmatise:
-                        word = token.lemma.text.strip()
-                        if 'just_content_words' in kwargs:
-                            if kwargs['just_content_words'] is True:
-                                if not token.pos.text[0] in open_classes:
-                                    continue
-                    result.append(word)
+        for sent in sents:
+            if lemmatise:
+                res = [w.lemma for w in sent.tokens if re.match(regex, w.word)]
+            else:
+                res = [w.word for w in sent.tokens if re.match(regex, w.word)]
+            for w in res:
+                result.append(w)
         return result
 
     def deprole(sents):
         """print funct:dep, using good lemmatisation"""
         result = []
         for s in sents:
-            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-            for dep in right_dependency_grammar[0].find_all('dep'):
-                for governor in dep.find_all('governor', limit = 1):
-                    matchgov = governor.get_text().strip()
-                    if re.match(regex, matchgov):
-                        role = dep.attrs.get('type').strip()
-                        deppy = dep.find_all('dependent', limit = 1)
-                        result_word = deppy[0].get_text().strip()
-                        if lemmatise or pos_filter:
-                            result_word_id = deppy[0].attrs.get('idx').strip()
-                            token_info = s.find_all('token', id=result_word_id, limit = 1)
-                            if lemmatise:
-                                result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
-                            if pos_filter:
-                                result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                        if function_filter:
-                            if not re.match(funfil_regex, role):
-                                continue
-                        if pos_filter:
-                            if not re.match(pos_regex, result_pos):
-                                continue
-                        colsep = role + u':' + result_word
-                        result.append(colsep)
+            deps = get_deps(s, dep_type)
+
+            # get links matching gov
+            lks = [l for l in deps.links if re.match(regex, l.governor.text)]
+            for lk in lks:
+                # get role
+                role = lk.type
+                # stop if role is bad
+                if function_filter:
+                    if not re.match(funfil_regex, role):
+                        continue
+                # get word or lemma
+                if not lemmatise:
+                    word = lk.dependent.text
+                else:
+                    word = s.get_token_by_id(lk.dependent.idx).lemma
+
+                # stop if pos_filtering
+                if pos_filter:
+                    pos = s.get_token_by_id(lk.dependent.idx).pos
+                    if re.match(pos_regex, pos):
+                        continue
+                # make result
+                if not function_filter:
+                    res = role + u':' + word
+                else:
+                    res = word
+                result.append(res)
         return result
 
     def words_by_function(sents):
         """print match by function, using good lemmatisation"""
+
+        # if function matches query, return word or lemma
         result = []
         for s in sents:
-            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-            for dep in right_dependency_grammar[0].find_all('dep'):
-                if re.match(query, dep.attrs.get('type')):
-                    deppy = dep.find_all('dependent', limit = 1)
-                    result_word = deppy[0].get_text().strip()
-                    if lemmatise:
-                        result_word_id = deppy[0].attrs.get('idx')
-                        # find this id
-                        token_info = s.find_all('token', id=result_word_id, limit = 1)
-                        result_word = token_info[0].find_all('lemma', limit = 1)[0].text.strip()
-                        if pos_filter:
-                            result_pos = token_info[0].find_all('pos', limit = 1)[0].text.strip()
-                            if not re.search(pos_regex, result_pos):
-                                continue
-                    result.append(result_word)    
+            deps = get_deps(s, dep_type)
+            if not pos_filter and not lemmatise:
+                to_return = [r.dependent.text for r in deps.links if re.match(regex, r.type)]
+            else:
+                if lemmatise and pos_filter:
+                    to_return = [s.get_token_by_id(r.dependent.idx).lemma for r in deps.links \
+                               if re.match(regex, r.type) and \
+                               re.search(pos_regex, s.get_token_by_id(r.dependent.idx).pos)]
+                elif lemmatise and not pos_filter:
+                    to_return = [s.get_token_by_id(r.dependent.idx).lemma for r in deps.links \
+                               if re.match(regex, r.type)]
+                elif pos_filter and not lemmatise:
+                    to_return = [r.dependent.text for r in deps.links if re.match(regex, r.type) \
+                    and re.search(pos_regex, s.get_token_by_id(r.dependent.idx).pos)]
+            
+            for r in to_return:
+                result.append(r)
         return result
 
     def funct(sents):
-        """"print functional role"""
+        """print functional role of regex match"""
         result = []
         for s in sents:
-            right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-            for dep in right_dependency_grammar[0].find_all('dep'):
-                for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text().strip()
-                    if re.match(regex, word):
-                        role = dep.attrs.get('type').strip()
-                        if function_filter:
-                            if re.search(funfil_regex, role):
-                                continue
-                        # pos filter not working here!                      
-                        result.append(role)
+            deps = get_deps(s, dep_type)
+            roles = [r.type for r in deps.links if re.match(regex, r.dependent.text)]
+            if function_filter:
+                roles = [r for r in roles if not re.search(funfil_regex, r)]                    
+            for r in roles:
+                result.append(r)
         return result
 
     def tok_by_list(pattern, list_of_toks):
@@ -682,10 +661,9 @@ def interrogator(path,
             to_open = 'tmp-%s.txt' % kwargs['outname']
         else:
             to_open = 'tmp.txt'
+        to_write = '\n'.join([sent._parse_string.strip() for sent in sents if sent.parse_string is not None]).encode('utf-8', errors = 'ignore')
         with open(to_open, "w") as fo:
-            for sent in sents:
-                fo.write(sent.parse.text.encode("UTF-8") + '\n')
-
+            fo.write(to_write)
         res = tregex_engine(query = query, 
                             options = ['-o', '-%s' % translated_option], 
                             corpus = to_open,
@@ -694,6 +672,14 @@ def interrogator(path,
             root.update()
         os.remove(to_open)
         return res
+
+    def get_deps(sentence, dep_type):
+        if dep_type == 'basic-dependencies':
+            return sentence.basic_dependencies
+        if dep_type == 'collapsed-dependencies':
+            return sentence.collapsed_dependencies
+        if dep_type == 'collapsed-ccprocessed-dependencies':
+            return sentence.collapsed_ccprocessed_dependencies
 
     def get_stats(sents):
         """get a bunch of frequencies on interpersonal phenomena"""
@@ -708,14 +694,14 @@ def interrogator(path,
         with open(to_open, "w") as fo:
             for sent in sents:
                 statsmode_results['Sentences'] += 1
-                fo.write(sent.parse.text.encode("UTF-8") + '\n')
-                # add number of passives
-                right_dependency_grammar = sent.find_all('dependencies', type=dep_type, limit = 1)
-                for dep in right_dependency_grammar[0].find_all('dep'):
-                    if re.search(r'(nsubjpass|csubjpass)', dep.attrs.get('type').strip()):
-                        statsmode_results['Passives'] += 1
-                toks = sent.find_all('token')
-                statsmode_results['Tokens'] += len(toks)
+                fo.write(sent.parse_string.rstrip().encode('utf-8', errors = 'ignore') + '\n')
+                deps = get_deps(sent, dep_type)
+                numpass = len([x for x in deps.links if x.type.endswith('pass')])
+                statsmode_results['Passives'] += numpass
+                statsmode_results['Tokens'] += len(sent.tokens)
+                statsmode_results['Words'] += len([w for w in sent.tokens if w.word.isalnum()])
+                #statsmode_results['Unique words'] += len(set([w.word.lower() for w in sent.tokens if w.word.isalnum()]))
+                #statsmode_results['Unique lemmata'] += len(set([w.lemma.lower() for w in sent.tokens if w.word.isalnum()]))
 
         # count moods via trees          (/\?/ !< __)
         from dictionaries.process_types import processes
@@ -747,7 +733,7 @@ def interrogator(path,
                 p.animate(numdone, str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys())))
             # this should show progress more often
             if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set(numdone * 100.0 / (total_files * len(tregex_qs.keys())))
+                kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
 
     def depnummer(sents):
@@ -1197,6 +1183,7 @@ def interrogator(path,
         sorted_dirs = [os.path.basename(path)]
 
     # numerically sort subcorpora if the first can be an int
+    # could improve now with is_number, all
     else:
         try:
             check = int(sorted_dirs[0])
@@ -1331,7 +1318,7 @@ def interrogator(path,
                         print '%s: Interrogating corpus ... ' % time
                     root.update()
                     if 'note' in kwargs.keys():
-                        kwargs['note'].progvar.set((index + 1) * 100.0 / len(sorted_dirs))
+                        kwargs['note'].progvar.set(((index + 1) * 100.0 / len(sorted_dirs) / denom) + startnum)
                 # get path to corpus/subcorpus
                 if len(sorted_dirs) == 1:
                     subcorpus = path
@@ -1400,7 +1387,7 @@ def interrogator(path,
                 if root and tk and not statsmode:
                     root.update()
                     if 'note' in kwargs.keys():
-                        kwargs['note'].progvar.set((c + 1) * 100.0 / total_files)
+                        kwargs['note'].progvar.set((((c + 1) * 100.0 / total_files) / denom) + startnum)
                         time = strftime("%H:%M:%S", localtime())
                         if not one_big_corpus:
                             print '%s: Interrogating subcorpus: %s' % (time, subcorpus_name)
@@ -1414,19 +1401,21 @@ def interrogator(path,
                 if dependency or can_do_fast is False:
                     with open(filepath, "rb") as text:
                         data = text.read()
-                        from bs4 import SoupStrainer, BeautifulSoup
-                        justsents = SoupStrainer('sentences')
-                        soup = BeautifulSoup(data, parse_only=justsents)  
+                        from corenlp_xml.document import Document
+                        corenlp_xml = Document(data)
+                        #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
                         if just_speakers:  
-                            sents = [s for s in soup.find_all('sentence') \
-                            if s.speakername.text.strip() in just_speakers]
+                            sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                            #sents = [s for s in corenlp_xml.find_all('sentence') \
+                            #if s.speakername.text.strip() in just_speakers]
                         else:
-                            sents = [s for s in soup.find_all('sentence')]
+                            sents = corenlp_xml.sentences
                         # run whichever function has been called
+
                         result_from_file = dep_funct(sents)
 
                         # memory problems
-                        soup = None
+                        corenlp_xml = None
                         data = None
                         gc.collect()
 
@@ -1484,7 +1473,7 @@ def interrogator(path,
         if not root:
             p.animate(len(sorted_dirs))
         if 'note' in kwargs.keys():
-            kwargs['note'].progvar.set(100)
+            kwargs['note'].progvar.set((100 / denom + startnum))
         if root and tk:
             root.update()
     else:
@@ -1496,7 +1485,7 @@ def interrogator(path,
                 else:
                     p.animate(total_files * 10)
             if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set(100)
+                kwargs['note'].progvar.set((100 / denom + startnum))
         except:
             pass
 
