@@ -1112,6 +1112,7 @@ def pmultiquery(path,
     function_filter = False,
     just_speakers = False,
     root = False,
+    note = False,
     print_info = True,
     **kwargs):
     """Parallel process multiple queries or corpora.
@@ -1170,15 +1171,19 @@ def pmultiquery(path,
     multiple_speakers = False
     multiple_corpora = False
 
+    denom = 1
     if hasattr(path, '__iter__'):
         multiple_corpora = True
         num_cores = best_num_parallel(num_cores, len(path))
+        denom = len(path)
     elif hasattr(query, '__iter__'):
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
+        denom = len(query)
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
         num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
+        denom = len(function_filter.keys())
     elif just_speakers:
         from corpkit.build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
@@ -1188,6 +1193,7 @@ def pmultiquery(path,
             print 'No speaker name data found.'
             return
         num_cores = best_num_parallel(num_cores, len(just_speakers))
+        denom = len(just_speakers)
         
     if num_proc != 'default':
         num_cores = num_proc
@@ -1199,9 +1205,10 @@ def pmultiquery(path,
     # the options that don't change
     d = {'option': option,
          'paralleling': True,
-         'function': 'interrogator'}
-         #'root': root}
-
+         'function': 'interrogator',
+         'root': root,
+         'note': note,
+         'denominator': denom}
     # add kwargs to query
     for k, v in kwargs.items():
         d[k] = v
@@ -1273,12 +1280,41 @@ def pmultiquery(path,
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
-    import sys
-    reload(sys)
-    stdout=sys.stdout
-    res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
-    res = sorted(res)
-    # 
+    #import sys
+    #reload(sys)
+    #stdout=sys.stdout
+
+    if not root:
+        res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+        res = sorted(res)
+    else:
+        res = []
+        for index, d in enumerate(ds):
+            d['startnum'] = (100 / denom) * index
+            res.append(interrogator(**d))
+        res = sorted(res)
+
+    # multiprocessing way
+    #from multiprocessing import Process
+    #from corpkit.interrogator import interrogator
+    #jobs = []
+    ##for d in ds:
+    ##    p = multiprocessing.Process(target=interrogator, kwargs=(**d,))
+    ##    jobs.append(p)
+    ##    p.start()
+    ##    while p.is_alive():
+    ##        import time
+    ##        time.sleep(2)
+    ##        if root:
+    ##            root.update()
+    #result_queue = multiprocessing.Queue()
+    #
+    #for d in ds:
+    #funs = [interrogator(result_queue, **kwargs) for kwargs in ds]
+    #jobs = [multiprocessing.Process(mc) for mc in funs]
+    #for job in jobs: job.start()
+    #for job in jobs: job.join()
+    #results = [result_queue.get() for mc in funs]
 
     # turn list into dict of results, make query and total branches,
     # save and return
