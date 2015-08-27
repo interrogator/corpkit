@@ -489,13 +489,13 @@ def corpkit_gui():
             'Get role of match': 'f',
             'Get "role:dependent", matching governor': 'd',
             'Get "role:governor", matching dependent': 'g',
-            'Get lemmata': 'l',
+            'Get lemmata matching regex': 'l',
             'Get tokens by role': 'm',
             'Get dependency index of regular expression match': 'n',
             'Get part-of-speech tag': 'p',
             'Regular expression search': 'r',
             'Simple search string search': 's',
-            'Get tokens': 't',
+            'Get tokens matching regex': 't',
             'Get words': 'w',
             'Get tokens matching regular expression': 'h',
             'Get tokens matching list': 'e'}
@@ -508,8 +508,8 @@ def corpkit_gui():
                              'Get tokens matching list'], 
                    'Dependencies':
                             ['Get role of match',
-                             'Get lemmata',
-                             'Get tokens',
+                             'Get lemmata matching regex',
+                             'Get tokens matching regex',
                              'Get tokens by role',
                              'Get "role:dependent", matching governor',
                              'Get "role:governor", matching dependent',
@@ -631,14 +631,20 @@ def corpkit_gui():
                              'function_filter': ff,
                              'dep_type': depdict[kind_of_dep.get()]}
 
+        #def keep_updating(root, interrogating = True):
+        #    if interrogating:
+        #        root.update()
+        #        root.after(1000, lambda: keep_updating(root))
+
+        #loop_updates = False
         if only_sel_speakers.get():
             ids = [int(i) for i in speaker_listbox.curselection()]
             jspeak = [speaker_listbox.get(i) for i in ids]
             # in the gui, we can't do 'each' queries (right now)
             if 'ALL' in jspeak:
                 jspeak = 'each'
-                #get_speaker_names_from_xml_corpus(corpus_fullpath.get())
             interrogator_args['just_speakers'] = jspeak
+            #loop_updates = True
 
         # warn the user that they get no feedback during this!
 
@@ -669,7 +675,11 @@ def corpkit_gui():
             selected_option = 'v'
             interrogator_args['query'] = 'any'
 
+        #interrogating = True
+        #if loop_updates:
+        #    root.after(1000, lambda: keep_updating(root, interrogating = interrogating)) # 500
         interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
+        #interrogating = False
         
         sys.stdout = note.redir
         if not interrodata or interrodata == 'Bad query':
@@ -739,12 +749,13 @@ def corpkit_gui():
 
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E)
         Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Interrogation finished, with multiple results.' % thetime
         if interrogation_returned_dict:
             tkMessageBox.showinfo(
             "Multiple results returned",
-            "Your query returned multiple spreadsheets. Only one is shown here, but each can be accessed by the editing and plotting tools.")
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Interrogation finished, with multiple results.' % thetime
+            "Your query returned multiple spreadsheets. Only one is shown in the Interrogate tab, but each can be accessed by the editing and plotting tools.")
+
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -1632,7 +1643,7 @@ def corpkit_gui():
         # junk for showing the plot in tkinter
         import matplotlib
         matplotlib.use('TkAgg')
-        from numpy import arange, sin, pi
+        #from numpy import arange, sin, pi
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
         # implement the default mpl key bindings
         from matplotlib.backend_bases import key_press_handler
@@ -1686,6 +1697,8 @@ def corpkit_gui():
         d['style'] = plot_style.get()
         d['tex'] = texuse.get()
         d['black_and_white'] = bw.get()
+        d['reverse_legend'] = rl.get()
+        d['subplots'] = sbplt.get()
 
         if log_x.get() == 1 and log_y.get() == 1:
             d['log'] = 'x,y'
@@ -1723,7 +1736,7 @@ def corpkit_gui():
         if show_totals_in_plot == 'legend + plot':
             d['show_totals'] = 'both'
 
-        d['figsize'] = (12.6, 6.3)
+        d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
 
         f = plotter(plotnametext.get(), what_to_plot, **d)
         time = strftime("%H:%M:%S", localtime())
@@ -1824,11 +1837,11 @@ def corpkit_gui():
     log_x = IntVar()
     Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 8, sticky = W)
     log_y = IntVar()
-    Checkbutton(tab3, text="Log y axis", variable=log_y).grid(column = 1, row = 8, sticky = E)
+    Checkbutton(tab3, text="Log y axis", variable=log_y, width = 11).grid(column = 1, row = 8, sticky = E)
 
     # transpose
     transpose_vis = IntVar()
-    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False)
+    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width = 11)
     trans_but_vis.grid(column = 1, row = 9, sticky = E)
 
     cumul = IntVar()
@@ -1838,11 +1851,17 @@ def corpkit_gui():
     bw = IntVar()
     Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 10, sticky = W)
     texuse = IntVar()
-    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False).grid(column = 1, row = 10, sticky = E)
+    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 11).grid(column = 1, row = 10, sticky = E)
+
+    rl = IntVar()
+    Checkbutton(tab3, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column = 0, row = 11, sticky = W)
+    sbplt = IntVar()
+    Checkbutton(tab3, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 11).grid(column = 1, row = 11, sticky = E)
+
 
 
     # chart type
-    Label(tab3, text='Colour scheme:').grid(row = 11, column = 0, sticky = W)
+    Label(tab3, text='Colour scheme:').grid(row = 12, column = 0, sticky = W)
     chart_cols = StringVar(root)
     chart_cols.set('Default')
     schemes = tuple(('Default', 'Spectral', 'summer', 'coolwarm', 'pink_r', 'Set1', 'Set2', 
@@ -1865,34 +1884,49 @@ def corpkit_gui():
         'Blues_r', 'YlOrBr_r', 'seismic', 'Purples', 'seismic_r', 'RdBu', 'Greys', 'BuGn_r', 
         'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot'))
     ch_col = OptionMenu(tab3, chart_cols, *schemes)
-    ch_col.grid(row = 11, column = 1, sticky = E)
+    ch_col.grid(row = 12, column = 1, sticky = E)
 
     # style
     stys = tuple(('ggplot', 'fivethirtyeight', 'bmh'))
     plot_style = StringVar(root)
     plot_style.set('ggplot')
-    Label(tab3, text = 'Plot style:').grid(row = 12, column = 0, sticky = W)
+    Label(tab3, text = 'Plot style:').grid(row = 13, column = 0, sticky = W)
     pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
-    pick_a_datatype.grid(row = 12, column = 1, sticky=E)
+    pick_a_datatype.grid(row = 13, column = 1, sticky=E)
 
     # legend pos
-    Label(tab3, text='Legend position:').grid(row = 13, column = 0, sticky = W)
+    Label(tab3, text='Legend position:').grid(row = 14, column = 0, sticky = W)
     legloc = StringVar(root)
     legloc.set('best')
     locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
     loc_options = OptionMenu(tab3, legloc, *locs)
-    loc_options.grid(row = 13, column = 1, sticky = E)
+    loc_options.grid(row = 14, column = 1, sticky = E)
+
+    # figure size
+    Label(tab3, text='Figure size:').grid(row = 15, column = 0, sticky = W)
+    figsiz1 = StringVar(root)
+    figsiz1.set('12')
+    figsizes = tuple(('2', '4', '6', '8', '10', '12', '14', '16', '18'))
+    fig1 = OptionMenu(tab3, figsiz1, *figsizes)
+    fig1.configure(width = 5)
+    fig1.grid(row = 15, column = 1, sticky = W, padx = (46, 0))
+    Label(tab3, text='*').grid(row = 15, column = 1, padx = (50, 0))
+    figsiz2 = StringVar(root)
+    figsiz2.set('6')
+    fig2 = OptionMenu(tab3, figsiz2, *figsizes)
+    fig2.configure(width = 5)
+    fig2.grid(row = 15, column = 1, sticky = E)
 
     # show_totals option
-    Label(tab3, text='Show totals: ').grid(row = 14, column = 0, sticky = W)
+    Label(tab3, text='Show totals: ').grid(row = 16, column = 0, sticky = W)
     showtot = StringVar(root)
     showtot.set('Off')
     showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
     show_tot_menu = OptionMenu(tab3, showtot, *showtot_options)
-    show_tot_menu.grid(row = 14, column = 1, sticky = E)
+    show_tot_menu.grid(row = 16, column = 1, sticky = E)
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 15, column = 1, sticky = E)
+    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
 
     # save image button
     #Button(tab3, text = 'Save image', command = lambda: save_current_image()).grid(column = 2, row = 13)
@@ -2210,6 +2244,10 @@ def corpkit_gui():
     conclistbox.bind("<%s-s>" % key, lambda x: concsave())
     conclistbox.bind("<%s-e>" % key, lambda x: conc_export())
     conclistbox.bind("<%s-t>" % key, lambda x: toggle_filenames())
+    conclistbox.bind("<%s-A>" % key, select_all_conclines)
+    conclistbox.bind("<%s-S>" % key, lambda x: concsave())
+    conclistbox.bind("<%s-E>" % key, lambda x: conc_export())
+    conclistbox.bind("<%s-T>" % key, lambda x: toggle_filenames())
 
     # these were 'generate' and 'edit', but they look ugly right now. the spaces are nice though.
     lab = StringVar()
@@ -2533,6 +2571,7 @@ def corpkit_gui():
         #load_project(path = os.path.join(fp, name))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project "%s" created.' % (thetime, name)
+        note.focus_on(tab0)
 
     def get_saved_results(kind = 'interrogation'):
         from corpkit import load_all_results
@@ -3378,7 +3417,7 @@ def corpkit_gui():
         #cf = CanvasFrame(tab0, width=200, height=200)
         
         cf = Canvas(tab0, width=650, height=370, bd = 5)
-        cf.grid(row = 6, column = 2, rowspan = 2)
+        cf.grid(row = 6, column = 2, rowspan = 10)
         if cf not in boxes:
             boxes.append(cf)
         # draw the tree and send to the frame's canvas
@@ -3390,6 +3429,12 @@ def corpkit_gui():
 
         tc.bind_click_trees(tc.toggle_collapsed)
         #tc.bind_click_nodes(color, 3)
+
+    def select_all_editor(*args):
+        editor.tag_add(SEL, "1.0", END)
+        editor.mark_set(INSERT, "1.0")
+        editor.see(INSERT)
+        return 'break'
 
     def onselect_f(evt):
         for box in boxes:
@@ -3424,12 +3469,17 @@ def corpkit_gui():
                 fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
                 text = open(fp).read()
 
+
+            # needs a scrollbar
             editor = Text(tab0, height = 27)
             the_editor['editor'] = editor
             editor.grid(row = 1, column = 2, rowspan = 10)
             if editor not in boxes:
                 boxes.append(editor)
             editor.bind("<%s-s>" % key, savebuttonaction)
+            editor.bind("<%s-a>" % key, select_all_editor)
+            editor.bind("<%s-S>" % key, savebuttonaction)
+            editor.bind("<%s-A>" % key, select_all_editor)
             editor.config(borderwidth=0,
                   font="{Lucida Sans Typewriter} 12",
                   #foreground="green",
@@ -3643,7 +3693,7 @@ def corpkit_gui():
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
-    root.after(0, start_update_check) # 500
+    root.after(50000, start_update_check) # 500
 
     menubar = Menu(root)
     if sys.platform == 'darwin':
