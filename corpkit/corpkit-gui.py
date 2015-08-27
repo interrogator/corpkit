@@ -273,7 +273,7 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth, cellwidth=50)
+                                    rowheaderwidth=100, cellwidth=50)
                 table.createTableFrame()
                 model = table.model
                 model.importDict(raw_data)
@@ -579,12 +579,65 @@ def corpkit_gui():
         elif pane == 'plot':
             pass
 
+
+    def show_prev():
+        import pandas
+        global prev
+        global nex
+        currentname = name_of_interro_spreadsheet.get()
+        ind = all_interrogations.keys().index(currentname)
+        if ind > 0:
+            if ind == 1:
+                prev.configure(state=DISABLED)
+                nex.configure(state = NORMAL)
+            else:
+                prev.configure(state=NORMAL)
+            newname = all_interrogations.keys()[ind - 1]
+            newdata = all_interrogations[newname]
+            name_of_interro_spreadsheet.set(newname)
+            i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
+            if 'results' in newdata._asdict().keys():
+                update_spreadsheet(interro_results, newdata.results, height = 340, indexwidth = 70, width = 650)
+            totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
+            update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
+            refresh()
+        else:
+            prev.configure(state=DISABLED)
+            nex.configure(state = NORMAL)
+
+    def show_next():
+        import pandas
+        global prev
+        global nex
+        currentname = name_of_interro_spreadsheet.get()
+        ind = all_interrogations.keys().index(currentname)
+        if ind + 1 < len(all_interrogations.keys()):
+            if ind + 2 == len(all_interrogations.keys()):
+                nex.configure(state=DISABLED)
+                prev.configure(state=NORMAL)
+            else:
+                nex.configure(state=NORMAL)
+            newname = all_interrogations.keys()[ind + 1]
+            newdata = all_interrogations[newname]
+            name_of_interro_spreadsheet.set(newname)
+            i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
+            if 'results' in newdata._asdict().keys():
+                update_spreadsheet(interro_results, newdata.results, height = 340, indexwidth = 70, width = 650)
+            totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
+            update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
+            refresh()
+        else:
+            nex.configure(state=DISABLED)
+            prev.configure(state=NORMAL)
+
     def do_interrogation():
         Button(tab1, text = 'Interrogate', command = ignore).grid(row = 17, column = 1, sticky = E)
         note.progvar.set(0)
         """performs an interrogation"""
         import pandas
         from corpkit import interrogator
+
+        prev_num_interrogations = len(all_interrogations.keys())
         
         # spelling conversion?
         conv = (spl.var).get()
@@ -720,7 +773,7 @@ def corpkit_gui():
                 all_interrogations[nm] = r
 
         # show most recent (alphabetically last) interrogation spreadsheet
-        recent_interrogation_name = all_interrogations.keys()[-1]
+        recent_interrogation_name = all_interrogations.keys()[prev_num_interrogations]
         recent_interrogation_data = all_interrogations[recent_interrogation_name]
 
         name_of_interro_spreadsheet.set(recent_interrogation_name)
@@ -734,6 +787,26 @@ def corpkit_gui():
             update_spreadsheet(interro_results, recent_interrogation_data.results, height = 340, indexwidth = 70, width = 650)
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
+        global prev
+        prev = Button(tab1, text = 'Previous', command = show_prev)
+        prev.grid(row = 17, column = 2, sticky = W, padx = (120, 0))
+        global nex
+        nex = Button(tab1, text = 'Next', command = show_next)
+        nex.grid(row = 17, column = 2, sticky = W, padx = (220, 0))
+        if len(all_interrogations.keys()) < 2:
+            nex.configure(state = DISABLED)
+            prev.configure(state = DISABLED)
+
+        ind = all_interrogations.keys().index(name_of_interro_spreadsheet.get())
+        if ind == 0:
+            prev.configure(state=DISABLED)
+        else:
+            prev.configure(state=NORMAL)
+
+        if ind + 1 == len(all_interrogations.keys()):
+            nex.configure(state = DISABLED)
+        else:
+            nex.configure(state = NORMAL)
         refresh()
         
         # add current subcorpora to editor menu
@@ -749,13 +822,9 @@ def corpkit_gui():
 
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E)
         Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Interrogation finished, with multiple results.' % thetime
         if interrogation_returned_dict:
-            tkMessageBox.showinfo(
-            "Multiple results returned",
-            "Your query returned multiple spreadsheets. Only one is shown in the Interrogate tab, but each can be accessed by the editing and plotting tools.")
-
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation finished, with multiple results.' % thetime
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -1996,6 +2065,8 @@ def corpkit_gui():
             option == 'l'
 
         query = query_text.get()
+        if not query or query == '':
+            query = 'any'
         tree = show_trees.get()
 
         d = {'random': random_conc_option.get(),
@@ -2008,16 +2079,18 @@ def corpkit_gui():
              'dep_type': depdict[conc_kind_of_dep.get()]}
 
         if justdep.get() != '':
-            d['dep_function'] = justdep.get()
+            if justdep.get().startswith('[') and justdep.get().endswith(']'):
+                jdep = justdep.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+            else:
+                jdep = remake_special_query(justdep.get())
+            d['dep_function'] = jdep
 
         if only_sel_speakers_conc.get():
             ids = [int(i) for i in speaker_listbox_conc.curselection()]
             jspeak_conc = [speaker_listbox_conc.get(i) for i in ids]
-            if 'ALL' in jspeak_conc:     
-                if not names:
-                    jspeak_conc = get_speaker_names_from_xml_corpus(corpus_fullpath.get())
-                else:
-                    jspeak_conc = names
+            if 'ALL' in jspeak_conc:
+                from corpkit.build import get_speaker_names_from_xml_corpus
+                jspeak_conc = get_speaker_names_from_xml_corpus(corpus_fullpath.get())
             if 'NONE' in jspeak_conc:
                 jspeak_conc = False    
             d['just_speakers'] = jspeak_conc
@@ -3431,6 +3504,7 @@ def corpkit_gui():
         #tc.bind_click_nodes(color, 3)
 
     def select_all_editor(*args):
+        editor = the_editor['editor']
         editor.tag_add(SEL, "1.0", END)
         editor.mark_set(INSERT, "1.0")
         editor.see(INSERT)
