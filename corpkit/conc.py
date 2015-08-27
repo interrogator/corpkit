@@ -22,9 +22,7 @@ def conc(corpus,
     import re
     import pandas as pd
     from pandas import DataFrame
-    from time import localtime, strftime
-    from bs4 import BeautifulSoup, SoupStrainer
-    
+    from time import localtime, strftime    
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -38,6 +36,9 @@ def conc(corpus,
     except NameError:
         import subprocess
         have_ipython = False
+
+    if query == 'any':
+        query = r'.*'
     
     # convert list to query
     if type(query) == list:
@@ -59,6 +60,14 @@ def conc(corpus,
     if type(just_speakers) == str:
         if just_speakers.lower() != 'all':
             just_speakers = [just_speakers]
+
+    def get_deps(sentence, dep_type):
+        if dep_type == 'basic-dependencies':
+            return sentence.basic_dependencies
+        if dep_type == 'collapsed-dependencies':
+            return sentence.collapsed_dependencies
+        if dep_type == 'collapsed-ccprocessed-dependencies':
+            return sentence.collapsed_ccprocessed_dependencies
 
     conc_lines = []
     if option.startswith('t'):
@@ -117,18 +126,21 @@ def conc(corpus,
                     else:
                         lines = data.splitlines()
                     for l in lines:
-                        mat = re.search(r'^(.*?)(' + query + r')(.*)$', l)
+                        m = re.compile(r'^(.*?)(' + query + r')(.*)$', re.IGNORECASE)
+                        mat = re.search(m, l)
                         if mat:
                             conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(3)])
                     continue
-                    
-                justsents = SoupStrainer('sentences')
-                soup = BeautifulSoup(data, parse_only=justsents)  
-                if just_speakers_is_list:  
-                    sents = [s for s in soup.find_all('sentence') \
-                    if s.speakername.text.strip() in just_speakers]
+
+                from corenlp_xml.document import Document
+                corenlp_xml = Document(data)
+                #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
+                if just_speakers:  
+                    sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                    #sents = [s for s in corenlp_xml.find_all('sentence') \
+                    #if s.speakername.text.strip() in just_speakers]
                 else:
-                    sents = [s for s in soup.find_all('sentence')]
+                    sents = corenlp_xml.sentences
                 nsents = len(sents)
                 for i, s in enumerate(sents):
                     if num_fs == 1:
@@ -137,10 +149,10 @@ def conc(corpus,
                             if root:
                                 root.update()
                     try:
-                        speakr = s.speakername.text.strip()
+                        speakr = s.speakername.strip()
                     except:
                         speakr = '' 
-                    parsetree = s.parse.text.strip()
+                    parsetree = s.parse_string
                     if option.startswith('t'):
                         if trees:
                             options = '-s'
@@ -157,22 +169,27 @@ def conc(corpus,
                                     preserve_case = True,
                                     root = root)
                         for whole, mid in zip(wholes, middle_column_result):
-                            reg = re.compile(r'(' + re.escape(mid) + r')')
+                            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
                             start, middle, end = re.split(reg, whole, 1)
                             conc_lines.append([f, speakr, start, middle, end])
                     elif option.startswith('d'):
-                        right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                        for dep in right_dependency_grammar[0].find_all('dep'):
-                            for dependent in dep.find_all('dependent', limit = 1):
-                                matchdep = dependent.get_text().strip()
-                                if re.match(query, matchdep):
-                                    role = dep.attrs.get('type').strip()
-                                    if dep_function != 'any':
-                                        if not re.match(dep_function, role):
-                                            continue
-                                    line = normalise(s.parse.text.strip())
-                                    start, middle, end = re.split(r'(' + query + r')', line, 1)
-                                    conc_lines.append([f, speakr, start, middle, end])
+                        
+                        #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                        deps = get_deps(s, dep_type)
+                        if dep_function == 'any' or dep_function is False:
+                            wdsmatching = [l.dependent.text.strip() for l in deps.links \
+                                           if re.match(query, l.dependent.text.strip())]
+                        else:
+                            comped = re.compile(dep_function, re.IGNORECASE)
+                            #goodsent = any(re.match(query, l.dependent.text.strip()) for l in deps.links if re.match(comped, l.type.strip()))
+                            wdsmatching = [l.dependent.text.strip() for l in deps.links \
+                                           if re.match(comped, l.type.strip()) and \
+                                           re.match(query, l.dependent.text.strip())]
+                        # this is shit, needs indexing or something
+                        for wd in wdsmatching:
+                            line = normalise(parsetree)
+                            start, middle, end = re.split(r'(' + wd + r')', line, 1)
+                            conc_lines.append([f, speakr, start, middle, end])
 
     # does not keep results ordered!
     unique_results = [list(x) for x in set(tuple(x) for x in conc_lines)]
@@ -265,5 +282,3 @@ def conc(corpus,
     else:
         df.columns = ['f', 'l', 'm', 'r', 'link']
     return df
-
-# r'/NN.?/ < /(?i)\brisk/ $ (/NN.?/ < /(?i)factor >># NP)' 
