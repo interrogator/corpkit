@@ -709,7 +709,7 @@ def get_list_of_speaker_names(corpuspath):
     from corpkit.build import get_filepaths
     files = get_filepaths(corpuspath)
     names = []
-    idregex = re.compile('^([A-Z0-9]+): *')
+    idregex = re.compile(r'(^.*?):\s+(.*$)')
     for f in files:
         data = open(f).read().splitlines()
         for l in data:
@@ -725,7 +725,8 @@ def make_no_id_corpus(pth, newpth):
     import re
     import shutil
     from corpkit.build import get_filepaths
-    idregex = re.compile('^([A-Z0-9]+): *(.*)$')
+    # define regex broadly enough to accept timestamps, locations if need be
+    idregex = re.compile(r'(^.*?):\s+(.*$)')
     shutil.copytree(pth, newpth)
     files = get_filepaths(newpth)
     names = []
@@ -790,10 +791,10 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         id_txtdata = idttxt.read()
         idttxt.close()
 
-        # get the offsets for each sentence
-        #just_sents = SoupStrainer('sentences')
+        # todo: do this with lxml
         soup = BeautifulSoup(data)
         for s in soup.find_all('sentence'):
+            # don't get corefs
             if s.parent.name == 'sentences':
                 tokens = s.find_all('token')
                 start = int(tokens[0].find_all('characteroffsetbegin', limit = 1)[0].text)
@@ -814,9 +815,6 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
                 new_tag = soup.new_tag("speakername")
                 s.append(new_tag)
                 new_tag.string = speakerid
-        # because of this prettifying, we have to do 'strip' on everything
-        # later on. it'd probably be better if just left ugly.
-        # also, this means that any parent of 'sentences' doesn't go in!
         html = str(soup.root)
         # make changes
         with open(f, "wb") as fopen:
