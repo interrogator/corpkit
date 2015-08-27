@@ -791,32 +791,33 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         idttxt.close()
 
         # get the offsets for each sentence
-        just_sents = SoupStrainer('sentences')
-        soup = BeautifulSoup(data, parse_only=just_sents)
+        #just_sents = SoupStrainer('sentences')
+        soup = BeautifulSoup(data)
         for s in soup.find_all('sentence'):
-            tokens = s.find_all('token')
-            start = int(tokens[0].find_all('characteroffsetbegin', limit = 1)[0].text)
-            end = int(tokens[-1].find_all('characteroffsetend', limit = 1)[0].text)
-            # extract this sentence from the unparsed version
-            sent = stripped_txtdata[start:end]
-            # find out line number
-            # sever at start of match
-            cut_old_text = stripped_txtdata[:start]
-            line_index = cut_old_text.count('\n')
-            # lookup this text
-            with_id = id_txtdata.splitlines()[line_index]
-            split_line = with_id.split(': ', 1)
-            if len(split_line) > 1:
-                speakerid = split_line[0]
-            else:
-                speakerid = 'UNIDENTIFIED'
-            new_tag = soup.new_tag("speakername")
-            s.append(new_tag)
-            new_tag.string = speakerid
+            if s.parent.name == 'sentences':
+                tokens = s.find_all('token')
+                start = int(tokens[0].find_all('characteroffsetbegin', limit = 1)[0].text)
+                end = int(tokens[-1].find_all('characteroffsetend', limit = 1)[0].text)
+                # extract this sentence from the unparsed version
+                sent = stripped_txtdata[start:end]
+                # find out line number
+                # sever at start of match
+                cut_old_text = stripped_txtdata[:start]
+                line_index = cut_old_text.count('\n')
+                # lookup this text
+                with_id = id_txtdata.splitlines()[line_index]
+                split_line = with_id.split(': ', 1)
+                if len(split_line) > 1:
+                    speakerid = split_line[0]
+                else:
+                    speakerid = 'UNIDENTIFIED'
+                new_tag = soup.new_tag("speakername")
+                s.append(new_tag)
+                new_tag.string = speakerid
         # because of this prettifying, we have to do 'strip' on everything
         # later on. it'd probably be better if just left ugly.
         # also, this means that any parent of 'sentences' doesn't go in!
-        html = soup.prettify(soup.original_encoding)
+        html = str(soup.root)
         # make changes
         with open(f, "wb") as fopen:
             fopen.write(html)
