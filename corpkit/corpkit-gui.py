@@ -44,7 +44,9 @@ class RedirectText(object):
 class Notebook(Frame):
 
     """Notebook Widget"""
-    def __init__(self, parent, activerelief = RAISED, inactiverelief = RIDGE, xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', **kw):
+    def __init__(self, parent, activerelief = RAISED, inactiverelief = FLAT, 
+                xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', 
+                activefc = ("Helvetica", 14, "bold"), inactivefc = ("Helvetica", 14), **kw):
         """Construct a Notebook Widget
 
         Notebook(self, parent, activerelief = RAISED, inactiverelief = RIDGE, xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', **kw)        
@@ -62,6 +64,8 @@ class Notebook(Frame):
                                                                                            #Make various argument available to the rest of the class
         self.activefg = activefg                                                           
         self.inactivefg = inactivefg
+        self.activefc = activefc
+        self.inactivefc = inactivefc
         self.deletedTabs = []        
         self.xpad = xpad
         self.ypad = ypad
@@ -79,16 +83,16 @@ class Notebook(Frame):
         self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
         # the notebook, with its tabs, middle, status bars
-        self.noteBookFrame = Frame(parent)                                                 #Create a frame to hold everything together
-        self.BFrame = Frame(self.noteBookFrame)
-        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25)                                            #Create a frame to put the "tabs" in
+        self.noteBookFrame = Frame(parent, bg = '#c5c5c5')                                                 #Create a frame to hold everything together
+        self.BFrame = Frame(self.noteBookFrame, bg = '#c5c5c5')
+        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, bg = '#F4F4F4')                                            #Create a frame to put the "tabs" in
         self.progbarspace = Frame(self.noteBookFrame, relief = RAISED, bd = 2, height = 25)
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
         # status bar text and log
         self.status_text = StringVar()
         self.log_stream = []
-        self.text = Label(self.statusbar, textvariable = self.status_text, height = 1, font = ("Courier New", 13), width = 135, anchor = W)
+        self.text = Label(self.statusbar, textvariable = self.status_text, height = 1, font = ("Courier New", 13), width = 135, anchor = W, bg = '#F4F4F4')
         self.text.grid(sticky = W)
         self.progbar = Progressbar(self.progbarspace, orient = 'horizontal', length = 500, mode = 'determinate', variable = self.progvar, style="TProgressbar")
         self.progbar.grid(sticky = E)
@@ -113,10 +117,14 @@ class Notebook(Frame):
                     self.tabVars[i][1].grid_remove()                                       #Remove the Frame corresponding to each tab that is not selected
                     self.tabVars[i][0]['relief'] = self.inactiverelief                     #Change the relief of all tabs that are not selected to "Groove"
                     self.tabVars[i][0]['fg'] = self.inactivefg                             #Set the fg of the tab, showing it is selected, default is black
+                    self.tabVars[i][0]['font'] = self.inactivefc
+                    self.tabVars[i][0]['bg'] = '#c5c5c5'
                 else:                                                                      #When on the tab that is currently selected...
                     self.tabVars[i][1].grid()                                              #Re-grid the frame that corresponds to the tab                      
                     self.tabVars[IDNum][0]['relief'] = self.activerelief                   #Change the relief to "Raised" to show the tab is selected
-                    self.tabVars[i][0]['fg'] = self.activefg                               #Set the fg of the tab, showing it is not selected, default is black
+                    self.tabVars[i][0]['fg'] = self.activefg
+                    self.tabVars[i][0]['font'] = self.activefc
+                    self.tabVars[i][0]['bg'] = 'white'                               #Set the fg of the tab, showing it is not selected, default is black
         # prog to zero on change tab?
         # self.progvar.set(0)
 
@@ -199,7 +207,7 @@ def corpkit_gui():
     root.resizable(FALSE,FALSE)
 
     #HWHW h 550
-    note = Notebook(root, width= 1365, height = 660, activefg = 'red', inactivefg = 'blue')  #Create a Note book Instance
+    note = Notebook(root, width= 1365, height = 660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
     note.grid()
     tab0 = note.add_tab(text = "Build")
     tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
@@ -424,8 +432,17 @@ def corpkit_gui():
             newdata = make_df_totals(newdata)
         return newdata
 
+    def color_saved(lb, savepath, colour = '#D9DDDB'):
+        """make saved items in listbox have colour background"""
+        all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
+        for index, item in enumerate(all_items):
+            issaved = os.path.isfile(os.path.join(savepath, urlify(item) + '.p'))
+            if issaved:
+                lb.itemconfig(index, {'bg':colour})
+
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
+        import os
         # Reset name_of_o_ed_spread and delete all old options
         # get the latest only after first interrogation
         if len(all_interrogations.keys()) == 1:
@@ -448,6 +465,11 @@ def corpkit_gui():
             #every_interro_listbox.delete(0, END)
             if choice != 'None':
                 every_interro_listbox.insert(END, choice)
+        
+        # gray out the saved
+        color_saved(every_interro_listbox, data_fullpath.get())
+        color_saved(ev_conc_listbox, conc_fullpath.get())
+
         new_clines = []
         prev_conc_listbox.delete(0, 'end')
         for cline in all_conc.keys():
@@ -458,6 +480,9 @@ def corpkit_gui():
             if choice != 'None':
                 ev_conc_listbox.insert(END, choice)
                 prev_conc_listbox.insert(END, choice)
+        #for i in len(new_xx):
+        #    listbox.itemconfig(1, {'bg':'red'})
+
 
     def add_tkt_index(df):
         import pandas
@@ -872,9 +897,9 @@ def corpkit_gui():
         path_to_new_unparsed_corpus.set(fp)
         add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
         sel_corpus.set(fp)        
-        parse_button_text.set('Parse corpus: %s' % os.path.basename(fp))
+        parse_button_text.set('Parse: %s' % os.path.basename(fp))
         add_subcorpora_to_build_box(fp)
-        sel_corpus_button.set('Corpus selected: "%s"' % os.path.basename(fp))
+        sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
         lab.set('Concordancing: %s' % basepath.get())
         togglespeaker()
@@ -953,7 +978,7 @@ def corpkit_gui():
     spk_scrl.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
     spk_sbar = Scrollbar(spk_scrl)
     spk_sbar.pack(side=RIGHT, fill=Y)
-    speaker_listbox = Listbox(spk_scrl, selectmode = EXTENDED, width = 32, height = 4, 
+    speaker_listbox = Listbox(spk_scrl, selectmode = EXTENDED, width = 32, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                               yscrollcommand=spk_sbar.set, exportselection = False)
     speaker_listbox.pack()
     speaker_listbox.configure(state = DISABLED)
@@ -1074,7 +1099,7 @@ def corpkit_gui():
     frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     dtscrollbar = Scrollbar(frm)
     dtscrollbar.pack(side=RIGHT, fill=Y)
-    datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 32, height = 5, 
+    datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 32, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                         yscrollcommand=dtscrollbar.set, exportselection = False)
     datatype_listbox.pack()
     dtscrollbar.config(command=datatype_listbox.yview)
@@ -1128,7 +1153,7 @@ def corpkit_gui():
     name_of_interro_spreadsheet.set('')
     i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
     Label(tab1, textvariable = i_resultname, 
-          font = ("Helvetica", 12, "bold")).grid(row = 0, 
+          font = ("Helvetica", 13, "bold")).grid(row = 0, 
            column = 2, sticky = W, padx=20, pady=0)    
     
     # make spreadsheet frames for interrogate pane
@@ -1461,7 +1486,7 @@ def corpkit_gui():
     tup = tuple([i for i in all_interrogations.keys()])    
     selected_to_edit = StringVar(root)
     selected_to_edit.set('None')
-    x = Label(tab2, text = 'To edit:', font = ("Helvetica", 12, "bold"))
+    x = Label(tab2, text = 'To edit', font = ("Helvetica", 13, "bold"))
     x.grid(row = 0, column = 0, sticky = W)
     dataframe1s = OptionMenu(tab2, selected_to_edit, *tup)
     dataframe1s.grid(row = 1, column = 0, sticky=W)
@@ -1486,7 +1511,7 @@ def corpkit_gui():
     opp = StringVar(root)
     opp.set('None')
     operations = ('None', '%', '*', '/', '-', '+', 'combine', 'keywords', 'a', 'd')
-    Label(tab2, text='Operation and demonominator:', font = ("Helvetica", 12, "bold")).grid(row = 2, column = 0, sticky = W)
+    Label(tab2, text='Operation and demonominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
     ops = OptionMenu(tab2, opp, *operations)
     ops.grid(row = 3, column = 0, sticky = W)
     opp.trace("w", op_callback)
@@ -1508,7 +1533,7 @@ def corpkit_gui():
     df2box.grid(row = 3, column = 1, sticky = E)
 
     # sort by
-    Label(tab2, text = 'Sort results by:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 0, sticky = W)
+    Label(tab2, text = 'Sort results by', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 0, sticky = W)
     sort_val = StringVar(root)
     sort_val.set('None')
     sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
@@ -1550,7 +1575,7 @@ def corpkit_gui():
 
     subc_sel_vals = []
     # entries + entry field for regex, off, skip, keep, merge
-    Label(tab2, text = 'Edit entries:', font = ("Helvetica", 12, "bold")).grid(row = 9, column = 0, sticky = W, pady = (10, 0))
+    Label(tab2, text = 'Edit entries', font = ("Helvetica", 13, "bold")).grid(row = 9, column = 0, sticky = W, pady = (10, 0))
     
     # edit entries regex box
     entry_regex = StringVar()
@@ -1621,13 +1646,13 @@ def corpkit_gui():
             merge.configure(state = DISABLED)
 
     # subcorpora + optionmenu off, skip, keep
-    Label(tab2, text = 'Edit subcorpora:', font = ("Helvetica", 12, "bold")).grid(row = 14, column = 0, sticky = W)
+    Label(tab2, text = 'Edit subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 14, column = 0, sticky = W)
     
     edit_sub_f = Frame(tab2)
     edit_sub_f.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
     edsub_scbr = Scrollbar(edit_sub_f)
     edsub_scbr.pack(side=RIGHT, fill=Y)
-    subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height = 5, 
+    subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                            yscrollcommand=edsub_scbr.set, exportselection = False)
     subc_listbox.pack(fill=BOTH)
     edsub_scbr.config(command=subc_listbox.yview)
@@ -1652,7 +1677,7 @@ def corpkit_gui():
     # name the edit
     edit_nametext = StringVar()
     edit_nametext.set('untitled')
-    Label(tab2, text = 'Edit name:', font = ("Helvetica", 12, "bold")).grid(row = 19, column = 0, sticky = W)
+    Label(tab2, text = 'Edit name', font = ("Helvetica", 13, "bold")).grid(row = 19, column = 0, sticky = W)
     msn = Entry(tab2, textvariable = edit_nametext)
     msn.grid(row = 20, column = 0)
 
@@ -1665,12 +1690,12 @@ def corpkit_gui():
     name_of_o_ed_spread.set('')
     resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
     Label(tab2, textvariable = resultname, 
-          font = ("Helvetica", 12, "bold")).grid(row = 0, 
+          font = ("Helvetica", 13, "bold")).grid(row = 0, 
            column = 2, sticky = W, padx = 20)    
     o_editor_results = Frame(tab2, height = 20, width = 20)
     o_editor_results.grid(column = 2, row = 1, rowspan=9, padx = 20)
     #Label(tab2, text = 'Totals to edit:', 
-          #font = ("Helvetica", 12, "bold")).grid(row = 4, 
+          #font = ("Helvetica", 13, "bold")).grid(row = 4, 
            #column = 2, sticky = W, pady=0)
     o_editor_totals = Frame(tab2, height = 1, width = 20)
     o_editor_totals.grid(column = 2, row = 10, rowspan=1, padx = 20)
@@ -1681,12 +1706,12 @@ def corpkit_gui():
     name_of_n_ed_spread.set('')
     editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
     Label(tab2, textvariable = editoname, 
-          font = ("Helvetica", 12, "bold")).grid(row = 11, 
+          font = ("Helvetica", 13, "bold")).grid(row = 11, 
            column = 2, sticky = W, padx = 20)        
     n_editor_results = Frame(tab2, height = 30, width = 20)
     n_editor_results.grid(column = 2, row = 12, rowspan=9, padx = 20)
     #Label(tab2, text = 'Edited totals:', 
-          #font = ("Helvetica", 12, "bold")).grid(row = 15, 
+          #font = ("Helvetica", 13, "bold")).grid(row = 15, 
            #column = 2, sticky = W, padx=20, pady=0)
     n_editor_totals = Frame(tab2, height = 1, width = 20)
     n_editor_totals.grid(column = 2, row = 21, rowspan=1, padx = 20)
@@ -2285,7 +2310,7 @@ def corpkit_gui():
     cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
     cscrollbar.pack(side=RIGHT, fill=Y)
     cscrollbarx.pack(side=BOTTOM, fill=X)
-    conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, 
+    conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief = SUNKEN, bg = '#F4F4F4',
                           xscrollcommand=cscrollbarx.set, height = 450, 
                           width = 1050, font = ('Courier New', fsize.get()), 
                           selectmode = EXTENDED)
@@ -2325,8 +2350,8 @@ def corpkit_gui():
     # these were 'generate' and 'edit', but they look ugly right now. the spaces are nice though.
     lab = StringVar()
     lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
-    Label(tab4, textvariable = lab, font = ("Helvetica", 12, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
-    Label(tab4, text = ' ', font = ("Helvetica", 12, "bold")).grid(row = 1, column = 9, columnspan = 2)
+    Label(tab4, textvariable = lab, font = ("Helvetica", 13, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
+    Label(tab4, text = ' ', font = ("Helvetica", 13, "bold")).grid(row = 1, column = 9, columnspan = 2)
 
     # select subcorpus
     # add whole corpus option
@@ -2393,7 +2418,7 @@ def corpkit_gui():
     cqb = Entry(tab4, textvariable = query_text, width = 50)
     cqb.grid(row = 2, column = 1, columnspan = 4)
 
-    Label(tab4, text = 'Limit results to function:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 3)
+    Label(tab4, text = 'Limit results to function:', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 3, sticky = S)
     justdep = StringVar()
     justdep.set('nsubj(pass)?')
     ebox = Entry(tab4, textvariable = justdep, width = 22)
@@ -2446,7 +2471,7 @@ def corpkit_gui():
     scfrm.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W)
     scscrollbar = Scrollbar(scfrm)
     scscrollbar.pack(side=RIGHT, fill=Y)
-    speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 25, height = 4, 
+    speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 25, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                                    yscrollcommand=scscrollbar.set, exportselection = False)
     speaker_listbox_conc.pack()
     cscrollbar.config(command=speaker_listbox_conc.yview)
@@ -2562,7 +2587,7 @@ def corpkit_gui():
             df = df.drop_duplicates(subset = ['l', 'm', 'r'])
         add_conc_lines_to_window(df)
 
-    Button(tab4, text = 'Save as ... ', command = concsave).grid(row = 5, column = 9, columnspan = 2, padx = (215,0))
+    Button(tab4, text = 'Store as ... ', command = concsave).grid(row = 5, column = 9, columnspan = 2, padx = (225,0))
     Button(tab4, text = 'Merge', command = merge_conclines).grid(row = 5, column = 10, sticky = E)
 
     show_filenames = IntVar()
@@ -2582,7 +2607,7 @@ def corpkit_gui():
     # export to csv
     Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 2, column = 13)
 
-    Label(tab4, text = 'Saved concordances:', font = ("Helvetica", 12, "bold")).grid(row = 4, column = 9, columnspan = 2, padx = (260,0))
+    Label(tab4, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 9, columnspan = 3, padx = (310,0), sticky=S)
 
     def load_saved_conc():
         should_continue = True
@@ -2609,7 +2634,7 @@ def corpkit_gui():
     prev_conc.grid(row = 4, column = 12, rowspan = 2, columnspan = 3, sticky = E)
     prevcbar = Scrollbar(prev_conc)
     prevcbar.pack(side=RIGHT, fill=Y)
-    prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 25, height = 4, 
+    prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 25, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                                 yscrollcommand=prevcbar.set, exportselection = False)
     prev_conc_listbox.pack()
     cscrollbar.config(command=speaker_listbox.yview)
@@ -2824,9 +2849,9 @@ def corpkit_gui():
         else:
             perm_text = ''
         for i in sel_vals:
-            answer = tkSimpleDialog.askstring('Rename', 'Choose a new name for "%s":' % i)
+            answer = tkSimpleDialog.askstring('Rename', 'Choose a new name for "%s":' % i, initialvalue = i)
             if answer is None or answer == '':
-                continue
+                return
             else:
                 all_interrogations[answer] = all_interrogations.pop(i)
             if permanently:
@@ -2997,7 +3022,7 @@ def corpkit_gui():
 
         get_saved_results()
         get_saved_results(kind = 'concordance')
-        open_proj_basepath.set('Loaded project: "%s"' % os.path.basename(fp))
+        open_proj_basepath.set('Loaded: "%s"' % os.path.basename(fp))
 
         # reset tool:
         root.title("corpkit: %s" % os.path.basename(fp))
@@ -3045,7 +3070,7 @@ def corpkit_gui():
             print '%s: Can only view one interrogation at a time.' % (thetime)
             return
 
-        Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 3)
+        Label(tab5, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 3)
         mlb = Table(tab5, ['Option', 'Value'],
                   column_weights=[1, 1], height = 70, width = 30)
         mlb.grid(sticky = N, column = 3, row = 1, rowspan = 40)
@@ -3110,7 +3135,7 @@ def corpkit_gui():
     ev_int_box.grid(sticky = E, column = 1, row = 1, rowspan = 20)
     ev_int_sb = Scrollbar(ev_int_box)
     ev_int_sb.pack(side=RIGHT, fill=Y)
-    every_interro_listbox = Listbox(ev_int_box, selectmode = SINGLE, height = 20, width = 23, 
+    every_interro_listbox = Listbox(ev_int_box, selectmode = SINGLE, height = 20, width = 23, relief = SUNKEN, bg = '#F4F4F4',
                                     yscrollcommand=ev_int_sb.set, exportselection=False)
     every_interro_listbox.pack(fill=BOTH)
     every_interro_listbox.select_set(0)
@@ -3126,7 +3151,7 @@ def corpkit_gui():
     open_proj_basepath = StringVar()
     open_proj_basepath.set('Open project')
 
-    #Label(tab5, text = 'Project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
+    #Label(tab5, text = 'Project', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0)
     #Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
     #Button(tab5, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
     #Button(tab5, textvariable = basepath, command = getdir).grid(row = 3, column = 0, sticky=W)
@@ -3134,7 +3159,7 @@ def corpkit_gui():
     #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
     #Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 5, column = 0, sticky=W)
 
-    Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
+    Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 1)
     Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 22).grid(row = 22, column = 1)
 
     #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
@@ -3149,7 +3174,7 @@ def corpkit_gui():
     #Label(tab5, text = 'Delete selected: '()).grid(sticky = E, row = 5, column = 1)
     Button(tab5, text = 'Delete', command = lambda: del_one_or_more()).grid(sticky = E, column = 1, row = 25)
 
-    Label(tab5, text = 'Saved concordances', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 2, padx = 50)
+    Label(tab5, text = 'Saved concordances', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 2, padx = 50)
 
     # a list of every interrogation
     def onselect_conc(evt):
@@ -3167,7 +3192,7 @@ def corpkit_gui():
     ev_conc_box.grid(sticky = E, column = 2, row = 1, rowspan = 20, padx = 50)
     ev_conc_sb = Scrollbar(ev_conc_box)
     ev_conc_sb.pack(side=RIGHT, fill=Y)
-    ev_conc_listbox = Listbox(ev_conc_box, selectmode = SINGLE, height = 20, width = 23,
+    ev_conc_listbox = Listbox(ev_conc_box, selectmode = SINGLE, height = 20, width = 23, relief = SUNKEN, bg = '#F4F4F4',
                               yscrollcommand=ev_conc_sb.set, exportselection = False)
     ev_conc_listbox.pack(fill=BOTH)
     ev_conc_listbox.select_set(0)
@@ -3192,7 +3217,6 @@ def corpkit_gui():
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
     ##############     ##############     ##############     ##############     ############## 
     
-
     from corpkit import download_cnlp, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_tokenised_text():
@@ -3297,7 +3321,7 @@ def corpkit_gui():
     parse_button_text.set('Parse corpus')
 
     tokenise_button_text = StringVar()
-    tokenise_button_text.set('Just tokenise corpus')
+    tokenise_button_text.set('Tokenise')
 
     sel_corpus = StringVar()
     sel_corpus.set('')
@@ -3347,13 +3371,14 @@ def corpkit_gui():
                 message = 'Select corpus for viewing/editing/parsing.')
         if unparsed_corpus_path is False or unparsed_corpus_path == '':    
             return
-        parse_button_text.set('Parse corpus: "%s"' % bn(unparsed_corpus_path))
+        parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
+        tokenise_button_text.set('Tokenise: "%s"' % bn(unparsed_corpus_path))
         path_to_new_unparsed_corpus.set(unparsed_corpus_path)
         #add_corpus_button.set('Added: %s' % bn(unparsed_corpus_path))
         where_to_put_corpus = pjoin(project_fullpath.get(), 'data')       
         sel_corpus.set(unparsed_corpus_path)
         sel_corpus_button.set('Corpus selected: "%s"' % bn(unparsed_corpus_path))
-        parse_button_text.set('Parse corpus: "%s"' % bn(unparsed_corpus_path))
+        parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
         add_subcorpora_to_build_box(unparsed_corpus_path)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus: "%s"' % (time, bn(unparsed_corpus_path))
@@ -3403,29 +3428,29 @@ def corpkit_gui():
         sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Corpus copied to project folder.' % (thetime)
-        parse_button_text.set('Parse corpus: %s' % os.path.basename(newc))
+        parse_button_text.set('Parse: %s' % os.path.basename(newc))
         add_subcorpora_to_build_box(newc)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
         Button(tab0, textvariable = add_corpus_button, command=getcorpus).grid(row = 3, column = 0, sticky=W)
 
     # duplicate of one in 'manage
-    Label(tab0, text = 'Create project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
-    #Label(tab0, text = 'New project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
-    Button(tab0, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
+    Label(tab0, text = 'Create project', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0)
+    #Label(tab0, text = 'New project', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0)
+    Button(tab0, textvariable = new_proj_basepath, command = make_new_project, width = 30).grid(row = 1, column = 0, sticky=W)
     #Label(tab0, text = 'Open project: ').grid(row = 2, column = 0, sticky=W)
-    Button(tab0, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
+    Button(tab0, textvariable = open_proj_basepath, command = load_project, width = 30).grid(row = 2, column = 0, sticky=W)
     #Label(tab0, text = 'Add corpus to project: ').grid(row = 4, column = 0, sticky=W)
-    Button(tab0, textvariable = add_corpus_button, command=getcorpus).grid(row = 3, column = 0, sticky=W)
+    Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 30).grid(row = 3, column = 0, sticky=W)
     #Label(tab0, text = 'Corpus to parse: ').grid(row = 6, column = 0, sticky=W)
-    Button(tab0, textvariable = sel_corpus_button, command=select_corpus).grid(row = 4, column = 0, sticky=W)
-    #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
+    Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 30).grid(row = 4, column = 0, sticky=W)
+    #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
     speakseg = IntVar()
     speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg)
     speakcheck_build.grid(column = 0, row = 5, sticky=W)
-    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 6, column = 0, sticky=W)
-    #Label(tab0, text = 'Parse corpus: ').grid(row = 8, column = 0, sticky=W)
-    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 7, column = 0, sticky=W)
+    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 30).grid(row = 6, column = 0, sticky=W)
+    #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
+    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 30).grid(row = 7, column = 0, sticky=W)
 
     subc_sel_vals_build = []
 
@@ -3464,15 +3489,15 @@ def corpkit_gui():
             f_in_s.set('Files in corpus: %s' % os.path.basename(path_to_new_unparsed_corpus.get()))
 
     # a listbox of subcorpora
-    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 12, "bold")).grid(row = 8, column = 0, sticky=W)
+    Label(tab0, text = 'Subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 8, column = 0, sticky=W)
 
 
-    build_sub_f = Frame(tab0)
+    build_sub_f = Frame(tab0, width = 31)
     build_sub_f.grid(row = 9, column = 0, sticky = W)
     build_sub_sb = Scrollbar(build_sub_f)
     build_sub_sb.pack(side=RIGHT, fill=Y)
-    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED,
-                                 yscrollcommand=build_sub_sb.set, exportselection=False)
+    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
+                                 yscrollcommand=build_sub_sb.set, exportselection=False, width = 31)
     subc_listbox_build.pack(fill=BOTH)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
@@ -3579,7 +3604,7 @@ def corpkit_gui():
             editor.insert(END, text)
             editor.mark_set(INSERT, 1.0)
             editf.set('Edit file: %s' % chosen_f[0])
-            viewedit = Label(tab0, textvariable = editf, font = ("Helvetica", 12, "bold"))
+            viewedit = Label(tab0, textvariable = editf, font = ("Helvetica", 13, "bold"))
             viewedit.grid(row = 2, column = 2, sticky=W)
             if viewedit not in boxes:
                 boxes.append(viewedit)
@@ -3604,7 +3629,7 @@ def corpkit_gui():
                 text = open(fp).read()
             lines = text.splitlines()
             editf.set('View trees: %s' % chosen_f[0])
-            vieweditxml = Label(tab0, textvariable = editf, font = ("Helvetica", 12, "bold"))
+            vieweditxml = Label(tab0, textvariable = editf, font = ("Helvetica", 13, "bold"))
             vieweditxml.grid(row = 0, column = 2, sticky=W)
             if vieweditxml not in boxes:
                 boxes.append(vieweditxml)
@@ -3641,12 +3666,12 @@ def corpkit_gui():
     f_in_s.set('Files in subcorpus: ')
 
     # a listbox of files
-    Label(tab0, textvariable = f_in_s, font = ("Helvetica", 12, "bold")).grid(row = 0, column = 1, sticky=N, padx = 30)
+    Label(tab0, textvariable = f_in_s, font = ("Helvetica", 13, "bold")).grid(row = 0, column = 1, sticky=N, padx = 30)
     build_f_box = Frame(tab0)
     build_f_box.grid(row = 1, column = 1, rowspan = 12, padx = 30)
     build_f_sb = Scrollbar(build_f_box)
     build_f_sb.pack(side=RIGHT, fill=Y)
-    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED, 
+    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
                      exportselection = False, yscrollcommand=build_f_sb.set)
     f_view.pack(fill=BOTH)
     xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
