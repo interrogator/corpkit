@@ -216,7 +216,6 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
             temp_list = [interrogation.query, interrogation.results, interrogation.totals]
     elif len(interrogation) == 4:
         temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
-
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
@@ -427,7 +426,7 @@ def new_project(name, loc = '.', root = False):
             raise
 
     # make other directories
-    dirs_to_make = ['data', 'images', 'saved_interrogations', 'saved_concordances', 'dictionaries']
+    dirs_to_make = ['data', 'images', 'saved_interrogations', 'saved_concordances', 'dictionaries', 'exported']
     #subdirs_to_make = ['dictionaries', 'saved_interrogations']
     for directory in dirs_to_make:
         os.makedirs(os.path.join(fullpath, directory))
@@ -953,15 +952,31 @@ def tregex_engine(query = False,
         res = [(w, t.upper()) for w, t in res]
     return res
 
-def load_all_results(data_dir = 'saved_interrogations', root = False, only_concs = False):
+def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kwargs):
     import corpkit
     """load every saved interrogation in data_dir into a dict"""
     import os
     import time
     from other import load_result
     from time import localtime, strftime
+    
+    def get_root_note(kwargs):
+        if 'root' in kwargs.keys():
+            root = kwargs['root']
+        else:
+            root = False
+        if 'note' in kwargs.keys():
+            note = kwargs['note']
+        else:
+            note = False       
+        return root, note
+
+    root, note = get_root_note(kwargs)
+
     r = {}
     fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
+    if note and len(fs) > 3:
+        note.progvar.set(0)
     if len(fs) == 0:
         if not root:
             raise ValueError('No saved data found in %s' % data_dir)
@@ -973,7 +988,7 @@ def load_all_results(data_dir = 'saved_interrogations', root = False, only_concs
             #    print '%s: No saved concordances found in %s' % (thetime, data_dir)
             return
     l = 0
-    for finding in fs:
+    for index, finding in enumerate(fs):
         try:
             tmp = load_result(finding, loaddir = data_dir, only_concs = only_concs)
             if not tmp:
@@ -982,13 +997,13 @@ def load_all_results(data_dir = 'saved_interrogations', root = False, only_concs
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
             l += 1
-            if root:
-                root.update()
         except:
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
-            if root:
-                root.update()
+        if note and len(fs) > 3:
+            note.progvar.set((index + 1) * 100.0 / len(fs))
+        if root:
+            root.update()
     time = strftime("%H:%M:%S", localtime())
     print '%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir))
     return r
@@ -1322,6 +1337,11 @@ def pmultiquery(path,
         out = {}
         #print ''
         for (name, data), d in zip(res, ds):
+            for unpicklable in ['note', 'root']:
+                try:
+                    del d[unpicklable]
+                except:
+                    pass
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
                 
