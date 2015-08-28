@@ -105,8 +105,8 @@ class Notebook(Frame):
         self.noteBookFrame.grid()
         self.BFrame.grid(row = 0, column = 0, columnspan = 27, sticky = N) # ", column = 13)" puts the tabs in the middle!
         self.noteBook.grid(row = 1, column = 0, columnspan = 27)
-        self.statusbar.grid(row = 2, column = 0, padx = (0, 265))
-        self.progbarspace.grid(row = 2, column = 0, padx = (265, 0), sticky = E)
+        self.statusbar.grid(row = 2, column = 0, padx = (0, 273))
+        self.progbarspace.grid(row = 2, column = 0, padx = (273, 0), sticky = E)
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -2490,9 +2490,9 @@ def corpkit_gui():
     Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
 
     # edit conc lines
-    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0))
-    Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10)
-    Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11)
+    Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0), sticky = E)
+    Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10, sticky = E)
+    Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11, columnspan = 2, sticky = W, padx = (25, 0))
 
 
     def toggle_filenames(*args):
@@ -2591,8 +2591,8 @@ def corpkit_gui():
     Button(tab4, text = 'Merge', command = merge_conclines).grid(row = 5, column = 10, sticky = E)
 
     show_filenames = IntVar()
-    fnbut = Checkbutton(tab4, text="Toggle filenames", variable=show_filenames, command=toggle_filenames)
-    fnbut.grid(row = 3, column = 10, columnspan = 2, sticky = E)
+    fnbut = Checkbutton(tab4, text="Show filenames", variable=show_filenames, command=toggle_filenames)
+    fnbut.grid(row = 3, column = 10, columnspan = 3, padx = (50, 20))
     fnbut.select()
     show_filenames.trace("w", toggle_filenames)
 
@@ -2602,10 +2602,10 @@ def corpkit_gui():
     sortval.set('M1')
     prev_sortval = ['None']
     srtkind = OptionMenu(tab4, sortval, *sort_vals)
-    srtkind.grid(row = 2, column = 12)
+    srtkind.grid(row = 2, column = 12, sticky = E)
 
     # export to csv
-    Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 2, column = 13)
+    Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 2, column = 13, sticky = E)
 
     Label(tab4, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 9, columnspan = 3, padx = (310,0), sticky=S)
 
@@ -3492,12 +3492,12 @@ def corpkit_gui():
     Label(tab0, text = 'Subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 8, column = 0, sticky=W)
 
 
-    build_sub_f = Frame(tab0, width = 31)
+    build_sub_f = Frame(tab0, width = 31, height = 24)
     build_sub_f.grid(row = 9, column = 0, sticky = W)
     build_sub_sb = Scrollbar(build_sub_f)
     build_sub_sb.pack(side=RIGHT, fill=Y)
-    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 20, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
-                                 yscrollcommand=build_sub_sb.set, exportselection=False, width = 31)
+    subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 24, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
+                                 yscrollcommand=build_sub_sb.set, exportselection=False, width = 31,)
     subc_listbox_build.pack(fill=BOTH)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
@@ -3646,7 +3646,7 @@ def corpkit_gui():
                     bracktree = searched.group(1)
                     flat = flatten_treestring(bracktree)
                     trees.append([bracktree, flat])
-            sentsbox = Listbox(tab0, selectmode = SINGLE, width = 100, font = ("Courier New", 10))
+            sentsbox = Listbox(tab0, selectmode = SINGLE, width = 100, font = ("Courier New", 11))
             if sentsbox not in boxes:
                 boxes.append(sentsbox)
             sentsbox.grid(row = 1, column = 2, rowspan = 4)
@@ -3663,15 +3663,15 @@ def corpkit_gui():
         # f_in_s.set('Files in corpus: %s' subc_selected)
 
     f_in_s = StringVar()
-    f_in_s.set('Files in subcorpus: ')
+    f_in_s.set('Files in subcorpus ')
 
     # a listbox of files
-    Label(tab0, textvariable = f_in_s, font = ("Helvetica", 13, "bold")).grid(row = 0, column = 1, sticky=N, padx = 30)
-    build_f_box = Frame(tab0)
+    Label(tab0, textvariable = f_in_s, font = ("Helvetica", 13, "bold")).grid(row = 0, column = 1, sticky='NW', padx = (30, 0))
+    build_f_box = Frame(tab0, height = 36)
     build_f_box.grid(row = 1, column = 1, rowspan = 12, padx = 30)
     build_f_sb = Scrollbar(build_f_box)
     build_f_sb.pack(side=RIGHT, fill=Y)
-    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 32, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
+    f_view = Listbox(build_f_box, selectmode = EXTENDED, height = 36, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
                      exportselection = False, yscrollcommand=build_f_sb.set)
     f_view.pack(fill=BOTH)
     xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
