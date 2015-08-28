@@ -92,7 +92,6 @@ class Notebook(Frame):
         self.text.grid(sticky = W)
         self.progbar = Progressbar(self.progbarspace, orient = 'horizontal', length = 500, mode = 'determinate', variable = self.progvar, style="TProgressbar")
         self.progbar.grid(sticky = E)
-
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
         sys.stderr = self.redir
@@ -496,6 +495,7 @@ def corpkit_gui():
             'Regular expression search': 'r',
             'Simple search string search': 's',
             'Get tokens matching regex': 't',
+            'Get stats': 'v',
             'Get words': 'w',
             'Get tokens matching regular expression': 'h',
             'Get tokens matching list': 'e'}
@@ -2657,9 +2657,9 @@ def corpkit_gui():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: No project loaded.' % (thetime)
         if kind == 'interrogation':
-            r = load_all_results(data_dir = datad, root = root)
+            r = load_all_results(data_dir = datad, root = root, note = note)
         else:
-            r = load_all_results(data_dir = datad, root = root, only_concs = True)
+            r = load_all_results(data_dir = datad, root = root, note = note, only_concs = True)
         if r is not None:
             for name, loaded in r.items():
                 if kind == 'interrogation':
@@ -2677,6 +2677,8 @@ def corpkit_gui():
     project_fullpath.set('')
     conc_fullpath = StringVar()
     conc_fullpath.set('')
+    exported_fullpath = StringVar()
+    exported_fullpath.set('')
 
     def data_getdir():
         import os
@@ -2719,12 +2721,15 @@ def corpkit_gui():
         import os
         saved = 0
         existing = 0
+        # for each filename selected
         for i in sel_vals:
-            if urlify(i) + '.p' not in os.listdir(data_fullpath.get()):
+            safename = urlify(i) + '.p'
+            # make sure not already there
+            if safename not in os.listdir(data_fullpath.get()):
                 if kind == 'interrogation':
-                    save_result(all_interrogations[i], urlify(i) + '.p', savedir = data_fullpath.get())
+                    save_result(all_interrogations[i], safename, savedir = data_fullpath.get())
                 else:
-                    save_result(all_conc[i], urlify(i) + '.p', savedir = conc_fullpath.get())
+                    save_result(all_conc[i], safename, savedir = conc_fullpath.get())
                 saved += 1
             else:
                 existing += 1
@@ -2796,7 +2801,7 @@ def corpkit_gui():
     def urlify(s):
         "Turn title into filename"
         import re
-        s = s.lower()
+        #s = s.lower()
         s = re.sub(r"[^\w\s-]", '', s)
         s = re.sub(r"\s+", '-', s)
         s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
@@ -2844,7 +2849,9 @@ def corpkit_gui():
         thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
             print '%s: %s %srenamed as %s.' % (thetime, sel_vals[0], perm_text, answer)
-        print '%s: %d interrogations %srenamed.' % (thetime, len(sel_vals), perm_text)
+        else:
+            print '%s: %d interrogation %srenamed.' % (thetime, len(sel_vals), perm_text)
+
         refresh()
 
     sel_vals_interro = []
@@ -2877,23 +2884,25 @@ def corpkit_gui():
                         return
                 else:
                     fp = project_fullpath.get()
-                os.makedirs(os.path.join(fp, answer))
+                os.makedirs(os.path.join(exported_fullpath.get(), answer))
                 for k in keys:
                     if k == 'results':
                         if 'results' in data._asdict().keys():
-                            data.results.drop('tkintertable-order', errors = 'ignore').to_csv(os.path.join(fp, answer, 'results.csv'), sep ='\t')
+                            tkdrop = data.results.drop('tkintertable-order', errors = 'ignore')
+                            tkdrop.to_csv(os.path.join(exported_fullpath.get(), answer, 'results.csv'), sep ='\t', encoding = 'utf-8')
                     if k == 'totals':
                         if 'totals' in data._asdict().keys():
-                            pandas.DataFrame(data.totals).to_csv(os.path.join(fp, answer, 'totals.csv'), sep ='\t')
+                            tkdrop = data.totals.drop('tkintertable-order', errors = 'ignore')
+                            tkdrop.to_csv(os.path.join(exported_fullpath.get(), answer, 'totals.csv'), sep ='\t', encoding = 'utf-8')
                     if k == 'query':
                         if 'query' in data._asdict().keys():
-                            pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'query.csv'), sep ='\t')
+                            pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(exported_fullpath.get(), answer, 'query.csv'), sep ='\t', encoding = 'utf-8')
                     if k == 'table':
                         if 'table' in data._asdict().keys():
-                            pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(fp, answer, 'table.csv'), sep ='\t')
+                            pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(exported_fullpath.get(), answer, 'table.csv'), sep ='\t', encoding = 'utf-8')
         if fp:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Results exported to %s' % (thetime, os.path.join(os.path.basename(fp), answer))        
+            print '%s: Results exported to %s' % (thetime, os.path.join(os.path.basename(exported_fullpath.get()), answer))        
 
     def reset_everything():
         # result names
@@ -2970,6 +2979,7 @@ def corpkit_gui():
         image_fullpath.set(os.path.join(fp, 'images'))
         data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
         conc_fullpath.set(os.path.join(fp, 'saved_concordances'))
+        exported_fullpath.set(os.path.join(fp, 'exported'))
 
         if not os.path.isdir(data_fullpath.get()):
             thetime = strftime("%H:%M:%S", localtime())
@@ -3029,30 +3039,25 @@ def corpkit_gui():
         togglespeaker()
 
     def view_query():
-        #Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 4, padx = 40)
+
+        if len(sel_vals_interro) > 1:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Can only view one interrogation at a time.' % (thetime)
+            return
+
+        Label(tab5, text = 'Query information', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 3)
         mlb = Table(tab5, ['Option', 'Value'],
-                  column_weights=[1, 1], height = 50)
-        mlb.grid(sticky = N, column = 0, row = 5, rowspan = 40)
+                  column_weights=[1, 1], height = 70, width = 30)
+        mlb.grid(sticky = N, column = 3, row = 1, rowspan = 40)
+        for i in mlb._mlb.listboxes:
+            i.config(height = 25)
+
                   #reprfunc=(lambda i,j,s: '  %s' % s))
 
         mlb.columnconfig('Option', background='#afa')
         mlb.columnconfig('Value', background='#efe')
 
-        #MultiListbox(tab5, (('Option', 30), ('Value', 40)))
-        #show_query_keys = Listbox(tab5, selectmode = EXTENDED, height = 20)
-        
-        
-        #Label(tab5, text = 'Query value', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 5, padx = 5)
-        #show_query_vals = Listbox(tab5, selectmode = EXTENDED, height = 20)
-        #show_query_vals.grid(sticky = E, column = 5, row = 2, rowspan = 20, padx = 5)
-
-        #Label(tab5, text = 'Queries', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 2, padx = 40)
-
-        if len(sel_vals) > 1:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Can only view one interrogation at a time.' % (thetime)
-            return
-        q_dict = dict(all_interrogations[sel_vals[0]].query)
+        q_dict = dict(all_interrogations[sel_vals_interro[0]].query)
         mlb.clear()
         #show_query_vals.delete(0, 'end')
         flipped_trans = {v: k for k, v in transdict.items()}
@@ -3063,7 +3068,11 @@ def corpkit_gui():
             for nm, lst in option_dict.items():
                 for i in lst:
                     flipped_opt[i] = nm
-            the_opt = flipped_opt[flipped_trans[q_dict['option']]]
+            # not very robust, will break when more added
+            try:
+                the_opt = flipped_opt[flipped_trans[q_dict['option']]]
+            except KeyError:
+                the_opt = 'Stats'
             q_dict['kind_of_search'] = the_opt
 
         for d in ['dataframe1', 'dataframe2']:
@@ -3076,9 +3085,10 @@ def corpkit_gui():
             v = q_dict[k]
             if k == 'option':
                 v = flipped_trans[v]
-            if v is False:
+            if v is False or v == 0:
                 v = 'False'
-
+            if v is True or v == 1:
+                v = 'True'
             #mlb.insert(END, (str(k), str(v)))
             mlb.append([k, v])
             #show_query_vals.insert(END, '%d. %s' % (i, str(v)))
@@ -3097,7 +3107,7 @@ def corpkit_gui():
 
 
     ev_int_box = Frame(tab5)
-    ev_int_box.grid(sticky = E, column = 1, row = 2, rowspan = 20)
+    ev_int_box.grid(sticky = E, column = 1, row = 1, rowspan = 20)
     ev_int_sb = Scrollbar(ev_int_box)
     ev_int_sb.pack(side=RIGHT, fill=Y)
     every_interro_listbox = Listbox(ev_int_box, selectmode = SINGLE, height = 20, width = 23, 
@@ -3116,28 +3126,28 @@ def corpkit_gui():
     open_proj_basepath = StringVar()
     open_proj_basepath.set('Open project')
 
-    Label(tab5, text = 'Project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
-    Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
-    Button(tab5, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
-    Button(tab5, textvariable = basepath, command = getdir).grid(row = 3, column = 0, sticky=W)
+    #Label(tab5, text = 'Project', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 0)
+    #Button(tab5, textvariable = new_proj_basepath, command = make_new_project).grid(row = 1, column = 0, sticky=W)
+    #Button(tab5, textvariable = open_proj_basepath, command = load_project).grid(row = 2, column = 0, sticky=W)
+    #Button(tab5, textvariable = basepath, command = getdir).grid(row = 3, column = 0, sticky=W)
     #Button(tab5, textvariable = data_basepath, command = data_getdir).grid(row = 4, column = 0, sticky=W)
     #Label(tab5, text = 'Image directory: ').grid(sticky = W, row = 1, column = 0)
     #Button(tab5, textvariable = image_basepath, command = image_getdir).grid(row = 5, column = 0, sticky=W)
 
     Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 1)
-    Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 20).grid(row = 1, column = 1)
+    Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 22).grid(row = 22, column = 1)
 
     #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
-    Button(tab5, text = 'Save', command = lambda: save_one_or_more()).grid(sticky = W, column = 1, row = 22)
-    Button(tab5, text = 'View', command = lambda: view_query()).grid(sticky = W, column = 1, row = 23)
-    Button(tab5, text = 'Rename', command = lambda: rename_one_or_more()).grid(sticky = W, column = 1, row = 24)
+    Button(tab5, text = 'Save', command = lambda: save_one_or_more()).grid(sticky = W, column = 1, row = 23)
+    Button(tab5, text = 'View', command = lambda: view_query()).grid(sticky = W, column = 1, row = 24)
+    Button(tab5, text = 'Rename', command = lambda: rename_one_or_more()).grid(sticky = W, column = 1, row = 25)
     perm = IntVar()
     #Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 16, sticky=W)
-    Button(tab5, text = 'Export', command = lambda: export_interrogation()).grid(sticky = E, column = 1, row = 22)
+    Button(tab5, text = 'Export', command = lambda: export_interrogation()).grid(sticky = E, column = 1, row = 23)
     #Label(tab5, text = 'Remove selected: '()).grid(sticky = W, row = 4, column = 0)
-    Button(tab5, text = 'Remove', command= lambda: remove_one_or_more()).grid(sticky = E, column = 1, row = 23)
+    Button(tab5, text = 'Remove', command= lambda: remove_one_or_more()).grid(sticky = E, column = 1, row = 24)
     #Label(tab5, text = 'Delete selected: '()).grid(sticky = E, row = 5, column = 1)
-    Button(tab5, text = 'Delete', command = lambda: del_one_or_more()).grid(sticky = E, column = 1, row = 24)
+    Button(tab5, text = 'Delete', command = lambda: del_one_or_more()).grid(sticky = E, column = 1, row = 25)
 
     Label(tab5, text = 'Saved concordances', font = ("Helvetica", 12, "bold")).grid(sticky = W, row = 0, column = 2, padx = 50)
 
@@ -3154,7 +3164,7 @@ def corpkit_gui():
                 sel_vals_conc.append(value)
 
     ev_conc_box = Frame(tab5)
-    ev_conc_box.grid(sticky = E, column = 2, row = 2, rowspan = 20, padx = 50)
+    ev_conc_box.grid(sticky = E, column = 2, row = 1, rowspan = 20, padx = 50)
     ev_conc_sb = Scrollbar(ev_conc_box)
     ev_conc_sb.pack(side=RIGHT, fill=Y)
     ev_conc_listbox = Listbox(ev_conc_box, selectmode = SINGLE, height = 20, width = 23,
@@ -3164,19 +3174,19 @@ def corpkit_gui():
     ev_conc_sb.config(command=ev_conc_listbox.yview)   
     xxa = ev_conc_listbox.bind('<<ListboxSelect>>', onselect_conc)
 
-    Button(tab5, text = 'Get saved concordances', command = lambda: get_saved_results(kind = 'concordance'), width = 20).grid(row = 1, column = 2, padx = (50, 50))
+    Button(tab5, text = 'Get saved concordances', command = lambda: get_saved_results(kind = 'concordance'), width = 22).grid(row = 22, column = 2, padx = (50, 50))
 
     #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
-    Button(tab5, text = 'Save', command = lambda: save_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 22, padx = (50, 50) )
+    Button(tab5, text = 'Save', command = lambda: save_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 23, padx = (50, 50) )
     #Button(tab5, text = 'View', command = lambda: view_query(kind = 'concordance')).grid(sticky = W, column = 2, row = 23, padx = (50, 50) )
-    Button(tab5, text = 'Rename', command = lambda: rename_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 24, padx = (50, 50) )
+    Button(tab5, text = 'Rename', command = lambda: rename_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 25, padx = (50, 50) )
     perm = IntVar()
     #Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 2, row = 16, sticky=W)
-    Button(tab5, text = 'Export', command = lambda: export_interrogation(kind = 'concordance')).grid(sticky = E, column = 2, row = 22, padx = (50, 50) )
+    Button(tab5, text = 'Export', command = lambda: export_interrogation(kind = 'concordance')).grid(sticky = E, column = 2, row = 23, padx = (50, 50) )
     #Label(tab5, text = 'Remove selected: '(kind = 'concordance')).grid(sticky = W, row = 4, column = 0)
-    Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 23, padx = (50, 50) )
+    Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 24, padx = (50, 50) )
     #Label(tab5, text = 'Delete selected: '(kind = 'concordance')).grid(sticky = E, row = 5, column = 2)
-    Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 24, padx = (50, 50) )
+    Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 25, padx = (50, 50) )
 
     ##############     ##############     ##############     ##############     ############## 
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
@@ -3737,6 +3747,9 @@ def corpkit_gui():
                 tkMessageBox.showinfo(
                 "No connection to remote server",
                 "Could not connect to remote server.")
+            else:
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Could not connect to remote server.' % thetime                
             return
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         vnum = float(re.search(reg, str(html)).group(1))
