@@ -298,17 +298,7 @@ def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
     elif len(unpickled) == 2:
         outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
         output = outputnames(unpickled[0], unpickled[1])
-    if not only_concs:
-        return output
-    else:
-        try:
-            cols = list(output.columns)
-            if 'l' in cols:
-                return output
-            else:
-                return
-        except:
-            return
+    return output
 
 def report_display():
     import corpkit
@@ -988,11 +978,13 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
             #    print '%s: No saved concordances found in %s' % (thetime, data_dir)
             return
     l = 0
+    import pandas
     for index, finding in enumerate(fs):
         try:
             tmp = load_result(finding, loaddir = data_dir, only_concs = only_concs)
-            if not tmp:
-                continue
+            if type(tmp) != pandas.core.frame.DataFrame:
+                if not tmp:
+                    continue
             r[os.path.splitext(finding)[0]] = tmp
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
