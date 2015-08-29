@@ -474,10 +474,8 @@ def corpkit_gui():
             if choice != 'None':
                 every_interro_listbox.insert(END, choice)
 
-        color_saved(every_interro_listbox, data_fullpath.get(), '#ccebc5', '#fbb4ae')
-        color_saved(ev_conc_listbox, conc_fullpath.get(), '#ccebc5', '#fbb4ae')
-
         new_clines = []
+        ev_conc_listbox.delete(0, 'end')
         prev_conc_listbox.delete(0, 'end')
         for cline in all_conc.keys():
             new_clines.append(cline)
@@ -487,8 +485,9 @@ def corpkit_gui():
             if choice != 'None':
                 ev_conc_listbox.insert(END, choice)
                 prev_conc_listbox.insert(END, choice)
-        #for i in len(new_xx):
-        #    listbox.itemconfig(1, {'bg':'red'})
+
+        color_saved(every_interro_listbox, data_fullpath.get(), '#ccebc5', '#fbb4ae')
+        color_saved(ev_conc_listbox, conc_fullpath.get(), '#ccebc5', '#fbb4ae')
 
     def add_tkt_index(df):
         """add order to df for tkintertable"""
@@ -2393,8 +2392,6 @@ def corpkit_gui():
                 tmp.focus_set()
             tmp.grid(row = index + 1, column = 1)
 
-        
-
 
         toplevel.bind("<Return>", quit_coding)
         toplevel.bind("<Tab>", focus_next_window)
@@ -2670,8 +2667,12 @@ def corpkit_gui():
         should_continue = True
         global conc_saved
         if not conc_saved:
-            should_continue = tkMessageBox.askyesno("Unsaved data", 
+            if type(current_conc[0]) != str:
+                should_continue = tkMessageBox.askyesno("Unsaved data", 
                           "Unsaved concordance lines will be forgotten. Continue?")
+            else:
+                should_continue = True
+
         if not should_continue:
             return
         import pandas
@@ -2698,12 +2699,13 @@ def corpkit_gui():
             df = df.drop_duplicates(subset = ['l', 'm', 'r'])
         add_conc_lines_to_window(df)
 
-    Button(tab4, text = 'Store as ...', command = concsave).grid(row = 5, column = 9, columnspan = 2, padx = (225,0))
+    Button(tab4, text = 'Remove', command= lambda: remove_one_or_more(window = 'conc', kind = 'concordance')).grid(row = 5, column = 9, columnspan = 2, padx = (235,0))
+    Button(tab4, text = 'Store as', command = concsave).grid(row = 5, column = 8, columnspan = 2, padx = (185,0))
     Button(tab4, text = 'Merge', command = merge_conclines).grid(row = 5, column = 10, sticky = E)
 
     show_filenames = IntVar()
     fnbut = Checkbutton(tab4, text='Filenames', variable=show_filenames, command=toggle_filenames)
-    fnbut.grid(row = 3, column = 10, columnspan = 3, padx = (50, 0))
+    fnbut.grid(row = 3, column = 8, columnspan = 3, padx = (210, 0))
     fnbut.select()
     show_filenames.trace('w', toggle_filenames)
 
@@ -2715,14 +2717,16 @@ def corpkit_gui():
 
     show_speaker = IntVar()
     showspkbut = Checkbutton(tab4, text='Speakers', variable=show_speaker, command=toggle_filenames)
-    showspkbut.grid(row = 3, column = 8, columnspan = 3, padx = (210, 0))
+    showspkbut.grid(row = 3, column = 10, columnspan = 3, padx = (50, 0))
     #showspkbut.select()
     show_speaker.trace('w', toggle_filenames)
 
     show_index = IntVar()
     indbut = Checkbutton(tab4, text='Index', variable=show_index, command=toggle_filenames)
     indbut.grid(row = 3, column = 7, columnspan = 3, padx = (160, 0))
-    #indbut.select()
+    indbut.select()
+    # disabling because turning index off can cause problems when sorting, etc
+    indbut.config(state = DISABLED)
     show_index.trace('w', toggle_filenames)
 
     # possible sort
@@ -2737,14 +2741,17 @@ def corpkit_gui():
     # export to csv
     Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 2, column = 13, sticky = E)
 
-    Label(tab4, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 9, columnspan = 3, padx = (310,0), sticky=S)
+    Label(tab4, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 9, columnspan = 3, padx = (220,0), sticky=S)
 
     def load_saved_conc():
         should_continue = True
         global conc_saved
         if not conc_saved:
-            should_continue = tkMessageBox.askyesno("Unsaved data", 
+            if type(current_conc[0]) != str:
+                should_continue = tkMessageBox.askyesno("Unsaved data", 
                           "Unsaved concordance lines will be forgotten. Continue?")
+            else:
+                should_continue = True
         if should_continue:
             toget = prev_conc_listbox.curselection()
             if len(toget) > 1:
@@ -2900,11 +2907,14 @@ def corpkit_gui():
                 print '%s: %d %ss saved, %d already existed' % (thetime, saved, kind, existing)
         refresh()
 
-    def remove_one_or_more(kind = 'interrogation'):
+    def remove_one_or_more(window = False, kind = 'interrogation'):
         if kind == 'interrogation':
             sel_vals = sel_vals_interro
         else:
             sel_vals = sel_vals_conc
+        if window is not False:
+            toget = prev_conc_listbox.curselection()
+            sel_vals = [prev_conc_listbox.get(toget)]
         if len(sel_vals) == 0:
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: No interrogations selected.' % thetime
@@ -2983,7 +2993,10 @@ def corpkit_gui():
             if answer is None or answer == '':
                 return
             else:
-                all_interrogations[answer] = all_interrogations.pop(i)
+                if kind == 'interrogation':
+                    all_interrogations[answer] = all_interrogations.pop(i)
+                else:
+                    all_conc[answer] = all_conc.pop(i)
             if permanently:
                 p = data_fullpath.get()
                 oldf = os.path.join(p, i + '.p')
