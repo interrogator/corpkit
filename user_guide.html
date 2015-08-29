@@ -107,10 +107,11 @@
 
 <ul>
 <li><a href="#speaker-ids-1">Speaker IDs</a></li>
-<li><a href="#editing-concordance-lines">Editing concordance lines</a></li>
+<li><a href="#editing">Editing</a></li>
 <li><a href="#sorting-1">Sorting</a></li>
+<li><a href="#colours-and-themes">Colours and themes</a></li>
 <li><a href="#exporting-concordance-lines">Exporting concordance lines</a></li>
-<li><a href="#saving-loading-and-mering">Saving, loading and mering</a></li>
+<li><a href="#saving-loading-and-merging">Saving, loading and merging</a></li>
 </ul>
 </li>
 <li><a href="#manage">Manage</a></li>
@@ -633,12 +634,12 @@ SPEAKER23: I know why. But I'm not telling.`
 <h3>
 <a id="user-content-speaker-ids-1" class="anchor" href="#speaker-ids-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Speaker IDs</h3>
 
-<p>Concordancing using speaker IDs is often very slow. If you want to concordance your data faster, and you don't care if you don't get speaker ID information, leave the <code>Speakers</code> option unchecked.</p>
+<p>If you have speaker segmented data, you can restrict your concordancing to specific speakers. Concordancing using speaker IDs is often slow, however. If you want to concordance your data faster, and you don't care if you don't get speaker ID information, leave the <code>Speakers</code> option unchecked.</p>
 
 <p>If you select <code>ALL</code> as the speaker, you'll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.</p>
 
 <h3>
-<a id="user-content-editing-concordance-lines" class="anchor" href="#editing-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing concordance lines</h3>
+<a id="user-content-editing" class="anchor" href="#editing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Editing</h3>
 
 <p>You can use <code>backspace</code> to delete selected lines, or <code>shift-backspace</code> to inverse-delete. Alternatively, buttons are provided.</p>
 
@@ -647,9 +648,16 @@ SPEAKER23: I know why. But I'm not telling.`
 
 <p>Sorting is always by the first character. <code>L1</code> sorts by the rightmost word in the left-hand column; <code>L2</code> sorts by the second rightmost. This is similar for the other columns. Sorting by <code>M-1</code> will sort by the last word in the middle column, and <code>M-2</code> by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.</p>
 
-<p>You can also sort by filename or speaker (if available).</p>
+<p>You can also sort by index, filename, colour, theme or speaker (if available), or randomise your results.</p>
 
 <p>Clicking <code>Sort</code> again without making any other changes will invert the sort order.</p>
+
+<h3>
+<a id="user-content-colours-and-themes" class="anchor" href="#colours-and-themes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Colours and themes</h3>
+
+<p>You can use the numbers 0-9 to colour-code your text. <code>9</code> blacks out a line, and <code>0</code> returns the line to its default white.</p>
+
+<p>You can also attach names to these colours via <code>File --&gt; Coding scheme</code>. By using colours in combindation with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.</p>
 
 <h3>
 <a id="user-content-exporting-concordance-lines" class="anchor" href="#exporting-concordance-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exporting concordance lines</h3>
@@ -657,13 +665,13 @@ SPEAKER23: I know why. But I'm not telling.`
 <p><code>Export</code> allows you to save results to CSV files, which can be loaded into Excel, or similar.</p>
 
 <blockquote>
-<p>Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to LaTeX tables, and all kinds of other cool things.</p>
+<p>Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to <code>LaTeX</code> tables, and all kinds of other cool things.</p>
 </blockquote>
 
 <h3>
-<a id="user-content-saving-loading-and-mering" class="anchor" href="#saving-loading-and-mering" aria-hidden="true"><span class="octicon octicon-link"></span></a>Saving, loading and mering</h3>
+<a id="user-content-saving-loading-and-merging" class="anchor" href="#saving-loading-and-merging" aria-hidden="true"><span class="octicon octicon-link"></span></a>Saving, loading and merging</h3>
 
-<p>Unlike corpus interrogations, concordance lines aren't stored by default. Once you're happy with the data on screen, however, you can hit <code>Save as ...</code> and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the <code>Manage</code> pane.</p>
+<p>Unlike corpus interrogations, concordance lines aren't stored by default. Once you're happy with the data on screen, however, you can hit <code>Store as</code> and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the <code>Manage</code> pane, where you can save it permanently.</p>
 
 <p>You can use <code>Load</code> to show saved concordance lines, or <code>Merge</code> to combine multiple saved lines into the current window. If your current concordance is unsaved, you'll be asked if you want to save it first.</p>
 
@@ -671,12 +679,10 @@ SPEAKER23: I know why. But I'm not telling.`
 <a id="user-content-manage" class="anchor" href="#manage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Manage</h2>
 
 <blockquote>
-<p><code>Manage</code> allows you to manipulate your interrogations, edited data and concordances.</p>
+<p><code>Manage</code> allows you to manipulate your interrogations, edited data and stored concordances.</p>
 </blockquote>
 
-<p><code>Load project</code> will automatically set the path to data, dictionaries, images and saved interrogations. You can still select custom locations for these if you like. It's also available via the menu bar.</p>
-
-<p>With <code>Get saved interrogations</code>, you can load into memory any findings you saved in the project earlier. <code>Get saved concordances</code> does the same with previously stored concordance lines.</p>
+<p>With <code>Get saved interrogations</code>, you can load into memory any findings you saved in the project earlier. <code>Get saved concordances</code> does the same with previously saved concordance lines. These are performed automatically when you open a project with saved data.</p>
 
 <p>For both interrogations and concordances, you can then export to CSV, remove from memory, or save or delete from your hard drive.</p>
 
@@ -690,7 +696,7 @@ SPEAKER23: I know why. But I'm not telling.`
 <h2>
 <a id="user-content-settings" class="anchor" href="#settings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Settings</h2>
 
-<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project. These will be loaded when you open the project in the future.</p>
+<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project,. These will be loaded when you open the project in the future.</p>
 
 <h2>
 <a id="user-content-updates" class="anchor" href="#updates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Updates</h2>
