@@ -3,7 +3,7 @@ title: 'corpkit'
 subtitle: 'a toolkit for doing corpus linguistics'
 
 # if you wish to integrate disqus on pages set your shortname here
-disqus_shortname: 'corpkit'
+disqus_shortname: ''
 
 # if you use google analytics, add your tracking id here
 google_analytics_id: ''
