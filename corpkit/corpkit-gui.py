@@ -509,6 +509,8 @@ def corpkit_gui():
         else:
             the_name = name_box_text
         return the_name
+
+    corpus_names_and_speakers = {}
         
     transdict = {
             'Get distance from root for regex match': 'a',
@@ -663,6 +665,7 @@ def corpkit_gui():
         note.progvar.set(0)
         """performs an interrogation"""
         import pandas
+        from time import localtime, strftime
         from corpkit import interrogator
 
         prev_num_interrogations = len(all_interrogations.keys())
@@ -674,6 +677,7 @@ def corpkit_gui():
         
         # lemmatag: do i need to add as button if trees?
         lemmatag = False
+        
         query = False
 
         # special query: add to this list!
@@ -687,6 +691,8 @@ def corpkit_gui():
                 # allow list queries
                 if query.startswith('[') and query.endswith(']'):
                     query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                elif transdict[searchtype()] in ['e', 's']:
+                    query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     # convert special stuff
                     query = remake_special_query(query)
@@ -699,7 +705,12 @@ def corpkit_gui():
         # make name
         the_name = namer(nametext.get(), type_of_data = 'interrogation')
         
-        selected_option = transdict[datatype_chosen_option.get()]
+        selected_option = transdict[searchtype()]
+        if selected_option == '':
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: You need to select a search type.' % thetime
+            return
+
         interrogator_args = {'query': query,
                              'lemmatise': lem.get(),
                              'phrases': phras.get(),
@@ -868,15 +879,14 @@ def corpkit_gui():
         if not fp:
             return
         
-        subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+        subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set(os.path.basename(fp))
-        subs = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
         pick_subcorpora['menu'].delete(0, 'end')
-        if len(subs) > 0:
+        if len(subdrs) > 0:
             pick_subcorpora.config(state = NORMAL)
-            for choice in subs:
+            for choice in subdrs:
                 pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
         else:
             pick_subcorpora.config(state = NORMAL)
@@ -890,7 +900,15 @@ def corpkit_gui():
         sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
         lab.set('Concordancing: %s' % basepath.get())
-        togglespeaker()
+        
+        if basepath.get() in corpus_names_and_speakers.keys():
+            togglespeaker()
+            speakcheck.config(state = NORMAL)
+            speakcheck_conc.config(state = NORMAL)
+        else:
+            speakcheck.config(state = DISABLED)
+            speakcheck_conc.config(state = DISABLED)
+
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
     
@@ -925,10 +943,14 @@ def corpkit_gui():
 
     def togglespeaker(*args):
         """this adds names to the speaker listboxes"""
-        from corpkit.build import get_speaker_names_from_xml_corpus
+        #from corpkit.build import get_speaker_names_from_xml_corpus
         import os
         if os.path.isdir(corpus_fullpath.get()):
-            ns = get_speaker_names_from_xml_corpus(corpus_fullpath.get())
+
+            ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
+        #except Key
+        #if os.path.isdir(corpus_fullpath.get()):
+        #    ns = get_speaker_names_from_xml_corpus(corpus_fullpath.get())
         else:
             return
         # figure out which list we need to add to, and which we should del from
@@ -998,13 +1020,31 @@ def corpkit_gui():
 
     entrytext.trace("w", entry_callback)
 
+    def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
+                   'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
+                   'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
+                   'Tokens': r'\b(m.n|wom.n|child(ren)?)\b'}
+
     def onselect(evt):
         w = evt.widget
         index = int(w.curselection()[0])
         value = w.get(index)
-        callback()
-        datatype_chosen_option.set(value)
+        w.see(index)
+        #datatype_chosen_option.set(value)
         datatype_listbox.select_set(index)
+        datatype_listbox.see(index)
+        if value == 'Get tokens by role':
+            entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
+        elif value == 'Simple search string search':
+            entrytext.set(r'[cat,cats,mouse,mice,cheese]')
+        elif value == 'Regular expression search':
+            entrytext.set(r'(m.n|wom.n|child(ren)?)')
+        elif value == 'Get tokens matching regular expression':
+            entrytext.set(r'(m.n|wom.n|child(ren)?)')
+        elif value == 'Get tokens matching list':
+            entrytext.set(r'[cat,cats,mouse,mice,cheese]')
+        else:
+            entrytext.set(def_queries[datatype_picked.get()])
 
     # boolean interrogation arguments
     lem = IntVar()
@@ -1025,17 +1065,11 @@ def corpkit_gui():
 
     def callback(*args):
         """if the drop down list for data type changes, fill options"""
-        #try:
-        #    curselect = int(datatype_listbox.curselection()[0])
-        #except IndexError:
-        #    curselect = False
         datatype_listbox.delete(0, 'end')
         chosen = datatype_picked.get()
         lst = option_dict[chosen]
         for e in lst:
             datatype_listbox.insert(END, e)
-
-        #datatype_listbox.select_set(0)
 
         if chosen == 'Dependencies':
             pick_dep_type.configure(state = NORMAL)
@@ -1044,9 +1078,6 @@ def corpkit_gui():
             lmt.configure(state = DISABLED)
             mwbut.configure(state = DISABLED)
             tfbut.configure(state = DISABLED)
-            entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-            if datatype_chosen_option.get() == 'Get tokens by role':
-                entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
         else:
             pick_dep_type.configure(state = DISABLED)
             q.configure(state = DISABLED)
@@ -1054,25 +1085,8 @@ def corpkit_gui():
             lmt.configure(state = NORMAL)
             mwbut.configure(state = NORMAL)
             tfbut.configure(state = NORMAL)
-        if chosen == 'Trees':
-            entrytext.set(r'JJ > (NP <<# /NN.?/)')
-        if chosen == 'Plaintext':
-            entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-            if datatype_chosen_option.get() == 'Simple search string search':
-                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
-            elif datatype_chosen_option.get() == 'Regular expression search':
-                entrytext.set(r'(m.n|wom.n|child(ren)?)')
-        if chosen == 'Tokens':
-            entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-            if datatype_chosen_option.get() == 'Get tokens matching regular expression':
-                entrytext.set(r'(m.n|wom.n|child(ren)?)')
-            elif datatype_chosen_option.get() == 'Get tokens matching list':
-                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
-        #if curselect is not False:
-        #    datatype_listbox.select_set(curselect)
-        #else:
-        #    datatype_listbox.select_set(0)
-
+        
+        entrytext.set(def_queries[chosen])
 
     datatype_picked = StringVar(root)
     datatype_picked.set('Trees')
@@ -1091,13 +1105,22 @@ def corpkit_gui():
                         yscrollcommand=dtscrollbar.set, exportselection = False)
     datatype_listbox.pack()
     dtscrollbar.config(command=datatype_listbox.yview)
-    datatype_chosen_option = StringVar()
-    datatype_chosen_option.set('Get words')
+    #datatype_chosen_option = StringVar()
+    #datatype_chosen_option.set('Get words')
     #datatype_chosen_option.set('w')
     x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
     # hack: change it now to populate below 
     datatype_picked.set('Trees')
     datatype_listbox.select_set(0)
+
+    def searchtype():
+        i = datatype_listbox.curselection()
+        if len(i) > 0:
+            index = int(i[0])
+            return datatype_listbox.get(index)
+        else:
+            return ''
+
 
     def q_callback(*args):
         if special_queries.get() == 'Off':
@@ -1710,13 +1733,16 @@ def corpkit_gui():
     # VISUALISE TAB #       # VISUALISE TAB #      # VISUALISE TAB #      # VISUALISE TAB #  
     #################       #################      #################      #################  
 
-    # where to put the current figure
+    # where to put the current figure and frame
     thefig = []
+    oldplotframe = []
 
     def do_plotting():
         """when you press plot"""
         Button(tab3, text = 'Plot', command = ignore).grid(row = 17, column = 1, sticky = E)
         # junk for showing the plot in tkinter
+        for i in oldplotframe:
+            i.destroy()
         import matplotlib
         matplotlib.use('TkAgg')
         #from numpy import arange, sin, pi
@@ -1817,15 +1843,21 @@ def corpkit_gui():
         f = plotter(plotnametext.get(), what_to_plot, **d)
         time = strftime("%H:%M:%S", localtime())
         print '%s: %s plotted.' % (time, plotnametext.get())
+        
+        del oldplotframe[:]
+
         toolbar_frame = Tkinter.Frame(tab3)
         toolbar_frame.grid(row=18, column=2, columnspan = 3, sticky = N)
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
         canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 16, padx = 20, columnspan = 3)
+        oldplotframe.append(canvas.get_tk_widget())
+        oldplotframe.append(toolbar_frame)
         toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
         toolbar.update()
-        for i in thefig:
-            thefig.pop()
+
+        del thefig[:]
+        
         thefig.append(f.gcf())
         Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
 
@@ -3096,6 +3128,25 @@ def corpkit_gui():
         pick_subcorpora['menu'].delete(0, 'end')
         refresh()
 
+    def convert_speakdict_to_string(dictionary):
+        if len(dictionary.keys()) == 0:
+            return None
+        out = []
+        for k, v in dictionary.items():
+            out.append('%s:%s' % (k, ','.join([i.replace(',', '').replace(':', '').replace(';', '') for i in v])))
+        return ';'.join(out)
+
+    def parse_speakdict(string):
+        if string is None:
+            return {}
+        redict = {}
+        corps = string.split(';')
+        for c in corps:
+            name, vals = c.split(':')
+            vs = vals.split(',')
+            redict[name] = vs
+        return redict
+
         # settings
     def load_config():
         import os
@@ -3103,7 +3154,6 @@ def corpkit_gui():
         Config = ConfigParser.ConfigParser()
         f = os.path.join(project_fullpath.get(), 'settings.ini')
         Config.read(f)
-
 
         def conmap(section):
             dict1 = {}
@@ -3123,15 +3173,23 @@ def corpkit_gui():
         x_axis_l.set(conmap("Visualise")['x axis title'])
         chart_cols.set(conmap("Visualise")['colour scheme'])
         corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+        spk = conmap("Interrogate")['speakers']
+        corpora_speakers = parse_speakdict(spk)
+        for i, v in corpora_speakers.items():
+            corpus_names_and_speakers[i] = v
         fsize.set(conmap('Concordance')['font size'])
         # window setting causes conc_sort to run, causing problems.
         #win.set(conmap('Concordance')['window'])
         kind_of_dep.set(conmap('Interrogate')['dependency type'])
         conc_kind_of_dep.set(conmap('Concordance')['dependency type'])
         cods = conmap('Concordance')['coding scheme']
-        codsep = cods.split(',')
-        for (box, val), cod in zip(entryboxes.items(), codsep):
-            val.set(cod)
+        if cods is None:
+            for box, val in entryboxes.items():
+                val.set('')
+        else:
+            codsep = cods.split(',')
+            for (box, val), cod in zip(entryboxes.items(), codsep):
+                val.set(cod)
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
@@ -3164,7 +3222,6 @@ def corpkit_gui():
         if os.path.isfile(f):
             load_config()
 
-
         os.chdir(fp)
 
         get_saved_results()
@@ -3188,8 +3245,14 @@ def corpkit_gui():
                     first = all_corpora[0]
             if first:
                 corpus_fullpath.set(os.path.join(fp, 'data', first))
-            
-        subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+            else:
+                corpus_fullpath.set('')
+                note.focus_on(tab0)
+        
+        if corpus_fullpath.get() != '':
+            subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+        else:
+            subdrs = []
 
         basepath.set(os.path.basename(corpus_fullpath.get()))
 
@@ -3208,6 +3271,7 @@ def corpkit_gui():
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         note.progvar.set(0)
+        
         togglespeaker()
 
     def view_query():
@@ -3357,7 +3421,7 @@ def corpkit_gui():
 
     def create_tokenised_text():
         note.progvar.set(0)
-        Button(tab0, textvariable = tokenise_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
+        Button(tab0, textvariable = tokenise_button_text, command=ignore, width = 33).grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
         if speakseg.get():
             unparsed_corpus_path = unparsed_corpus_path + '-stripped'
@@ -3369,13 +3433,13 @@ def corpkit_gui():
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set(os.path.basename(outdir))
-        if len([f for f in os.listdir(outdir) if f.endswith('xml')]) > 0:
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
-        else:
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Error: no files created in "%s"' % (time, os.path.basename(outdir))
-        Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text).grid(row = 6, column = 0, sticky=W)
+        #if len([f for f in os.listdir(outdir) if f.endswith('.p')]) > 0:
+        time = strftime("%H:%M:%S", localtime())
+        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+        #else:
+            #time = strftime("%H:%M:%S", localtime())
+            #print '%s: Error: no files created in "%s"' % (time, os.path.basename(outdir))
+        Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33).grid(row = 6, column = 0, sticky=W)
 
     def create_parsed_corpus():
         """make sure things are installed, do speaker id work, then parse, then structure"""
@@ -3384,7 +3448,7 @@ def corpkit_gui():
         import re
         from time import strftime, localtime
 
-        Button(tab0, textvariable = parse_button_text, command=ignore).grid(row = 6, column = 0, sticky=W)
+        Button(tab0, textvariable = parse_button_text, command=ignore, width = 33).grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = sel_corpus.get()
 
         if speakseg.get():
@@ -3439,17 +3503,28 @@ def corpkit_gui():
         new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
         corpus_fullpath.set(new_corpus_path)
 
+        dirs_to_rename = [unparsed_corpus_path, parsed_dir]
+
         if speakseg.get():
+            dirs_to_rename.append(unparsed_corpus_path + '-stripped')
             add_ids_to_xml(new_corpus_path, root = root, note = note)
             corpus_names = get_speaker_names_from_xml_corpus(new_corpus_path)
+            corpus_names_and_speakers[os.path.basename(new_corpus_path)] = corpus_names
+            if project_fullpath.get() != '':
+                save_config()
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Names found: %s' % (thetime, ', '.join(corpus_names))
+        
+        from corpkit.build import rename_all_files
+        rename_all_files(dirs_to_rename)
+
+        os.remove(filelist)
 
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
         basepath.set(os.path.basename(new_corpus_path))
-        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus).grid(row = 6, column = 0, sticky=W)
+        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33).grid(row = 6, column = 0, sticky=W)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
 
@@ -3521,7 +3596,7 @@ def corpkit_gui():
 
     def getcorpus():
         """copy unparsed texts to project folder"""
-        Button(tab0, textvariable = add_corpus_button, command=ignore).grid(row = 3, column = 0, sticky=W)
+        Button(tab0, textvariable = add_corpus_button, command=ignore, width = 33).grid(row = 3, column = 0, sticky=W)
         import shutil
         import os
         home = os.path.expanduser("~")
@@ -3536,6 +3611,7 @@ def corpkit_gui():
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Corpus copied to project folder.' % (thetime)
         except OSError:
+            Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
             if os.path.basename(fp) == '':
                 return
             thetime = strftime("%H:%M:%S", localtime())
@@ -3568,25 +3644,25 @@ def corpkit_gui():
         add_subcorpora_to_build_box(newc)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
-        Button(tab0, textvariable = add_corpus_button, command=getcorpus).grid(row = 3, column = 0, sticky=W)
+        Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
 
     # duplicate of one in 'manage
     Label(tab0, text = 'Create project', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0)
     #Label(tab0, text = 'New project', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0)
-    Button(tab0, textvariable = new_proj_basepath, command = make_new_project, width = 30).grid(row = 1, column = 0, sticky=W)
+    Button(tab0, textvariable = new_proj_basepath, command = make_new_project, width = 33).grid(row = 1, column = 0, sticky=W)
     #Label(tab0, text = 'Open project: ').grid(row = 2, column = 0, sticky=W)
-    Button(tab0, textvariable = open_proj_basepath, command = load_project, width = 30).grid(row = 2, column = 0, sticky=W)
+    Button(tab0, textvariable = open_proj_basepath, command = load_project, width = 33).grid(row = 2, column = 0, sticky=W)
     #Label(tab0, text = 'Add corpus to project: ').grid(row = 4, column = 0, sticky=W)
-    Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 30).grid(row = 3, column = 0, sticky=W)
+    Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
     #Label(tab0, text = 'Corpus to parse: ').grid(row = 6, column = 0, sticky=W)
-    Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 30).grid(row = 4, column = 0, sticky=W)
+    Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 33).grid(row = 4, column = 0, sticky=W)
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
     speakseg = IntVar()
     speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg)
     speakcheck_build.grid(column = 0, row = 5, sticky=W)
-    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 30).grid(row = 6, column = 0, sticky=W)
+    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33).grid(row = 6, column = 0, sticky=W)
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
-    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 30).grid(row = 7, column = 0, sticky=W)
+    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33).grid(row = 7, column = 0, sticky=W)
 
     subc_sel_vals_build = []
 
@@ -3627,12 +3703,12 @@ def corpkit_gui():
     # a listbox of subcorpora
     Label(tab0, text = 'Subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 8, column = 0, sticky=W)
 
-    build_sub_f = Frame(tab0, width = 31, height = 24)
+    build_sub_f = Frame(tab0, width = 34, height = 24)
     build_sub_f.grid(row = 9, column = 0, sticky = W, rowspan = 2)
     build_sub_sb = Scrollbar(build_sub_f)
     build_sub_sb.pack(side=RIGHT, fill=Y)
     subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 24, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
-                                 yscrollcommand=build_sub_sb.set, exportselection=False, width = 31,)
+                                 yscrollcommand=build_sub_sb.set, exportselection=False, width = 34)
     subc_listbox_build.pack(fill=BOTH)
     xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
     subc_listbox_build.select_set(0)
@@ -3847,12 +3923,16 @@ def corpkit_gui():
     def save_config():
         import ConfigParser
         import os
-        codscheme = ','.join([i.get().replace(',', '') for i in entryboxes.values()])
+        if any(v != '' for v in entryboxes.values()):
+            codscheme = ','.join([i.get().replace(',', '') for i in entryboxes.values()])
+        else:
+            codscheme = None
         Config = ConfigParser.ConfigParser()
         cfgfile = open(os.path.join(project_fullpath.get(), 'settings.ini') ,'w')
         Config.add_section('Build')
         Config.add_section('Interrogate')
         Config.set('Interrogate','Corpus path', corpus_fullpath.get())
+        Config.set('Interrogate','Speakers', convert_speakdict_to_string(corpus_names_and_speakers))
         Config.set('Interrogate','dependency type', kind_of_dep.get())  
         Config.add_section('Edit')
         Config.add_section('Visualise')
