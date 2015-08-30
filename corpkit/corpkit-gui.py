@@ -230,7 +230,6 @@ def corpkit_gui():
     editor_tables = {}
     currently_in_each_frame = {}
     sort_direction = True
-    #names = []
 
     def convert_pandas_dict_to_ints(dict_obj):
         """try to turn pandas as_dict into ints, for tkintertable
@@ -450,11 +449,42 @@ def corpkit_gui():
                 lb.itemconfig(index, {'bg':colour2})
         lb.selection_clear(0, END)
 
+    def paste_into_textwidget(*args):
+        # get the clipboard data, and replace all newlines
+        # with the literal string "\n"
+        #import clipboard
+        #clipboard = clipboard.get()
+        #clipboard = clipboard.replace("\n", "\\n")
+        # delete the selected text, if any
+        try:
+            start = args[0].widget.index("sel.first")
+            end = args[0].widget.index("sel.last")
+            args[0].widget.delete(start, end)
+        except TclError, e:
+            # nothing was selected, so paste doesn't need
+            # to delete anything
+            pass
+        # for some reason, this works with the error.
+        try:
+            args[0].widget.insert("insert", clipboard)
+        except NameError:
+            pass
+
     def select_all_text(*args):
         try:
             args[0].widget.selection_range(0, END)
         except:
             args[0].widget.tag_add("sel","1.0","end")
+
+    def update_available_corpora():
+        import os
+        fp = corpora_fullpath.get()
+        all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
+        for om in [available_corpora, available_corpora_build]:
+            om.config(state = NORMAL)
+            om['menu'].delete(0, 'end')
+            for corp in all_corpora:
+                om['menu'].add_command(label=corp, command=Tkinter._setit(current_corpus, corp))
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -607,14 +637,14 @@ def corpkit_gui():
             if need_make_totals(df):
                 df = make_df_totals(df)
             df_tot = pandas.DataFrame(df.sum(), dtype = object)
-            update_spreadsheet(o_editor_results, df_to_show = df, height = 340, model = editor_tables[o_editor_results], just_default_sort = True, width = 720)
-            update_spreadsheet(o_editor_totals, df_to_show = df_tot, height = 10, model = editor_tables[o_editor_totals], just_default_sort = True, width = 720)
+            update_spreadsheet(o_editor_results, df_to_show = df, height = 130, model = editor_tables[o_editor_results], just_default_sort = True, width = 800)
+            update_spreadsheet(o_editor_totals, df_to_show = df_tot, height = 10, model = editor_tables[o_editor_totals], just_default_sort = True, width = 800)
             df = make_df_from_model(editor_tables[n_editor_results])
             if need_make_totals(df):
                 df = make_df_totals(df)
             df_tot = pandas.DataFrame(df.sum(), dtype = object)
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 340, model = editor_tables[n_editor_results], just_default_sort = True, width = 720)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, model = editor_tables[n_editor_totals], just_default_sort = True, width = 720)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 340, model = editor_tables[n_editor_results], just_default_sort = True, width = 800)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, model = editor_tables[n_editor_totals], just_default_sort = True, width = 800)
         elif pane == 'plot':
             pass
 
@@ -870,27 +900,20 @@ def corpkit_gui():
     # corpus path setter
     corpus_fullpath = StringVar()
     corpus_fullpath.set('')
-    basepath = StringVar()
-    basepath.set('Select corpus')
-
-    def getdir(ask = True):
+    
+    def corpus_callback(*args):
+        """on selecting a corpus, set everything appropriately.
+        also, disable some kinds of search based on the name"""
         import os
-        if os.path.isdir(os.path.join(project_fullpath.get(), 'data')):
-            initdir = os.path.join(project_fullpath.get(), 'data')
-        else:
-            initdir = False
-        if ask:
-            fp = tkFileDialog.askdirectory(title = 'Select corpus', initialdir = initdir)
-            corpus_fullpath.set(fp)
-        else:
-            fp = corpus_fullpath.get()
-        if not fp:
-            return
+        corpus_name = current_corpus.get()
+        fp = os.path.join(corpora_fullpath.get(), corpus_name)
+        corpus_fullpath.set(fp)
+
+        subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) \
+                        if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
         
-        subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
         if len(subdrs) == 0:
             charttype.set('bar')
-        basepath.set(os.path.basename(fp))
         pick_subcorpora['menu'].delete(0, 'end')
         if len(subdrs) > 0:
             pick_subcorpora.config(state = NORMAL)
@@ -900,16 +923,26 @@ def corpkit_gui():
             pick_subcorpora.config(state = NORMAL)
             pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
             pick_subcorpora.config(state = DISABLED)
+
         path_to_new_unparsed_corpus.set(fp)
-        add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
-        sel_corpus.set(fp)        
-        parse_button_text.set('Parse: %s' % os.path.basename(fp))
+        #add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
+        current_corpus.set(os.path.basename(fp))
+        if not os.path.basename(fp).endswith('-parsed'):
+            parsebut.config(state = NORMAL)
+            parse_button_text.set('Parse: %s' % os.path.basename(fp))
+        else:
+            parsebut.config(state = DISABLED)
+        if not os.path.basename(fp).endswith('-tokenised'):
+            tokbut.config(state = NORMAL)
+            tokenise_button_text.set('Tokenise: %s' % os.path.basename(fp))
+        else:
+            tokbut.config(state = DISABLED)
         add_subcorpora_to_build_box(fp)
-        sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
+        #sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
-        lab.set('Concordancing: %s' % basepath.get())
+        lab.set('Concordancing: %s' % corpus_name)
         
-        if basepath.get() in corpus_names_and_speakers.keys():
+        if corpus_name in corpus_names_and_speakers.keys():
             togglespeaker()
             speakcheck.config(state = NORMAL)
             speakcheck_conc.config(state = NORMAL)
@@ -919,10 +952,22 @@ def corpkit_gui():
 
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
-    
-    Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
-    Button(tab1, textvariable = basepath, command = getdir, width = 30).grid(row = 0, column = 0, columnspan = 2, sticky = E)
 
+    Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
+    current_corpus = StringVar()
+    current_corpus.set('Select corpus')
+    available_corpora = OptionMenu(tab1, current_corpus, *tuple(('Select corpus')))
+    available_corpora.config(width = 30, justify = CENTER, state = DISABLED)
+    current_corpus.trace("w", corpus_callback)
+    available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = E)
+
+    # for build tab
+    #Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
+    #current_corpus = StringVar()
+    #current_corpus.set('Select corpus')
+    available_corpora_build = OptionMenu(tab0, current_corpus, *tuple(('Select corpus')))
+    available_corpora_build.config(width = 35, justify = CENTER, state = DISABLED)
+    available_corpora_build.grid(row = 4, column = 0, sticky=W)
     # function filter
     funfil = StringVar()
     Label(tab1, text = 'Function filter:').grid(row = 10, column = 0, sticky = W)
@@ -1020,7 +1065,7 @@ def corpkit_gui():
     Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW')
     entrytext.set(r'JJ > (NP <<# /NN.?/)')
     qa = Text(tab1, width = 44, height = 4, borderwidth = 0.5, 
-              font = ("Courier New", 14), undo = True, relief = SUNKEN)
+              font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD)
     qa.grid(row = 5, column = 0, columnspan = 2, sticky = E)
     all_text_widgets.append(qa)
 
@@ -1103,7 +1148,7 @@ def corpkit_gui():
     datatype_picked.set('Trees')
     Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
     pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
-    pick_a_datatype.configure(width = 26, justify = CENTER)
+    pick_a_datatype.configure(width = 30, justify = CENTER)
     pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
     datatype_picked.trace("w", callback)
 
@@ -1268,13 +1313,13 @@ def corpkit_gui():
             except:
                 pass
             if 'results' in the_data._asdict().keys():
-                update_spreadsheet(o_editor_results, the_data.results, height = 140, indexwidth = 70, width = 720)
-            update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 720)
+                update_spreadsheet(o_editor_results, the_data.results, height = 130, indexwidth = 70, width = 800)
+            update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 800)
             if there_is_new_data:
                 if newdata != 'None' and newdata != '':
                     if 'results' in the_data._asdict().keys():
-                        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 140, width = 720)
-                    update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 720)
+                        update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 140, width = 800)
+                    update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 800)
             if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
                 the_data = all_interrogations[name_of_interro_spreadsheet.get()]
                 tot = pandas.DataFrame(the_data.totals, dtype = object)
@@ -1460,8 +1505,8 @@ def corpkit_gui():
         # update edited spreadsheets
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
         if 'results' in most_recent._asdict().keys():
-            update_spreadsheet(n_editor_results, most_recent.results, height = 140, width = 720)
-        update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 720)
+            update_spreadsheet(n_editor_results, most_recent.results, height = 140, width = 800)
+        update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 800)
         
         # add button to update
         Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit')).grid(row = 21, column = 1, sticky = E)
@@ -1477,13 +1522,13 @@ def corpkit_gui():
         if selected_to_edit.get() != 'None':
             name_of_o_ed_spread.set(selected_to_edit.get())
             if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
-                update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 140, width = 720)
-            update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 720)
+                update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 140, width = 800)
+            update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 800)
             resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
-        update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 720)
-        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 720)
+        update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 800)
+        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
         for subcl in [subc_listbox]:
             subcl.configure(state = NORMAL)
             subcl.delete(0, 'end')
@@ -1694,11 +1739,11 @@ def corpkit_gui():
     do_sub = StringVar(root)
     do_sub.set('Off')
     do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
-    do_with_subc.grid(row = 16, column = 0, sticky = W)
+    do_with_subc.grid(row = 15, column = 0, sticky = W)
     do_sub.trace("w", do_s_callback)
 
     # subcorpora merge name    
-    Label(tab2, text = 'Merge name:').grid(row = 17, column = 0, sticky = 'NW')
+    Label(tab2, text = 'Merge name:').grid(row = 16, column = 0, sticky = 'NW')
     new_subc_name = StringVar()
     new_subc_name.set('')
     merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED)
@@ -1710,7 +1755,7 @@ def corpkit_gui():
     edit_nametext.set('untitled')
     Label(tab2, text = 'Edit name', font = ("Helvetica", 13, "bold")).grid(row = 19, column = 0, sticky = W)
     msn = Entry(tab2, textvariable = edit_nametext)
-    msn.grid(row = 20, column = 0)
+    msn.grid(row = 20, column = 0, sticky = W)
     all_text_widgets.append(msn)
 
     # edit button
@@ -1724,24 +1769,24 @@ def corpkit_gui():
     Label(tab2, textvariable = resultname, 
           font = ("Helvetica", 13, "bold")).grid(row = 0, 
            column = 2, sticky = W, padx = 20)    
-    o_editor_results = Frame(tab2, height = 20, width = 20)
-    o_editor_results.grid(column = 2, row = 1, rowspan=9, padx = 20)
+    o_editor_results = Frame(tab2, height = 13, width = 20)
+    o_editor_results.grid(column = 2, row = 1, rowspan=8, padx = 20)
     #Label(tab2, text = 'Totals to edit:', 
           #font = ("Helvetica", 13, "bold")).grid(row = 4, 
            #column = 2, sticky = W, pady=0)
     o_editor_totals = Frame(tab2, height = 1, width = 20)
-    o_editor_totals.grid(column = 2, row = 10, rowspan=1, padx = 20)
-    update_spreadsheet(o_editor_results, df_to_show = None, height = 200, width = 800)
+    o_editor_totals.grid(column = 2, row = 9, rowspan=1, padx = 20)
+    update_spreadsheet(o_editor_results, df_to_show = None, height = 130, width = 800)
     update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
     editoname = StringVar()
     name_of_n_ed_spread = StringVar()
     name_of_n_ed_spread.set('')
     editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
     Label(tab2, textvariable = editoname, 
-          font = ("Helvetica", 13, "bold")).grid(row = 11, 
+          font = ("Helvetica", 13, "bold")).grid(row = 10, 
            column = 2, sticky = W, padx = 20)        
     n_editor_results = Frame(tab2, height = 30, width = 20)
-    n_editor_results.grid(column = 2, row = 12, rowspan=9, padx = 20)
+    n_editor_results.grid(column = 2, row = 11, rowspan=9, padx = 20)
     #Label(tab2, text = 'Edited totals:', 
           #font = ("Helvetica", 13, "bold")).grid(row = 15, 
            #column = 2, sticky = W, padx=20, pady=0)
@@ -1818,17 +1863,25 @@ def corpkit_gui():
              'kind': the_kind}
 
         d['style'] = plot_style.get()
-        d['tex'] = texuse.get()
-        d['black_and_white'] = bw.get()
-        d['reverse_legend'] = rl.get()
-        d['subplots'] = sbplt.get()
+        
+        texu = texuse.get()
+        if texu == 0:
+            d['tex'] = False
+        else:
+            d['tex'] = True
 
-        if log_x.get() == 1 and log_y.get() == 1:
-            d['log'] = 'x,y'
-        if log_x.get() == 1 and not log_y.get() == 1:
-            d['log'] = 'x'
-        if log_y.get() == 1 and not log_x.get() == 1:
-            d['log'] = 'y'
+        d['black_and_white'] = bw.get()
+
+        if rl.get() == 1:
+            d['reverse_legend'] = True
+        
+        if sbplt.get() == 1:
+            d['subplots'] = True
+
+        if log_x.get() == 1:
+            d['logx'] = True
+        if log_y.get() == 1:
+            d['logy'] = True
 
         if x_axis_l.get() != '':
             d['x_label'] = x_axis_l.get()
@@ -2861,6 +2914,8 @@ def corpkit_gui():
         image_fullpath.set(os.path.join(project_fullpath.get(), 'images'))
         data_fullpath.set(os.path.join(project_fullpath.get(), 'saved_interrogations'))
         conc_fullpath.set(os.path.join(project_fullpath.get(), 'saved_concordances'))
+        corpora_fullpath.set(os.path.join(project_fullpath.get(), 'data'))
+        exported_fullpath.set(os.path.join(project_fullpath.get(), 'exported'))
         
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
         #load_project(path = os.path.join(fp, name))
@@ -2900,7 +2955,13 @@ def corpkit_gui():
     conc_fullpath = StringVar()
     conc_fullpath.set('')
     exported_fullpath = StringVar()
-    exported_fullpath.set('')
+    exported_fullpath.set('')        
+    image_fullpath = StringVar()
+    image_fullpath.set('')
+    image_basepath = StringVar()
+    image_basepath.set('Select image directory')
+    corpora_fullpath = StringVar()
+    corpora_fullpath.set('')
 
     def data_getdir():
         import os
@@ -2909,16 +2970,10 @@ def corpkit_gui():
             return
         data_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
-        sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
+        #sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
         time = strftime("%H:%M:%S", localtime())
         print '%s: Set data directory: %s' % (time, os.path.basename(fp))
-    
-    # corpus path setter
-    image_fullpath = StringVar()
-    image_fullpath.set('')
-    image_basepath = StringVar()
-    image_basepath.set('Select image directory')
 
     def image_getdir(nodialog = False):
         import os
@@ -3140,10 +3195,10 @@ def corpkit_gui():
         # spreadsheets
         update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
         update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
-        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 720)
-        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 720)
-        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 720)
-        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 720)
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 130, width = 800)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 800)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
         # interrogations
         for e in all_interrogations.keys():
             del all_interrogations[e]
@@ -3157,6 +3212,7 @@ def corpkit_gui():
         refresh()
 
     def convert_speakdict_to_string(dictionary):
+        """turn speaker info dict into a string for configparser"""
         if len(dictionary.keys()) == 0:
             return None
         out = []
@@ -3165,6 +3221,7 @@ def corpkit_gui():
         return ';'.join(out)
 
     def parse_speakdict(string):
+        """turn configparser's speaker info back into a dict"""
         if string is None:
             return {}
         redict = {}
@@ -3175,8 +3232,8 @@ def corpkit_gui():
             redict[name] = vs
         return redict
 
-        # settings
     def load_config():
+        """use configparser to get project settings"""
         import os
         import ConfigParser
         Config = ConfigParser.ConfigParser()
@@ -3238,6 +3295,7 @@ def corpkit_gui():
         data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
         conc_fullpath.set(os.path.join(fp, 'saved_concordances'))
         exported_fullpath.set(os.path.join(fp, 'exported'))
+        corpora_fullpath.set(os.path.join(fp, 'data'))
 
         if not os.path.isdir(data_fullpath.get()):
             thetime = strftime("%H:%M:%S", localtime())
@@ -3252,6 +3310,8 @@ def corpkit_gui():
 
         os.chdir(fp)
 
+        update_available_corpora()
+        
         get_saved_results()
         get_saved_results(kind = 'concordance')
         open_proj_basepath.set('Loaded: "%s"' % os.path.basename(fp))
@@ -3260,21 +3320,22 @@ def corpkit_gui():
         root.title("corpkit: %s" % os.path.basename(fp))
 
         if not corpus_fullpath.get() or corpus_fullpath.get() == '':
-
             # check if there are already (parsed) corpora
-            all_corpora = [d for d in os.listdir(os.path.join(fp, 'data')) if os.path.isdir(os.path.join(fp, 'data', d))]
-            parsed_corp = [d for d in all_corpora if d.endswith('-parsed')]
+            allcorp = [d for d in corpora_fullpath.get() if os.path.isdir(os.path.join(corpora_fullpath.get(), d))]
+            parsed_corp = [d for d in corpora_fullpath.get() if d.endswith('-parsed')]
             # select 
             first = False
             if len(parsed_corp) > 0:
                 first = parsed_corp[0]
             else:
-                if len(all_corpora) > 0:
-                    first = all_corpora[0]
+                if len(allcorp) > 0:
+                    first = allcorp[0]
             if first:
-                corpus_fullpath.set(os.path.join(fp, 'data', first))
+                corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
+                current_corpus.set(first)
             else:
                 corpus_fullpath.set('')
+                # no corpora, so go to build...
                 note.focus_on(tab0)
         
         if corpus_fullpath.get() != '':
@@ -3282,10 +3343,9 @@ def corpkit_gui():
         else:
             subdrs = []
 
-        basepath.set(os.path.basename(corpus_fullpath.get()))
+        corpus_name = os.path.basename(corpus_fullpath.get())
 
-        lab.set('Concordancing: %s' % basepath.get())
-
+        lab.set('Concordancing: %s' % corpus_name)
         pick_subcorpora['menu'].delete(0, 'end')
 
         if len(subdrs) > 0:
@@ -3300,7 +3360,7 @@ def corpkit_gui():
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         note.progvar.set(0)
         
-        if basepath.get() in corpus_names_and_speakers.keys():
+        if corpus_name in corpus_names_and_speakers.keys():
             togglespeaker()
             speakcheck.config(state = NORMAL)
             speakcheck_conc.config(state = NORMAL)
@@ -3455,8 +3515,9 @@ def corpkit_gui():
 
     def create_tokenised_text():
         note.progvar.set(0)
-        Button(tab0, textvariable = tokenise_button_text, command=ignore, width = 33).grid(row = 6, column = 0, sticky=W)
-        unparsed_corpus_path = sel_corpus.get()
+        tokbut = Button(tab0, textvariable = tokenise_button_text, command=ignore, width = 33)
+        tokbut.grid(row = 6, column = 0, sticky=W)
+        unparsed_corpus_path = corpus_fullpath.get()
         if speakseg.get():
             unparsed_corpus_path = unparsed_corpus_path + '-stripped'
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
@@ -3466,14 +3527,16 @@ def corpkit_gui():
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
-        basepath.set(os.path.basename(outdir))
+        #basepath.set(os.path.basename(outdir))
         #if len([f for f in os.listdir(outdir) if f.endswith('.p')]) > 0:
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
         #else:
             #time = strftime("%H:%M:%S", localtime())
             #print '%s: Error: no files created in "%s"' % (time, os.path.basename(outdir))
-        Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33).grid(row = 6, column = 0, sticky=W)
+        update_available_corpora()
+        tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33)
+        tokbut.grid(row = 6, column = 0, sticky=W)
 
     def create_parsed_corpus():
         """make sure things are installed, do speaker id work, then parse, then structure"""
@@ -3482,8 +3545,9 @@ def corpkit_gui():
         import re
         from time import strftime, localtime
 
-        Button(tab0, textvariable = parse_button_text, command=ignore, width = 33).grid(row = 6, column = 0, sticky=W)
-        unparsed_corpus_path = sel_corpus.get()
+        parsebut = Button(tab0, textvariable = parse_button_text, command=ignore, width = 33)
+        parsebut.grid(row = 6, column = 0, sticky=W)
+        unparsed_corpus_path = corpus_fullpath.get()
 
         if speakseg.get():
             thetime = strftime("%H:%M:%S", localtime())
@@ -3557,8 +3621,10 @@ def corpkit_gui():
         subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
         if len(subdrs) == 0:
             charttype.set('bar')
-        basepath.set(os.path.basename(new_corpus_path))
-        Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33).grid(row = 6, column = 0, sticky=W)
+        #basepath.set(os.path.basename(new_corpus_path))
+        update_available_corpora()
+        parsebut = Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33)
+        parsebut.grid(row = 6, column = 0, sticky=W)
         time = strftime("%H:%M:%S", localtime())
         print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
 
@@ -3568,10 +3634,10 @@ def corpkit_gui():
     tokenise_button_text = StringVar()
     tokenise_button_text.set('Tokenise')
 
-    sel_corpus = StringVar()
-    sel_corpus.set('')
-    sel_corpus_button = StringVar()
-    sel_corpus_button.set('Select corpus in project')
+    #sel_corpus = StringVar()
+    #sel_corpus.set('')
+    #sel_corpus_button = StringVar()
+    #sel_corpus_button.set('Select corpus in project')
 
     path_to_new_unparsed_corpus = StringVar()
     path_to_new_unparsed_corpus.set('')
@@ -3601,28 +3667,16 @@ def corpkit_gui():
         onselect_subc_build()
 
     def select_corpus():
-        """selects corpus for viewing/parsing
-
-        clean this up!"""
+        """selects corpus for viewing/parsing!"""
         from os.path import join as pjoin
         from os.path import basename as bn
-        if project_fullpath.get() == '':
-            home = os.path.expanduser("~")
-            init = pjoin(home, 'Documents')
-        else:
-            init = pjoin(project_fullpath.get(), 'data')
-        unparsed_corpus_path = tkFileDialog.askdirectory(title = 'Path to corpus',
-                initialdir = init,
-                message = 'Select corpus for viewing/editing/parsing.')
-        if unparsed_corpus_path is False or unparsed_corpus_path == '':    
-            return
         parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
         tokenise_button_text.set('Tokenise: "%s"' % bn(unparsed_corpus_path))
         path_to_new_unparsed_corpus.set(unparsed_corpus_path)
         #add_corpus_button.set('Added: %s' % bn(unparsed_corpus_path))
         where_to_put_corpus = pjoin(project_fullpath.get(), 'data')       
         sel_corpus.set(unparsed_corpus_path)
-        sel_corpus_button.set('Selected: "%s"' % bn(unparsed_corpus_path))
+        #sel_corpus_button.set('Selected: "%s"' % bn(unparsed_corpus_path))
         parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
         add_subcorpora_to_build_box(unparsed_corpus_path)
         time = strftime("%H:%M:%S", localtime())
@@ -3670,12 +3724,15 @@ def corpkit_gui():
                 shutil.move(fpath, newname)
         path_to_new_unparsed_corpus.set(newc)
         add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
-        sel_corpus.set(newc)
-        sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
+        current_corpus.set(os.path.basename(fp))
+        #sel_corpus.set(newc)
+        #sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Corpus copied to project folder.' % (thetime)
         parse_button_text.set('Parse: %s' % os.path.basename(newc))
+        tokenise_button_text.set('Tokenise: "%s"' % os.path.basename(newc))
         add_subcorpora_to_build_box(newc)
+        update_available_corpora()
         time = strftime("%H:%M:%S", localtime())
         print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
         Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
@@ -3689,22 +3746,24 @@ def corpkit_gui():
     #Label(tab0, text = 'Add corpus to project: ').grid(row = 4, column = 0, sticky=W)
     Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
     #Label(tab0, text = 'Corpus to parse: ').grid(row = 6, column = 0, sticky=W)
-    Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 33).grid(row = 4, column = 0, sticky=W)
+    #Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 33).grid(row = 4, column = 0, sticky=W)
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
     speakseg = IntVar()
     speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg)
     speakcheck_build.grid(column = 0, row = 5, sticky=W)
-    Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33).grid(row = 6, column = 0, sticky=W)
+    parsebut = Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33)
+    parsebut.grid(row = 6, column = 0, sticky=W)
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
-    Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33).grid(row = 7, column = 0, sticky=W)
+    tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33)
+    tokbut.grid(row = 7, column = 0, sticky=W)
 
     subc_sel_vals_build = []
 
     # a list of every interrogation
     def onselect_subc_build(evt = False):
+        """get selected subcorpora and delete editor"""
         import os
         if evt:
-            """get selected subcorpora"""
             # should only be one
             for i in subc_sel_vals_build:
                 subc_sel_vals_build.pop()
@@ -3714,11 +3773,17 @@ def corpkit_gui():
                 value = wx.get(index)
                 if value not in subc_sel_vals_build:
                     subc_sel_vals_build.append(value)
-
         # return for false click
         if len(subc_sel_vals_build) == 0 and selected_corpus_has_no_subcorpora.get() == 0:
             return
-        
+
+        # destroy editor and canvas if possible
+        for ob in buildbits.values():
+            try:
+                ob.destroy()
+            except:
+                pass
+
         f_view.configure(state = NORMAL)
         f_view.delete(0, 'end')
         newp = path_to_new_unparsed_corpus.get()
@@ -3750,9 +3815,8 @@ def corpkit_gui():
 
     chosen_f = []
     sentdict = {}
-    the_sent_box = {}
     boxes = []
-    the_editor = {}
+    buildbits = {}
 
     def show_a_tree(evt):
         """get selected file and show in file view"""
@@ -3762,7 +3826,7 @@ def corpkit_gui():
         from nltk.draw.util import CanvasFrame
         from nltk.draw import TreeWidget
 
-        sbox = the_sent_box['box']
+        sbox = buildbits['sentsbox']
         sent = sentdict[int(sbox.curselection()[0])]
         t = ParentedTree.fromstring(sent)
 
@@ -3770,6 +3834,7 @@ def corpkit_gui():
         #cf = CanvasFrame(tab0, width=200, height=200)
         
         cf = Canvas(tab0, width=650, height=370, bd = 5)
+        buildbits['treecanvas'] = cf
         cf.grid(row = 6, column = 2, rowspan = 10)
         if cf not in boxes:
             boxes.append(cf)
@@ -3784,7 +3849,7 @@ def corpkit_gui():
 
     def select_all_editor(*args):
         """not currently using, but might be good for select all"""
-        editor = the_editor['editor']
+        editor = buildbits['editor']
         editor.tag_add(SEL, "1.0", END)
         editor.mark_set(INSERT, "1.0")
         editor.see(INSERT)
@@ -3826,7 +3891,7 @@ def corpkit_gui():
 
             # needs a scrollbar
             editor = Text(tab0, height = 32)
-            the_editor['editor'] = editor
+            buildbits['editor'] = editor
             editor.grid(row = 1, column = 2, rowspan = 9, pady = (10,0), padx = (20, 0))
             if editor not in boxes:
                 boxes.append(editor)
@@ -3856,6 +3921,7 @@ def corpkit_gui():
             fullpath_to_file.set(fp)
             but = Button(tab0, text = 'Save changes', command = savebuttonaction)
             but.grid(row = 9, column = 2, sticky = 'SE')
+            buildbits['but'] = but
             if but not in boxes:
                 boxes.append(but)
         elif chosen_f[0].endswith('.xml'):
@@ -3875,6 +3941,7 @@ def corpkit_gui():
             editf.set('View trees: %s' % chosen_f[0])
             vieweditxml = Label(tab0, textvariable = editf, font = ("Helvetica", 13, "bold"))
             vieweditxml.grid(row = 0, column = 2, sticky=W)
+            buildbits['vieweditxml'] = vieweditxml
             if vieweditxml not in boxes:
                 boxes.append(vieweditxml)
             trees = []
@@ -3893,9 +3960,9 @@ def corpkit_gui():
             sentsbox = Listbox(tab0, selectmode = SINGLE, width = 100, font = ("Courier New", 11))
             if sentsbox not in boxes:
                 boxes.append(sentsbox)
+            buildbits['sentsbox'] = sentsbox
             sentsbox.grid(row = 1, column = 2, rowspan = 4)
             sentsbox.delete(0, END)
-            the_sent_box['box'] = sentsbox
             for i in sentdict.keys():
                 del sentdict[i]
             for i, (t, f) in enumerate(trees):
@@ -3925,7 +3992,7 @@ def corpkit_gui():
 
     def savebuttonaction(*args):
         f = open(fullpath_to_file.get(), "w")
-        editor = the_editor['editor']
+        editor = buildbits['editor']
         text = editor.get(1.0, END)
         try:
             # normalize trailing whitespace
@@ -4062,7 +4129,7 @@ def corpkit_gui():
         filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="New project", command=make_new_project)
     filemenu.add_command(label="Open project", command=load_project)
-    filemenu.add_command(label="Select corpus", command=getdir)
+    #filemenu.add_command(label="Select corpus", command=getdir)
     filemenu.add_separator()
     filemenu.add_command(label="Save project settings", command=save_config)
     filemenu.add_command(label="Load project settings", command=load_config)
@@ -4127,6 +4194,8 @@ def corpkit_gui():
     for i in all_text_widgets:
         i.bind("<%s-a>" % key, select_all_text)
         i.bind("<%s-A>" % key, select_all_text)
+        i.bind("<%s-v>" % key, paste_into_textwidget)
+        i.bind("<%s-V>" % key, paste_into_textwidget)
 
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="Help", command=query_help)
