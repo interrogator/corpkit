@@ -11,7 +11,7 @@ In contrast to most current corpus linguistic software (*AntConc*, *WMatrix*, *S
 
 ## Screenshots
 
-> Coming soon!
+> Coming soon.
 
 ## Cite
 
