@@ -577,7 +577,7 @@ def parse_corpus(proj_path, corpuspath, filelist,
             num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
             if num_parsed == 0:
                 print '%s: Initialising parser ... ' % (thetime)
-            if num_parsed > 0:
+            if num_parsed > 0 and num_parsed <= num_files_to_parse:
                 print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
@@ -646,6 +646,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
     for d in dir_list:
         os.makedirs(d)
     os.chdir(cwd)
+    # make list of xml filenames
     parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.xml')]
     # make a dictionary of the right paths
     pathdict = {}
@@ -656,14 +657,12 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
     # move each file
     for f in parsed_fs:
         noxml = f.replace('.xml', '')
-
         right_dir = pathdict[noxml].replace(corpuspath, new_corpus_path)
         # get rid of the temp adding of dirname to fname
-        short_name = f.replace('-%s' % right_dir, '')
+        #short_name = f.replace('-%s.txt.xml' % os.path.basename(right_dir), '.txt.xml')
         os.rename(os.path.join(new_corpus_path, f), 
-                  os.path.join(new_corpus_path, right_dir, short_name))
+                  os.path.join(new_corpus_path, right_dir, f))
     return new_corpus_path
-
 
 def corenlp_exists():
     import corpkit
@@ -844,3 +843,20 @@ def get_speaker_names_from_xml_corpus(path):
 def get_speakers(path):
     from corpkit.build import get_speaker_names_from_xml_corpus
     return get_speaker_names_from_xml_corpus(path)
+
+def rename_all_files(dirs_to_do):
+    """get rid of the inserted dirname in filenames after parsing"""
+    import os
+    from corpkit.build import get_filepaths
+    for d in dirs_to_do:
+        if not d.endswith('-parsed'):
+            ext = 'txt'
+        else:
+            ext = 'txt.xml'
+        fs = get_filepaths(d, ext)
+        for f in fs:
+            fname = os.path.basename(f)
+            justdir = os.path.dirname(f)
+            subcorpus = os.path.basename(justdir)
+            newname = fname.replace('-%s.%s' % (subcorpus, ext), '.%s' % ext)
+            os.rename(f, os.path.join(justdir, newname))
