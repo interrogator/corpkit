@@ -219,6 +219,8 @@ def corpkit_gui():
     tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
     note.text.update_idletasks()
 
+    all_text_widgets = []
+
     ###################     ###################     ###################     ###################
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
@@ -447,6 +449,12 @@ def corpkit_gui():
             else:
                 lb.itemconfig(index, {'bg':colour2})
         lb.selection_clear(0, END)
+
+    def select_all_text(*args):
+        try:
+            args[0].widget.selection_range(0, END)
+        except:
+            args[0].widget.tag_add("sel","1.0","end")
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -922,6 +930,7 @@ def corpkit_gui():
     funfil.set('')
     q = Entry(tab1, textvariable = funfil, width = 31, state = DISABLED)
     q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+    all_text_widgets.append(q)
 
     # pos filter
     posfil = StringVar()
@@ -930,6 +939,7 @@ def corpkit_gui():
     posfil.set(r'')
     qr = Entry(tab1, textvariable = posfil, width = 31, state = DISABLED)
     qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
+    all_text_widgets.append(qr)
 
     # lemma tags
     lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
@@ -1012,6 +1022,7 @@ def corpkit_gui():
     qa = Text(tab1, width = 44, height = 4, borderwidth = 0.5, 
               font = ("Courier New", 14), undo = True, relief = SUNKEN)
     qa.grid(row = 5, column = 0, columnspan = 2, sticky = E)
+    all_text_widgets.append(qa)
 
     def entry_callback(*args):
         qa.config(state = NORMAL)
@@ -1147,7 +1158,9 @@ def corpkit_gui():
     nametext = StringVar()
     nametext.set('untitled')
     Label(tab1, text = 'Interrogation name:').grid(row = 16, column = 0, sticky = W)
-    Entry(tab1, textvariable = nametext).grid(row = 16, column = 1, sticky = E)
+    tmp = Entry(tab1, textvariable = nametext)
+    tmp.grid(row = 16, column = 1, sticky = E)
+    all_text_widgets.append(tmp)
 
     def query_help():
         import webbrowser
@@ -1554,35 +1567,37 @@ def corpkit_gui():
     # spelling again
     Label(tab2, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
     spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
-    spl_editor.grid(row = 2, column = 1, sticky = E)
+    spl_editor.grid(row = 5, column = 1, sticky = E)
+    spl_editor.configure(width = 9)
+
+    # keep_top
+    Label(tab2, text = 'Keep top results:').grid(row = 6, column = 0, sticky = W)
+    keeptopnum = StringVar()
+    keeptopnum.set('all')
+    keeptopbox = Entry(tab2, textvariable = keeptopnum, width = 5)
+    keeptopbox.grid(column = 1, row = 6, sticky = E)
+    all_text_widgets.append(keeptopbox)
 
     # currently broken: just totals button
     just_tot_setting = IntVar()
     just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
     #just_tot_but.select()
-    just_tot_but.grid(column = 0, row = 6, sticky = W)
+    just_tot_but.grid(column = 0, row = 7, sticky = W)
 
     keep_stats_setting = IntVar()
     keep_stat_but = Checkbutton(tab2, text="Keep stats", variable=keep_stats_setting)
     #keep_stat_but.select()
-    keep_stat_but.grid(column = 1, row = 6, sticky = E)
+    keep_stat_but.grid(column = 1, row = 7, sticky = E)
 
     rem_abv_p_set = IntVar()
     rem_abv_p_but = Checkbutton(tab2, text="Remove above p", variable=rem_abv_p_set)
     #rem_abv_p_but.select()
-    rem_abv_p_but.grid(column = 0, row = 7, sticky = W)
+    rem_abv_p_but.grid(column = 0, row = 8, sticky = W)
 
     # transpose
     transpose = IntVar()
     trans_but = Checkbutton(tab2, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
-    trans_but.grid(column = 1, row = 7, sticky = E)
-
-    # keep_top
-    Label(tab2, text = 'Keep top results:').grid(row = 8, column = 0, sticky = W)
-    keeptopnum = StringVar()
-    keeptopnum.set('all')
-    keeptopbox = Entry(tab2, textvariable = keeptopnum, width = 5)
-    keeptopbox.grid(column = 1, row = 8, sticky = E)
+    trans_but.grid(column = 1, row = 8, sticky = E)
 
     subc_sel_vals = []
     # entries + entry field for regex, off, skip, keep, merge
@@ -1593,6 +1608,7 @@ def corpkit_gui():
     entry_regex.set(r'.*ing$')
     edit_box = Entry(tab2, textvariable = entry_regex, state = DISABLED)
     edit_box.grid(row = 10, column = 1, sticky = E)
+    all_text_widgets.append(edit_box)
 
     # merge entries newname
     Label(tab2, text = 'Merge name:').grid(row = 11, column = 0, sticky = W)
@@ -1600,6 +1616,7 @@ def corpkit_gui():
     newname_var.set('')
     mergen = Entry(tab2, textvariable = newname_var, state = DISABLED)
     mergen.grid(row = 11, column = 1, sticky = E)
+    all_text_widgets.append(mergen)
 
     Label(tab2, text = 'Replace in entry names:').grid(row = 12, column = 0, sticky = W)
     Label(tab2, text = 'Replace with:').grid(row = 12, column = 1, sticky = W)
@@ -1609,8 +1626,10 @@ def corpkit_gui():
     replacewith_string.set('')
     toreplace = Entry(tab2, textvariable = toreplace_string)
     toreplace.grid(row = 13, column = 0, sticky = W)
+    all_text_widgets.append(toreplace)
     replacewith = Entry(tab2, textvariable = replacewith_string)
-    replacewith.grid(row = 13, column = 1, sticky = E)    
+    replacewith.grid(row = 13, column = 1, sticky = E)
+    all_text_widgets.append(replacewith)    
     
     def do_w_callback(*args):
         """if not merging entries, diable input fields"""
@@ -1684,6 +1703,7 @@ def corpkit_gui():
     new_subc_name.set('')
     merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED)
     merge.grid(row = 17, column = 0, sticky = 'SW')
+    all_text_widgets.append(merge)
     
     # name the edit
     edit_nametext = StringVar()
@@ -1691,6 +1711,7 @@ def corpkit_gui():
     Label(tab2, text = 'Edit name', font = ("Helvetica", 13, "bold")).grid(row = 19, column = 0, sticky = W)
     msn = Entry(tab2, textvariable = edit_nametext)
     msn.grid(row = 20, column = 0)
+    all_text_widgets.append(msn)
 
     # edit button
     Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
@@ -1888,7 +1909,10 @@ def corpkit_gui():
     Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (35, 0))
     plotnametext = StringVar()
     plotnametext.set('Untitled')
-    Entry(tab3, textvariable = plotnametext).grid(row = 0, column = 1, pady = (35, 0))
+    tmp = Entry(tab3, textvariable = plotnametext)
+    tmp.grid(row = 0, column = 1, pady = (35, 0))
+    all_text_widgets.append(tmp)
+
 
     Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
@@ -1910,7 +1934,9 @@ def corpkit_gui():
     Label(tab3, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
     number_to_plot = StringVar()
     number_to_plot.set('7')
-    Entry(tab3, textvariable = number_to_plot, width = 3).grid(row = 4, column = 1, sticky = E)
+    tmp = Entry(tab3, textvariable = number_to_plot, width = 3)
+    tmp.grid(row = 4, column = 1, sticky = E)
+    all_text_widgets.append(tmp)
 
     # chart type
     Label(tab3, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
@@ -1924,12 +1950,16 @@ def corpkit_gui():
     Label(tab3, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
     x_axis_l = StringVar()
     x_axis_l.set('')
-    Entry(tab3, textvariable = x_axis_l).grid(row = 6, column = 1, sticky = W)
+    tmp = Entry(tab3, textvariable = x_axis_l)
+    tmp.grid(row = 6, column = 1, sticky = W)
+    all_text_widgets.append(tmp)
 
     Label(tab3, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
     y_axis_l = StringVar()
     y_axis_l.set('')
-    Entry(tab3, textvariable = y_axis_l).grid(row = 7, column = 1)
+    tmp = Entry(tab3, textvariable = y_axis_l)
+    tmp.grid(row = 7, column = 1)
+    all_text_widgets.append(tmp)
 
     # log options
     log_x = IntVar()
@@ -2385,9 +2415,6 @@ def corpkit_gui():
         tmp.set('')
         entryboxes[i] = tmp
 
-    def selectall_codescheme(*args):
-        args[0].widget.selection_range(0, END)
-
     def codingschemer():
         try:
             global toplevel
@@ -2418,8 +2445,7 @@ def corpkit_gui():
             if colour_index == 9:
                 fore = 'white'
             tmp = Entry(toplevel, textvariable = entryboxes[index], bg = colourdict[colour_index], fg = fore)
-            tmp.bind("<%s-a>" % key, selectall_codescheme)
-            tmp.bind("<%s-A>" % key, selectall_codescheme)
+            all_text_widgets.append(tmp)
             if index == 0:
                 tmp.focus_set()
             tmp.grid(row = index + 1, column = 1)
@@ -2580,6 +2606,7 @@ def corpkit_gui():
     query_text.set('/NN.?/ >># NP')
     cqb = Entry(tab4, textvariable = query_text, width = 50)
     cqb.grid(row = 2, column = 1, columnspan = 4)
+    all_text_widgets.append(cqb)
 
     Label(tab4, text = 'Limit results to function:').grid(row = 4, column = 3, sticky = S)
     justdep = StringVar()
@@ -2587,6 +2614,7 @@ def corpkit_gui():
     ebox = Entry(tab4, textvariable = justdep, width = 22)
     ebox.config(state = DISABLED)
     ebox.grid(row = 5, column = 3, columnspan = 2)
+    all_text_widgets.append(ebox)
     
     # window size: change to dynamic!
     win = StringVar()
@@ -3272,7 +3300,13 @@ def corpkit_gui():
         print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
         note.progvar.set(0)
         
-        togglespeaker()
+        if basepath.get() in corpus_names_and_speakers.keys():
+            togglespeaker()
+            speakcheck.config(state = NORMAL)
+            speakcheck_conc.config(state = NORMAL)
+        else:
+            speakcheck.config(state = DISABLED)
+            speakcheck_conc.config(state = DISABLED)
 
     def view_query():
 
@@ -3749,6 +3783,7 @@ def corpkit_gui():
         tc.bind_click_trees(tc.toggle_collapsed)
 
     def select_all_editor(*args):
+        """not currently using, but might be good for select all"""
         editor = the_editor['editor']
         editor.tag_add(SEL, "1.0", END)
         editor.mark_set(INSERT, "1.0")
@@ -3795,10 +3830,9 @@ def corpkit_gui():
             editor.grid(row = 1, column = 2, rowspan = 9, pady = (10,0), padx = (20, 0))
             if editor not in boxes:
                 boxes.append(editor)
+            all_text_widgets.append(editor)
             editor.bind("<%s-s>" % key, savebuttonaction)
-            editor.bind("<%s-a>" % key, select_all_editor)
             editor.bind("<%s-S>" % key, savebuttonaction)
-            editor.bind("<%s-A>" % key, select_all_editor)
             editor.config(borderwidth=0,
                   font="{Lucida Sans Typewriter} 12",
                   #foreground="green",
@@ -4088,6 +4122,11 @@ def corpkit_gui():
             subprocess.call(['open', logpath])
         else:
             os.startfile(logpath)
+
+    # bind select all for every possible widget
+    for i in all_text_widgets:
+        i.bind("<%s-a>" % key, select_all_text)
+        i.bind("<%s-A>" % key, select_all_text)
 
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="Help", command=query_help)
