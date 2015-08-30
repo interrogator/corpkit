@@ -217,14 +217,15 @@ def conc(corpus,
         from random import shuffle
         shuffle(series)
 
-    try:
-        df = pd.concat(series, axis = 1).T
-    except ValueError:
+    if series == []:
         if root:
             print 'No results found, sorry.'
             return
         else:
             raise ValueError("No results found, I'm afraid. Check your query and path.")
+
+    df = pd.concat(series, axis = 1).T
+
 
     if not add_links:
         df.columns = ['f', 's', 'l', 'm', 'r']

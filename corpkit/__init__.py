@@ -16,7 +16,7 @@ __all__ = ["interrogator",
            "move_parsed_files", 
             "corenlp_exists"]
 
-__version__ = "1.41"
+__version__ = "1.42"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 

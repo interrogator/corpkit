@@ -479,7 +479,7 @@ def corpkit_gui():
     def update_available_corpora():
         import os
         fp = corpora_fullpath.get()
-        all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d))])
+        all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
         for om in [available_corpora, available_corpora_build]:
             om.config(state = NORMAL)
             om['menu'].delete(0, 'end')
@@ -2243,6 +2243,9 @@ def corpkit_gui():
             query = tregex_qs[conc_special_queries.get()]
             d['option'] = 't'
 
+        print corpus
+        print query
+        print d
         r = conc(corpus, query, **d)  
         if r is not None and r is not False:
             add_conc_lines_to_window(r, preserve_colour = False)
@@ -2367,12 +2370,11 @@ def corpkit_gui():
             sort_way = toggle()
         df = current_conc[0]
         prev_sortval[0] = sortval.get()
-        dropsort = True
         # sorting by first column is easy, so we don't need pandas
         if sortval.get() == 'M1':
             low = [l.lower() for l in df['m']]
             df['tosorton'] = low
-        elif sortval.get() == 'Filename':
+        elif sortval.get() == 'File':
             low = [l.lower() for l in df['f']]
             df['tosorton'] = low
         elif sortval.get() == 'Colour':
@@ -2380,8 +2382,8 @@ def corpkit_gui():
             df['tosorton'] = colist
         elif sortval.get() == 'Theme':
             themelist = get_list_of_themes(df)
+            df.insert(1, 't', themelist)
             df.insert(1, 'tosorton', themelist)
-            dropsort = False
         elif sortval.get() == 'Index':
             df = df.sort(ascending = sort_way)
         elif sortval.get() == 'Random':
@@ -2657,7 +2659,7 @@ def corpkit_gui():
     # query:
     query_text = StringVar()
     query_text.set('/NN.?/ >># NP')
-    cqb = Entry(tab4, textvariable = query_text, width = 50)
+    cqb = Entry(tab4, textvariable = query_text, width = 50, font = ("Courier New", 14))
     cqb.grid(row = 2, column = 1, columnspan = 4)
     all_text_widgets.append(cqb)
 
@@ -2916,6 +2918,7 @@ def corpkit_gui():
         conc_fullpath.set(os.path.join(project_fullpath.get(), 'saved_concordances'))
         corpora_fullpath.set(os.path.join(project_fullpath.get(), 'data'))
         exported_fullpath.set(os.path.join(project_fullpath.get(), 'exported'))
+        log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
         
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
         #load_project(path = os.path.join(fp, name))
@@ -2955,7 +2958,9 @@ def corpkit_gui():
     conc_fullpath = StringVar()
     conc_fullpath.set('')
     exported_fullpath = StringVar()
-    exported_fullpath.set('')        
+    exported_fullpath.set('')  
+    log_fullpath = StringVar()
+    log_fullpath.set('')        
     image_fullpath = StringVar()
     image_fullpath.set('')
     image_basepath = StringVar()
@@ -3319,10 +3324,10 @@ def corpkit_gui():
         # reset tool:
         root.title("corpkit: %s" % os.path.basename(fp))
 
-        if not corpus_fullpath.get() or corpus_fullpath.get() == '':
+        if corpus_fullpath.get() == '':
             # check if there are already (parsed) corpora
-            allcorp = [d for d in corpora_fullpath.get() if os.path.isdir(os.path.join(corpora_fullpath.get(), d))]
-            parsed_corp = [d for d in corpora_fullpath.get() if d.endswith('-parsed')]
+            allcorp = [d for d in os.listdir(corpora_fullpath.get()) if os.path.isdir(os.path.join(corpora_fullpath.get(), d)) and '/' not in d]
+            parsed_corp = [d for d in os.listdir(corpora_fullpath.get()) if d.endswith('-parsed') and '/' not in d]
             # select 
             first = False
             if len(parsed_corp) > 0:
@@ -3337,6 +3342,8 @@ def corpkit_gui():
                 corpus_fullpath.set('')
                 # no corpora, so go to build...
                 note.focus_on(tab0)
+        else:
+            current_corpus.set(os.path.basename(corpus_fullpath.get()))
         
         if corpus_fullpath.get() != '':
             subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
@@ -4167,22 +4174,18 @@ def corpkit_gui():
     def show_log():
         import os
         from time import strftime, localtime
-        if project_fullpath.get() == '':
-            home = os.path.expanduser("~")
-            docpath = os.path.join(home, 'Documents')
-        else:
-            docpath = project_fullpath.get()
         input = '\n'.join([x for x in note.log_stream])
         #input = note.text.get("1.0",END)
         c = 0
-        logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
+        logpath = os.path.join(log_fullpath.get(), 'log-%s.txt' % str(c).zfill(2))
         while os.path.isfile(logpath):
-            logpath = os.path.join(docpath, 'log-%s.txt' % str(c).zfill(2))
+            logpath = os.path.join(log_fullpath.get(), 'log-%s.txt' % str(c).zfill(2))
             c += 1
         with open(logpath, "w") as fo:
             fo.write(input)
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Log saved to "%s".' % (thetime, logpath)
+            prnt = os.path.join('logs', os.path.basename(logpath))
+            print '%s: Log saved to "%s".' % (thetime, prnt)
         import sys
         if sys.platform == 'darwin':
             import subprocess

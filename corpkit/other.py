@@ -416,7 +416,8 @@ def new_project(name, loc = '.', root = False):
             raise
 
     # make other directories
-    dirs_to_make = ['data', 'images', 'saved_interrogations', 'saved_concordances', 'dictionaries', 'exported']
+    dirs_to_make = ['data', 'images', 'saved_interrogations', \
+      'saved_concordances', 'dictionaries', 'exported', 'logs']
     #subdirs_to_make = ['dictionaries', 'saved_interrogations']
     for directory in dirs_to_make:
         os.makedirs(os.path.join(fullpath, directory))
