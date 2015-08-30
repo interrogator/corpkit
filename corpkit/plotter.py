@@ -298,7 +298,7 @@ def plotter(title,
             if y_label is None:
                 y_label = 'Percentage of all matches'
             if x_label is None:
-                x_label = 'Distance from root'
+                x_label = ''
 
     # set backend?
     output_formats = ['svgz', 'ps', 'emf', 'rgba', 'raw', 'pdf', 'svg', 'eps', 'png', 'pgf']
@@ -493,6 +493,7 @@ def plotter(title,
         import warnings
         interactive = False
         warnings.warn('No interactive subplots yet, sorry.')
+        return
     # not using pandas for labels or legend anymore.
     #kwargs['labels'] = None
     #kwargs['legend'] = False
@@ -667,12 +668,13 @@ def plotter(title,
             if not piemode and not sbplt:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
             else:
-                dataframe.plot(figsize = figsize, **kwargs)
+                ax = dataframe.plot(figsize = figsize, **kwargs)
                 handles, labels = plt.gca().get_legend_handles_labels()
                 plt.legend( handles, labels, loc = leg_options['loc'], bbox_to_anchor = (0,-0.1,1,1),
                 bbox_transform = plt.gcf().transFigure )
-                plt.show()
-                return
+                if not tk:
+                    plt.show()
+                    return
         if 'rot' in kwargs:
             if kwargs['rot'] != 0 and kwargs['rot'] != 90:
                 labels = [item.get_text() for item in ax.get_xticklabels()]
@@ -941,9 +943,9 @@ def plotter(title,
 
     if not interactive and not running_python_tex and not running_spider and not tk:
         plt.show()
-    else:
-        if running_spider or tk:
-            return plt
+        return
+    if running_spider or tk or sbplt:
+        return plt
 
     if interactive:
         plt.subplots_adjust(right=.8)
