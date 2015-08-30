@@ -1399,25 +1399,26 @@ def interrogator(path,
                 else:
                     filepath = os.path.join(path, subcorpus_name, f)
                 if dependency or can_do_fast is False:
-                    with open(filepath, "rb") as text:
-                        data = text.read()
-                        from corenlp_xml.document import Document
-                        corenlp_xml = Document(data)
-                        #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
-                        if just_speakers:  
-                            sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
-                            #sents = [s for s in corenlp_xml.find_all('sentence') \
-                            #if s.speakername.text.strip() in just_speakers]
-                        else:
-                            sents = corenlp_xml.sentences
-                        # run whichever function has been called
+                    if not plaintext and not tokens:
+                        with open(filepath, "rb") as text:
+                            data = text.read()
+                            from corenlp_xml.document import Document
+                            corenlp_xml = Document(data)
+                            #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
+                            if just_speakers:  
+                                sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                                #sents = [s for s in corenlp_xml.find_all('sentence') \
+                                #if s.speakername.text.strip() in just_speakers]
+                            else:
+                                sents = corenlp_xml.sentences
+                            # run whichever function has been called
 
-                        result_from_file = dep_funct(sents)
+                            result_from_file = dep_funct(sents)
 
-                        # memory problems
-                        corenlp_xml = None
-                        data = None
-                        gc.collect()
+                            # memory problems
+                            corenlp_xml = None
+                            data = None
+                            gc.collect()
 
                 if plaintext:
                     with open(filepath, "rb") as text:
