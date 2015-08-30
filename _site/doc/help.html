@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width">
+
+        <title>corpkit : Help</title>
+        <meta name="description" content="a toolkit for doing corpus linguistics">
+
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="/css/syntax.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+
+        <div class="container">
+            <div class="row">
+                <div id="header" class="col-sm-12">
+                    <h4><a class="brand" href="/">corpkit</a>
+    <small>a toolkit for doing corpus linguistics</small>
+</h4>
+
+                </div>
+            </div>
+
+            <div class="row">
+                
+                
+                    <div id="navigation" class="col-sm-2">
+                        <ul class="nav nav-list">
+    <li><a href="/">Home</a></li>
+    
+        
+        
+
+        
+            
+                <li class="nav-header">Documentation</li>
+            
+            <li data-order=""><a href="/doc/help.html">Help</a></li>
+        
+            
+            <li data-order="9"><a href="/doc/features.html">Features</a></li>
+        
+            
+            <li data-order="8"><a href="/doc/manage.html">Manage</a></li>
+        
+            
+            <li data-order="7"><a href="/doc/concordance.html">Concordance</a></li>
+        
+            
+            <li data-order="6"><a href="/doc/visualise.html">Visualise</a></li>
+        
+            
+            <li data-order="5"><a href="/doc/edit.html">Edit</a></li>
+        
+            
+            <li data-order="4"><a href="/doc/interrogate.html">Interrogate</a></li>
+        
+            
+            <li data-order="3"><a href="/doc/build.html">Build</a></li>
+        
+            
+            <li data-order="1"><a href="/doc/setup.html">Setup</a></li>
+        
+    
+        
+        
+
+        
+    
+        
+        
+
+        
+    
+        
+        
+
+        
+            
+                <li class="nav-header">Developers</li>
+            
+            <li data-order=""><a href="/dev/contributing.html">Contributing</a></li>
+        
+    
+        
+        
+
+        
+    
+<!-- List additional links. It is recommended to add a divider
+    e.g. <li class="divider"></li> first to break up the content. -->
+</ul>
+
+                    </div>
+
+                    <div id="content" class="col-sm-10">
+                        <div class="page-header">
+    <h2>Help
+        
+    </h2>
+</div>
+
+<p><code>corpkit</code> is still missing documentation. For now, when things go wrong, you can select <code>Help --&gt; Save log</code> to generate a log file for your session. You can send this to developers to help diagnose the source of a problem.</p>
+
+<h2 id="settings">Settings</h2>
+
+<p>You can use <code>File --&gt; Save project settings</code> to save some settings of your project,. These will be loaded when you open the project in the future.</p>
+
+<h2 id="updates">Updates</h2>
+
+<p>If you&#39;re connected to the web when you open <code>corpkit</code>, it will look for software updates, and prompt you to download them if available. Major changes will be explicated when this occurs. You can also check for updates manually via the menu bar.</p>
+
+
+                    </div>
+                
+            </div>
+
+            
+
+            <div class="row">
+                <div id="footer" class="col-sm-12">
+                    Documentation for <a href="https://github.com/interrogator/corpkit">corpkit</a>
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function orderNav() {
+                var list,
+                    section,
+                    header,
+                    sections = [],
+                    lists = {},
+                    headers = {};
+
+                var navUl = document.querySelectorAll('#navigation ul')[0],
+                    navLis = document.querySelectorAll('#navigation ul li');
+
+                if (!navUl) return;
+
+                for (var i = 0; i < navLis.length; i++) {
+                    var order, li = navLis[i];
+
+                    if (li.classList.contains('nav-header')) {
+                        section = li.textContent || li.innerText;
+                        sections.push(section);
+                        headers[section] = li;
+                        continue;
+                    }
+
+                    if (!lists[section]) {
+                        lists[section] = [];
+                    }
+
+                    order = parseFloat(li.getAttribute('data-order'))
+                    lists[section].push([order, li]);
+                }
+
+                for (var i = 0; i < sections.length; i++) {
+                    section = sections[i];
+                    list = lists[section].sort(function(a, b) {
+                        return a[0] - b[0];
+                    });
+
+                    if (header = headers[section]) {
+                        navUl.appendChild(header);
+                    }
+                    for (var j = 0; j < list.length; j++) {
+                        navUl.appendChild(list[j][1]);
+                    }
+                }
+            }
+
+            if (document.querySelectorAll) orderNav();
+        </script>
+        
+    </body>
+</html>

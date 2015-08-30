@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width">
+
+        <title>corpkit : Concordance</title>
+        <meta name="description" content="a toolkit for doing corpus linguistics">
+
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="/css/syntax.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+
+        <div class="container">
+            <div class="row">
+                <div id="header" class="col-sm-12">
+                    <h4><a class="brand" href="/">corpkit</a>
+    <small>a toolkit for doing corpus linguistics</small>
+</h4>
+
+                </div>
+            </div>
+
+            <div class="row">
+                
+                
+                    <div id="navigation" class="col-sm-2">
+                        <ul class="nav nav-list">
+    <li><a href="/">Home</a></li>
+    
+        
+        
+
+        
+            
+                <li class="nav-header">Documentation</li>
+            
+            <li data-order=""><a href="/doc/help.html">Help</a></li>
+        
+            
+            <li data-order="9"><a href="/doc/features.html">Features</a></li>
+        
+            
+            <li data-order="8"><a href="/doc/manage.html">Manage</a></li>
+        
+            
+            <li data-order="7"><a href="/doc/concordance.html">Concordance</a></li>
+        
+            
+            <li data-order="6"><a href="/doc/visualise.html">Visualise</a></li>
+        
+            
+            <li data-order="5"><a href="/doc/edit.html">Edit</a></li>
+        
+            
+            <li data-order="4"><a href="/doc/interrogate.html">Interrogate</a></li>
+        
+            
+            <li data-order="3"><a href="/doc/build.html">Build</a></li>
+        
+            
+            <li data-order="1"><a href="/doc/setup.html">Setup</a></li>
+        
+    
+        
+        
+
+        
+    
+        
+        
+
+        
+    
+        
+        
+
+        
+            
+                <li class="nav-header">Developers</li>
+            
+            <li data-order=""><a href="/dev/contributing.html">Contributing</a></li>
+        
+    
+        
+        
+
+        
+    
+<!-- List additional links. It is recommended to add a divider
+    e.g. <li class="divider"></li> first to break up the content. -->
+</ul>
+
+                    </div>
+
+                    <div id="content" class="col-sm-10">
+                        <div class="page-header">
+    <h2>Concordance
+        
+    </h2>
+</div>
+
+<blockquote>
+<p><code>corpkit</code>&#39;s concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation.</p>
+</blockquote>
+
+<p>Most features this pane are similar to those provided by other concordancers, such as <code>Window</code> and <code>Random</code>. The key difference is that you can search using Tregex patterns, or by dependency function.</p>
+
+<p>When searching Trees, you can use the <code>Trees</code> option to output bracketted trees instead of plain text. This can be useful in understanding phrase structure grammar, or how to write Tregex queries.</p>
+
+<p>Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words. As with <code>Interrogate</code>, you can use special queries, like <code>ROLES:ACTOR</code>, or select some preset queries.</p>
+
+<blockquote>
+<p>You can use <code>ctrl/cmd-minus</code> <code>ctrl/cmd-plus</code> to change the concordance window font size.</p>
+</blockquote>
+
+<h3 id="speaker-ids">Speaker IDs</h3>
+
+<p>If you have speaker segmented data, you can restrict your concordancing to specific speakers. Concordancing using speaker IDs is often slow, however. If you want to concordance your data faster, and you don&#39;t care if you don&#39;t get speaker ID information, leave the <code>Speakers</code> option unchecked.</p>
+
+<p>If you select <code>ALL</code> as the speaker, you&#39;ll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.</p>
+
+<h3 id="editing">Editing</h3>
+
+<p>You can use <code>backspace</code> to delete selected lines, or <code>shift-backspace</code> to inverse-delete. Alternatively, buttons are provided.</p>
+
+<h3 id="sorting">Sorting</h3>
+
+<p>Sorting is always by the first character. <code>L1</code> sorts by the rightmost word in the left-hand column; <code>L2</code> sorts by the second rightmost. This is similar for the other columns. Sorting by <code>M-1</code> will sort by the last word in the middle column, and <code>M-2</code> by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.</p>
+
+<p>You can also sort by index, filename, colour, theme or speaker (if available), or randomise your results.</p>
+
+<p>Clicking <code>Sort</code> again without making any other changes will invert the sort order.</p>
+
+<h3 id="colours-and-themes">Colours and themes</h3>
+
+<p>You can use the numbers 0-9 to colour-code your text. <code>9</code> blacks out a line, and <code>0</code> returns the line to its default white.</p>
+
+<p>You can also attach names to these colours via <code>File --&gt; Coding scheme</code>. By using colours in combindation with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.</p>
+
+<h3 id="exporting-concordance-lines">Exporting concordance lines</h3>
+
+<p><code>Export</code> allows you to save results to CSV files, which can be loaded into Excel, or similar.</p>
+
+<blockquote>
+<p>Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to <code>LaTeX</code> tables, and all kinds of other cool things.</p>
+</blockquote>
+
+<h3 id="saving-loading-and-merging">Saving, loading and merging</h3>
+
+<p>Unlike corpus interrogations, concordance lines aren&#39;t stored by default. Once you&#39;re happy with the data on screen, however, you can hit <code>Store as</code> and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the <code>Manage</code> pane, where you can save it permanently.</p>
+
+<p>You can use <code>Load</code> to show saved concordance lines, or <code>Merge</code> to combine multiple saved lines into the current window. If your current concordance is unsaved, you&#39;ll be asked if you want to save it first.</p>
+
+
+                    </div>
+                
+            </div>
+
+            
+
+            <div class="row">
+                <div id="footer" class="col-sm-12">
+                    Documentation for <a href="https://github.com/interrogator/corpkit">corpkit</a>
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function orderNav() {
+                var list,
+                    section,
+                    header,
+                    sections = [],
+                    lists = {},
+                    headers = {};
+
+                var navUl = document.querySelectorAll('#navigation ul')[0],
+                    navLis = document.querySelectorAll('#navigation ul li');
+
+                if (!navUl) return;
+
+                for (var i = 0; i < navLis.length; i++) {
+                    var order, li = navLis[i];
+
+                    if (li.classList.contains('nav-header')) {
+                        section = li.textContent || li.innerText;
+                        sections.push(section);
+                        headers[section] = li;
+                        continue;
+                    }
+
+                    if (!lists[section]) {
+                        lists[section] = [];
+                    }
+
+                    order = parseFloat(li.getAttribute('data-order'))
+                    lists[section].push([order, li]);
+                }
+
+                for (var i = 0; i < sections.length; i++) {
+                    section = sections[i];
+                    list = lists[section].sort(function(a, b) {
+                        return a[0] - b[0];
+                    });
+
+                    if (header = headers[section]) {
+                        navUl.appendChild(header);
+                    }
+                    for (var j = 0; j < list.length; j++) {
+                        navUl.appendChild(list[j][1]);
+                    }
+                }
+            }
+
+            if (document.querySelectorAll) orderNav();
+        </script>
+        
+    </body>
+</html>
