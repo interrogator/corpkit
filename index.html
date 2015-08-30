@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>corpkit by interrogator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">corpkit</h1>
+      <h2 class="project-tagline">A toolkit for corpus linguistics</h2>
+      <a href="https://github.com/interrogator/corpkit" class="btn">View on GitHub</a>
+      <a href="https://github.com/interrogator/corpkit/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/interrogator/corpkit/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="corpkit-a-toolkit-for-working-with-linguistic-corpora" class="anchor" href="#corpkit-a-toolkit-for-working-with-linguistic-corpora" aria-hidden="true"><span class="octicon octicon-link"></span></a><em>corpkit</em>: a toolkit for working with linguistic corpora</h2>
+
+<p><a href="https://gitter.im/interrogator/corpkit?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Join the chat at https://gitter.im/interrogator/corpkit"></a> <a href="https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit"><img src="https://zenodo.org/badge/14568/interrogator/corpkit.svg" alt="DOI"></a> <a href="https://pypi.python.org/pypi/corpkit"><img src="https://img.shields.io/pypi/v/corpkit.svg" alt="PyPI"></a></p>
+
+<h3>
+<a id="daniel-mcdonald" class="anchor" href="#daniel-mcdonald" aria-hidden="true"><span class="octicon octicon-link"></span></a>Daniel McDonald</h3>
+
+<blockquote>
+<p>Because I kept building new tools and functions for my linguistic research, I decided to put them together into <code>corpkit</code>, a simple toolkit for working with parsed and structured linguistic corpora.</p>
+
+<p><strong>Right now, I'm in the middle of putting together a GUI version of the tool. This resides as pure Python in <code>corpkit/corpkit-gui.py</code>. There is also a zipped up version of an OSX executable in <code>./corpkit-v.v.tar.gz</code>. For now, there's a user guide over <a href="http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html">here</a>, and some screenshots can be seen in the <a href="#key-features">Key features</a> section.</strong></p>
+</blockquote>
+
+
+
+<ul>
+<li>
+<a href="#whats-in-here">What's in here?</a>
+
+<ul>
+<li><a href="#key-features">Key features</a></li>
+</ul>
+</li>
+<li>
+<a href="#installation">Installation</a>
+
+<ul>
+<li><a href="#by-downloading-the-repository">By downloading the repository</a></li>
+<li><a href="#by-cloning-the-repository">By cloning the repository</a></li>
+<li><a href="#via-pip">Via <code>pip</code></a></li>
+</ul>
+</li>
+<li><a href="#unpacking-the-orientation-data">Unpacking the orientation data</a></li>
+<li><a href="#quickstart">Quickstart</a></li>
+<li>
+<a href="#more-detailed-examples">More detailed examples</a>
+
+<ul>
+<li><a href="#concordancing">Concordancing</a></li>
+<li><a href="#systemic-functional-stuff">Systemic functional stuff</a></li>
+<li><a href="#keywording">Keywording</a></li>
+<li><a href="#parallel-processing">Parallel processing</a></li>
+<li><a href="#more-complex-queries-and-plots">More complex queries and plots</a></li>
+<li><a href="#visualisation-options">Visualisation options</a></li>
+</ul>
+</li>
+<li><a href="#more-information">More information</a></li>
+<li><a href="#cite">Cite</a></li>
+</ul>
+
+
+
+<h2>
+<a id="whats-in-here" class="anchor" href="#whats-in-here" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's in here?</h2>
+
+<p>Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:</p>
+
+<table>
+<thead>
+<tr>
+<th><strong>Function name</strong></th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>interrogator()</code></td>
+<td>interrogate parse trees, dependencies, or find keywords or ngrams</td>
+</tr>
+<tr>
+<td><code>plotter()</code></td>
+<td>visualise <code>interrogator()</code> results with <em>matplotlib</em>
+</td>
+</tr>
+<tr>
+<td><code>conc()</code></td>
+<td>complex concordancing of subcorpora</td>
+</tr>
+<tr>
+<td><code>editor()</code></td>
+<td>edit <code>interrogator()</code> or <code>conc()</code> results, calculate keywords</td>
+</tr>
+<tr>
+<td><code>collocates()</code></td>
+<td>get collocates from corpus/subcorpus/concordance lines</td>
+</tr>
+</tbody>
+</table>
+
+<p>While most of the tools are designed to work with corpora that are parsed (by e.g. <a href="http://nlp.stanford.edu/software/corenlp.shtml">Stanford CoreNLP</a>) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.</p>
+
+<p>The idea is to run the tools from an <a href="http://ipython.org/notebook.html">IPython Notebook</a>, but you could also operate the toolkit from the command line if you wanted to have less fun.</p>
+
+<p>The most comprehensive use of <code>corpkit</code> to date has been for an investigation of the word <em>risk</em> in The New York Times, 1963–2014. The repository for that project is <a href="https://www.github.com/interrogator/risk">here</a>; the Notebook demonstrating the use of <code>corpkit</code> can be viewed via either <a href="https://github.com/interrogator/risk/blob/master/risk.ipynb">GitHub</a> or <a href="http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb">NBviewer</a>.</p>
+
+<h3>
+<a id="key-features" class="anchor" href="#key-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Key features</h3>
+
+<h4>
+<a id="interrogator" class="anchor" href="#interrogator" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>interrogator()</code>
+</h4>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/interrogate.png"></p>
+
+<ul>
+<li>Use <a href="http://nlp.stanford.edu/%7Emanning/courses/ling289/Tregex.html">Tregex</a> or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena</li>
+<li>Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression</li>
+<li>Return words or phrases, POS/group/phrase tags, raw counts, or all three.</li>
+<li>Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to <code>dictionaries/word_transforms.py</code> manually if need be</li>
+<li>Look for keywords in each subcorpus (using code from <a href="https://github.com/sgrau/spindle-code"><em>Spindle</em></a>), and chart their keyness</li>
+<li>Look for ngrams in each subcorpus, and chart their frequency</li>
+<li>Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually</li>
+<li>Output Pandas DataFrames that can be easily edited and visualised</li>
+<li>Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora</li>
+</ul>
+
+<h4>
+<a id="editor" class="anchor" href="#editor" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>editor()</code>
+</h4>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/edit.png"></p>
+
+<ul>
+<li>Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)</li>
+<li>Sort results by name or total frequency</li>
+<li>Use linear regression to figure out the trajectories of results, and sort by the most increasing, decreasing or static values</li>
+<li>Show the <em>p</em>-value for linear regression slopes, or exclude results above <em>p</em>
+</li>
+<li>Work with absolute frequency, or determine ratios/percentage of another list: 
+
+<ul>
+<li>determine the total number of verbs, or total number of verbs that are <em>be</em>
+</li>
+<li>determine the percentage of verbs that are <em>be</em>
+</li>
+<li>determine the percentage of <em>be</em> verbs that are <em>was</em>
+</li>
+<li>determine the ratio of <em>was/were</em> ...</li>
+<li>etc.</li>
+</ul>
+</li>
+<li>Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)</li>
+</ul>
+
+<h4>
+<a id="plotter" class="anchor" href="#plotter" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>plotter()</code>
+</h4>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/visualise.png"></p>
+
+<ul>
+<li>Plot using <em>Pandas</em>/<em>Matplotlib</em>
+</li>
+<li>Interactive plots (hover-over text, interactive legends) using <em>mpld3</em> (examples in the <a href="https://github.com/interrogator/risk/blob/master/risk.ipynb"><em>Risk Semantics</em> notebook</a>)</li>
+<li>Plot anything you like: words, tags, counts for grammatical features ...</li>
+<li>Create line charts, bar charts, pie charts, etc. with the <code>kind</code> argument</li>
+<li>Use <code>subplots = True</code> to produce individual charts for each result</li>
+<li>Customisable figure titles, axes labels, legends, image size, colormaps, etc.</li>
+<li>Use <code>TeX</code> if you have it</li>
+<li>Use log scales if you really want</li>
+<li>Use a number of chart styles, such as <code>ggplot</code> or <code>fivethirtyeight</code>
+</li>
+<li>Save images to file, as <code>.pdf</code> or <code>.png</code>
+</li>
+</ul>
+
+<h4>
+<a id="other-stuff" class="anchor" href="#other-stuff" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other stuff</h4>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/conc.png"></p>
+
+<ul>
+<li>View top results as a table via <code>Pandas</code>
+</li>
+<li>Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances</li>
+<li>Concordance using Tregex (i.e. concordance all nominal groups containing <em>gross</em> as an adjective with <code>NP &lt; (JJ &lt; /gross/)</code>)</li>
+<li>Randomise concordance results, determine window size, output to CSV, etc.</li>
+<li>Quickly save interrogations and figures to file, and reload results in new sessions with <code>save_result()</code> and <code>load_result()</code>
+</li>
+<li>Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation</li>
+<li>Start a new blank project with <code>new_project()</code>
+</li>
+</ul>
+
+<p>One of the main reasons for these tools was to make it quicker and easier to explore corpora in complex ways, using output from one tool as input for the next.</p>
+
+<ul>
+<li>n-gramming and keywording can be done via <code>interrogator()</code>
+</li>
+<li>keywording can easily be done on your concordance lines</li>
+<li>Use loops to concordance the top results from an interrogation, or check their keyness</li>
+<li>use <code>editor()</code> to edit concordance line output as well as interrogations</li>
+<li>build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording</li>
+<li>Restrict keyword analysis to particular parts of lexis/grammar (i.e. NP heads), removing the need for stopword lists, and making topic summarisation easier</li>
+<li>Use <code>interrogator()</code> output or subset of output as target or reference corpus</li>
+<li>and so on ...</li>
+</ul>
+
+<p>Included here is a sample project, <code>orientation</code>, which you can run in order to familiarise yourself with the <code>corpkit</code> module. It uses a corpus of paragraphs of the NYT containing the word <em>risk</em>. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>You can get <code>corpkit</code> running by downloading or cloning this repository, or via <code>pip</code>.</p>
+
+<h3>
+<a id="by-downloading-the-repository" class="anchor" href="#by-downloading-the-repository" aria-hidden="true"><span class="octicon octicon-link"></span></a>By downloading the repository</h3>
+
+<p>Hit 'Download ZIP' and unzip the file. Then <code>cd</code> into the newly created directory and install:</p>
+
+<div class="highlight highlight-shell"><pre><span class="pl-c1">cd</span> corpkit-master
+<span class="pl-c"># might need sudo:</span>
+python setup.py install</pre></div>
+
+<h3>
+<a id="by-cloning-the-repository" class="anchor" href="#by-cloning-the-repository" aria-hidden="true"><span class="octicon octicon-link"></span></a>By cloning the repository</h3>
+
+<p>Clone the repo, <code>cd</code> into it and run the setup:</p>
+
+<div class="highlight highlight-shell"><pre>git clone https://github.com/interrogator/corpkit.git
+<span class="pl-c1">cd</span> corpkit
+<span class="pl-c"># might need sudo:</span>
+python setup.py install</pre></div>
+
+<h3>
+<a id="via-pip" class="anchor" href="#via-pip" aria-hidden="true"><span class="octicon octicon-link"></span></a>Via <code>pip</code>
+</h3>
+
+<div class="highlight highlight-shell"><pre><span class="pl-c"># might need sudo:</span>
+pip install corpkit</pre></div>
+
+<p>To interrogate corpora and plot results, you need <em>Java</em>, <em>NLTK</em> and <em>matplotlib</em>. Dependency searching needs <em>Beautiful Soup</em>. Tabling results needs <em>Pandas</em>, etc. For NLTK, you can also use pip:</p>
+
+<div class="highlight highlight-shell"><pre><span class="pl-c"># might need sudo</span>
+pip install -U nltk</pre></div>
+
+<p>The <code>pip</code> installation of NLTK does not come with the data needed for NLTK's tokeniser, so you'll also need to install that from Python:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">import</span> nltk
+<span class="pl-c"># change 'punkt' to 'all' to get everything</span>
+<span class="pl-k">&gt;&gt;&gt;</span> nltk.download(<span class="pl-s"><span class="pl-pds">'</span>punkt<span class="pl-pds">'</span></span>)</pre></div>
+
+<h2>
+<a id="unpacking-the-orientation-data" class="anchor" href="#unpacking-the-orientation-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Unpacking the orientation data</h2>
+
+<p>If you installed by downloading or cloning this repository, you'll have the orientation project installed. To use it, <code>cd</code> into the orientation project and unzip the data files:</p>
+
+<div class="highlight highlight-shell"><pre><span class="pl-c1">cd</span> orientation
+<span class="pl-c"># unzip data to data folder</span>
+gzip -dc data/nyt.tar.gz <span class="pl-k">|</span> tar -xf - -C data</pre></div>
+
+<h2>
+<a id="quickstart" class="anchor" href="#quickstart" aria-hidden="true"><span class="octicon octicon-link"></span></a>Quickstart</h2>
+
+<p>The best way to use <code>corpkit</code> is by opening <code>orientation.ipynb</code> with IPython, and executing the first few cells:</p>
+
+<div class="highlight highlight-shell"><pre>ipython notebook orientation.ipynb</pre></div>
+
+<p>Or, just use <em>(I)Python</em> (more difficult, less fun):</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">import</span> corpkit
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> interroplot
+
+<span class="pl-c"># set corpus path</span>
+<span class="pl-k">&gt;&gt;&gt;</span> corpus <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>data/nyt/years<span class="pl-pds">'</span></span>
+
+<span class="pl-c"># search nyt for modal auxiliaries:</span>
+<span class="pl-k">&gt;&gt;&gt;</span> interroplot(corpus, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>MD<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output: </p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/md2.png">
+<br><br></p>
+
+<h2>
+<a id="more-detailed-examples" class="anchor" href="#more-detailed-examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>More detailed examples</h2>
+
+<p><code>interroplot()</code> is just a demo function that does three things in order:</p>
+
+<ol>
+<li>uses <code>interrogator()</code> to search corpus for a (Regex or Tregex) query</li>
+<li>uses <code>editor()</code> to calculate the relative frequencies of each result</li>
+<li>uses <code>plotter()</code> to show the top seven results</li>
+</ol>
+
+<p>Here's an example of the three functions at work on the NYT corpus:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> interrogator, editor, plotter
+<span class="pl-c"># make tregex query: head of NP in PP containing 'of'</span>
+<span class="pl-c"># in NP headed by risk word:</span>
+<span class="pl-k">&gt;&gt;&gt;</span> q <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# (NP &gt; (PP &lt;&lt;# /<span class="pl-k">(?i)</span>of/ &gt; (NP &lt;&lt;# (/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/))))<span class="pl-pds">'</span></span>
+
+<span class="pl-c"># count terminals/leaves of trees only, and do lemmatisation:</span>
+<span class="pl-k">&gt;&gt;&gt;</span> risk_of <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>words<span class="pl-pds">'</span></span>, q, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)
+
+<span class="pl-c"># use editor to turn absolute into relative frequencies</span>
+<span class="pl-k">&gt;&gt;&gt;</span> to_plot <span class="pl-k">=</span> editor(risk_of.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, risk_of.totals)
+
+<span class="pl-c"># plot the results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Risk of (noun)<span class="pl-pds">'</span></span>, to_plot.results, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Percentage of all results<span class="pl-pds">'</span></span>,
+...    <span class="pl-smi">style</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>fivethirtyeight<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output: </p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png">
+<br><br></p>
+
+<h3>
+<a id="concordancing" class="anchor" href="#concordancing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Concordancing</h3>
+
+<p>You can use Tregex queries to concordance things, too:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> conc
+
+<span class="pl-k">&gt;&gt;&gt;</span> subcorpus <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>data/nyt/years/2005<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> query <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/JJ<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt; (NP &lt;&lt;# (/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">\b</span>risk/))<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> lines <span class="pl-k">=</span> conc(subcorpus, query, <span class="pl-smi">window</span> <span class="pl-k">=</span> <span class="pl-c1">50</span>, <span class="pl-smi">n</span> <span class="pl-k">=</span> <span class="pl-c1">10</span>, <span class="pl-smi">random</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)</pre></div>
+
+<p>Output (a <code>Pandas DataFrame</code>):</p>
+
+<pre><code>0    hedge funds or high-risk stocks obviously poses a         greater   risk to the pension program than a portfolio of   
+1           contaminated water pose serious health and   environmental   risks                                             
+2   a cash break-even pace '' was intended to minimize       financial   risk to the parent company                        
+3                                                Other           major   risks identified within days of the attack        
+4                           One seeks out stocks ; the           other   monitors risks                                    
+5        men and women in Colorado Springs who were at            high   risk for H.I.V. infection , because of            
+6   by the marketing consultant Seth Godin , to taking      calculated   risks , in the opinion of two longtime business   
+7        to happen '' in premises '' where there was a            high   risk of fire                                      
+8       As this was match points , some of them took a          slight   risk at the second trick by finessing the heart   
+9     said that the agency 's continuing review of how         Guidant   treated patient risks posed by devices like the 
+</code></pre>
+
+<p>You can use this output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with <code>editor()</code>.</p>
+
+<h3>
+<a id="systemic-functional-stuff" class="anchor" href="#systemic-functional-stuff" aria-hidden="true"><span class="octicon octicon-link"></span></a>Systemic functional stuff</h3>
+
+<p>Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in <code>dictionaries/process_types.py</code>, <code>pattern.en</code> will get all their inflections automatically.</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> quickview
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> dictionaries.process_types <span class="pl-k">import</span> processes
+
+<span class="pl-c"># use verbal process regex as the query</span>
+<span class="pl-c"># deprole finds the dependent of verbal processes, and its functional role</span>
+<span class="pl-c"># keep only results matching function_filter regex</span>
+<span class="pl-k">&gt;&gt;&gt;</span> sayers <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>d<span class="pl-pds">'</span></span>, processes.verbal, 
+...    <span class="pl-smi">function_filter</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>nsubj<span class="pl-k">$</span><span class="pl-pds">'</span></span>, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)
+
+<span class="pl-c"># have a look at the top results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> quickview(sayers, <span class="pl-smi">n</span> <span class="pl-k">=</span> <span class="pl-c1">20</span>)</pre></div>
+
+<p>Output:</p>
+
+<pre><code>  0: he (n=24530)
+  1: she (n=5558)
+  2: they (n=5510)
+  3: official (n=4348)
+  4: it (n=3752)
+  5: who (n=2940)
+  6: that (n=2665)
+  7: i (n=2062)
+  8: expert (n=2057)
+  9: analyst (n=1369)
+ 10: we (n=1214)
+ 11: report (n=1103)
+ 12: company (n=1070)
+ 13: which (n=1043)
+ 14: you (n=987)
+ 15: researcher (n=987)
+ 16: study (n=901)
+ 17: critic (n=826)
+ 18: person (n=802)
+ 19: agency (n=798)
+ 20: doctor (n=770)
+
+</code></pre>
+
+<p>First, let's try removing the pronouns using <code>editor()</code>. The quickest way is to use the editable wordlists stored in <code>dictionaries/wordlists</code>:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> editor
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> dictionaries.wordlists <span class="pl-k">import</span> wordlists
+<span class="pl-k">&gt;&gt;&gt;</span> prps <span class="pl-k">=</span> wordlists.pronouns
+
+<span class="pl-c"># alternative approaches:</span>
+<span class="pl-c"># &gt;&gt;&gt; prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]</span>
+<span class="pl-c"># &gt;&gt;&gt; prps = ['he', 'she', 'you']</span>
+<span class="pl-c"># &gt;&gt;&gt; prps = as_regex(wl.pronouns, boundaries = 'line')</span>
+
+<span class="pl-c"># give editor() indices, words, wordlists or regexes to keep remove or merge</span>
+<span class="pl-k">&gt;&gt;&gt;</span> sayers_no_prp <span class="pl-k">=</span> editor(sayers.results, <span class="pl-smi">skip_entries</span> <span class="pl-k">=</span> prps,
+...    <span class="pl-smi">skip_subcorpora</span> <span class="pl-k">=</span> [<span class="pl-c1">1963</span>])
+<span class="pl-k">&gt;&gt;&gt;</span> quickview(sayers_no_prp, <span class="pl-smi">n</span> <span class="pl-k">=</span> <span class="pl-c1">10</span>)</pre></div>
+
+<p>Output:</p>
+
+<pre><code>  0: official (n=4342)
+  1: expert (n=2055)
+  2: analyst (n=1369)
+  3: report (n=1098)
+  4: company (n=1066)
+  5: researcher (n=987)
+  6: study (n=900)
+  7: critic (n=825)
+  8: person (n=801)
+  9: agency (n=796)
+</code></pre>
+
+<p>Great. Now, let's sort the entries by trajectory, and then plot:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># sort with editor()</span>
+<span class="pl-k">&gt;&gt;&gt;</span> sayers_no_prp <span class="pl-k">=</span> editor(sayers_no_prp.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, sayers.totals, <span class="pl-smi">sort_by</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>increase<span class="pl-pds">'</span></span>)
+
+<span class="pl-c"># make an area chart with custom y label</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Sayers, increasing<span class="pl-pds">'</span></span>, sayers_no_prp.results, <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>area<span class="pl-pds">'</span></span>, 
+...    <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Percentage of all sayers<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output:</p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png">
+<br><br></p>
+
+<p>We can also merge subcorpora. Let's look for changes in gendered pronouns:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> subcorpora_to_merge <span class="pl-k">=</span> [(<span class="pl-s"><span class="pl-pds">'</span>1960s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>196<span class="pl-pds">'</span></span>), 
+...    (<span class="pl-s"><span class="pl-pds">'</span>1980s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>198<span class="pl-pds">'</span></span>), (<span class="pl-s"><span class="pl-pds">'</span>1990s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>199<span class="pl-pds">'</span></span>), 
+...    (<span class="pl-s"><span class="pl-pds">'</span>2000s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>200<span class="pl-pds">'</span></span>), (<span class="pl-s"><span class="pl-pds">'</span>2010s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>201<span class="pl-pds">'</span></span>)]
+
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">for</span> subcorp, search <span class="pl-k">in</span> subcorpora_to_merge:
+...    sayers <span class="pl-k">=</span> editor(sayers.results, <span class="pl-smi">merge_subcorpora</span> <span class="pl-k">=</span> search, <span class="pl-smi">new_subcorpus_name</span><span class="pl-k">=</span>subcorp)
+
+<span class="pl-c"># now, get relative frequencies for he and she</span>
+<span class="pl-k">&gt;&gt;&gt;</span> genders <span class="pl-k">=</span> editor(sayers.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, sayers.totals, <span class="pl-smi">just_entries</span> <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>he<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>she<span class="pl-pds">'</span></span>])
+
+<span class="pl-c"># and plot it as a series of pie charts, showing totals on the slices:</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Pronominal sayers in the NYT<span class="pl-pds">'</span></span>, genders.results.T, <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>pie<span class="pl-pds">'</span></span>,
+...    <span class="pl-smi">subplots</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>, <span class="pl-smi">figsize</span> <span class="pl-k">=</span> (<span class="pl-c1">15</span>, <span class="pl-c1">2.75</span>), <span class="pl-smi">show_totals</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>plot<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output:</p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/ann_he_she.png">
+<br><br></p>
+
+<p>Woohoo, a decreasing gender divide! </p>
+
+<h3>
+<a id="keywording" class="anchor" href="#keywording" aria-hidden="true"><span class="octicon octicon-link"></span></a>Keywording</h3>
+
+<p>As I see it, there are two main problems with keywording, as typically performed in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of <em>I</em>, <em>you</em> and <em>one</em> can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.</p>
+
+<p>So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With <code>corpkit</code>, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key <em>predicators</em> (rightmost verbs in the VP), or key <em>participants</em> (heads of arguments of these VPs):</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># just heads of participants (no pronouns, though!)</span>
+<span class="pl-k">&gt;&gt;&gt;</span> part <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/(NN<span class="pl-k">|</span>JJ)<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# (/(NP<span class="pl-k">|</span>ADJP)/ <span class="pl-k">$</span> VP <span class="pl-k">|</span> &gt; VP)<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> p <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>words<span class="pl-pds">'</span></span>, part, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)</pre></div>
+
+<p>When using <code>editor()</code> to calculate keywords, there are a few default parameters that can be easily changed:</p>
+
+<table>
+<thead>
+<tr>
+<th>Keyword argument</th>
+<th>Function</th>
+<th>Default setting</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>threshold</code></td>
+<td>Remove words occurring fewer than <code>n</code> times in reference corpus</td>
+<td><code>False</code></td>
+<td>
+<code>'high/medium/low'</code>/ <code>True/False</code> / <code>int</code>
+</td>
+</tr>
+<tr>
+<td><code>calc_all</code></td>
+<td>Calculate keyness for words in both reference and target corpus, rather than just target corpus</td>
+<td><code>True</code></td>
+<td><code>True/False</code></td>
+</tr>
+<tr>
+<td><code>selfdrop</code></td>
+<td>Attempt to remove target data from reference data when calculating keyness</td>
+<td><code>True</code></td>
+<td><code>True/False</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>Let's have a look at how these options change the output:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># 'self' as reference corpus uses p.results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> options <span class="pl-k">=</span> {<span class="pl-s"><span class="pl-pds">'</span>selfdrop<span class="pl-pds">'</span></span>: <span class="pl-c1">True</span>, 
+...            <span class="pl-s"><span class="pl-pds">'</span>selfdrop<span class="pl-pds">'</span></span>: <span class="pl-c1">False</span>, 
+...            <span class="pl-s"><span class="pl-pds">'</span>calc_all<span class="pl-pds">'</span></span>: <span class="pl-c1">False</span>, 
+...            <span class="pl-s"><span class="pl-pds">'</span>threshold<span class="pl-pds">'</span></span>: <span class="pl-c1">False</span>}
+
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">for</span> k, v <span class="pl-k">in</span> options.items():
+...    k <span class="pl-k">=</span> editor(p.results, <span class="pl-s"><span class="pl-pds">'</span>keywords<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>self<span class="pl-pds">'</span></span>, <span class="pl-smi">k</span> <span class="pl-k">=</span> v)
+...    <span class="pl-k">print</span> k.results.ix[<span class="pl-s"><span class="pl-pds">'</span>2011<span class="pl-pds">'</span></span>].order(<span class="pl-smi">ascending</span> <span class="pl-k">=</span> <span class="pl-c1">False</span>)
+</pre></div>
+
+<p>Output:</p>
+
+<table>
+<thead>
+<tr>
+<th>#1: default</th>
+<th align="right"></th>
+<th>#2: no <code>selfdrop</code>
+</th>
+<th align="right"></th>
+<th>#3: no <code>calc_all</code>
+</th>
+<th align="right"></th>
+<th>#4: no <code>threshold</code>
+</th>
+<th align="right"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>risk</td>
+<td align="right">1941.47</td>
+<td>risk</td>
+<td align="right">1909.79</td>
+<td>risk</td>
+<td align="right">1941.47</td>
+<td>bank</td>
+<td align="right">668.19</td>
+</tr>
+<tr>
+<td>bank</td>
+<td align="right">1365.70</td>
+<td>bank</td>
+<td align="right">1247.51</td>
+<td>bank</td>
+<td align="right">1365.70</td>
+<td>crisis</td>
+<td align="right">242.05</td>
+</tr>
+<tr>
+<td>crisis</td>
+<td align="right">431.36</td>
+<td>crisis</td>
+<td align="right">388.01</td>
+<td>crisis</td>
+<td align="right">431.36</td>
+<td>obama</td>
+<td align="right">172.41</td>
+</tr>
+<tr>
+<td>investor</td>
+<td align="right">410.06</td>
+<td>investor</td>
+<td align="right">387.08</td>
+<td>investor</td>
+<td align="right">410.06</td>
+<td>demiraj</td>
+<td align="right">161.90</td>
+</tr>
+<tr>
+<td>rule</td>
+<td align="right">316.77</td>
+<td>rule</td>
+<td align="right">293.33</td>
+<td>rule</td>
+<td align="right">316.77</td>
+<td>regulator</td>
+<td align="right">144.91</td>
+</tr>
+<tr>
+<td></td>
+<td align="right">...</td>
+<td></td>
+<td align="right">...</td>
+<td></td>
+<td align="right">...</td>
+<td></td>
+<td align="right">...</td>
+</tr>
+<tr>
+<td>clinton</td>
+<td align="right">-37.80</td>
+<td>tactic</td>
+<td align="right">-35.09</td>
+<td>hussein</td>
+<td align="right">-25.42</td>
+<td>clinton</td>
+<td align="right">-87.33</td>
+</tr>
+<tr>
+<td>vioxx</td>
+<td align="right">-38.00</td>
+<td>vioxx</td>
+<td align="right">-35.29</td>
+<td>clinton</td>
+<td align="right">-37.80</td>
+<td>today</td>
+<td align="right">-89.49</td>
+</tr>
+<tr>
+<td>greenspan</td>
+<td align="right">-54.35</td>
+<td>greenspan</td>
+<td align="right">-51.38</td>
+<td>vioxx</td>
+<td align="right">-38.00</td>
+<td>risky</td>
+<td align="right">-125.76</td>
+</tr>
+<tr>
+<td>bush</td>
+<td align="right">-153.06</td>
+<td>bush</td>
+<td align="right">-143.02</td>
+<td>bush</td>
+<td align="right">-153.06</td>
+<td>bush</td>
+<td align="right">-253.95</td>
+</tr>
+<tr>
+<td>yesterday</td>
+<td align="right">-162.30</td>
+<td>yesterday</td>
+<td align="right">-151.71</td>
+<td>yesterday</td>
+<td align="right">-162.30</td>
+<td>yesterday</td>
+<td align="right">-268.29</td>
+</tr>
+</tbody>
+</table>
+
+<p>As you can see, slight variations on keywording give different impressions of the same corpus!</p>
+
+<p>A key strength of <code>corpkit</code>'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> yrs <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>2011<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>2012<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>2013<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>2014<span class="pl-pds">'</span></span>]
+<span class="pl-k">&gt;&gt;&gt;</span> keys <span class="pl-k">=</span> editor(p.results.ix[yrs].sum(), <span class="pl-s"><span class="pl-pds">'</span>keywords<span class="pl-pds">'</span></span>, p.results.drop(yrs),
+...    <span class="pl-smi">threshold</span> <span class="pl-k">=</span> <span class="pl-c1">False</span>)
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">print</span> keys.results</pre></div>
+
+<p>Output:</p>
+
+<pre><code>bank          1795.24
+obama          722.36
+romney         560.67
+jpmorgan       527.57
+rule           413.94
+dimon          389.86
+draghi         349.80
+regulator      317.82
+italy          282.00
+crisis         243.43
+putin          209.51
+greece         208.80
+snowden        208.35
+mf             192.78
+adoboli        161.30
+</code></pre>
+
+<p>... or track the keyness of a set of words over time:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> terror <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>terror<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>terrorism<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>terrorist<span class="pl-pds">'</span></span>]
+<span class="pl-k">&gt;&gt;&gt;</span> terr <span class="pl-k">=</span> editor(p.results, <span class="pl-s"><span class="pl-pds">'</span>k<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>self<span class="pl-pds">'</span></span>, <span class="pl-smi">merge_entries</span> <span class="pl-k">=</span> terror, <span class="pl-smi">newname</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>terror<span class="pl-pds">'</span></span>)
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">print</span> terr.results.terror</pre></div>
+
+<p>Output:</p>
+
+<pre><code>1963    -2.51
+1987    -3.67
+1988   -16.09
+1989    -6.24
+1990   -16.24
+...       ...
+Name: terror, dtype: float64
+</code></pre>
+
+<h4>
+<a id="plotting-keywords" class="anchor" href="#plotting-keywords" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plotting keywords</h4>
+
+<p>Naturally, we can use <code>plotter()</code> for our keywords too:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Terror* as Participant in the \emph<span class="pl-c1">{NYT}</span><span class="pl-pds">'</span></span>, pols.results.terror, 
+...    <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>area<span class="pl-pds">'</span></span>, <span class="pl-smi">stacked</span> <span class="pl-k">=</span> <span class="pl-c1">False</span>, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>L/L Keyness<span class="pl-pds">'</span></span>)
+<span class="pl-k">&gt;&gt;&gt;</span> politicians <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>bush<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>obama<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>gore<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>clinton<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>mccain<span class="pl-pds">'</span></span>, 
+...                <span class="pl-s"><span class="pl-pds">'</span>romney<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>dole<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>reagan<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>gorbachev<span class="pl-pds">'</span></span>]
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Keyness of politicians in the \emph<span class="pl-c1">{NYT}</span><span class="pl-pds">'</span></span>, k.results[politicans], 
+...    <span class="pl-smi">num_to_plot</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>L/L Keyness<span class="pl-pds">'</span></span>, <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>area<span class="pl-pds">'</span></span>, <span class="pl-smi">legend_pos</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>center left<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output:
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png">
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-emphnyt.png">
+<br><br></p>
+
+<h4>
+<a id="traditional-reference-corpora" class="anchor" href="#traditional-reference-corpora" aria-hidden="true"><span class="octicon octicon-link"></span></a>Traditional reference corpora</h4>
+
+<p>If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, <code>editor()</code> recognises <code>dicts</code>, <code>DataFrames</code>, <code>Series</code>, files containing <code>dicts</code>, or paths to plain text files or trees.</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># arbitrary list of common/boring words</span>
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> dictionaries.stopwords <span class="pl-k">import</span> stopwords
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">print</span> editor(p.results.ix[<span class="pl-s"><span class="pl-pds">'</span>2013<span class="pl-pds">'</span></span>], <span class="pl-s"><span class="pl-pds">'</span>k<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>bnc.p<span class="pl-pds">'</span></span>, 
+...    <span class="pl-smi">skip_entries</span> <span class="pl-k">=</span> stopwords).results
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">print</span> editor(p.results.ix[<span class="pl-s"><span class="pl-pds">'</span>2013<span class="pl-pds">'</span></span>], <span class="pl-s"><span class="pl-pds">'</span>k<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>bnc.p<span class="pl-pds">'</span></span>, <span class="pl-smi">calc_all</span> <span class="pl-k">=</span> <span class="pl-c1">False</span>).results</pre></div>
+
+<p>Output (not so useful):</p>
+
+<pre><code>#1                                #2
+bank           5568.25            bank      5568.25
+person         5423.24            person    5423.24
+company        3839.14            company   3839.14
+way            3537.16            way       3537.16
+state          2873.94            state     2873.94
+                ...                           ...  
+three          -691.25            ten       -199.36
+people         -829.97            bit       -205.97
+going          -877.83            sort      -254.71
+erm           -2429.29            thought   -255.72
+yeah          -3179.90            will      -679.06
+</code></pre>
+
+<p>Finally, for the record, you could also use <code>interrogator()</code> or <code>keywords()</code> to calculate keywords, though these options may offer less flexibility:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">from</span> corpkit <span class="pl-k">import</span> keywords
+<span class="pl-k">&gt;&gt;&gt;</span> keys <span class="pl-k">=</span> keywords(p.results.ix[<span class="pl-s"><span class="pl-pds">'</span>2002<span class="pl-pds">'</span></span>], <span class="pl-smi">reference_corpus</span> <span class="pl-k">=</span> p.results])
+<span class="pl-k">&gt;&gt;&gt;</span> keys <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>keywords<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>any<span class="pl-pds">'</span></span>, <span class="pl-smi">reference_corpus</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>self<span class="pl-pds">'</span></span>)</pre></div>
+
+<h3>
+<a id="parallel-processing" class="anchor" href="#parallel-processing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parallel processing</h3>
+
+<p><code>interrogator()</code> can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:</p>
+
+<ol>
+<li>a <code>list</code> of paths as <code>path</code> (i.e. <code>['path/to/corpus1', 'path/to/corpus2']</code>)</li>
+<li>a <code>dict</code> as <code>query</code> (i.e. <code>{'Noun phrases': r'NP', 'Verb phrases': r'VP'}</code>)</li>
+</ol>
+
+<p>Let's look at different risk processes (e.g. <em>risk</em>, <em>take risk</em>, <em>run risk</em>, <em>pose risk</em>, <em>put at risk</em>) using constituency parses:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> query <span class="pl-k">=</span> {<span class="pl-s"><span class="pl-pds">'</span>risk<span class="pl-pds">'</span></span>: <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>VP &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>/)<span class="pl-pds">'</span></span>, 
+...    <span class="pl-s"><span class="pl-pds">'</span>take risk<span class="pl-pds">'</span></span>: <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>VP &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-k">\b</span>(take<span class="pl-k">|</span>takes<span class="pl-k">|</span>taking<span class="pl-k">|</span>took<span class="pl-k">|</span>taken)<span class="pl-k">+</span><span class="pl-k">\b</span>/) &lt; (NP &lt;&lt;# /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>/)<span class="pl-pds">'</span></span>, 
+...    <span class="pl-s"><span class="pl-pds">'</span>run risk<span class="pl-pds">'</span></span>: <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>VP &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-k">\b</span>(run<span class="pl-k">|</span>runs<span class="pl-k">|</span>running<span class="pl-k">|</span>ran)<span class="pl-k">+</span><span class="pl-k">\b</span>/) &lt; (NP &lt;&lt;# /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>/)<span class="pl-pds">'</span></span>, 
+...    <span class="pl-s"><span class="pl-pds">'</span>put at risk<span class="pl-pds">'</span></span>: <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>VP &lt;&lt;# /<span class="pl-k">(?i)</span>(put<span class="pl-k">|</span>puts<span class="pl-k">|</span>putting)<span class="pl-cce">\b</span>/ &lt;&lt; (PP &lt;&lt;# /<span class="pl-k">(?i)</span>at/ &lt; (NP &lt;&lt;# /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/))<span class="pl-pds">'</span></span>, 
+...    <span class="pl-s"><span class="pl-pds">'</span>pose risk<span class="pl-pds">'</span></span>: <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>VP &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-k">\b</span>(pose<span class="pl-k">|</span>poses<span class="pl-k">|</span>posed<span class="pl-k">|</span>posing)<span class="pl-k">+</span><span class="pl-k">\b</span>/) &lt; (NP &lt;&lt;# /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>/)<span class="pl-pds">'</span></span>}
+
+<span class="pl-k">&gt;&gt;&gt;</span> processes <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>count<span class="pl-pds">'</span></span>, query)
+<span class="pl-k">&gt;&gt;&gt;</span> proc_rel <span class="pl-k">=</span> editor(processes.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, processes.totals)
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Risk processes<span class="pl-pds">'</span></span>, proc_rel.results)</pre></div>
+
+<p>Output:</p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png">
+<br><br></p>
+
+<h3>
+<a id="more-complex-queries-and-plots" class="anchor" href="#more-complex-queries-and-plots" aria-hidden="true"><span class="octicon octicon-link"></span></a>More complex queries and plots</h3>
+
+<p>Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># a query to find heads of nps that are subjects of risk processes</span>
+<span class="pl-k">&gt;&gt;&gt;</span> query <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/<span class="pl-k">^</span>NN(S<span class="pl-k">|</span>)<span class="pl-k">$</span>/ !&lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-cce">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# (@NP <span class="pl-k">$</span> (VP &lt;<span class="pl-k">+</span>(VP) (VP ( &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/) <span class="pl-pds">'</span></span> \
+...    <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">|</span> &lt;&lt;# (/VB<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-k">\b</span>(take<span class="pl-k">|</span>taking<span class="pl-k">|</span>takes<span class="pl-k">|</span>taken<span class="pl-k">|</span>took<span class="pl-k">|</span>run<span class="pl-k">|</span>running<span class="pl-k">|</span>runs<span class="pl-k">|</span>ran<span class="pl-k">|</span>put<span class="pl-k">|</span>putting<span class="pl-k">|</span>puts)/) &lt; <span class="pl-pds">'</span></span> \
+...    <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>(NP &lt;&lt;# (/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-k">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/))))))<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> noun_riskers <span class="pl-k">=</span> interrogator(c, <span class="pl-s"><span class="pl-pds">'</span>words<span class="pl-pds">'</span></span>, query, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)
+
+<span class="pl-k">&gt;&gt;&gt;</span> quickview(noun_riskers, <span class="pl-c1">10</span>)</pre></div>
+
+<p>Output:</p>
+
+<pre><code>  0: person (n=195)
+  1: company (n=139)
+  2: bank (n=80)
+  3: investor (n=66)
+  4: government (n=63)
+  5: man (n=51)
+  6: leader (n=48)
+  7: woman (n=43)
+  8: official (n=40)
+  9: player (n=39)
+</code></pre>
+
+<p>We can use <code>editor()</code> to make some thematic categories:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># get everyday people</span>
+<span class="pl-k">&gt;&gt;&gt;</span> p <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>person<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>man<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>woman<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>child<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>consumer<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>baby<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>student<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>patient<span class="pl-pds">'</span></span>]
+
+<span class="pl-k">&gt;&gt;&gt;</span> them_cat <span class="pl-k">=</span> editor(noun_riskers.results, <span class="pl-smi">merge_entries</span> <span class="pl-k">=</span> p, <span class="pl-smi">newname</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Everyday people<span class="pl-pds">'</span></span>)
+
+<span class="pl-c"># get business, gov, institutions</span>
+<span class="pl-k">&gt;&gt;&gt;</span> i <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>company<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>bank<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>investor<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>government<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>leader<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>president<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>officer<span class="pl-pds">'</span></span>, 
+...      <span class="pl-s"><span class="pl-pds">'</span>politician<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>institution<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>agency<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>candidate<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>firm<span class="pl-pds">'</span></span>]
+
+<span class="pl-k">&gt;&gt;&gt;</span> them_cat <span class="pl-k">=</span> editor(them_cat.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, noun_riskers.totals, <span class="pl-smi">merge_entries</span> <span class="pl-k">=</span> i, 
+...    <span class="pl-smi">newname</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Institutions<span class="pl-pds">'</span></span>, <span class="pl-smi">sort_by</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>total<span class="pl-pds">'</span></span>, <span class="pl-smi">skip_subcorpora</span> <span class="pl-k">=</span> <span class="pl-c1">1963</span>,
+...    <span class="pl-smi">just_entries</span> <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>Everyday people<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>Institutions<span class="pl-pds">'</span></span>])
+
+<span class="pl-c"># plot result</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Types of riskers<span class="pl-pds">'</span></span>, them_cat.results, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Percentage of all riskers<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output:</p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/types-of-riskers.png">
+<br><br></p>
+
+<p>Let's also find out what percentage of the time some nouns appear as riskers:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># find any head of an np not containing risk</span>
+<span class="pl-k">&gt;&gt;&gt;</span> query <span class="pl-k">=</span> <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>/NN<span class="pl-c1">.</span><span class="pl-k">?</span>/ &gt;&gt;# NP !&lt; /<span class="pl-k">(?i)</span><span class="pl-c1">.</span><span class="pl-k">?</span><span class="pl-cce">\b</span>risk<span class="pl-c1">.</span><span class="pl-k">?</span>/<span class="pl-pds">'</span></span>
+<span class="pl-k">&gt;&gt;&gt;</span> noun_lemmata <span class="pl-k">=</span> interrogator(corpus, <span class="pl-s"><span class="pl-pds">'</span>words<span class="pl-pds">'</span></span>, query, <span class="pl-smi">lemmatise</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>)
+
+<span class="pl-c"># get some key terms</span>
+<span class="pl-k">&gt;&gt;&gt;</span> people <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>man<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>woman<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>child<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>baby<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>politician<span class="pl-pds">'</span></span>, 
+...           <span class="pl-s"><span class="pl-pds">'</span>senator<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>obama<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>clinton<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>bush<span class="pl-pds">'</span></span>]
+<span class="pl-k">&gt;&gt;&gt;</span> selected <span class="pl-k">=</span> editor(noun_riskers.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, noun_lemmata.results, 
+...    <span class="pl-smi">just_entries</span> <span class="pl-k">=</span> people, <span class="pl-smi">just_totals</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>, <span class="pl-smi">threshold</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>, <span class="pl-smi">sort_by</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>total<span class="pl-pds">'</span></span>)
+
+<span class="pl-c"># make a bar chart:</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Risk and power<span class="pl-pds">'</span></span>, selected.results, <span class="pl-smi">num_to_plot</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>, <span class="pl-smi">kind</span> <span class="pl-k">=</span> k, 
+...    <span class="pl-smi">x_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Word<span class="pl-pds">'</span></span>, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Risker percentage<span class="pl-pds">'</span></span>, <span class="pl-smi">fontsize</span> <span class="pl-k">=</span> <span class="pl-c1">15</span>)</pre></div>
+
+<p>Output:</p>
+
+<p><img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png">
+<br><br></p>
+
+<h3>
+<a id="visualisation-options" class="anchor" href="#visualisation-options" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualisation options</h3>
+
+<p>With a bit of creativity, you can do some pretty awesome data-viz, thanks to <em>Pandas</em> and <em>Matplotlib</em>. The following plots require only one interrogation:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">&gt;&gt;&gt;</span> modals <span class="pl-k">=</span> interrogator(annual_trees, <span class="pl-s"><span class="pl-pds">'</span>words<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>MD &lt; __<span class="pl-pds">'</span></span>)
+<span class="pl-c"># simple stuff: make relative frequencies for individual or total results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> rel_modals <span class="pl-k">=</span> editor(modals.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, modals.totals)
+
+<span class="pl-c"># trickier: make an 'others' result from low-total entries</span>
+<span class="pl-k">&gt;&gt;&gt;</span> low_indices <span class="pl-k">=</span> <span class="pl-c1">range</span>(<span class="pl-c1">7</span>, modals.results.shape[<span class="pl-c1">1</span>])
+<span class="pl-k">&gt;&gt;&gt;</span> each_md <span class="pl-k">=</span> editor(modals.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, modals.totals, <span class="pl-smi">merge_entries</span> <span class="pl-k">=</span> low_indices, 
+...    <span class="pl-smi">newname</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>other<span class="pl-pds">'</span></span>, <span class="pl-smi">sort_by</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>total<span class="pl-pds">'</span></span>, <span class="pl-smi">just_totals</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>, <span class="pl-smi">keep_top</span> <span class="pl-k">=</span> <span class="pl-c1">7</span>)
+
+<span class="pl-c"># complex stuff: merge results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> entries_to_merge <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span>(<span class="pl-k">^</span>w<span class="pl-k">|</span><span class="pl-cce">\'</span>ll<span class="pl-k">|</span><span class="pl-cce">\'</span>d)<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>c<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>m<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>sh<span class="pl-pds">'</span></span>]
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">for</span> regex <span class="pl-k">in</span> entries_to_merge:
+...    modals <span class="pl-k">=</span> editor(modals.results, <span class="pl-smi">merge_entries</span> <span class="pl-k">=</span> regex)
+
+<span class="pl-c"># complex stuff: merge subcorpora</span>
+<span class="pl-k">&gt;&gt;&gt;</span> subcorpora_to_merge <span class="pl-k">=</span> [(<span class="pl-s"><span class="pl-pds">'</span>1960s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>196<span class="pl-pds">'</span></span>), (<span class="pl-s"><span class="pl-pds">'</span>1980s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>198<span class="pl-pds">'</span></span>), (<span class="pl-s"><span class="pl-pds">'</span>1990s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>199<span class="pl-pds">'</span></span>), 
+...    (<span class="pl-s"><span class="pl-pds">'</span>2000s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>200<span class="pl-pds">'</span></span>), (<span class="pl-s"><span class="pl-pds">'</span>2010s<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">'</span><span class="pl-k">^</span>201<span class="pl-pds">'</span></span>)]
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">for</span> subcorp, search <span class="pl-k">in</span> subcorpora_to_merge:
+...    modals <span class="pl-k">=</span> editor(modals.results, <span class="pl-smi">merge_subcorpora</span> <span class="pl-k">=</span> search, <span class="pl-smi">new_subcorpus_name</span><span class="pl-k">=</span>subcorp)
+
+<span class="pl-c"># make relative, sort, remove what we don't want</span>
+<span class="pl-k">&gt;&gt;&gt;</span> modals <span class="pl-k">=</span> editor(modals.results, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>, modals.totals, <span class="pl-smi">keep_stats</span> <span class="pl-k">=</span> <span class="pl-c1">False</span>,
+...    <span class="pl-smi">just_subcorpora</span> <span class="pl-k">=</span> [n <span class="pl-k">for</span> n, s <span class="pl-k">in</span> subcorpora_to_merge], <span class="pl-smi">sort_by</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>total<span class="pl-pds">'</span></span>, <span class="pl-smi">keep_top</span> <span class="pl-k">=</span> <span class="pl-c1">4</span>)
+
+<span class="pl-c"># show results</span>
+<span class="pl-k">&gt;&gt;&gt;</span> <span class="pl-k">print</span> rel_modals.results, each_md.results, modals.results</pre></div>
+
+<p>Output:</p>
+
+<pre><code>          would       will        can      could  ...        need     shall      dare  shalt
+1963  22.326833  23.537323  17.955615   6.590451  ...    0.000000  0.537996  0.000000      0
+1987  24.750614  18.505132  15.512505  11.117537  ...    0.072286  0.260228  0.014457      0
+1988  23.138986  19.257117  16.182067  11.219364  ...    0.091338  0.060892  0.000000      0
+...         ...        ...        ...        ...  ...         ...       ...       ...    ...
+2012  23.097345  16.283186  15.132743  15.353982  ...    0.029499  0.029499  0.000000      0
+2013  22.136269  17.286522  16.349301  15.620351  ...    0.029753  0.029753  0.000000      0
+2014  21.618357  17.101449  16.908213  14.347826  ...    0.024155  0.000000  0.000000      0
+[29 rows x 17 columns] 
+
+would     23.235853
+will      17.484034
+can       15.844070
+could     13.243449
+may        9.581255
+should     7.292294
+other      7.290155
+Name: Combined total, dtype: float64 
+
+       would/will/'ll...  can/could/ca  may/might/must  should/shall/shalt
+1960s          47.276395     25.016812       19.569603            7.800941
+1980s          44.756285     28.050776       19.224476            7.566817
+1990s          44.481957     29.142571       19.140310            6.892708
+2000s          42.386571     30.710739       19.182867            7.485681
+2010s          42.581666     32.045745       17.777845            7.397044
+
+</code></pre>
+
+<p>Now, some intense plotting:</p>
+
+<div class="highlight highlight-python"><pre><span class="pl-c"># exploded pie chart</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Pie chart of common modals in the NYT<span class="pl-pds">'</span></span>, each_md.results, <span class="pl-smi">explode</span> <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>other<span class="pl-pds">'</span></span>],
+...    <span class="pl-smi">num_to_plot</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>, <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>pie<span class="pl-pds">'</span></span>, <span class="pl-smi">colours</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Accent<span class="pl-pds">'</span></span>, <span class="pl-smi">figsize</span> <span class="pl-k">=</span> (<span class="pl-c1">11</span>, <span class="pl-c1">11</span>))
+
+<span class="pl-c"># bar chart, transposing and reversing the data</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>Modals use by decade<span class="pl-pds">'</span></span>, modals.results.iloc[::<span class="pl-k">-</span><span class="pl-c1">1</span>].T.iloc[::<span class="pl-k">-</span><span class="pl-c1">1</span>], <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>barh<span class="pl-pds">'</span></span>,
+...    <span class="pl-smi">x_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Percentage of all modals<span class="pl-pds">'</span></span>, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Modal group<span class="pl-pds">'</span></span>)
+
+<span class="pl-c"># stacked area chart</span>
+<span class="pl-k">&gt;&gt;&gt;</span> plotter(<span class="pl-s"><span class="pl-pds">'</span>An ocean of modals<span class="pl-pds">'</span></span>, rel_modals.results.drop(<span class="pl-s"><span class="pl-pds">'</span>1963<span class="pl-pds">'</span></span>), <span class="pl-smi">kind</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>area<span class="pl-pds">'</span></span>, 
+...    <span class="pl-smi">stacked</span> <span class="pl-k">=</span> <span class="pl-c1">True</span>, <span class="pl-smi">colours</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>summer<span class="pl-pds">'</span></span>, <span class="pl-smi">figsize</span> <span class="pl-k">=</span> (<span class="pl-c1">8</span>, <span class="pl-c1">10</span>), <span class="pl-smi">num_to_plot</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>, 
+...    <span class="pl-smi">legend_pos</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>lower right<span class="pl-pds">'</span></span>, <span class="pl-smi">y_label</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Percentage of all modals<span class="pl-pds">'</span></span>)</pre></div>
+
+<p>Output:</p>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" height="400" width="400">
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png" height="230" width="500">
+<img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png" height="600" width="500">
+</p>
+
+<h2>
+<a id="more-information" class="anchor" href="#more-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>More information</h2>
+
+<p>Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:</p>
+
+<ol>
+<li>
+<a href="https://github.com/interrogator/sfl_corpling">Longitudinal linguistic change in an online support group</a> (thesis project)</li>
+<li>
+<a href="https://github.com/interrogator/risk">Discourse-semantics of <em>risk</em> in the NYT, 1963–2014</a> (most <code>corpkit</code> use)</li>
+<li><a href="https://github.com/resbaz/nltk">Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches</a></li>
+</ol>
+
+<h2>
+<a id="cite" class="anchor" href="#cite" aria-hidden="true"><span class="octicon octicon-link"></span></a>Cite</h2>
+
+<p>If you want to cite <code>corpkit</code>, please use:</p>
+
+<blockquote>
+<p><code>McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361</code></p>
+</blockquote>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/interrogator/corpkit">corpkit</a> is maintained by <a href="https://github.com/interrogator">interrogator</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
