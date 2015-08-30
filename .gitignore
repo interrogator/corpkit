@@ -1,0 +1,5 @@
+*.sw?
+_site
+_pages
+.DS_Store
+jekyll-page
