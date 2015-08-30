@@ -1,3 +1,9 @@
+---
+title: corpkit
+
+---
+
+
 ## *corpkit*: a Python-based toolkit for working with linguistic corpora
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit)
@@ -7,7 +13,7 @@
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Right now, I'm in the middle of putting together a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in `./corpkit-v.v.tar.gz`. For now, there's a user guide over [here](http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html), and some screenshots can be seen in the [Key features](#key-features) section.**
+> **Recently, I've been working on a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in `./corpkit-v.v.tar.gz`. Documentation for the GUI is emerging [here](http://interrogator.github.io/corpkit/).**
 
 <!-- MarkdownTOC -->
 
@@ -53,7 +59,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### `interrogator()`
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/interrogate.png" />
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
@@ -67,7 +72,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### `editor()`
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/edit.png" />
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -83,7 +87,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### `plotter()` 
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/visualise.png" />
 
 * Plot using *Pandas*/*Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
@@ -98,7 +101,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 #### Other stuff
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/conc.png" />
 
 * View top results as a table via `Pandas`
 * Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances

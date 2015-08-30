@@ -1209,8 +1209,8 @@ def corpkit_gui():
 
     def query_help():
         import webbrowser
-        webbrowser.open('file://' + resource_path('user_guide.html').replace('corpkit/corpkit/corpkit', 'corpkit/corpkit'), new = 0)
-        #webbrowser.open_new('http://htmlpreview.github.io/?https://raw.githubusercontent.com/interrogator/corpkit/master/user_guide.html')
+        #webbrowser.open('file://' + resource_path('user_guide.html').replace('corpkit/corpkit/corpkit', 'corpkit/corpkit'), new = 0)
+        webbrowser.open_new('http://interrogator.github.io/corpkit')
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
