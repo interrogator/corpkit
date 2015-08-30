@@ -11,8 +11,19 @@ In contrast to most current corpus linguistic software (*AntConc*, *WMatrix*, *S
 
 ## Screenshots
 
-> Coming soon.
+<center>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" />
+<br>Searching a corpus using constituency parses<br>
 
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" />
+<br>Making relative frequencies, skipping subcorpora<br>
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" />
+<br>Visualising results<br>
+
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" />
+<br>Concordancing with constituency queries, coding results<br>
+</center>
 ## Cite
 
 If you want to cite `corpkit`, please use:
