@@ -508,6 +508,11 @@ def corpkit_gui():
             new_choices.append(interro)
         new_choices = tuple(new_choices)
         dataframe2s['menu'].add_command(label='Self', command=Tkinter._setit(data2_pick, 'Self'))
+        if project_fullpath.get() != '':
+            dpath = os.path.join(project_fullpath.get(), 'dictionaries')
+            dicts = sorted([f.replace('.p', '') for f in os.listdir(dpath) if os.path.isfile(os.path.join(dpath, f)) and f.endswith('.p')])
+            for d in dicts:
+                dataframe2s['menu'].add_command(label=d, command=Tkinter._setit(data2_pick, d))
         for choice in new_choices:
             dataframe1s['menu'].add_command(label=choice, command=Tkinter._setit(selected_to_edit, choice))
             dataframe2s['menu'].add_command(label=choice, command=Tkinter._setit(data2_pick, choice))
@@ -702,6 +707,34 @@ def corpkit_gui():
             nex.configure(state=DISABLED)
             prev.configure(state=NORMAL)
 
+    def save_as_dictionary():
+        import os
+        import pandas
+        import pickle
+        from time import localtime, strftime
+        dpath = os.path.join(project_fullpath.get(), 'dictionaries')
+        dataname = name_of_interro_spreadsheet.get()
+        fname = urlify(dataname) + '.p'
+        if fname.startswith('interrogation') or fname.startswith('edited'):
+            fname = tkSimpleDialog.askstring('Dictionary name', 'Choose a name for your dictionary:')
+        if fname == '' or fname is False:
+            return
+        else:
+            fname = fname + '.p'
+        fpn = os.path.join(dpath, fname)
+        data = all_interrogations[dataname]
+        if 'results' in data._asdict().keys():
+            as_series = data.results.sum()
+            with open(fpn, 'w') as fo: 
+                pickle.dump(as_series, fo)
+            thetime = strftime("%H:%M:%S", localtime())
+            print '\n%s: Dictionary created: %s\n' % (thetime, os.path.join('dictionaries', fname))
+            refresh()
+        else:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No results branch found, sorry.' % thetime
+            return
+
     def do_interrogation():
         Button(tab1, text = 'Interrogate', command = ignore).grid(row = 17, column = 1, sticky = E)
         note.progvar.set(0)
@@ -865,6 +898,9 @@ def corpkit_gui():
         if len(all_interrogations.keys()) < 2:
             nex.configure(state = DISABLED)
             prev.configure(state = DISABLED)
+
+        savdict = Button(tab1, text = 'Save as dictionary', command = save_as_dictionary)
+        savdict.grid(row = 17, column = 2, sticky = E, padx = (0, 175))
 
         ind = all_interrogations.keys().index(name_of_interro_spreadsheet.get())
         if ind == 0:
@@ -1043,7 +1079,7 @@ def corpkit_gui():
     # save these with project!
     only_sel_speakers = IntVar()
     speakcheck = Checkbutton(tab1, text='Speakers', variable=only_sel_speakers, command = togglespeaker)
-    speakcheck.grid(column = 0, row = 13, sticky=W)
+    speakcheck.grid(column = 0, row = 13, sticky=W, pady = (15, 0))
     only_sel_speakers.trace("w", togglespeaker)
 
     spk_scrl = Frame(tab1)
@@ -1353,6 +1389,7 @@ def corpkit_gui():
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
+        import os
 
         # translate operation into interrogator input
         operation_text = opp.get()
@@ -1364,22 +1401,43 @@ def corpkit_gui():
             operation_text = '/'
         if opp.get() == u"\u00D7":
             operation_text = '*'
+        if opp.get() == '%-diff':
+            operation_text = 'a'
 
+        using_dict = False
         # translate dataframe2 into interrogator input
         data2 = data2_pick.get()
         if data2 == 'None' or data2 == '' or data2 == 'Self':
             data2 = False
+        # check if it's a dict
+        if data2_pick.get() not in all_interrogations.keys():
+            dpath = os.path.join(project_fullpath.get(), 'dictionaries')
+            dfile = os.path.join(dpath, data2_pick.get() + '.p')
+            import pickle
+            data2 = pickle.load(open(dfile, 'rb'))
+            #if type(data2) == list:
+            #    if len(data2) == 1:
+            #        data2 = data2[0]
+            if type(data2) != pandas.core.series.Series:
+                data2 = pandas.Series(data2)
+            using_dict = True
 
-        if data2:
-            if df2branch.get() == 'results':
-                try:
-                    data2 = all_interrogations[data2].results
-                except AttributeError:
-                    print 'Interrogation has no results branch.'
-            elif df2branch.get() == 'totals':
-                data2 = all_interrogations[data2].totals
-            if transpose.get():
-                data2 = data2.T
+        if data2 is not False:
+            if not using_dict:
+                if df2branch.get() == 'results':
+                    try:
+                        data2 = all_interrogations[data2].results
+                    except AttributeError:
+                        print 'Denominator has no results branch.'
+                        return
+                elif df2branch.get() == 'totals':
+                    try:
+                        data2 = all_interrogations[data2].totals
+                    except AttributeError:
+                        print 'Denominator has no totals branch.'
+                        return
+                if transpose.get():
+                    data2 = data2.T
 
         the_data = all_interrogations[name_of_o_ed_spread.get()]
         if df1branch.get() == 'results':
@@ -1591,7 +1649,7 @@ def corpkit_gui():
     # operation for editor
     opp = StringVar(root)
     opp.set('None')
-    operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', 'a', 'd')
+    operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'd')
     Label(tab2, text='Operation and demonominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
     ops = OptionMenu(tab2, opp, *operations)
     ops.grid(row = 3, column = 0, sticky = W)
@@ -2382,7 +2440,7 @@ def corpkit_gui():
         elif sortval.get() == 'Colour':
             colist = get_list_of_colours(df)
             df['tosorton'] = colist
-        elif sortval.get() == 'Theme':
+        elif sortval.get() == 'Scheme':
             themelist = get_list_of_themes(df)
             df.insert(1, 't', themelist)
             df.insert(1, 'tosorton', themelist)
@@ -2827,7 +2885,7 @@ def corpkit_gui():
     show_filenames.trace('w', toggle_filenames)
 
     show_themes = IntVar()
-    themebut = Checkbutton(tab4, text='Themes', variable=show_themes, command=toggle_filenames)
+    themebut = Checkbutton(tab4, text='Scheme', variable=show_themes, command=toggle_filenames)
     themebut.grid(row = 3, column = 9, columnspan = 3, padx = (320, 0))
     #themebut.select()
     show_themes.trace('w', toggle_filenames)
@@ -2847,7 +2905,7 @@ def corpkit_gui():
     show_index.trace('w', toggle_filenames)
 
     # possible sort
-    sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Theme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
+    sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
     sortval = StringVar()
     sortval.set('M1')
     prev_sortval = ['None']
