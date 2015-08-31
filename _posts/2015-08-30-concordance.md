@@ -8,7 +8,7 @@ order: 7
 
 >`corpkit`'s concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation.
 
-Most features this pane are similar to those provided by other concordancers, such as `Window` and `Random`. The key difference is that you can search using Tregex patterns, or by dependency function.
+Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can generally reuse your queries from `Interrogate` to 
 
 When searching Trees, you can use the `Trees` option to output bracketted trees instead of plain text. This can be useful in understanding phrase structure grammar, or how to write Tregex queries.
 
@@ -38,7 +38,9 @@ Clicking `Sort` again without making any other changes will invert the sort orde
 
 You can use the numbers 0-9 to colour-code your text. `9` blacks out a line, and `0` returns the line to its default white.
 
-You can also attach names to these colours via `File --> Coding scheme`. By using colours in combindation with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
+You can also attach names to these colours via `File` &rarr; `Coding scheme`. By using colours in combination with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
+
+If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together.
 
 ### Exporting concordance lines
 

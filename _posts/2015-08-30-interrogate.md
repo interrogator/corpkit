@@ -161,20 +161,26 @@ then `corpkit` will know that the output will be verbs. If lemmatisation of tree
 
 If you have used the `speaker segmentation` option, you can restrict your searches to specific speakers. You can use `shift+click` or `ctrl+click` to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as `False`, rather than `ALL`.
 
+If you have selected `ALL` speakers, or have highlighted more than one, multiple interrogations will be performed, with the speaker ID appended to the interrogation name. Only one of these results will be shown as a spreadsheet, but you can use `Previous` and `Next` to navigate between them.
+
 ### Running interrogations
 
 On large datasets, interrogations can take some time, especially for dependency searches with many options. Speaker IDs also come at the cost of speed. Be patient!
 
 Be sure to name your interrogation, via the `Name interrogation` box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.
 
+> Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the `Manage` tab. You can head there to access previous queries, or to save interrogations to disk.
+
 ### Editing spreadsheets
 
-Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora.
+Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora. You can flip back and forward between other interrogations with the `Previous` and `Next` buttons.
 
-Once you've changed the results, you can hit `'Update interrogation'` to update the version of the data that is stored in memory.
+If you manually edit the results in either the results or totals spreadsheet, you can hit `'Update interrogation'` to update the version of the data that is stored in memory.
 
 It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. 
 
-Sorting the result order is performed in the edit window (see below).
+Sorting the result order is performed in the edit window.
 
-> If you're trying to compare speakers within a corpus, a simple way to do this is to perform two (or more) speaker-restricted interrogations, manually edit the column name(s) of the spreadsheet to include information about the speaker. You can then use the `combine` operation in `edit` to put the two interrogations together
+### Next steps
+
+It can be hard to learn anything interesting from absolute frequencies alone. Generally, you'll next want to go to the `Edit` tab to modify the results into something more informative.

@@ -11,20 +11,17 @@ In contrast to most current corpus linguistic software (*AntConc*, *WMatrix*, *S
 
 ## Screenshots
 
-<center>
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" height="300" width="600"/>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" height="300" width="600"/>
 Searching a corpus using constituency parses<br><br>
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" height="300" width="600"/>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" height="300" width="600"/>
 Making relative frequencies, skipping subcorpora<br><br>
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" height="300" width="600"/>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" height="300" width="600"/>
 Visualising results<br><br>
 
-<img style="float:center" src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" height="300" width="560"/>
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" height="300" width="560"/>
 Concordancing with constituency queries, coding results<br><br>
-
-</center>
 
 ## Cite
 

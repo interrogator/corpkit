@@ -19,3 +19,7 @@ Checking the `TeX` option will mean that the plotter will try to use `LaTeX` to 
 ### Exporting
 
 If you're more confortable generating visualisations in another tool, you can head to the `Manage` tab to export a CSV version of any interrogations or edited results. This can be imported into Excel, for example.
+
+### Next steps
+
+Through the process of interrogating, editing and visualising, you may find something that sticks out: maybe something is very frequent in a subcorpus, or maybe something is conspicuously absent. The `Concordance` tab allows you to resuse your `Interrogate` queries to look at language in co(n)text.
