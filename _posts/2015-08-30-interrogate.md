@@ -8,11 +8,11 @@ order: 4
 
 > `Interrogate` will iterate over subcorpora in a corpus, searching for the same thing, and tabulating the results.
 
-### Selecting a corpus
+ Selecting a corpus
 
 If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now.
 
-### Selecting a kind of data
+ Selecting a kind of data
 
 `corpkit` can presently work with three kinds of data:
 
@@ -22,11 +22,11 @@ If you were working in the `Build` tab, `corpkit` will try to guess the corpus y
 
 The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. When you select a kind of data, the kinds of search that are available to you change. These will be explained in the next seciton.
 
-### Writing queries
+ Writing queries
 
 Depending on the kind of data you want to search, you need to write different kinds of queries.
 
-#### Trees
+# Trees
 
 If you want to search for information in `trees`, you need to write a Tregex query. Tregex is a language for searching syntax trees like this one:
 
@@ -74,7 +74,7 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 > More specific documentation coming soon
  
-#### Dependencies
+# Dependencies
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -86,7 +86,7 @@ The different kinds of interrogation search the dependency parses for governors,
 
 > More specific documentation coming soon
 
-#### Plain text
+# Plain text
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
 
@@ -98,17 +98,17 @@ Using regular expressions, you could do something more complex, like get both th
 
 This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because `corpkit` won't know the word classes of the words you're finding.
 
-#### Special queries
+# Special queries
 
 `corpkit` also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar. 
 
-##### Preset queries
+## Preset queries
 
 `'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar. 
 
 `Stats` will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.
 
-##### Query parts
+## Query parts
 
 There are also some things you can type into your query that `corpkit` recognises and handles differently. You can, for example, enter
 
@@ -134,7 +134,7 @@ Currently, the special query types are:
 
 When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
 
-### Search options
+## Search options
 
 The `Interrogate` tab has many options.
 
@@ -147,7 +147,7 @@ The `Interrogate` tab has many options.
 | Normalise spelling | Convert between UK and US English     |
 | Dependency type    | Which dependency grammar to use (see [here](http://nlp.stanford.edu/software/example.xml) for info)     |
 
-#### Lemmatisation
+## Lemmatisation
 
 When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.
 
@@ -157,13 +157,13 @@ If searching trees and using lemmatisation, `corpkit` will try to determine the 
 
 then `corpkit` will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force `corpkit` to treat all results as a given part of speech.
 
-### Speaker IDs
+## Speaker IDs
 
 If you have used the `speaker segmentation` option, you can restrict your searches to specific speakers. You can use `shift+click` or `ctrl+click` to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as `False`, rather than `ALL`.
 
 If you have selected `ALL` speakers, or have highlighted more than one, multiple interrogations will be performed, with the speaker ID appended to the interrogation name. Only one of these results will be shown as a spreadsheet, but you can use `Previous` and `Next` to navigate between them.
 
-### Running interrogations
+## Running interrogations
 
 On large datasets, interrogations can take some time, especially for dependency searches with many options. Speaker IDs also come at the cost of speed. Be patient!
 
@@ -171,7 +171,7 @@ Be sure to name your interrogation, via the `Name interrogation` box. This makes
 
 > Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the `Manage` tab. You can head there to access previous queries, or to save interrogations to disk.
 
-### Editing spreadsheets
+## Editing spreadsheets
 
 Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora. You can flip back and forward between other interrogations with the `Previous` and `Next` buttons.
 
@@ -181,6 +181,6 @@ It's important to remember that the results and totals spreadsheets do not commu
 
 Sorting the result order is performed in the edit window.
 
-### Next steps
+## Next steps
 
 It can be hard to learn anything interesting from absolute frequencies alone. Generally, you'll next want to go to the `Edit` tab to modify the results into something more informative.
