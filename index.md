@@ -50,7 +50,7 @@ Currently, `corpkit` works for Mac, and presumably Linux. Windows support is com
 
 To download, head to `corpkit`'s [**GitHub page**](https://github.com/interrogator/corpkit) and click `Download Zip`. 
 
-Head to the [Setup page](docs/setup.html) for (very simple) installation instructions.
+Head to the [Setup page](doc/setup.html) for (very simple) installation instructions.
 
 ## Cite
 
