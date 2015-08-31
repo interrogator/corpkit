@@ -40,7 +40,7 @@ You can use the numbers 0-9 to colour-code your text. `9` blacks out a line, and
 
 You can also attach names to these colours via `File` &rarr; `Coding scheme`. By using colours in combination with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
 
-If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together.
+If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together. You can also 
 
 ### Exporting concordance lines
 
