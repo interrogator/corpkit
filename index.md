@@ -3,7 +3,8 @@ layout: default
 title: "corpkit"
 ---
 
-## corpkit
+corpkit
+=======
 
 `corpkit` is a tool for doing corpus linguistics. It does a lot of the usual things, like parsing, concordancing and keywording, but also extends their potential significantly: you can concordance by searching for combinations of lexical and grammatical features, and can do keywording of lemmas, of subcorpora compared to corpora, or of words in certain positions within clauses. Interrogations can be quickly edited and visualised in complex ways, or saved and loaded within projects, or exported to formats that can be handled by other tools.
 
