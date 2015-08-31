@@ -181,6 +181,10 @@ It's important to remember that the results and totals spreadsheets do not commu
 
 Sorting the result order is performed in the edit window.
 
+## Making dictionaries
+
+If you want, you can use the `Save as dictionary` button to generate a reference corpus from an interrogation, comprised of each word and its total frequency. This will be stored in the `dictionaries/` folder of the project. Every dictionary file in this directory can be loaded when doing keywording in the `Edit` tab.
+
 ## Next steps
 
 It can be hard to learn anything interesting from absolute frequencies alone. Generally, you'll next want to go to the `Edit` tab to modify the results into something more informative.
