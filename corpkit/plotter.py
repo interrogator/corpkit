@@ -395,22 +395,30 @@ def plotter(title,
             absolutes = False
 
     #  use colormap if need be:
-    if num_to_plot > 7:
+    if num_to_plot > 0:
         if not was_series:
             if 'kind' in kwargs:
                 if kwargs['kind'] in ['pie', 'line', 'area']:
                     if colours:
                         if not plotting_a_totals_column:
+                            if colours == 'Default':
+                                colours = 'Paired'
                             kwargs['colormap'] = colours
         #else:
             if colours:
+                if colours == 'Default':
+                    colours = 'Paired'
                 kwargs['colormap'] = colours
 
     if piemode:
-        if num_to_plot > 7:
+        if num_to_plot > 0:
+            if colours == 'Default':
+                colours = 'Paired'
             kwargs['colormap'] = colours
         else:
-            if num_to_plot > 7:
+            if num_to_plot > 0:
+                if colours == 'Default':
+                    colours = 'Paired'
                 kwargs['colormap'] = colours
         #else:
             #if len(dataframe.T.columns) < 8:
