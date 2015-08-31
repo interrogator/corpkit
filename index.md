@@ -15,24 +15,24 @@ If you're interested in the command line interface, head to the [`corpkit reposi
 
 ## Screenshots
 
-<figure>
+<figure> <center>
   <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="600" height="300">
-  <figcaption>Searching a corpus using constituency parses</figcaption>
+  <figcaption>Searching a corpus using constituency parses</figcaption> </center>
 </figure> 
 
-<figure>
+<figure><center>
   <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" alt="Editing" width="600" height="300">
   <figcaption>Making relative frequencies, skipping subcorpora</figcaption>
-</figure> 
+</figure></center>
 
-<figure>
+<figure><center>
   <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" alt="Visualising" width="600" height="300">
   <figcaption>Visualising results</figcaption>
-</figure> 
+</figure></center>
 
-<figure>
+<figure><center>
   <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" alt="Concordancing" width="560" height="300">
-  <figcaption>Concordancing with constituency queries, coding results</figcaption>
+  <figcaption>Concordancing with constituency queries, coding results</figcaption></center>
 </figure> 
 
 ## Cite
