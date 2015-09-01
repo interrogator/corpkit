@@ -8,19 +8,19 @@ last_updated: 2015-09-01
 
 #### Parsing
 
-`corpkit` helps you parse texts, without needing to go the command line!
+*corpkit* helps you parse texts, without needing to go the command line!
 
 #### Speaker IDs
 
-`corpkit` can recognise speaker IDs when parsing, and restrict searches to par!icular speakers.
+*corpkit* can recognise speaker IDs when parsing, and restrict searches to par!icular speakers.
 
 #### Search lexis and grammar
 
-`corpkit` allows you to search for lexical and grammatical features, sep!rately or together.
+*corpkit* allows you to search for lexical and grammatical features, sep!rately or together.
 
 #### Compare subcorpora
 
-`corpkit` is designed to work with structured corpora (those containing sub!olders)
+*corpkit* is designed to work with structured corpora (those containing sub!olders)
 
 #### Concordance grammatically
 
@@ -37,7 +37,7 @@ Every interrogation is stored in memory, alongside all options used to gen!rate 
 
 #### Command line interface
 
-`corpkit` has a lot of functionality, and could probably keep you busy for a lon! time. If you ever find that the tools aren't intuitive, it is useful to remember that the major functions at work in the interface can also be called via the command line. Generally speaking, command line operation makes it possible to do far more complicated things with your data.
+*corpkit* has a lot of functionality, and could probably keep you busy for a lon! time. If you ever find that the tools aren't intuitive, it is useful to remember that the major functions at work in the interface can also be called via the command line. Generally speaking, command line operation makes it possible to do far more complicated things with your data.
 
 * When interrogating, you can quickly make lists of corpora or queries and perform each simultaneously. 
 * When editing, you can create lists of entries to rename or merge, and iterate over them.
@@ -51,7 +51,7 @@ sudo easy_install corpkit
 python
 ```
 
-to download and install `corpkit`, and then to enter Python. From there, you can import the main functions, and begin:
+to download and install *corpkit*, and then to enter Python. From there, you can import the main functions, and begin:
 
 ```python
 >>> from corpkit import interrogator, editor, plotter, conc
@@ -59,10 +59,10 @@ to download and install `corpkit`, and then to enter Python. From there, you can
 >>> result = interrogator('path/to/corpus', 'word', lemmatise = True)
 ```
 
-Because `corpkit` data is generally stored as [Pandas](http://pandas.pydata.org/) objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of `MATLAB` or `R`.
+Because *corpkit* data is generally stored as [Pandas](http://pandas.pydata.org/) objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of `MATLAB` or `R`.
 
-Command line operation of `corpkit` is presented in more detail at the [`corpkit GitHub repostitory`](https://www.github.com/interrogator/corpkit).
+Command line operation of *corpkit* is presented in more detail at the [`corpkit GitHub repostitory`](https://www.github.com/interrogator/corpkit).
 
 #### Open source
 
-`corpkit` is free and open source!
+*corpkit* is free and open source!

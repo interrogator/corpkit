@@ -1,16 +1,13 @@
 ---
-title: About the author
-keywords: linguistics
+title: About the author, and the tool
+keywords: linguistics, bridge, university, sfl
 last_updated: August 12, 2015
 tags: [getting-started]
 ---
 {% include linkrefs.html %} 
 
-I'm Daniel McDonald, a PhD student in linguistics at University of Melbourne/PolyU, Hong Kong.
+I'm Daniel McDonald, a PhD student in linguistics at University of Melbourne/PolyU, Hong Kong. Most of my research revolves around looking for lexicogrammatical and discourse-semantic patterns and changes in large datasets. 
 
-I made *corpkit* because there was no reusable way of doing the kinds of interrogations I needed for my thesis and other research projects. I suppose basically, the research question underlying `corpkit` is:
+*corpkit* grew organically out of the code I had developed to make sense of my data. I initially made a basic command line interface for interrogating, editing and plotting corpora, and described it alongside my research project findings whenver I presented my research. Many people seemed interested in some of tools and methods, but most didn't know how to program. So, for them, I'm putting together this graphical interface, documentation.
 
-> What might non-computational linguists want to do with parser output?
-
-I made a basic command line interface for interrogating, editing and plotting corpora, and presented it alongside research project findings. Colleagues seemed interested in some of the methods, but didn't know how to program, so I'm putting the GUI and documentation together mostly for them.
-
+The best way to look at *corpkit* is as an rickety little open-source bridge between applied, systemic, corpus and computational linguistics.

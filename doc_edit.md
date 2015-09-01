@@ -61,7 +61,7 @@ When writing out entries to keep/remove/merge, you can supply either:
 
 If merging either subcorpora or entries, you may want to provide a new name for the merged item. If you leave this field blank, the first few entry names are joined together with slashes as the new name.
 
-Merging entries is a powerful way to do thematic categorisation: you could merge the names of illnesses as `'Illnesses'`, and the names of treatments as `Treatments`. You could then edit the edited results, keeping only those two.
+Merging entries is a powerful way to do thematic categorisation: you could merge the names of illnesses as `Illnesses`, and the names of treatments as `Treatments`. You could then edit the edited results, keeping only those two.
 
 ## Replacing names
 

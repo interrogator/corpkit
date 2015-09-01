@@ -6,7 +6,6 @@
 
 Interrogations can be quickly edited and visualised in complex ways, or saved and loaded within projects, or exported to formats that can be handled by other tools.
 
-
 ## Screenshots
 
 <figure> 
@@ -58,13 +57,13 @@ Currently, *corpkit* works for Mac, and presumably Linux. Windows support is com
 
 To download, head to *corpkit*'s [**GitHub page**](https://github.com/interrogator/corpkit) and click `Download Zip`. 
 
-Head to the [Setup page](doc/setup.html) for (very simple) installation instructions.
+Head to the [Setup page](doc/doc_setup.html) for (very simple) installation instructions.
 
 ## Cite
 
 If you want to cite *corpkit*, please use:
 
 ```
-`McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. 
-Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
+McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. 
+Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
 ```

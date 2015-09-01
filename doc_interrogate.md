@@ -213,7 +213,7 @@ Be sure to name your interrogation, via the `Name interrogation` box. This makes
 
 Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora. You can flip back and forward between other interrogations with the `Previous` and `Next` buttons.
 
-If you manually edit the results in either the results or totals spreadsheet, you can hit `'Update interrogation'` to update the version of the data that is stored in memory.
+If you manually edit the results in either the results or totals spreadsheet, you can hit `Update interrogation` to update the version of the data that is stored in memory.
 
 It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. 
 
