@@ -1,6 +1,6 @@
 ---
 title: "Visualise"
-tags: visualise, pandas, plot, matplotlib, python, corpkit, gui
+tags: [visualise, pandas, matplotlib]
 keywords: visualise, pandas, plot, matplotlib, python, corpkit, gui
 summary: "This tab is all about representing your results graphically. You should be able to generate publication-quality figures without needing to export the data from the tool."
 last_updated: 2015-09-01

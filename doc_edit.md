@@ -1,6 +1,6 @@
 ---
 title: "Edit"
-tags: editing, gui, corpkit
+tags: [edit, pandas]
 keywords: editing, gui, corpkit
 summary: "This tab allows you to manipulate interrogation results in complex ways."
 last_updated: 2015-09-01

@@ -5,7 +5,7 @@ entries:
 - title: Sidebar
   subcategories:
     - title: Frontmatter # leave this frontmatter section here for PDF outputs
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -13,7 +13,7 @@ entries:
       items:
         - title: Title Page
           url: /titlepage.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
@@ -21,14 +21,14 @@ entries:
 
         - title: Table of Contents
           url: /tocpage.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
           web: false
 
     - title: Features
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -37,13 +37,13 @@ entries:
       items:
         - title: Key features
           url: /doc_features.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
     - title: Getting started
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -52,27 +52,27 @@ entries:
       items:
         - title: Download
           url: /doc_download.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Installation
           url: /doc_install.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Setup
           url: /doc_setup.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
     - title: User guide
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -80,62 +80,62 @@ entries:
       items:
         - title: Build
           url: /doc_build.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Interrogate
           url: /doc_interrogate.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Edit
           url: /doc_edit.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Visualise
           url: /doc_visualise.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Concordance
           url: /doc_concordance.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Manage
           url: /doc_manage.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Help
           url: /doc_help.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Preferences
           url: /doc_preferences.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
     - title: Examples
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -143,20 +143,20 @@ entries:
       items:
         - title: Risk Semantics
           url: /doc_risk.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Online support groups
           url: /doc_osg.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
     - title: Resources
-      audience: writers, designers
+      audience: geeks, non-coders
       platform: all
       product: all
       version: all
@@ -164,14 +164,36 @@ entries:
       items:
         - title: Links
           url: /doc_links.html
-          audience: writers, designers
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all
 
         - title: Tutorials
           url: /doc_tutorials.html
-          audience: writers, designers
+          audience: geeks, non-coders
+          platform: all
+          product: all
+          version: all
+
+
+    - title: Contributing
+      audience: geeks, non-coders
+      platform: all
+      product: all
+      version: all
+      print: true
+      items:
+        - title: Pull requests
+          url: /doc_pull-requests.html
+          audience: geeks
+          platform: all
+          product: all
+          version: all
+
+        - title: Feedback
+          url: /doc_feedback.html
+          audience: geeks, non-coders
           platform: all
           product: all
           version: all

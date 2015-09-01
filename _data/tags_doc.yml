@@ -1,9 +1,17 @@
 allowed-tags:
   - getting-started
-  - content-types
-  - navigation
-  - formatting
-  - publishing
-  - single-sourcing
-  - special-layouts
-
+  - help
+  - build
+  - interrogate
+  - edit
+  - visualise
+  - concordance
+  - manage
+  - parsing
+  - python
+  - pandas
+  - matploblib
+  - github
+  - writing-queries
+  - example
+  - tutorial

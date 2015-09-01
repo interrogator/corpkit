@@ -1,6 +1,6 @@
 ---
 title: "Help"
-tags: help, log, gui, corpkit
+tags: [help]
 keywords: help, log, gui, corpkit
 summary: "When things go wrong, you can get in touch!"
 last_updated: 2015-09-01
