@@ -1,7 +1,7 @@
 ---
-title: "Discourse-semantics of risk in *The New York Times*, 1963&ndash;2014: a corpus linguistic approach"
+title: "Discourse-semantics of risk in <i>The New York Times</i>, 1963&ndash;2014&#58; a corpus linguistic approach"
 tags: [example, tutorial]
-keywords: interrogation, gui, corpkit
+keywords: project, corpkit, example, risk
 summary: "This is an ongoing research project using corpkit."
 last_updated: 2015-09-01
 ---
