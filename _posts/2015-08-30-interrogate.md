@@ -10,23 +10,22 @@ order: 4
 
 ## Selecting a corpus
 
-If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now.
+If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
 
- Selecting a kind of data
+## Selecting a kind of data
 
 `corpkit` can presently work with three kinds of data:
 
 1. Constituency parse trees
 2. Dependency parses
 3. Plain text
+4. Tokenised corpora
 
-The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. When you select a kind of data, the kinds of search that are available to you change. These will be explained in the next seciton.
+The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. The fourth is your corpus as a list of tokens, which can be created via the `Build` tab.
 
- Writing queries
+When you select a kind of data, the kinds of search that are available to you change, as do the kinds of queries that can be understood. These will be explained in the next secitons.
 
-Depending on the kind of data you want to search, you need to write different kinds of queries.
-
-## Trees
+### Trees
 
 If you want to search for information in `trees`, you need to write a Tregex query. Tregex is a language for searching syntax trees like this one:
 
@@ -74,7 +73,7 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the `Build` tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.
 
-### Tree searching options
+#### Tree searching options
  
 When searching with trees, there are a few extra options available.
 
@@ -82,7 +81,7 @@ When searching with trees, there are a few extra options available.
 
 When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people.
 
-## Dependencies
+### Dependencies
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -92,7 +91,7 @@ In dependency grammar, words in sentences are connected in a series of governor-
 
 The best source of information and dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
 
-## Dependency grammars
+### Dependency grammars
 
 Your data has actually been annotated with three slightly different dependency grammars. You can choose to work with:
 
@@ -102,7 +101,7 @@ Your data has actually been annotated with three slightly different dependency g
 
 For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
-## Search types
+### Search types
 
 There are many potentially interesting things in dependency annotations, and, accordingly, many different kinds of search available for them. 
 
@@ -120,13 +119,13 @@ Below is a basic explanation of what each kind of query matches, and what it out
 | Get "role:dependent", matching governor  |  Governor  | role:dependent      |
 | Get "role:governor", matching dependent  |  Dependent | role:governor       |
 
-## Dependency options
+### Dependency options
 
 Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
 
 For the `role:governor` and `role:dependent` search options, if you use a function filter, the `role:` portion of the output is not printed.
 
-## Plain text
+### Plain text
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
 
@@ -138,17 +137,23 @@ Using regular expressions, you could do something more complex, like get both th
 
 This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because `corpkit` won't know the word classes of the words you're finding.
 
+### Tokens
+
+As with plain text, you can use either a list of a regular expression to match tokens.
+
+> More coming soon
+
 ## Special queries
 
-`corpkit` also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar. 
+`corpkit` also has some pre-programmed queries and query parts, based mostly around concepts from systemic-functional grammar. 
 
-## Preset queries
+### Preset queries
 
 `'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar. 
 
 `Stats` will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.
 
-## Query parts
+### Query parts
 
 There are also some things you can type into your query that `corpkit` recognises and handles differently. You can, for example, enter
 
@@ -175,18 +180,6 @@ Each special query type has a number of possible subtypes:
 * `PROCESSES:` recognises `MENTAL`, `VERBAL` and `RELATIONAL`.
 
 When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
-
-## Search options
-
-The `Interrogate` tab has a few other options:
-
-| Option             | Purpose          |
-|-----------|--------------|
-
-| Function filter    | Match only words filling specific dependency roles (regular expression)                                                      |
-| POS filter         | Match only words with specific POS in dependency queries (regex)   |
-| Normalise spelling | Convert between UK and US English     |
-| Dependency type    | Which dependency grammar to use (see [here](http://nlp.stanford.edu/software/example.xml) for info)     |
 
 ## Lemmatisation
 
