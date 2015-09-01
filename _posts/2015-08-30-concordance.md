@@ -8,7 +8,7 @@ order: 7
 
 >`corpkit`'s concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation.
 
-Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can generally reuse your queries from `Interrogate` to 
+Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can reuse your queries from `Interrogate` if you like.
 
 When searching Trees, you can use the `Trees` option to output bracketted trees instead of plain text. This can be useful in understanding phrase structure grammar, or how to write Tregex queries.
 
@@ -28,19 +28,23 @@ You can use `backspace` to delete selected lines, or `shift-backspace` to invers
 
 ## Sorting
 
-Sorting is always by the first character. `L1` sorts by the rightmost word in the left-hand column; `L2` sorts by the second rightmost. This is similar for the other columns. Sorting by `M-1` will sort by the last word in the middle column, and `M-2` by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.
+Sorting is always by the first character in a word. `L1` sorts by the rightmost word in the left-hand column; `L2` sorts by the second rightmost. This is similar for the other columns. Sorting by `M-1` will sort by the last word in the middle column, and `M-2` by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.
 
 You can also sort by index, filename, colour, theme or speaker (if available), or randomise your results.
 
 Clicking `Sort` again without making any other changes will invert the sort order.
 
-## Colours and themes
+## Colours and schemes
+
+Something unique about `corpkit` is that you can quickly and easily group, colour and/or categorise your concordance lines.
 
 You can use the numbers 0-9 to colour-code your text. `9` blacks out a line, and `0` returns the line to its default white.
 
 You can also attach names to these colours via `File` &rarr; `Coding scheme`. By using colours in combination with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
 
-If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together. You can also 
+If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together. 
+
+If you do `File` &rarr; `Save project settings`, `corpkit` will remember your coding scheme for next time.
 
 ## Exporting concordance lines
 

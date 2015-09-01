@@ -8,7 +8,7 @@ order: 4
 
 > `Interrogate` will iterate over subcorpora in a corpus, searching for the same thing, and tabulating the results.
 
- Selecting a corpus
+## Selecting a corpus
 
 If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now.
 
@@ -26,7 +26,7 @@ The first two can both be found inside the parsed version of a corpus. The third
 
 Depending on the kind of data you want to search, you need to write different kinds of queries.
 
-# Trees
+## Trees
 
 If you want to search for information in `trees`, you need to write a Tregex query. Tregex is a language for searching syntax trees like this one:
 
@@ -72,9 +72,17 @@ Though it is unfortunately beyond the scope of this guide to teach Regular Expre
 
 Detailed documentation for Tregex usage (with more complex queries and operators) can be found [here](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html). If you want to learn Regular Expressions, there are hundreds of free resources online, including [Regular Expression Crosswords](http://regexcrossword.com/)!
 
-> More specific documentation coming soon
+If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the `Build` tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.
+
+### Tree searching options
  
-# Dependencies
+When searching with trees, there are a few extra options available.
+
+`Multiword results` informs `corpkit` that you expect your results to be more than one word long (if you are searching for VPs, for example). This causes `corpkit` to do tokenisation of results, leading to overall better processing.
+
+When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people.
+
+## Dependencies
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -82,11 +90,43 @@ In dependency grammar, words in sentences are connected in a series of governor-
 <img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png"  height="60" width="400"/>
 </p>
 
-The different kinds of interrogation search the dependency parses for governors, dependents and relationships. In each case, the kind of query you'll write is a Regular Expression.
+The best source of information and dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
 
-> More specific documentation coming soon
+## Dependency grammars
 
-# Plain text
+Your data has actually been annotated with three slightly different dependency grammars. You can choose to work with:
+
+1. Basic dependencies
+2. Collapsed dependencies
+3. Collapsed dependencies with conjunctions collapsed too
+
+For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
+
+## Search types
+
+There are many potentially interesting things in dependency annotations, and, accordingly, many different kinds of search available for them. 
+
+The different options match and print different combinations of *governors*, *dependents* and *relationships*. In each case, the kind of query you'll write is a Regular Expression or list.
+
+Below is a basic explanation of what each kind of query matches, and what it outputs.
+
+| Search type            | Query matches | Output                             |
+|------------------------|----------|-----------------------------------------|
+| Get role of match      | Token   |  Token's role                            |
+| Get lemmata of match   | Token   |  Token's lemma form                      |
+| Get tokens             | Token   |  Token                                   |
+| Get tokens by role     | Role    |  Role's dependent                        |
+| Get distance from root | Token   |  Number of steps away from root position |
+| Get "role:dependent", matching governor  |  Governor  | role:dependent      |
+| Get "role:governor", matching dependent  |  Dependent | role:governor       |
+
+## Dependency options
+
+Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
+
+For the `role:governor` and `role:dependent` search options, if you use a function filter, the `role:` portion of the output is not printed.
+
+## Plain text
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
 
@@ -98,7 +138,7 @@ Using regular expressions, you could do something more complex, like get both th
 
 This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because `corpkit` won't know the word classes of the words you're finding.
 
-# Special queries
+## Special queries
 
 `corpkit` also has some pre-programmed queries and query parts, based around concepts from systemic-functional grammar. 
 
@@ -122,11 +162,13 @@ will get verbal groups that contain mental process types.
 
 Currently, the special query types are:
 
-| Special query kind | Matches           |
-|--------------------|-------------------|
+| Special query kind -| Matches           |
+|---------------------|-------------------|
 | `PROCESSES:`        | Tokens            |
 | `ROLES:`            | CoreNLP functions |
 | `WORDLISTS:`        | Tokens            |
+
+Each special query type has a number of possible subtypes:
 
 * `WORDLISTS:` recognises `PRONOUNS`, `ARTICLES`, `CONJUNCTIONS`, `DETERMINERS`, `PREPOSITIONS`, `CONNECTORS`, `MODALS`, `CLOSEDCLASS` and `TITLES`.
 * `ROLES:` recognises `ACTOR`, `ADJUNCT`, `AUXILIARY`, `CIRCUMSTANCE`, `CLASSIFIER`, `COMPLEMENT`, `DEICTIC`, `EPITHET`, `EVENT`, `EXISTENTIAL`, `GOAL`, `MODAL`, `NUMERATIVE`, `PARTICIPANT`, `PARTICIPANT1`, `PARTICIPANT2`, `POLARITY`, `PREDICATOR`, `PROCESS`, `QUALIFIER`, `SUBJECT`, `TEXTUAL` and `THING`.
@@ -136,12 +178,11 @@ When using dependencies, you could get *Sensers* by searching for the role and d
 
 ## Search options
 
-The `Interrogate` tab has many options.
+The `Interrogate` tab has a few other options:
 
-| Option             | Purpose                                                                            |
-|--------------------|------------------------------------------------------------------------------------|
-| Filter titles      | Remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people |
-| Multiword results  |    If each result can be more than one word, this tokenises the results for better processing     |
+| Option             | Purpose          |
+|-----------|--------------|
+
 | Function filter    | Match only words filling specific dependency roles (regular expression)                                                      |
 | POS filter         | Match only words with specific POS in dependency queries (regex)   |
 | Normalise spelling | Convert between UK and US English     |
@@ -162,6 +203,12 @@ then `corpkit` will know that the output will be verbs. If lemmatisation of tree
 If you have used the `speaker segmentation` option, you can restrict your searches to specific speakers. You can use `shift+click` or `ctrl+click` to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as `False`, rather than `ALL`.
 
 If you have selected `ALL` speakers, or have highlighted more than one, multiple interrogations will be performed, with the speaker ID appended to the interrogation name. Only one of these results will be shown as a spreadsheet, but you can use `Previous` and `Next` to navigate between them.
+
+## Naming an interrogation
+
+You are given the option of naming your interrogation. You don't *have to* to do this, but it will help you keep track of which interrogations contain which kinds of data.
+
+If you forgot to name an interrogation before running it, you can head to the `Manage` tab to rename it at any time.
 
 ## Running interrogations
 

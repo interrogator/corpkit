@@ -10,13 +10,15 @@ order: 6
 
 Most options here are self-explanatory. Pick the results you want to plot, play with some options, and hit `Plot`. This can be a great way to identify salient linguistic features in your dataset. Once you've plotted something, a navigation pane appears under the figure, allowing scrolling, zooming, saving and so forth.
 
-Note that `Number to plot` takes the top `n` entries from the results of interest. If you don't want these, go back to the `Edit` tab and remove/sort the results some more. You can type in 'all' to get every result---but be warned, this often won't look so good!
+Note that `Number to plot` takes the top `n` entries from the results of interest. If you don't want these, go back to the `Edit` tab and remove/sort the results some more. You can type in `all` to get every result---but be warned, this often won't look so good!
+
+> More documentation forthcoming
 
 ## TeX 
 
 Checking the `TeX` option will mean that the plotter will try to use `LaTeX` to typeset the text in the chart. If you have a TeX distribution, but this option isn't working for you, you may need to use the command-line version of `corpkit`.
 
-## Exporting
+## Visualising data with other tools
 
 If you're more confortable generating visualisations in another tool, you can head to the `Manage` tab to export a CSV version of any interrogations or edited results. This can be imported into Excel, for example.
 
