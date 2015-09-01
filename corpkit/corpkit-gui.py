@@ -206,7 +206,7 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
-    root.resizable(FALSE,FALSE)
+    #root.resizable(FALSE,FALSE)
 
     #HWHW h 550
     note = Notebook(root, width= 1365, height = 660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
@@ -438,11 +438,11 @@ def corpkit_gui():
             newdata = make_df_totals(newdata)
         return newdata
 
-    def color_saved(lb, savepath, colour1 = '#D9DDDB', colour2 = 'white'):
+    def color_saved(lb, savepath, colour1 = '#D9DDDB', colour2 = 'white', ext = '.p'):
         """make saved items in listbox have colour background"""
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
         for index, item in enumerate(all_items):
-            issaved = os.path.isfile(os.path.join(savepath, urlify(item) + '.p'))
+            issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
             if issaved:
                 lb.itemconfig(index, {'bg':colour1})
             else:
@@ -503,6 +503,7 @@ def corpkit_gui():
             data_to_plot.set(all_interrogations.keys()[-1])
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
+        every_image_listbox.delete(0, 'end')
         new_choices = []
         for interro in all_interrogations.keys():
             new_choices.append(interro)
@@ -521,6 +522,7 @@ def corpkit_gui():
             if choice != 'None':
                 every_interro_listbox.insert(END, choice)
 
+        # CLEAN THIS UP! duplicating below
         new_clines = []
         ev_conc_listbox.delete(0, 'end')
         prev_conc_listbox.delete(0, 'end')
@@ -533,8 +535,20 @@ def corpkit_gui():
                 ev_conc_listbox.insert(END, choice)
                 prev_conc_listbox.insert(END, choice)
 
-        color_saved(every_interro_listbox, data_fullpath.get(), '#ccebc5', '#fbb4ae')
+        new_images = []
+        every_image_listbox.delete(0, 'end')
+        for cline in all_images:
+            new_images.append(cline.replace('.png', ''))
+        new_images = tuple(new_images)
+        for choice in new_images:
+            #every_interro_listbox.delete(0, END)
+            if choice != 'None':
+                every_image_listbox.insert(END, choice)
+
+        color_saved(every_interro_listbox, savedinterro_fullpath.get(), '#ccebc5', '#fbb4ae')
         color_saved(ev_conc_listbox, conc_fullpath.get(), '#ccebc5', '#fbb4ae')
+        # all are saved inherently!
+        color_saved(every_image_listbox, image_fullpath.get(), '#ccebc5', '#fbb4ae', ext = '.png')
 
     def add_tkt_index(df):
         """add order to df for tkintertable"""
@@ -1619,6 +1633,7 @@ def corpkit_gui():
     from collections import OrderedDict
     all_interrogations = OrderedDict()
     all_conc = OrderedDict()
+    all_images = []
     all_interrogations['None'] = 'None'
 
     # result to edit
@@ -1993,7 +2008,7 @@ def corpkit_gui():
         toolbar_frame.grid(row=18, column=2, columnspan = 3, sticky = 'NW', padx = (400,0))
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
-        canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 16, padx = (40, 20), columnspan = 3)
+        canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 20, padx = (40, 20), columnspan = 3)
         oldplotframe.append(canvas.get_tk_widget())
         oldplotframe.append(toolbar_frame)
         toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
@@ -2002,8 +2017,115 @@ def corpkit_gui():
         del thefig[:]
         
         thefig.append(f.gcf())
+        savedplot.set('Saved image: ')
         Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
 
+    images = {'the_current_fig': -1}
+
+    def move(direction = 'forward'):
+        import os
+        from PIL import Image
+        from PIL import ImageTk
+        from time import localtime, strftime
+        import Tkinter
+
+        for i in oldplotframe:
+            i.destroy()
+        del oldplotframe[:]
+
+        # maybe sort by date added?
+        image_list = [i for i in all_images]
+        if len(image_list) == 0:
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: No images found in images folder.' % thetime
+        
+        # figure out where we're up to 
+        if images['the_current_fig'] != -1:
+            ind = image_list.index(images['the_current_fig'])
+        else:
+            ind = -1
+
+        if direction == 'forward':
+            newind = ind + 1
+        else:
+            newind = ind - 1
+
+        if newind < 1:
+            pbut.configure(state=DISABLED)
+        else:
+            pbut.configure(state=NORMAL)
+        if newind + 1 == len(image_list):
+            nbut.configure(state = DISABLED)
+        else:
+            nbut.configure(state = NORMAL)
+
+        image = Image.open(os.path.join(image_fullpath.get(), image_list[newind]))
+        image_to_measure = ImageTk.PhotoImage(image)
+        old_height = image_to_measure.height()
+        old_width = image_to_measure.width()
+
+        def determine_new_dimensions(height, width):
+            maxh = 500
+            maxw = 1000
+            diff = float(height) / float(width)
+            if diff > 1:
+                # make height max
+                newh = maxh
+                # figure out level of magnification
+                prop = maxh / float(height)
+                neww = width * prop
+            elif diff < 1:
+                neww = maxw
+                prop = maxw / float(width)
+                newh = height * prop
+            elif diff == 1:
+                newh = maxh
+                neww = maxw
+            return (int(neww), int(newh))
+        # calculate new dimensions
+        newdimensions = determine_new_dimensions(old_height, old_width)
+        
+        # determine left  padding
+        padxright = 20
+        if newdimensions[0] != 1000:
+            padxleft = ((1000 - newdimensions[0]) / 2) + 40
+        else:
+            padxleft = 40
+        padytop = (500 - newdimensions[1]) / 2
+        
+        def makezero(n):
+            if n < 0:
+                return 0
+            else:
+                return n
+        
+        padxright = makezero(padxright)
+        padxleft = makezero(padxleft)
+        padytop = makezero(padytop)
+
+        image = image.resize(newdimensions)
+        image = ImageTk.PhotoImage(image)
+        frm = Frame(tab3, height = 500, width = 1000)
+        frm.grid(column = 2, row = 1, rowspan = 20, padx = (padxleft, padxright), \
+                  pady = padytop, columnspan = 3)
+        gallframe = Label(frm, image = image, justify = CENTER)
+        gallframe.pack(anchor = 'center', fill=BOTH)
+        oldplotframe.append(frm)
+        images[image_list[newind]] = image
+        images['the_current_fig'] = image_list[newind]
+        savedplot.set('Saved image: %s' % os.path.splitext(image_list[newind])[0])
+        
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Viewing %s' % (thetime, os.path.splitext(image_list[newind])[0])
+
+    savedplot = StringVar()
+    savedplot.set('View saved images: ')
+    Label(tab3, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (15, 0), sticky = W)
+    pbut = Button(tab3, text='Previous', command=lambda: move(direction = 'back'))
+    pbut.grid(row = 23, column = 0, sticky = W)
+    nbut = Button(tab3, text='Next', command=lambda: move(direction = 'forward'))
+    nbut.grid(row = 23, column = 1, sticky = E)
+    
     def save_current_image():
         import os
         # figre out filename
@@ -2034,7 +2156,6 @@ def corpkit_gui():
     tmp = Entry(tab3, textvariable = plotnametext)
     tmp.grid(row = 0, column = 1, pady = (35, 0))
     all_text_widgets.append(tmp)
-
 
     Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
@@ -2087,11 +2208,11 @@ def corpkit_gui():
     log_x = IntVar()
     Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 8, sticky = W)
     log_y = IntVar()
-    Checkbutton(tab3, text="Log y axis", variable=log_y, width = 11).grid(column = 1, row = 8, sticky = E)
+    Checkbutton(tab3, text="Log y axis", variable=log_y, width = 13).grid(column = 1, row = 8, sticky = E)
 
     # transpose
     transpose_vis = IntVar()
-    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width = 11)
+    trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width = 13)
     trans_but_vis.grid(column = 1, row = 9, sticky = E)
 
     cumul = IntVar()
@@ -2101,12 +2222,12 @@ def corpkit_gui():
     bw = IntVar()
     Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 10, sticky = W)
     texuse = IntVar()
-    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 11).grid(column = 1, row = 10, sticky = E)
+    Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 13).grid(column = 1, row = 10, sticky = E)
 
     rl = IntVar()
     Checkbutton(tab3, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column = 0, row = 11, sticky = W)
     sbplt = IntVar()
-    Checkbutton(tab3, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 11).grid(column = 1, row = 11, sticky = E)
+    Checkbutton(tab3, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13).grid(column = 1, row = 11, sticky = E)
 
     # chart type
     Label(tab3, text='Colour scheme:').grid(row = 12, column = 0, sticky = W)
@@ -2978,7 +3099,7 @@ def corpkit_gui():
         project_fullpath.set(os.path.join(fp, name))
         os.chdir(project_fullpath.get())
         image_fullpath.set(os.path.join(project_fullpath.get(), 'images'))
-        data_fullpath.set(os.path.join(project_fullpath.get(), 'saved_interrogations'))
+        savedinterro_fullpath.set(os.path.join(project_fullpath.get(), 'saved_interrogations'))
         conc_fullpath.set(os.path.join(project_fullpath.get(), 'saved_concordances'))
         corpora_fullpath.set(os.path.join(project_fullpath.get(), 'data'))
         exported_fullpath.set(os.path.join(project_fullpath.get(), 'exported'))
@@ -2996,27 +3117,35 @@ def corpkit_gui():
         from corpkit import load_all_results
         from time import strftime, localtime
         if kind == 'interrogation':
-            datad = data_fullpath.get()
-        else:
+            datad = savedinterro_fullpath.get()
+        elif kind == 'concordance':
             datad = conc_fullpath.get()
+        elif kind == 'image':
+            datad = image_fullpath.get()
         if datad == '':
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: No project loaded.' % (thetime)
-        if kind == 'interrogation':
-            r = load_all_results(data_dir = datad, root = root, note = note)
+        if kind == 'image':
+            image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
+            for iname in image_list:
+                if iname not in all_images:
+                    all_images.append(iname)
         else:
-            r = load_all_results(data_dir = datad, root = root, note = note, only_concs = True)
-        if r is not None:
-            for name, loaded in r.items():
-                if kind == 'interrogation':
-                    all_interrogations[name] = loaded
-                else:
-                    all_conc[name] = loaded
+            if kind == 'interrogation':
+                r = load_all_results(data_dir = datad, root = root, note = note)
+            else:
+                r = load_all_results(data_dir = datad, root = root, note = note, only_concs = True)
+            if r is not None:
+                for name, loaded in r.items():
+                    if kind == 'interrogation':
+                        all_interrogations[name] = loaded
+                    else:
+                        all_conc[name] = loaded
         refresh()
     
     # corpus path setter
-    data_fullpath = StringVar()
-    data_fullpath.set('')
+    savedinterro_fullpath = StringVar()
+    savedinterro_fullpath.set('')
     data_basepath = StringVar()
     data_basepath.set('Select data directory')
     project_fullpath = StringVar()
@@ -3039,7 +3168,7 @@ def corpkit_gui():
         fp = tkFileDialog.askdirectory(title = 'Open data directory')
         if not fp:
             return
-        data_fullpath.set(fp)
+        savedinterro_fullpath.set(fp)
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
         #sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
@@ -3073,16 +3202,16 @@ def corpkit_gui():
         for i in sel_vals:
             safename = urlify(i) + '.p'
             # make sure not already there
-            if safename not in os.listdir(data_fullpath.get()):
+            if safename not in os.listdir(savedinterro_fullpath.get()):
                 if kind == 'interrogation':
-                    save_result(all_interrogations[i], safename, savedir = data_fullpath.get())
+                    save_result(all_interrogations[i], safename, savedir = savedinterro_fullpath.get())
                 else:
                     save_result(all_conc[i], safename, savedir = conc_fullpath.get())
                 saved += 1
             else:
                 existing += 1
                 thetime = strftime("%H:%M:%S", localtime())
-                print '%s: %s already exists in %s.' % (thetime, urlify(i), os.path.basename(data_fullpath.get()))   
+                print '%s: %s already exists in %s.' % (thetime, urlify(i), os.path.basename(savedinterro_fullpath.get()))   
         thetime = strftime("%H:%M:%S", localtime())
         if saved == 1 and existing == 0:
             print '%s: %s saved.' % (thetime, sel_vals[0])
@@ -3121,10 +3250,17 @@ def corpkit_gui():
         refresh()
 
     def del_one_or_more(kind = 'interrogation'):
+        ext = '.p'
         if kind == 'interrogation':
             sel_vals = sel_vals_interro
+            p = savedinterro_fullpath.get()
+        elif kind == 'image':
+            sel_vals = sel_vals_images
+            p = image_fullpath.get()
+            ext = '.png'
         else:
             sel_vals = sel_vals_conc
+            p = conc_fullpath.get()
         if len(sel_vals) == 0:
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: No interrogations selected.' % thetime
@@ -3136,10 +3272,13 @@ def corpkit_gui():
                 try:
                     if kind == 'interrogation':
                         del all_interrogations[i]
-                        os.remove(os.path.join(data_fullpath.get(), i + '.p'))
-                    else:
+                        os.remove(os.path.join(p, i + ext))
+                    elif kind == 'concordance':
                         del all_conc[i]
-                        os.remove(os.path.join(conc_fullpath.get(), i + '.p'))
+                        os.remove(os.path.join(p, i + ext))
+                    else:
+                        all_images.pop(i)
+                        os.remove(os.path.join(p, i + ext))
                 except:
                     pass
         thetime = strftime("%H:%M:%S", localtime())
@@ -3159,13 +3298,20 @@ def corpkit_gui():
         return s
 
     def rename_one_or_more(kind = 'interrogation'):
+        ext = '.p'
         if kind == 'interrogation':
             sel_vals = sel_vals_interro
+            p = savedinterro_fullpath.get()
+        elif kind == 'image':
+            sel_vals = sel_vals_images
+            p = image_fullpath.get()
+            ext = '.png'
         else:
             sel_vals = sel_vals_conc
+            p = conc_fullpath.get()
         if len(sel_vals) == 0:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No interrogations selected.' % thetime
+            print '%s: No items selected.' % thetime
             return
         import os
         permanently = True
@@ -3181,41 +3327,48 @@ def corpkit_gui():
             else:
                 if kind == 'interrogation':
                     all_interrogations[answer] = all_interrogations.pop(i)
+                elif kind == 'image':
+                    ind = all_images.index(i)
+                    all_images.pop(i)
+                    all_images.insert(ind, answer)
                 else:
                     all_conc[answer] = all_conc.pop(i)
             if permanently:
-                p = data_fullpath.get()
-                oldf = os.path.join(p, i + '.p')
+                oldf = os.path.join(p, i + ext)
                 if os.path.isfile(oldf):
-                    newf = os.path.join(p, urlify(answer) + '.p')
+                    newf = os.path.join(p, urlify(answer) + ext)
                     os.rename(oldf, newf)
-            if name_of_interro_spreadsheet.get() == i:
-                name_of_interro_spreadsheet.set(answer)
-                i_resultname.set('Interrogation results: %s' % str(answer))
-                #update_spreadsheet(interro_results, all_interrogations[answer].results)
-            if name_of_o_ed_spread.get() == i:
-                name_of_o_ed_spread.set(answer)
-                #update_spreadsheet(o_editor_results, all_interrogations[answer].results)
-            if name_of_n_ed_spread.get() == i:
-                name_of_n_ed_spread.set(answer)
-                #update_spreadsheet(n_editor_results, all_interrogations[answer].results)
+            if kind == 'interrogation':
+                if name_of_interro_spreadsheet.get() == i:
+                    name_of_interro_spreadsheet.set(answer)
+                    i_resultname.set('Interrogation results: %s' % str(answer))
+                    #update_spreadsheet(interro_results, all_interrogations[answer].results)
+                if name_of_o_ed_spread.get() == i:
+                    name_of_o_ed_spread.set(answer)
+                    #update_spreadsheet(o_editor_results, all_interrogations[answer].results)
+                if name_of_n_ed_spread.get() == i:
+                    name_of_n_ed_spread.set(answer)
+                    #update_spreadsheet(n_editor_results, all_interrogations[answer].results)
 
         thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
             print '%s: %s %srenamed as %s.' % (thetime, sel_vals[0], perm_text, answer)
         else:
-            print '%s: %d interrogation %srenamed.' % (thetime, len(sel_vals), perm_text)
+            print '%s: %d items %srenamed.' % (thetime, len(sel_vals), perm_text)
 
         refresh()
 
     sel_vals_interro = []
     sel_vals_conc = []
+    sel_vals_images = []
 
     def export_interrogation(kind = 'interrogation'):
         if kind == 'interrogation':
             sel_vals = sel_vals_interro
+        elif kind == 'concordance':
+            sel_vals = sel_vals_conc
         else:
-            sel_vals = sel_conv_vals
+            sel_vals = sel_vals_images
         """save dataframes and options to file"""
         import os
         import pandas
@@ -3363,12 +3516,12 @@ def corpkit_gui():
         reset_everything()
 
         image_fullpath.set(os.path.join(fp, 'images'))
-        data_fullpath.set(os.path.join(fp, 'saved_interrogations'))
+        savedinterro_fullpath.set(os.path.join(fp, 'saved_interrogations'))
         conc_fullpath.set(os.path.join(fp, 'saved_concordances'))
         exported_fullpath.set(os.path.join(fp, 'exported'))
         corpora_fullpath.set(os.path.join(fp, 'data'))
 
-        if not os.path.isdir(data_fullpath.get()):
+        if not os.path.isdir(savedinterro_fullpath.get()):
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Selected folder does not contain corpkit project.' % (thetime)    
             return    
@@ -3387,6 +3540,7 @@ def corpkit_gui():
         
         get_saved_results()
         get_saved_results(kind = 'concordance')
+        get_saved_results(kind = 'image')
         open_proj_basepath.set('Loaded: "%s"' % os.path.basename(fp))
 
         # reset tool:
@@ -3453,10 +3607,10 @@ def corpkit_gui():
             print '%s: Can only view one interrogation at a time.' % (thetime)
             return
 
-        Label(tab5, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 3)
+        Label(tab5, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 4, padx = (65, 0))
         mlb = Table(tab5, ['Option', 'Value'],
                   column_weights=[1, 1], height = 70, width = 30)
-        mlb.grid(sticky = N, column = 3, row = 1, rowspan = 40)
+        mlb.grid(sticky = N, column = 4, row = 1, rowspan = 40, padx = (50, 0))
         for i in mlb._mlb.listboxes:
             i.config(height = 29)
 
@@ -3491,7 +3645,6 @@ def corpkit_gui():
             v = q_dict[k]
             if k == 'option':
                 v = flipped_trans[v]
-            print v
             try:
                 if v is False:
                     v = 'False'
@@ -3508,7 +3661,7 @@ def corpkit_gui():
 
         if 'query' in q_dict.keys():
             qubox = Text(tab5, font = ("Courier New", 14), relief = SUNKEN, wrap = WORD, width = 40, height = 5, undo = True)
-            qubox.grid(column = 3, row = 23, rowspan = 5)
+            qubox.grid(column = 4, row = 23, rowspan = 5, padx = (65, 0))
             qubox.delete(1.0, END)
             qubox.insert(END, q_dict['query'])
             manage_box['qubox'] = qubox
@@ -3611,6 +3764,53 @@ def corpkit_gui():
     Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 24, padx = (50, 50) )
     #Label(tab5, text = 'Delete selected: '(kind = 'concordance')).grid(sticky = E, row = 5, column = 2)
     Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 25, padx = (50, 50) )
+
+
+# a list of every interrogation
+    def onselect_image(evt):
+        # remove old vals
+        for i in sel_vals_images:
+            sel_vals_images.pop()
+        wx = evt.widget
+        indices = wx.curselection()
+        for index in indices:
+            value = wx.get(index)
+            if value not in sel_vals_images:
+                sel_vals_images.append(value)
+
+    ev_image_box = Frame(tab5, height = 30)
+    ev_image_box.grid(sticky = E, column = 3, row = 1, rowspan = 20)
+    ev_image_sb = Scrollbar(ev_image_box)
+    ev_image_sb.pack(side=RIGHT, fill=Y)
+    every_image_listbox = Listbox(ev_image_box, selectmode = SINGLE, height = 30, width = 23, relief = SUNKEN, bg = '#F4F4F4',
+                                    yscrollcommand=ev_image_sb.set, exportselection=False)
+    every_image_listbox.pack(fill=BOTH)
+    every_image_listbox.select_set(0)
+    ev_image_sb.config(command=every_image_listbox.yview)   
+    xx = every_image_listbox.bind('<<ListboxSelect>>', onselect_image)
+    # default: w option
+    every_image_listbox.select_set(0)
+
+    # Set interrogation option
+
+    new_proj_basepath = StringVar()
+    new_proj_basepath.set('New project')
+    open_proj_basepath = StringVar()
+    open_proj_basepath.set('Open project')
+
+    Label(tab5, text = 'Saved images', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 3)
+    Button(tab5, text = 'Get saved images', command = lambda: get_saved_results(kind = 'image'), width = 22).grid(row = 22, column = 3)
+    Button(tab5, text = 'Rename', command = lambda: rename_one_or_more()).grid(sticky = W, column = 3, row = 25)
+    #Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 24)
+    Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 25)
+
+
+
+
+
+
+
+
 
     ##############     ##############     ##############     ##############     ############## 
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
