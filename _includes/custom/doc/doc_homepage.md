@@ -6,35 +6,82 @@
 
 Interrogations can be quickly edited and visualised in complex ways, or saved and loaded within projects, or exported to formats that can be handled by other tools.
 
+*corpkit* accomplishes all of this by leveraging a number of sophisticated programming libraries, including *pandas*, *matplotlib*, *scipy*, *Tkinter*, *tkintertable* and *Stanford CoreNLP*.
+
 ## Screenshots
 
-<figure> 
 <center>
-  <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="400" height="200"></a>
-  <figcaption>Searching a corpus using constituency parses</figcaption> 
+<table width="500" border="0" cellpadding="5">
+<tr>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="100" height="50"></a>
+</div> <br />
+Searching a corpus using constituency parses
+</td>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" alt="Editing" width="100" height="50"></a>
+</div> <br />
+Making relative frequencies, skipping subcorpora
+</td>
+</tr>
+<tr>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" alt="Visualising" width="100" height="50"></a>
+</div> <br />
+Visualising results as a line graph, using TeX
+</td>
+
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" alt="Concordancing" width="90" height="50"></a>
+</div>
+<br />
+Concordancing with constituency queries, manually coding results
+</td>
+</tr>
+</table>
 </center>
-</figure>
 
-<figure>
-  <center>
-  <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" alt="Editing" width="400" height="200"></a>
-  <figcaption>Making relative frequencies, skipping subcorpora</figcaption>
-  </center>
-</figure>
+## Example figures
 
-<figure>
-  <center>
-  <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" alt="Visualising" width="400" height="200"></a>
-  <figcaption>Visualising results</figcaption> 
-  </center>
-</figure
+<center>
+<table width="500" border="0" cellpadding="5">
 
-<figure>
-  <center>
-  <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" alt="Concordancing" width="370" height="200"></a>
-  <figcaption>Concordancing with constituency queries, manually coding results</figcaption>
-  </center>
-</figure>
+<tr>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" alt="Interrogating" width="100" height="50"></a>
+</div> <br />
+Changing frequencies of risk processes
+</td>
+
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/nominalisation-of-risk-emphthe-new-york-times-19872014.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/nominalisation-of-risk-emphthe-new-york-times-19872014.png" alt="Editing" width="100" height="50"></a>
+</div> <br />
+Nominalisation of risk
+</td>
+</tr>
+<tr>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" alt="Risk and power" width="90" height="50"></a>
+</div>
+<br />
+How often do certain social actors do risking?
+</td>
+<td align="center" valign="center">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" alt="Visualising" width="100" height="50"></a>
+</div> <br />
+Modal auxiliaries in the NYT
+</td>
+</tr>
+</table>
+</center>
 
 ## Key features
 
@@ -49,7 +96,7 @@ Also unique to *corpkit* are:
 
 The final key difference between *corpkit* and most current corpus linguistic software (*AntConc*, *WMatrix*, *Sketch Engine*, *UAM Corpus Tool*, *Wordsmith Tools*, etc.), *corpkit* is **free and open-source**, hackable, and provides both graphical and command-line interfaces, so that it may be useful for geek and non-geek alike. 
 
-If you're interested in the command line interface, head to the [*corpkit* repository](https://www.github.com/interrogator/corpkit) for documentation and code. If you're interested in the graphical interface, you're in the right place. **From here on out, this document focusses on the graphical, not the command-line version of the tool.**
+A more detailed overview of features can be found on the [Features page](doc/doc_features.html).
 
 ## Download
 
