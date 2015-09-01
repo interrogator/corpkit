@@ -1,6 +1,6 @@
 ---
 title: "Concordance"
-tags: pandas, concordance, gui, corpkit
+tags: [pandas, concordance]
 keywords: pandas, concordance, gui, corpkit
 summary: "This concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation."
 last_updated: 2015-09-01

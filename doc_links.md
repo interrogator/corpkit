@@ -1,7 +1,7 @@
 ---
 title: "Links"
-tags: interrogation, gui, corpkit
-keywords: interrogation, gui, corpkit
+tags: [links, help, resources]
+keywords: interrogation, gui, corpkit, links, libraries, python
 summary: "A few things that might help you!"
 last_updated: 2015-09-01
 ---
@@ -24,7 +24,7 @@ last_updated: 2015-09-01
 * [*Sketch Engine*](http://www.sketchengine.co.uk/)
 * [*AntConc*](http://www.laurenceanthony.net/software.html)
 * [*UAM Corpus Tool*](http://www.wagsoft.com/CorpusTool/index.html)
-* [*Wordsmith Tools](http://www.lexically.net/wordsmith/)
+* [*Wordsmith Tools*](http://www.lexically.net/wordsmith/)
 * [*Natural Language Toolkit*](http://www.nltk.org/)
 
 ## Leveraged libraries and modules

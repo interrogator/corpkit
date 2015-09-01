@@ -10,7 +10,7 @@ Most options here are self-explanatory. Pick the results you want to plot, play 
 
 Note that `Number to plot` takes the top `n` entries from the results of interest. If you don't want these, go back to the `Edit` tab and remove/sort the results some more. You can type in `all` to get every result---but be warned, this often won't look so good!
 
-> More documentation forthcoming
+> More documentation forthcoming...
 
 ## TeX 
 
