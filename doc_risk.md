@@ -28,13 +28,13 @@ If you want to download and interrogate the corpus yourself, read on.
 
 Once you've got [IPython](http://ipython.org/install.html) (`pip install ipython[all]` should do it for non-Windows users), you should downlad the contents of this repository. Either download and unzip via 'Download ZIP', or clone the repository with:
 
-```shell
+```
 git clone https://github.com/interrogator/risk.git
 ```
 
 Then, change into the project directory and start the IPython Notebook:
 
-```shell
+```
 cd risk
 # or, cd risk-master if you downloaded the .zip
 ipython notebook risk.ipynb
