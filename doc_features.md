@@ -2,7 +2,7 @@
 title: "Key features"
 tags: Features, gui, corpkit
 keywords: features, gui, corpkit
-summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source"
+summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source."
 last_updated: 2015-09-01
 ---
 

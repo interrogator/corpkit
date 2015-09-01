@@ -8,11 +8,11 @@ last_updated: 2015-09-01
 
 ## Selecting a corpus
 
-If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
+If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
 
 ## Selecting a kind of data
 
-`corpkit` can presently work with three kinds of data:
+*corpkit* can presently work with three kinds of data:
 
 1. Constituency parse trees
 2. Dependency parses
@@ -75,7 +75,7 @@ If your searches aren't matching what you think they should, you might want to l
  
 When searching with trees, there are a few extra options available.
 
-`Multiword results` informs `corpkit` that you expect your results to be more than one word long (if you are searching for VPs, for example). This causes `corpkit` to do tokenisation of results, leading to overall better processing.
+`Multiword results` informs *corpkit* that you expect your results to be more than one word long (if you are searching for VPs, for example). This causes *corpkit* to do tokenisation of results, leading to overall better processing.
 
 When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people.
 
@@ -133,7 +133,7 @@ Using regular expressions, you could do something more complex, like get both th
 
 > `(cats?|dogs?|fish)`
 
-This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because `corpkit` won't know the word classes of the words you're finding.
+This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because *corpkit* won't know the word classes of the words you're finding.
 
 ### Tokens
 
@@ -143,7 +143,7 @@ As with plain text, you can use either a list of a regular expression to match t
 
 ## Special queries
 
-`corpkit` also has some pre-programmed queries and query parts, based mostly around concepts from systemic-functional grammar. 
+*corpkit* also has some pre-programmed queries and query parts, based mostly around concepts from systemic-functional grammar. 
 
 ### Preset queries
 
@@ -153,7 +153,7 @@ As with plain text, you can use either a list of a regular expression to match t
 
 ### Query parts
 
-There are also some things you can type into your query that `corpkit` recognises and handles differently. You can, for example, enter
+There are also some things you can type into your query that *corpkit* recognises and handles differently. You can, for example, enter
 
 > `PROCESSES:VERBAL`
 
@@ -183,11 +183,11 @@ When using dependencies, you could get *Sensers* by searching for the role and d
 
 When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.
 
-If searching trees and using lemmatisation, `corpkit` will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:
+If searching trees and using lemmatisation, *corpkit* will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:
 
 > `/VB.?/ >> VP`
 
-then `corpkit` will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force `corpkit` to treat all results as a given part of speech.
+then *corpkit* will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force *corpkit* to treat all results as a given part of speech.
 
 ## Speaker IDs
 

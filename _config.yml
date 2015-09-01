@@ -10,14 +10,14 @@ destination: ../doc_non-coders
 topnav_title: corpkit
 homepage_title: corpkit&#58; corpus linguistics software
 site_title: corpkit
-disqus_shortname: mcdonaldd
+disqus_shortname: 
 google_analytics: 
 
 # variables
 
-sidebar_tagline: non-coders
+sidebar_tagline: corpkit
 sidebar_version: version 1.xx
-theme_file: theme-green.css
+theme_file: theme-blue.css
 project_file_name: doc
 
 port: 4003
