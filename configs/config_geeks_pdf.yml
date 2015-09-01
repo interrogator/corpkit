@@ -1,0 +1,16 @@
+destination: ../doc_designers-pdf
+url: "http://127.0.0.1:4002"
+baseurl: "/doc_designers"
+port: 4002
+print: true
+print_title: corpkit for coders
+print_subtitle: version 1.xx
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page_print"
+      comments: true
+      search: true

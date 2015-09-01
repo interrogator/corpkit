@@ -1,57 +1,66 @@
-# Site title and subtitle. This is used in _includes/header.html
-title: 'corpkit'
-subtitle: 'a toolkit for doing corpus linguistics'
+# copied in from configs
 
-# if you wish to integrate disqus on pages set your shortname here
-disqus_shortname: ''
+# project definitions
+project: doc
+audience: non-coders
+product: all
+platform: all
+version: all
+destination: ../doc_non-coders
+topnav_title: corpkit
+homepage_title: corpkit&#58; corpus linguistics software
+site_title: corpkit
+disqus_shortname: mcdonaldd
+google_analytics: 
 
-# if you use google analytics, add your tracking id here
-google_analytics_id: ''
+# variables
 
-# Enable/show navigation. There are there options:
-#   0 - always hide
-#   1 - always show
-#   2 - show only if posts are present
-navigation: 2
+sidebar_tagline: non-coders
+sidebar_version: version 1.xx
+theme_file: theme-green.css
+project_file_name: doc
 
-# URL to source code, used in _includes/footer.html
-codeurl: 'https://github.com/interrogator/corpkit'
+port: 4003
+exclude:
+  - doc_geeks*
+  - configs/
+  - _site
+  - _drafts
+  - di_multi*
 
-# Default categories (in order) to appear in the navigation
-sections: [
-    ['doc', 'Documentation'],
-    ['tut', 'Tutorial'],
-    ['ref', 'Reference'],
-    ['dev', 'Developers'],
-    ['post', 'Posts']
-]
+# same for all
+host: 127.0.0.1
+feedback_email: mcdonaldd@unimelb.edu.au
+sidebar_accordion: true
+markdown: redcarpet
+print: false
 
-# Keep as an empty string if served up at the root. If served up at a specific
-# path (e.g. on GitHub pages) leave off the trailing slash, e.g. /my-project
-baseurl: '/corpkit'
+# only use suffix if you need to force index.html to display
+# suffix: index.html
 
-# Dates are not included in permalinks
-permalink: none
+redcarpet:
+  extensions: ["no_intra_emphasis", "fenced_code_blocks", "tables", "with_toc_data"]
 
-# Syntax highlighting
 highlighter: pygments
 
-# Since these are pages, it doesn't really matter
-future: true
+collections:
+  tooltips:
+    output: true
 
-# Exclude non-site files
-exclude: ['bin', 'README.md']
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+      comments: true
+  -
+    scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+      comments: true
 
-# Use the redcarpet Markdown renderer
-markdown: redcarpet
-redcarpet:
-    extensions: [
-        'no_intra_emphasis',
-        'fenced_code_blocks',
-        'autolink',
-        'strikethrough',
-        'superscript',
-        'with_toc_data',
-        'tables',
-        'hardwrap'
-    ]
+

@@ -1,0 +1,16 @@
+destination: ../doc_writers-pdf
+url: "http://127.0.0.1:4004"
+baseurl: "/doc_writers"
+port: 4004
+print: true
+print_title: corpkit for non-coders
+print_subtitle: version 1.xx
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page_print"
+      comments: true
+      search: true
