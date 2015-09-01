@@ -6,6 +6,18 @@ date: 2015-08-30 22:08:42
 order: 7
 ---
 
+<!-- MarkdownTOC -->
+
+- [Speaker IDs](#speaker-ids)
+- [Editing](#editing)
+- [Sorting](#sorting)
+- [Colours and schemes](#colours-and-schemes)
+- [Exporting concordance lines](#exporting-concordance-lines)
+- [Saving, loading and merging](#saving-loading-and-merging)
+
+<!-- /MarkdownTOC -->
+
+
 >`corpkit`'s concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation.
 
 Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can reuse your queries from `Interrogate` if you like.

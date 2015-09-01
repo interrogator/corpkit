@@ -8,6 +8,31 @@ order: 4
 
 > `Interrogate` will iterate over subcorpora in a corpus, searching for the same thing, and tabulating the results.
 
+<!-- MarkdownTOC -->
+
+- [Selecting a corpus](#selecting-a-corpus)
+- [Selecting a kind of data](#selecting-a-kind-of-data)
+    - [Trees](#trees)
+    - [Dependencies](#dependencies)
+    - [Dependency grammars](#dependency-grammars)
+    - [Search types](#search-types)
+    - [Dependency options](#dependency-options)
+    - [Plain text](#plain-text)
+    - [Tokens](#tokens)
+- [Special queries](#special-queries)
+    - [Preset queries](#preset-queries)
+    - [Query parts](#query-parts)
+- [Lemmatisation](#lemmatisation)
+- [Speaker IDs](#speaker-ids)
+- [Naming an interrogation](#naming-an-interrogation)
+- [Running interrogations](#running-interrogations)
+- [Editing spreadsheets](#editing-spreadsheets)
+- [Making dictionaries](#making-dictionaries)
+- [Next steps](#next-steps)
+
+<!-- /MarkdownTOC -->
+
+
 ## Selecting a corpus
 
 If you were working in the `Build` tab, `corpkit` will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
