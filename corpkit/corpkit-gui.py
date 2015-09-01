@@ -2268,13 +2268,13 @@ def corpkit_gui():
     figsiz1.set('12')
     figsizes = tuple(('2', '4', '6', '8', '10', '12', '14', '16', '18'))
     fig1 = OptionMenu(tab3, figsiz1, *figsizes)
-    fig1.configure(width = 5)
-    fig1.grid(row = 15, column = 1, sticky = W, padx = (46, 0))
-    Label(tab3, text='*').grid(row = 15, column = 1, padx = (50, 0))
+    fig1.configure(width = 6)
+    fig1.grid(row = 15, column = 1, sticky = W, padx = (27, 0))
+    Label(tab3, text=u"\u00D7").grid(row = 15, column = 1, padx = (30, 0))
     figsiz2 = StringVar(root)
     figsiz2.set('6')
     fig2 = OptionMenu(tab3, figsiz2, *figsizes)
-    fig2.configure(width = 5)
+    fig2.configure(width = 6)
     fig2.grid(row = 15, column = 1, sticky = E)
 
     # show_totals option
@@ -3416,6 +3416,7 @@ def corpkit_gui():
         i_resultname.set('Interrogation results:')
         resultname.set('Results to edit:')
         editoname.set('Edited results:')
+        savedplot.set('Saved images: ')
         # spreadsheets
         update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
         update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
@@ -3429,10 +3430,25 @@ def corpkit_gui():
         # subcorpora listbox
         subc_listbox.delete(0, END)
         subc_listbox_build.delete(0, END)
+        # concordance
         conclistbox.delete(0, END)
+        # every interrogation
         every_interro_listbox.delete(0, END)
+        # every conc
+        ev_conc_listbox.delete(0, END)
+        prev_conc_listbox.delete(0, END)
+        # images
+        every_image_listbox.delete(0, END)
         every_interrogation['menu'].delete(0, 'end')
         pick_subcorpora['menu'].delete(0, 'end')
+        # speaker listboxes
+        speaker_listbox.delete(0, 'end')
+        speaker_listbox_conc.delete(0, 'end')
+        # keys
+        for e in all_conc.keys():
+            del all_conc[e]
+        for e in all_images:
+            all_images.pop(e)
         refresh()
 
     def convert_speakdict_to_string(dictionary):
