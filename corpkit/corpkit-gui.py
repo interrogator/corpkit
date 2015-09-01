@@ -2177,6 +2177,7 @@ def corpkit_gui():
     conc_saved = False
 
     def add_conc_lines_to_window(data, loading = False, preserve_colour = True):
+        from time import localtime, strftime
         import pandas as pd
         import re
         #pd.set_option('display.height', 1000)
@@ -2238,6 +2239,7 @@ def corpkit_gui():
             print '%s: Concordancing done: %d results.' % (thetime, len(lines))
 
     def do_concordancing():
+        from time import localtime, strftime
         Button(tab4, text = 'Run', command = ignore).grid(row = 3, column = 4, sticky = E)
         for i in itemcoldict.keys():
             del itemcoldict[i]
@@ -2281,6 +2283,7 @@ def corpkit_gui():
                 jdep = remake_special_query(justdep.get())
             d['dep_function'] = jdep
 
+        jspeak_conc = False
         if only_sel_speakers_conc.get():
             ids = [int(i) for i in speaker_listbox_conc.curselection()]
             jspeak_conc = [speaker_listbox_conc.get(i) for i in ids]
@@ -2303,9 +2306,9 @@ def corpkit_gui():
             query = tregex_qs[conc_special_queries.get()]
             d['option'] = 't'
 
-        print corpus
-        print query
-        print d
+        if jspeak_conc is not False:
+            showspkbut.select()
+
         r = conc(corpus, query, **d)  
         if r is not None and r is not False:
             add_conc_lines_to_window(r, preserve_colour = False)
@@ -2314,6 +2317,7 @@ def corpkit_gui():
         Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
+        from time import localtime, strftime   
         if type(current_conc[0]) == str:
             return
         items = conclistbox.curselection()
@@ -2328,7 +2332,8 @@ def corpkit_gui():
         global conc_saved
         conc_saved = False
 
-    def delete_reverse_conc_lines(*args):
+    def delete_reverse_conc_lines(*args):   
+        from time import localtime, strftime
         if type(current_conc[0]) == str:
             return
         items = [int(i) for i in conclistbox.curselection()]
@@ -2347,8 +2352,8 @@ def corpkit_gui():
         """export conc lines to csv"""
         import os
         import pandas
+        from time import localtime, strftime
         if type(current_conc[0]) == str:
-            from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Nothing to export.' % (thetime)
             return
@@ -2359,19 +2364,19 @@ def corpkit_gui():
             docpath = project_fullpath.get()
         if data == 'default':
             thedata = current_conc[0]
-            thedata.to_csv(header = False, sep = '\t')
+            thedata = thedata.to_csv(header = False, sep = '\t')
         else:
             thedata = all_conc[data]
-            thedata.to_csv(header = False, sep = '\t')
+            thedata = thedata.to_csv(header = False, sep = '\t')
         savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
-                                       initialdir = docpath,
+                                       initialdir = exported_fullpath.get(),
                                        message = 'Choose a name and place for your exported data.',
                                        defaultextension = '.csv',
                                        initialfile = 'data.csv')
         if savepath == '':
             return
         with open(savepath, "w") as fo:
-            fo.write(csv)
+            fo.write(thedata)
         thetime = strftime("%H:%M:%S", localtime())
         print '%s: Concordance lines exported.' % (thetime)
         global conc_saved
@@ -2509,8 +2514,7 @@ def corpkit_gui():
 
         if sortval.get() != 'Index' and sortval.get() != 'Random':
             df = df.sort(['tosorton'], ascending = sort_way)
-            if dropsort:
-                df = df.drop(['tosorton'], axis = 1, errors = 'ignore')
+            df = df.drop(['tosorton'], axis = 1, errors = 'ignore')
         if show_filenames.get() == 0:
             add_conc_lines_to_window(df.drop('f', axis = 1, errors = 'ignore'))
         else:
@@ -3135,7 +3139,7 @@ def corpkit_gui():
                         os.remove(os.path.join(data_fullpath.get(), i + '.p'))
                     else:
                         del all_conc[i]
-                        os.remove(os.path.join(data_fullpath.get(), i + '.p'))
+                        os.remove(os.path.join(conc_fullpath.get(), i + '.p'))
                 except:
                     pass
         thetime = strftime("%H:%M:%S", localtime())
