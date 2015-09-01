@@ -96,7 +96,7 @@ Also unique to *corpkit* are:
 
 The final key difference between *corpkit* and most current corpus linguistic software (*AntConc*, *WMatrix*, *Sketch Engine*, *UAM Corpus Tool*, *Wordsmith Tools*, etc.), *corpkit* is **free and open-source**, hackable, and provides both graphical and command-line interfaces, so that it may be useful for geek and non-geek alike. 
 
-A more detailed overview of features can be found on the [Features page](doc/doc_features.html).
+A more detailed overview of features can be found on the [Features page](doc_features.html).
 
 ## Download
 
@@ -104,7 +104,7 @@ Currently, *corpkit* works for Mac, and presumably Linux. Windows support is com
 
 To download, head to *corpkit*'s [**GitHub page**](https://github.com/interrogator/corpkit) and click `Download Zip`. 
 
-Head to the [Setup page](doc/doc_setup.html) for (very simple) installation instructions.
+Head to the [Setup page](doc_setup.html) for (very simple) installation instructions.
 
 ## Cite
 
