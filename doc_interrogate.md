@@ -89,7 +89,7 @@ In dependency grammar, words in sentences are connected in a series of governor-
 
 The best source of information and dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
 
-### Dependency grammars
+#### Dependency grammars
 
 Your data has actually been annotated with three slightly different dependency grammars. You can choose to work with:
 
@@ -99,7 +99,7 @@ Your data has actually been annotated with three slightly different dependency g
 
 For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
-### Search types
+#### Dependency search types
 
 There are many potentially interesting things in dependency annotations, and, accordingly, many different kinds of search available for them. 
 
@@ -117,7 +117,7 @@ Below is a basic explanation of what each kind of query matches, and what it out
 | Get "role:dependent", matching governor  |  Governor  | role:dependent      |
 | Get "role:governor", matching dependent  |  Dependent | role:governor       |
 
-### Dependency options
+#### Dependency options
 
 Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
 

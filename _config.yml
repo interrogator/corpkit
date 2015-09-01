@@ -8,7 +8,7 @@ platform: all
 version: all
 destination: ../doc_non-coders
 topnav_title: corpkit
-homepage_title: corpkit&#58; corpus linguistics software
+homepage_title: corpkit&#58; a tool for investigating text 
 site_title: corpkit
 disqus_shortname: 
 google_analytics: 
