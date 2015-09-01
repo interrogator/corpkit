@@ -2,7 +2,7 @@
 title: "Key features"
 tags: Features, gui, corpkit
 keywords: features, gui, corpkit
-summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source."
+summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source!"
 last_updated: 2015-09-01
 ---
 
@@ -12,32 +12,33 @@ last_updated: 2015-09-01
 
 #### Speaker IDs
 
-*corpkit* can recognise speaker IDs when parsing, and restrict searches to par!icular speakers.
+*corpkit* can recognise speaker IDs when parsing, and restrict searches to particular speakers.
 
 #### Search lexis and grammar
 
-*corpkit* allows you to search for lexical and grammatical features, sep!rately or together.
+*corpkit* allows you to search for lexical and grammatical features, separately or together.
 
 #### Compare subcorpora
 
-*corpkit* is designed to work with structured corpora (those containing sub!olders)
+*corpkit* is designed to work with structured corpora (those containing subfolders). 
 
 #### Concordance grammatically
 
-You can concordance using Tregex queries or dependency roles, rather than a sim!le regular expression search of the text.
+You can concordance using Tregex queries or dependency roles, rather than a simple regular expression search of the text.
 
-There are also preset queries for concordancing of particular moods (imperative, interrogate, (modalised) declarative), process types (relational, mental, verbal)
+There are also preset queries for concordancing of particular moods (imperative, interrogate, (modalised) declarative), process types (relational, mental, verbal).
 
 #### Annotate concordances
 
-You can quickly highlight concordance lines, add tags, sort by tag,!
+You can quickly highlight concordance lines, add tags, sort by tag, and export these tags alongside your data.
+
 #### Store everything
 
-Every interrogation is stored in memory, alongside all options used to gen!rate the result. You can save these to disk and auto-load them when you open a project. Concordances can be stored, saved, merged and loaded too. This means that you can always reproduce a particular interrogation. You can even share your project with others.
+Every interrogation is stored in memory, alongside all options used to generate the result. You can save these to disk and auto-load them when you open a project. Concordances can be stored, saved, merged and loaded too. This means that you can always reproduce a particular interrogation. You can even share your project with others.
 
 #### Command line interface
 
-*corpkit* has a lot of functionality, and could probably keep you busy for a lon! time. If you ever find that the tools aren't intuitive, it is useful to remember that the major functions at work in the interface can also be called via the command line. Generally speaking, command line operation makes it possible to do far more complicated things with your data.
+*corpkit* has a lot of functionality, and could probably keep you busy for a long time. If you ever find that the tools aren't intuitive, it is useful to remember that the major functions at work in the interface can also be called via the command line. Generally speaking, command line operation makes it possible to do far more complicated things with your data.
 
 * When interrogating, you can quickly make lists of corpora or queries and perform each simultaneously. 
 * When editing, you can create lists of entries to rename or merge, and iterate over them.
