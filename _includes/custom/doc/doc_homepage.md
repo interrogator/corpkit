@@ -68,11 +68,3 @@ If you want to cite *corpkit*, please use:
 `McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. 
 Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
 ```
-
-## PDF Download 
-
-If you would like to download this help file as a PDF, you can do so here. The PDF most of the same content as the online help, except that some elements (such as video or special layouts) don't translate the the print medium, so they're excluded.
-
-<a target="_blank" class="noCrossRef" href="doc_{{site.audience}}_pdf.pdf"><button type="button" class="btn btn-default" aria-label="Left Align"><span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> PDF Download</button></a>
-
-The PDF contains a timestamp in the header indicating when it was last generated. If you download a PDF, keep in mind that it may go out of date quickly. Always compare your PDF timestamp against the online help timestamp (which you can find in the footer).
