@@ -2627,7 +2627,8 @@ def corpkit_gui():
                     themes.append('')
             else:
                 themes.append('')
-        print themes
+        if all(i == '' for i in themes):
+            timestring('Warning: no scheme defined.')
         return themes
 
     def conc_sort(*args):
