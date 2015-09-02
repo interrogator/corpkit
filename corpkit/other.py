@@ -695,9 +695,9 @@ def datareader(data, plaintext = False, **kwargs):
 
     return good
 
-def tregex_engine(query = False, 
+def tregex_engine(corpus = False,  
                   options = False, 
-                  corpus = False,  
+                  query = False, 
                   check_query = False,
                   check_for_trees = False,
                   lemmatise = False,
@@ -781,6 +781,9 @@ def tregex_engine(query = False,
         # append list of options to query 
         if options:
             [tregex_command.append(o) for o in options]
+        # dummy option
+        else:
+            options = ['-t']
         if query:
             tregex_command.append(query)
         if corpus:
@@ -819,6 +822,7 @@ def tregex_engine(query = False,
                     time = strftime("%H:%M:%S", localtime())
                     print '%s: Error parsing Tregex query.' % time
                     return False
+                time = strftime("%H:%M:%S", localtime())
                 selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
