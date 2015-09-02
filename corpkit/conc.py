@@ -77,12 +77,13 @@ def conc(corpus,
             options = '-t'
     if can_do_fast:
         speakr = ''
-        wholes = tregex_engine(query, 
+        tregex_engine(query = query, check_query = True, root = root)
+        wholes = tregex_engine(query = query, 
                                 options = ['-o', '-w', '-f', options], 
                                 corpus = corpus,
                                 preserve_case = True,
                                 root = root)
-        middle_column_result = tregex_engine(query, 
+        middle_column_result = tregex_engine(query = query, 
                                 options = ['-o', options], 
                                 corpus = corpus,
                                 preserve_case = True,
@@ -164,12 +165,13 @@ def conc(corpus,
                             options = '-s'
                         else:
                             options = '-t'
-                        wholes = tregex_engine(query, 
+                        tregex_engine(query = query, check_query = True, root = root)
+                        wholes = tregex_engine(query = query, 
                                     options = ['-o', '-w', '-filter', options], 
                                     corpus = parsetree,
                                     preserve_case = True,
                                     root = root)
-                        middle_column_result = tregex_engine(query, 
+                        middle_column_result = tregex_engine(query = query, 
                                     options = ['-o', '-filter', options], 
                                     corpus = parsetree,
                                     preserve_case = True,
