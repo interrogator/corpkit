@@ -5,5 +5,6 @@ tags: [tutorial, getting-started, help]
 summary: "Learning to search parser output"
 last_updated: 2015-09-01
 ---
+{% include linkrefs.html %}
 
 > Coming soon

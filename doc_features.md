@@ -2,9 +2,10 @@
 title: "Key features"
 tags: [features, getting-started, pandas, matplotlib, concordance]
 keywords: features, gui, corpkit
-summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source!"
+summary: "<i>corpkit</i> does what you'd expect, plus a lot more. Better still, it's free and open-source!"
 last_updated: 2015-09-01
 ---
+{% include linkrefs.html %}
 
 #### Parsing
 
@@ -14,21 +15,22 @@ last_updated: 2015-09-01
 
 *corpkit* can recognise speaker IDs when parsing, and restrict searches to particular speakers. All you need to do is format your data like a transcript:
 
-    PROSECUTOR: Good afternoon, Mr. President.
-    CLINTON: Good afternoon.
+    PROSECUTOR: Good afternoon.
+    PRESIDENT: Good afternoon.
     PROSECUTOR: Could you please state your full name for the record, sir?
-    CLINTON: William Jefferson Clinton.
+    PRESIDENT: William Jefferson Clinton.
 
 ... and *corpkit* will figure out the rest!
 
 #### Search lexis and grammar
 
-*corpkit* allows you to search for lexical and grammatical features, separately or together. You can use a regular expression to match both words and the functions of words, answering questions like:
+*corpkit* allows you to search for both lexical and grammatical features, either separately or together. You can use a regular expression to match both words and the functions of words, answering questions like:
 
-    What grammatical roles do a particular term of interest generally take?
-    When the VP is headed by verb x, what is its subject?
+* *What grammatical roles do a particular term of interest generally take?*
+* *When the VP is headed by verb x, what is its subject?*
+* *What are the most common participants in the corpus, and how are they modified?*
 
-You can use also use *Tregex* to define very complex queries, like the one below, which matches `harm` in `person at the risk of possible harm`:
+You can use also use *Tregex* to define very complex queries, like the one below, which matches `harm` in `person at the risk of serious harm`:
 
     /NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))
     Head of noun phrase in PP headed by 'of' in a noun phrase headed by 'risk'
@@ -41,15 +43,25 @@ The example below shows how members of an online support group increasingly pref
 </div>
 </center>
 
+It was made in three few simple steps:
+
+1. Searching for predicators when the subject is human pronominal and the complement is headed by *bipolar*, using automatic lemmatisation to collapse verb forms
+2. Merging every result aside from *be* and *have* as *Other processes*
+3. Plotting the three remaining results as a line chart, with *fivethirtyeight* style.
+
+#### Dedicated visualisation tools
+
+*corpkit* leverages *pandas*, *matplotlib* and *TeX* to generate high-quality visualisations of linguistic data. You can choose colourmaps, plot types, styles, labels, and much more. Every visualisation shown on this site was made with *corpkit*. That said, you can also export your data easily to CSV files, which can be loaded painlessly into Excel.
+
 #### Functional queries
 
-There are preset queries to count mood types, common participants and processes. You can also use special operators to match sets of words and roles that correspond to systemic-functional categories:
+There are preset queries to match mood types, process types, and the heads of participants. You can also use special operators to match sets of words and roles that correspond to systemic-functional categories:
 
     /VB.?/ < /PROCESSES:MENTAL/
 
 #### Compare subcorpora
 
-*corpkit* is designed to work with structured corpora (those containing subfolders). So, not only can you search for nuanced patterns in the text, but you can quickly find out how they vary in frequency in each subcorpus.
+*corpkit* is designed to work with structured corpora (those containing subfolders). So, not only can you search for nuanced patterns in the text, but you can quickly find out how they vary in frequency by subcorpus.
 
 <center>
 <div style="width:700px;height:350px;overflow:hidden;" >
@@ -101,7 +113,9 @@ You can quickly highlight concordance lines, add tags, sort by tag, and export t
 
 #### Store everything
 
-Every interrogation is stored in memory, alongside all options used to generate the result. You can save these to disk and auto-load them when you open a project. Concordances can be stored, saved, merged and loaded too. This means that you can always reproduce a particular interrogation. You can even share your project with others.
+Every interrogation is stored in memory, alongside all options used to generate the result. You can save these to disk and auto-load them when you open a project. Concordances can be stored, saved, merged and loaded too. This means that you can always reproduce a particular interrogation. 
+
+You can even share your project with others: if you share the project folder with your colleagues, they can use *corpkit* to explore your saved interrogations, concordances and images.
 
 #### Command line interface
 

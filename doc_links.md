@@ -5,12 +5,15 @@ keywords: interrogation, gui, corpkit, links, libraries, python
 summary: "A few things that might help you!"
 last_updated: 2015-09-01
 ---
+{% include linkrefs.html %}
 
 ## Parsing
 
 * [*Stanford CoreNLP*](http://nlp.stanford.edu/index.shtml): the parser used by *corpkit*
 * [*Stanford Dependencies Manual*](http://nlp.stanford.edu/software/dependencies_manual.pdf): help understanding dependency grammars and dependency types.
 * [*Universal Dependencies*](http://universaldependencies.github.io/docs/#language-en) used by the CoreNLP parser
+
+{{warning}} If you use Speaker IDs, *corpkit* will ever so slightly modify the CoreNLP xml output format to include a tag for each sentece. This could potentially lead to compatibility issues if you want to run the parsed file through other tools. {{end}}
 
 ## Querying
 

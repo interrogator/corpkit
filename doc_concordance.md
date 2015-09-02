@@ -5,6 +5,7 @@ keywords: pandas, concordance, gui, corpkit
 summary: "This concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation."
 last_updated: 2015-09-01
 ---
+{% include linkrefs.html %}
 
 Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can reuse your queries from `Interrogate` if you like.
 
@@ -12,7 +13,7 @@ When searching Trees, you can use the `Trees` option to output bracketted trees 
 
 Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words. As with `Interrogate`, you can use special queries, like `ROLES:ACTOR`, or select some preset queries.
 
-> You can use `ctrl/cmd-minus` `ctrl/cmd-plus` to change the concordance window font size.
+{{tip}} You can use `ctrl/cmd-minus` `ctrl/cmd-plus` to change the concordance window font size. {{end}}
 
 ## Speaker IDs
 
@@ -28,7 +29,7 @@ You can use `backspace` to delete selected lines, or `shift-backspace` to invers
 
 Sorting is always by the first character in a word. `L1` sorts by the rightmost word in the left-hand column; `L2` sorts by the second rightmost. This is similar for the other columns. Sorting by `M-1` will sort by the last word in the middle column, and `M-2` by the second last. These options are useful if, for example, you are looking at the most common verbal groups in your data.
 
-You can also sort by index, filename, colour, theme or speaker (if available), or randomise your results.
+You can also sort by index, filename, colour, theme or speaker ID (if available), or randomise your results.
 
 Clicking `Sort` again without making any other changes will invert the sort order.
 
@@ -48,7 +49,7 @@ If you do `File` &rarr; `Save project settings`, *corpkit* will remember your co
 
 `Export` allows you to save results to CSV files, which can be loaded into Excel, or similar.
 
-> Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to `LaTeX` tables, and all kinds of other cool things.
+{{note}} Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to `LaTeX` tables, and all kinds of other cool things. {{end}}
 
 ## Saving, loading and merging
 

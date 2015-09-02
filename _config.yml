@@ -30,7 +30,7 @@ exclude:
 
 # same for all
 host: 127.0.0.1
-feedback_email: mcdonaldd@unimelb.edu.au
+feedback_email: "mcdonaldd@unimelb.edu.au"
 sidebar_accordion: true
 markdown: redcarpet
 print: false

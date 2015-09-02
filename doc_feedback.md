@@ -4,6 +4,7 @@ tags: [help, github]
 date: 2015-08-30 22:09:08
 summary: "Feedback is always welcome!"
 ---
+{% include linkrefs.html %}
 
 *corpkit* is a new tool, with a small user base, and an even smaller list of developers. As such, things are bound to go wrong, and there are potentially useful features that nobody has even considered adding yet.
 

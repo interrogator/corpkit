@@ -6,6 +6,8 @@ summary: "This tab provides the main means of searching your corpus for lexical 
 last_updated: 2015-09-01
 ---
 
+{% include linkrefs.html %}
+
 ## Selecting a corpus
 
 If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
@@ -139,7 +141,7 @@ This kind of search has drawbacks, though. Lemmatisation, for example, will not 
 
 As with plain text, you can use either a list of a regular expression to match tokens.
 
-> More coming soon
+{{warning}} More coming soon! {{end}}
 
 ## Special queries
 
@@ -179,6 +181,8 @@ Each special query type has a number of possible subtypes:
 
 When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
 
+{{note}} An interface for editing and defining custom queries is in development. {{end}}
+
 ## Lemmatisation
 
 When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.
@@ -207,7 +211,7 @@ On large datasets, interrogations can take some time, especially for dependency 
 
 Be sure to name your interrogation, via the `Name interrogation` box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.
 
-> Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the `Manage` tab. You can head there to access previous queries, or to save interrogations to disk.
+{{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the `Manage` tab. You can head there to access previous queries, or to save interrogations to disk. {{end}}
 
 ## Editing spreadsheets
 
@@ -217,7 +221,7 @@ If you manually edit the results in either the results or totals spreadsheet, yo
 
 It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. 
 
-Sorting the result order is performed in the edit window.
+{{tip}} Sorting the result order is performed in the edit window. {{end}}
 
 ## Making dictionaries
 

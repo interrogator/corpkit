@@ -112,7 +112,7 @@ Also unique to *corpkit* are:
 
 The final key difference between *corpkit* and most current corpus linguistic software (*AntConc*, *WMatrix*, *Sketch Engine*, *UAM Corpus Tool*, *Wordsmith Tools*, etc.), *corpkit* is **free and open-source**, hackable, and provides both graphical and command-line interfaces, so that it may be useful for geek and non-geek alike. 
 
-A more detailed overview of features can be found on the [Features page](doc_features.html).
+{{tip}} A more detailed overview of features can be found on the <a href="doc_features.html"><i>Features</i></a> page. {{end}}
 
 ## Download
 

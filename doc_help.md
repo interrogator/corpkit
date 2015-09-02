@@ -6,6 +6,8 @@ summary: "When things go wrong, you can get in touch!"
 last_updated: 2015-09-01
 ---
 
+{% include linkrefs.html %}
+
 `corpkit` is still missing documentation. For now, when things go wrong, you can select `Help` &rarr; `Save log` to generate a log file for your session. You can send this to developers to help diagnose the source of a problem.
 
 ## Settings

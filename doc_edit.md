@@ -2,10 +2,10 @@
 title: "Edit"
 tags: [edit, pandas]
 keywords: editing, gui, corpkit
-summary: "This tab allows you to manipulate interrogation results in complex ways."
+summary: "The <i>Edit</i>tab allows you to manipulate interrogation results in complex ways."
 last_updated: 2015-09-01
 ---
-
+{% include linkrefs.html %}
 
 ## Selecting data to edit
 
@@ -44,7 +44,7 @@ If you select the `keywords` operation, you can get log-likelihood keyness score
 
 Using `Self`-`results` as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.
 
-> Negative keywords exist, too: try sorting by inverse total to find out which words are uncommon in the target data.
+{{tip}} Negative keywords exist, too: try sorting by inverse total to find out which words are uncommon in the target data. {{end}}
 
 You can also use `%-diff` to calculate keywords via percentage difference, an alternative keyword algorithm.
 
@@ -57,7 +57,7 @@ When writing out entries to keep/remove/merge, you can supply either:
 1. A regular expression to match: `^fr*iends?$` will match `fiend`, `fiends`, `friend` and `friends`.
 2. A list: `[fiend,fiends,friend,friends]`
 
-> Special queries work here, too. If you searched for process, you could keep only verbal processes by using `PROCCESSES:VERBAL`.
+{{note}} Special queries work here, too. If you searched for process, you could keep only verbal processes by using <i>PROCCESSES:VERBAL</i>. {{end}}
 
 If merging either subcorpora or entries, you may want to provide a new name for the merged item. If you leave this field blank, the first few entry names are joined together with slashes as the new name.
 
@@ -88,7 +88,7 @@ Once all your options are set, just hit `Edit`.
 
 Editing is generally very fast, but very large interrogations, combined with many different kinds of edits, may slow things down a bit. Using results, rather than totals, as a denominator will generally take a little longer.
 
-> You can use `Help` &rarr; `Save log` after performing an edit to get some information about what was performed.
+{{note}} You can use <i>Help &rarr; Save log</i> after performing an edit to get some information about what was performed. {{end}}
 
 If you'd like to see the results in a bigger window, head back to the `Interrogate` tab and use the `Previous` and `Next` buttons to bring up your edited results.
 

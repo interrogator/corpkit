@@ -3,6 +3,7 @@ title: "Pull requests"
 tags: [help, geeks, github, code]
 date: 2015-08-30 22:09:08
 ---
+{% include linkrefs.html %}
 
 Everything about `corpkit` is free and open-source. If you can code, please do consider contributing to the [GitHub](https://www.github.com/interrogator/corpkit), by way of issue, fork or pull request.
 
