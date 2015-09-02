@@ -33,7 +33,7 @@ class RedirectText(object):
     def write(self, string):
         """""" 
         import re
-        if 'Parsing file' not in string and 'Initialising parser' not in string:
+        if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
             self.log.append(string)
         # remove blank lines
         show_reg = re.compile(r'^\s*$')
@@ -221,6 +221,11 @@ def corpkit_gui():
 
     all_text_widgets = []
 
+    def timestring(input):
+        from time import localtime, strftime
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: %s' % (thetime, input.lstrip())
+
     ###################     ###################     ###################     ###################
     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
     ###################     ###################     ###################     ###################
@@ -338,8 +343,9 @@ def corpkit_gui():
         """turn special queries into appropriate regexes, lists, etc"""
         lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:']
         if any([special in query for special in lst_of_specials]):
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Special query detected. Loading wordlists ... ' % thetime
+            
+            timestring('Special query detected. Loading wordlists ... ')
+            
             from dictionaries.process_types import processes
             from dictionaries.roles import roles
             from dictionaries.wordlists import wordlists
@@ -367,8 +373,8 @@ def corpkit_gui():
                                        inverse = False)
                         query = divided.group(1) + asr + divided.group(5)
                     except:
-                        thetime = strftime("%H:%M:%S", localtime())
-                        print '%s: "%s" must be: %s' % (thetime, divided.group(4), ', '.join(dict_of_specials[special]._asdict().keys()))
+                        
+                        timestring('"%s" must be: %s' % (divided.group(4), ', '.join(dict_of_specials[special]._asdict().keys())))
                         return False
         return query
 
@@ -630,7 +636,7 @@ def corpkit_gui():
     tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
                      'Unmodalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                      'Modalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                     'Interrogative': r'ROOT << (/\?/ !< __)',
+                     'Interrogatives': r'ROOT << (/\?/ !< __)',
                      'Mental processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.mental, boundaries = 'w'),
                      'Verbal processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.verbal, boundaries = 'w'),
                      'Relational processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.relational, boundaries = 'w')}
@@ -741,12 +747,10 @@ def corpkit_gui():
             as_series = data.results.sum()
             with open(fpn, 'w') as fo: 
                 pickle.dump(as_series, fo)
-            thetime = strftime("%H:%M:%S", localtime())
-            print '\n%s: Dictionary created: %s\n' % (thetime, os.path.join('dictionaries', fname))
+            timestring('Dictionary created: %s\n' % (os.path.join('dictionaries', fname)))
             refresh()
         else:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No results branch found, sorry.' % thetime
+            timestring('No results branch found, sorry.')
             return
 
     def do_interrogation():
@@ -796,8 +800,7 @@ def corpkit_gui():
         
         selected_option = transdict[searchtype()]
         if selected_option == '':
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: You need to select a search type.' % thetime
+            timestring('You need to select a search type.')
             return
 
         interrogator_args = {'query': query,
@@ -840,8 +843,7 @@ def corpkit_gui():
             interrogator_args['pos_filter'] = pf
 
         if corpus_fullpath.get() == '':
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: You need to select a corpus.' % thetime
+            timestring('You need to select a corpus.')
             Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
             return
 
@@ -928,8 +930,13 @@ def corpkit_gui():
             nex.configure(state = NORMAL)
         refresh()
 
+        if 'results' in recent_interrogation_data._asdict().keys():
+            subs = r.results.index
+        else:
+            subs = r.totals.index
+
         subc_listbox.delete(0, 'end')
-        for e in list(r.results.index):
+        for e in list(subs):
             if e != 'tkintertable-order':
                 subc_listbox.insert(END, e)
 
@@ -939,8 +946,7 @@ def corpkit_gui():
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E)
         Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
         if interrogation_returned_dict:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Interrogation finished, with multiple results.' % thetime
+            timestring('Interrogation finished, with multiple results.')
 
     class MyOptionMenu(OptionMenu):
         """Simple OptionMenu for things that don't change"""
@@ -1136,7 +1142,8 @@ def corpkit_gui():
     def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
                    'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
                    'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
-                   'Tokens': r'\b(m.n|wom.n|child(ren)?)\b'}
+                   'Tokens': r'\b(m.n|wom.n|child(ren)?)\b',
+                   'Other': r'[cat,cats,mouse,mice,cheese]'}
 
     def onselect(evt):
         w = evt.widget
@@ -1147,17 +1154,23 @@ def corpkit_gui():
         datatype_listbox.select_set(index)
         datatype_listbox.see(index)
         if value == 'Get tokens by role':
-            entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
         elif value == 'Simple search string search':
-            entrytext.set(r'[cat,cats,mouse,mice,cheese]')
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
         elif value == 'Regular expression search':
-            entrytext.set(r'(m.n|wom.n|child(ren)?)')
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(r'(m.n|wom.n|child(ren)?)')
         elif value == 'Get tokens matching regular expression':
-            entrytext.set(r'(m.n|wom.n|child(ren)?)')
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(r'(m.n|wom.n|child(ren)?)')
         elif value == 'Get tokens matching list':
-            entrytext.set(r'[cat,cats,mouse,mice,cheese]')
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
         else:
-            entrytext.set(def_queries[datatype_picked.get()])
+            if entrytext.get() not in def_queries.values():
+                entrytext.set(def_queries[datatype_picked.get()])
 
     # boolean interrogation arguments
     lem = IntVar()
@@ -1353,13 +1366,16 @@ def corpkit_gui():
             if name_of_n_ed_spread.get() != '':
                 update_interrogation(n_editor_results, id = 2)
                 update_interrogation(n_editor_totals, id = 2, is_total = True)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Updated interrogations with manual data.' % thetime
+        timestring('Updated interrogations with manual data.')
         if pane == 'interrogate':
             the_data = all_interrogations[name_of_interro_spreadsheet.get()]
             tot = pandas.DataFrame(the_data.totals, dtype = object)
+            
             if 'results' in the_data._asdict().keys():
                 update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
+            else:
+                update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
+
             update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70, width = 650)
         if pane == 'edit':
             the_data = all_interrogations[name_of_o_ed_spread.get()]
@@ -1384,8 +1400,7 @@ def corpkit_gui():
                     update_spreadsheet(interro_results, the_data.results, height = 340, indexwidth = 70, width = 650)
                 update_spreadsheet(interro_totals, tot, height = 10, indexwidth = 70, width = 650)
         
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Updated spreadsheet display in edit window.' % thetime
+        timestring('Updated spreadsheet display in edit window.')
 
     def is_number(s):
         """check if str can be added for the below"""
@@ -1403,6 +1418,7 @@ def corpkit_gui():
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
+        from time import localtime, strftime
         import os
 
         # translate operation into interrogator input
@@ -1424,7 +1440,7 @@ def corpkit_gui():
         if data2 == 'None' or data2 == '' or data2 == 'Self':
             data2 = False
         # check if it's a dict
-        if data2_pick.get() not in all_interrogations.keys():
+        elif data2_pick.get() not in all_interrogations.keys():
             dpath = os.path.join(project_fullpath.get(), 'dictionaries')
             dfile = os.path.join(dpath, data2_pick.get() + '.p')
             import pickle
@@ -1442,13 +1458,15 @@ def corpkit_gui():
                     try:
                         data2 = all_interrogations[data2].results
                     except AttributeError:
-                        print 'Denominator has no results branch.'
+                        timestring('Denominator has no results branch.')
+                        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
                         return
                 elif df2branch.get() == 'totals':
                     try:
                         data2 = all_interrogations[data2].totals
                     except AttributeError:
-                        print 'Denominator has no totals branch.'
+                        timestring('Denominator has no totals branch.')
+                        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
                         return
                 if transpose.get():
                     data2 = data2.T
@@ -1458,7 +1476,9 @@ def corpkit_gui():
             try:
                 data1 = the_data.results
             except AttributeError:
-                print 'Interrogation has no results branch.'
+                timestring('Interrogation has no results branch.')
+                Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+                return
         elif df1branch.get() == 'totals':
             data1 = the_data.totals
 
@@ -1537,7 +1557,7 @@ def corpkit_gui():
             try:
                 numtokeep = int(keeptopnum.get())
             except ValueError:
-                print 'Keep top n results value must be number.'
+                timestring('Keep top n results value must be number.')
                 Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
                 return
             editor_args['keep_top'] = numtokeep
@@ -1600,15 +1620,42 @@ def corpkit_gui():
         # restore button
         Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
 
+    def df2_callback(*args):
+        try:
+            thisdata = all_interrogations[data2_pick.get()]
+        except KeyError:
+            return
+
+        if 'results' in thisdata._asdict().keys():
+            df2box.config(state = NORMAL)
+        else:
+            df2box.config(state = NORMAL)
+            df2branch.set('totals')
+            df2box.config(state = DISABLED)
+
     def df_callback(*args):
         """show names and spreadsheets for what is selected as result to edit
            also, hide the edited results section"""
         if selected_to_edit.get() != 'None':
             name_of_o_ed_spread.set(selected_to_edit.get())
-            if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
-                update_spreadsheet(o_editor_results, all_interrogations[name_of_o_ed_spread.get()].results, height = 138, width = 800)
-            update_spreadsheet(o_editor_totals, all_interrogations[name_of_o_ed_spread.get()].totals, height = 10, width = 800)
+            thisdata = all_interrogations[selected_to_edit.get()]
             resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
+            if 'results' in thisdata._asdict().keys():
+                update_spreadsheet(o_editor_results, thisdata.results, height = 138, width = 800)
+                df1box.config(state = NORMAL)
+            else:
+                df1box.config(state = NORMAL)
+                df1branch.set('totals')
+                df1box.config(state = DISABLED)
+                update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 800)
+            #if 'totals' in thisdata._asdict().keys():
+                #update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 800)
+                #df1box.config(state = NORMAL)
+            #else:
+                #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
+                #df1box.config(state = NORMAL)
+                #df1branch.set('results')
+                #df1box.config(state = DISABLED)
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 800)
@@ -1617,18 +1664,16 @@ def corpkit_gui():
             subcl.configure(state = NORMAL)
             subcl.delete(0, 'end')
             if name_of_o_ed_spread.get() != '':
-                if 'results' in all_interrogations[name_of_o_ed_spread.get()]._asdict().keys():
-                    cols = list(all_interrogations[name_of_o_ed_spread.get()].results.index)
+                if 'results' in thisdata._asdict().keys():
+                    cols = list(thisdata.results.index)
                 else:
-                    cols = list(all_interrogations[name_of_o_ed_spread.get()].totals.index)
+                    cols = list(thisdata.totals.index)
                 for e in cols:
                     if e != 'tkintertable-order':
                         subcl.insert(END, e) 
         do_sub.set('Off')
         do_with_entries.set('Off')
-            #subcl.configure(state = DISABLED)    
-
-
+  
     # all interrogations here
     from collections import OrderedDict
     all_interrogations = OrderedDict()
@@ -1650,7 +1695,7 @@ def corpkit_gui():
     df1branch = StringVar()
     df1branch.set('results')
     df1box = OptionMenu(tab2, df1branch, 'results', 'totals')
-    df1box.config(width = 19)
+    df1box.config(width = 19, state = DISABLED)
     df1box.grid(row = 1, column = 1, sticky = E)
 
     def op_callback(*args):
@@ -1678,6 +1723,7 @@ def corpkit_gui():
     dataframe2s = OptionMenu(tab2, data2_pick, *tups)
     dataframe2s.config(state = DISABLED, width = 9)
     dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = N)
+    data2_pick.trace("w", df2_callback)
 
     # DF2 branch selection
     df2branch = StringVar(root)
@@ -2005,7 +2051,7 @@ def corpkit_gui():
         del oldplotframe[:]
 
         toolbar_frame = Tkinter.Frame(tab3, borderwidth = 0)
-        toolbar_frame.grid(row=18, column=2, columnspan = 3, sticky = 'NW', padx = (400,0))
+        toolbar_frame.grid(row=22, column=2, columnspan = 3, sticky = 'NW', padx = (400,0))
         canvas = FigureCanvasTkAgg(f.gcf(), tab3)
         canvas.show()
         canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 20, padx = (40, 20), columnspan = 3)
@@ -2157,6 +2203,18 @@ def corpkit_gui():
     tmp.grid(row = 0, column = 1, pady = (35, 0))
     all_text_widgets.append(tmp)
 
+    def plot_callback(*args):
+        try:
+            thisdata = all_interrogations[data_to_plot.get()]
+        except KeyError:
+            return
+        if 'results' in thisdata._asdict().keys():
+            plotbox.config(state = NORMAL)
+        else:
+            plotbox.config(state = NORMAL)
+            plotbranch.set('totals')
+            plotbox.config(state = DISABLED)
+
     Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
     # select result to plot
     data_to_plot = StringVar(root)
@@ -2164,6 +2222,8 @@ def corpkit_gui():
     data_to_plot.set(most_recent)
     every_interrogation = OptionMenu(tab3, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
     every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
+    data_to_plot.trace("w", plot_callback)
+
 
     # branch selection
     plotbranch = StringVar(root)
@@ -2322,10 +2382,10 @@ def corpkit_gui():
             data = data.drop('s', axis = 1, errors = 'ignore')
 
         if them:
-            if 't' not in list(data.columns):
-                themelist = get_list_of_themes(data)
-                if any(t != '' for t in themelist):
-                    data.insert(0, 't', themelist)
+            data = data.drop('t', axis = 1, errors = 'ignore')
+            themelist = get_list_of_themes(data)
+            if any(t != '' for t in themelist):
+                data.insert(0, 't', themelist)
 
         formatl = lambda x: "{0}".format(x[-window:])
         #formatf = lambda x: "{0}".format(x[-20:])
@@ -2430,8 +2490,14 @@ def corpkit_gui():
         if jspeak_conc is not False:
             showspkbut.select()
 
-        r = conc(corpus, query, **d)  
+        r = conc(corpus, query, **d)
         if r is not None and r is not False:
+            numresults = len(r.index)
+            if numresults > 999:
+                truncate = tkMessageBox.askyesno("Long results list", 
+                          "%d unique results! Truncate to 1000?" % numresults)
+                if truncate:
+                    r = r.head(1000)
             add_conc_lines_to_window(r, preserve_colour = False)
         global conc_saved
         conc_saved = False
@@ -2868,16 +2934,14 @@ def corpkit_gui():
             cqb.config(state = NORMAL)
             query_text.set(tregex_qs[conc_special_queries.get()])
             cqb.config(state = DISABLED)
-            
             pick_a_conc_datatype.config(state = NORMAL)
             corpus_search_type.set('Trees')
             pick_a_conc_datatype.config(state = DISABLED)
-
             conc_pick_dep_type.config(state = DISABLED)
             ebox.config(state = DISABLED)
             conc_pick_dep_type.config(state = DISABLED)
-            conc_pick_dep_type.config(state = DISABLED)
         else:
+            pick_a_conc_datatype.config(state = NORMAL)
             cqb.config(state = NORMAL)
             conc_pick_dep_type.config(state = NORMAL)
             ebox.config(state = NORMAL)
@@ -3129,7 +3193,7 @@ def corpkit_gui():
             image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
             for iname in image_list:
                 if iname not in all_images:
-                    all_images.append(iname)
+                    all_images.append(iname.replace('.png', ''))
         else:
             if kind == 'interrogation':
                 r = load_all_results(data_dir = datad, root = root, note = note)
@@ -3269,18 +3333,15 @@ def corpkit_gui():
         result = tkMessageBox.askquestion("Are You Sure?", "Permanently delete the following files:\n\n    %s" % '\n    '.join(sel_vals), icon='warning')
         if result == 'yes':
             for i in sel_vals:
-                try:
-                    if kind == 'interrogation':
-                        del all_interrogations[i]
-                        os.remove(os.path.join(p, i + ext))
-                    elif kind == 'concordance':
-                        del all_conc[i]
-                        os.remove(os.path.join(p, i + ext))
-                    else:
-                        all_images.pop(i)
-                        os.remove(os.path.join(p, i + ext))
-                except:
-                    pass
+                if kind == 'interrogation':
+                    del all_interrogations[i]
+                    os.remove(os.path.join(p, i + ext))
+                elif kind == 'concordance':
+                    del all_conc[i]
+                    os.remove(os.path.join(p, i + ext))
+                else:
+                    all_images.remove(i)
+                    os.remove(os.path.join(p, i + ext))
         thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
             print '%s: %s deleted.' % (thetime, sel_vals[0])

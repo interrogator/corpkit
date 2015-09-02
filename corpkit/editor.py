@@ -1015,7 +1015,7 @@ def editor(dataframe1,
         #total = df.copy()
     else:
         # might be wrong if using division or something...
-        total = df.T.sum()
+        total = df.T.sum(axis = 1)
 
     
     if type(tots) != pandas.core.frame.DataFrame and type(tots) != pandas.core.series.Series:

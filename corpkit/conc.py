@@ -93,8 +93,14 @@ def conc(corpus,
             conc_lines.append([os.path.basename(f), speakr, start, middle, end])
     else:
 
-        fs_to_conc = [f for f in os.listdir(corpus) if os.path.isfile(os.path.join(corpus, f))]
-        fs_to_conc = [f for f in fs_to_conc if f.endswith('.txt') or f.endswith('.xml')]
+        fs_to_conc = []
+        for r, dirs, fs in os.walk(corpus):
+            for f in fs:
+                if not os.path.isfile(os.path.join(r, f)):
+                    continue
+                if not f.endswith('.txt') and not f.endswith('.xml'):
+                    continue
+                fs_to_conc.append(os.path.join(r, f))
 
         def normalise(concline):
             import re
@@ -106,7 +112,8 @@ def conc(corpus,
             return concline.strip()
 
         num_fs = len(fs_to_conc)
-        for index, f in enumerate(fs_to_conc):
+        for index, filepath in enumerate(fs_to_conc):
+            f = os.path.basename(filepath)
             if num_fs > 1:
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((index) * 100.0 / num_fs)
@@ -115,7 +122,6 @@ def conc(corpus,
             print '%s: Extracting data from %s ...' % (thetime, f)
             if root:
                 root.update()
-            filepath = os.path.join(corpus, f)
             with open(filepath, "rb") as text:
                 data = text.read()
                 if option.startswith('p') or option.startswith('l'):

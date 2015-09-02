@@ -175,7 +175,6 @@ def plotter(title,
         return output
 
     # are we doing subplots?
-    # redundant ish now
     sbplt = False
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
@@ -241,7 +240,6 @@ def plotter(title,
                 else:
                     kwargs['autopct'] = '%1.1f%%'
 
-
     #if piemode:
         #if partial_pie:
             #kwargs['startangle'] = 180
@@ -261,6 +259,8 @@ def plotter(title,
         # don't know if this is much good.
         if cumulative:
             dataframe = DataFrame(dataframe.cumsum())
+        if len(list(dataframe.columns)) == 1 and 'total' in list(dataframe.columns)[0].lower():
+            was_series = True
     
     # attempt to convert x axis to ints:
     try:
@@ -272,6 +272,9 @@ def plotter(title,
     if not was_series:
         for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
             dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+    else:
+        dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
+        dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
             
     # look at columns to see if all can be ints, in which case, set up figure
     # for depnumming
@@ -482,7 +485,7 @@ def plotter(title,
                 #if kwargs['kind'] in ['barh', 'area']:
                     #xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
         else:
-            xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
+            xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
         if len(max(xvals, key=len)) > 6:
             if not piemode:
                 kwargs['rot'] = 45
