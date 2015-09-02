@@ -8,7 +8,7 @@ last_updated: 2015-09-01
 
 ## Parsing
 
-* [*Stanford CoreNLP*](http://nlp.stanford.edu/index.shtml)
+* [*Stanford CoreNLP*](http://nlp.stanford.edu/index.shtml): the parser used by *corpkit*
 * [*Stanford Dependencies Manual*](http://nlp.stanford.edu/software/dependencies_manual.pdf): help understanding dependency grammars and dependency types.
 * [*Universal Dependencies*](http://universaldependencies.github.io/docs/#language-en) used by the CoreNLP parser
 

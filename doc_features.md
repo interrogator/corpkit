@@ -1,6 +1,6 @@
 ---
 title: "Key features"
-tags: Features, gui, corpkit
+tags: [features, getting-started, pandas, matplotlib, concordance]
 keywords: features, gui, corpkit
 summary: "corpkit does what you'd expect, plus a lot more. Better still, it's free and open-source!"
 last_updated: 2015-09-01
@@ -12,7 +12,12 @@ last_updated: 2015-09-01
 
 #### Speaker IDs
 
-*corpkit* can recognise speaker IDs when parsing, and restrict searches to particular speakers.
+*corpkit* can recognise speaker IDs when parsing, and restrict searches to particular speakers. All you need to do is format your data like a transcript:
+
+    PROSECUTOR: Good afternoon, Mr. President.
+    CLINTON: Good afternoon.
+    PROSECUTOR: Could you please state your full name for the record, sir?
+    CLINTON: William Jefferson Clinton.
 
 #### Search lexis and grammar
 

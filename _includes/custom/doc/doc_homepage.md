@@ -13,73 +13,91 @@ Interrogations can be quickly edited and visualised in complex ways, or saved an
 <center>
 <table width="500" border="0" cellpadding="5">
 <tr>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="100" height="50"></a>
 </div> <br />
-Searching a corpus using constituency parses
+<i>Searching a corpus using constituency parses</i>
 </td>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/editing.png" alt="Editing" width="100" height="50"></a>
 </div> <br />
-Making relative frequencies, skipping subcorpora
+<i>Making relative frequencies, skipping subcorpora</i>
 </td>
 </tr>
 <tr>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" alt="Visualising" width="100" height="50"></a>
 </div> <br />
-Visualising results as a line graph, using TeX
+<i>Visualising results as a line graph, using TeX</i>
 </td>
 
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/conc2.png" alt="Concordancing" width="90" height="50"></a>
 </div>
 <br />
-Concordancing with constituency queries, manually coding results
+<i>Concordancing with constituency queries, manually coding results</i>
 </td>
 </tr>
 </table>
 </center>
 
-## Example figures
+## Example figures: *Risk Semantics project*
 
 <center>
 <table width="500" border="0" cellpadding="5">
 
 <tr>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" alt="Interrogating" width="100" height="50"></a>
 </div> <br />
-Changing frequencies of risk processes
+<i>Changing frequencies of risk processes</i>
 </td>
 
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/nominalisation-of-risk-emphthe-new-york-times-19872014.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/nominalisation-of-risk-emphthe-new-york-times-19872014.png" alt="Editing" width="100" height="50"></a>
 </div> <br />
-Nominalisation of risk
+<i>Nominalisation of risk</i>
 </td>
 </tr>
 <tr>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" alt="Risk and power" width="90" height="50"></a>
 </div>
 <br />
-How often do certain social actors do risking?
+<i>How often do certain social actors do risking?</i>
 </td>
-<td align="center" valign="center">
+<td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
-<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" alt="Visualising" width="100" height="50"></a>
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png" alt="Modals" width="100" height="50"></a>
 </div> <br />
-Modal auxiliaries in the NYT
+<i>Modal auxiliaries in the NYT</i>
 </td>
 </tr>
+<tr>
+
+<td align="center" valign="bottom">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" alt="Sayers, increasing" width="90" height="50""></a>
+</div>
+<br />
+<i>Sayers in verbal processes, sorted by increasing frequency</i>
+</td>
+<td align="center" valign="bottom">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png" alt="Modal ocean" width="100" height="50"></a>
+</div> <br />
+<i>An ocean of modals in the NYT</i>
+</td>
+</tr>
+
+
 </table>
 </center>
 
@@ -111,6 +129,6 @@ Head to the [Setup page](doc_setup.html) for (very simple) installation instruct
 If you want to cite *corpkit*, please use:
 
 ```
-McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. 
-Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
+McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from
+https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
 ```
