@@ -211,7 +211,7 @@ On large datasets, interrogations can take some time, especially for dependency 
 
 Be sure to name your interrogation, via the `Name interrogation` box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.
 
-{{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the `Manage` tab. You can head there to access previous queries, or to save interrogations to disk. {{end}}
+{{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the <code>Manage</code> tab. You can head there to access previous queries, or to save interrogations to disk. {{end}}
 
 ## Editing spreadsheets
 

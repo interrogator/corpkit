@@ -63,10 +63,10 @@ For this option to work, each text file in your corpus must be formatted with sp
 
 This will allow you to restrict your interrogations and concordances to specific interlocutors.
 
-{{note}} It's worth noting that Speaker IDs don't technically need to denote speakers: timestamps or dates could be formatted in the same way, allowing you to restrict interrogations temporally. {{end}}
+{{note}} Speaker IDs don't <i>technically</i> need to denote speakers: timestamps or dates could be formatted in the same way, allowing you to restrict interrogations temporally. {{end}}
 
 ## Next steps
 
-Once texts are parsed, there is one more feature you might like to use. If you select a corpus of parsed texts, rather than editing the file contents, you can look at visualisations of the parse trees. This can be helpful in learning how to write a Tregex query (see below).
+Once texts are parsed, there is one more feature you might like to use. If you select a corpus of parsed texts, rather than editing the file contents, you can look at visualisations of the parse trees. This can be helpful in learning how to write a Tregex query.
 
 Any parsed corpus becomes selectable from the menu, or from the `Interrogate` tab. Next, you can move over to the `Interrogate` tab to begin investigating  your data.

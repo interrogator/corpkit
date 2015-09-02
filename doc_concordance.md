@@ -13,7 +13,7 @@ When searching Trees, you can use the `Trees` option to output bracketted trees 
 
 Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words. As with `Interrogate`, you can use special queries, like `ROLES:ACTOR`, or select some preset queries.
 
-{{tip}} You can use `ctrl/cmd-minus` `ctrl/cmd-plus` to change the concordance window font size. {{end}}
+{{tip}} You can use <code>ctrl/cmd-minus</code> <code>ctrl/cmd-plus</code> to change the concordance window font size. {{end}}
 
 ## Speaker IDs
 
@@ -49,7 +49,7 @@ If you do `File` &rarr; `Save project settings`, *corpkit* will remember your co
 
 `Export` allows you to save results to CSV files, which can be loaded into Excel, or similar.
 
-{{note}} Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to `LaTeX` tables, and all kinds of other cool things. {{end}}
+{{note}} Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to <code>LaTeX</code> tables, and all kinds of other cool things. {{end}}
 
 ## Saving, loading and merging
 
