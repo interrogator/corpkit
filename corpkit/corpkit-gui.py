@@ -1055,7 +1055,7 @@ def corpkit_gui():
     lemtag.set('')
     Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 12, column = 0, columnspan = 2, sticky = W)
     lmt = OptionMenu(tab1, lemtag, *lemtags)
-    lmt.config(state = NORMAL)
+    lmt.config(state = NORMAL, width = 10)
     lmt.grid(row = 12, column = 1, sticky=E)
     #lemtag.trace("w", d_callback)
 
@@ -1187,6 +1187,7 @@ def corpkit_gui():
 
     Label(tab1, text = 'Normalise spelling:').grid(row = 9, column = 0, sticky = W)
     spl = MyOptionMenu(tab1, 'Off','UK','US')
+    spl.configure(width = 10)
     spl.grid(row = 9, column = 1, sticky = E)
 
     def callback(*args):
@@ -1264,7 +1265,7 @@ def corpkit_gui():
     queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
     special_queries = StringVar(root)
     special_queries.set('Off')
-    Label(tab1, text = 'Preset query:').grid(row = 6, column = 0, sticky = W)
+    Label(tab1, text = 'Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
     pick_a_query = OptionMenu(tab1, special_queries, *queries)
     pick_a_query.grid(row = 6, column = 1, sticky=E)
     special_queries.trace("w", q_callback)
@@ -1721,7 +1722,7 @@ def corpkit_gui():
     data2_pick.set('Self')
     #Label(tab2, text = 'Denominator:').grid(row = 3, column = 0, sticky = W)
     dataframe2s = OptionMenu(tab2, data2_pick, *tups)
-    dataframe2s.config(state = DISABLED, width = 9)
+    dataframe2s.config(state = DISABLED, width = 16)
     dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = N)
     data2_pick.trace("w", df2_callback)
 
