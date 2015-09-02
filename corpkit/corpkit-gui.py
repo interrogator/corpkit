@@ -78,7 +78,7 @@ class Notebook(Frame):
         self.progvar.set(0)
         self.style = Style()
         self.style.theme_use("default")
-        self.style.configure("TProgressbar", thickness=15)
+        self.style.configure("TProgressbar", thickness=15, foreground = '#347DBE', background = '#347DBE')
         self.kwargs = kw                                                                   
         self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
@@ -262,7 +262,12 @@ def corpkit_gui():
         """refresh a spreadsheet in the editor window"""
         from collections import OrderedDict
         import pandas
-        kwarg = {}
+        kwarg = {'cellbackgr':              '#F7F7FA',
+                  'grid_color':             '#c5c5c5',
+                  'entrybackgr':            '#F4F4F4',
+                  'selectedcolor':          'white',
+                  'rowselectedcolor':       '#b3cde3',
+                  'multipleselectioncolor': '#fbb4ae'}
         if width:
             kwarg['width'] = width
         if model and not df_to_show:
@@ -287,7 +292,7 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=100, cellwidth=50)
+                                    rowheaderwidth=100, cellwidth=50, **kwarg)
                 table.createTableFrame()
                 model = table.model
                 model.importDict(raw_data)
@@ -335,7 +340,7 @@ def corpkit_gui():
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
         else:
-            table = TableCanvas(frame_to_update, height = height, width = width, cellwidth=60)
+            table = TableCanvas(frame_to_update, height = height, cellwidth=60, **kwarg)
             table.createTableFrame()            # sorts by total freq, ok for now
             table.redrawTable()
 
@@ -616,24 +621,24 @@ def corpkit_gui():
                             ['Regular expression search', 
                              'Simple search string search']}
 
-    sort_trans = {'None': False,
-                  'Total': 'total',
-                  'Inverse total': 'infreq',
-                  'Name': 'name',
-                  'Increase': 'increase',
-                  'Decrease': 'decrease',
-                  'Static': 'static',
-                  'Turbulent': 'turbulent'}
+    sort_trans = {'None':           False,
+                  'Total':          'total',
+                  'Inverse total':  'infreq',
+                  'Name':           'name',
+                  'Increase':       'increase',
+                  'Decrease':       'decrease',
+                  'Static':         'static',
+                  'Turbulent':      'turbulent'}
 
     spec_quer_translate = {'Participants': 'participants',
-                           'Any': 'any',
-                           'Processes': 'processes',
-                           'Subjects': 'subjects',
-                           'Entities': 'entities'}
+                           'Any':          'any',
+                           'Processes':    'processes',
+                           'Subjects':     'subjects',
+                           'Entities':     'entities'}
 
     from dictionaries.process_types import processes
     from corpkit.other import as_regex
-    tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+    tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< /VB(D|G|Z|N)/ !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/ !<< (/(?i)^thank/ . /(?i)^you/)',
                      'Unmodalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                      'Modalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
                      'Interrogatives': r'ROOT << (/\?/ !< __)',
@@ -2389,10 +2394,22 @@ def corpkit_gui():
                 data.insert(0, 't', themelist)
 
         formatl = lambda x: "{0}".format(x[-window:])
-        #formatf = lambda x: "{0}".format(x[-20:])
+        formatm = '{{:<{}s}}'.format(data['m'].str.len().max()).format
         formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
-        lines = data.to_string(header = False, index = show_index.get(), formatters={'l': formatl,
-                                                           'r': formatr}).splitlines()
+        fmters = {'l':formatl, 'm': formatm,'r':formatr}
+
+        # only do left align when long result ...
+        # removed because it's no big deal if always left aligned, and this
+        # copes when people search for 'root' or something.
+
+        #if conc_special_queries.get() in ['Imperatives', 
+        #                                  'Modalised declaratives', 
+        #                                  'Unmodalised declaratives', 
+        #                                  'Interrogatives']:
+        
+        fmters['m'] = formatm
+
+        lines = data.to_string(header = False, index = show_index.get(), formatters=fmters).splitlines()
         lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
         conclistbox.delete(0, END)
         for line in lines:
@@ -2430,7 +2447,7 @@ def corpkit_gui():
         time = strftime("%H:%M:%S", localtime())
         print '%s: Concordancing in progress ... ' % (time)       
         from corpkit.conc import conc
-        if subc_pick.get() == "Subcorpus":
+        if subc_pick.get() == "Subcorpus" or subc_pick.get() == 'all':
             corpus = corpus_fullpath.get()
         else:
             corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
@@ -2796,7 +2813,7 @@ def corpkit_gui():
     itemcoldict = {}
     colourdict = {1: '#fbb4ae',
                   2: '#b3cde3',
-                  3: '#ccebc5',
+                  3: 'white',
                   4: '#decbe4',
                   5: '#fed9a6',
                   6: '#ffffcc',
@@ -3391,7 +3408,7 @@ def corpkit_gui():
                     all_interrogations[answer] = all_interrogations.pop(i)
                 elif kind == 'image':
                     ind = all_images.index(i)
-                    all_images.pop(i)
+                    all_images.remove(i)
                     all_images.insert(ind, answer)
                 else:
                     all_conc[answer] = all_conc.pop(i)
@@ -3510,7 +3527,7 @@ def corpkit_gui():
         for e in all_conc.keys():
             del all_conc[e]
         for e in all_images:
-            all_images.pop(e)
+            all_images.remove(e)
         refresh()
 
     def convert_speakdict_to_string(dictionary):
@@ -3598,6 +3615,7 @@ def corpkit_gui():
         conc_fullpath.set(os.path.join(fp, 'saved_concordances'))
         exported_fullpath.set(os.path.join(fp, 'exported'))
         corpora_fullpath.set(os.path.join(fp, 'data'))
+        log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
 
         if not os.path.isdir(savedinterro_fullpath.get()):
             thetime = strftime("%H:%M:%S", localtime())
@@ -3656,6 +3674,7 @@ def corpkit_gui():
         pick_subcorpora['menu'].delete(0, 'end')
 
         if len(subdrs) > 0:
+            pick_subcorpora['menu'].add_command(label='all', command=Tkinter._setit(subc_pick, 'all'))
             pick_subcorpora.config(state = NORMAL)
             for choice in subdrs:
                 pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
@@ -4272,9 +4291,19 @@ def corpkit_gui():
                 fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
                 text = open(fp).read()
 
-
             # needs a scrollbar
             editor = Text(tab0, height = 32)
+
+            # have to do this every time! so horrible.
+            editor.bind("<%s-a>" % key, select_all_text)
+            editor.bind("<%s-A>" % key, select_all_text)
+            editor.bind("<%s-v>" % key, paste_into_textwidget)
+            editor.bind("<%s-V>" % key, paste_into_textwidget)
+            editor.bind("<%s-x>" % key, cut_from_textwidget)
+            editor.bind("<%s-X>" % key, cut_from_textwidget)
+            editor.bind("<%s-c>" % key, copy_from_textwidget)
+            editor.bind("<%s-C>" % key, copy_from_textwidget)
+            
             buildbits['editor'] = editor
             editor.grid(row = 1, column = 2, rowspan = 9, pady = (10,0), padx = (20, 0))
             if editor not in boxes:
