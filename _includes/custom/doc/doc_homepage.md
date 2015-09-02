@@ -84,7 +84,7 @@ Interrogations can be quickly edited and visualised in complex ways, or saved an
 
 <td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
-<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" alt="Sayers, increasing" width="90" height="50""></a>
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" alt="Sayers, increasing" width="90" height="50"></a>
 </div>
 <br />
 <i>Sayers in verbal processes, sorted by increasing frequency</i>
@@ -96,8 +96,6 @@ Interrogations can be quickly edited and visualised in complex ways, or saved an
 <i>An ocean of modals in the NYT</i>
 </td>
 </tr>
-
-
 </table>
 </center>
 
