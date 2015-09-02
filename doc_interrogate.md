@@ -1,6 +1,6 @@
 ---
 title: "Interrogate"
-tags: [interrogate]
+tags: [interrogate, writing-queries, python, sfl]
 keywords: interrogation, gui, corpkit
 summary: "This tab provides the main means of searching your corpus for lexical and grammatical patterns."
 last_updated: 2015-09-01

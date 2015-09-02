@@ -1,6 +1,6 @@
 ---
 title: "Download"
-tags: [download, OSX, gui]
+tags: [download, OSX, gui, getting-started]
 keywords: download, OSX
 date: 2015-08-30 22:09:08
 ---

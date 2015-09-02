@@ -1,6 +1,6 @@
 ---
 title: "Build"
-tags: build, parse, structure, corpus, gui, corpkit
+tags: [build, parsing, structure, corpus, getting-started]
 keywords: interrogation, gui, corpkit
 summary: "This tab helps you incorporate, view, edit and parse plain text corpora."
 last_updated: 2015-09-01

@@ -8,7 +8,7 @@ last_updated: 2015-09-01
 
 #### Parsing
 
-*corpkit* helps you parse texts, without needing to go the command line!
+*corpkit* helps you parse texts, without needing to go the command line. All you need to do is add text files and hit `Parse`!
 
 #### Speaker IDs
 
@@ -19,23 +19,85 @@ last_updated: 2015-09-01
     PROSECUTOR: Could you please state your full name for the record, sir?
     CLINTON: William Jefferson Clinton.
 
+... and *corpkit* will figure out the rest!
+
 #### Search lexis and grammar
 
-*corpkit* allows you to search for lexical and grammatical features, separately or together.
+*corpkit* allows you to search for lexical and grammatical features, separately or together. You can use a regular expression to match both words and the functions of words, answering questions like:
+
+    What grammatical roles do a particular term of interest generally take?
+    When the VP is headed by verb x, what is its subject?
+
+You can use also use *Tregex* to define very complex queries, like the one below, which matches `harm` in `person at the risk of possible harm`:
+
+    /NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))
+    Head of noun phrase in PP headed by 'of' in a noun phrase headed by 'risk'
+
+The example below shows how members of an online support group increasingly prefer *having bipolar* constructions to *being bipolar* constructions:
+
+<center>
+<div style="width:560px;height:280px;overflow:hidden;" >
+<img title="" src="images/being-and-having-bipolar-538.png"/>
+</div>
+</center>
+
+#### Functional queries
+
+There are preset queries to count mood types, common participants and processes. You can also use special operators to match sets of words and roles that correspond to systemic-functional categories:
+
+    /VB.?/ < /PROCESSES:MENTAL/
 
 #### Compare subcorpora
 
-*corpkit* is designed to work with structured corpora (those containing subfolders). 
+*corpkit* is designed to work with structured corpora (those containing subfolders). So, not only can you search for nuanced patterns in the text, but you can quickly find out how they vary in frequency in each subcorpus.
+
+<center>
+<div style="width:700px;height:350px;overflow:hidden;" >
+<img title="" src="images/mental-proc.png" align="center"/>
+</div>
+</center>
+
+#### Sophisticated editing of results
+
+The `Edit` tab provides a rane of possibilities for transforming interrogation results:
+
+<center>
+<div style="width:300px;height:400px;overflow:hidden;" >
+<img title="" src="images/edit-panel.png">
+</div>
+</center>
+
+You can quickly remove, keep or merge entries or subcorpora. In the figure below, kinds of modals are collapsed, and annual subcorpora are collapsed into decades:
+
+<center>
+<div style="width:700px;height:350px;overflow:hidden;" >
+<img title="" src="images/modals-use-by-decade.png", height="130", width="200"/>
+</div>
+</center>
+
+#### Controlled keywording
+
+Keywording works better when you comparse subcorpora to a corpus, rather than a corpus to a reference corpus. It also produces more engaging results if you isolate a particular word class or grammatical position. Here's a visualisation of US politicians' names as log-likelihood keywords in the NYT:
+
+<center>
+<div style="width:700px;height:350px;overflow:hidden;" >
+<img title="" src="images/keyness-of-politicians-in-the-emphnyt.png", height="130", width="200"/>
+</div>
+</center>
 
 #### Concordance grammatically
 
-You can concordance using Tregex queries or dependency roles, rather than a simple regular expression search of the text.
-
-There are also preset queries for concordancing of particular moods (imperative, interrogate, (modalised) declarative), process types (relational, mental, verbal).
+You can concordance using Tregex queries or dependency roles, rather than a simple regular expression search of the text. There are also preset queries for concordancing of particular moods (imperative, interrogate, (modalised) declarative), process types (relational, mental, verbal).
 
 #### Annotate concordances
 
-You can quickly highlight concordance lines, add tags, sort by tag, and export these tags alongside your data.
+You can quickly highlight concordance lines, add tags, sort by tag, and export these tags alongside your data. In the example below, passive constructions in a clinical encounter have been concordanced and coloured by person. Speaker IDs are also shown.
+
+<center>
+<div style="width:700px;height:350px;overflow:hidden;" >
+<img title="" src="images/conc-passives.png", height="100", width="200"/>
+</div>
+</center>
 
 #### Store everything
 
@@ -50,25 +112,8 @@ Every interrogation is stored in memory, alongside all options used to generate 
 * When plotting, you can generate HTML based visuals that are clickable, highlightable, embeddable, and so on.
 * You could also be quite recursive, and automatically generate concordance lines for the most key and unkey keywords in every subcorpus.
 
-If you're interested in trying out the command line interface, on OSX, you could simply enter `Terminal` and do:
-
-```
-sudo easy_install corpkit
-python
-```
-
-to download and install *corpkit*, and then to enter Python. From there, you can import the main functions, and begin:
-
-```python
->>> from corpkit import interrogator, editor, plotter, conc
->>> q = r'/NN.?/ >># NP'
->>> result = interrogator('path/to/corpus', 'word', lemmatise = True)
-```
-
-Because *corpkit* data is generally stored as [Pandas](http://pandas.pydata.org/) objects, from the command line it is easy to manipulate results in complex ways, with most of the functionality of `MATLAB` or `R`.
-
-Command line operation of *corpkit* is presented in more detail at the [`corpkit GitHub repostitory`](https://www.github.com/interrogator/corpkit).
+Command line operation of *corpkit* is presented in more detail at the [*corpkit GitHub repostitory*](https://www.github.com/interrogator/corpkit).
 
 #### Open source
 
-*corpkit* is free and open source!
+Finally, *corpkit* is free and open source! It's yours to do with as you please.

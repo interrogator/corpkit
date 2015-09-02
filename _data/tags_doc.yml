@@ -10,10 +10,15 @@ allowed-tags:
   - parsing
   - python
   - pandas
-  - matploblib
+  - matplotlib
   - github
   - writing-queries
   - example
   - tutorial
   - links
   - resources
+  - download
+  - setup
+  - install
+  - geeks
+  - code

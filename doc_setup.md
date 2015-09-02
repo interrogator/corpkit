@@ -1,6 +1,6 @@
 ---
 title: "Setup"
-tags: setup, corpkit, gui
+tags: [setup, getting-started, osx]
 keywords: setup, corpkit, gui
 summary: "Just open it!"
 last_updated: 2015-09-01
