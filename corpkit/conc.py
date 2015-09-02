@@ -124,6 +124,7 @@ def conc(corpus,
             if root:
                 root.update()
             with open(filepath, "rb") as text:
+                parsetreedict = {}
                 data = text.read()
                 if option.startswith('p') or option.startswith('l'):
                     if option.startswith('l'):
@@ -138,11 +139,12 @@ def conc(corpus,
                         if mat:
                             conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(3)])
                     continue
-
                 from corenlp_xml.document import Document
                 corenlp_xml = Document(data)
                 #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
-                if just_speakers:  
+                if just_speakers:
+                    for s in just_speakers:
+                        parsetreedict[s] = []
                     sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
                     #sents = [s for s in corenlp_xml.find_all('sentence') \
                     #if s.speakername.text.strip() in just_speakers]
@@ -161,27 +163,9 @@ def conc(corpus,
                         speakr = '' 
                     parsetree = s.parse_string
                     if option.startswith('t'):
-                        if trees:
-                            options = '-s'
-                        else:
-                            options = '-t'
-                        tregex_engine(query = query, check_query = True, root = root)
-                        wholes = tregex_engine(query = query, 
-                                    options = ['-o', '-w', '-filter', options], 
-                                    corpus = parsetree,
-                                    preserve_case = True,
-                                    root = root)
-                        middle_column_result = tregex_engine(query = query, 
-                                    options = ['-o', '-filter', options], 
-                                    corpus = parsetree,
-                                    preserve_case = True,
-                                    root = root)
-                        for whole, mid in zip(wholes, middle_column_result):
-                            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
-                            start, middle, end = re.split(reg, whole, 1)
-                            conc_lines.append([f, speakr, start, middle, end])
-                    elif option.startswith('d'):
-                        
+                        parsetreedict[speakr].append(parsetree)
+                        continue
+                    elif option.startswith('d'): 
                         #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
                         deps = get_deps(s, dep_type)
                         if dep_function == 'any' or dep_function is False:
@@ -199,7 +183,37 @@ def conc(corpus,
                             start, middle, end = re.split(r'(' + wd + r')', line, 1)
                             conc_lines.append([f, speakr, start, middle, end])
 
+                if option.startswith('t'):
+                    for speakr, dt in parsetreedict.items():
+                        trees_as_string = '\n'.join(dt)
+                        if trees:
+                            options = '-s'
+                        else:
+                            options = '-t'
+                        with open('tmp.txt', 'w') as fo:
+                            fo.write(trees_as_string.encode('utf-8', errors = 'ignore'))
+                        tregex_engine(query = query, check_query = True, root = root)
+                        wholes = tregex_engine(query = query, 
+                                    options = ['-o', '-w', options], 
+                                    corpus = 'tmp.txt',
+                                    preserve_case = True,
+                                    root = root)
+                        middle_column_result = tregex_engine(query = query, 
+                                    options = ['-o', options], 
+                                    corpus = 'tmp.txt',
+                                    preserve_case = True,
+                                    root = root)
+                        for whole, mid in zip(wholes, middle_column_result):
+                            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
+                            start, middle, end = re.split(reg, whole, 1)
+                            conc_lines.append([f, speakr, start, middle, end])
+
     # does not keep results ordered!
+    try:
+        os.remove('tmp.txt')
+    except:
+        pass
+
     unique_results = [list(x) for x in set(tuple(x) for x in conc_lines)]
 
     #make into series

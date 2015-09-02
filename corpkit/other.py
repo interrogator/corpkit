@@ -790,21 +790,19 @@ def tregex_engine(corpus = False,
             if os.path.isdir(corpus) or os.path.isfile(corpus):
                 if '-filter' not in options:
                     tregex_command.append(corpus)
-
         # do query
-
         try:
             if type(options) != bool:
                 if not '-filter' in options:
                     res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
                 else:
                     p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                    p.stdin.write(corpus)
+                    p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
                     res = p.communicate()[0].splitlines()
                     p.stdin.close()
             else:
                 p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                p.stdin.write(corpus)
+                p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
                 res = p.communicate()[0].splitlines()
                 p.stdin.close()
         # exception handling for regex error

@@ -1623,6 +1623,9 @@ def corpkit_gui():
         
         # finish up
         refresh()
+        # reset some buttons that the user probably wants reset
+        opp.set('None')
+        data2_pick.set('Self')
         # restore button
         Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
 
@@ -1654,8 +1657,8 @@ def corpkit_gui():
                 df1branch.set('totals')
                 df1box.config(state = DISABLED)
                 update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 800)
-            #if 'totals' in thisdata._asdict().keys():
-                #update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 800)
+            if 'totals' in thisdata._asdict().keys():
+                update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 800)
                 #df1box.config(state = NORMAL)
             #else:
                 #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
@@ -4303,7 +4306,7 @@ def corpkit_gui():
             editor.bind("<%s-X>" % key, cut_from_textwidget)
             editor.bind("<%s-c>" % key, copy_from_textwidget)
             editor.bind("<%s-C>" % key, copy_from_textwidget)
-            
+
             buildbits['editor'] = editor
             editor.grid(row = 1, column = 2, rowspan = 9, pady = (10,0), padx = (20, 0))
             if editor not in boxes:
