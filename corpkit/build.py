@@ -422,24 +422,26 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
         shutil.copy(filepath, subcorpus_path)
     print 'Done!'
 
-def download_cnlp(proj_path, root = False):
+def download_large_file(proj_path, url, root = False, **kwargs):
     import corpkit
     """download corenlp to proj_path"""
     import os
     import urllib2
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
-    url = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
-    stanpath = os.path.join(home, 'corenlp')
-    fullfile = os.path.join(stanpath, file_name)
+    if 'stanford' in url:
+        downloaded_dir = os.path.join(home, 'corenlp')
+    else:
+        downloaded_dir = 'temp'
+    fullfile = os.path.join(downloaded_dir, file_name)
     u = urllib2.urlopen(url)
     try:
-        os.makedirs(stanpath)
+        os.makedirs(downloaded_dir)
     except:
-        if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(stanpath):
-            return stanpath, fullfile
+        if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(downloaded_dir):
+            return downloaded_dir, fullfile
         pass
     
     f = open(fullfile, 'wb')
@@ -447,7 +449,10 @@ def download_cnlp(proj_path, root = False):
     file_size = int(meta.getheaders("Content-Length")[0])
     if root:
         root.update()
-    p = TextProgressBar(int(file_size))
+    if 'note' in kwargs.keys():
+        kwargs['note'].progvar.set(0)
+    else:
+        p = TextProgressBar(int(file_size))
 
     file_size_dl = 0
     block_sz = 8192
@@ -455,20 +460,25 @@ def download_cnlp(proj_path, root = False):
         buffer = u.read(block_sz)
         if not buffer:
             break
-
         file_size_dl += len(buffer)
         f.write(buffer)
         #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
         #status = status + chr(8)*(len(status)+1)
-        p.animate(file_size_dl)
+        if 'note' in kwargs.keys():
+            kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
+        else:
+            p.animate(file_size_dl)
         if root:
             root.update()
+    if 'note' in kwargs.keys():  
+        kwargs['note'].progvar.set(100)
+    else:    
+        p.animate(int(file_size))
 
-    p.animate(int(file_size))
     time = strftime("%H:%M:%S", localtime())
-    print '%s: CoreNLP downloaded successully' % time
+    print '%s: Downloaded successully.' % time
     f.close()
-    return stanpath, fullfile
+    return downloaded_dir, fullfile
 
 #'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
 def extract_cnlp(fullfilepath, root = False):

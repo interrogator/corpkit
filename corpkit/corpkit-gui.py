@@ -10,7 +10,6 @@ import sys,string
 import threading
 import ScrolledText
 import time
-from time import strftime, localtime
 from ttk import Progressbar, Style
 
 ########################################################################
@@ -201,8 +200,10 @@ def corpkit_gui():
     # key binding
     if sys.platform == 'darwin':
         key = 'Mod1'
+        fext = 'app'
     else:
         key = 'Control'
+        fext = 'exe'
     
     root = Tk()
     root.title("corpkit")
@@ -220,6 +221,9 @@ def corpkit_gui():
     note.text.update_idletasks()
 
     all_text_widgets = []
+
+    root.lift()
+    root.attributes('-topmost', True)
 
     def timestring(input):
         from time import localtime, strftime
@@ -736,7 +740,7 @@ def corpkit_gui():
         import os
         import pandas
         import pickle
-        from time import localtime, strftime
+        
         dpath = os.path.join(project_fullpath.get(), 'dictionaries')
         dataname = name_of_interro_spreadsheet.get()
         fname = urlify(dataname) + '.p'
@@ -763,7 +767,7 @@ def corpkit_gui():
         note.progvar.set(0)
         """performs an interrogation"""
         import pandas
-        from time import localtime, strftime
+        
         from corpkit import interrogator
 
         prev_num_interrogations = len(all_interrogations.keys())
@@ -1018,8 +1022,7 @@ def corpkit_gui():
             speakcheck.config(state = DISABLED)
             speakcheck_conc.config(state = DISABLED)
 
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Set corpus directory: "%s"' % (time, os.path.basename(fp))
+        timestring('Set corpus directory: "%s"' % os.path.basename(fp))
 
     Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
     current_corpus = StringVar()
@@ -1424,7 +1427,7 @@ def corpkit_gui():
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
-        from time import localtime, strftime
+        
         import os
 
         # translate operation into interrogator input
@@ -1572,14 +1575,12 @@ def corpkit_gui():
         r = editor(data1, **editor_args)
         
         if not r:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Editing caused an error.' % thetime
+            timestring('Editing caused an error.')
             Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
             return
 
         if len(list(r.results.columns)) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Editing removed all results.' % thetime
+            timestring('Editing removed all results.')
             Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
             return
 
@@ -1589,8 +1590,7 @@ def corpkit_gui():
             large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
             r.results.drop(large, axis = 1, inplace = True)
 
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Result editing completed successfully.' % thetime
+        timestring('Result editing completed successfully.')
         
         # name the edit
         the_name = namer(edit_nametext.get(), type_of_data = 'edited')
@@ -1959,20 +1959,19 @@ def corpkit_gui():
         from corpkit import plotter
 
         if data_to_plot.get() == 'None':
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No data selected to plot.' % (thetime)
+            timestring('No data selected to plot.')
             Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
             return
 
         if plotbranch.get() == 'results':
             if not 'results' in all_interrogations[data_to_plot.get()]._asdict().keys():
-                print 'No results branch to plot.'
+                timestring('No results branch to plot.')
                 Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
             if not 'totals' in all_interrogations[data_to_plot.get()]._asdict().keys():
-                print 'No totals branch to plot.'
+                timestring('No totals branch to plot.')
                 Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].totals
@@ -2054,8 +2053,7 @@ def corpkit_gui():
         d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
 
         f = plotter(plotnametext.get(), what_to_plot, **d)
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: %s plotted.' % (time, plotnametext.get())
+        timestring('%s plotted.' % plotnametext.get())
         
         del oldplotframe[:]
 
@@ -2081,7 +2079,7 @@ def corpkit_gui():
         import os
         from PIL import Image
         from PIL import ImageTk
-        from time import localtime, strftime
+        
         import Tkinter
 
         for i in oldplotframe:
@@ -2091,8 +2089,7 @@ def corpkit_gui():
         # maybe sort by date added?
         image_list = [i for i in all_images]
         if len(image_list) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No images found in images folder.' % thetime
+            timestring('No images found in images folder.')
         
         # figure out where we're up to 
         if images['the_current_fig'] != -1:
@@ -2170,8 +2167,7 @@ def corpkit_gui():
         images['the_current_fig'] = image_list[newind]
         savedplot.set('Saved image: %s' % os.path.splitext(image_list[newind])[0])
         
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Viewing %s' % (thetime, os.path.splitext(image_list[newind])[0])
+        timestring('Viewing %s' % os.path.splitext(image_list[newind])[0])
 
     savedplot = StringVar()
     savedplot.set('View saved images: ')
@@ -2201,8 +2197,7 @@ def corpkit_gui():
             return
 
         thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: %s saved to %s.' % (time, fo, image_fullpath.get())
+        timestring('%s saved to %s.' % (fo, image_fullpath.get()))
 
     # title tab
     Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (35, 0))
@@ -2367,7 +2362,7 @@ def corpkit_gui():
     conc_saved = False
 
     def add_conc_lines_to_window(data, loading = False, preserve_colour = True):
-        from time import localtime, strftime
+        
         import pandas as pd
         import re
         #pd.set_option('display.height', 1000)
@@ -2434,21 +2429,19 @@ def corpkit_gui():
             for i in todel:
                 del itemcoldict[i]
 
-        thetime = strftime("%H:%M:%S", localtime())
         if loading:
-            print '%s: Concordances loaded.' % (thetime)
+            timestring('Concordances loaded.')
         else:
-            print '%s: Concordancing done: %d results.' % (thetime, len(lines))
+            timestring('Concordancing done: %d results.' % len(lines))
 
     def do_concordancing():
-        from time import localtime, strftime
+        
         Button(tab4, text = 'Run', command = ignore).grid(row = 3, column = 4, sticky = E)
         for i in itemcoldict.keys():
             del itemcoldict[i]
         import os
         """when you press 'run'"""
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Concordancing in progress ... ' % (time)       
+        timestring('Concordancing in progress ... ')
         from corpkit.conc import conc
         if subc_pick.get() == "Subcorpus" or subc_pick.get() == 'all':
             corpus = corpus_fullpath.get()
@@ -2525,34 +2518,32 @@ def corpkit_gui():
         Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
-        from time import localtime, strftime   
+           
         if type(current_conc[0]) == str:
             return
         items = conclistbox.curselection()
         #current_conc[0].results.drop(current_conc[0].results.iloc[1,].name)
         r = current_conc[0].drop([current_conc[0].iloc[int(n),].name for n in items])
         add_conc_lines_to_window(r)
-        thetime = strftime("%H:%M:%S", localtime())
         if len(items) == 1:
-            print '%s: %d line removed.' % (thetime, len(items))
+            timestring('%d line removed.' % len(items))
         if len(items) > 1:
-            print '%s: %d lines removed.' % (thetime, len(items))
+            timestring('%d lines removed.' % len(items))
         global conc_saved
         conc_saved = False
 
     def delete_reverse_conc_lines(*args):   
-        from time import localtime, strftime
+        
         if type(current_conc[0]) == str:
             return
         items = [int(i) for i in conclistbox.curselection()]
         r = current_conc[0].iloc[items,]
         add_conc_lines_to_window(r)
         conclistbox.select_set(0, END)
-        thetime = strftime("%H:%M:%S", localtime())
         if len(conclistbox.get(0, END)) - len(items) == 1:
-            print '%s: %d line removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
+            timestring('%d line removed.' % ((len(conclistbox.get(0, END)) - len(items))))
         if len(conclistbox.get(0, END)) - len(items) > 1:
-            print '%s: %d lines removed.' % (thetime, (len(conclistbox.get(0, END)) - len(items)))
+            timestring('%d lines removed.' % ((len(conclistbox.get(0, END)) - len(items))))
         global conc_saved
         conc_saved = False
 
@@ -2560,10 +2551,9 @@ def corpkit_gui():
         """export conc lines to csv"""
         import os
         import pandas
-        from time import localtime, strftime
+        
         if type(current_conc[0]) == str:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Nothing to export.' % (thetime)
+            timestring('Nothing to export.')
             return
         if project_fullpath.get() ==  '':
             home = os.path.expanduser("~")
@@ -2585,8 +2575,7 @@ def corpkit_gui():
             return
         with open(savepath, "w") as fo:
             fo.write(thedata)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Concordance lines exported.' % (thetime)
+        timestring('Concordance lines exported.')
         global conc_saved
         conc_saved = False
 
@@ -2669,17 +2658,15 @@ def corpkit_gui():
             try:
                 low = [l.lower() for l in df['s']]
             except:
-                from time import localtime, strftime
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: No speaker information to sort by.' % (thetime)
+                
+                timestring('No speaker information to sort by.')
                 return
             df['tosorton'] = low
         # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
-            from time import localtime, strftime
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Tokenising concordance lines ... ' % (thetime)
+            
+            timestring('Tokenising concordance lines ... ')
             # tokenise the right part of each line
             # get l or r column
             col = sortval.get()[0].lower()
@@ -2728,9 +2715,8 @@ def corpkit_gui():
             add_conc_lines_to_window(df.drop('f', axis = 1, errors = 'ignore'))
         else:
             add_conc_lines_to_window(df)
-        from time import localtime, strftime
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: %d concordance lines sorted.' % (thetime, len(conclistbox.get(0, END)))
+        
+        timestring('%d concordance lines sorted.' % len(conclistbox.get(0, END)))
         global conc_saved
         conc_saved = False
 
@@ -2761,10 +2747,9 @@ def corpkit_gui():
         toplevel.wm_attributes('-topmost', 1)
         def quit_coding(*args):
             toplevel.destroy()
-
-        Label(toplevel, text = ('When concordancing, you can colour code lines using 0-9 keys. '\
-                                'If you name the colours here, you can export or save the concordance lines with '\
-                                'names attached.'), font = ('Helvetica', 13, 'italic'), wraplength = 250, justify = LEFT).grid(row = 0, column = 0, columnspan = 2)
+        #Label(toplevel, text = ('When concordancing, you can colour code lines using 0-9 keys. '\
+        #                        'If you name the colours here, you can export or save the concordance lines with '\
+        #                        'names attached.'), font = ('Helvetica', 13, 'italic'), wraplength = 250, justify = LEFT).grid(row = 0, column = 0, columnspan = 2)
         stopbut = Button(toplevel, text = 'Done', command=quit_coding)
         stopbut.grid(row = 12, column = 0, columnspan = 2, pady = 15)        
         for index, colour_index in enumerate(colourdict.keys()):
@@ -3066,17 +3051,14 @@ def corpkit_gui():
         dfs = []
         if toget != ():
             if len(toget) < 2:
-                from time import strftime, localtime
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Need multiple concordances to merge.' % (thetime, name)
+                timestring('Need multiple concordances to merge.' % name)
                 return
             for item in toget:
                 nm = prev_conc_listbox.get(item)
                 dfs.append(all_conc[nm])
         else:
-            from time import strftime, localtime
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Nothing selected to merge.' % (thetime, name)
+            
+            timestring('Nothing selected to merge.' % name)
             return
         df = pandas.concat(dfs, ignore_index = True)
         should_drop = tkMessageBox.askyesno("Remove duplicates", 
@@ -3141,9 +3123,7 @@ def corpkit_gui():
         if should_continue:
             toget = prev_conc_listbox.curselection()
             if len(toget) > 1:
-                from time import strftime, localtime
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Only one selection allowed for load.' % (thetime, name)
+                timestring('Only one selection allowed for load.' % name)
                 return
             if toget != ():
                 nm = prev_conc_listbox.get(toget[0])
@@ -3169,7 +3149,7 @@ def corpkit_gui():
     def make_new_project():
         import os
         from corpkit import new_project
-        from time import strftime, localtime
+        
         name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
         if not name:
             return
@@ -3195,13 +3175,12 @@ def corpkit_gui():
         
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
         #load_project(path = os.path.join(fp, name))
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project "%s" created.' % (thetime, name)
+        timestring('Project "%s" created.' % name)
         note.focus_on(tab0)
 
     def get_saved_results(kind = 'interrogation'):
         from corpkit import load_all_results
-        from time import strftime, localtime
+        
         if kind == 'interrogation':
             datad = savedinterro_fullpath.get()
         elif kind == 'concordance':
@@ -3209,8 +3188,7 @@ def corpkit_gui():
         elif kind == 'image':
             datad = image_fullpath.get()
         if datad == '':
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No project loaded.' % (thetime)
+            timestring('No project loaded.')
         if kind == 'image':
             image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
             for iname in image_list:
@@ -3258,8 +3236,7 @@ def corpkit_gui():
         data_basepath.set('Saved data: "%s"' % os.path.basename(fp))
         #sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
         #fs = sorted([d for d in os.listdir(fp) if os.path.isfile(os.path.join(fp, d))])
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Set data directory: %s' % (time, os.path.basename(fp))
+        timestring('Set data directory: %s' % os.path.basename(fp))
 
     def image_getdir(nodialog = False):
         import os
@@ -3268,8 +3245,7 @@ def corpkit_gui():
             return
         image_fullpath.set(fp)
         image_basepath.set('Images: "%s"' % os.path.basename(fp))
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Set image directory: %s' % (time, os.path.basename(fp))
+        timestring('Set image directory: %s' % os.path.basename(fp))
 
     def save_one_or_more(kind = 'interrogation'):
         if kind == 'interrogation':
@@ -3277,8 +3253,7 @@ def corpkit_gui():
         else:
             sel_vals = sel_vals_conc
         if len(sel_vals) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Nothing selected to save.' % thetime
+            timestring('Nothing selected to save.')
             return
         from corpkit import save_result
         import os
@@ -3296,16 +3271,14 @@ def corpkit_gui():
                 saved += 1
             else:
                 existing += 1
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: %s already exists in %s.' % (thetime, urlify(i), os.path.basename(savedinterro_fullpath.get()))   
-        thetime = strftime("%H:%M:%S", localtime())
+                timestring('%s already exists in %s.' % (urlify(i), os.path.basename(savedinterro_fullpath.get())))
         if saved == 1 and existing == 0:
-            print '%s: %s saved.' % (thetime, sel_vals[0])
+            timestring('%s saved.' % sel_vals[0])
         else:
             if existing == 0:
-                print '%s: %d %ss saved.' % (thetime, len(sel_vals), kind)
+                timestring('%d %ss saved.' % (len(sel_vals), kind))
             else:
-                print '%s: %d %ss saved, %d already existed' % (thetime, saved, kind, existing)
+                timestring('%d %ss saved, %d already existed' % (saved, kind, existing))
         refresh()
 
     def remove_one_or_more(window = False, kind = 'interrogation'):
@@ -3317,8 +3290,7 @@ def corpkit_gui():
             toget = prev_conc_listbox.curselection()
             sel_vals = [prev_conc_listbox.get(toget)]
         if len(sel_vals) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No interrogations selected.' % thetime
+            timestring('No interrogations selected.')
             return
         for i in sel_vals:
             try:
@@ -3328,11 +3300,10 @@ def corpkit_gui():
                     del all_conc[i]
             except:
                 pass
-        thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
-            print '%s: %s removed.' % (thetime, sel_vals[0])
+            timestring('%s removed.' % sel_vals[0])
         else:
-            print '%s: %d interrogations removed.' % (thetime, len(sel_vals))
+            timestring('%d interrogations removed.' % len(sel_vals))
         refresh()
 
     def del_one_or_more(kind = 'interrogation'):
@@ -3348,8 +3319,7 @@ def corpkit_gui():
             sel_vals = sel_vals_conc
             p = conc_fullpath.get()
         if len(sel_vals) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No interrogations selected.' % thetime
+            timestring('No interrogations selected.')
             return
         import os
         result = tkMessageBox.askquestion("Are You Sure?", "Permanently delete the following files:\n\n    %s" % '\n    '.join(sel_vals), icon='warning')
@@ -3364,11 +3334,10 @@ def corpkit_gui():
                 else:
                     all_images.remove(i)
                     os.remove(os.path.join(p, i + ext))
-        thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
-            print '%s: %s deleted.' % (thetime, sel_vals[0])
+            timestring('%s deleted.' % sel_vals[0])
         else:
-            print '%s: %d %ss deleted.' % (thetime, kind, len(sel_vals))
+            timestring('%d %ss deleted.' % (kind, len(sel_vals)))
         refresh()
 
     def urlify(s):
@@ -3393,8 +3362,7 @@ def corpkit_gui():
             sel_vals = sel_vals_conc
             p = conc_fullpath.get()
         if len(sel_vals) == 0:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: No items selected.' % thetime
+            timestring('No items selected.')
             return
         import os
         permanently = True
@@ -3433,11 +3401,10 @@ def corpkit_gui():
                     name_of_n_ed_spread.set(answer)
                     #update_spreadsheet(n_editor_results, all_interrogations[answer].results)
 
-        thetime = strftime("%H:%M:%S", localtime())
         if len(sel_vals) == 1:
-            print '%s: %s %srenamed as %s.' % (thetime, sel_vals[0], perm_text, answer)
+            timestring('%s %srenamed as %s.' % (sel_vals[0], perm_text, answer))
         else:
-            print '%s: %d items %srenamed.' % (thetime, len(sel_vals), perm_text)
+            timestring('%d items %srenamed.' % (len(sel_vals), perm_text))
 
         refresh()
 
@@ -3491,8 +3458,7 @@ def corpkit_gui():
                         if 'table' in data._asdict().keys():
                             pandas.DataFrame(data.query.values(), index = data.query.keys()).to_csv(os.path.join(exported_fullpath.get(), answer, 'table.csv'), sep ='\t', encoding = 'utf-8')
         if fp:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Results exported to %s' % (thetime, os.path.join(os.path.basename(exported_fullpath.get()), answer))        
+            timestring('Results exported to %s' % (os.path.join(os.path.basename(exported_fullpath.get()), answer)))
 
     def reset_everything():
         # result names
@@ -3622,8 +3588,7 @@ def corpkit_gui():
         log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
 
         if not os.path.isdir(savedinterro_fullpath.get()):
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Selected folder does not contain corpkit project.' % (thetime)    
+            timestring('Selected folder does not contain corpkit project.')    
             return    
 
         project_fullpath.set(fp)
@@ -3686,8 +3651,7 @@ def corpkit_gui():
             pick_subcorpora.config(state = NORMAL)
             pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
             pick_subcorpora.config(state = DISABLED)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project "%s" opened.' % (thetime, os.path.basename(fp))
+        timestring('Project "%s" opened.' % os.path.basename(fp))
         note.progvar.set(0)
         
         if corpus_name in corpus_names_and_speakers.keys():
@@ -3704,8 +3668,7 @@ def corpkit_gui():
         if len(sel_vals_interro) == 0:
             return
         if len(sel_vals_interro) > 1:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Can only view one interrogation at a time.' % (thetime)
+            timestring('Can only view one interrogation at a time.')
             return
 
         Label(tab5, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 4, padx = (65, 0))
@@ -3906,18 +3869,11 @@ def corpkit_gui():
     Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 25)
 
 
-
-
-
-
-
-
-
     ##############     ##############     ##############     ##############     ############## 
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
     ##############     ##############     ##############     ##############     ############## 
     
-    from corpkit import download_cnlp, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
+    from corpkit.build import download_large_file, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_tokenised_text():
         note.progvar.set(0)
@@ -3935,11 +3891,9 @@ def corpkit_gui():
             charttype.set('bar')
         #basepath.set(os.path.basename(outdir))
         #if len([f for f in os.listdir(outdir) if f.endswith('.p')]) > 0:
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(outdir))
+        timestring('Corpus parsed and ready to interrogate: "%s"' % os.path.basename(outdir))
         #else:
-            #time = strftime("%H:%M:%S", localtime())
-            #print '%s: Error: no files created in "%s"' % (time, os.path.basename(outdir))
+            #timestring('Error: no files created in "%s"' % os.path.basename(outdir))
         update_available_corpora()
         tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33)
         tokbut.grid(row = 6, column = 0, sticky=W)
@@ -3949,15 +3903,14 @@ def corpkit_gui():
         note.progvar.set(0)
         import os
         import re
-        from time import strftime, localtime
+        
 
         parsebut = Button(tab0, textvariable = parse_button_text, command=ignore, width = 33)
         parsebut.grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = corpus_fullpath.get()
 
         if speakseg.get():
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Processing speaker names ... ' % (thetime)
+            timestring('Processing speaker names ... ')
             from corpkit.build import make_no_id_corpus, get_speaker_names_from_xml_corpus, add_ids_to_xml
 
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
@@ -3967,11 +3920,11 @@ def corpkit_gui():
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                           "CoreNLP parser not found. Download/install it?")
             if downstall_nlp:
-                stanpath, cnlp_zipfile = download_cnlp(project_fullpath.get(), root = root)
+                corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
+                stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, root = root)
                 extract_cnlp(cnlp_zipfile, root = root)
             else:
-                time = strftime("%H:%M:%S", localtime())
-                print '%s: Cannot parse data without Stanford CoreNLP.' % (time)
+                timestring('Cannot parse data without Stanford CoreNLP.')
                 return
         jdk = check_jdk()
         if jdk is False:
@@ -3980,16 +3933,13 @@ def corpkit_gui():
                 import webbrowser
                 webbrowser.open_new('http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html')
                 import time
-                time = strftime("%H:%M:%S", localtime())
-                print '%s: Waiting for Java JDK 1.8 installation to complete.' % (time)
+                timestring('Waiting for Java JDK 1.8 installation to complete.')
                 while jdk is False:
                     jdk = check_jdk()
-                    time = strftime("%H:%M:%S", localtime())
-                    print '%s: Waiting for Java JDK 1.8 installation to complete.' % (time)
+                    timestring('Waiting for Java JDK 1.8 installation to complete.')
                     time.sleep(5)
             else:
-                time = strftime("%H:%M:%S", localtime())
-                print '%s: Cannot parse data without Java JDK 1.8.' % (time)
+                timestring('Cannot parse data without Java JDK 1.8.')
                 return
 
         # there are two functions doing the same thing: this and get_filepaths!
@@ -3997,9 +3947,8 @@ def corpkit_gui():
         
         if filelist is False:
             # zero files...
-            from time import localtime, strftime
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Error: no text files found in "%s"' % (thetime, unparsed_corpus_path)
+            
+            timestring('Error: no text files found in "%s"' % unparsed_corpus_path)
             return
 
         parsed_dir = parse_corpus(project_fullpath.get(), unparsed_corpus_path, filelist, root = root, stdout = sys.stdout, note = note)
@@ -4016,8 +3965,7 @@ def corpkit_gui():
             corpus_names_and_speakers[os.path.basename(new_corpus_path)] = corpus_names
             if project_fullpath.get() != '':
                 save_config()
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Names found: %s' % (thetime, ', '.join(corpus_names))
+            timestring('Names found: %s' %', '.join(corpus_names))
         
         from corpkit.build import rename_all_files
         rename_all_files(dirs_to_rename)
@@ -4031,8 +3979,7 @@ def corpkit_gui():
         update_available_corpora()
         parsebut = Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33)
         parsebut.grid(row = 6, column = 0, sticky=W)
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Corpus parsed and ready to interrogate: "%s"' % (time, os.path.basename(new_corpus_path))
+        timestring('Corpus parsed and ready to interrogate: "%s"' % os.path.basename(new_corpus_path))
 
     parse_button_text = StringVar()
     parse_button_text.set('Parse corpus')
@@ -4085,8 +4032,7 @@ def corpkit_gui():
         #sel_corpus_button.set('Selected: "%s"' % bn(unparsed_corpus_path))
         parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
         add_subcorpora_to_build_box(unparsed_corpus_path)
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Selected corpus: "%s"' % (time, bn(unparsed_corpus_path))
+        timestring('Selected corpus: "%s"' % bn(unparsed_corpus_path))
 
     def getcorpus():
         """copy unparsed texts to project folder"""
@@ -4102,14 +4048,12 @@ def corpkit_gui():
         newc = os.path.join(where_to_put_corpus, os.path.basename(fp))
         try:
             shutil.copytree(fp, newc)
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Corpus copied to project folder.' % (thetime)
+            timestring('Corpus copied to project folder.')
         except OSError:
             Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
             if os.path.basename(fp) == '':
                 return
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: "%s" already exists in project.' % (thetime, os.path.basename(fp)) 
+            timestring('"%s" already exists in project.' % os.path.basename(fp)) 
             return
         # encode and rename files
         for (rootdir, d, fs) in os.walk(newc):
@@ -4133,14 +4077,12 @@ def corpkit_gui():
         current_corpus.set(os.path.basename(fp))
         #sel_corpus.set(newc)
         #sel_corpus_button.set('Selected corpus: "%s"' % os.path.basename(newc))
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Corpus copied to project folder.' % (thetime)
+        timestring('Corpus copied to project folder.')
         parse_button_text.set('Parse: %s' % os.path.basename(newc))
         tokenise_button_text.set('Tokenise: "%s"' % os.path.basename(newc))
         add_subcorpora_to_build_box(newc)
         update_available_corpora()
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Selected corpus for viewing/parsing: "%s"' % (time, os.path.basename(newc))
+        timestring('Selected corpus for viewing/parsing: "%s"' % os.path.basename(newc))
         Button(tab0, textvariable = add_corpus_button, command=getcorpus, width = 33).grid(row = 3, column = 0, sticky=W)
 
     # duplicate of one in 'manage
@@ -4417,8 +4359,7 @@ def corpkit_gui():
             f.write("\n")
         finally:
             f.close()
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: %s saved.' % (thetime, filename.get())
+        timestring('%s saved.' % filename.get())
 
     filename = StringVar()
     filename.set('')
@@ -4470,8 +4411,7 @@ def corpkit_gui():
         Config.add_section('Manage')
         Config.set('Manage','Project path',project_fullpath.get())
         Config.write(cfgfile)
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Project settings saved to settings.ini.' % thetime
+        timestring('Project settings saved to settings.ini.')
 
     def quitfunc():
         if project_fullpath.get() != '':
@@ -4482,6 +4422,84 @@ def corpkit_gui():
         realquit.set(1)
         root.quit()
 
+    def restart(newpath = False):
+        """restarts corpkit .py or gui, designed for version updates"""
+        import sys
+        import os
+        import subprocess
+        import inspect
+        timestring('Restarting ... ')
+        # get path to current script
+        if newpath is False:
+            newpath = inspect.getfile(inspect.currentframe())
+        if sys.platform == "win32":
+            if newpath.endswith('.py'):
+                timestring('Not yet supported, sorry.')
+                return
+            os.startfile(newpath)
+        else:
+            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            if newpath.endswith('.py'):
+                opener = 'python'
+            subprocess.Popen([opener, newpath])
+            from time import sleep
+            sleep(1)
+        sys.exit()
+
+
+    def untar(fname):
+        """untar a file"""
+        import tarfile
+        tar = tarfile.open(fname)
+        tar.extractall()
+        tar.close()
+
+    def update_corpkit():
+        """get new corpkit, delete this one, open it up"""
+        import sys
+        import os
+        import inspect
+        from corpkit.build import download_large_file
+        # get path to this script
+        corpath = inspect.getfile(inspect.currentframe())
+        # check we're using executable version, because .py users can
+        # use github to update
+        extens = '.%s' % fext
+        if extens not in corpath:
+            timestring("Get it from GitHub: https://www.github.com/interrogator/corpkit")
+            return
+        # get new version
+        url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-%s.tar.gz' % stver
+        downloaded_dir, corpkittarfile = download_large_file(project_fullpath.get(), \
+                                                              url, root = root, note = note)
+        
+        timestring('Extracting update ...')
+        # get dir of tarfile
+        new_corpkit_tardir = os.path.basename(corpkittarfile)
+        # untar, get new filename
+        untar(corpkittarfile)
+        
+        timestring('Applying update ...')
+        # delete the tar
+        os.remove(corpkittarfile)
+        # get whatever the new app is called
+        newappfname = [f for f in os.listdir(downloaded_dir) if f.endswith(fext)][0]
+        # get the executable in the path
+        apppath = corpath.split('.%s' %fext , 1)[0] + '.%s' % fext
+        # get the dir it's in
+        appdir = os.path.dirname(apppath)
+        # remove this very app
+        os.remove(apppath)
+        # move new version
+        os.rename(newappfname, os.path.join(appdir, newappfname))
+        restart(os.path.join(appdir, newappfname))
+
+    def make_float_from_version(ver):
+        """take a version string and turn it into a comparable float"""
+        ver = str(ver)
+        ndots_to_delete = ver.count('.') - 1
+        return float(ver[::-1].replace('.', '', ndots_to_delete)[::-1])
+
     def check_updates(showfalse = True, lateprint = False):
         """check for updates, showing a window if there is one, and if showfalse, 
            even if not. This works by simply downloading the html of the GitHub main
@@ -4489,15 +4507,15 @@ def corpkit_gui():
            on (e.g.) PythonGit. Not sure if this should unzip and overwrite the
            existing file or not."""
         import corpkit
-        ver = corpkit.__version__
-        ver = float(ver)
+        # get current version as float
+        oldstver = str(corpkit.__version__)
+        ver = make_float_from_version(oldstver)
         import re
         import urllib2
-        from time import strftime, localtime
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Checking for updates ... ' % thetime
+        
+        timestring('Checking for updates ... ')
         try:
-            response = urllib2.urlopen('https://www.github.com/interrogator/corpkit')
+            response = urllib2.urlopen('https://www.github.com/interrogator/corpkit-app')
             html = response.read()
         except:
             if showfalse:
@@ -4505,38 +4523,42 @@ def corpkit_gui():
                 "No connection to remote server",
                 "Could not connect to remote server.")
             else:
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Could not connect to remote server.' % thetime                
+                timestring('Could not connect to remote server.')  
             return
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
-        vnum = float(re.search(reg, str(html)).group(1))
+        # get version number as string
+        stver = re.search(reg, str(html)).group(1)
+        vnum = make_float_from_version(stver)
         if vnum > ver:
-            download_update = tkMessageBox.askyesno("Update available: corpkit %s." % str(vnum), 
-                          "Download corpkit %s now?" % str(vnum))
+            timestring('Update found: corpkit %s' % stver)
+            download_update = tkMessageBox.askyesno("Update available: corpkit %s." % stver, 
+                          "Download corpkit %s now?" % stver)
             if download_update:
-                import webbrowser
-                webbrowser.open_new('https://raw.githubusercontent.com/interrogator/corpkit/master/corpkit-%s.tar.gz' % str(vnum))
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Update found: corpkit %s' % (thetime, str(vnum))
+                update_corpkit()
+                timestring('Automatic update failed.')
+                return
+                
             else:
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Update found: corpkit %s. Not downloaded.' % (thetime, str(vnum))
+                timestring('Update found: corpkit %s. Not downloaded.' % stver)
                 return
         else:
             if showfalse:
                 tkMessageBox.showinfo(
                 "Up to date!",
                 "corpkit (version %s) up to date!" % ver)
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: corpkit (version %s) up to date.' % (thetime, str(vnum))
+                timestring('corpkit (version %s) up to date.' % oldstver)
                 return
             else:
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: No updates available.' % thetime
+                timestring('No updates available.')
 
     def start_update_check():
         check_updates(showfalse = False, lateprint = True)
 
+    def unmax():
+        """stop it being always on top"""
+        root.attributes('-topmost', False)
+
+    root.after(1000, unmax)
     root.after(100000, start_update_check)
 
     def config_menu(*args):
@@ -4581,7 +4603,7 @@ def corpkit_gui():
     filemenu.add_command(label="Check for updates", command=check_updates)
     # broken on deployed version ... path to self stuff
     #filemenu.add_separator()
-    #filemenu.add_command(label="Restart tool", command=clear_all)
+    filemenu.add_command(label="Restart tool", command=restart)
     filemenu.add_separator()
     #filemenu.add_command(label="Exit", command=quitfunc)
     menubar.add_cascade(label="File", menu=filemenu)
@@ -4607,7 +4629,7 @@ def corpkit_gui():
 
     def show_log():
         import os
-        from time import strftime, localtime
+        
         input = '\n'.join([x for x in note.log_stream])
         #input = note.text.get("1.0",END)
         c = 0
@@ -4617,9 +4639,8 @@ def corpkit_gui():
             c += 1
         with open(logpath, "w") as fo:
             fo.write(input)
-            thetime = strftime("%H:%M:%S", localtime())
             prnt = os.path.join('logs', os.path.basename(logpath))
-            print '%s: Log saved to "%s".' % (thetime, prnt)
+            timestring('Log saved to "%s".' % prnt)
         import sys
         if sys.platform == 'darwin':
             import subprocess

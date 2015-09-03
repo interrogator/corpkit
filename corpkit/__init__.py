@@ -8,7 +8,7 @@ __all__ = ["interrogator",
            "load_all_results",
            "as_regex",
            "new_project",
-           "download_cnlp", 
+           "download_large_file", 
            "extract_cnlp", 
            "get_corpus_filepaths", 
            "check_jdk", 
@@ -45,7 +45,7 @@ from other import load_all_results
 from other import quickview
 from other import as_regex
 from other import new_project
-from build import download_cnlp
+from build import download_large_file
 from build import extract_cnlp
 from build import get_corpus_filepaths
 from build import check_jdk

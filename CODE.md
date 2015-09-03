@@ -9,4 +9,4 @@ Links:
  - http://wiki.tcl.tk
  - https://en.wikipedia.org/wiki/Tk_(software)
 
-In the orientation folder, you can find a sample dataset and an iPython notebook for getting started. The library source code is in the corpkit folder. And there's some slides and TeX source in the talks folder.
+In the orientation folder, you can find a sample dataset and an IPython notebook for getting started with the command line interface. The library source code is in the `corpkit` folder. And there's some slides and TeX source in the talks folder.
