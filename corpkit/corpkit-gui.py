@@ -4627,7 +4627,6 @@ def corpkit_gui():
 
     def show_log():
         import os
-        
         input = '\n'.join([x for x in note.log_stream])
         #input = note.text.get("1.0",END)
         c = 0

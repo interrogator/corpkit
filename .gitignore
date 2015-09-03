@@ -65,3 +65,5 @@ corpkit/testingground.py
 corpkit/testinggroundthree.py
 corpkit/testinggroundtwo.py
 
+corpkit/log*
+*.app/
