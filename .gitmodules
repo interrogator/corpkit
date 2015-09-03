@@ -1,0 +1,3 @@
+[submodule "corpkit-app"]
+	path = corpkit-app
+	url = https://github.com/interrogator/corpkit-app.git
