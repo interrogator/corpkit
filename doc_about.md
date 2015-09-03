@@ -1,5 +1,5 @@
 ---
-title: About the author, and the tool
+title: About the tool, and those who made it exist
 keywords: linguistics, bridge, university, sfl
 last_updated: August 12, 2015
 tags: [getting-started]

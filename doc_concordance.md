@@ -55,5 +55,5 @@ If you do `File` &rarr; `Save project settings`, *corpkit* will remember your co
 
 Unlike corpus interrogations, concordance lines aren't stored by default. Once you're happy with the data on screen, however, you can hit `Store as` and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the `Manage` pane, where you can save it permanently.
 
-You can use `Load` to show saved concordance lines, or `Merge` to combine multiple saved lines into the current window. If your current concordance is unsaved, you'll be asked if you want to save it first.
+You can use `Load` to show saved concordance lines, or `Merge` to combine multiple saved lines into the current window. If your current concordance is unsaved, don't worry, you'll be asked if you want to save it first.
 
