@@ -4446,7 +4446,6 @@ def corpkit_gui():
             sleep(1)
         sys.exit()
 
-
     def untar(fname):
         """untar a file"""
         import tarfile
@@ -4454,7 +4453,7 @@ def corpkit_gui():
         tar.extractall()
         tar.close()
 
-    def update_corpkit():
+    def update_corpkit(stver):
         """get new corpkit, delete this one, open it up"""
         import sys
         import os
@@ -4534,10 +4533,9 @@ def corpkit_gui():
             download_update = tkMessageBox.askyesno("Update available: corpkit %s." % stver, 
                           "Download corpkit %s now?" % stver)
             if download_update:
-                update_corpkit()
+                update_corpkit(stver)
                 timestring('Automatic update failed.')
                 return
-                
             else:
                 timestring('Update found: corpkit %s. Not downloaded.' % stver)
                 return
@@ -4624,7 +4622,7 @@ def corpkit_gui():
     def about_box():
         import corpkit
         ver = corpkit.__version__
-        tkMessageBox.showinfo('About', 'corpkit %s\n\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
+        tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit/\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                               'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
 
     def show_log():
