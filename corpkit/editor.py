@@ -509,9 +509,13 @@ def editor(dataframe1,
 
     def do_stats(df):
         """do linregress and add to df"""
-        #try: 
-        from scipy.stats import linregress
-        #except:
+        try: 
+            from scipy.stats import linregress
+        except ImportError:
+            from time import localtime, strftime
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: sort type not available in this verion of corpkit.' % thetime
+            return
         #from stats.stats import linregress
 
         entries = []
