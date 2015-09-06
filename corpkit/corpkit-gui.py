@@ -16,7 +16,7 @@ from ttk import Progressbar, Style
 
 # stdout to app
 class RedirectText(object):
-    """"""
+    """send text to app from stdout"""
 
     #----------------------------------------------------------------------
     def __init__(self, text_ctrl, log_text):
@@ -32,10 +32,11 @@ class RedirectText(object):
     def write(self, string):
         """""" 
         import re
-        if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
-            self.log.append(string)
-        # remove blank lines
         show_reg = re.compile(r'^\s*$')
+        if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
+            if not re.match(show_reg, string):
+                self.log.append(string)
+        # remove blank lines
         if not re.match(show_reg, string):
             self.output.set(string)
             #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
@@ -194,6 +195,17 @@ def corpkit_gui():
     sys.path.append(dicpath)
     sys.path.append(baspat)
 
+    def runner(button, command):
+        """runs the command of a button, disabling the button till it is done,
+        whether it returns early or not"""
+        try:
+            command()
+        except Exception, err:
+            import traceback
+            print traceback.format_exc()
+            note.progvar.set(0)
+        button.config(state = NORMAL)
+
     def adjustCanvas(someVariable = None):
         fontLabel["font"] = ("arial", var.get())
 
@@ -207,6 +219,7 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
+    #root.overrideredirect(True)
     #root.resizable(FALSE,FALSE)
 
     #HWHW h 550
@@ -220,10 +233,12 @@ def corpkit_gui():
     tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
     note.text.update_idletasks()
 
+    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+    #root.overrideredirect(True)
     all_text_widgets = []
 
     root.lift()
-    root.attributes('-topmost', True)
+    #root.attributes('-topmost', True)
 
     def timestring(input):
         from time import localtime, strftime
@@ -518,6 +533,12 @@ def corpkit_gui():
         dataframe2s['menu'].delete(0, 'end')
         if len(all_interrogations.keys()) > 0:
             data_to_plot.set(all_interrogations.keys()[-1])
+            edbut.config(state = NORMAL)
+            plotbut.config(state = NORMAL)
+        else:
+            edbut.config(state = DISABLED)
+            plotbut.config(state = DISABLED)
+
         every_interrogation['menu'].delete(0, 'end')
         every_interro_listbox.delete(0, 'end')
         every_image_listbox.delete(0, 'end')
@@ -561,6 +582,7 @@ def corpkit_gui():
             #every_interro_listbox.delete(0, END)
             if choice != 'None':
                 every_image_listbox.insert(END, choice)
+
 
         color_saved(every_interro_listbox, savedinterro_fullpath.get(), '#ccebc5', '#fbb4ae')
         color_saved(ev_conc_listbox, conc_fullpath.get(), '#ccebc5', '#fbb4ae')
@@ -765,7 +787,7 @@ def corpkit_gui():
             return
 
     def do_interrogation():
-        Button(tab1, text = 'Interrogate', command = ignore).grid(row = 17, column = 1, sticky = E)
+        interrobut.config(state = DISABLED)
         note.progvar.set(0)
         """performs an interrogation"""
         import pandas
@@ -839,13 +861,13 @@ def corpkit_gui():
         lemmatag = False
         if lemtag.get() != 'None':
             if lemtag.get() == 'Noun':
-                lemmatag = 'N'
+                lemmatag = 'n'
             if lemtag.get() == 'Adjective':
-                lemmatag = 'A'
+                lemmatag = 'a'
             if lemtag.get() == 'Verb':
-                lemmatag = 'V'
+                lemmatag = 'v'
             if lemtag.get() == 'Adverb':
-                lemmatag = 'R'
+                lemmatag = 'r'
         if lemmatag is not False:
             interrogator_args['lemmatag'] = lemmatag
 
@@ -855,7 +877,7 @@ def corpkit_gui():
 
         if corpus_fullpath.get() == '':
             timestring('You need to select a corpus.')
-            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
+        
             return
 
         if special_queries.get() == 'Stats':
@@ -866,7 +888,7 @@ def corpkit_gui():
         
         sys.stdout = note.redir
         if not interrodata or interrodata == 'Bad query':
-            Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
+        
             update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
             update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)            
             return
@@ -955,7 +977,7 @@ def corpkit_gui():
         nametext.set('untitled')
 
         Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E)
-        Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
+    
         if interrogation_returned_dict:
             timestring('Interrogation finished, with multiple results.')
 
@@ -1023,6 +1045,8 @@ def corpkit_gui():
         else:
             speakcheck.config(state = DISABLED)
             speakcheck_conc.config(state = DISABLED)
+        interrobut.config(state = NORMAL)
+        concbut.config(state = NORMAL)
 
         timestring('Set corpus directory: "%s"' % os.path.basename(fp))
 
@@ -1295,7 +1319,9 @@ def corpkit_gui():
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
-    Button(tab1, text = 'Interrogate', command = do_interrogation).grid(row = 17, column = 1, sticky = E)
+    interrobut = Button(tab1, text = 'Interrogate')
+    interrobut.config(command = lambda: runner(interrobut, do_interrogation), state = DISABLED)
+    interrobut.grid(row = 17, column = 1, sticky = E)
 
     # name to show above spreadsheet 0
     i_resultname = StringVar()
@@ -1425,7 +1451,7 @@ def corpkit_gui():
         return True
 
     def do_editing():
-        Button(tab2, text = 'Edit', command = ignore).grid(row = 20, column = 1, sticky = E)
+        edbut.config(state = DISABLED)
         """what happens when you press edit"""
         import pandas
         from corpkit import editor
@@ -1470,14 +1496,14 @@ def corpkit_gui():
                         data2 = all_interrogations[data2].results
                     except AttributeError:
                         timestring('Denominator has no results branch.')
-                        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+                        
                         return
                 elif df2branch.get() == 'totals':
                     try:
                         data2 = all_interrogations[data2].totals
                     except AttributeError:
                         timestring('Denominator has no totals branch.')
-                        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+                        
                         return
                 if transpose.get():
                     data2 = data2.T
@@ -1488,7 +1514,7 @@ def corpkit_gui():
                 data1 = the_data.results
             except AttributeError:
                 timestring('Interrogation has no results branch.')
-                Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+                
                 return
         elif df1branch.get() == 'totals':
             data1 = the_data.totals
@@ -1569,7 +1595,7 @@ def corpkit_gui():
                 numtokeep = int(keeptopnum.get())
             except ValueError:
                 timestring('Keep top n results value must be number.')
-                Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+                
                 return
             editor_args['keep_top'] = numtokeep
         
@@ -1578,12 +1604,12 @@ def corpkit_gui():
         
         if not r:
             timestring('Editing caused an error.')
-            Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+            
             return
 
         if len(list(r.results.columns)) == 0:
             timestring('Editing removed all results.')
-            Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+            
             return
 
         # drop over 1000?
@@ -1629,7 +1655,7 @@ def corpkit_gui():
         opp.set('None')
         data2_pick.set('Self')
         # restore button
-        Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+        
 
     def df2_callback(*args):
         try:
@@ -1901,7 +1927,9 @@ def corpkit_gui():
     all_text_widgets.append(msn)
 
     # edit button
-    Button(tab2, text = 'Edit', command = lambda: do_editing()).grid(row = 20, column = 1, sticky = E)
+    edbut = Button(tab2, text = 'Edit')
+    edbut.config(command = lambda: runner(edbut, do_editing), state = DISABLED)
+    edbut.grid(row = 20, column = 1, sticky = E)
 
     # show spreadsheets
     resultname = StringVar()
@@ -1947,7 +1975,7 @@ def corpkit_gui():
 
     def do_plotting():
         """when you press plot"""
-        Button(tab3, text = 'Plot', command = ignore).grid(row = 17, column = 1, sticky = E)
+        plotbut.config(state = DISABLED)
         # junk for showing the plot in tkinter
         for i in oldplotframe:
             i.destroy()
@@ -1962,19 +1990,19 @@ def corpkit_gui():
 
         if data_to_plot.get() == 'None':
             timestring('No data selected to plot.')
-            Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+            
             return
 
         if plotbranch.get() == 'results':
             if not 'results' in all_interrogations[data_to_plot.get()]._asdict().keys():
                 timestring('No results branch to plot.')
-                Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+                
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].results
         elif plotbranch.get() == 'totals':
             if not 'totals' in all_interrogations[data_to_plot.get()]._asdict().keys():
                 timestring('No totals branch to plot.')
-                Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+                
                 return
             what_to_plot = all_interrogations[data_to_plot.get()].totals
         
@@ -2066,7 +2094,7 @@ def corpkit_gui():
                 timestring('No TeX distribution found. Disabling TeX option.')
                 texuse.set(0)
                 tbut.config(state = DISABLED)
-            Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+            
             return
 
         timestring('%s plotted.' % plotnametext.get())
@@ -2088,7 +2116,7 @@ def corpkit_gui():
                 timestring('No TeX distribution found. Disabling TeX option.')
                 texuse.set(0)
                 tbut.config(state = DISABLED)
-            Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+            
             return
             
         canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 20, padx = (40, 20), columnspan = 3)
@@ -2101,7 +2129,7 @@ def corpkit_gui():
         
         thefig.append(f.gcf())
         savedplot.set('Saved image: ')
-        Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+        
 
     images = {'the_current_fig': -1}
 
@@ -2207,27 +2235,25 @@ def corpkit_gui():
     nbut = Button(tab3, text='Next', command=lambda: move(direction = 'forward'))
     nbut.grid(row = 23, column = 1, sticky = E)
     
-    def save_current_image():
-        import os
-        # figre out filename
-        filename = namer(plotnametext.get(), type_of_data = 'image') + '.png'
-        import sys
-        defaultextension = '.png' if sys.platform == 'darwin' else ''
-        kwarg = {'defaultextension': defaultextension,
-                 #'filetypes': [('all files', '.*'), 
-                               #('png file', '.png')],
-                 'initialfile': filename}
-        imagedir = image_fullpath.get()
-        if imagedir:
-            kwarg['initialdir'] = imagedir
-
-        fo = tkFileDialog.asksaveasfilename(**kwarg)
-
-        if fo is None: # asksaveasfile return `None` if dialog closed with "cancel".
-            return
-
-        thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
-        timestring('%s saved to %s.' % (fo, image_fullpath.get()))
+    # not in use while using the toolbar instead...
+    #def save_current_image():
+    #    import os
+    #    # figre out filename
+    #    filename = namer(plotnametext.get(), type_of_data = 'image') + '.png'
+    #    import sys
+    #    defaultextension = '.png' if sys.platform == 'darwin' else ''
+    #    kwarg = {'defaultextension': defaultextension,
+    #             #'filetypes': [('all files', '.*'), 
+    #                           #('png file', '.png')],
+    #             'initialfile': filename}
+    #    imagedir = image_fullpath.get()
+    #    if imagedir:
+    #        kwarg['initialdir'] = imagedir
+    #    fo = tkFileDialog.asksaveasfilename(**kwarg)
+    #    if fo is None: # asksaveasfile return `None` if dialog closed with "cancel".
+    #        return
+    #    thefig[0].savefig(os.path.join(image_fullpath.get(), fo))
+    #    timestring('%s saved to %s.' % (fo, image_fullpath.get()))
 
     # title tab
     Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (35, 0))
@@ -2381,7 +2407,9 @@ def corpkit_gui():
     show_tot_menu.grid(row = 16, column = 1, sticky = E)
 
     # plot button
-    Button(tab3, text = 'Plot', command = lambda: do_plotting()).grid(row = 17, column = 1, sticky = E)
+    plotbut = Button(tab3, text = 'Plot')
+    plotbut.grid(row = 17, column = 1, sticky = E)
+    plotbut.config(command = lambda: runner(plotbut, do_plotting), state = DISABLED)
 
     ###################     ###################     ###################     ###################
     # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #
@@ -2466,8 +2494,7 @@ def corpkit_gui():
             timestring('Concordancing done: %d results.' % len(lines))
 
     def do_concordancing():
-        
-        Button(tab4, text = 'Run', command = ignore).grid(row = 3, column = 4, sticky = E)
+        concbut.config(state = DISABLED)
         for i in itemcoldict.keys():
             del itemcoldict[i]
         import os
@@ -2546,7 +2573,6 @@ def corpkit_gui():
             add_conc_lines_to_window(r, preserve_colour = False)
         global conc_saved
         conc_saved = False
-        Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
         
     def delete_conc_lines(*args):
            
@@ -2833,7 +2859,7 @@ def corpkit_gui():
     itemcoldict = {}
     colourdict = {1: '#fbb4ae',
                   2: '#b3cde3',
-                  3: 'white',
+                  3: '#D9DDDB',
                   4: '#decbe4',
                   5: '#fed9a6',
                   6: '#ffffcc',
@@ -3020,8 +3046,9 @@ def corpkit_gui():
     trs.grid(row = 3, column = 1, columnspan = 3, padx = (200, 0))
 
     # run button
-    Button(tab4, text = 'Run', command = lambda: do_concordancing()).grid(row = 3, column = 4, sticky = E)
-
+    concbut = Button(tab4, text = 'Run')
+    concbut.grid(row = 3, column = 4, sticky = E)
+    concbut.config(command = lambda: runner(concbut, do_concordancing), state = DISABLED)
 
     # edit conc lines
     Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0), sticky = E)
@@ -3180,7 +3207,7 @@ def corpkit_gui():
     def make_new_project():
         import os
         from corpkit import new_project
-        
+        reset_everything()
         name = tkSimpleDialog.askstring('New project', 'Choose a name for your project:')
         if not name:
             return
@@ -3201,8 +3228,9 @@ def corpkit_gui():
         corpora_fullpath.set(os.path.join(project_fullpath.get(), 'data'))
         exported_fullpath.set(os.path.join(project_fullpath.get(), 'exported'))
         log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
-
         addbut.config(state=NORMAL)
+
+        open_proj_basepath.set('Loaded: "%s"' % name)
         
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
         #load_project(path = os.path.join(fp, name))
@@ -3497,6 +3525,7 @@ def corpkit_gui():
         resultname.set('Results to edit:')
         editoname.set('Edited results:')
         savedplot.set('Saved images: ')
+        open_proj_basepath.set('Open project')
         # spreadsheets
         update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
         update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
@@ -3936,10 +3965,7 @@ def corpkit_gui():
         note.progvar.set(0)
         import os
         import re
-        
-
-        parsebut = Button(tab0, textvariable = parse_button_text, command=ignore, width = 33)
-        parsebut.grid(row = 6, column = 0, sticky=W)
+        parsebut.config(state = DISABLED)
         unparsed_corpus_path = corpus_fullpath.get()
 
         if speakseg.get():
@@ -3954,14 +3980,14 @@ def corpkit_gui():
                           "CoreNLP parser not found. Download/install it?")
             if downstall_nlp:
                 corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
-                stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, root = root)
+                stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, root = root, note = note)
                 extract_cnlp(cnlp_zipfile, root = root)
             else:
                 timestring('Cannot parse data without Stanford CoreNLP.')
                 return
         jdk = check_jdk()
         if jdk is False:
-            downstall_jdk = tkMessageBox.askyesno("You need Java JDK 1.8 to use CoreNLP.", "Hit 'yes' to open web browser at download link. Once installed, corpkit should resume automatically")
+            downstall_jdk = tkMessageBox.askyesno("Java JDK", "You need Java JDK 1.8 to use CoreNLP.\n\nHit 'yes' to open web browser at download link. Once installed, corpkit should resume automatically")
             if downstall_jdk:
                 import webbrowser
                 webbrowser.open_new('http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html')
@@ -3980,7 +4006,6 @@ def corpkit_gui():
         
         if filelist is False:
             # zero files...
-            
             timestring('Error: no text files found in "%s"' % unparsed_corpus_path)
             return
 
@@ -4010,8 +4035,6 @@ def corpkit_gui():
             charttype.set('bar')
         #basepath.set(os.path.basename(new_corpus_path))
         update_available_corpora()
-        parsebut = Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33)
-        parsebut.grid(row = 6, column = 0, sticky=W)
         timestring('Corpus parsed and ready to interrogate: "%s"' % os.path.basename(new_corpus_path))
 
     parse_button_text = StringVar()
@@ -4133,8 +4156,10 @@ def corpkit_gui():
     speakseg = IntVar()
     speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg, state = DISABLED)
     speakcheck_build.grid(column = 0, row = 5, sticky=W)
-    parsebut = Button(tab0, textvariable = parse_button_text, command=create_parsed_corpus, width = 33, state = DISABLED)
+    
+    parsebut = Button(tab0, textvariable = parse_button_text, width = 33, state = DISABLED)
     parsebut.grid(row = 6, column = 0, sticky=W)
+    parsebut.config(command=lambda: runner(parsebut, create_parsed_corpus))
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
     tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33, state = DISABLED)
     tokbut.grid(row = 7, column = 0, sticky=W)
@@ -4510,9 +4535,7 @@ def corpkit_gui():
                 return
             else:
                 apppath = apppath[0]
-                #timestring('Error finding corpkit path')
-                #return
-        # get the dir it's in
+ 
         appdir = os.path.dirname(apppath)
 
         # get new version
