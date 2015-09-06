@@ -73,11 +73,11 @@ def plotter(title,
         from time import localtime, strftime
         time = strftime("%H:%M:%S", localtime())
         sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
-        if sel.startswith('e') or sel.startswith('E'):
+        if sel.lower().startswith('e'):
             sys.exit(0)
         else:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: Interrogation resumed.\n' % time
+            print '%s: Plotting resumed.\n' % time
     signal.signal(signal.SIGINT, signal_handler)
 
     running_python_tex = check_pytex()
@@ -187,14 +187,29 @@ def plotter(title,
     if style not in styles:
         raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
 
+    if 'savepath' in kwargs.keys():
+        mpl.rcParams['savefig.directory'] = kwargs['savepath']
+        del kwargs['savepath']
+
+    mpl.rcParams['savefig.bbox'] = 'tight'
+
     # try to use tex
+    # TO DO:
+    # make some font kwargs here
+    # stop warning after switching back from tex
     using_tex = False
+    mpl.rcParams['font.family'] = 'sans-serif'
+    mpl.rcParams['text.latex.unicode'] = True
+    
     if tex == 'try' or tex is True:
         try:
             rc('text', usetex=True)
             rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
             using_tex = True
         except:
+            matplotlib.rc('font', family='sans-serif') 
+            matplotlib.rc('font', serif='Helvetica Neue') 
+            matplotlib.rc('text', usetex='false') 
             rc('text', usetex=False)
     else:
         rc('text', usetex=False)  

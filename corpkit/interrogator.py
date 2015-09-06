@@ -141,11 +141,18 @@ def interrogator(path,
     from time import localtime, strftime
     import pandas as pd
     from pandas import DataFrame, Series
+    import nltk
+    import os
+    npat = nltk.__file__
+    nltkpath = os.path.dirname(npat)
+    if nltkpath not in nltk.data.path:
+        nltk.data.path.append(nltkpath)
+
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
-
+    import corpkit
     from corpkit.tests import check_pytex, check_t_kinter
     from textprogressbar import TextProgressBar
     from other import tregex_engine
@@ -1236,7 +1243,7 @@ def interrogator(path,
     # check for valid query. so ugly.
     if using_tregex:
         if query:
-            query = tregex_engine(query = query, options = '-t', check_query = True, root = root)
+            query = tregex_engine(corpus = False, query = query, options = '-t', check_query = True, root = root)
             if query is False:
                 if root:
                     return 'Bad query'
