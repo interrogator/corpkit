@@ -807,7 +807,10 @@ def tregex_engine(corpus = False,
                 p.stdin.close()
         # exception handling for regex error
         except Exception, e:
-            res = str(e.output).split('\n')
+            try:
+                res = str(e.output).split('\n')
+            except:
+                raise e
 
         if check_query:
             # define error searches 
