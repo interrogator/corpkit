@@ -1602,14 +1602,15 @@ def corpkit_gui():
         # do editing
         r = editor(data1, **editor_args)
         
+        if type(r) == str:
+            if r == 'linregress':
+                return
         if not r:
             timestring('Editing caused an error.')
-            
             return
 
         if len(list(r.results.columns)) == 0:
             timestring('Editing removed all results.')
-            
             return
 
         # drop over 1000?
@@ -4497,7 +4498,7 @@ def corpkit_gui():
                 return
             os.startfile(newpath)
         else:
-            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
             if newpath.endswith('.py'):
                 opener = 'python'
             subprocess.Popen([opener, newpath])
@@ -4543,28 +4544,44 @@ def corpkit_gui():
         downloaded_dir, corpkittarfile = download_large_file(project_fullpath.get(), \
                                                               url, root = root, note = note, actually_download = False)
         
+        # make absolute paths
+        fulldd = os.path.join(os.getcwd(), downloaded_dir)
+        fulltf = os.path.join(os.getcwd(), corpkittarfile)
+
         timestring('Extracting update ...')
+        
         # get dir of tarfile
         new_corpkit_tardir = os.path.basename(corpkittarfile)
-        # untar, get new filename
+        
         # why not extract to actual dir?
-        untar(corpkittarfile, downloaded_dir)
+        untar(fulltf, downloaded_dir)
         
         timestring('Applying update ...')
+        
         # delete the tar
         #os.remove(corpkittarfile)
         # get whatever the new app is called
-        dd = os.path.join(os.getcwd(), downloaded_dir)
-        newappfname = [f for f in os.listdir(dd) if f.endswith(fext)][0]
+        newappfname = [f for f in os.listdir(fulldd) if f.endswith(fext)][0]
         # get the executable in the path
-
-        # remove this very app
-        if '.py.' not in apppath:
-            os.remove(apppath)
-        # move new version
-        os.rename(os.path.join(dd, newappfname), os.path.join(appdir, newappfname))
-        
-        restart(os.path.join(appdir, newappfname))
+        restart_now = tkMessageBox.askyesno("Restart",
+                          "Restart now?\n\nThis will delete the current version of corpkit.")
+        import shutil
+        if restart_now:
+            # remove this very app
+            if '.py' not in apppath:
+                shutil.rmtree(apppath)
+            # move new version
+            shutil.copytree(os.path.join(fulldd, newappfname), os.path.join(appdir, newappfname))
+            # delete donwnloaded file and dir
+            shutil.rmtree(fulldd)
+            restart(os.path.join(appdir, newappfname))
+        else:
+            try:
+                shutil.copytree(os.path.join(fulldd, newappfname), os.path.join(appdir, newappfname))
+            except OSError:
+                shutil.copytree(os.path.join(fulldd, newappfname), os.path.join(appdir, newappfname + '-new'))
+            timestring('New version in %s' % os.path.join(fulldd, newappfname + '-new'))
+            return
 
     def make_float_from_version(ver):
         """take a version string and turn it into a comparable float"""
@@ -4608,14 +4625,12 @@ def corpkit_gui():
         stver = re.search(reg, str(html)).group(1)
         vnum = make_float_from_version(stver)
         
-        #if vnum > ver:
-        if 2 == 2:
+        if vnum > ver:
             timestring('Update found: corpkit %s' % stver)
             download_update = tkMessageBox.askyesno("Update available",
                           "Update available: corpkit %s\n\n Download now?" % stver)
             if download_update:
                 update_corpkit(stver)
-                timestring('Automatic update failed.')
                 return
             else:
                 timestring('Update found: corpkit %s. Not downloaded.' % stver)
