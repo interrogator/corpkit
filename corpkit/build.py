@@ -440,8 +440,13 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
         os.makedirs(downloaded_dir)
     except OSError:
         if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(downloaded_dir):
-            return downloaded_dir, fullfile
-        pass
+            import zipfile
+            the_zip_file = zipfile.ZipFile(fullfile)
+            ret = the_zip_file.testzip()
+            if ret is None:
+                return downloaded_dir, fullfile
+            else:
+                os.remove(fullfile)
     
     if actually_download:
         u = urllib2.urlopen(url)
@@ -739,7 +744,11 @@ def make_no_id_corpus(pth, newpth):
     from corpkit.build import get_filepaths
     # define regex broadly enough to accept timestamps, locations if need be
     idregex = re.compile(r'(^.*?):\s+(.*$)')
-    shutil.copytree(pth, newpth)
+    try:
+        shutil.copytree(pth, newpth)
+    except OSError:
+        shutil.rmtree(newpth)
+        shutil.copytree(pth, newpth)
     files = get_filepaths(newpth)
     names = []
     for f in files:
@@ -804,7 +813,7 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         idttxt.close()
 
         # todo: do this with lxml
-        soup = BeautifulSoup(data)
+        soup = BeautifulSoup(data, "lxml")
         for s in soup.find_all('sentence'):
             # don't get corefs
             if s.parent.name == 'sentences':
