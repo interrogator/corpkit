@@ -3577,7 +3577,9 @@ def corpkit_gui():
         texuse.set(conmap("Visualise")['use tex'])
         x_axis_l.set(conmap("Visualise")['x axis title'])
         chart_cols.set(conmap("Visualise")['colour scheme'])
-        corpus_fullpath.set(conmap("Interrogate")['corpus path'])
+        rel_corpuspath = conmap("Interrogate")['corpus path']
+        corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
+        corpus_fullpath.set(corpa)
         spk = conmap("Interrogate")['speakers']
         corpora_speakers = parse_speakdict(spk)
         for i, v in corpora_speakers.items():
@@ -4421,7 +4423,8 @@ def corpkit_gui():
         cfgfile = open(os.path.join(project_fullpath.get(), 'settings.ini') ,'w')
         Config.add_section('Build')
         Config.add_section('Interrogate')
-        Config.set('Interrogate','Corpus path', corpus_fullpath.get())
+        relcorpuspath = corpus_fullpath.get().replace(project_fullpath.get(), '').lstrip('/')
+        Config.set('Interrogate','Corpus path', relcorpuspath)
         Config.set('Interrogate','Speakers', convert_speakdict_to_string(corpus_names_and_speakers))
         Config.set('Interrogate','dependency type', kind_of_dep.get())  
         Config.add_section('Edit')

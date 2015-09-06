@@ -791,26 +791,26 @@ def tregex_engine(corpus = False,
                 if '-filter' not in options:
                     tregex_command.append(corpus)
         # do query
-        try:
-            if type(options) != bool:
-                if not '-filter' in options:
-                    res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
-                else:
-                    p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                    p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
-                    res = p.communicate()[0].splitlines()
-                    p.stdin.close()
+        #try:
+        if type(options) != bool:
+            if not '-filter' in options:
+                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
             else:
                 p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
                 p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
                 res = p.communicate()[0].splitlines()
                 p.stdin.close()
+        else:
+            p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+            p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
+            res = p.communicate()[0].splitlines()
+            p.stdin.close()
         # exception handling for regex error
-        except Exception, e:
-            try:
-                res = str(e.output).split('\n')
-            except:
-                raise e
+        #except Exception, e:
+        #    try:
+        #        res = str(e.output).split('\n')
+        #    except:
+        #        raise e
 
         if check_query:
             # define error searches 

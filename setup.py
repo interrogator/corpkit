@@ -22,6 +22,7 @@ class install_with_nltk_extras(install):
                 import pip
                 pip.main(['install', package])
         install_with_pip('git+git://github.com/interrogator/corenlp-xml-lib.git')
+        install_with_pip('git+https://github.com/dmnfarrell/tkintertable.git')
 
 setup(name='corpkit',
       version='1.48',
