@@ -515,7 +515,7 @@ def editor(dataframe1,
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: sort type not available in this verion of corpkit.' % thetime
-            return
+            return False
         #from stats.stats import linregress
 
         entries = []
@@ -609,6 +609,9 @@ def editor(dataframe1,
         # this is really shitty now that i know how to sort, like in the above
         if keep_stats:
             df = do_stats(df)
+            if type(df) == bool:
+                if df is False:
+                    return False
         if sort_by == 'total':
             if df1_istotals:
                 df = df.T
@@ -637,6 +640,9 @@ def editor(dataframe1,
             
             if not keep_stats:
                 df = do_stats(df)
+                if type(df) == bool:
+                    if df is False:
+                        return False
 
             slopes = df.ix['slope']
             if sort_by == 'increase':
@@ -990,6 +996,9 @@ def editor(dataframe1,
     # resort data
     if sort_by:
         df = resort(df, keep_stats = keep_stats, sort_by = sort_by)
+        if type(df) == bool:
+            if df is False:
+                return 'linregress'
 
     if keep_top:
         if not just_totals:
