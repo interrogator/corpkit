@@ -11,16 +11,33 @@
 
 <!-- MarkdownTOC -->
 
-- What's in here?
-- Installation
-- Unpacking the orientation data
-- Quickstart
-- More detailed examples
-- More information
-- Cite
+- [What's in here?][whats-in-here]
+  - [Key features][key-features]
+    - [`interrogator()`][interrogator]
+    - [`editor()`][editor]
+    - [`plotter()`][plotter]
+    - [Other stuff][other-stuff]
+- [Installation][installation]
+  - [By downloading the repository][by-downloading-the-repository]
+  - [By cloning the repository][by-cloning-the-repository]
+  - [Via `pip`][via-pip]
+- [Unpacking the orientation data][unpacking-the-orientation-data]
+- [Quickstart][quickstart]
+- [More detailed examples][more-detailed-examples]
+  - [Concordancing][concordancing]
+  - [Systemic functional stuff][systemic-functional-stuff]
+  - [Keywording][keywording]
+    - [Plotting keywords][plotting-keywords]
+    - [Traditional reference corpora][traditional-reference-corpora]
+  - [Parallel processing][parallel-processing]
+  - [More complex queries and plots][more-complex-queries-and-plots]
+  - [Visualisation options][visualisation-options]
+- [More information][more-information]
+- [Cite][cite]
 
 <!-- /MarkdownTOC -->
 
+<a name="whats-in-here"></a>
 ## What's in here?
 
 Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:
@@ -39,8 +56,10 @@ The idea is to run the tools from an [IPython Notebook](http://ipython.org/noteb
 
 The most comprehensive use of `corpkit` to date has been for an investigation of the word *risk* in The New York Times, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of `corpkit` can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
+<a name="key-features"></a>
 ### Key features
 
+<a name="interrogator"></a>
 #### `interrogator()`
 
 
@@ -54,6 +73,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
+<a name="editor"></a>
 #### `editor()`
 
 
@@ -69,6 +89,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
+<a name="plotter"></a>
 #### `plotter()` 
 
 
@@ -83,6 +104,7 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
 * Save images to file, as `.pdf` or `.png`
 
+<a name="other-stuff"></a>
 #### Other stuff
 
 
@@ -107,10 +129,12 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 
 Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.
 
+<a name="installation"></a>
 ## Installation
 
 You can get `corpkit` running by downloading or cloning this repository, or via `pip`.
 
+<a name="by-downloading-the-repository"></a>
 ### By downloading the repository
 
 Hit 'Download ZIP' and unzip the file. Then `cd` into the newly created directory and install:
@@ -121,6 +145,7 @@ cd corpkit-master
 python setup.py install
 ```
 
+<a name="by-cloning-the-repository"></a>
 ### By cloning the repository
 
 Clone the repo, ``cd`` into it and run the setup:
@@ -132,6 +157,7 @@ cd corpkit
 python setup.py install
 ```
 
+<a name="via-pip"></a>
 ### Via `pip`
 
 ```shell
@@ -154,6 +180,7 @@ The `pip` installation of NLTK does not come with the data needed for NLTK's tok
 >>> nltk.download('punkt')
 ```
 
+<a name="unpacking-the-orientation-data"></a>
 ## Unpacking the orientation data
 
 If you installed by downloading or cloning this repository, you'll have the orientation project installed. To use it, `cd` into the orientation project and unzip the data files:
@@ -164,6 +191,7 @@ cd orientation
 gzip -dc data/nyt.tar.gz | tar -xf - -C data
 ```
 
+<a name="quickstart"></a>
 ## Quickstart
 
 The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, and executing the first few cells:
@@ -190,6 +218,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md2.png" />
 <br><br>
 
+<a name="more-detailed-examples"></a>
 ## More detailed examples
 
 `interroplot()` is just a demo function that does three things in order:
@@ -222,6 +251,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
 <br><br>
 
+<a name="concordancing"></a>
 ### Concordancing
 
 You can use Tregex queries to concordance things, too:
@@ -251,6 +281,7 @@ Output (a `Pandas DataFrame`):
 
 You can use this output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`.
 
+<a name="systemic-functional-stuff"></a>
 ### Systemic functional stuff
 
 Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, `pattern.en` will get all their inflections automatically.
@@ -370,6 +401,7 @@ Output:
 
 Woohoo, a decreasing gender divide! 
 
+<a name="keywording"></a>
 ### Keywording
 
 As I see it, there are two main problems with keywording, as typically performed in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
@@ -471,6 +503,7 @@ Output:
 Name: terror, dtype: float64
 ```
 
+<a name="plotting-keywords"></a>
 #### Plotting keywords
 
 Naturally, we can use `plotter()` for our keywords too:
@@ -488,6 +521,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-emphnyt.png" />
 <br><br>
 
+<a name="traditional-reference-corpora"></a>
 #### Traditional reference corpora
 
 If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `editor()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
@@ -525,6 +559,7 @@ Finally, for the record, you could also use `interrogator()` or `keywords()` to 
 >>> keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
 ```
 
+<a name="parallel-processing"></a>
 ### Parallel processing
 
 `interrogator()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
@@ -551,6 +586,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" />
 <br><br>
 
+<a name="more-complex-queries-and-plots"></a>
 ### More complex queries and plots
 
 Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:
@@ -628,6 +664,7 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
 <br><br>
 
+<a name="visualisation-options"></a>
 ### Visualisation options
 
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
@@ -713,6 +750,7 @@ Output:
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png"  height="600" width="500"/>
 </p>
 
+<a name="more-information"></a>
 ## More information
 
 Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
@@ -721,6 +759,7 @@ Some things are likely lacking documentation right now. For now, the more comple
 2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk) (most `corpkit` use)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
+<a name="cite"></a>
 ## Cite
 
 If you want to cite `corpkit`, please use:
