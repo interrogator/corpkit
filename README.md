@@ -11,29 +11,29 @@
 
 <!-- MarkdownTOC -->
 
-- [What's in here?][whats-in-here]
-  - [Key features][key-features]
-    - [`interrogator()`][interrogator]
-    - [`editor()`][editor]
-    - [`plotter()`][plotter]
-    - [Other stuff][other-stuff]
-- [Installation][installation]
-  - [By downloading the repository][by-downloading-the-repository]
-  - [By cloning the repository][by-cloning-the-repository]
-  - [Via `pip`][via-pip]
-- [Unpacking the orientation data][unpacking-the-orientation-data]
-- [Quickstart][quickstart]
-- [More detailed examples][more-detailed-examples]
-  - [Concordancing][concordancing]
-  - [Systemic functional stuff][systemic-functional-stuff]
-  - [Keywording][keywording]
-    - [Plotting keywords][plotting-keywords]
-    - [Traditional reference corpora][traditional-reference-corpora]
-  - [Parallel processing][parallel-processing]
-  - [More complex queries and plots][more-complex-queries-and-plots]
-  - [Visualisation options][visualisation-options]
-- [More information][more-information]
-- [Cite][cite]
+- [What's in here?](#whats-in-here)
+  - [Key features](#key-features)
+    - [`interrogator()`](#interrogator)
+    - [`editor()`](#editor)
+    - [`plotter()`](#plotter)
+    - [Other stuff](#other-stuff)
+- [Installation](#installation)
+  - [By downloading the repository](#by-downloading-the-repository)
+  - [By cloning the repository](#by-cloning-the-repository)
+  - [Via `pip`](#via-pip)
+- [Unpacking the orientation data](#unpacking-the-orientation-data)
+- [Quickstart](#quickstart)
+- [More detailed examples](#more-detailed-examples)
+  - [Concordancing](#concordancing)
+  - [Systemic functional stuff](#systemic-functional-stuff)
+  - [Keywording](#keywording)
+    - [Plotting keywords](#plotting-keywords)
+    - [Traditional reference corpora](#traditional-reference-corpora)
+  - [Parallel processing](#parallel-processing)
+  - [More complex queries and plots](#more-complex-queries-and-plots)
+  - [Visualisation options](#visualisation-options)
+- [More information](#more-information)
+- [Cite](#cite)
 
 <!-- /MarkdownTOC -->
 
