@@ -7,27 +7,17 @@
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Recently, I've been working on a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in `./corpkit-v.v.tar.gz`. Documentation for the GUI is emerging [here](http://interrogator.github.io/corpkit/).**
+> **Recently, I've been working on a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-v-xx.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
 <!-- MarkdownTOC -->
 
-- [What's in here?](#whats-in-here)
-  - [Key features](#key-features)
-- [Installation](#installation)
-  - [By downloading the repository](#by-downloading-the-repository)
-  - [By cloning the repository](#by-cloning-the-repository)
-  - [Via `pip`](#via-pip)
-- [Unpacking the orientation data](#unpacking-the-orientation-data)
-- [Quickstart](#quickstart)
-- [More detailed examples](#more-detailed-examples)
-  - [Concordancing](#concordancing)
-  - [Systemic functional stuff](#systemic-functional-stuff)
-  - [Keywording](#keywording)
-  - [Parallel processing](#parallel-processing)
-  - [More complex queries and plots](#more-complex-queries-and-plots)
-  - [Visualisation options](#visualisation-options)
-- [More information](#more-information)
-- [Cite](#cite)
+- What's in here?
+- Installation
+- Unpacking the orientation data
+- Quickstart
+- More detailed examples
+- More information
+- Cite
 
 <!-- /MarkdownTOC -->
 
