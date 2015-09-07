@@ -142,7 +142,7 @@ So, to give some examples of output based on the sentence above:
 | <i>Get distance from root</i> | `^to$` |   |   | <b>2</b>  |
 | <i>Get "role:dependent"</i>  | `\bfollow.*`  |   |  | <b>`to`, `lead`</b>  |
 | <i>Get "role:dependent"</i>  | `\bfollow.*`  |   | `^N.*`  | <b>`lead`</b>  |
-| <i>Get "role:dependent"</i>  | `^tr`  |   | `MD`  | `aux:would`  |
+| <i>Get "role:dependent"</i>  | `^tr`  |   | `MD`  | <b>`aux:would`</b>  |
 | <i>Get "role:governor"</i> | <code>^(would&#124;will&#124;wo)</code> |    |    |  <b>`aux:try` </b>  |
 | <i>Get "role:governor"</i> | `any` | <code>(dobj&#124;nsubj)</code>  |   |  <b>`try`, `follow`</b>   |
 
