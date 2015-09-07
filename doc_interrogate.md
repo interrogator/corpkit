@@ -137,7 +137,6 @@ So, to give some examples of output based on the sentence above:
 | <i>Get role of match</i>  | `lead\b`  |   |   | <b>`dobj`</b>  |
 | <i>Get role of match</i>  | `WORDLISTS:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
 | <i>Get tokens by role</i> | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
-| <i>Get tokens by role | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
 | <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   |   | <b>`I`, `lead`  |
 | <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   | `^P`  | <b>`I`</b> |
 | <i>Get distance from root</i> | `^to$` |   |   | <b>2</b>  |
