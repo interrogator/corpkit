@@ -119,11 +119,35 @@ Below is a basic explanation of what each kind of query matches, and what it out
 | Get "role:dependent", matching governor  |  Governor  | role:dependent      |
 | Get "role:governor", matching dependent  |  Dependent | role:governor       |
 
+
 #### Dependency options
 
 Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
 
 For the `role:governor` and `role:dependent` search options, if you use a function filter, the `role:` portion of the output is not printed.
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png"  height="60" width="400"/>
+</p><br>
+
+So, to give some examples of output based on the sentence above:
+
+| Option  | Query  | Function filter  | POS filter  | Output |
+|---|---:|---:|---:|---:|
+| <i>Get role of match</i>  | `lead\b`  |   |   | <b>`dobj`</b>  |
+| <i>Get role of match</i>  | `WORDLISTS:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <i>Get tokens by role</i> | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
+| <i>Get tokens by role | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
+| <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   |   | <b>`I`, `lead`  |
+| <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   | `^P`  | <b>`I`</b> |
+| <i>Get distance from root</i> | `^to$` |   |   | <b>2</b>  |
+| <i>Get "role:dependent"</i>  | `\bfollow.*`  |   |  | <b>`to`, `lead`</b>  |
+| <i>Get "role:dependent"</i>  | `\bfollow.*`  |   | `^N.*`  | <b>`lead`</b>  |
+| <i>Get "role:dependent"</i>  | `^tr`  |   | `MD`  | `aux:would`  |
+| <i>Get "role:governor"</i> | <code>^(would&#124;will&#124;wo)</code> |    |    |  <b>`aux:try` </b>  |
+| <i>Get "role:governor"</i> | `any` | <code>(dobj&#124;nsubj)</code>  |   |  <b>`try`, `follow`</b>   |
+
+
 
 ### Plain text
 
