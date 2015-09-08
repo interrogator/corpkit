@@ -102,7 +102,7 @@ class Notebook(Frame):
         self.progbar.grid(sticky = E)
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
-        #sys.stderr = self.redir
+        sys.stderr = self.redir
 
         #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
@@ -252,6 +252,7 @@ def corpkit_gui():
     sentdict = {}
     boxes = []
     buildbits = {}
+    most_recent_projects = []
 
     subc_sel_vals_build = []
 
@@ -643,7 +644,7 @@ def corpkit_gui():
         """make saved items in listbox have colour background"""
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
         if lists:
-            colour3 = '#b3cde3'
+            colour3 = '#decbe4'
         for index, item in enumerate(all_items):
             if not lists:
                 issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
@@ -691,6 +692,7 @@ def corpkit_gui():
             args[0].widget.tag_add("sel","1.0","end")
 
     def update_available_corpora():
+        """updates corpora in project, and returns a list of them"""
         import os
         fp = corpora_fullpath.get()
         all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
@@ -699,6 +701,7 @@ def corpkit_gui():
             om['menu'].delete(0, 'end')
             for corp in all_corpora:
                 om['menu'].add_command(label=corp, command=Tkinter._setit(current_corpus, corp))
+        return all_corpora
 
     def refresh():
         """refreshes the list of dataframes in the editor and plotter panes"""
@@ -2871,6 +2874,26 @@ def corpkit_gui():
         lst = get_both_spellings(lst)
         if pos == 'v':
             lst = add_verb_inflections(lst)
+        if pos == 'n':
+            from corpkit.inflect import pluralize
+            expanded = []
+            for w in lst:
+                expanded.append(w)
+                pl = pluralize(w)
+                if pl != w:
+                    expanded.append(pl)
+        if pos == 'a':
+            from corpkit.inflect import grade
+            expanded = []
+            for w in lst:
+                expanded.append(w)
+                comp = grade(w, suffix = "er")
+                if comp != w:
+                    expanded.append(comp)
+                supe = grade(w, suffix = "est")
+                if supe != w:
+                    expanded.append(supe)
+            lst = sorted(set(expanded))
         # delete widget text, reinsrt all
         tb.delete(1.0, END)
         for w in lst:
@@ -2905,7 +2928,7 @@ def corpkit_gui():
         global tb
         lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         global schemename
-        if schemename.get() == '<Enter a name>':
+        if schemename.get() == 'List name':
             timestring('wordlist needs a name.')
             return
         specname = ''.join([i for i in schemename.get().upper() if i.isalpha() or i == '_'])
@@ -2915,7 +2938,7 @@ def corpkit_gui():
         custom_special_dict[specname] = lst
         global cust_spec
         cust_spec.delete(0, END)
-        for k, v in custom_special_dict.items():
+        for k, v in sorted(custom_special_dict.items()):
             cust_spec.insert(END, k)
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
         timestring('LIST:%s stored to custom wordlists.' % specname)
@@ -2931,7 +2954,7 @@ def corpkit_gui():
         schemename = StringVar()
         schemename.set('<Enter a name>')
         scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER)
-        scheme_name_field.grid(column = 0, row = 4, sticky = W)
+        scheme_name_field.grid(column = 0, row = 5, sticky = W)
         global tb
         custom_words = Frame(popup, width = 9, height = 40)
         custom_words.grid(row = 1, column = 0, padx = 5)
@@ -2952,11 +2975,12 @@ def corpkit_gui():
         tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
         tmp.grid(row = 2, column = 0, sticky = W)
         tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17)
-        tmp.grid(row = 3, column = 0, sticky = W)
-        tmp.config(state = DISABLED)        
+        tmp.grid(row = 3, column = 0, sticky = W)  
+        tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17)
+        tmp.grid(row = 4, column = 0, sticky = W)      
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
-        savebut.grid(row = 5, column = 0, sticky = W)
+        savebut.grid(row = 6, column = 0, sticky = W)
         Label(popup, text = 'Previous wordlists', font = ("Helvetica", 13, "bold")).grid(column = 1, row = 0, padx = 15)
         other_custom_queries = Frame(popup, width = 9, height = 30)
         other_custom_queries.grid(row = 1, column = 1, padx = 15)
@@ -2968,71 +2992,97 @@ def corpkit_gui():
         pwlscrbar.config(command=cust_spec.yview)
         cust_spec.pack()
         cust_spec.delete(0, END)
-        for k, v in custom_special_dict.items():
+        for k, v in sorted(custom_special_dict.items()):
             cust_spec.insert(END, k)
 
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
 
         def remove_this_custom_query():
             global cust_spec
-            index = cust_spec.curselection()
-            name = cust_spec.get(index)
-            del custom_special_dict[name]
-            cust_spec.delete(0, END)
-            for k, v in custom_special_dict.items():
-                cust_spec.insert(END, k)
-            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
-            timestring('%s forgotten' % name)
+            indexes = cust_spec.curselection()
+            for index in indexes:
+                name = cust_spec.get(index)
+                del custom_special_dict[name]
+                cust_spec.delete(0, END)
+                for k, v in sorted(custom_special_dict.items()):
+                    cust_spec.insert(END, k)
+                color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            if len(indexes) == 1:
+                timestring('%s forgotten.' % name)
+            else:
+                timestring('%d lists forgotten.' % len(indexes))
 
         def delete_this_custom_query():
             global cust_spec
-            index = cust_spec.curselection()
-            name = cust_spec.get(index)
-            if name in predict.keys():
-                timestring("%s can't be permanently deleted." % name)
-                return
-            del custom_special_dict[name]
-            try:
+            indexes = cust_spec.curselection()
+            for index in indexes:
+                name = cust_spec.get(index)
+                if name in predict.keys():
+                    timestring("%s can't be permanently deleted." % name)
+                    return
                 del custom_special_dict[name]
-            except:
-                pass
+                try:
+                    del custom_special_dict[name]
+                except:
+                    pass
+            
             dump_custom_list_json()
-
             cust_spec.delete(0, END)
-            for k, v in custom_special_dict.items():
+            for k, v in sorted(custom_special_dict.items()):
                 cust_spec.insert(END, k)
             color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
-            timestring('%s permanently deleted' % name)
-
+            
+            if len(indexes) == 1:
+                timestring('%s permanently deleted' % name)
+            else:
+                timestring('%d lists permanently deleted' % len(indexes))
 
         def show_this_custom_query(*args):
             global cust_spec
             index = cust_spec.curselection()
+            if len(index) > 1:
+                timestring("Can only show one list at a time.")
+                return
             name = cust_spec.get(index)
             tb.delete(1.0, END)
             for i in custom_special_dict[name]:
                 tb.insert(END, i + '\n')
             schemename.set(name)
 
+        def merge_this_custom_query(*args):
+            global cust_spec
+            indexes = cust_spec.curselection()
+            names = [cust_spec.get(i) for i in indexes]
+            tb.delete(1.0, END)
+            for name in names:
+                for i in custom_special_dict[name]:
+                    tb.insert(END, i + '\n')
+            schemename.set('Merged')
+
         def add_custom_query_to_json():
             global cust_spec
-            index = cust_spec.curselection()
-            name = cust_spec.get(index)
-            saved_special_dict[name] = custom_special_dict[name]
+            indexes = cust_spec.curselection()
+            for index in indexes:
+                name = cust_spec.get(index)
+                saved_special_dict[name] = custom_special_dict[name]
             dump_custom_list_json()
             color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
-            timestring('%s saved to custom_wordlists.txt' % name)            
+            if len(indexes) == 1:
+                timestring('%s saved to file.' % name)
+            else:
+                timestring('%d lists saved to file.' % len(indexes))          
         
         Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2, sticky = E)
-        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 3, sticky = E)
-        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 4, sticky = E)
-        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E)
+        Button(popup, text = 'Merge', command = merge_this_custom_query, width = 17).grid(column = 1, row = 3, sticky = E)
+        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 4, sticky = E)
+        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E)
+        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E)
 
         def quit_listing(*args):
             popup.destroy()
 
         stopbut = Button(popup, text = 'Done', command=quit_listing)
-        stopbut.grid(column = 0, columnspan = 2, row = 6, pady = 7)
+        stopbut.grid(column = 0, columnspan = 2, row = 7, pady = 7)
 
     # a place for the toplevel entry info
     entryboxes = OrderedDict()
@@ -3073,7 +3123,7 @@ def corpkit_gui():
             all_text_widgets.append(tmp)
             if index == 0:
                 tmp.focus_set()
-            tmp.grid(row = index + 1, column = 1)
+            tmp.grid(row = index + 1, column = 1, padx = 10)
 
 
         toplevel.bind("<Return>", quit_coding)
@@ -3470,6 +3520,8 @@ def corpkit_gui():
         log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
         addbut.config(state=NORMAL)
 
+        
+
         open_proj_basepath.set('Loaded: "%s"' % name)
         save_config()
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
@@ -3507,6 +3559,16 @@ def corpkit_gui():
                         all_conc[name] = loaded
         refresh()
     
+    def recentchange(*args):
+        if recent_project.get() != '':
+            project_fullpath.set(recent_project.get())            
+            load_project(path = project_fullpath.get())
+
+    def projchange(*args):
+        if project_fullpath.get() != '' and project_fullpath.get() not in most_recent_projects:
+            most_recent_projects.append(project_fullpath.get())
+            save_tool_prefs(printout = False)
+
     # corpus path setter
     savedinterro_fullpath = StringVar()
     savedinterro_fullpath.set('')
@@ -3514,6 +3576,10 @@ def corpkit_gui():
     data_basepath.set('Select data directory')
     project_fullpath = StringVar()
     project_fullpath.set('')
+    project_fullpath.trace("w", projchange)
+    recent_project = StringVar()
+    recent_project.set('')
+    recent_project.trace("w", recentchange)
     conc_fullpath = StringVar()
     conc_fullpath.set('')
     exported_fullpath = StringVar()
@@ -3900,7 +3966,7 @@ def corpkit_gui():
             load_config()
 
         os.chdir(fp)
-        update_available_corpora()
+        list_of_corpora = update_available_corpora()
         addbut.config(state=NORMAL)
         
         get_saved_results()
@@ -3911,33 +3977,35 @@ def corpkit_gui():
         # reset tool:
         root.title("corpkit: %s" % os.path.basename(fp))
 
-        if corpus_fullpath.get() == '':
+        #if corpus_fullpath.get() == '':
             # check if there are already (parsed) corpora
-            allcorp = [d for d in os.listdir(corpora_fullpath.get()) if os.path.isdir(os.path.join(corpora_fullpath.get(), d)) and '/' not in d]
-            parsed_corp = [d for d in os.listdir(corpora_fullpath.get()) if d.endswith('-parsed') and '/' not in d]
-            # select 
-            first = False
-            if len(parsed_corp) > 0:
-                first = parsed_corp[0]
-            else:
-                if len(allcorp) > 0:
-                    first = allcorp[0]
-            if first:
-                corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
-                current_corpus.set(first)
-            else:
-                corpus_fullpath.set('')
-                # no corpora, so go to build...
-                note.focus_on(tab0)
-        else:
-            current_corpus.set(os.path.basename(corpus_fullpath.get()))
         
+        parsed_corp = [d for d in list_of_corpora if d.endswith('-parsed')]
+        # select 
+        first = False
+        if len(parsed_corp) > 0:
+            first = parsed_corp[0]
+        else:
+            if len(list_of_corpora) > 0:
+                first = list_of_corpora[0]
+            else:
+                first = False
+        if first:
+            corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
+            current_corpus.set(first)
+        else:
+            corpus_fullpath.set('')
+            # no corpora, so go to build...
+            note.focus_on(tab0)
+        #else:
+        #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
+        
+        corpus_name = os.path.basename(corpus_fullpath.get())
+
         if corpus_fullpath.get() != '':
             subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
         else:
-            subdrs = []
-
-        corpus_name = os.path.basename(corpus_fullpath.get())
+            subdrs = []       
 
         lab.set('Concordancing: %s' % corpus_name)
         pick_subcorpora['menu'].delete(0, 'end')
@@ -4700,7 +4768,7 @@ def corpkit_gui():
                 resouce_path = appdir
         return os.path.join(resource_path, 'tool_settings.ini')
 
-    def save_tool_prefs():
+    def save_tool_prefs(printout = True):
         """save any preferences to tool preferences"""
         import ConfigParser
         import os
@@ -4710,12 +4778,15 @@ def corpkit_gui():
             timestring('No settings file found.')
             return
 
+        Config.add_section('Projects')
+        Config.set('Projects','most recent', ';'.join(most_recent_projects[-5:]))
         Config.add_section('CoreNLP')
         Config.set('CoreNLP','Parser path', corenlppath.get())
         Config.add_section('Appearance')
         cfgfile = open(settingsfile ,'w')
         Config.write(cfgfile)
-        timestring('Tool preferences saved.')
+        if printout:
+            timestring('Tool preferences saved.')
 
     def load_tool_prefs():
         """load preferences"""
@@ -4731,6 +4802,9 @@ def corpkit_gui():
         Config = ConfigParser.ConfigParser()
         Config.read(settingsfile)
         parspath = conmap(Config, "CoreNLP")['parser path']
+        mostrec = conmap(Config, "Projects")['most recent'].split(';')
+        for i in mostrec:
+            most_recent_projects.append(i)
         if parspath == 'default':
             corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
         else:
@@ -4973,6 +5047,17 @@ def corpkit_gui():
     def config_menu(*args):
         import os
         fp = corpora_fullpath.get()
+        recentmenu.delete(0, END)
+        if len(most_recent_projects) == 0:
+            filemenu.entryconfig("Open recent project", state="disabled")
+        if len(most_recent_projects) == 1 and most_recent_projects[0] == '':
+            filemenu.entryconfig("Open recent project", state="disabled")
+        else:
+            filemenu.entryconfig("Open recent project", state="normal")   
+            for c in list(set(most_recent_projects[::-1][:5])):
+                if c:
+                    lab = os.path.join(os.path.basename(os.path.dirname(c)), os.path.basename(c))
+                    recentmenu.add_radiobutton(label=lab, variable = recent_project, value = c)
         if os.path.isdir(fp):
             all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
             if len(all_corpora) > 0:
@@ -4995,6 +5080,8 @@ def corpkit_gui():
     
     menubar = Menu(root)
     selectmenu = Menu(root)
+    recentmenu = Menu(root)
+
     if sys.platform == 'darwin':
         filemenu = Menu(menubar, tearoff=0, name='apple', postcommand=config_menu)
     else:
@@ -5002,6 +5089,7 @@ def corpkit_gui():
 
     filemenu.add_command(label="New project", command=make_new_project)
     filemenu.add_command(label="Open project", command=load_project)
+    filemenu.add_cascade(label="Open recent project", menu=recentmenu)
     filemenu.add_cascade(label="Select corpus", menu=selectmenu)
 
     filemenu.add_separator()
