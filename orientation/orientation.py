@@ -58,8 +58,7 @@ nltk.download('wordnet')
 # <codecell>
 import corpkit
 import pandas as pd
-from corpkit import (interrogator, editor, plotter, quickview, multiquery,
-                    conc, keywords, colls, save_result, load_result, new_project)
+from corpkit import interrogator, editor, plotter, quickview
 # show figures in browser
 % matplotlib inline
 
@@ -106,7 +105,7 @@ pd.set_option('expand_frame_repr', False)
 # 1. **path to corpus**
 #
 # 2. Tregex **options**:
-#   * **'t/w/words'**: return only words
+#   * **'w/words'**: return only words
 #   * **'c/count'**: return a count of matches
 #   * **'p/pos'**: return only the tag
 #   * **'b/both'**: return tag and word together
@@ -125,13 +124,13 @@ allwords = interrogator(annual_trees, 'count', 'any')
 
 # <codecell>
 # from the allwords results, print the totals
-print allwords.totals
+allwords.totals
 
 # <markdowncell>
 # If you want to see the query and options that created the results, you can use:
 
 # <codecell>
-print allwords.query
+allwords.query
 
 # <markdowncell>
 # ### Plotting results

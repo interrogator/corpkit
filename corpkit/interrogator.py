@@ -143,10 +143,19 @@ def interrogator(path,
     from pandas import DataFrame, Series
     import nltk
     import os
+
     npat = nltk.__file__
     nltkpath = os.path.dirname(npat)
     if nltkpath not in nltk.data.path:
         nltk.data.path.append(nltkpath)
+        # /Users/daniel/Work/corpkit/dist/corpkit-gui.app/Contents/Resources/lib/python2.7/site-packages.zip/nltk
+        if 'note' in kwargs.keys():
+            path_within_gui = os.path.join(nltkpath.split('/lib/python2.7')[0], 'nltk_data')
+            if path_within_gui not in nltk.data.path:
+                nltk.data.path.append(path_within_gui)
+
+    # very temporary!
+    nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
 
     try:
         from IPython.display import display, clear_output

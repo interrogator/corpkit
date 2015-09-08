@@ -22,10 +22,10 @@ class install_with_nltk_extras(install):
                 import pip
                 pip.main(['install', package])
         install_with_pip('git+git://github.com/interrogator/corenlp-xml-lib.git')
-        install_with_pip('git+https://github.com/dmnfarrell/tkintertable.git')
+        install_with_pip('git+git://github.com/interrogator/tkintertable.git')
 
 setup(name='corpkit',
-      version='1.57',
+      version='1.58',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
@@ -42,6 +42,6 @@ setup(name='corpkit',
                         "mpld3 >= 0.2", 
                         "beautifulsoup4>=4.3.2",
                         "lxml>=3.4.4",
-                        "PIL>=1.1.7",
-                        "tkintertable>=1.2"],
+                        "PIL>=1.1.7"],
+                        #"tkintertable>=1.2"],
       zip_safe = False)
