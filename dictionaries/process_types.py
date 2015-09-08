@@ -3,13 +3,128 @@
 #   dictionaries: process type wordlists
 #   Author: Daniel McDonald
 
-# This code used to make a regular expression to match the words
-# That's been commented out. Now, you get a word list. This can still be passed
-# to interrogator(), however, which will make the regex. 
+# make regular expressions and lists of inflected words from word lists
 
-def process_types(regex = False):
+def load_verb_data():
+    """load the verb lexicon"""
+
+    def resource_path(relative):
+        import os
+        return os.path.join(os.environ.get("_MEIPASS2", os.path.abspath(".")),relative)
+    
+    import pickle
+    try:
+        lexemes = pickle.load(open(resource_path('eng_verb_lexicon.p'), 'rb'))
+    except:
+        import os
+        import corpkit
+        corpath = os.path.dirname(corpkit.__file__)
+        baspat = os.path.dirname(corpath)
+        dicpath = os.path.join(baspat, 'dictionaries')
+        lexemes = pickle.load(open(os.path.join(dicpath, 'eng_verb_lexicon.p'), 'rb'))
+    return lexemes
+
+def find_lexeme(verb):
+    """ For a regular verb (base form), returns the forms using a rule-based approach.
+    
+    taken from pattern.en, because it wouldn't go into py2app properly
+    """
+    vowels = ['a', 'e', 'i', 'o', 'u']
+    v = verb.lower()
+    if len(v) > 1 and v.endswith("e") and v[-2] not in vowels:
+        # Verbs ending in a consonant followed by "e": dance, save, devote, evolve.
+        return [v, v, v, v+"s", v, v[:-1]+"ing"] + [v+"d"]*6
+    if len(v) > 1 and v.endswith("y") and v[-2] not in vowels:
+        # Verbs ending in a consonant followed by "y": comply, copy, magnify.
+        return [v, v, v, v[:-1]+"ies", v, v+"ing"] + [v[:-1]+"ied"]*6
+    if v.endswith(("ss", "sh", "ch", "x")):
+        # Verbs ending in sibilants: kiss, bless, box, polish, preach.
+        return [v, v, v, v+"es", v, v+"ing"] + [v+"ed"]*6
+    if v.endswith("ic"):
+        # Verbs ending in -ic: panic, mimic.
+        return [v, v, v, v+"es", v, v+"king"] + [v+"ked"]*6
+    if len(v) > 1 and v[-1] not in vowels and v[-2] not in vowels:
+        # Verbs ending in a consonant cluster: delight, clamp.
+        return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+    if (len(v) > 1 and v.endswith(("y", "w")) and v[-2] in vowels) \
+    or (len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] in vowels) \
+    or (len(v) > 3 and v[-1] not in vowels and v[-3] in vowels and v[-4] in vowels):
+        # Verbs ending in a long vowel or diphthong followed by a consonant: paint, devour, play.
+        return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+    if len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] not in vowels:
+        # Verbs ending in a short vowel followed by a consonant: chat, chop, or compel.
+        return [v, v, v, v+"s", v, v+v[-1]+"ing"] + [v+v[-1]+"ed"]*6
+    return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
+
+def get_both_spellings(verb_list):
+    """add alternative spellings to verb_list"""
+    from dictionaries.word_transforms import usa_convert
+    uk_convert = {v: k for k, v in usa_convert.items()}
+    to_add_to_verb_list = []
+    for w in verb_list:
+        if w in usa_convert.keys():
+          to_add_to_verb_list.append(usa_convert[w])
+    for w in verb_list:
+        if w in uk_convert.keys():
+          to_add_to_verb_list.append(uk_convert[w])
+    verb_list = sorted(list(set(verb_list + to_add_to_verb_list)))
+    return verb_list
+
+def add_verb_inflections(verb_list):
+    """add verb inflections to verb_list"""
+    from dictionaries.word_transforms import usa_convert
+    uk_convert = {v: k for k, v in usa_convert.items()}
+    from dictionaries.process_types import find_lexeme
+    
+    # get lexemes
+    lexemes = load_verb_data()
+    verbforms = []
+    
+    # for each verb, get or guess the inflections
+    for w in verb_list:
+        verbforms.append(w)
+        try:
+            wforms = lexemes[w]
+        except KeyError:
+            wforms = find_lexeme(w)
+        # get list of unique forms
+        forms = list(set([form.replace("n't", "").replace(" not", "") for form in wforms if form]))
+      
+        for f in forms:
+            verbforms.append(f)
+      
+      # deal with contractions
+        if w == 'be':
+            be_conts = [r"'m", r"'re", r"'s"]
+            for cont in be_conts:
+                verbforms.append(cont)
+        if w == "have":
+            have_conts = [r"'d", r"'s", r"'ve"]
+            for cont in have_conts:
+                verbforms.append(cont)
+    
+    # go over again, and add both possible spellings
+    to_add = []
+    for w in verbforms:
+        if w in usa_convert.keys():
+          to_add.append(usa_convert[w])
+    for w in verbforms:
+        if w in uk_convert.keys():
+          to_add.append(uk_convert[w])
+    verbforms = sorted(list(set(verbforms + to_add)))
+
+    # ensure unicode
+    t = []
+    for w in verbforms:
+        if type(w) != unicode:
+            t.append(unicode(w, 'utf-8', errors = 'ignore'))
+        else:
+            t.append(w)
+    verbforms = t
+    return verbforms
+    
+def process_types():
     """Make a named tuple for each process type (no material yet)"""
-    import collections
     
     relational = ["become",
                   "feel",
@@ -287,126 +402,15 @@ def process_types(regex = False):
                    "smell", 
                    "worry"]
 
-    def regex_or_list_maker(verb_list):
-        """makes a regex from the list of words passed to it"""
-        # add alternative spellings
-        from dictionaries.word_transforms import usa_convert
+    processed_lists = []
+    for lst in [relational, mental, verbal]:
+        lst = get_both_spellings(lst)
+        lst = add_verb_inflections(lst)
+        processed_lists.append(lst)
 
-        def resource_path(relative):
-            import os
-            return os.path.join(
-                os.environ.get(
-                    "_MEIPASS2",
-                    os.path.abspath(".")
-                ),
-                relative
-            )
-        import pickle
-        try:
-            lexemes = pickle.load(open(resource_path('eng_verb_lexicon.p'), 'rb'))
-        except:
-            import os
-            import corpkit
-            corpath = os.path.dirname(corpkit.__file__)
-            baspat = os.path.dirname(corpath)
-            dicpath = os.path.join(baspat, 'dictionaries')
-            lexemes = pickle.load(open(os.path.join(dicpath, 'eng_verb_lexicon.p'), 'rb'))
-        
-        def find_lexeme(verb):
-            """ For a regular verb (base form), returns the forms using a rule-based approach.
-            taken from pattern
-            """
-            vowels = ['a', 'e', 'i', 'o', 'u']
-            v = verb.lower()
-            if len(v) > 1 and v.endswith("e") and v[-2] not in vowels:
-                # Verbs ending in a consonant followed by "e": dance, save, devote, evolve.
-                return [v, v, v, v+"s", v, v[:-1]+"ing"] + [v+"d"]*6
-            if len(v) > 1 and v.endswith("y") and v[-2] not in vowels:
-                # Verbs ending in a consonant followed by "y": comply, copy, magnify.
-                return [v, v, v, v[:-1]+"ies", v, v+"ing"] + [v[:-1]+"ied"]*6
-            if v.endswith(("ss", "sh", "ch", "x")):
-                # Verbs ending in sibilants: kiss, bless, box, polish, preach.
-                return [v, v, v, v+"es", v, v+"ing"] + [v+"ed"]*6
-            if v.endswith("ic"):
-                # Verbs ending in -ic: panic, mimic.
-                return [v, v, v, v+"es", v, v+"king"] + [v+"ked"]*6
-            if len(v) > 1 and v[-1] not in vowels and v[-2] not in vowels:
-                # Verbs ending in a consonant cluster: delight, clamp.
-                return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-            if (len(v) > 1 and v.endswith(("y", "w")) and v[-2] in vowels) \
-            or (len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] in vowels) \
-            or (len(v) > 3 and v[-1] not in vowels and v[-3] in vowels and v[-4] in vowels):
-                # Verbs ending in a long vowel or diphthong followed by a consonant: paint, devour, play.
-                return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-            if len(v) > 2 and v[-1] not in vowels and v[-2] in vowels and v[-3] not in vowels:
-                # Verbs ending in a short vowel followed by a consonant: chat, chop, or compel.
-                return [v, v, v, v+"s", v, v+v[-1]+"ing"] + [v+v[-1]+"ed"]*6
-            return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-        
-        uk_convert = {v: k for k, v in usa_convert.items()}
-        to_add_to_verb_list = []
-        for w in verb_list:
-            if w in usa_convert.keys():
-              to_add_to_verb_list.append(usa_convert[w])
-        for w in verb_list:
-            if w in uk_convert.keys():
-              to_add_to_verb_list.append(uk_convert[w])
-        verb_list = sorted(list(set(verb_list + to_add_to_verb_list)))
-
-        verbforms = []
-        for w in verb_list:
-          try:
-            wforms = lexemes[w]
-          except KeyError:
-            wforms = find_lexeme(w)
-          forms = list(set([form.replace("n't", "").replace(" not", "") for form in wforms]))
-          for f in forms:
-              verbforms.append(f)
-          # deal with contractions
-          if w == 'be':
-              be_conts = [r"'m", r"'re", r"'s"]
-              for cont in be_conts:
-                  verbforms.append(cont)
-          if w == "have":
-              have_conts = [r"'d", r"'s", r"'ve"]
-              for cont in have_conts:
-                  verbforms.append(cont)
-        
-        to_add = []
-        for w in verbforms:
-            if w in usa_convert.keys():
-              to_add.append(usa_convert[w])
-        for w in verbforms:
-            if w in uk_convert.keys():
-              to_add.append(uk_convert[w])
-        verbforms = sorted(list(set(verbforms + to_add)))
-        t = []
-
-        # ensure unicode
-        for w in verbforms:
-            if type(w) != unicode:
-                t.append(unicode(w, 'utf-8', errors = 'ignore'))
-            else:
-                t.append(w)
-        verbforms = t
-        
-        if not regex:
-            return verbforms
-        else:
-            return r'(?i)\b(' + r'|'.join(verbforms) + r')\b'
-    
-    list_of_regexes = []
-
-    for process_type in [relational, mental, verbal]:
-        # replace handles lemmata ending in e
-        as_list_or_regex = regex_or_list_maker(process_type)
-        list_of_regexes.append(as_list_or_regex)
-
-        #regex_list = [regex_or_list_maker(process_type) for process_type in [relational_processes, mental_processes, verbal_processes]]
-        # implement material process as any word not on this list?
-
+    import collections
     outputnames = collections.namedtuple("processes", ['relational', 'mental', 'verbal'])
-    output = outputnames(list_of_regexes[0], list_of_regexes[1], list_of_regexes[2])
+    output = outputnames(processed_lists[0], processed_lists[1], processed_lists[2])
     return output
 
-processes = process_types(regex = False)
+processes = process_types()
