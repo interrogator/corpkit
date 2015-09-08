@@ -434,7 +434,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     if 'stanford' in url:
         downloaded_dir = os.path.join(home, 'corenlp')
     else:
-        downloaded_dir = 'temp'
+        downloaded_dir = os.path.join(home, 'temp')
     fullfile = os.path.join(downloaded_dir, file_name)
     try:
         os.makedirs(downloaded_dir)
@@ -449,40 +449,47 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
                 os.remove(fullfile)
     
     if actually_download:
-        u = urllib2.urlopen(url)
-        f = open(fullfile, 'wb')
-        meta = u.info()
-        file_size = int(meta.getheaders("Content-Length")[0])
-        if root:
-            root.update()
-        if 'note' in kwargs.keys():
-            kwargs['note'].progvar.set(0)
-        else:
-            p = TextProgressBar(int(file_size))
-        from time import localtime, strftime
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Downloading ... ' % thetime
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buffer = u.read(block_sz)
-            if not buffer:
-                break
-            file_size_dl += len(buffer)
-            f.write(buffer)
-            #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-            #status = status + chr(8)*(len(status)+1)
-            if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
-            else:
-                p.animate(file_size_dl)
+        try:
+            u = urllib2.urlopen(url)
+            f = open(fullfile, 'wb')
+            meta = u.info()
+            file_size = int(meta.getheaders("Content-Length")[0])
             if root:
                 root.update()
-        if 'note' in kwargs.keys():  
-            kwargs['note'].progvar.set(100)
-        else:    
-            p.animate(int(file_size))
-
+            if 'note' in kwargs.keys():
+                kwargs['note'].progvar.set(0)
+            else:
+                p = TextProgressBar(int(file_size))
+            from time import localtime, strftime
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Downloading ... ' % thetime
+            file_size_dl = 0
+            block_sz = 8192
+            while True:
+                buffer = u.read(block_sz)
+                if not buffer:
+                    break
+                file_size_dl += len(buffer)
+                f.write(buffer)
+                #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+                #status = status + chr(8)*(len(status)+1)
+                if 'note' in kwargs.keys():
+                    kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
+                else:
+                    p.animate(file_size_dl)
+                if root:
+                    root.update()
+            if 'note' in kwargs.keys():  
+                kwargs['note'].progvar.set(100)
+            else:    
+                p.animate(int(file_size))
+        except:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Downloaded failed: bad connection.' % time
+            f.close()
+            if root:
+                root.update()
+            return
         time = strftime("%H:%M:%S", localtime())
         print '%s: Downloaded successully.' % time
         f.close()
