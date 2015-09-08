@@ -292,6 +292,11 @@ def corpkit_gui():
     sel_vals_images = []
     manage_box = {}
 
+    # custom lists
+    custom_special_dict = {}
+    # just the ones on the hd
+    saved_special_dict = {}
+
     # not currently using this sort feature---should use in conc though
     import itertools
     direct = itertools.cycle([0,1]).next
@@ -512,7 +517,12 @@ def corpkit_gui():
 
     def remake_special_query(query):
         """turn special queries into appropriate regexes, lists, etc"""
-        lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:']
+        # for custom queries
+        from collections import namedtuple
+        def convert(dictionary):
+            return namedtuple('outputnames', dictionary.keys())(**dictionary)
+
+        lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:', 'CUSTOM:']
         if any([special in query for special in lst_of_specials]):
             
             timestring('Special query detected. Loading wordlists ... ')
@@ -520,32 +530,43 @@ def corpkit_gui():
             from dictionaries.process_types import processes
             from dictionaries.roles import roles
             from dictionaries.wordlists import wordlists
-            dict_of_specials = {'PROCESSES:': processes, 'ROLES:': roles, 'WORDLISTS:': wordlists}
+            from corpkit import as_regex
+            customs = convert(custom_special_dict)
+            dict_of_specials = {'PROCESSES:': processes,
+                                'ROLES:': roles, 
+                                'WORDLISTS:': wordlists,
+                                'CUSTOM:': customs}
+
             for special in lst_of_specials:
-                # temporary, to show off process type searching.
-                if special == 'PROCESSES:':
-                    lemmatag = 'v'
-                from corpkit import as_regex
                 if special in query:
+                    # possible values after colon
                     types = [k for k in dict_of_specials[special]._asdict().keys()]
+                    # split up the query by the first part of the special query
                     reg = re.compile('(^.*)(%s)(:)([A-Z]+)(.*$)' % special[:-1])
+                    # split the query into parts
                     divided = re.search(reg, query)
+                    # set the right boundaries
                     if special == 'PROCESSES:':
                         the_bound = 'w'
                     if special == 'ROLES:':
                         the_bound = False
                     if special == 'WORDLISTS:':
                         the_bound = 'w'
+                    if special == 'CUSTOM:':
+                        the_bound = 'w'
                     try:
-                        lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
+                        # when custom, the keys *are* capitalised :)
+                        if special != 'CUSTOM:':
+                            lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
+                        else:
+                            lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4)]
                         asr = as_regex(lst_of_matches, 
                                        boundaries = the_bound, 
                                        case_sensitive = case_sensitive.get(), 
                                        inverse = False)
                         query = divided.group(1) + asr + divided.group(5)
                     except:
-                        
-                        timestring('"%s" must be: %s' % (divided.group(4), ', '.join(dict_of_specials[special]._asdict().keys())))
+                        timestring('"%s" must be: %s' % (divided.group(4), ', '.join(types)))
                         return False
         return query
 
@@ -615,11 +636,15 @@ def corpkit_gui():
             newdata = make_df_totals(newdata)
         return newdata
 
-    def color_saved(lb, savepath, colour1 = '#D9DDDB', colour2 = 'white', ext = '.p'):
+    def color_saved(lb, savepath = False, colour1 = '#D9DDDB', colour2 = 'white', ext = '.p', lists = False):
         """make saved items in listbox have colour background"""
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
         for index, item in enumerate(all_items):
-            issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+            if not lists:
+
+                issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+            else:
+                issaved = item in saved_special_dict.keys()
             if issaved:
                 lb.itemconfig(index, {'bg':colour1})
             else:
@@ -2825,6 +2850,146 @@ def corpkit_gui():
         global conc_saved
         conc_saved = False
 
+    def focus_next_window(event):
+        event.widget.tk_focusNext().focus()
+        return "break"
+
+    def do_inflection(pos = 'v'):
+        global tb
+        from dictionaries.process_types import get_both_spellings, add_verb_inflections
+        # get text from widget
+        lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
+        # get variant forms
+        lst = get_both_spellings(lst)
+        if pos == 'v':
+            lst = add_verb_inflections(lst)
+        # delete widget text, reinsrt all
+        tb.delete(1.0, END)
+        for w in lst:
+            tb.insert(END, w + '\n')
+
+    def store_wordlist():
+        global tb
+        lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
+        global schemename
+        specname = ''.join([i for i in schemename.get().upper() if i.isalpha()])
+        custom_special_dict[specname] = lst
+        global cust_spec
+        cust_spec.delete(0, END)
+        for k, v in custom_special_dict.items():
+            cust_spec.insert(END, k)
+        color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+        timestring('CUSTOM:%s stored to custom wordlists.' % specname)
+
+    def custom_lists():
+        from Tkinter import Toplevel
+        popup = Toplevel()
+        popup.title('Custom wordlists')
+        popup.wm_attributes('-topmost', 1)
+        Label(popup, text = 'Create wordlist', font = ("Helvetica", 13, "bold")).grid(column = 0, row = 0)
+        global schemename
+        schemename = StringVar()
+        schemename.set('Name your list')
+        scheme_name_field = Entry(popup, textvariable = schemename)
+        global tb
+        custom_words = Frame(popup, width = 5, height = 40)
+        custom_words.grid(row = 1, column = 0)
+        cwscrbar = Scrollbar(custom_words)
+        cwscrbar.pack(side=RIGHT, fill=Y)
+        tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
+                  bg = '#F4F4F4', width = 20, height = 26, font = ("Courier New", 13))
+        tb.bind("<%s-a>" % key, select_all_text)
+        tb.bind("<%s-A>" % key, select_all_text)
+        tb.bind("<%s-v>" % key, paste_into_textwidget)
+        tb.bind("<%s-V>" % key, paste_into_textwidget)
+        tb.bind("<%s-x>" % key, cut_from_textwidget)
+        tb.bind("<%s-X>" % key, cut_from_textwidget)
+        tb.bind("<%s-c>" % key, copy_from_textwidget)
+        tb.bind("<%s-C>" % key, copy_from_textwidget)
+        tb.pack(side=LEFT, fill=BOTH)
+        tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
+        tmp.grid(row = 2, column = 0)
+        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
+        tmp.grid(row = 3, column = 0)
+        tmp.config(state = DISABLED)        
+        #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
+        savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
+        savebut.grid(row = 5, column = 0)
+
+        Label(popup, text = 'Previous wordlists', font = ("Helvetica", 13, "bold")).grid(column = 1, row = 0, padx = 15)
+        other_custom_queries = Frame(popup, width = 5, height = 30)
+        other_custom_queries.grid(row = 1, column = 1, padx = 15)
+        pwlscrbar = Scrollbar(other_custom_queries)
+        pwlscrbar.pack(side=RIGHT, fill=Y)
+        global cust_spec
+        cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height = 23, relief = SUNKEN, bg = '#F4F4F4',
+                                    yscrollcommand=pwlscrbar.set, exportselection = False)
+        cust_spec.pack()
+        cust_spec.delete(0, END)
+        for k, v in custom_special_dict.items():
+            cust_spec.insert(END, k)
+        color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+
+        def remove_this_custom_query():
+            global cust_spec
+            index = cust_spec.curselection()
+            name = cust_spec.get(index)
+            del custom_special_dict[name]
+            cust_spec.delete(0, END)
+            for k, v in custom_special_dict.items():
+                cust_spec.insert(END, k)
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+
+        def delete_this_custom_query():
+            global cust_spec
+            index = cust_spec.curselection()
+            name = cust_spec.get(index)
+            del custom_special_dict[name]
+            try:
+                del custom_special_dict[name]
+            except:
+                pass
+            dump_custom_list_json()
+
+            cust_spec.delete(0, END)
+            for k, v in custom_special_dict.items():
+                cust_spec.insert(END, k)
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+
+
+        def show_this_custom_query(*args):
+            global cust_spec
+            index = cust_spec.curselection()
+            name = cust_spec.get(index)
+            tb.delete(1.0, END)
+            for i in custom_special_dict[name]:
+                tb.insert(END, i + '\n')
+            schemename.set(name)
+
+        def add_custom_query_to_json():
+            global cust_spec
+            index = cust_spec.curselection()
+            name = cust_spec.get(index)
+            saved_special_dict[name] = custom_special_dict[name]
+            dump_custom_list_json()
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)            
+        
+        Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2)
+        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 3)
+        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 4)
+        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 5)
+
+
+        #cust_spec.bind('<<ListboxSelect>>', show_this_custom_query)
+
+        cscrollbar.config(command=speaker_listbox.yview)
+        def quit_listing(*args):
+            popup.destroy()
+
+        scheme_name_field.grid(column = 0, row = 4)
+        stopbut = Button(popup, text = 'Done', command=quit_listing)
+        stopbut.grid(column = 0, columnspan = 2, row = 6)
+
     # a place for the toplevel entry info
     entryboxes = OrderedDict()
 
@@ -2841,9 +3006,6 @@ def corpkit_gui():
         except:
             pass
 
-        def focus_next_window(event):
-            event.widget.tk_focusNext().focus()
-            return "break"
 
         from Tkinter import Toplevel
         toplevel = Toplevel()
@@ -3611,6 +3773,23 @@ def corpkit_gui():
             redict[name] = vs
         return redict
 
+    def load_custom_list_json():
+        import json
+        f = os.path.join(project_fullpath.get(), 'custom_wordlists.txt')
+        if os.path.isfile(f):
+            data = json.loads(open(f).read())
+            for k, v in data.items():
+                if k not in custom_special_dict.keys():
+                    custom_special_dict[k] = v
+                if k not in saved_special_dict.keys():
+                    saved_special_dict[k] = v
+
+    def dump_custom_list_json():
+        import json
+        f = os.path.join(project_fullpath.get(), 'custom_wordlists.txt')
+        with open(f, 'w') as fo:
+            fo.write(json.dumps(saved_special_dict))
+
     def load_config():
         """use configparser to get project settings"""
         import os
@@ -3623,19 +3802,19 @@ def corpkit_gui():
         texuse.set(conmap(Config, "Visualise")['use tex'])
         x_axis_l.set(conmap(Config, "Visualise")['x axis title'])
         chart_cols.set(conmap(Config, "Visualise")['colour scheme'])
-        rel_corpuspath = conmap("Interrogate")['corpus path']
+        rel_corpuspath = conmap(Config, "Interrogate")['corpus path']
         corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
         corpus_fullpath.set(corpa)
-        spk = conmap("Interrogate")['speakers']
+        spk = conmap(Config, "Interrogate")['speakers']
         corpora_speakers = parse_speakdict(spk)
         for i, v in corpora_speakers.items():
             corpus_names_and_speakers[i] = v
-        fsize.set(conmap(Config, 'Concordance')['font size'])
+        fsize.set(conmap(Config, "Concordance")['font size'])
         # window setting causes conc_sort to run, causing problems.
-        #win.set(conmap(Config, 'Concordance')['window'])
+        #win.set(conmap(Config, "Concordance")['window'])
         kind_of_dep.set(conmap(Config, 'Interrogate')['dependency type'])
-        conc_kind_of_dep.set(conmap(Config, 'Concordance')['dependency type'])
-        cods = conmap('Concordance')['coding scheme']
+        conc_kind_of_dep.set(conmap(Config, "Concordance")['dependency type'])
+        cods = conmap(Config, "Concordance")['coding scheme']
         if cods is None:
             for box, val in entryboxes.items():
                 val.set('')
@@ -3738,6 +3917,8 @@ def corpkit_gui():
         else:
             speakcheck.config(state = DISABLED)
             speakcheck_conc.config(state = DISABLED)
+
+        load_custom_list_json()
 
     def view_query():
         if len(sel_vals_interro) == 0:
@@ -4782,18 +4963,22 @@ def corpkit_gui():
     filemenu.add_separator()
     filemenu.add_command(label="Save project settings", command=save_config)
     filemenu.add_command(label="Load project settings", command=load_config)
+    filemenu.add_command(label="Save tool preferences", command=save_tool_prefs)
     filemenu.add_separator()
-    filemenu.add_command(label="Coding scheme", command=codingschemer)
+
     #filemenu.add_command(label="Coding scheme print", command=print_entryboxes)
-    filemenu.add_separator()
-    filemenu.add_command(label="Check for updates", command=check_updates)
+
+    
     # broken on deployed version ... path to self stuff
     #filemenu.add_separator()
     filemenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
-    filemenu.add_command(label="Save tool preferences", command=save_tool_prefs)
-    filemenu.add_command(label="Restart tool", command=restart)
+    filemenu.add_separator()
+    filemenu.add_command(label="Check for updates", command=check_updates)
+    #filemenu.add_separator()
+    #filemenu.add_command(label="Restart tool", command=restart)
     filemenu.add_separator()
     #filemenu.add_command(label="Exit", command=quitfunc)
+    
     menubar.add_cascade(label="File", menu=filemenu)
     if sys.platform == 'darwin':
         windowmenu = Menu(menubar, name='window')
@@ -4801,6 +4986,21 @@ def corpkit_gui():
     else:
         sysmenu = Menu(menubar, name='system')
         menubar.add_cascade(menu=sysmenu)
+
+    def schemesshow(*args):
+        """only edit schemes once in project"""
+        import os
+        if project_fullpath.get() == '':
+            schemenu.entryconfig("Wordlists", state="disabled")
+            schemenu.entryconfig("Coding scheme", state="disabled")
+        else:
+            schemenu.entryconfig("Wordlists", state="normal")
+            schemenu.entryconfig("Coding scheme", state="normal")
+
+    schemenu = Menu(menubar, tearoff=0, postcommand = schemesshow)
+    menubar.add_cascade(label="Schemes", menu=schemenu)
+    schemenu.add_command(label="Coding scheme", command=codingschemer)
+    schemenu.add_command(label="Wordlists", command=custom_lists)
 
     # prefrences section
     #if sys.platform == 'darwin':
