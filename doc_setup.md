@@ -2,13 +2,16 @@
 title: "Setup"
 tags: [setup, getting-started, osx]
 keywords: setup, corpkit, gui
-summary: "Just open it!"
 last_updated: 2015-09-01
 ---
 
-All you have to do is open the app to begin using *corpkit*. If you get an "unidentified developer" error, simply `control-click` or `right-click`, and select `Open` that way.
+## Opening the app
 
-That said, some features may not work until you have additional bits and pieces installed. In most cases, *corpkit* will prompt you if it cannot find a resource. 
+All you have to do is open the app to begin using *corpkit*. If you get an "unidentified developer" error, simply `control-click` or `right-click`, and select `Open` that way. 
+
+## Extras
+
+Most of the things *corpkit* needs to run are embedded inside the app. A few things, however, might need to installed as you go along. In most cases, *corpkit* will prompt you if it cannot find a resource.
 
 ### Java
 
@@ -18,7 +21,9 @@ Once it's installred, restart *corpkit* and try again. If the error persists, th
 
 ### CoreNLP parser
 
-Parsing files requires the download and installation of the Stanford CoreNLP parser. *corpkit* will manage this for you, installing the parser to your Home directory. It's pretty large, so if you ever want to remove it, just delete the `corenlp` folder from your `/users/yourname` directory.
+Parsing files requires the download and installation of the [Stanford CoreNLP parser](http://nlp.stanford.edu/software/corenlp.shtml). *corpkit* will manage this for you, installing the parser to your Home directory. It's pretty large, so if you ever want to remove it, just delete the `corenlp` folder from your `/users/yourname` directory.
+
+{{note}} If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can update the `corenlp path` setting manually in a project's `settings.ini` file to tell *corpkit* where to look. {{end}}
 
 ### TeX
 

@@ -17,6 +17,10 @@ If you can't open *corpkit* because it is from an unidentified developer, simply
 
 For example, when searching parse trees, your Mac will pop up a message if you don't have the right Java installed, and will point you to a website where you can get it. Once it's installed, restart *corpkit* and try again. If the error persists, the reason is that your Mac actually pointed you to the wrong Java distribution. The one you need is [here](https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg). This, unfortunately, is an error that's pretty much out of *corpkit*'s hands. See [here](https://www.java.com/en/download/faq/yosemite_java.xml) for more info.
 
+### CoreNLP path
+
+If *corpkit* can't find your CoreNLP installation for parsing, or if you've moved the `users/yourusername/corenlp` directory, make sure its path is correct in your project's `settings.ini` file.
+
 ### Screen size issues
 
 Currently, there are fairly limited options for the size of the corpkit main window. If you can't see the status bar, it may be useful try switching the Dock to auto hide (via `System Preferences`), and reopening *corpkit*.
