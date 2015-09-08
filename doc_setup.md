@@ -23,7 +23,7 @@ Once it's installred, restart *corpkit* and try again. If the error persists, th
 
 Parsing files requires the download and installation of the [Stanford CoreNLP parser](http://nlp.stanford.edu/software/corenlp.shtml). *corpkit* will manage this for you, installing the parser to your Home directory. It's pretty large, so if you ever want to remove it, just delete the `corenlp` folder from your `/users/yourname` directory.
 
-{{note}} If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can update the `corenlp path` setting manually in a project's `settings.ini` file to tell *corpkit* where to look. {{end}}
+{{note}} If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can tell *corpkit* where the parser is via the `Set CoreNLP path` option in the menu. {{end}}
 
 ### TeX
 

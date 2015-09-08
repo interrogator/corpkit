@@ -147,7 +147,6 @@ So, to give some examples of output based on the sentence above:
 | <i>Get "role:governor"</i> | `any` | <code>(dobj&#124;nsubj)</code>  |   |  <b>`try`, `follow`</b>   |
 
 
-
 ### Plain text
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
@@ -178,7 +177,7 @@ As with plain text, you can use either a list of a regular expression to match t
 
 ### Query parts
 
-There are also some things you can type into your query that *corpkit* recognises and handles differently. You can, for example, enter
+There are also some things you can type into your query that *corpkit* recognises and handles differently. You can, for example, enter:
 
 > `PROCESSES:VERBAL`
 
@@ -204,17 +203,29 @@ Each special query type has a number of possible subtypes:
 
 When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
 
-{{note}} An interface for editing and defining custom queries is in development. {{end}}
+{{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /PROCESSES:MENTAL/"</code> will work, but <code>"/VB.?/ < PROCESSES:MENTAL"</code> will not. {{end}}
+
+### Creating and modifying special queries
+
+If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists, including those outlined in the previous section. Simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in your query by typing `LIST:NAME`.
+
+You can easily select a predefined list, modify and rename it, and access it in the same way.
+
+The `Get verb/noun inflections` button will help you make queries that match all possible forms of the lemmata of interest.
+
+Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in blue, unsaved lists in red, and saved in green.
+
+{{tip}} Custom wordlists are stored in <code>`project_dir/custom_wordlists.txt`</code>. You can open up these files and alter them if need be. So long as you respect the file's syntax, the wordlist will be loaded when you open the project. {{end}}
 
 ## Lemmatisation
 
-When working with dependencies, lemmatisation is handled by Stanford CoreNLP. When searching trees, WordNet is used.
+When working with dependencies, lemmatisation is handled by *Stanford CoreNLP*, and is very accurate. When searching trees, *WordNet* is used. In order to work properly, wordNet-based lemmatisation needs to know the part of speech of the word it's lemmatising.
 
 If searching trees and using lemmatisation, *corpkit* will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:
 
-> `/VB.?/ >> VP`
+> <code>/<b>V</b>B.?/ >> VP</code>
 
-then *corpkit* will know that the output will be verbs. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force *corpkit* to treat all results as a given part of speech.
+then *corpkit* will know that the output will be verbs, based on the initial `V`. If lemmatisation of trees isn't working as expected, you can use the `Result word class` option to force *corpkit* to treat all results as a given part of speech.
 
 ## Speaker IDs
 

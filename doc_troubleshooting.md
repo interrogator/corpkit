@@ -19,7 +19,7 @@ For example, when searching parse trees, your Mac will pop up a message if you d
 
 ### CoreNLP path
 
-If *corpkit* can't find your CoreNLP installation for parsing, or if you've moved the `users/yourusername/corenlp` directory, make sure its path is correct in your project's `settings.ini` file.
+If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can tell *corpkit* where the parser is via the `Set CoreNLP path` option in the menu.
 
 ### Screen size issues
 

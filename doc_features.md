@@ -61,6 +61,14 @@ There are preset queries to match mood types, process types, and the heads of pa
 
     /VB.?/ < /PROCESSES:MENTAL/
 
+You can also build custom wordlists that can be added into more complex searches.
+
+You can quickly define `ANIMALS` as `cat, dog, bird, wolf, (etc.)`, and then search for animals as clausal subjects with:
+
+    @NP <<# /LIST:ANIMALS/
+
+*corpkit* can automatically handle the task of getting inflected word forms.
+
 #### Compare subcorpora
 
 *corpkit* is designed to work with structured corpora (those containing subfolders). So, not only can you search for nuanced patterns in the text, but you can quickly find out how they vary in frequency by subcorpus.

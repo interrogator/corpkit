@@ -39,7 +39,7 @@ Something unique about *corpkit* is that you can quickly and easily group, colou
 
 You can use the numbers 0-9 to colour-code your text. `9` blacks out a line, and `0` returns the line to its default white.
 
-You can also attach names to these colours via `File` &rarr; `Coding scheme`. By using colours in combination with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
+You can also attach names to these colours via `Schemes` &rarr; `Coding scheme`. By using colours in combination with a coding scheme, you can categorise the concordance lines by theme or by a linguistic feature, and then export the categorisations alongside the data.
 
 If you've defined anything in a coding scheme, you can sort by `Scheme` to group your categories together. 
 
