@@ -496,7 +496,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     return downloaded_dir, fullfile
 
 #'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
-def extract_cnlp(fullfilepath, root = False):
+def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     import corpkit
     """extract corenlp"""
     import zipfile
@@ -506,10 +506,11 @@ def extract_cnlp(fullfilepath, root = False):
     print '%s: Extracting CoreNLP files ...' % time
     if root:
         root.update()
-    home = os.path.expanduser("~")
-    stanpath = os.path.join(home, 'corenlp')
+    if corenlppath is False:
+        home = os.path.expanduser("~")
+        corenlppath = os.path.join(home, 'corenlp')
     with zipfile.ZipFile(fullfilepath) as zf:
-        zf.extractall(stanpath)
+        zf.extractall(corenlppath)
     time = strftime("%H:%M:%S", localtime())
     print '%s: CoreNLP extracted. ' % time
 
@@ -540,7 +541,7 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path, corpuspath, filelist, 
+def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
                  only_tokenise = False, root = False, stdout = False, **kwargs):
     import corpkit
     import subprocess
@@ -570,16 +571,18 @@ def parse_corpus(proj_path, corpuspath, filelist,
                 print 'Folder containing tokens already exists: "%s-tokenised"' % basecp            
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
-    home = os.path.expanduser("~")
-    stanpath = os.path.join(home, 'corenlp')
-    find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
+    if corenlppath is False:
+        home = os.path.expanduser("~")
+        corenlppath = os.path.join(home, 'corenlp')
+
+    find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
     if len(find_install) > 0:
         find_install = find_install[0]
     else:
         print 'Nothing in CoreNLP directory.'
         return
     if not only_tokenise:
-        os.chdir(os.path.join(stanpath, find_install))
+        os.chdir(os.path.join(corenlppath, find_install))
         root.update_idletasks()
         reload(sys)
         import os
@@ -689,20 +692,21 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
                   os.path.join(new_corpus_path, right_dir, f))
     return new_corpus_path
 
-def corenlp_exists():
+def corenlp_exists(corenlppath = False):
     import corpkit
     import os
     important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
                        'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
-    home = os.path.expanduser("~")
-    stanpath = os.path.join(home, 'corenlp')
-    if os.path.isdir(stanpath):
-        find_install = [d for d in os.listdir(stanpath) if os.path.isdir(os.path.join(stanpath, d))]
+    if corenlppath is False:
+        home = os.path.expanduser("~")
+        corenlppath = os.path.join(home, 'corenlp')
+    if os.path.isdir(corenlppath):
+        find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
         if len(find_install) > 0:
             find_install = find_install[0]
         else:
             return False
-        javalib = os.path.join(stanpath, find_install)
+        javalib = os.path.join(corenlppath, find_install)
         if len(javalib) == 0:
             return False
         if not all([f in os.listdir(javalib) for f in important_files]):
