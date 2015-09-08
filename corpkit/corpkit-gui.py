@@ -639,16 +639,21 @@ def corpkit_gui():
     def color_saved(lb, savepath = False, colour1 = '#D9DDDB', colour2 = 'white', ext = '.p', lists = False):
         """make saved items in listbox have colour background"""
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
+        if lists:
+            colour3 = '#b3cde3'
         for index, item in enumerate(all_items):
             if not lists:
-
                 issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
             else:
                 issaved = item in saved_special_dict.keys()
+
             if issaved:
                 lb.itemconfig(index, {'bg':colour1})
             else:
                 lb.itemconfig(index, {'bg':colour2})
+            if lists:
+                if item in predict.keys():
+                    lb.itemconfig(index, {'bg':colour3})
         lb.selection_clear(0, END)
 
     def paste_into_textwidget(*args):
@@ -2868,11 +2873,35 @@ def corpkit_gui():
         for w in lst:
             tb.insert(END, w + '\n')
 
+    def make_dict_from_existing_wordlists():
+        from collections import namedtuple
+        def convert(dictionary):
+            return namedtuple('outputnames', dictionary.keys())(**dictionary)
+        all_preset_types = {}
+        from dictionaries.process_types import processes
+        from dictionaries.roles import roles
+        from dictionaries.wordlists import wordlists
+        from corpkit import as_regex
+        customs = convert(custom_special_dict)
+        special_qs = [processes, roles, wordlists]
+        for kind in special_qs:
+            types = [k for k in kind._asdict().keys()]
+            for t in types:
+                all_preset_types[t] = kind._asdict()[t]
+        return all_preset_types
+    
+    predict = make_dict_from_existing_wordlists()
+    for k, v in predict.items():
+        custom_special_dict[k.upper()] = v
+
     def store_wordlist():
         global tb
         lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         global schemename
         specname = ''.join([i for i in schemename.get().upper() if i.isalpha()])
+        if specname in predict.keys():
+            timestring('"%s" already taken, sorry.' % specname)
+            return
         custom_special_dict[specname] = lst
         global cust_spec
         cust_spec.delete(0, END)
@@ -2915,7 +2944,6 @@ def corpkit_gui():
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
         savebut.grid(row = 5, column = 0)
-
         Label(popup, text = 'Previous wordlists', font = ("Helvetica", 13, "bold")).grid(column = 1, row = 0, padx = 15)
         other_custom_queries = Frame(popup, width = 5, height = 30)
         other_custom_queries.grid(row = 1, column = 1, padx = 15)
@@ -2928,6 +2956,7 @@ def corpkit_gui():
         cust_spec.delete(0, END)
         for k, v in custom_special_dict.items():
             cust_spec.insert(END, k)
+
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
 
         def remove_this_custom_query():
