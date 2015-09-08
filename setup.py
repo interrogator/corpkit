@@ -25,7 +25,7 @@ class install_with_nltk_extras(install):
         install_with_pip('git+https://github.com/dmnfarrell/tkintertable.git')
 
 setup(name='corpkit',
-      version='1.55',
+      version='1.57',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
