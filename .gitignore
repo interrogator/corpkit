@@ -67,3 +67,4 @@ corpkit/testinggroundtwo.py
 
 corpkit/log*
 *.app/
+.ipynb_checkpoints/
