@@ -47,8 +47,7 @@ def plotter(title,
 
     import numpy
     from time import localtime, strftime
-    from tests import check_pytex, check_spider, check_t_kinter
-    import signal
+    from corpkit.tests import check_pytex, check_spider, check_t_kinter
 
     if interactive:
         import mpld3
@@ -57,28 +56,6 @@ def plotter(title,
         from plugins import InteractiveLegendPlugin, HighlightLines
 
     tk = check_t_kinter()
-
-    def signal_handler(signal, frame):
-        import signal
-        """pause on ctrl+c, rather than just stop loop"""
-
-        #def subsig(signal, frame):
-        #    """exit on ctrl c"""
-        #    import sys
-        #    sys.exit(0)
-        #
-        #signal.signal(signal.SIGINT, subsig)
-        
-        import sys
-        from time import localtime, strftime
-        time = strftime("%H:%M:%S", localtime())
-        sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
-        if sel.lower().startswith('e'):
-            sys.exit(0)
-        else:
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Plotting resumed.\n' % time
-    signal.signal(signal.SIGINT, signal_handler)
 
     running_python_tex = check_pytex()
     # incorrect spelling of spider on purpose
@@ -274,7 +251,7 @@ def plotter(title,
         # don't know if this is much good.
         if cumulative:
             dataframe = DataFrame(dataframe.cumsum())
-        if len(list(dataframe.columns)) == 1 and 'total' in list(dataframe.columns)[0].lower():
+        if len(list(dataframe.columns)) == 1:
             was_series = True
     
     # attempt to convert x axis to ints:
@@ -347,7 +324,8 @@ def plotter(title,
             del kwargs['explode']
     if piemode:
         if 'explode' in kwargs:
-            kwargs['explode'] = auto_explode(dataframe, 
+            if not sbplt:
+                kwargs['explode'] = auto_explode(dataframe, 
                                              kwargs['explode'], 
                                              was_series = was_series, 
                                              num_to_plot = num_to_plot)
