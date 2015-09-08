@@ -81,12 +81,26 @@ def add_verb_inflections(verb_list):
     verbforms = []
     
     # for each verb, get or guess the inflections
+    # make list of ALL VERBS IN ALL INFLECTIONS
+    all_lists = [lst for lst in lexemes.values()]
+    allverbs = []
+    for lst in all_lists:
+        for v in lst:
+            if v:
+                allverbs.append(v)
+    allverbs = list(set(allverbs))
+    # use dict first
     for w in verb_list:
         verbforms.append(w)
         try:
             wforms = lexemes[w]
         except KeyError:
-            wforms = find_lexeme(w)
+            # if not in dict, if it's an inflection, forget it
+            if w in allverbs:
+                continue
+            # if it's a coinage, guess
+            else:
+                wforms = find_lexeme(w)
         # get list of unique forms
         forms = list(set([form.replace("n't", "").replace(" not", "") for form in wforms if form]))
       
