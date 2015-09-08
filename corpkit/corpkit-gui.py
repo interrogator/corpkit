@@ -522,7 +522,7 @@ def corpkit_gui():
         def convert(dictionary):
             return namedtuple('outputnames', dictionary.keys())(**dictionary)
 
-        lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:', 'CUSTOM:']
+        lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:', 'CUSTOM:', 'LIST:']
         if any([special in query for special in lst_of_specials]):
             
             timestring('Special query detected. Loading wordlists ... ')
@@ -535,14 +535,15 @@ def corpkit_gui():
             dict_of_specials = {'PROCESSES:': processes,
                                 'ROLES:': roles, 
                                 'WORDLISTS:': wordlists,
-                                'CUSTOM:': customs}
+                                'CUSTOM:': customs,
+                                'LIST:': customs}
 
             for special in lst_of_specials:
                 if special in query:
                     # possible values after colon
                     types = [k for k in dict_of_specials[special]._asdict().keys()]
                     # split up the query by the first part of the special query
-                    reg = re.compile('(^.*)(%s)(:)([A-Z]+)(.*$)' % special[:-1])
+                    reg = re.compile('(^.*)(%s)(:)([A-Z0-9_]+)(.*$)' % special[:-1])
                     # split the query into parts
                     divided = re.search(reg, query)
                     # set the right boundaries
@@ -554,9 +555,11 @@ def corpkit_gui():
                         the_bound = 'w'
                     if special == 'CUSTOM:':
                         the_bound = 'w'
+                    if special == 'LIST:':
+                        the_bound = 'w'
                     try:
                         # when custom, the keys *are* capitalised :)
-                        if special != 'CUSTOM:':
+                        if special != 'CUSTOM:' and special != 'LIST:':
                             lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
                         else:
                             lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4)]
@@ -567,7 +570,7 @@ def corpkit_gui():
                         query = divided.group(1) + asr + divided.group(5)
                     except:
                         timestring('"%s" must be: %s' % (divided.group(4), ', '.join(types)))
-                        return False
+                        raise
         return query
 
     def ignore():
@@ -2887,10 +2890,14 @@ def corpkit_gui():
         for kind in special_qs:
             types = [k for k in kind._asdict().keys()]
             for t in types:
-                all_preset_types[t] = kind._asdict()[t]
+                if kind == roles:
+                    all_preset_types[t.upper() + '_ROLE'] = kind._asdict()[t]
+                else:
+                    all_preset_types[t.upper()] = kind._asdict()[t]
         return all_preset_types
     
     predict = make_dict_from_existing_wordlists()
+
     for k, v in predict.items():
         custom_special_dict[k.upper()] = v
 
@@ -2898,7 +2905,10 @@ def corpkit_gui():
         global tb
         lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         global schemename
-        specname = ''.join([i for i in schemename.get().upper() if i.isalpha()])
+        if schemename.get() == '<Enter a name>':
+            timestring('wordlist needs a name.')
+            return
+        specname = ''.join([i for i in schemename.get().upper() if i.isalpha() or i == '_'])
         if specname in predict.keys():
             timestring('"%s" already taken, sorry.' % specname)
             return
@@ -2908,9 +2918,10 @@ def corpkit_gui():
         for k, v in custom_special_dict.items():
             cust_spec.insert(END, k)
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
-        timestring('CUSTOM:%s stored to custom wordlists.' % specname)
+        timestring('LIST:%s stored to custom wordlists.' % specname)
 
     def custom_lists():
+        """a popup for defining custom wordlists"""
         from Tkinter import Toplevel
         popup = Toplevel()
         popup.title('Custom wordlists')
@@ -2918,15 +2929,17 @@ def corpkit_gui():
         Label(popup, text = 'Create wordlist', font = ("Helvetica", 13, "bold")).grid(column = 0, row = 0)
         global schemename
         schemename = StringVar()
-        schemename.set('Name your list')
-        scheme_name_field = Entry(popup, textvariable = schemename)
+        schemename.set('<Enter a name>')
+        scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER)
+        scheme_name_field.grid(column = 0, row = 4, sticky = W)
         global tb
-        custom_words = Frame(popup, width = 5, height = 40)
-        custom_words.grid(row = 1, column = 0)
+        custom_words = Frame(popup, width = 9, height = 40)
+        custom_words.grid(row = 1, column = 0, padx = 5)
         cwscrbar = Scrollbar(custom_words)
         cwscrbar.pack(side=RIGHT, fill=Y)
         tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
-                  bg = '#F4F4F4', width = 20, height = 26, font = ("Courier New", 13))
+                  bg = '#F4F4F4', width = 30, height = 26, font = ("Courier New", 13))
+        cwscrbar.config(command=tb.yview)
         tb.bind("<%s-a>" % key, select_all_text)
         tb.bind("<%s-A>" % key, select_all_text)
         tb.bind("<%s-v>" % key, paste_into_textwidget)
@@ -2937,21 +2950,22 @@ def corpkit_gui():
         tb.bind("<%s-C>" % key, copy_from_textwidget)
         tb.pack(side=LEFT, fill=BOTH)
         tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
-        tmp.grid(row = 2, column = 0)
-        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
-        tmp.grid(row = 3, column = 0)
+        tmp.grid(row = 2, column = 0, sticky = W)
+        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17)
+        tmp.grid(row = 3, column = 0, sticky = W)
         tmp.config(state = DISABLED)        
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
-        savebut.grid(row = 5, column = 0)
+        savebut.grid(row = 5, column = 0, sticky = W)
         Label(popup, text = 'Previous wordlists', font = ("Helvetica", 13, "bold")).grid(column = 1, row = 0, padx = 15)
-        other_custom_queries = Frame(popup, width = 5, height = 30)
+        other_custom_queries = Frame(popup, width = 9, height = 30)
         other_custom_queries.grid(row = 1, column = 1, padx = 15)
         pwlscrbar = Scrollbar(other_custom_queries)
         pwlscrbar.pack(side=RIGHT, fill=Y)
         global cust_spec
         cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height = 23, relief = SUNKEN, bg = '#F4F4F4',
-                                    yscrollcommand=pwlscrbar.set, exportselection = False)
+                                    yscrollcommand=pwlscrbar.set, exportselection = False, width = 30)
+        pwlscrbar.config(command=cust_spec.yview)
         cust_spec.pack()
         cust_spec.delete(0, END)
         for k, v in custom_special_dict.items():
@@ -2968,11 +2982,15 @@ def corpkit_gui():
             for k, v in custom_special_dict.items():
                 cust_spec.insert(END, k)
             color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            timestring('%s forgotten' % name)
 
         def delete_this_custom_query():
             global cust_spec
             index = cust_spec.curselection()
             name = cust_spec.get(index)
+            if name in predict.keys():
+                timestring("%s can't be permanently deleted." % name)
+                return
             del custom_special_dict[name]
             try:
                 del custom_special_dict[name]
@@ -2984,6 +3002,7 @@ def corpkit_gui():
             for k, v in custom_special_dict.items():
                 cust_spec.insert(END, k)
             color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            timestring('%s permanently deleted' % name)
 
 
         def show_this_custom_query(*args):
@@ -3001,23 +3020,19 @@ def corpkit_gui():
             name = cust_spec.get(index)
             saved_special_dict[name] = custom_special_dict[name]
             dump_custom_list_json()
-            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)            
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            timestring('%s saved to custom_wordlists.txt' % name)            
         
-        Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2)
-        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 3)
-        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 4)
-        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 5)
+        Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2, sticky = E)
+        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 3, sticky = E)
+        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 4, sticky = E)
+        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E)
 
-
-        #cust_spec.bind('<<ListboxSelect>>', show_this_custom_query)
-
-        cscrollbar.config(command=speaker_listbox.yview)
         def quit_listing(*args):
             popup.destroy()
 
-        scheme_name_field.grid(column = 0, row = 4)
         stopbut = Button(popup, text = 'Done', command=quit_listing)
-        stopbut.grid(column = 0, columnspan = 2, row = 6)
+        stopbut.grid(column = 0, columnspan = 2, row = 6, pady = 7)
 
     # a place for the toplevel entry info
     entryboxes = OrderedDict()
@@ -5000,8 +5015,7 @@ def corpkit_gui():
     
     # broken on deployed version ... path to self stuff
     #filemenu.add_separator()
-    filemenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
-    filemenu.add_separator()
+
     filemenu.add_command(label="Check for updates", command=check_updates)
     #filemenu.add_separator()
     #filemenu.add_command(label="Restart tool", command=restart)
@@ -5085,6 +5099,8 @@ def corpkit_gui():
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="Help", command=query_help)
     helpmenu.add_command(label="Save log", command=show_log)
+    helpmenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
+    helpmenu.add_separator()
     helpmenu.add_command(label="About", command=about_box)
     menubar.add_cascade(label="Help", menu=helpmenu)
 
