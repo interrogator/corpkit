@@ -100,7 +100,9 @@ def interrogator(path,
     post_process : function
        pass a function that processes every item in the list of results
     ** kwargs : Mostly exists to allow users to pass in earlier interrogation
-               settings in order to reperform the search.
+                settings in order to reperform the search.
+                gramsize: get ngrams larger than 2
+                tokenizer: which tokeniser to use
 
     Example 1: Tree querying
     --------
@@ -144,18 +146,11 @@ def interrogator(path,
     import nltk
     import os
 
-    npat = nltk.__file__
-    nltkpath = os.path.dirname(npat)
-    if nltkpath not in nltk.data.path:
-        nltk.data.path.append(nltkpath)
-        # /Users/daniel/Work/corpkit/dist/corpkit-gui.app/Contents/Resources/lib/python2.7/site-packages.zip/nltk
-        if 'note' in kwargs.keys():
-            path_within_gui = os.path.join(nltkpath.split('/lib/python2.7')[0], 'nltk_data')
-            if path_within_gui not in nltk.data.path:
-                nltk.data.path.append(path_within_gui)
-
-    # very temporary!
-    nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
+    td = {}
+    from corpkit.other import add_nltk_data_to_nltk_path
+    if 'note' in kwargs.keys():
+        td['note'] = kwargs['note']
+    add_nltk_data_to_nltk_path(**td)
 
     try:
         from IPython.display import display, clear_output
@@ -335,7 +330,7 @@ def interrogator(path,
         
         # tokenise if multiword:
         if phrases:
-            from nltk import word_tokenize
+            from nltk import word_tokenize as word_tokenize
             list_of_matches = [word_tokenize(i) for i in list_of_matches]
         if lemmatise:
             tag = gettag(query, lemmatag = lemmatag)
@@ -615,6 +610,32 @@ def interrogator(path,
             result.append(m)
         return result
 
+    def tok_ngrams(pattern, list_of_toks):
+        from collections import Counter
+        global gramsize
+        import re
+        ngrams = Counter()
+        result = []
+        # if it's not a compiled regex
+        list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
+        for index, w in enumerate(list_of_toks):
+            try:
+                the_gram = [list_of_toks[index+x] for x in range(gramsize)]
+                if not any(re.search(query, x) for x in the_gram):
+                    continue
+                #if query != 'any':
+                #    if not any(re.search(query, w) is True for w in the_gram):
+                #        continue
+                ngrams[' '.join(the_gram)] += 1
+            except IndexError:
+                pass
+        # turn counter into list of results
+        for k, v in ngrams.items():
+            if v > 1:
+                for i in range(v):
+                    result.append(k)
+        return result
+
     def tok_by_reg(pattern, list_of_toks):
         """search for regex in plaintext corpora"""
         return [m for m in list_of_toks if re.search(pattern, m)]
@@ -635,17 +656,17 @@ def interrogator(path,
         if type(pattern) == str:
             pattern = [pattern]
         result = []
-        # this slows things down significantly ...
-        from nltk import word_tokenize
-        tokenized = word_tokenize(plaintext_data)
-        # consider saving tokenised corpus and then opening it when needed
         for p in pattern:
+            if case_sensitive:
+                pat = re.compile(r'\b' + re.escape(p) + '\b')
+            else:
+                pat = re.compile(r'\b' + re.escape(p) + '\b', re.IGNORECASE)
             if not any_plaintext_word:
-                num_matches = tokenized.count(p)
-                for m in range(num_matches):
+                matches = re.findall(pat, plaintext_data)
+                for m in range(matches):
                     result.append(p)
             else:
-                for m in tokenized:
+                for m in plaintext_data.split():
                     result.append(m)
         return result
 
@@ -932,10 +953,32 @@ def interrogator(path,
             translated_option = 'h'
             tokens = True
             optiontext = 'Tokens via regular expression.'
+            dep_funct = tok_by_reg
         elif option.lower().startswith('e'):
             translated_option = 'e'
             tokens = True
             optiontext = 'Tokens via list.'
+            dep_funct = tok_by_list
+        elif option.lower().startswith('j'):
+            translated_option = 'j'
+            tokens = True
+            lemmatise = False
+            optiontext = 'Get ngrams from tokens.'
+            if query == 'any':
+                query = r'.*'
+            if type(query) == list:
+                query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
+            else:
+                if not case_sensitive:
+                    query = re.compile(query, re.IGNORECASE)
+                else:
+                    query = re.compile(query)
+            global gramsize
+            if 'gramsize' in kwargs.keys():
+                gramsize = kwargs['gramsize']
+            else:
+                gramsize = 2
+            dep_funct = tok_ngrams
         else:
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
@@ -1074,29 +1117,29 @@ def interrogator(path,
     if titlefilter:
         phrases = True
 
-    def filtermaker(filter):
-        if type(filter) == list:
+    def filtermaker(the_filter):
+        if type(the_filter) == list:
             from other import as_regex
-            filter = as_regex(filter, case_sensitive = case_sensitive)
+            the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
         try:
-            output = re.compile(filter)
+            output = re.compile(the_filter)
             is_valid = True
         except:
             is_valid = False
         while not is_valid:
             if root:
                 time = strftime("%H:%M:%S", localtime())
-                print filter
-                print '%s: Invalid filter regular expression.' % time
+                print the_filter
+                print '%s: Invalid the_filter regular expression.' % time
                 return False
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
                 '              a) rewrite it now\n' \
-                '              b) exit\n\nYour selection: ' % (time, filter))
+                '              b) exit\n\nYour selection: ' % (time, the_filter))
             if 'a' in selection:
-                filter = raw_input('\nNew regular expression: ')
+                the_filter = raw_input('\nNew regular expression: ')
                 try:
-                    output = re.compile(r'\b' + filter + r'\b')
+                    output = re.compile(r'\b' + the_filter + r'\b')
                     is_valid = True
                 except re.error:
                     is_valid = False
@@ -1265,11 +1308,17 @@ def interrogator(path,
             try:
                 if translated_option == 'r':
                     if type(query) == str:
-                        regex = re.compile(r'\b' + query + r'\b')
+                        if case_sensitive:
+                            regex = re.compile(r'\b' + query + r'\b')
+                        else:
+                            regex = re.compile(r'\b' + query + r'\b', re.IGNORECASE)
                     else:
                         regex = query
                 else:
-                    regex = re.compile(query)
+                    if case_sensitive:
+                        regex = re.compile(query)
+                    else:
+                        regex = re.compile(query, re.IGNORECASE)
                 is_valid = True
             except re.error:
                 is_valid = False
@@ -1285,7 +1334,10 @@ def interrogator(path,
                 if 'a' in selection:
                     query = raw_input('\nNew regular expression: ')
                     try:
-                        regex = re.compile(r'\b' + query + r'\b')
+                        if case_sensitive:
+                            regex = re.compile(r'\b' + query + r'\b')
+                        else:
+                            regex = re.compile(r'\b' + query + r'\b', re.IGNORECASE)
                         is_valid = True
                     except re.error:
                         is_valid = False
@@ -1294,13 +1346,12 @@ def interrogator(path,
                     return
 
     #print list nicely
-    if not translated_option == 's':
+    if type(query) == list:
+        qtext = ', '.join(query)
+    elif type(query) == str or type(query) == unicode:
         qtext = query
     else:
-        if type(query) == list:
-            qtext = ', '.join(query)
-        else:
-            qtext = query
+        qtext = 'regex'
 
     global skipped_sents
     skipped_sents = 0
@@ -1340,7 +1391,6 @@ def interrogator(path,
                     subcorpus = path
                 else:
                     subcorpus = os.path.join(path,subcorpus_name)
-        
                 if keywording:
                     result = []
                     from corpkit import keywords
@@ -1445,11 +1495,15 @@ def interrogator(path,
                             result_from_file = plaintext_simple_search(query, data)
                 if tokens:
                     import pickle
+                    import os
                     data = pickle.load(open(filepath, "rb"))
+                    #print data
                     if translated_option == 'h':
                         result_from_file = tok_by_reg(regex, data)
                     if translated_option == 'e':
                         result_from_file = tok_by_list(query, data)
+                    if translated_option == 'j':
+                        result_from_file = tok_ngrams(query, data)
 
                 if 'result_from_file' in locals():
                     if not statsmode:
