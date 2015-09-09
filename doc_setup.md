@@ -17,7 +17,7 @@ Most of the things *corpkit* needs to run are embedded inside the app. A few thi
 
 You'll need Java in order to search constituency trees. Your Mac will pop up a message if you don't have the right Java installed, and will point you to a website where you can get it.
 
-Once it's installred, restart *corpkit* and try again. If the error persists, the reason is that your Mac actually pointed you to the wrong Java distribution. The one you need is [here](https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg). 
+Once it's installed, restart *corpkit* and try again. If the error persists, the reason is that your Mac actually pointed you to the wrong Java distribution. The one you need is [here](https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg). 
 
 ### CoreNLP parser
 

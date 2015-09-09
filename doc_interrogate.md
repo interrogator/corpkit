@@ -10,11 +10,11 @@ last_updated: 2015-09-01
 
 ## Selecting a corpus
 
-If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the File menu.
+If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the menu.
 
 ## Selecting a kind of data
 
-*corpkit* can presently work with three kinds of data:
+*corpkit* can presently work with four kinds of data:
 
 1. Constituency parse trees
 2. Dependency parses
@@ -163,7 +163,11 @@ This kind of search has drawbacks, though. Lemmatisation, for example, will not 
 
 As with plain text, you can use either a list of a regular expression to match tokens.
 
-{{warning}} More coming soon! {{end}}
+{{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, though they in general allow less sophisticated interrogation, and are not a high priorty. {{end}}
+
+### Plaintext
+
+You can also search the plain text version of the corpus using simple or regular expression based searches.
 
 ## Special queries
 
@@ -211,7 +215,7 @@ If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define you
 
 You can easily select a predefined list, modify and rename it, and access it in the same way.
 
-The `Get verb/noun inflections` button will help you make queries that match all possible forms of the lemmata of interest.
+The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest.
 
 Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in blue, unsaved lists in red, and saved in green.
 
@@ -229,7 +233,7 @@ then *corpkit* will know that the output will be verbs, based on the initial `V`
 
 ## Speaker IDs
 
-If you have used the `speaker segmentation` option, you can restrict your searches to specific speakers. You can use `shift+click` or `ctrl+click` to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as `False`, rather than `ALL`.
+If you have used the `Speaker segmentation` option, you can restrict your searches to specific speakers. You can use `shift+click` or `ctrl+click` to select multiple speaker IDs. Speaker IDs may slow down tree-based searching quite a lot, so if you don't care too much about them, leave the option as `False`, rather than `ALL`.
 
 If you have selected `ALL` speakers, or have highlighted more than one, multiple interrogations will be performed, with the speaker ID appended to the interrogation name. Only one of these results will be shown as a spreadsheet, but you can use `Previous` and `Next` to navigate between them.
 
