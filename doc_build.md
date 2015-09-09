@@ -66,7 +66,7 @@ This will allow you to restrict your interrogations and concordances to specific
 
 ## Pressing the button
 
-Parsing is a computationally intensive process. For long sentencs, there are thousands of possible parses. The parser has to create them all, and decide which is the most likely. Sit tight and let the parsing happen. It's worth the wait.
+Parsing is a computationally intensive process. For long sentences, there are thousands of possible parses. The parser has to create them all, and decide which is the most likely. Sit tight and let the parsing happen. It's worth the wait.
 
 ## Next steps
 
