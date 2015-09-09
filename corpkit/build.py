@@ -551,9 +551,19 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
     import chardet
     from time import localtime, strftime
     import time
-    if not check_jdk():
-        print 'Need latest Java.'
-        return
+    
+    if not only_tokenise:
+        if not check_jdk():
+            print 'Need latest Java.'
+            return
+
+    # add nltk to path
+    td = {}
+    from corpkit.other import add_nltk_data_to_nltk_path
+    if 'note' in kwargs.keys():
+        td['note'] = kwargs['note']
+    add_nltk_data_to_nltk_path(**td)
+
     basecp = os.path.basename(corpuspath)
     if only_tokenise:
         new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
@@ -624,6 +634,10 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
             one_big_corpus = True
         else:
             one_big_corpus = False
+        if any(os.path.isdir(os.path.join(new_corpus_path, d)) for d in dirs):
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Directory already exists. Delete it if need be.' % thetime
+            return
         for d in dirs:
             os.makedirs(os.path.join(new_corpus_path, d))
         nfiles = len(fs)
@@ -640,7 +654,7 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
                 pth = os.path.join(new_corpus_path, newname)
             else:
                 pth = os.path.join(new_corpus_path, thedir, newname)
-            with open(pth, "w") as fo:
+            with open(pth, "wb") as fo:
                 pickle.dump(tokens, fo)
             if 'note' in kwargs.keys():
                 kwargs['note'].progvar.set((index + 1) * 100.0 / nfiles)
