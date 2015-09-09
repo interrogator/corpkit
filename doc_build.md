@@ -41,11 +41,11 @@ Once you have added a corpus to the project, you can select it for viewing, edit
 
 With a plain text corpus selected, you can view and edit the text files in your collection. You can make last-minute changes to the corpus now: after the texts are parsed, they are very difficult to change.
 
-{{warning}} This interface is not designed for a serious amount of editing work. For large amounts of editing, use a good text editor, like  <a href="http://www.sublimetext.com"><i>Sublime Text</i></a> or <a href="http://www.barebones.com/products/textwrangler"><i>TextWrangler</i></a>{{end}}
+{{warning}} This interface is not designed for a serious amount of editing work. For large amounts of editing, use a good text editor, like  <a href="http://www.sublimetext.com"><i>Sublime Text</i></a> or <a href="http://www.barebones.com/products/textwrangler"><i>TextWrangler.</i></a>{{end}}
 
 ## Parsing
 
-Parsing requires the one-time installation of the *Stanford CoreNLP* parser, as well as some things needed to run it. Follow the prompts to download and install it. If you want to remove the parser from your hard disk at any stage, it can be found in your `home` directory as `corenlp`.
+Parsing requires the one-time installation of the *Stanford CoreNLP* parser, as well as some things needed to run it. Follow the prompts to download and install it. If you want to move or delete the parser, it can be found in your `home` directory as `corenlp`. If you move it, you can manually set the CoreNLP path within *corpkit*.
 
 {{tip}} Some features of <i>corpkit</i> work without parsing, but parsing is the best way to find complex and interesting things in your data. {{end}}
 
@@ -59,11 +59,14 @@ For this option to work, each text file in your corpus must be formatted with sp
 
     JOHN: Why did they change the signs above all the bins?
     SPEAKER23: I know why. But I'm not telling.
-    ...
 
 This will allow you to restrict your interrogations and concordances to specific interlocutors.
 
 {{note}} Speaker IDs don't <i>technically</i> need to denote speakers: timestamps or dates could be formatted in the same way, allowing you to restrict interrogations temporally. {{end}}
+
+## Pressing the button
+
+Parsing is a computationally intensive process. For long sentencs, there are thousands of possible parses. The parser has to create them all, and decide which is the most likely. Sit tight and let the parsing happen. It's worth the wait.
 
 ## Next steps
 
