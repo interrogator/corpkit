@@ -9,6 +9,7 @@ def load_verb_data():
     """load the verb lexicon"""
 
     def resource_path(relative):
+        """seemingly not working"""
         import os
         return os.path.join(os.environ.get("_MEIPASS2", os.path.abspath(".")),relative)
     
@@ -21,7 +22,11 @@ def load_verb_data():
         corpath = os.path.dirname(corpkit.__file__)
         baspat = os.path.dirname(corpath)
         dicpath = os.path.join(baspat, 'dictionaries')
-        lexemes = pickle.load(open(os.path.join(dicpath, 'eng_verb_lexicon.p'), 'rb'))
+        try:
+            lexemes = pickle.load(open(os.path.join(dicpath, 'eng_verb_lexicon.p'), 'rb'))
+        except:
+            from corpkit.other import get_gui_resource_dir
+            lexemes = pickle.load(open(os.path.join(get_gui_resource_dir(), 'eng_verb_lexicon.p'), 'rb'))
     return lexemes
 
 def find_lexeme(verb):
