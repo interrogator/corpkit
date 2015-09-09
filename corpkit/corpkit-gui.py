@@ -325,6 +325,7 @@ def corpkit_gui():
             'Count matches': 'c',
             'Get role of match': 'f',
             'Get "role:dependent", matching governor': 'd',
+            'Get ngrams': 'j',
             'Get "role:governor", matching dependent': 'g',
             'Get lemmata matching regex': 'l',
             'Get tokens by role': 'm',
@@ -335,15 +336,16 @@ def corpkit_gui():
             'Get tokens matching regex': 't',
             'Get stats': 'v',
             'Get words': 'w',
-            'Get tokens matching regular expression': 'h',
+            'Get tokens by regex': 'h',
             'Get tokens matching list': 'e'}
 
     option_dict = {'Trees': ['Get words', 
                              'Get tag and word of match', 
                              'Count matches', 
                              'Get part-of-speech tag'],
-                   'Tokens': ['Get tokens matching regular expression', 
-                             'Get tokens matching list'], 
+                   'Tokens': ['Get tokens by regex', 
+                             'Get tokens matching list',
+                             'Get ngrams'], 
                    'Dependencies':
                             ['Get role of match',
                              'Get lemmata matching regex',
@@ -388,6 +390,10 @@ def corpkit_gui():
     ###################     ###################     ###################     ###################
     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
     ###################     ###################     ###################     ###################
+
+    from corpkit.other import get_gui_resource_dir
+    resource_path = StringVar()
+    resource_path.set(get_gui_resource_dir())
 
     def timestring(input):
         """print with time prepended"""
@@ -1064,6 +1070,11 @@ def corpkit_gui():
             selected_option = 'v'
             interrogator_args['query'] = 'any'
 
+        if selected_option == 'j':
+            global ngmsize
+            if (ngmsize.var).get() != 'n':
+                interrogator_args['gramsize'] = int((ngmsize.var).get())
+
         interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         
         sys.stdout = note.redir
@@ -1204,12 +1215,15 @@ def corpkit_gui():
         else:
             parsebut.config(state = DISABLED)
             speakcheck_build.config(state = DISABLED)
+            datatype_picked.set('Dependencies')
         if not os.path.basename(fp).endswith('-tokenised'):
             if not os.path.basename(fp).endswith('-parsed'):
+                datatype_picked.set('Plaintext')
                 tokbut.config(state = NORMAL)
                 tokenise_button_text.set('Tokenise: %s' % os.path.basename(fp))
         else:
             tokbut.config(state = DISABLED)
+            datatype_picked.set('Tokens')
         add_subcorpora_to_build_box(fp)
         #sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
@@ -1353,7 +1367,16 @@ def corpkit_gui():
                    'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
                    'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
                    'Tokens': r'\b(m.n|wom.n|child(ren)?)\b',
-                   'Other': r'[cat,cats,mouse,mice,cheese]'}
+                   'Other': r'[cat,cats,mouse,mice,cheese]',
+                   'other2': r'\b(amod|nn|advm|vmod|tmod)\b',
+                   'other3': 'any'}
+
+    special_examples = {'Get tokens by role': r'\b(amod|nn|advm|vmod|tmod)\b',
+                            'Simple search string search': r'[cat,cats,mouse,mice,cheese]',
+                            'Regular expression search': r'(m.n|wom.n|child(ren)?)',
+                            'Get tokens by regex': r'(m.n|wom.n|child(ren)?)',
+                            'Get tokens matching list': r'[cat,cats,mouse,mice,cheese]',
+                            'Get ngrams': 'any'}
 
     def onselect(evt):
         w = evt.widget
@@ -1363,26 +1386,26 @@ def corpkit_gui():
         #datatype_chosen_option.set(value)
         datatype_listbox.select_set(index)
         datatype_listbox.see(index)
-        if value == 'Get tokens by role':
-            if entrytext.get() not in def_queries.values():
-                entrytext.set(r'\b(amod|nn|advm|vmod|tmod)\b')
-        elif value == 'Simple search string search':
-            if entrytext.get() not in def_queries.values():
-                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
-        elif value == 'Regular expression search':
-            if entrytext.get() not in def_queries.values():
-                entrytext.set(r'(m.n|wom.n|child(ren)?)')
-        elif value == 'Get tokens matching regular expression':
-            if entrytext.get() not in def_queries.values():
-                entrytext.set(r'(m.n|wom.n|child(ren)?)')
-        elif value == 'Get tokens matching list':
-            if entrytext.get() not in def_queries.values():
-                entrytext.set(r'[cat,cats,mouse,mice,cheese]')
-        else:
-            if entrytext.get() not in def_queries.values():
+        if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
+            try:
+                entrytext.set(special_examples[value])
+            except KeyError:
                 entrytext.set(def_queries[datatype_picked.get()])
 
-    # boolean interrogation arguments
+        if value == 'Get ngrams':
+            global ngmsize
+            ngmsize = MyOptionMenu(tab1, 'n','2','3','4','5','6','7','8')
+            ngmsize.configure(width = 5)
+            ngmsize.grid(row = 3, column = 0, sticky = 'SW', pady = (0, 10), padx = (13, 0))
+            lbut.config(state = DISABLED)
+        else:
+            lbut.config(state = NORMAL)
+            try:
+                ngmsize.destroy()
+            except:
+                pass
+
+    # boolean interrogation arguments need fixing...
     lem = IntVar()
     lbut = Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
     lbut.grid(column = 0, row = 7, sticky=W)
@@ -1423,6 +1446,7 @@ def corpkit_gui():
             mwbut.configure(state = NORMAL)
             tfbut.configure(state = NORMAL)
         
+        #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
         entrytext.set(def_queries[chosen])
 
     datatype_picked = StringVar(root)
@@ -1438,7 +1462,7 @@ def corpkit_gui():
     frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     dtscrollbar = Scrollbar(frm)
     dtscrollbar.pack(side=RIGHT, fill=Y)
-    datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 32, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+    datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 38, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                         yscrollcommand=dtscrollbar.set, exportselection = False)
     datatype_listbox.pack()
     dtscrollbar.config(command=datatype_listbox.yview)
@@ -2798,6 +2822,11 @@ def corpkit_gui():
         # if sorting by other columns, however, it gets tough.
         else:
             from nltk import word_tokenize as tokenise
+            td = {}
+            from corpkit.other import add_nltk_data_to_nltk_path
+            if 'note' in kwargs.keys():
+                td['note'] = kwargs['note']
+                add_nltk_data_to_nltk_path(**td)
             
             timestring('Tokenising concordance lines ... ')
             # tokenise the right part of each line
@@ -2865,7 +2894,7 @@ def corpkit_gui():
         # get variant forms
         lst = get_both_spellings(lst)
         if pos == 'v':
-            lst = add_verb_inflections(lst)
+            expanded = add_verb_inflections(lst)
         if pos == 'n':
             from corpkit.inflect import pluralize
             expanded = []
@@ -2933,7 +2962,6 @@ def corpkit_gui():
         for k, v in sorted(custom_special_dict.items()):
             cust_spec.insert(END, k)
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
-        
         timestring('LIST:%s stored to custom wordlists.' % specname)
 
     def custom_lists():
@@ -2947,6 +2975,7 @@ def corpkit_gui():
         schemename = StringVar()
         schemename.set('<Enter a name>')
         scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER, width = 17, font = ("Courier New", 13))
+        #scheme_name_field.bind('<Button-1>', select_all_text)
         scheme_name_field.grid(column = 0, row = 5, sticky = W, padx = (7, 0))
         global tb
         custom_words = Frame(popup, width = 9, height = 40)
@@ -2956,20 +2985,21 @@ def corpkit_gui():
         tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
                   bg = '#F4F4F4', width = 20, height = 26, font = ("Courier New", 13))
         cwscrbar.config(command=tb.yview)
-        tb.bind("<%s-a>" % key, select_all_text)
-        tb.bind("<%s-A>" % key, select_all_text)
-        tb.bind("<%s-v>" % key, paste_into_textwidget)
-        tb.bind("<%s-V>" % key, paste_into_textwidget)
-        tb.bind("<%s-x>" % key, cut_from_textwidget)
-        tb.bind("<%s-X>" % key, cut_from_textwidget)
-        tb.bind("<%s-c>" % key, copy_from_textwidget)
-        tb.bind("<%s-C>" % key, copy_from_textwidget)
+        for box in [tb, scheme_name_field]:
+            box.bind("<%s-a>" % key, select_all_text)
+            box.bind("<%s-A>" % key, select_all_text)
+            box.bind("<%s-v>" % key, paste_into_textwidget)
+            box.bind("<%s-V>" % key, paste_into_textwidget)
+            box.bind("<%s-x>" % key, cut_from_textwidget)
+            box.bind("<%s-X>" % key, cut_from_textwidget)
+            box.bind("<%s-c>" % key, copy_from_textwidget)
+            box.bind("<%s-C>" % key, copy_from_textwidget)
         tb.pack(side=LEFT, fill=BOTH)
         tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
         tmp.grid(row = 2, column = 0, sticky = W, padx = (7, 0))
-        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17)
+        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17, state = DISABLED)
         tmp.grid(row = 3, column = 0, sticky = W, padx = (7, 0))  
-        tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17)
+        tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17, state = DISABLED)
         tmp.grid(row = 4, column = 0, sticky = W, padx = (7, 0))       
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
@@ -3520,8 +3550,6 @@ def corpkit_gui():
         log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
         addbut.config(state=NORMAL)
 
-        
-
         open_proj_basepath.set('Loaded: "%s"' % name)
         save_config()
         root.title("corpkit: %s" % os.path.basename(project_fullpath.get()))
@@ -3828,6 +3856,9 @@ def corpkit_gui():
         editoname.set('Edited results:')
         savedplot.set('Saved images: ')
         open_proj_basepath.set('Open project')
+        corpus_fullpath.set('')
+        corpora_fullpath.set('')
+
         # spreadsheets
         update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
         update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
@@ -4750,23 +4781,7 @@ def corpkit_gui():
 
     def get_tool_pref_file():
         """get the location of the tool preferences files"""
-        import inspect
-        import os
-        import sys
-        corpath = inspect.getfile(inspect.currentframe())
-        extens = '.%s' % fext
-        apppath = corpath.split(extens , 1)
-        resource_path = ''
-        if len(apppath) == 1:
-            resource_path = os.path.dirname(corpath)
-        else:
-            apppath = apppath[0] + extens
-            appdir = os.path.dirname(apppath)
-            if sys.platform != 'darwin':
-                resource_path = os.path.join(apppath, 'Contents', 'Resources')
-            else:
-                resouce_path = appdir
-        return os.path.join(resource_path, 'tool_settings.ini')
+        return os.path.join(resource_path.get(), 'tool_settings.ini')
 
     def save_tool_prefs(printout = True):
         """save any preferences to tool preferences"""
