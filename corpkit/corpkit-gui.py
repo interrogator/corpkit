@@ -1186,6 +1186,7 @@ def corpkit_gui():
         pick_subcorpora['menu'].delete(0, 'end')
         if len(subdrs) > 0:
             pick_subcorpora.config(state = NORMAL)
+            pick_subcorpora['menu'].add_command(label='All', command=Tkinter._setit(subc_pick, 'All'))
             for choice in subdrs:
                 pick_subcorpora['menu'].add_command(label=choice, command=Tkinter._setit(subc_pick, choice))
         else:
@@ -2579,7 +2580,7 @@ def corpkit_gui():
         """when you press 'run'"""
         timestring('Concordancing in progress ... ')
         from corpkit.conc import conc
-        if subc_pick.get() == "Subcorpus" or subc_pick.get() == 'all':
+        if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all':
             corpus = corpus_fullpath.get()
         else:
             corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
