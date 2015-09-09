@@ -1441,3 +1441,43 @@ def add_corpkit_to_path():
             sys.path.append(p)
         if p not in os.environ["PATH"].split(':'): 
             os.environ["PATH"] += os.pathsep + p
+
+def add_nltk_data_to_nltk_path(**kwargs):
+    import nltk
+    import os
+    npat = nltk.__file__
+    nltkpath = os.path.dirname(npat)
+    if nltkpath not in nltk.data.path:
+        nltk.data.path.append(nltkpath)
+        if 'note' in kwargs.keys():
+            path_within_gui = os.path.join(nltkpath.split('/lib/python2.7')[0], 'nltk_data')
+            if path_within_gui not in nltk.data.path:
+                nltk.data.path.append(path_within_gui)
+
+    # very temporary! -- for using .py
+    nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
+
+def get_gui_resource_dir():
+    import inspect
+    import os
+    import sys
+    if sys.platform == 'darwin':
+        key = 'Mod1'
+        fext = 'app'
+    else:
+        key = 'Control'
+        fext = 'exe'
+    corpath = corpath = __file__
+    extens = '.%s' % fext
+    apppath = corpath.split(extens , 1)
+    resource_path = ''
+    if len(apppath) == 1:
+        resource_path = os.path.dirname(corpath)
+    else:
+        apppath = apppath[0] + extens
+        appdir = os.path.dirname(apppath)
+        if sys.platform == 'darwin':
+            resource_path = os.path.join(apppath, 'Contents', 'Resources')
+        else:
+            resource_path = appdir
+    return resource_path
