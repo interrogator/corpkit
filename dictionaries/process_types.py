@@ -98,6 +98,8 @@ def add_verb_inflections(verb_list):
             # if not in dict, if it's an inflection, forget it
             if w in allverbs:
                 continue
+            if "'" in w:
+                continue
             # if it's a coinage, guess
             else:
                 wforms = find_lexeme(w)
