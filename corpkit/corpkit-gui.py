@@ -547,17 +547,8 @@ def corpkit_gui():
                     reg = re.compile('(^.*)(%s)(:)([A-Z0-9_]+)(.*$)' % special[:-1])
                     # split the query into parts
                     divided = re.search(reg, query)
-                    # set the right boundaries
-                    if special == 'PROCESSES:':
-                        the_bound = 'w'
-                    if special == 'ROLES:':
-                        the_bound = False
-                    if special == 'WORDLISTS:':
-                        the_bound = 'w'
-                    if special == 'CUSTOM:':
-                        the_bound = 'w'
-                    if special == 'LIST:':
-                        the_bound = 'w'
+                    # set the right boundaries: line only
+                    the_bound = 'l'
                     try:
                         # when custom, the keys *are* capitalised :)
                         if special != 'CUSTOM:' and special != 'LIST:':
@@ -644,7 +635,7 @@ def corpkit_gui():
         """make saved items in listbox have colour background"""
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
         if lists:
-            colour3 = '#decbe4'
+            colour3 = '#ffffcc'
         for index, item in enumerate(all_items):
             if not lists:
                 issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
@@ -2893,7 +2884,7 @@ def corpkit_gui():
                 supe = grade(w, suffix = "est")
                 if supe != w:
                     expanded.append(supe)
-            lst = sorted(set(expanded))
+        lst = sorted(set(expanded))
         # delete widget text, reinsrt all
         tb.delete(1.0, END)
         for w in lst:
@@ -2928,12 +2919,12 @@ def corpkit_gui():
         global tb
         lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         global schemename
-        if schemename.get() == 'List name':
+        if schemename.get() == '<Enter a name>':
             timestring('wordlist needs a name.')
             return
-        specname = ''.join([i for i in schemename.get().upper() if i.isalpha() or i == '_'])
+        specname = ''.join([i for i in schemename.get().upper() if i.isalnum() or i == '_'])
         if specname in predict.keys():
-            timestring('"%s" already taken, sorry.' % specname)
+            timestring('Name "%s" already taken, sorry.' % specname)
             return
         custom_special_dict[specname] = lst
         global cust_spec
@@ -2941,6 +2932,7 @@ def corpkit_gui():
         for k, v in sorted(custom_special_dict.items()):
             cust_spec.insert(END, k)
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+        
         timestring('LIST:%s stored to custom wordlists.' % specname)
 
     def custom_lists():
@@ -2953,15 +2945,15 @@ def corpkit_gui():
         global schemename
         schemename = StringVar()
         schemename.set('<Enter a name>')
-        scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER)
-        scheme_name_field.grid(column = 0, row = 5, sticky = W)
+        scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER, width = 17, font = ("Courier New", 13))
+        scheme_name_field.grid(column = 0, row = 5, sticky = W, padx = (7, 0))
         global tb
         custom_words = Frame(popup, width = 9, height = 40)
         custom_words.grid(row = 1, column = 0, padx = 5)
         cwscrbar = Scrollbar(custom_words)
         cwscrbar.pack(side=RIGHT, fill=Y)
         tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
-                  bg = '#F4F4F4', width = 30, height = 26, font = ("Courier New", 13))
+                  bg = '#F4F4F4', width = 20, height = 26, font = ("Courier New", 13))
         cwscrbar.config(command=tb.yview)
         tb.bind("<%s-a>" % key, select_all_text)
         tb.bind("<%s-A>" % key, select_all_text)
@@ -2973,29 +2965,35 @@ def corpkit_gui():
         tb.bind("<%s-C>" % key, copy_from_textwidget)
         tb.pack(side=LEFT, fill=BOTH)
         tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
-        tmp.grid(row = 2, column = 0, sticky = W)
+        tmp.grid(row = 2, column = 0, sticky = W, padx = (7, 0))
         tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17)
-        tmp.grid(row = 3, column = 0, sticky = W)  
+        tmp.grid(row = 3, column = 0, sticky = W, padx = (7, 0))  
         tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17)
-        tmp.grid(row = 4, column = 0, sticky = W)      
+        tmp.grid(row = 4, column = 0, sticky = W, padx = (7, 0))       
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
-        savebut.grid(row = 6, column = 0, sticky = W)
+        savebut.grid(row = 6, column = 0, sticky = W, padx = (7, 0))
         Label(popup, text = 'Previous wordlists', font = ("Helvetica", 13, "bold")).grid(column = 1, row = 0, padx = 15)
         other_custom_queries = Frame(popup, width = 9, height = 30)
         other_custom_queries.grid(row = 1, column = 1, padx = 15)
         pwlscrbar = Scrollbar(other_custom_queries)
         pwlscrbar.pack(side=RIGHT, fill=Y)
         global cust_spec
-        cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height = 23, relief = SUNKEN, bg = '#F4F4F4',
-                                    yscrollcommand=pwlscrbar.set, exportselection = False, width = 30)
+        cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height = 24, relief = SUNKEN, bg = '#F4F4F4',
+                                    yscrollcommand=pwlscrbar.set, exportselection = False, width = 20,
+                                    font = ("Courier New", 13))
         pwlscrbar.config(command=cust_spec.yview)
         cust_spec.pack()
         cust_spec.delete(0, END)
+        
+        def colour_the_custom_queries(*args):
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+
+        cust_spec.bind('<<Modified>>', colour_the_custom_queries)
         for k, v in sorted(custom_special_dict.items()):
             cust_spec.insert(END, k)
 
-        color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+        colour_the_custom_queries()
 
         def remove_this_custom_query():
             global cust_spec
@@ -3006,7 +3004,7 @@ def corpkit_gui():
                 cust_spec.delete(0, END)
                 for k, v in sorted(custom_special_dict.items()):
                     cust_spec.insert(END, k)
-                color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
             if len(indexes) == 1:
                 timestring('%s forgotten.' % name)
             else:
@@ -3022,10 +3020,9 @@ def corpkit_gui():
                     return
                 del custom_special_dict[name]
                 try:
-                    del custom_special_dict[name]
+                    del saved_special_dict[name]
                 except:
                     pass
-            
             dump_custom_list_json()
             cust_spec.delete(0, END)
             for k, v in sorted(custom_special_dict.items()):
@@ -3033,9 +3030,9 @@ def corpkit_gui():
             color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
             
             if len(indexes) == 1:
-                timestring('%s permanently deleted' % name)
+                timestring('%s permanently deleted.' % name)
             else:
-                timestring('%d lists permanently deleted' % len(indexes))
+                timestring('%d lists permanently deleted.' % len(indexes))
 
         def show_this_custom_query(*args):
             global cust_spec
@@ -3048,6 +3045,8 @@ def corpkit_gui():
             for i in custom_special_dict[name]:
                 tb.insert(END, i + '\n')
             schemename.set(name)
+
+        cust_spec.bind('<Return>', show_this_custom_query)
 
         def merge_this_custom_query(*args):
             global cust_spec
@@ -3066,17 +3065,17 @@ def corpkit_gui():
                 name = cust_spec.get(index)
                 saved_special_dict[name] = custom_special_dict[name]
             dump_custom_list_json()
-            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
+            
             if len(indexes) == 1:
                 timestring('%s saved to file.' % name)
             else:
                 timestring('%d lists saved to file.' % len(indexes))          
         
-        Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2, sticky = E)
-        Button(popup, text = 'Merge', command = merge_this_custom_query, width = 17).grid(column = 1, row = 3, sticky = E)
-        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 4, sticky = E)
-        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E)
-        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E)
+        Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2, sticky = E, padx = (0, 7))
+        Button(popup, text = 'Merge', command = merge_this_custom_query, width = 17).grid(column = 1, row = 3, sticky = E, padx = (0, 7))
+        Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 4, sticky = E, padx = (0, 7))
+        Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E, padx = (0, 7))
+        Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E, padx = (0, 7))
 
         def quit_listing(*args):
             popup.destroy()
