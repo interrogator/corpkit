@@ -146,7 +146,6 @@ So, to give some examples of output based on the sentence above:
 | <i>Get "role:governor"</i> | <code>^(would&#124;will&#124;wo)</code> |    |    |  <b>`aux:try` </b>  |
 | <i>Get "role:governor"</i> | `any` | <code>(dobj&#124;nsubj)</code>  |   |  <b>`try`, `follow`</b>   |
 
-
 ### Plain text
 
 Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
@@ -179,45 +178,29 @@ You can also search the plain text version of the corpus using simple or regular
 
 `Stats` will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.
 
-### Query parts
+### Wordlists
 
-There are also some things you can type into your query that *corpkit* recognises and handles differently. You can, for example, enter:
+*corpkit* also ships with a number of different lists of words or dependency roles that can be added into queries. The query below will match any of the closed class words in the `CLOSEDCLASS` list:
 
-> `PROCESSES:VERBAL`
+> `LIST:CLOSEDCLASS`
 
-to match any token corresponding to a verbal process (including all possible inflections). This can be powerful when used in conjunction with Tregex or dependency queries:
+ You can, for example, enter:
 
-> `VP <<# /PROCESSES:MENTAL/ $ NP`
- 
-will get verbal groups that contain mental process types.
+This can be powerful when used in conjunction with Tregex or dependency queries. The query below will get any predicator matching a list of mental processes
 
-Currently, the special query types are:
+> `VP <<# /LIST:MENTAL/ $ NP`
 
-| Special query kind -| Matches           |
-|---------------------|-------------------|
-| `PROCESSES:`        | Tokens            |
-| `ROLES:`            | CoreNLP functions |
-| `WORDLISTS:`        | Tokens            |
-
-Each special query type has a number of possible subtypes:
-
-* `WORDLISTS:` recognises `PRONOUNS`, `ARTICLES`, `CONJUNCTIONS`, `DETERMINERS`, `PREPOSITIONS`, `CONNECTORS`, `MODALS`, `CLOSEDCLASS` and `TITLES`.
-* `ROLES:` recognises `ACTOR`, `ADJUNCT`, `AUXILIARY`, `CIRCUMSTANCE`, `CLASSIFIER`, `COMPLEMENT`, `DEICTIC`, `EPITHET`, `EVENT`, `EXISTENTIAL`, `GOAL`, `MODAL`, `NUMERATIVE`, `PARTICIPANT`, `PARTICIPANT1`, `PARTICIPANT2`, `POLARITY`, `PREDICATOR`, `PROCESS`, `QUALIFIER`, `SUBJECT`, `TEXTUAL` and `THING`.
-* `PROCESSES:` recognises `MENTAL`, `VERBAL` and `RELATIONAL`.
-
-When using dependencies, you could get *Sensers* by searching for the role and dependent of `PROCESSES:MENTAL`, and then by using a function filter for `ROLES:PARTICIPANT1`.
+If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists, including those outlined in the previous section. Simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in a query with the  `LIST:NAME` syntax.
 
 {{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /PROCESSES:MENTAL/"</code> will work, but <code>"/VB.?/ < PROCESSES:MENTAL"</code> will not. {{end}}
 
 ### Creating and modifying special queries
 
-If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists, including those outlined in the previous section. Simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in your query by typing `LIST:NAME`.
-
 You can easily select a predefined list, modify and rename it, and access it in the same way.
 
 The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest.
 
-Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in blue, unsaved lists in red, and saved in green.
+Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in yellow, unsaved lists in red, and saved in green.
 
 {{tip}} Custom wordlists are stored in <code>`project_dir/custom_wordlists.txt`</code>. You can open up these files and alter them if need be. So long as you respect the file's syntax, the wordlist will be loaded when you open the project. {{end}}
 
