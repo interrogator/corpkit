@@ -194,15 +194,13 @@ If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define you
 
 {{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /PROCESSES:MENTAL/"</code> will work, but <code>"/VB.?/ < PROCESSES:MENTAL"</code> will not. {{end}}
 
-### Creating and modifying special queries
+### Creating and modifying wordlists
 
-You can easily select a predefined list, modify and rename it, and access it in the same way.
-
-The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest.
+You can easily select a predefined list, modify and rename it, and access it via `LIST:NAME`. The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest.
 
 Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in yellow, unsaved lists in red, and saved in green.
 
-{{tip}} Custom wordlists are stored in <code>`project_dir/custom_wordlists.txt`</code>. You can open up these files and alter them if need be. So long as you respect the file's syntax, the wordlist will be loaded when you open the project. {{end}}
+{{tip}} Custom wordlists are stored in <code>`project/custom_wordlists.txt`</code>. You can open up these files and alter them if need be. So long as you respect the file's syntax, the wordlist will be loaded when you open the project. {{end}}
 
 ## Lemmatisation
 
