@@ -567,8 +567,8 @@ def corpkit_gui():
                                        inverse = False)
                         query = divided.group(1) + asr + divided.group(5)
                     except:
-                        timestring('"%s" must be: %s' % (divided.group(4), ', '.join(types)))
-                        raise
+                        timestring('"%s" not found in wordlists.')
+                        return
         return query
 
     def ignore():
@@ -642,6 +642,7 @@ def corpkit_gui():
         all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
         if lists:
             colour3 = '#ffffcc'
+            colour4 = '#fed9a6'
         for index, item in enumerate(all_items):
             if not lists:
                 issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
@@ -654,7 +655,11 @@ def corpkit_gui():
                 lb.itemconfig(index, {'bg':colour2})
             if lists:
                 if item in predict.keys():
-                    lb.itemconfig(index, {'bg':colour3})
+
+                    if item.endswith('_ROLE'):
+                        lb.itemconfig(index, {'bg':colour3})
+                    else:
+                        lb.itemconfig(index, {'bg':colour4})
         lb.selection_clear(0, END)
 
     def paste_into_textwidget(*args):
@@ -1075,11 +1080,16 @@ def corpkit_gui():
             if (ngmsize.var).get() != 'n':
                 interrogator_args['gramsize'] = int((ngmsize.var).get())
 
+            global split_contract
+            if (split_contract.var).get() == 'No':
+                interrogator_args['split_contractions'] = False
+            elif (split_contract.var).get() == 'Yes':
+                interrogator_args['split_contractions'] = True
+
         interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
         
         sys.stdout = note.redir
         if not interrodata or interrodata == 'Bad query':
-        
             update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
             update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)            
             return
@@ -1127,6 +1137,9 @@ def corpkit_gui():
         # update spreadsheets
         if 'results' in recent_interrogation_data._asdict().keys():
             update_spreadsheet(interro_results, recent_interrogation_data.results, height = 340, indexwidth = 70, width = 650)
+        else:
+            update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
+
         update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
         
         global prev
@@ -1392,16 +1405,26 @@ def corpkit_gui():
             except KeyError:
                 entrytext.set(def_queries[datatype_picked.get()])
 
+        # add a contractions option here
+
         if value == 'Get ngrams':
             global ngmsize
-            ngmsize = MyOptionMenu(tab1, 'n','2','3','4','5','6','7','8')
-            ngmsize.configure(width = 5)
-            ngmsize.grid(row = 3, column = 0, sticky = 'SW', pady = (0, 10), padx = (13, 0))
+            ngmsize = MyOptionMenu(tab1, 'Size','2','3','4','5','6','7','8')
+            ngmsize.configure(width = 8)
+            ngmsize.grid(row = 3, column = 0, sticky = 'W', pady = (0, 10), padx = (2, 0))
             lbut.config(state = DISABLED)
+            global split_contract
+            split_contract = MyOptionMenu(tab1, 'Split', 'Yes', 'No')
+            split_contract.configure(width = 8)
+            split_contract.grid(row = 3, column = 0, sticky = 'SW', pady = (0, 3), padx = (2, 0))
         else:
             lbut.config(state = NORMAL)
             try:
                 ngmsize.destroy()
+            except:
+                pass
+            try:
+                split_contract.destroy()
             except:
                 pass
 
@@ -2950,12 +2973,18 @@ def corpkit_gui():
         lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         global schemename
         if schemename.get() == '<Enter a name>':
-            timestring('wordlist needs a name.')
+            timestring('Wordlist needs a name.')
             return
         specname = ''.join([i for i in schemename.get().upper() if i.isalnum() or i == '_'])
         if specname in predict.keys():
             timestring('Name "%s" already taken, sorry.' % specname)
             return
+        else:
+            if specname in custom_special_dict.keys():
+                should_continue = tkMessageBox.askyesno("Overwrite list", 
+                          "Overwrite existing list named '%s'?" % specname)
+                if not should_continue:
+                    return
         custom_special_dict[specname] = lst
         global cust_spec
         cust_spec.delete(0, END)
@@ -2997,9 +3026,9 @@ def corpkit_gui():
         tb.pack(side=LEFT, fill=BOTH)
         tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
         tmp.grid(row = 2, column = 0, sticky = W, padx = (7, 0))
-        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17, state = DISABLED)
+        tmp = Button(popup, text = 'Get noun inflections', command = lambda: do_inflection(pos = 'n'), width = 17)
         tmp.grid(row = 3, column = 0, sticky = W, padx = (7, 0))  
-        tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17, state = DISABLED)
+        tmp = Button(popup, text = 'Get adjective forms', command = lambda: do_inflection(pos = 'a'), width = 17)
         tmp.grid(row = 4, column = 0, sticky = W, padx = (7, 0))       
         #Button(text = 'Inflect as noun', command = lambda: do_inflection(pos = 'n')).grid()
         savebut = Button(popup, text = 'Store', command = store_wordlist, width = 17)
@@ -3096,6 +3125,7 @@ def corpkit_gui():
                 name = cust_spec.get(index)
                 saved_special_dict[name] = custom_special_dict[name]
             dump_custom_list_json()
+            color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
             
             if len(indexes) == 1:
                 timestring('%s saved to file.' % name)
@@ -3108,8 +3138,24 @@ def corpkit_gui():
         Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E, padx = (0, 7))
         Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E, padx = (0, 7))
 
+
+        def have_unsaved_list():
+            """finds out if there is an unsaved list"""
+            global tb
+            lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
+            if any(lst == l for l in custom_special_dict.values()):
+                return False
+            else:
+                return True
+
         def quit_listing(*args):
+            if have_unsaved_list():
+                should_continue = tkMessageBox.askyesno("Unsaved data", 
+                          "Unsaved list will be forgotten. Continue?")
+                if not should_continue:
+                    return        
             popup.destroy()
+
 
         stopbut = Button(popup, text = 'Done', command=quit_listing)
         stopbut.grid(column = 0, columnspan = 2, row = 7, pady = 7)
