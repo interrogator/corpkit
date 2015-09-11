@@ -162,6 +162,10 @@ This kind of search has drawbacks, though. Lemmatisation, for example, will not 
 
 As with plain text, you can use either a list of a regular expression to match tokens.
 
+An additional option, however, is to *Get n-grams*. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted.
+
+Two extra options appear when ngramming is selected. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
+
 {{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, though they in general allow less sophisticated interrogation, and are not a high priorty. {{end}}
 
 ### Plaintext
@@ -174,7 +178,9 @@ You can also search the plain text version of the corpus using simple or regular
 
 ### Preset queries
 
-`'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar. 
+`'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar.
+
+{{tip}} One of the first things you might like to do with your data is calculate the total number of tokens in each subcorpus. The easiest way to do this is to use the <code>Count tokens</code> option in the <code>Trees</code> search type, and to select <code>Any</code> as the preset query. You can then use this data, in combination with a different interrogation, to calculate the relative frequencies of specific words in the corpus. See <a href="doc_edit.html"><i>Edit</i></a> for more details.{{end}}
 
 `Stats` will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.
 
@@ -192,7 +198,7 @@ This can be powerful when used in conjunction with Tregex or dependency queries.
 
 If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists, including those outlined in the previous section. Simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in a query with the  `LIST:NAME` syntax.
 
-{{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /PROCESSES:MENTAL/"</code> will work, but <code>"/VB.?/ < PROCESSES:MENTAL"</code> will not. {{end}}
+{{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /LIST:MENTAL/"</code> will work, but <code>"/VB.?/ < LIST:MENTAL"</code> will not. {{end}}
 
 ### Creating and modifying wordlists
 
