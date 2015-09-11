@@ -16,6 +16,10 @@
 # 95% for Verbs.find_lemma() (for regular verbs)
 # 96% for Verbs.find_lexeme() (for regular verbs)
 
+#################################################################################
+# Modified from original to work as standalone for adjective and noun inflection.
+#################################################################################
+
 import os
 import sys
 import re
@@ -27,14 +31,14 @@ except:
     
 sys.path.insert(0, os.path.join(MODULE, "..", "..", "..", ".."))
 
-from pattern.text import Verbs as _Verbs
-from pattern.text import (
-    INFINITIVE, PRESENT, PAST, FUTURE,
-    FIRST, SECOND, THIRD,
-    SINGULAR, PLURAL, SG, PL,
-    PROGRESSIVE,
-    PARTICIPLE
-)
+#from pattern.text import Verbs as _Verbs
+#from pattern.text import (
+#    INFINITIVE, PRESENT, PAST, FUTURE,
+#    FIRST, SECOND, THIRD,
+#    SINGULAR, PLURAL, SG, PL,
+#    PROGRESSIVE,
+#    PARTICIPLE
+#)
 
 sys.path.pop(0)
 
@@ -622,113 +626,6 @@ def singularize(word, pos=NOUN, custom={}):
                     inflection = inflection.replace('\\' + str(k + 1), '')
             return suffix.sub(inflection, word)
     return word
-
-#### VERB CONJUGATION ##############################################################################
-
-class Verbs(_Verbs):
-    
-    def __init__(self):
-        _Verbs.__init__(self, os.path.join(MODULE, "en-verbs.txt"),
-            language = "en",
-              format = [0, 1, 2, 3, 7, 8, 17, 18, 19, 23, 25, 24, 16, 9, 10, 11, 15, 33, 26, 27, 28, 32],
-             default = {
-                 1: 0,   2: 0,   3: 0,   7: 0,  # present singular => infinitive ("I walk")
-                 4: 7,   5: 7,   6: 7,          # present plural
-                17: 25, 18: 25, 19: 25, 23: 25, # past singular
-                20: 23, 21: 23, 22: 23,         # past plural
-                 9: 16, 10: 16, 11: 16, 15: 16, # present singular negated
-                12: 15, 13: 15, 14: 15,         # present plural negated
-                26: 33, 27: 33, 28: 33,         # past singular negated
-                29: 32, 30: 32, 31: 32, 32: 33  # past plural negated
-            })
-    
-    def find_lemma(self, verb):
-        """ Returns the base form of the given inflected verb, using a rule-based approach.
-            This is problematic if a verb ending in -e is given in the past tense or gerund.
-        """
-        v = verb.lower()
-        b = False
-        if v in ("'m", "'re", "'s", "n't"):
-            return "be"
-        if v in ("'d", "'ll"):
-            return "will"
-        if v in  ("'ve"):
-            return "have"
-        if v.endswith("s"):
-            if v.endswith("ies") and len(v) > 3 and v[-4] not in VOWELS:
-                return v[:-3]+"y" # complies => comply
-            if v.endswith(("sses", "shes", "ches", "xes")):
-                return v[:-2]     # kisses => kiss
-            return v[:-1]
-        if v.endswith("ied") and re_vowel.search(v[:-3]) is not None:
-            return v[:-3]+"y"     # envied => envy
-        if v.endswith("ing") and re_vowel.search(v[:-3]) is not None:
-            v = v[:-3]; b=True;   # chopping => chopp
-        if v.endswith("ed") and re_vowel.search(v[:-2]) is not None:
-            v = v[:-2]; b=True;   # danced => danc
-        if b:
-            # Doubled consonant after short vowel: chopp => chop.
-            if len(v) > 3 and v[-1] == v[-2] and v[-3] in VOWELS and v[-4] not in VOWELS and not v.endswith("ss"):
-                return v[:-1]
-            if v.endswith(("ick", "ack")):
-                return v[:-1]     # panick => panic
-            # Guess common cases where the base form ends in -e:
-            if v.endswith(("v", "z", "c", "i")):
-                return v+"e"      # danc => dance
-            if v.endswith("g") and v.endswith(("dg", "lg", "ng", "rg")):
-                return v+"e"      # indulg => indulge
-            if v.endswith(("b", "d", "g", "k", "l", "m", "r", "s", "t")) \
-              and len(v) > 2 and v[-2] in VOWELS and not v[-3] in VOWELS \
-              and not v.endswith("er"): 
-                return v+"e"      # generat => generate
-            if v.endswith("n") and v.endswith(("an", "in")) and not v.endswith(("ain", "oin", "oan")):
-                return v+"e"      # imagin => imagine
-            if v.endswith("l") and len(v) > 1 and v[-2] not in VOWELS:
-                return v+"e"      # squabbl => squabble
-            if v.endswith("f") and len(v) > 2 and v[-2] in VOWELS and v[-3] not in VOWELS:
-                return v+"e"      # chaf => chafed
-            if v.endswith("e"):
-                return v+"e"      # decre => decree
-            if v.endswith(("th", "ang", "un", "cr", "vr", "rs", "ps", "tr")):
-                return v+"e"
-        return v
-
-    def find_lexeme(self, verb):
-        """ For a regular verb (base form), returns the forms using a rule-based approach.
-        """
-        v = verb.lower()
-        if len(v) > 1 and v.endswith("e") and v[-2] not in VOWELS:
-            # Verbs ending in a consonant followed by "e": dance, save, devote, evolve.
-            return [v, v, v, v+"s", v, v[:-1]+"ing"] + [v+"d"]*6
-        if len(v) > 1 and v.endswith("y") and v[-2] not in VOWELS:
-            # Verbs ending in a consonant followed by "y": comply, copy, magnify.
-            return [v, v, v, v[:-1]+"ies", v, v+"ing"] + [v[:-1]+"ied"]*6
-        if v.endswith(("ss", "sh", "ch", "x")):
-            # Verbs ending in sibilants: kiss, bless, box, polish, preach.
-            return [v, v, v, v+"es", v, v+"ing"] + [v+"ed"]*6
-        if v.endswith("ic"):
-            # Verbs ending in -ic: panic, mimic.
-            return [v, v, v, v+"es", v, v+"king"] + [v+"ked"]*6
-        if len(v) > 1 and v[-1] not in VOWELS and v[-2] not in VOWELS:
-            # Verbs ending in a consonant cluster: delight, clamp.
-            return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-        if (len(v) > 1 and v.endswith(("y", "w")) and v[-2] in VOWELS) \
-        or (len(v) > 2 and v[-1] not in VOWELS and v[-2] in VOWELS and v[-3] in VOWELS) \
-        or (len(v) > 3 and v[-1] not in VOWELS and v[-3] in VOWELS and v[-4] in VOWELS):
-            # Verbs ending in a long vowel or diphthong followed by a consonant: paint, devour, play.
-            return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-        if len(v) > 2 and v[-1] not in VOWELS and v[-2] in VOWELS and v[-3] not in VOWELS:
-            # Verbs ending in a short vowel followed by a consonant: chat, chop, or compel.
-            return [v, v, v, v+"s", v, v+v[-1]+"ing"] + [v+v[-1]+"ed"]*6
-        return [v, v, v, v+"s", v, v+"ing"] + [v+"ed"]*6
-
-verbs = Verbs()
-
-conjugate, lemma, lexeme, tenses = \
-    verbs.conjugate, verbs.lemma, verbs.lexeme, verbs.tenses
-
-#print conjugate("imaginarify", "part", parse=True)
-#print conjugate("imaginarify", "part", parse=False)
 
 #### COMPARATIVE & SUPERLATIVE #####################################################################
 
