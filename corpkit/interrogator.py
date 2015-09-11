@@ -65,7 +65,7 @@ def interrogator(path,
         - other:
             k/keywords: search for keywords, using reference_corpus as the reference corpus
                         use 'self' to make the whole corpus into a reference_corpus
-            n/ngrams: search for ngrams   
+            n/ngrams: search for ngrams in trees   
     query : str
         - a Tregex query (if using a Tregex option)
         - A regex to match a token/tokens (if using a dependencies, plaintext, or keywords/ngrams)
@@ -610,7 +610,7 @@ def interrogator(path,
             result.append(m)
         return result
 
-    def tok_ngrams(pattern, list_of_toks):
+    def tok_ngrams(pattern, list_of_toks, split_contractions = True):
         from collections import Counter
         global gramsize
         import re
@@ -618,6 +618,22 @@ def interrogator(path,
         result = []
         # if it's not a compiled regex
         list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
+        if not split_contractions:
+            unsplit = []
+            for index, t in enumerate(list_of_toks):
+                if index == 0 or index == len(list_of_toks) - 1:
+                    unsplit.append(t)
+                    continue
+                if "'" in t:
+                    rejoined = ''.join([list_of_toks[index - 1], t])
+                    unsplit.append(rejoined)
+                else:
+
+                    if not "'" in list_of_toks[index + 1]:
+                        unsplit.append(t)
+            list_of_toks = unsplit
+            
+            #list_of_toks = [x for x in list_of_toks if "'" not in x]
         for index, w in enumerate(list_of_toks):
             try:
                 the_gram = [list_of_toks[index+x] for x in range(gramsize)]
@@ -1447,6 +1463,7 @@ def interrogator(path,
             #for f in read_files:
             result = []
             for f in fileset:
+                result_from_file = None
                 # pass the x/y argument for more updates 
                 if not root and translated_option != 'v':
                     p.animate((c), str(c + 1) + '/' + str(total_files))
@@ -1503,9 +1520,12 @@ def interrogator(path,
                     if translated_option == 'e':
                         result_from_file = tok_by_list(query, data)
                     if translated_option == 'j':
-                        result_from_file = tok_ngrams(query, data)
-
-                if 'result_from_file' in locals():
+                        split_con = False
+                        if 'split_contractions' in kwargs.keys():
+                            if kwargs['split_contractions'] is True:
+                                split_con = True
+                        result_from_file = tok_ngrams(query, data, split_contractions = split_con)
+                if result_from_file:
                     if not statsmode:
                         for entry in result_from_file:
                             result.append(entry)
