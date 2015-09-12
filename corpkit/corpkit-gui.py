@@ -1077,7 +1077,7 @@ def corpkit_gui():
 
         if selected_option == 'j':
             global ngmsize
-            if (ngmsize.var).get() != 'n':
+            if (ngmsize.var).get() != 'Size':
                 interrogator_args['gramsize'] = int((ngmsize.var).get())
 
             global split_contract
@@ -1218,6 +1218,9 @@ def corpkit_gui():
             pick_subcorpora['menu'].add_command(label='None', command=Tkinter._setit(subc_pick, 'None'))
             pick_subcorpora.config(state = DISABLED)
 
+        pick_a_datatype['menu'].delete(0, 'end')
+        pick_a_conc_datatype['menu'].delete(0, 'end')
+
         path_to_new_unparsed_corpus.set(fp)
         #add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
         current_corpus.set(os.path.basename(fp))
@@ -1225,20 +1228,31 @@ def corpkit_gui():
             parsebut.config(state = NORMAL)
             speakcheck_build.config(state = NORMAL)
             parse_button_text.set('Parse: %s' % os.path.basename(fp))
+
         else:
+            pick_a_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(datatype_picked, 'Trees'))
+            pick_a_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(datatype_picked, 'Dependencies'))
+            pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
+            pick_a_conc_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(corpus_search_type, 'Dependencies'))
             parsebut.config(state = DISABLED)
             speakcheck_build.config(state = DISABLED)
             datatype_picked.set('Dependencies')
+            corpus_search_type.set('Dependencies')
         if not os.path.basename(fp).endswith('-tokenised'):
             if not os.path.basename(fp).endswith('-parsed'):
+                pick_a_datatype['menu'].add_command(label = 'Plaintext', command=Tkinter._setit(datatype_picked, 'Plaintext'))
+                pick_a_conc_datatype['menu'].add_command(label = 'Plaintext', command=Tkinter._setit(datatype_picked, 'Plaintext'))
                 datatype_picked.set('Plaintext')
+                corpus_search_type.set('Plaintext')
                 tokbut.config(state = NORMAL)
                 tokenise_button_text.set('Tokenise: %s' % os.path.basename(fp))
         else:
+            pick_a_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
+            pick_a_conc_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
+            corpus_search_type.set('Tokens')
             tokbut.config(state = DISABLED)
             datatype_picked.set('Tokens')
         add_subcorpora_to_build_box(fp)
-        #sel_corpus_button.set('Selected: "%s"' % os.path.basename(fp))
         note.progvar.set(0)
         lab.set('Concordancing: %s' % corpus_name)
         
@@ -1471,6 +1485,7 @@ def corpkit_gui():
         
         #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
         entrytext.set(def_queries[chosen])
+        datatype_listbox.select_set(0)
 
     datatype_picked = StringVar(root)
     datatype_picked.set('Trees')
@@ -1485,6 +1500,8 @@ def corpkit_gui():
     frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     dtscrollbar = Scrollbar(frm)
     dtscrollbar.pack(side=RIGHT, fill=Y)
+
+    # 
     datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 38, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                         yscrollcommand=dtscrollbar.set, exportselection = False)
     datatype_listbox.pack()
@@ -2503,8 +2520,8 @@ def corpkit_gui():
     plot_style = StringVar(root)
     plot_style.set('ggplot')
     Label(tab3, text = 'Plot style:').grid(row = 14, column = 0, sticky = W)
-    pick_a_datatype = OptionMenu(tab3, plot_style, *stys)
-    pick_a_datatype.grid(row = 14, column = 1, sticky=E)
+    pick_a_style = OptionMenu(tab3, plot_style, *stys)
+    pick_a_style.grid(row = 14, column = 1, sticky=E)
 
     # legend pos
     Label(tab3, text='Legend position:').grid(row = 15, column = 0, sticky = W)
