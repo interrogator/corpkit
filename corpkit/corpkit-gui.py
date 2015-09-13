@@ -4608,7 +4608,7 @@ def corpkit_gui():
             newsub = os.path.join(newp, subc_sel_vals_build[0])
         else:
             newsub = newp
-        fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml')]
+        fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml') or f.endswith('.p')]
         for e in fs:
             f_view.insert(END, e)
         if selected_corpus_has_no_subcorpora.get() == 0:      
@@ -4668,13 +4668,13 @@ def corpkit_gui():
         return 'break'
 
     def onselect_f(evt):
+        """get selected file and show in file view"""
         for box in boxes:
             try:
                 box.destroy()
             except:
                 pass
         import os
-        """get selected file and show in file view"""
         # should only be one
         for i in chosen_f:
             chosen_f.pop()
@@ -4688,17 +4688,22 @@ def corpkit_gui():
         if len(chosen_f) == 0:
             return
 
-        if chosen_f[0].endswith('.txt'):
+        if chosen_f[0].endswith('.txt') or chosen_f[0].endswith('.p'):
             newp = path_to_new_unparsed_corpus.get()
             if selected_corpus_has_no_subcorpora.get() == 0:
                 fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
             else:
                 fp = os.path.join(newp, chosen_f[0])
-            try:
-                text = open(fp).read()
-            except IOError:
-                fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
-                text = open(fp).read()
+            if chosen_f[0].endswith('.txt'):
+                try:
+                    text = open(fp).read()
+                except IOError:
+                    fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
+                    text = open(fp).read()
+            else:
+                import pickle
+                data = pickle.load(open(fp, "rb"))
+                text = '\n'.join(data)
 
             # needs a scrollbar
             editor = Text(tab0, height = 32)
@@ -4813,15 +4818,23 @@ def corpkit_gui():
     editf.set('Edit file: ')
 
     def savebuttonaction(*args):
-        f = open(fullpath_to_file.get(), "w")
+        if fullpath_to_file.get().endswith('.txt'):
+            f = open(fullpath_to_file.get(), "w")
+        else:
+            import pickle
+            f = open(fullpath_to_file.get(), "wb")
         editor = buildbits['editor']
         text = editor.get(1.0, END)
-        try:
-            # normalize trailing whitespace
-            f.write(text.rstrip().encode("utf-8"))
-            f.write("\n")
-        finally:
-            f.close()
+        if fullpath_to_file.get().endswith('.p'):
+            text = [x.strip() for x in text.split('\n')]
+            pickle.dump(text, f)
+        else:
+            try:
+                # normalize trailing whitespace
+                f.write(text.rstrip().encode("utf-8"))
+                f.write("\n")
+            finally:
+                f.close()
         timestring('%s saved.' % filename.get())
 
     filename = StringVar()
