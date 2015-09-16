@@ -12,9 +12,10 @@ last_updated: 2015-09-01
 
 All you need to start working with *corpkit* is some plain text. If your data isn't in plain text format (`.txt`), you should turn it into plain text. You can often do this from Microsoft Word, a text editor, or via any of dozens of websites, like [zamzar](http://www.zamzar.com/). It makes no real difference if you have many small text files or a few large large files.
 
-Once you have plain text files, ideally, you'll want to structure them: that is, put bits of text into subfolders representing something meaningful, like different timestamps, websites, books, chapters, etc. Give these subfolders useful names.
+Once you have plain text files, ideally, you'll want to structure them: that is, put bits of text into subfolders representing something meaningful, like different timestamps, websites, books, chapters, etc. Give these subfolders useful names. 
 
 If your corpus is unstructured, *corpkit* will still work, but you'll miss out on some really amazing features.
+
 
 ## Working with dialogue
 
@@ -33,7 +34,7 @@ A unique feature of *corpkit* is that it will parse these documents, allowing yo
 
 Once you have data, you can start up *corpkit* and begin. The best way to begin is by creating a new project, via the menu. This creates a folder, with subfolders for saved interrogations, concordances, images, logs, CSV files and corpus data. You should then be moved to the `Build` tab.
 
-From the `Build` tab, you can use `Add corpus` to copy your structured, plain-text corpus into the project directory.
+From the `Build` tab, you can use `Add corpus` to copy your structured, plain-text corpus into the project directory. You have to select a directory containing your files, rather than the files themselves. This directory will then be copied into your project's `data/` folder.
 
 Once you have added a corpus to the project, you can select it for viewing, editing and/or parsing. Or, if you want to add another corpus, or select a previously added corpus, you can do that instead.
 
