@@ -3972,7 +3972,10 @@ def corpkit_gui():
         redict = {}
         corps = string.split(';')
         for c in corps:
-            name, vals = c.split(':')
+            try:
+                name, vals = c.split(':')
+            except ValueError:
+                continue
             vs = vals.split(',')
             redict[name] = vs
         return redict
