@@ -47,8 +47,9 @@ Essentially, the module contains a bunch of functions for interrogating corpora,
 | `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `conc()`          | complex concordancing of subcorpora | 
-| `editor()`       | edit `interrogator()` or `conc()` results, calculate keywords      | 
-| `collocates()`    | get collocates from corpus/subcorpus/concordance lines | 
+| `editor()`       | edit `interrogator()` or `conc()` results, calculate keywords      |
+
+There are also some lists of words and dependency roles, which can be used to match systemic-functional process types. These are explained in more detail [here](#systemic-functional-stuff).
 
 While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
@@ -655,7 +656,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
 # make a bar chart:
->>> plotter('Risk and power', selected.results, num_to_plot = 'all', kind = k, 
+>>> plotter('Risk and power', selected.results, num_to_plot = 'all', kind = 'bar', 
 ...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
 ```
 
