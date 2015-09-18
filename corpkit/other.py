@@ -1338,7 +1338,7 @@ def pmultiquery(path,
             for unpicklable in ['note', 'root']:
                 try:
                     del d[unpicklable]
-                except:
+                except KeyError:
                     pass
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
