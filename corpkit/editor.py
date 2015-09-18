@@ -33,32 +33,32 @@ def editor(dataframe1,
 
     dataframe1:         list of results or totals to edit
     operation:          kind of maths to do on inputted lists:
-                        '+', '-', '/', '*', '%': self explanatory
-                        'k': log likelihood (keywords)
-                        'a': get distance metric (for use with interrogator 'a' option)
-                        'd': get percent difference (alternative approach to keywording)
+                            '+', '-', '/', '*', '%': self explanatory
+                            'k': log likelihood (keywords)
+                            'a': get distance metric (for use with interrogator 'a' option)
+                            'd': get percent difference (alternative approach to keywording)
     dataframe2:         list of results or totals
-                        if list of results, for each entry in dataframe 1, locate
-                        entry with same name in dataframe 2, and do maths there
+                            if list of results, for each entry in dataframe 1, locate
+                            entry with same name in dataframe 2, and do maths there
     sort_by:            calculate slope, stderr, r, p values, then sort by:
-                        increase: highest to lowest slope value
-                        decrease: lowest to highest slope value
-                        turbulent: most change in y axis values
-                        static: least change in y axis values
-                        total/most: largest number first
-                        infreq/least: smallest number first
-                        name: alphabetically
+                            increase: highest to lowest slope value
+                            decrease: lowest to highest slope value
+                            turbulent: most change in y axis values
+                            static: least change in y axis values
+                            total/most: largest number first
+                            infreq/least: smallest number first
+                            name: alphabetically
     keep_stats:         keep/drop stats values from dataframe after sorting
     keep_top:           after sorting, remove all but the top n results
     just_totals:        sum each column and work with sums
     threshold:          when using results list as dataframe 2, drop values occurring
                         fewer than n times. If not keywording, you can use:
-                        'high': dataframe2 total / 2500
-                        'medium': dataframe2 total / 5000
-                        'low': dataframe2 total / 10000
-                        If keywording, there are smaller default thresholds
+                            'high': dataframe2 total / 2500
+                            'medium': dataframe2 total / 5000
+                            'low': dataframe2 total / 10000
+                        Note: if keywording, there are smaller default thresholds
     just_entries:       keep only entries specified using:
-                        regex, list of indices, list of words
+                            regex, list of indices, list of words
     skip_entries:       as above
     merge_entries:      as above, or can take a dictionary of:
                         {newname: regex/wordlist/indexlist}
@@ -72,16 +72,19 @@ def editor(dataframe1,
     replace_names:      edit result names and then merge duplicate names. Use either:
                         a tuple: (r'regex-to-match', 'replacement text')
                         a string: a regex to delete
-    projection:         a tuple of ('subcorpus-name', n) to multiply results by n
+                        you can use a dict to do multiple replaces.
+    projection:         a tuple of ('subcorpus-name', n) to multiply results in subcorpus by n
     remove_above_p:     delete any result over p
     p:                  set the p value
-    revert_year:        when doing linear regression on years, turn them into 1, 2 ...
+    revert_year:        when doing linear regression on years, turn annual subcorpora into 1, 2 ...
     print_info:         print stuff to console showing what's being edited
     spelling:           convert/normalise spelling:
-                        'US' or 'UK'
+                            'US' or 'UK'
     selfdrop:           when keywording, try to remove target corpus from reference corpus
     calc_all:           when keywording, calculate words that appear in either corpus
     """
+
+    saved_args = locals()
 
     import corpkit
     import pandas
@@ -101,6 +104,19 @@ def editor(dataframe1,
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    # if passing a multiquery, do each result separately and return
+    if type(dataframe1) == dict:
+        out_dict = {}
+        from corpkit.editor import editor
+        del saved_args(dataframe1)
+        for k, v in dataframe1.items():
+            outdict[k] = editor(v.results, **saved_args)
+
+        from time import localtime, strftime
+        thetime = strftime("%H:%M:%S", localtime())
+        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys())))
+        return outdict
 
     pd.options.mode.chained_assignment = None
 
@@ -270,38 +286,36 @@ def editor(dataframe1,
                 for c in [c for c in list(df.columns) if int(c) > 1]:
                     df[c] = df[c] * (1.0 / int(c))
                 df = df.sum(axis = 1) / df2.T.sum()
-            #p.animate(len(list(df.columns)))
-            #if have_ipython:
-                #clear_output()
+
         return df, totals
 
-    def parse_input(df, input):
+    def parse_input(df, the_input):
         """turn whatever has been passed in into list of words that can 
            be used as pandas indices---maybe a bad way to go about it"""
         import re
-        if input == 'all':
-            input = r'.*'
-        if type(input) == int:
+        if the_input == 'all':
+            the_input = r'.*'
+        if type(the_input) == int:
             try:
-                input = str(input)
+                the_input = str(the_input)
             except:
                 pass
-            input = [input]
-        elif type(input) == str:
+            the_input = [the_input]
+        elif type(the_input) == str:
             try:
-                regex = re.compile(input)
+                regex = re.compile(the_input)
                 parsed_input = [w for w in list(df) if re.search(regex, w)]
                 return parsed_input
             except:
-                input = [input]
-        if type(input) == list:
-            if type(input[0]) == int:
-                parsed_input = [word for index, word in enumerate(list(df)) if index in input]
-            elif type(input[0]) == str or type(input[0]) == unicode:
+                the_input = [the_input]
+        if type(the_input) == list:
+            if type(the_input[0]) == int:
+                parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
+            elif type(the_input[0]) == str or type(the_input[0]) == unicode:
                 try:
-                    parsed_input = [word for word in input if word in df.columns]
+                    parsed_input = [word for word in the_input if word in df.columns]
                 except AttributeError: # if series
-                    parsed_input = [word for word in input if word in df.index]
+                    parsed_input = [word for word in the_input if word in df.index]
         return parsed_input
 
 
