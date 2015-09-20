@@ -107,10 +107,15 @@ def editor(dataframe1,
 
     # if passing a multiquery, do each result separately and return
     if type(dataframe1) == dict:
-        out_dict = {}
+        outdict = {}
         from corpkit.editor import editor
-        del saved_args(dataframe1)
-        for k, v in dataframe1.items():
+        del saved_args['dataframe1']
+        for i, (k, v) in enumerate(dataframe1.items()):
+            if i == 0:
+                saved_args['print_info'] = True
+            else:
+                saved_args['print_info'] = False
+
             outdict[k] = editor(v.results, **saved_args)
 
         from time import localtime, strftime
@@ -1034,16 +1039,23 @@ def editor(dataframe1,
                 df.name = 'keyness' % df.name
 
     # generate totals branch if not percentage results:
+    # fix me
     if df1_istotals or operation.startswith('k'):
-        try:
-            total = pd.Series(df['Total'], name = 'Total')
-        except:
+        if not just_totals:
+            try:
+                total = pd.Series(df['Total'], name = 'Total')
+            except:
+                pass
+                total = 'none'
+            #total = df.copy()
+        else:
             total = 'none'
-        #total = df.copy()
     else:
         # might be wrong if using division or something...
-        total = df.T.sum(axis = 1)
-
+        try:
+            total = df.T.sum(axis = 1)
+        except:
+            total = 'none'
     
     if type(tots) != pandas.core.frame.DataFrame and type(tots) != pandas.core.series.Series:
         total = df.sum(axis = 1)
