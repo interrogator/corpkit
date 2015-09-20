@@ -148,7 +148,7 @@ def interrogator(path,
 
     td = {}
     from corpkit.other import add_nltk_data_to_nltk_path
-    if 'note' in kwargs.keys():
+    if 'note' in kwargs.keys() and kwargs['note'] is not False:
         td['note'] = kwargs['note']
     add_nltk_data_to_nltk_path(**td)
 
@@ -237,7 +237,7 @@ def interrogator(path,
               'root': root ,
               'post_process': post_process }
         
-        if 'note' in kwargs.keys():
+        if 'note' in kwargs.keys() and kwargs['note'] is not False:
             d['note'] = kwargs['note']
 
         return pmultiquery(**d)
@@ -785,7 +785,7 @@ def interrogator(path,
             if not root:
                 p.animate(numdone, str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys())))
             # this should show progress more often
-            if 'note' in kwargs.keys():
+            if 'note' in kwargs.keys() and kwargs['note'] is not False:
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
 
@@ -1400,7 +1400,7 @@ def interrogator(path,
                     else:
                         print '%s: Interrogating corpus ... ' % time
                     root.update()
-                    if 'note' in kwargs.keys():
+                    if 'note' in kwargs.keys() and kwargs['note'] is not False:
                         kwargs['note'].progvar.set(((index + 1) * 100.0 / len(sorted_dirs) / denom) + startnum)
                 # get path to corpus/subcorpus
                 if len(sorted_dirs) == 1:
@@ -1469,7 +1469,7 @@ def interrogator(path,
                     p.animate((c), str(c + 1) + '/' + str(total_files))
                 if root and tk and not statsmode:
                     root.update()
-                    if 'note' in kwargs.keys():
+                    if 'note' in kwargs.keys() and kwargs['note'] is not False:
                         kwargs['note'].progvar.set((((c + 1) * 100.0 / total_files) / denom) + startnum)
                         time = strftime("%H:%M:%S", localtime())
                         if not one_big_corpus:
@@ -1563,7 +1563,7 @@ def interrogator(path,
     if not dependency and not plaintext and not tokens:
         if not root:
             p.animate(len(sorted_dirs))
-        if 'note' in kwargs.keys():
+        if 'note' in kwargs.keys() and kwargs['note'] is not False:
             kwargs['note'].progvar.set((100 / denom + startnum))
         if root and tk:
             root.update()
@@ -1575,7 +1575,7 @@ def interrogator(path,
                     p.animate(total_files)
                 else:
                     p.animate(total_files * 10)
-            if 'note' in kwargs.keys():
+            if 'note' in kwargs.keys() and kwargs['note'] is not False:
                 kwargs['note'].progvar.set((100 / denom + startnum))
         except:
             pass
