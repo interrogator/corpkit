@@ -147,7 +147,7 @@ def concprinter(df, kind = 'string', n = 100):
         print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
 
-def save_result(interrogation, savename, savedir = 'saved_interrogations'):
+def save_result(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
     import corpkit
     """Save an interrogation as pickle to savedir"""
     import collections
@@ -197,9 +197,9 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
                 fullpath = os.path.join(savedir, selection)
     
     # if it's just a table or series
+
     if type(interrogation) == pandas.core.frame.DataFrame or \
         type(interrogation) == pandas.core.series.Series or \
-        type(interrogation) == dict or \
         type(interrogation) == collections.Counter:
         # removing this nltk support for now
         # or \ type(interrogation) == nltk.text.Text:
@@ -219,22 +219,23 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations'):
     f = open(fullpath, 'w')
     pickle.dump(temp_list, f)
     time = strftime("%H:%M:%S", localtime())
-    print '\n%s: Data saved: %s\n' % (time, fullpath)
+    if print_info:
+        print '\n%s: Data saved: %s\n' % (time, fullpath)
     f.close()
 
 def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
+    """Reloads a save_result as namedtuple. it needs a filename and path to saved files"""
     import corpkit
-    """Reloads a save_result as namedtuple"""
     import collections
     import pickle
     import os
     import pandas
-    if not savename.endswith('.p'):
-        savename = savename + '.p'
-    
-    notfound = True
+    if not os.path.isdir(os.path.join(loaddir, savename)):
+        if not savename.endswith('.p'):
+            savename = savename + '.p'
     
     def namesuggester(entered_name, searched_dir):
+        """if you got the wrong name, this finds the most similar name and suggests it."""
         import corpkit
         from nltk.metrics.distance import edit_distance
         from itertools import groupby
@@ -255,50 +256,67 @@ def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
             except ValueError:
                 return sel
 
-    while notfound:
-        try:
-            unpickled = pickle.load(open(os.path.join(loaddir, savename), 'rb'))
-            notfound = False
-        except IOError:
-            sel = namesuggester(savename, loaddir)
-            if not sel:
-                return
-            else:
-                savename = sel + '.p'
+    def make_into_namedtuple(unpickled):
+        """take a filename, make it into named tuple"""
 
-    if type(unpickled) == pandas.core.frame.DataFrame or \
-    type(unpickled) == pandas.core.series.Series or \
-    type(unpickled) == dict or \
-    type(unpickled) == collections.Counter:
-    # or \
-    #type(unpickled) == nltk.text.Text:
-        output = unpickled
-
-    if len(unpickled) == 1:
-        if type(unpickled[0]) == pandas.core.frame.DataFrame or \
-        type(unpickled[0]) == pandas.core.series.Series or \
-        type(unpickled[0]) == dict or \
-        type(unpickled[0]) == collections.Counter:
+        # figure out what's in the unpickled data, use to turn into named tup
+        if type(unpickled) == pandas.core.frame.DataFrame or \
+        type(unpickled) == pandas.core.series.Series or \
+        type(unpickled) == collections.Counter:
         # or \
-        #type(unpickled[0]) == nltk.text.Text:
-            output = unpickled[0]
-    elif len(unpickled) == 4:
-        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
-        output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])
-    elif len(unpickled) == 3:
-        if unpickled[0]['function'] == 'interrogator':
-            if unpickled[0]['query'].startswith('k'):
-                outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'table'])
+        #type(unpickled) == nltk.text.Text:
+            output = unpickled
+
+        if len(unpickled) == 1:
+            if type(unpickled[0]) == pandas.core.frame.DataFrame or \
+            type(unpickled[0]) == pandas.core.series.Series or \
+            type(unpickled[0]) == dict or \
+            type(unpickled[0]) == collections.Counter:
+            # or \
+            #type(unpickled[0]) == nltk.text.Text:
+                output = unpickled[0]
+        elif len(unpickled) == 4:
+            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
+            output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])
+        elif len(unpickled) == 3:
+            if unpickled[0]['function'] == 'interrogator':
+                if unpickled[0]['query'].startswith('k'):
+                    outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'table'])
+                else:
+                    # not presently possible, i think:
+                    outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
             else:
-                # not presently possible, i think:
                 outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
-        else:
-            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
-        output = outputnames(unpickled[0], unpickled[1], unpickled[2])
-    elif len(unpickled) == 2:
-        outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
-        output = outputnames(unpickled[0], unpickled[1])
-    return output
+            output = outputnames(unpickled[0], unpickled[1], unpickled[2])
+        elif len(unpickled) == 2:
+            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
+            output = outputnames(unpickled[0], unpickled[1])
+        return output
+
+    filepath = os.path.join(loaddir, savename)
+    if os.path.isfile(filepath):
+        notfound = True
+        while notfound:
+            filepath = os.path.join(loaddir, savename)    
+            try:
+                unpickled = pickle.load(open(filepath, 'rb'))
+                notfound = False
+            except IOError:
+                sel = namesuggester(savename, loaddir)
+                if not sel:
+                    return
+                else:
+                    savename = sel + '.p'
+        return make_into_namedtuple(unpickled)
+
+    elif os.path.isdir(filepath):
+        fs = [f for f in os.listdir(filepath) \
+                if os.path.isfile(os.path.join(filepath, f)) and f.endswith('.p')]    
+        outs = {}
+        for f in fs:
+            unpickled = pickle.load(open(os.path.join(filepath, f), 'rb'))    
+            outs[f.replace('.p', '')] = make_into_namedtuple(unpickled)
+        return outs
 
 def report_display():
     import corpkit
@@ -970,7 +988,7 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
     root, note = get_root_note(kwargs)
 
     r = {}
-    fs = [f for f in os.listdir(data_dir) if f.endswith('.p')]
+    fs = [f for f in os.listdir(data_dir) if f.endswith('.p') or os.path.isdir(os.path.join(data_dir, f))]
     if note and len(fs) > 3:
         note.progvar.set(0)
     if len(fs) == 0:
@@ -1152,8 +1170,9 @@ def pmultiquery(path,
     try:
         from joblib import Parallel, delayed
     except:
-        raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
-                         'Install with:\n\n        pip install joblib')
+        pass
+        #raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
+        #                 'Install with:\n\n        pip install joblib')
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
 
@@ -1273,7 +1292,7 @@ def pmultiquery(path,
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations:\n              %s" \
-           "\n          Query: '%s'" \
+           "\n\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, "\n              ".join(path), query) )
 
     elif multiple_queries:
@@ -1283,12 +1302,12 @@ def pmultiquery(path,
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n          Query: '%s'" \
+           "\n\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n          Query: '%s'" \
+           "\n\n          Query: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
 
     # run in parallel, get either a list of tuples (non-c option)
@@ -1297,15 +1316,21 @@ def pmultiquery(path,
     #reload(sys)
     #stdout=sys.stdout
 
-    if not root:
+    if root:
         res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
-        res = sorted(res)
+        try:
+            res = sorted(res)
+        except:
+            pass
     else:
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
             res.append(interrogator(**d))
-        res = sorted(res)
+        try:
+            res = sorted(res)
+        except:
+            pass
 
     # multiprocessing way
     #from multiprocessing import Process
@@ -1342,7 +1367,6 @@ def pmultiquery(path,
                     pass
             if not option.startswith('k'):
                 outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-                
                 try:
                     stotal = data.sum(axis = 1)
                     stotal.name = u'Total'
@@ -1355,18 +1379,23 @@ def pmultiquery(path,
             out[name] = output
     
         # could be wrong for unstructured corpora?
-        time = strftime("%H:%M:%S", localtime())
-        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
         if quicksave:
             for k, v in out.items():
-                save_result(v, k, savedir = os.path.join('saved_interrogations', quicksave))
+                save_result(v, k, savedir = os.path.join('saved_interrogations', quicksave), print_info = False)
+        
+            time = strftime("%H:%M:%S", localtime())
+            print "\n%s: %d files saved to %s" % ( time, len(out.keys()), os.path.join('saved_interrogations', quicksave))
+
+        time = strftime("%H:%M:%S", localtime())
+        print "\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
+        
         return out
     # make query and total branch, save, return
     else:
         out = pd.concat(res, axis = 1)
         out = editor(out, sort_by = sort_by, print_info = False, keep_stats = False)
         time = strftime("%H:%M:%S", localtime())
-        print '\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
+        print '\n\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
         if quicksave:
             from other import save_result
             save_result(out, quicksave)
