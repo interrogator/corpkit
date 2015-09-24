@@ -192,7 +192,7 @@ You can also search the plain text version of the corpus using simple or regular
 
  You can, for example, enter:
 
-This can be powerful when used in conjunction with Tregex or dependency queries. The query below will get any predicator matching a list of mental processes
+This can be powerful when used in conjunction with Tregex or dependency queries. The query below will get any predicator matching a list of mental processes:
 
 > `VP <<# /LIST:MENTAL/ $ NP`
 
@@ -210,7 +210,7 @@ Custom wordlists can be stored to memory or, saved to your project under a chose
 
 ## Lemmatisation
 
-When working with dependencies, lemmatisation is handled by *Stanford CoreNLP*, and is very accurate. When searching trees, *WordNet* is used. In order to work properly, wordNet-based lemmatisation needs to know the part of speech of the word it's lemmatising.
+When working with dependencies, lemmatisation is handled by *Stanford CoreNLP*, and is very accurate. When searching trees, *WordNet* is used. In order to work properly, WordNet-based lemmatisation needs to know the part of speech of the word it's lemmatising.
 
 If searching trees and using lemmatisation, *corpkit* will try to determine the word class you're searching for by looking at the first part of your Tregex query. If your query is:
 
@@ -246,7 +246,7 @@ If you manually edit the results in either the results or totals spreadsheet, yo
 
 It's important to remember that the results and totals spreadsheets do not communicate with one another. As such, if you are adding or subtracting from individual results, you'd need to update the total results part to reflect these changes. 
 
-{{tip}} Sorting the result order is performed in the edit window. {{end}}
+{{tip}} Sorting the result order is performed in the <code>Edit</code> tab.{{end}}
 
 ## Making dictionaries
 
