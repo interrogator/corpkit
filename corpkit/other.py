@@ -1316,7 +1316,7 @@ def pmultiquery(path,
     #reload(sys)
     #stdout=sys.stdout
 
-    if root:
+    if not root:
         res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
             res = sorted(res)

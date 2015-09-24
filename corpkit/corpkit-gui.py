@@ -92,6 +92,8 @@ class Notebook(Frame):
         # status bar text and log
         self.status_text = StringVar()
         self.log_stream = []
+        #self.imagewatched = StringVar()
+
         self.text = Label(self.statusbar, textvariable = self.status_text, 
                          height = 1, font = ("Courier New", 13), width = 135, 
                          anchor = W, bg = '#F4F4F4')
@@ -220,6 +222,7 @@ def corpkit_gui():
     
     root = Tk()
     root.title("corpkit")
+    root.imagewatched = StringVar()
     #root.overrideredirect(True)
     #root.resizable(FALSE,FALSE)
 
@@ -394,6 +397,18 @@ def corpkit_gui():
     from corpkit.other import get_gui_resource_dir
     resource_path = StringVar()
     resource_path.set(get_gui_resource_dir())
+
+
+    def refresh_images(*args):
+        """get list of images saved in images folder"""
+        import os
+        image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
+        for iname in image_list:
+            if iname not in all_images:
+                all_images.append(iname.replace('.png', ''))
+        refresh()
+
+    root.imagewatched.trace("w", refresh_images)
 
     def timestring(input):
         """print with time prepended"""
@@ -2281,6 +2296,7 @@ def corpkit_gui():
         image_list = [i for i in all_images]
         if len(image_list) == 0:
             timestring('No images found in images folder.')
+            return
         
         # figure out where we're up to 
         if images['the_current_fig'] != -1:
@@ -2302,7 +2318,10 @@ def corpkit_gui():
         else:
             nbut.configure(state = NORMAL)
 
-        image = Image.open(os.path.join(image_fullpath.get(), image_list[newind]))
+        imf = image_list[newind]
+        if not imf.endswith('.png'):
+            imf = imf + '.png'
+        image = Image.open(os.path.join(image_fullpath.get(), imf))
         image_to_measure = ImageTk.PhotoImage(image)
         old_height = image_to_measure.height()
         old_width = image_to_measure.width()
@@ -3683,6 +3702,12 @@ def corpkit_gui():
     image_basepath.set('Select image directory')
     corpora_fullpath = StringVar()
     corpora_fullpath.set('')
+
+    def imagedir_modified(*args):
+        import matplotlib
+        matplotlib.rcParams['savefig.directory'] = image_fullpath.get()
+
+    image_fullpath.trace("w", imagedir_modified)
 
     def data_getdir():
         import os

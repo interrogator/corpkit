@@ -61,9 +61,19 @@ def plotter(title,
     # incorrect spelling of spider on purpose
     running_spider = check_spider()
 
+    def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+        """remove extreme values from colourmap --- no pure white"""
+        import matplotlib.colors as colors
+        import numpy as np
+        new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+        return new_cmap
+
     def get_savename(imagefolder, save = False, title = False, ext = 'png'):
         """Come up with the savename for the image."""
         import os
+
         def urlify(s):
             "Turn title into filename"
             import re
@@ -83,22 +93,13 @@ def plotter(title,
                 filename = urlify(title) + ext
                 savename = os.path.join(imagefolder, filename)
 
-        #    # generic sequential naming
-        #    else:
-        #        list_images = [i for i in sorted(os.listdir(imagefolder)) if i.startswith('image-')]
-        #        if len(list_images) > 0:
-        #            num = int(list_images[-1].split('-')[1].split('.')[0]) + 1
-        #            autoname = 'image-' + str(num).zfill(3)
-        #            savename = os.path.join(imagefolder, autoname + '.png')
-        #        else:
-        #            savename = os.path.join(imagefolder, 'image-001.png')
-        
         # remove duplicated ext
         if savename.endswith('%s%s' % (ext, ext)):
             savename = savename.replace('%s%s' % (ext, ext), ext, 1)
         return savename
 
     def rename_data_with_total(dataframe, was_series = False, using_tex = False, absolutes = True):
+        """adds totals (abs, rel, keyness) to entry name strings"""
         if was_series:
             where_the_words_are = dataframe.index
         else:
@@ -173,7 +174,6 @@ def plotter(title,
     # try to use tex
     # TO DO:
     # make some font kwargs here
-    # stop warning after switching back from tex
     using_tex = False
     mpl.rcParams['font.family'] = 'sans-serif'
     mpl.rcParams['text.latex.unicode'] = True
@@ -498,6 +498,7 @@ def plotter(title,
         interactive = False
         warnings.warn('No interactive subplots yet, sorry.')
         return
+        
     # not using pandas for labels or legend anymore.
     #kwargs['labels'] = None
     #kwargs['legend'] = False
@@ -640,14 +641,6 @@ def plotter(title,
     if black_and_white:
         if kwargs['kind'] == 'line':
             kwargs['linewidth'] = 1
-
-        def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
-            import matplotlib.colors as colors
-            import numpy as np
-            new_cmap = colors.LinearSegmentedColormap.from_list(
-            'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
-            cmap(np.linspace(minval, maxval, n)))
-            return new_cmap
 
         cmap = plt.get_cmap('Greys')
         new_cmap = truncate_colormap(cmap, 0.25, 0.95)
