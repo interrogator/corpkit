@@ -166,6 +166,7 @@ def interrogator(path,
                                               taglemma)
     from other import add_corpkit_to_path
     import gc
+
     #from bs4 import BeautifulSoup, SoupStrainer
 
     add_corpkit_to_path()
@@ -242,10 +243,17 @@ def interrogator(path,
 
         return pmultiquery(**d)
 
-    if 'paralleling' in kwargs:
+    if 'paralleling' in kwargs.keys():
         paralleling = kwargs['paralleling']
     else:
         paralleling = False
+
+    par_args = {}
+    if not root:
+        from blessings import Terminal
+        term = Terminal()
+        par_args['terminal'] = term
+        par_args['linenum'] = paralleling
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
@@ -269,6 +277,24 @@ def interrogator(path,
     have_python_tex = check_pytex()
 
     regex_nonword_filter = re.compile("[A-Za-z0-9]")
+
+    def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
+                 init = False, length = False):
+        """animates progress bar"""
+        if init:
+            from textprogressbar import TextProgressBar
+            return TextProgressBar(length)
+        if type(linenum) == int:
+            with terminal.location(0, terminal.height - (linenum + 1)):
+                if tot_string:
+                    progbar.animate(count, tot_string)
+                else:
+                    progbar.animate(count)
+        else:
+            if tot_string:
+                progbar.animate(count, tot_string)
+            else:
+                progbar.animate(count) 
 
     def signal_handler(signal, frame):
         import signal
@@ -783,7 +809,11 @@ def interrogator(path,
             if root:
                 root.update()
             if not root:
-                p.animate(numdone, str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys())))
+                tot_string = str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys()))
+                if 'outname' in kwargs.keys():
+                    tot_string = '%s: %s' % (kwargs['outname'], tot_string)
+                animator(p, numdone, tot_string, **par_args)
+                #p.animate(numdone)
             # this should show progress more often
             if 'note' in kwargs.keys() and kwargs['note'] is not False:
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
@@ -1297,13 +1327,19 @@ def interrogator(path,
         c = 0
         if not root:
             if translated_option != 'v':
-                p = TextProgressBar(total_files)
+                p = animator(None, None, init = True, length = total_files, **par_args)
+                #p = TextProgressBar(total_files)
             else:
-                p = TextProgressBar(total_files * 10)
+                p = animator(None, None, init = True, length = total_files * 10, **par_args)
+                #p = TextProgressBar(total_files * 10)
     # if tregex, make progress bar for each dir
     else:
         if not root:
-            p = TextProgressBar(len(sorted_dirs))
+            if 'outname' in kwargs.keys():
+                p = animator(None, None, tot_string = kwargs['outname'], init = True, length = len(sorted_dirs), **par_args)
+            else:
+                p = animator(None, None, init = True, length = len(sorted_dirs), **par_args)
+            #p = TextProgressBar(len(sorted_dirs))
 
     # loop through each subcorpus
     subcorpus_names = []
@@ -1385,14 +1421,18 @@ def interrogator(path,
 
     global numdone
     numdone = 0
-    
+
     for index, d in enumerate(sorted_dirs):
         if using_tregex or keywording or n_gramming:
             if can_do_fast:
                 subcorpus_name = d
                 subcorpus_names.append(subcorpus_name)
                 if not root:
-                    p.animate(index)
+                    if paralleling is not False:
+                        animator(p, index, kwargs['outname'], **par_args)
+                    else:
+                        animator(p, index, **par_args)
+                    #p.animate(index)
                 if root and tk:
                     time = strftime("%H:%M:%S", localtime())
                     if not one_big_corpus:
@@ -1466,7 +1506,11 @@ def interrogator(path,
                 result_from_file = None
                 # pass the x/y argument for more updates 
                 if not root and translated_option != 'v':
-                    p.animate((c), str(c + 1) + '/' + str(total_files))
+                    tot_string = str(c + 1) + '/' + str(total_files)
+                    if 'outname' in kwargs.keys():
+                        tot_string = '%s: %s' % (kwargs['outname'], tot_string)
+                    animator(p, c, tot_string, **par_args)
+                    #p.animate((c), tot_string)
                 if root and tk and not statsmode:
                     root.update()
                     if 'note' in kwargs.keys() and kwargs['note'] is not False:
@@ -1560,21 +1604,35 @@ def interrogator(path,
         if statsmode:
             dicts.append(statsmode_results)
 
-    if not dependency and not plaintext and not tokens:
+    if not plaintext:
         if not root:
-            p.animate(len(sorted_dirs))
+            if paralleling is not False:
+                animator(p, len(sorted_dirs), kwargs['outname'], **par_args)
+            else:
+                animator(p, len(sorted_dirs), **par_args)
+            #p.animate(len(sorted_dirs))
         if 'note' in kwargs.keys() and kwargs['note'] is not False:
             kwargs['note'].progvar.set((100 / denom + startnum))
         if root and tk:
             root.update()
+
     else:
         # weird float div by 0 zero error here for plaintext
         try:
             if not root:
-                if translated_option != v:
-                    p.animate(total_files)
+                if translated_option != 'v':
+                    if paralleling is not False:
+                        animator(p, total_files, kwargs['outname'], **par_args)
+                    else:
+                        animator(p, total_files, **par_args)
+                    #p.animate(total_files)
+
                 else:
-                    p.animate(total_files * 10)
+                    if paralleling is not False:
+                        animator(p, total_files * 10, kwargs['outname'], **par_args)
+                    else:
+                        animator(p, total_files * 10, **par_args)
+                    #p.animate(total_files * 10)
             if 'note' in kwargs.keys() and kwargs['note'] is not False:
                 kwargs['note'].progvar.set((100 / denom + startnum))
         except:
@@ -1701,7 +1759,7 @@ def interrogator(path,
     if printstatus and distance_mode and skipped_sents > 0:
         print '\n          %d sentences over 99 words skipped.\n' % skipped_sents
 
-    if paralleling:
+    if type(paralleling) == int:
         return (kwargs['outname'], df)
         
     #make results into named tuple
