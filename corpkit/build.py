@@ -581,11 +581,15 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
                 print 'Folder containing tokens already exists: "%s-tokenised"' % basecp            
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
-    if corenlppath is False:
+    if 'stanford-corenlp' in corenlppath:
+        corenlppath = os.path.basename(corenlppath.rstrip('/'))
+    elif corenlppath is False:
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')
 
-    find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
+    find_install = [d for d in os.listdir(corenlppath) \
+                   if os.path.isdir(os.path.join(corenlppath, d)) \
+                   and os.path.isfile(os.path.join(corenlppath, d, 'jollyday.jar'))]
     if len(find_install) > 0:
         find_install = find_install[0]
     else:
