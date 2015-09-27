@@ -1180,7 +1180,7 @@ def pmultiquery(path,
         import corpkit
         """decide how many parallel processes to run
 
-        the idea, more or less, is to """
+        the idea, more or less, is to balance the load when possible"""
         if num_queries <= num_cores:
             return num_queries
         if num_queries > num_cores:
@@ -1194,7 +1194,7 @@ def pmultiquery(path,
                     square_root = math.sqrt(num_queries)
                     if square_root <= num_queries / num_cores: 
                         return int(square_root)    
-        return num_queries / ((num_queries / num_cores) + 1)
+        return num_cores
 
     # are we processing multiple queries or corpora?
     # find out optimal number of cores to use.
@@ -1236,7 +1236,7 @@ def pmultiquery(path,
     
     # the options that don't change
     d = {'option': option,
-         'paralleling': True,
+         #'paralleling': True,
          'function': 'interrogator',
          'root': root,
          'note': note,
@@ -1257,6 +1257,7 @@ def pmultiquery(path,
             a_dict['query'] = query
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
+            a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_queries:
@@ -1266,6 +1267,7 @@ def pmultiquery(path,
             a_dict['query'] = q
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
+            a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_option:
@@ -1275,6 +1277,7 @@ def pmultiquery(path,
             a_dict['query'] = query
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
+            a_dict['paralleling'] = index
             a_dict['function_filter'] = q
             a_dict['printstatus'] = False
             ds.append(a_dict)
@@ -1286,6 +1289,7 @@ def pmultiquery(path,
             a_dict['outname'] = name
             a_dict['just_speakers'] = [name]
             a_dict['function_filter'] = function_filter
+            a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
 
@@ -1315,14 +1319,33 @@ def pmultiquery(path,
     #import sys
     #reload(sys)
     #stdout=sys.stdout
-
+    failed = False
+    #ds = ds[::-1]
     if not root:
-        res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+        from blessings import Terminal
+        terminal = Terminal()
+        print '\n' * (len(ds) - 2)
+        for dobj in ds:
+            linenum = dobj['paralleling']
+            with terminal.location(0, terminal.height - (linenum + 1)):
+                # this is a really bad idea.
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: [                           0%% (%s)                       ]' % (thetime, dobj['outname'])
+        
+        #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+        try:
+            res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+            print '\n'
+        except:
+            failed = True
+            print 'Multiprocessing failed.'
+            raise
         try:
             res = sorted(res)
         except:
+            failed = True
             pass
-    else:
+    elif root or failed:
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
@@ -1380,8 +1403,18 @@ def pmultiquery(path,
     
         # could be wrong for unstructured corpora?
         if quicksave:
+            fullpath = os.path.join('saved_interrogations', quicksave)
+            while os.path.isdir(fullpath):
+                selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (quicksave, 'saved_interrogations'))
+                if selection == 'o' or selection == 'O':
+                    import shutil
+                    shutil.rmtree(fullpath)
+                else:
+                    import os
+                    fullpath = os.path.join('saved_interrogations', selection)
+
             for k, v in out.items():
-                save_result(v, k, savedir = os.path.join('saved_interrogations', quicksave), print_info = False)
+                save_result(v, k, savedir = fullpath, print_info = False)
         
             time = strftime("%H:%M:%S", localtime())
             print "\n%s: %d files saved to %s" % ( time, len(out.keys()), os.path.join('saved_interrogations', quicksave))
