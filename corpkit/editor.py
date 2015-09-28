@@ -88,6 +88,7 @@ def editor(dataframe1,
 
     import corpkit
     import pandas
+    import signal
     import pandas as pd
     import numpy as np
     import re
@@ -115,36 +116,24 @@ def editor(dataframe1,
                 saved_args['print_info'] = True
             else:
                 saved_args['print_info'] = False
-
             outdict[k] = editor(v.results, **saved_args)
-
         from time import localtime, strftime
         thetime = strftime("%H:%M:%S", localtime())
         print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys())))
         return outdict
 
-    pd.options.mode.chained_assignment = None
-
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
-    
+
+    pd.options.mode.chained_assignment = None
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     from corpkit.tests import check_pytex
     if check_pytex():
         print_info = False
 
-    import signal
     def signal_handler(signal, frame):
-        import signal
         """pause on ctrl+c, rather than just stop loop"""
-
-        #def subsig(signal, frame):
-        #    """exit on ctrl c"""
-        #    import sys
-        #    sys.exit(0)
-        #
-        #signal.signal(signal.SIGINT, subsig)
-        
+        import signal
         import sys
         from time import localtime, strftime
         time = strftime("%H:%M:%S", localtime())
@@ -323,7 +312,6 @@ def editor(dataframe1,
                     parsed_input = [word for word in the_input if word in df.index]
         return parsed_input
 
-
     def synonymise(df, pos = 'n'):
         """pass a df and a pos and convert df columns to most common synonyms"""
         from nltk.corpus import wordnet as wn
@@ -500,6 +488,7 @@ def editor(dataframe1,
         return df
 
     def span_these_subcorpora(df, lst_of_subcorpora, prinf = True):
+        """select only a span of numerical suborpora (first, last)"""
         non_totals = [subcorpus for subcorpus in list(df.index)]
         good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
         if len(lst_of_subcorpora) == 0:
@@ -513,6 +502,7 @@ def editor(dataframe1,
         return df
 
     def projector(df, list_of_tuples, prinf = True):
+        """project abs values"""
         for subcorpus, projection_value in list_of_tuples:
             if type(subcorpus) == int:
                 subcorpus = str(subcorpus)
@@ -955,8 +945,6 @@ def editor(dataframe1,
             else:
                 just_one_total_number = True
                 df2 = df2.sum()
-
-    # combine lists
 
     tots = df.sum(axis = 1)
 
