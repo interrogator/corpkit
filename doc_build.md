@@ -67,6 +67,8 @@ This will allow you to restrict your interrogations and concordances to specific
 
 ## Pressing the button
 
+Once you hit parse, you'll be asked to select which kinds of annotation you want to perform. If you're not so sure what you're doing, it's best to perhaps leave these options as they are and hit `Done`. Currently, nothing in *corpkit* processes the `referent tracking` or `named entity recognition` tags. Therefore, they can safely be left unchecked, and this will bring the size of the parsed data down a little bit.
+
 Parsing is a computationally intensive process. For long sentences, there are thousands of possible parses. The parser has to create them all, and decide which is the most likely. Sit tight and let the parsing happen. It's worth the wait.
 
 ## Next steps
