@@ -2948,9 +2948,16 @@ def corpkit_gui():
     def do_inflection(pos = 'v'):
         global tb
         from dictionaries.process_types import get_both_spellings, add_verb_inflections
-        # get text from widget
-        lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
-        # get variant forms
+        
+        # get every word
+        all_words = [w.strip().lower() for w in tb.get(1.0, END).split()]
+        # try to get just selection
+        cursel = False
+        try:
+            lst = [w.strip().lower() for w in tb.get(SEL_FIRST, SEL_LAST).split()]
+            cursel = True
+        except:
+            lst = [w.strip().lower() for w in tb.get(1.0, END).split()]
         lst = get_both_spellings(lst)
         if pos == 'v':
             expanded = add_verb_inflections(lst)
@@ -2973,6 +2980,8 @@ def corpkit_gui():
                 supe = grade(w, suffix = "est")
                 if supe != w:
                     expanded.append(supe)
+        if cursel:
+            expanded = expanded + all_words
         lst = sorted(set(expanded))
         # delete widget text, reinsrt all
         tb.delete(1.0, END)
