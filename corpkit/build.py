@@ -495,7 +495,6 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
         f.close()
     return downloaded_dir, fullfile
 
-#'/Users/danielmcdonald/Documents/testing-tmp/corenlp/stanford-corenlp-full-2015-04-20.zip'
 def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     import corpkit
     """extract corenlp"""
@@ -541,7 +540,7 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
+def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operations = False,
                  only_tokenise = False, root = False, stdout = False, **kwargs):
     import corpkit
     import subprocess
@@ -576,38 +575,40 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False,
         if not only_tokenise:
             if any([f.endswith('.xml') for f in fs]):
                 print 'Folder containing xml already exists: "%s-parsed"' % basecp
+                return False
         else:
             if any([f.endswith('.txt') for f in fs]):
-                print 'Folder containing tokens already exists: "%s-tokenised"' % basecp            
+                print 'Folder containing tokens already exists: "%s-tokenised"' % basecp  
+                return False          
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
-    if 'stanford-corenlp' in corenlppath:
-        corenlppath = os.path.basename(corenlppath.rstrip('/'))
-    elif corenlppath is False:
+    if corenlppath is False:
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')
-
-    find_install = [d for d in os.listdir(corenlppath) \
+        find_install = [d for d in os.listdir(corenlppath) \
                    if os.path.isdir(os.path.join(corenlppath, d)) \
                    and os.path.isfile(os.path.join(corenlppath, d, 'jollyday.jar'))]
-    if len(find_install) > 0:
-        find_install = find_install[0]
-    else:
-        print 'Nothing in CoreNLP directory.'
-        return
+        if len(find_install) > 0:
+            corenlppath = os.path.join(corenlppath, find_install[0])
+        else:
+            print 'No parser found.'
+            return
+
     if not only_tokenise:
-        os.chdir(os.path.join(corenlppath, find_install))
+        os.chdir(corenlppath)
         root.update_idletasks()
         reload(sys)
         import os
         import time
+        if operations is False:
+            operations = 'tokenize,ssplit,pos,lemma,ner,parse,dcoref'
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
         proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
                      '-Xmx2g', 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
-                     'tokenize,ssplit,pos,lemma,ner,parse,dcoref', 
+                     operations, 
                      '-filelist', filelist,
                      '-noClobber',
                      '-outputDirectory', new_corpus_path, 
@@ -719,7 +720,11 @@ def corenlp_exists(corenlppath = False):
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')
     if os.path.isdir(corenlppath):
-        find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
+        find_install = [d for d in os.listdir(corenlppath) \
+                   if os.path.isdir(os.path.join(corenlppath, d)) \
+                   and os.path.isfile(os.path.join(corenlppath, d, 'jollyday.jar'))]
+
+        #find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
         if len(find_install) > 0:
             find_install = find_install[0]
         else:

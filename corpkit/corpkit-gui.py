@@ -394,7 +394,7 @@ def corpkit_gui():
     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
     ###################     ###################     ###################     ###################
 
-    from corpkit.other import get_gui_resource_dir
+    from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
     resource_path = StringVar()
     resource_path.set(get_gui_resource_dir())
 
@@ -3038,6 +3038,68 @@ def corpkit_gui():
         color_saved(cust_spec, colour1 = '#ccebc5', colour2 = '#fbb4ae', lists = True)
         timestring('LIST:%s stored to custom wordlists.' % specname)
 
+
+    parser_opts = StringVar()
+
+    def parser_options():
+        """a popup with corenlp options"""
+        from Tkinter import Toplevel
+        global poptions
+        poptions = Toplevel()
+        poptions.title('Parser options')
+        from collections import OrderedDict
+
+        popt = OrderedDict()
+        for k, v in [('Tokenise', 'tokenize'),
+                    ('Sentence splitting', 'ssplit'),
+                    ('POS tagging', 'pos'),
+                    ('Lemmatisation', 'lemma'),
+                    ('Named entity recognition', 'ner'),
+                    ('Parse', 'parse'),
+                    ('Referent tracking', 'dcoref')]:
+                    popt[k] = v
+
+        butvar = {}
+        butbut = {}
+
+        orders = {'tokenize': 0,
+                  'ssplit': 1,
+                  'pos': 2,
+                  'lemma': 3,
+                  'ner': 4,
+                  'parse': 5,
+                  'dcoref': 6}
+
+            # select higher buttons
+            #vals = [i.get() for i in butvar.values() if i.get() is not False and i.get() != 0 and i.get() != '0']
+            #vals = sorted(vals, key=lambda x:orders[x])
+            #the_opts = ','.join(vals)
+            #print the_opts
+
+        for index, (k, v) in enumerate(popt.items()):
+            tmp = StringVar()
+            but = Checkbutton(poptions, text=k, variable=tmp, onvalue = v, offvalue = False)
+            but.grid(sticky = W)
+            if k != 'Referent tracking':
+                but.select()
+            else:
+                but.deselect()
+            butbut[index] = but
+            butvar[index] = tmp
+
+        def optionspicked(*args):
+            vals = [i.get() for i in butvar.values() if i.get() is not False and i.get() != 0 and i.get() != '0']
+            vals = sorted(vals, key=lambda x:orders[x])
+            the_opts = ','.join(vals)
+            poptions.destroy()
+            parser_opts.set(the_opts)
+
+        stopbut = Button(poptions, text = 'Done', command=optionspicked)
+        stopbut.grid()
+
+        #poptions.protocol("WM_DELETE_WINDOW", on_closing)
+
+
     def custom_lists():
         """a popup for defining custom wordlists"""
         from Tkinter import Toplevel
@@ -4385,7 +4447,7 @@ def corpkit_gui():
         outdir = parse_corpus(project_fullpath.get(), 
                               unparsed_corpus_path, 
                               filelist, 
-                              corenlppath = corenlppath.get(),
+                              corenlppath = get_fullpath_to_jars(corenlppath.get()),
                               root = root, 
                               stdout = sys.stdout, 
                               note = note, 
@@ -4405,6 +4467,10 @@ def corpkit_gui():
 
     def create_parsed_corpus():
         """make sure things are installed, do speaker id work, then parse, then structure"""
+        
+        parser_options()
+        root.wait_window(poptions)
+
         note.progvar.set(0)
         import os
         import re
@@ -4418,7 +4484,7 @@ def corpkit_gui():
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             unparsed_corpus_path = unparsed_corpus_path + '-stripped'
             
-        if not corenlp_exists(corenlppath = corenlppath.get()):
+        if not get_fullpath_to_jars(corenlppath.get()):
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                           "CoreNLP parser not found. Download/install it?")
             if downstall_nlp:
@@ -4455,10 +4521,14 @@ def corpkit_gui():
         parsed_dir = parse_corpus(project_fullpath.get(),
                                   unparsed_corpus_path, 
                                   filelist, 
-                                  corenlppath = corenlppath.get(),
+                                  corenlppath = get_fullpath_to_jars(corenlppath.get()),
+                                  operations = parser_opts.get(),
                                   root = root, 
                                   stdout = sys.stdout, 
                                   note = note)
+        if parsed_dir is False:
+            return
+
         sys.stdout = note.redir
         new_corpus_path = move_parsed_files(project_fullpath.get(), unparsed_corpus_path, parsed_dir)
         corpus_fullpath.set(new_corpus_path)
@@ -5166,9 +5236,10 @@ def corpkit_gui():
                                        message = 'Select folder containing the CoreNLP parser.')
         if fp and fp != '':
             corenlppath.set(fp)
-            if not corenlp_exists(corenlppath = corenlppath.get()):
+            if not get_fullpath_to_jars(corenlppath.get()):
                 recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
-                            message = "CoreNLP not found in %s." %fp)
+                            message = "CoreNLP not found in %s." % fp )
+                timestring("CoreNLP not found in %s." % fp )
             else:
                 save_tool_prefs()
 

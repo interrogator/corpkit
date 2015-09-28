@@ -1243,3 +1243,29 @@ def get_gui_resource_dir():
         else:
             resource_path = appdir
     return resource_path
+
+def get_fullpath_to_jars(path_var):
+    """when corenlp is needed, this returns the *abs path to jar files*"""
+    import os
+    important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
+                   'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
+    
+    # if user selected file in parser dir rather than dir
+    if os.path.isfile(path_var):
+        corenlppath.set(os.path.dirname(path_var.rstrip('/')))
+    # if the user selected the subdir:
+    if all(os.path.isfile(os.path.join(path_var, f)) for f in important_files):
+        return path_var
+    # if the user selected the parent dir:
+    else:
+        find_install = [d for d in os.listdir(path_var) \
+           if os.path.isdir(os.path.join(path_var, d)) \
+           and os.path.isfile(os.path.join(path_var, d, 'jollyday.jar'))]
+        if len(find_install) > 0:
+            return os.path.join(path_var, find_install[0])
+
+    # otherwise, return false.
+    recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
+                        message = "CoreNLP not found in %s." % path_var)
+    timestring("CoreNLP not found in %s." % path_var)
+    return False
