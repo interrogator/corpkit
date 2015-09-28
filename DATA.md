@@ -1,17 +1,15 @@
-It ain't all strings! You can use the corpkit library functions to manipulate different data structures.
+This repository contains some sample data, in the form of syntax trees from The New York Times.
 
 **Parsed NYT Text**
 
-Upon unzipping orientation/data/nyt.tar.gz one can discover two collections of text files. They seem to be the same data, just organised in different ways.
+Upon unzipping orientation/data/nyt.tar.gz one can discover two collections of text files.
 
-One collection is organised by year. The other collection is organised first by topic (economics, health or politics) and then by year (from 1987 to 2014).
+One collection is organised by year (1963-2014). The other collection is a subset of the first, containing three topics (economics, health or politics), which are also sorted into annual subcorpora. Any of these directories can be used as the path for a *corpkit* query.
 
-The text files are essentially lists of trees. Each line is a parse tree for a sentence from the original corpus. The encoding used for the trees looks a lot like Lisp code, it's the format used for the Penn Treebank project: http://www.cis.upenn.edu/~treebank/.
+The text files are essentially loads and loads of syntax trees. These were created using Stanford CoreNLP. Most of them contain the word *risk*, or are immediately adjacent to a sentence containing a risk word.
 
-**Interrogation Format**
+**Dictionaries and wordlists**
 
-Interrogation sessions can be serialized to directories of CSV files. See the load_result function, defined in corpkit/other.py.
+In the dictionaries folder there are .p files and .py files which contain data. The .p files are Python pickles, inside of which are word frequency dicts from various corpora. These can be used as reference corpora.
 
-**Dictionaries**
-
-In the dictionaries folder there are .p files and .py files which contain data. The .p files are Python pickles. Each pickle contains a dict object which maps words to integers, presumably a frequency count. The .py files are miscellaneous data. Some are just lists of words and others are more complicated. For example, in roles.py there is some kind of compatibility mapping between CoreNLP and SFL. CoreNLP is a Java library made by researchers from Stanford and SFL is systemic functional linguistics.
+The `dictionaries/*.py` files are essentially wordlists and basic functions for generating wordlists with inflections. `roles.py`, for example, provides a mapping of some systemic functional linguistic constructs to Universal Dependencies, so that corpkit can search and edit using SF categories. `process_types` generates a named tuple of word lists for mental, verbal and relational processes, which can also be fed into queries and edits.

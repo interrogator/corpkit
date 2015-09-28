@@ -1,4 +1,4 @@
-## corpkit's dependencies
+## *corpkit*'s dependencies
 
 Corpkit leverages several powerful Python libraries.
 
