@@ -43,6 +43,7 @@ setup(name='corpkit',
                         "mpld3 >= 0.2", 
                         "beautifulsoup4>=4.3.2",
                         "lxml>=3.4.4",
+                        "blessings>=1.6",
                         "PIL>=1.1.7"],
                         #"tkintertable>=1.2"],
       zip_safe = False)
