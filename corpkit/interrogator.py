@@ -355,7 +355,7 @@ def interrogator(path,
             list_of_matches = [w.lower() for w in list_of_matches]
             # remove nonwords, strip . to normalise "dr."
             if translated_option != 'o' and translated_option != 'u':
-                list_of_matches = [w.lstrip('.').rstrip('.') for w in list_of_matches if re.match(regex_nonword_filter, w)]
+                list_of_matches = [w.lstrip('.').rstrip('.') for w in list_of_matches if re.search(regex_nonword_filter, w)]
         
         list_of_matches.sort()
         
@@ -865,7 +865,7 @@ def interrogator(path,
     # check if pythontex is being used:
     have_python_tex = check_pytex()
     
-    regex_nonword_filter = re.compile("[A-Za-z0-9]")
+    regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
 
     # parse option
     # handle hyphen at start
@@ -1622,7 +1622,11 @@ def interrogator(path,
     if not plaintext:
         if not root:
             if paralleling is not False:
-                tstr = '%s: %d/%d' % (kwargs['outname'], total_files, total_files)
+                if dependency or plaintext or tokens or can_do_fast is False:
+                    tstr = '%s: %d/%d' % (kwargs['outname'], total_files, total_files)
+                else:
+                    tstr = '%s: %d/%d' % (kwargs['outname'], len(sorted_dirs), len(sorted_dirs))
+
             else:
                 tstr = False
             animator(p, len(sorted_dirs), tot_string = tstr, **par_args)

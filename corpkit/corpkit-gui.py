@@ -3080,7 +3080,7 @@ def corpkit_gui():
             tmp = StringVar()
             but = Checkbutton(poptions, text=k, variable=tmp, onvalue = v, offvalue = False)
             but.grid(sticky = W)
-            if k != 'Referent tracking':
+            if k != 'Referent tracking' and k != 'Named entity recognition':
                 but.select()
             else:
                 but.deselect()
@@ -5183,7 +5183,7 @@ def corpkit_gui():
         ver = make_float_from_version(oldstver)
         import re
         import urllib2
-        timestring('Checking for updates ... ')
+        #timestring('Checking for updates ... ')
         try:
             response = urllib2.urlopen('https://www.github.com/interrogator/corpkit-app')
             html = response.read()
@@ -5193,7 +5193,8 @@ def corpkit_gui():
                 "No connection to remote server",
                 "Could not connect to remote server.")
             else:
-                timestring('Could not connect to remote server.')  
+                pass
+                #timestring('Could not connect to remote server.')  
             return
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         # get version number as string
