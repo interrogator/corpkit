@@ -12,9 +12,8 @@ class TextProgressBar:
         have_ipython = True
     except ImportError:
         have_ipython = False
-    def __init__(self, iterations):
+    def __init__(self, iterations, dirname = False):
         from time import localtime, strftime
-
         try:
             from IPython.display import display, clear_output
             have_ipython = True
@@ -25,9 +24,8 @@ class TextProgressBar:
         self.prog_bar = '[]'
         self.fill_char = '*'
         self.width = 60
-        self.__update_amount(0)
+        self.__update_amount(0, dirname = dirname)
         self.animate = self.animate_ipython
-
 
     def animate_ipython(self, iter, dirname = None):
         try:
