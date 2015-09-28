@@ -135,10 +135,10 @@ So, to give some examples of output based on the sentence above:
 | Option  | Query  | Function filter  | POS filter  | Output |
 |---|---:|---:|---:|---:|
 | <i>Get role of match</i>  | `lead\b`  |   |   | <b>`dobj`</b>  |
-| <i>Get role of match</i>  | `WORDLISTS:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <i>Get role of match</i>  | `LIST:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
 | <i>Get tokens by role</i> | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
-| <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   |   | <b>`I`, `lead`  |
-| <i>Get tokens by role</i>  | ROLES:PARTICIPANT  |   | `^P`  | <b>`I`</b> |
+| <i>Get tokens by role</i>  | LIST:PARTICIPANT  |   |   | <b>`I`, `lead`  |
+| <i>Get tokens by role</i>  | LIST:PARTICIPANT  |   | `^P`  | <b>`I`</b> |
 | <i>Get distance from root</i> | `^to$` |   |   | <b>2</b>  |
 | <i>Get "role:dependent"</i>  | `\bfollow.*`  |   |  | <b>`to`, `lead`</b>  |
 | <i>Get "role:dependent"</i>  | `\bfollow.*`  |   | `^N.*`  | <b>`lead`</b>  |
@@ -202,7 +202,7 @@ If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define you
 
 ### Creating and modifying wordlists
 
-You can easily select a predefined list, modify and rename it, and access it via `LIST:NAME`. The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest.
+You can easily select a predefined list, modify and rename it, and access it via `LIST:NAME`. The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest. You can highlight particular words to get inflections for, or leave the text box unselected in order to inflect every word.
 
 Custom wordlists can be stored to memory or, saved to your project under a chosen name. Predefined lists will be highlighted in yellow, unsaved lists in red, and saved in green.
 
