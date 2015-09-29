@@ -1,4 +1,4 @@
-#!usr/bin/python
+#!/usr/bin/env python
 
 # corpkit GUI
 # Daniel McDonald
@@ -5139,6 +5139,8 @@ def corpkit_gui():
                 opener = "open" if sys.platform == "darwin" else "xdg-open"
                 if newpath.endswith('.py'):
                     opener = 'python'
+                    if 'daniel/Work/corpkit' in newpath:
+                        opener = '/Users/daniel/virtenvs/corpkit-env/bin/python'
                 subprocess.Popen([opener, newpath])
                 from time import sleep
                 sleep(1)
@@ -5230,18 +5232,21 @@ def corpkit_gui():
             ndots_to_delete = ver.count('.') - 1
             return float(ver[::-1].replace('.', '', ndots_to_delete)[::-1])
 
-        def check_updates(showfalse = True, lateprint = False, auto = False):
-            """check for updates, showing a window if there is one, and if showfalse, 
-               even if not. This works by simply downloading the html of the GitHub main
-               page, and searching for the .tar.gz file. This avoids extra dependencies
-               on (e.g.) PythonGit. Not sure if this should unzip and overwrite the
-               existing file or not."""
+        def modification_date(filename):
+            """ get datetime of file modification"""
+            import os
+            import datetime
+            t = os.path.getmtime(filename)
+            return datetime.datetime.fromtimestamp(t)
 
-            # weird hacky way to not repeat download
+        def check_updates(showfalse = True, lateprint = False, auto = False):
+            """check for updates, minor and major."""
+
+            # weird hacky way to not repeat request
             if do_auto_update.get() == 1 and auto is True:
                 return
             if auto is False:
-                do_auto_update.set(1) 
+                do_auto_update.set(1)
 
             import corpkit
             # get current version as float
@@ -5249,20 +5254,22 @@ def corpkit_gui():
             ver = make_float_from_version(oldstver)
             import re
             import urllib2
-            #timestring('Checking for updates ... ')
+            import datetime
+            from dateutil.parser import parse
+            import os
+
+            # CHECK FOR MAJOR UPDATE
             try:
                 response = urllib2.urlopen('https://www.github.com/interrogator/corpkit-app')
                 html = response.read()
-            except:
+            except HTTPError:
                 if showfalse:
                     tkMessageBox.showinfo(
                     "No connection to remote server",
                     "Could not connect to remote server.")
-                else:
-                    pass
-                    #timestring('Could not connect to remote server.')  
                 return
             reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
+            
             # get version number as string
             stver = re.search(reg, str(html)).group(1)
             vnum = make_float_from_version(stver)
@@ -5277,15 +5284,60 @@ def corpkit_gui():
                 else:
                     timestring('Update found: corpkit %s. Not downloaded.' % stver)
                     return
+            
+            # check for minor update
             else:
-                if showfalse:
-                    tkMessageBox.showinfo(
-                    "Up to date!",
-                    "corpkit (version %s) up to date!" % ver)
-                    timestring('corpkit (version %s) up to date.' % oldstver)
+                import inspect
+                #this_script = os.path.join(get_gui_resource_dir(), 'corpkit-%s.py' % oldstver)
+                this_script = inspect.getfile(inspect.currentframe())
+                olddate = modification_date(this_script)
+
+                try:
+                    minor_response = urllib2.urlopen('https://github.com/interrogator/corpkit-app/blob/master/corpkit-gui.py')
+                    minor_html = minor_response.read()
+                except HTTPError:
+                    if showfalse:
+                        tkMessageBox.showinfo(
+                        "No connection to remote server",
+                        "Could not connect to remote server.")
                     return
-                else:
-                    timestring('No updates available.')
+                # get line with modified time for gui code
+                timereg = re.compile(r"([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9])")
+                try:
+                    timeline = next(i for i in minor_html.split('\n') if 'relative-time' in i)
+                except StopIteration:
+                    return
+                # parse the date part
+                try:
+                    newdate = parse(re.search(timereg, timeline).group(1))
+                except:
+                    return
+                if newdate > olddate:
+                    timestring('Minor update found: corpkit %s' % stver)
+                    download_update = tkMessageBox.askyesno("Minor update available",
+                                  "Minor update available: corpkit %s\n\n Apply now?" % stver)
+                    if download_update:
+                        # get script contents
+                        script_response = urllib2.urlopen('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
+                        newscript = script_response.read()
+                        #replace this script
+                        if not this_script.endswith('corpkit-gui.py'):
+                            with open(this_script, "w") as fo:
+                                fo.write(newscript)
+                        else:
+                            timestring("Can't replace developer copy, sorry.")
+                        restart()
+                        return
+                    else:
+                        timestring('Minor update found: corpkit %s. Not downloaded.' % stver)
+                        return
+
+            if showfalse:
+                tkMessageBox.showinfo(
+                "Up to date!",
+                "corpkit (version %s) up to date!" % ver)
+                timestring('corpkit (version %s) up to date.' % oldstver)
+                return
 
         def start_update_check():
             check_updates(showfalse = False, lateprint = True, auto = True)
