@@ -196,7 +196,7 @@ def pmultiquery(path,
             with terminal.location(0, terminal.height - (linenum + 1)):
                 # this is a really bad idea.
                 thetime = strftime("%H:%M:%S", localtime())
-                print '%s: [                           0%% (%s)                       ]' % (thetime, dobj['outname'])
+                print '%s: [                      0%% (%s)                            ]' % (thetime, dobj['outname'])
         
         #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:

@@ -55,11 +55,20 @@ class TextProgressBar:
         num_hashes = int(round((percent_done / 100.0) * all_full))
         time = strftime("%H:%M:%S", localtime())
         self.prog_bar = time + ': [' + self.fill_char * num_hashes + ' ' * (all_full - num_hashes) + ']'
-        pct_place = (len(self.prog_bar) // 2) + (3)
+        
         if dirname:
             pct_string = '%d%% ' % percent_done + '(' + dirname + ')'
         else:
             pct_string = '%d%%' % percent_done # could pass dirname here!
+        # find out where the index of the first space in the middle string
+        try:
+            index_of_space = next(i for i, j in enumerate(pct_string) if j.isspace())
+        except StopIteration:
+            index_of_space = 0
+        # put middle string in centre, adjust so that spaces are always aligned
+        pct_place = (len(self.prog_bar) / 2) - index_of_space
+        #if len(pct_string) < 20:
+            #pct_string = ' ' * (20 - len(pct_string)) + pct_string
         self.prog_bar = self.prog_bar[0:pct_place] + \
            (pct_string + self.prog_bar[pct_place + len(pct_string):])
 
