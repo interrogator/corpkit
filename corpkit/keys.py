@@ -178,7 +178,10 @@ def keywords(data,
     
     # print and return
     if clear:
-        clear_output()
+        try:
+            clear_output()
+        except:
+            pass
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print '%s: Done! %d results.\n' % (time, len(list(out.index)))
@@ -238,7 +241,10 @@ def ngrams(data,
 
     # print and return
     if clear:
-        clear_output()
+        try:
+            clear_output()
+        except:
+            pass
     if printstatus:
         time = strftime("%H:%M:%S", localtime())
         print '%s: Done! %d results.\n' % (time, len(list(out.index)))
