@@ -2,6 +2,9 @@
 
 # corpkit GUI
 # Daniel McDonald
+
+# <updated>DATE-REPLACE</updated>
+
 # Template created by: Patrick T. Cossette <cold_soul79078@yahoo.com>
 
 import Tkinter
@@ -68,6 +71,10 @@ class SplashScreen( object ):
       
         # Destroy the splash window
         self._splash.destroy( )
+        try:
+            self.__root.destroy()
+        except:
+            pass
 
       # Display the application window
       #self._root.deiconify( )
@@ -238,11 +245,11 @@ class Notebook(Frame):
 def corpkit_gui():
     
     root = Tk()
-    the_splash = SplashScreen(root, r'loading_image.png', 3.0)
+    #the_splash = SplashScreen(root, r'loading_image.png', 3.0)
 
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     root.withdraw( )
-    the_splash.__enter__()
+    #the_splash.__enter__()
 
 
     import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
@@ -1578,7 +1585,7 @@ def corpkit_gui():
     pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
     datatype_picked.trace("w", callback)
 
-    Label(tab1, text = 'Search type:').grid(row = 3, column = 0, sticky = 'NW')
+    Label(tab1, text = 'Search\ntype:').grid(row = 3, column = 0, sticky = 'NW')
     frm = Frame(tab1)
     frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
     dtscrollbar = Scrollbar(frm)
@@ -1961,7 +1968,7 @@ def corpkit_gui():
     opp = StringVar(root)
     opp.set('None')
     operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'd')
-    Label(tab2, text='Operation and demonominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
+    Label(tab2, text='Operation and denominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
     ops = OptionMenu(tab2, opp, *operations)
     ops.grid(row = 3, column = 0, sticky = W)
     opp.trace("w", op_callback)
@@ -5143,9 +5150,23 @@ def corpkit_gui():
                 opener = 'python'
                 if 'daniel/Work/corpkit' in newpath:
                     opener = '/Users/daniel/virtenvs/corpkit-env/bin/python'
-            subprocess.Popen([opener, newpath])
+                cmd = [opener, newpath]
+            else:
+                if sys.platform == "darwin":
+                    cmd = [opener, '-n', newpath]
+                else:
+                    cmd = [opener, newpath]
+            #os.system('%s %s' % (opener, newpath))
+            #subprocess.Popen(cmd)
             from time import sleep
             sleep(1)
+            #reload(inspect.getfile(inspect.currentframe()))
+            subprocess.Popen(cmd)
+        try:
+            the_splash.__exit__()
+        except:
+            pass
+        root.quit()
         sys.exit()
 
     def untar(fname, extractto):
@@ -5256,6 +5277,7 @@ def corpkit_gui():
         ver = make_float_from_version(oldstver)
         import re
         import urllib2
+        from urllib2 import HTTPError
         import datetime
         from dateutil.parser import parse
         import os
@@ -5290,48 +5312,57 @@ def corpkit_gui():
         # check for minor update
         else:
             import inspect
-            #this_script = os.path.join(get_gui_resource_dir(), 'corpkit-%s.py' % oldstver)
             this_script = inspect.getfile(inspect.currentframe())
             olddate = modification_date(this_script)
 
             try:
-                minor_response = urllib2.urlopen('https://github.com/interrogator/corpkit-app/blob/master/corpkit-gui.py')
-                minor_html = minor_response.read()
+                script_response = urllib2.urlopen('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
+                newscript = script_response.read()
+                dateline = next(l for l in newscript.split('\n') if l.startswith('# <updated>'))
+                timereg = re.compile(r'# <updated>(.*)<.updated>')
+
             except HTTPError:
                 if showfalse:
                     tkMessageBox.showinfo(
                     "No connection to remote server",
                     "Could not connect to remote server.")
                 return
-            # get line with modified time for gui code
-            timereg = re.compile(r"([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9])")
-            try:
-                timeline = next(i for i in minor_html.split('\n') if 'relative-time' in i)
-            except StopIteration:
-                return
+
             # parse the date part
             try:
-                newdate = parse(re.search(timereg, timeline).group(1))
+                dat = re.search(timereg, dateline).group(1)
+                newdate = parse(dat)
             except:
+                if showfalse:
+                    tkMessageBox.showinfo(
+                    "Error.",
+                    "Error.")
                 return
+            # testing code
+            #if 2 == 2:
             if newdate > olddate:
                 timestring('Minor update found: corpkit %s' % stver)
                 download_update = tkMessageBox.askyesno("Minor update available",
                               "Minor update available: corpkit %s\n\n Apply now?" % stver)
                 if download_update:
-                    # get script contents
-                    script_response = urllib2.urlopen('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
-                    newscript = script_response.read()
-                    #replace this script
                     if not this_script.endswith('corpkit-gui.py'):
                         with open(this_script, "w") as fo:
                             fo.write(newscript)
                     else:
                         timestring("Can't replace developer copy, sorry.")
-                    restart()
+                        return
+                    import inspect
+                    corpath = inspect.getfile(inspect.currentframe())
+                    extens = '.%s' % fext
+                    if extens not in corpath and sys.platform != 'darwin':
+                        timestring("Get it from GitHub: https://www.github.com/interrogator/corpkit")
+                        return
+                    # split on .app or .exe, then re-add .app
+                    apppath = corpath.split(extens , 1)[0] + extens
+                    restart(apppath)
                     return
                 else:
-                    timestring('Minor update found: corpkit %s. Not downloaded.' % stver)
+                    timestring('Minor update found: corpkit %s, %s. Not downloaded.' % (stver, dat))
                     return
 
         if showfalse:
