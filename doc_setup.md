@@ -27,6 +27,10 @@ Parsing files requires the download and installation of the [Stanford CoreNLP pa
 
 ### TeX
 
-Finally, when plotting, The `Use TeX` option requires a TeX distribution. TeX is a typesetting system that the *corpkit* plotter can use to generate the text in the plot. The main reason pepol
+Finally, when plotting, The `Use TeX` option requires a TeX distribution. TeX is a typesetting system that the *corpkit* plotter can use to generate the text in the plot. It's mostly useful if you're writing up articles using TeX, and would like the fonts in your figures to match. If you don't already have TeX, it's probably not worth downloading TeX just for these images, as TeX installations can be gigabytes in size.
 
-It's probably not worth downloading TeX just for these images, as TeX installations can be gigabytes in size. The main reason people might want to turn the TeX option on is that their paper is written in a TeX font, and they'd like to keep all text consistent.
+## Settings
+
+*corpkit* stores two kinds of settings. The first are project-specific settings, which are saved to the `settings.ini` file inside each project directory. These include annotation schemes, wordlists, TeX use, etc.
+
+Global settings, such as the path to CoreNLP, recently opened projects, etc., are saved within the tool itself.
