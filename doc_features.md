@@ -9,7 +9,7 @@ last_updated: 2015-09-01
 
 #### Parsing
 
-*corpkit* helps you parse texts, without needing to go the command line. All you need to do is add text files and hit `Parse`!
+*corpkit* helps you parse texts, without needing to go the command line. Just load in a folder containing text files or subfolders of text files, then hit `Parse`!
 
 #### Speaker IDs
 
@@ -55,19 +55,20 @@ It was made in three few simple steps:
 
 *corpkit* leverages *pandas*, *matplotlib* and *TeX* to generate high-quality visualisations of linguistic data. You can choose colourmaps, plot types, styles, labels, and much more. Every visualisation shown on this site was made with *corpkit*. That said, you can also export your data easily to CSV files, which can be loaded painlessly into Excel.
 
-#### Functional queries
+#### Wordlists
 
-There are preset queries to match mood types, process types, and the heads of participants. You can also use special operators to match sets of words and roles that correspond to systemic-functional categories:
-
-    /VB.?/ < /PROCESSES:MENTAL/
-
-You can also build custom wordlists that can be added into more complex searches.
-
-You can quickly define `ANIMALS` as `cat, dog, bird, wolf, (etc.)`, and then search for animals as clausal subjects with:
+You can also build custom wordlists that can be added into more complex searches. Via the `Wordlists` menu item, you can quickly define `ANIMALS` as `cat, dog, bird, wolf, (etc.)`, and then search for animals as clausal subjects with:
 
     @NP <<# /LIST:ANIMALS/
 
-*corpkit* can automatically handle the task of getting inflected word forms.
+The wordlists tool can automatically retrieve inflection forms for you, as well. These lists can be easily edited or saved.
+
+#### Functional queries
+
+There are preset queries to match mood types, process types, heads of participants, and so on. You can also use pre-defined wordlists to search for certain kinds of functional information, such as *mental verbs*:
+
+    /VB.?/ < /LIST:MENTAL/
+
 
 #### Compare subcorpora
 
