@@ -3,6 +3,7 @@
 # corpkit GUI
 # Daniel McDonald
 
+# t
 # <updated>DATE-REPLACE</updated>
 
 # Template created by: Patrick T. Cossette <cold_soul79078@yahoo.com>
@@ -5286,7 +5287,7 @@ def corpkit_gui():
         try:
             response = urllib2.urlopen('https://www.github.com/interrogator/corpkit-app')
             html = response.read()
-        except HTTPError:
+        except:
             if showfalse:
                 tkMessageBox.showinfo(
                 "No connection to remote server",
@@ -5321,7 +5322,7 @@ def corpkit_gui():
                 dateline = next(l for l in newscript.split('\n') if l.startswith('# <updated>'))
                 timereg = re.compile(r'# <updated>(.*)<.updated>')
 
-            except HTTPError:
+            except:
                 if showfalse:
                     tkMessageBox.showinfo(
                     "No connection to remote server",
