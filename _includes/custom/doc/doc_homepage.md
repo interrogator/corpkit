@@ -110,8 +110,8 @@ Also unique to *corpkit* are:
 * Sophisticated editing and plotting tools (via *pandas* and *matplotlib*)
 * Immediately editable results (via *tkintertable*)
 * Thematic coding and colouring of concordance lines
-* Tool for using and resuing wordlists, getting word inflections
-* Simply integration of wordlists and corpus queries
+* Tool for building re-usable wordlists, getting spelling variants and inflections
+* Simple integration of wordlists and corpus queries
 * Auto-storage of results from investigations, as well as all the options used to generate them
 
 The final key difference between *corpkit* and most current corpus linguistic software (*AntConc*, *WMatrix*, *Sketch Engine*, *UAM Corpus Tool*, *Wordsmith Tools*, etc.), *corpkit* is **free and open-source**, hackable, and provides both graphical and command-line interfaces, so that it may be useful for geek and non-geek alike. 
