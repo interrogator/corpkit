@@ -112,14 +112,17 @@ def editor(dataframe1,
         from corpkit.editor import editor
         del saved_args['dataframe1']
         for i, (k, v) in enumerate(dataframe1.items()):
+            # only print the first time around
             if i == 0:
-                saved_args['print_info'] = True
+                pass
+                #saved_args['print_info'] = True
             else:
                 saved_args['print_info'] = False
             outdict[k] = editor(v.results, **saved_args)
-        from time import localtime, strftime
-        thetime = strftime("%H:%M:%S", localtime())
-        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys())))
+        if print_info:
+            from time import localtime, strftime
+            thetime = strftime("%H:%M:%S", localtime())
+            print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys())))
         return outdict
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
