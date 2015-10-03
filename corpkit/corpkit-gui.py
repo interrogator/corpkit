@@ -470,6 +470,9 @@ def corpkit_gui():
     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
     ###################     ###################     ###################     ###################
 
+
+    from hashlib import md5
+    
     from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
     resource_path = StringVar()
     resource_path.set(get_gui_resource_dir())
