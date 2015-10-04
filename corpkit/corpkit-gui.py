@@ -3,10 +3,11 @@
 # corpkit GUI
 # Daniel McDonald
 
-# t
+# A date is stored here, for update checking:
 # <updated>DATE-REPLACE</updated>
 
-# Template created by: Patrick T. Cossette <cold_soul79078@yahoo.com>
+# Template created by: 
+# Patrick T. Cossette <cold_soul79078@yahoo.com>
 
 import Tkinter
 from Tkinter import *
@@ -21,64 +22,7 @@ from PIL import ImageTk
 
 from corpkit.other import get_gui_resource_dir
 import os
-rd = get_gui_resource_dir()
-
-class SplashScreen( object ):
-    def __init__( self, tkRoot, imageFilename, minSplashTime=0 ):
-        import os
-        rd = get_gui_resource_dir()
-        self._root              = tkRoot
-        #image = Image.open(os.path.join(imageFilename))
-            #image_to_measure = ImageTk.PhotoImage(image)
-        self._image             = ImageTk.PhotoImage(file = os.path.join(rd, imageFilename))
-        self._splash            = None
-        self._minSplashTime     = time.time() + minSplashTime
-      
-    def __enter__( self ):
-        # Remove the app window from the display
-        #self._root.withdraw( )
-        
-        # Calculate the geometry to center the splash image
-        scrnWt = self._root.winfo_screenwidth( )
-        scrnHt = self._root.winfo_screenheight( )
-        
-        imgWt = self._image.width()
-        imgHt = self._image.height()
-        
-        imgXPos = (scrnWt / 2) - (imgWt / 2)
-        imgYPos = (scrnHt / 2) - (imgHt / 2)
-
-        # Create the splash screen      
-        self._splash = Tkinter.Toplevel()
-        self._splash.overrideredirect(1)
-        self._splash.geometry( '+%d+%d' % (imgXPos, imgYPos) )
-
-        background_label = Tkinter.Label(self._splash, image=self._image)
-        background_label.grid(row = 1, column = 1, sticky = W)
-        import corpkit
-        oldstver = str(corpkit.__version__)
-        txt = 'Loading corpkit v%s ...' % oldstver
-        cnv = Tkinter.Canvas(self._splash, width=200, height=20)
-        cnv.create_text((100, 14), text = txt, font = ("Helvetica", 14, "bold"))
-        cnv.grid(row = 1, column = 1, sticky = 'SW', padx = 20, pady = 20)
-
-        self._splash.update( )
-   
-    def __exit__( self, exc_type, exc_value, traceback ):
-        # Make sure the minimum splash time has elapsed
-        timeNow = time.time()
-        if timeNow < self._minSplashTime:
-            time.sleep( self._minSplashTime - timeNow )
-      
-        # Destroy the splash window
-        self._splash.destroy( )
-        try:
-            self.__root.destroy()
-        except:
-            pass
-
-      # Display the application window
-      #self._root.deiconify( )
+rd = '/users/daniel/Work/corpkit/dist/corpkit-1.61.app/Contents/MacOS'
 
 ########################################################################
 
@@ -249,9 +193,8 @@ def corpkit_gui():
     #the_splash = SplashScreen(root, r'loading_image.png', 3.0)
 
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-    root.withdraw( )
+    #root.withdraw( )
     #the_splash.__enter__()
-
 
     import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
     from Tkinter import StringVar, Listbox, Text
@@ -261,10 +204,15 @@ def corpkit_gui():
     import corpkit
     from nltk.draw.table import MultiListbox, Table
     from collections import OrderedDict
+    import requests
+    import traceback
+    import dateutil
 
-    def resource_path(relative):
-        import os
-        return os.path.join(os.environ.get("_MEIPASS2",os.path.abspath(".")),relative)
+    # unused
+    from hashlib import md5
+    #import OpenSSL
+    #import crypto
+    #import rand
 
     # add tregex to path
     corpath = os.path.dirname(corpkit.__file__)
@@ -470,13 +418,9 @@ def corpkit_gui():
     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
     ###################     ###################     ###################     ###################
 
-
-    from hashlib import md5
-    
     from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
     resource_path = StringVar()
-    resource_path.set(get_gui_resource_dir())
-
+    resource_path.set('/users/daniel/Work/corpkit/dist/corpkit-1.61.app/Contents/MacOS')
 
     def refresh_images(*args):
         """get list of images saved in images folder"""
@@ -1983,7 +1927,7 @@ def corpkit_gui():
     data2_pick.set('Self')
     #Label(tab2, text = 'Denominator:').grid(row = 3, column = 0, sticky = W)
     dataframe2s = OptionMenu(tab2, data2_pick, *tups)
-    dataframe2s.config(state = DISABLED, width = 16)
+    dataframe2s.config(state = DISABLED, width = 13)
     dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = N)
     data2_pick.trace("w", df2_callback)
 
@@ -2695,6 +2639,8 @@ def corpkit_gui():
         formatm = '{{:<{}s}}'.format(data['m'].str.len().max()).format
         formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
         fmters = {'l':formatl, 'm': formatm,'r':formatr}
+
+        print 'test...........'
 
         # only do left align when long result ...
         # removed because it's no big deal if always left aligned, and this
@@ -4636,10 +4582,10 @@ def corpkit_gui():
         timestring('Corpus parsed and ready to interrogate: "%s"' % os.path.basename(new_corpus_path))
 
     parse_button_text = StringVar()
-    parse_button_text.set('Parse corpus')
+    parse_button_text.set('Created parsed corpus')
 
     tokenise_button_text = StringVar()
-    tokenise_button_text.set('Tokenise')
+    tokenise_button_text.set('Create tokenised corpus')
 
     #sel_corpus = StringVar()
     #sel_corpus.set('')
@@ -5280,16 +5226,14 @@ def corpkit_gui():
         oldstver = str(corpkit.__version__)
         ver = make_float_from_version(oldstver)
         import re
-        import urllib2
-        from urllib2 import HTTPError
         import datetime
         from dateutil.parser import parse
         import os
 
         # CHECK FOR MAJOR UPDATE
         try:
-            response = urllib2.urlopen('https://www.github.com/interrogator/corpkit-app')
-            html = response.read()
+            response = requests.get('https://www.github.com/interrogator/corpkit-app')
+            html = response.text
         except:
             if showfalse:
                 tkMessageBox.showinfo(
@@ -5299,7 +5243,7 @@ def corpkit_gui():
         reg = re.compile('title=.corpkit-([0-9\.]+)\.tar\.gz')
         
         # get version number as string
-        stver = re.search(reg, str(html)).group(1)
+        stver = str(re.search(reg, html).group(1))
         vnum = make_float_from_version(stver)
         
         if vnum > ver:
@@ -5320,8 +5264,8 @@ def corpkit_gui():
             olddate = modification_date(this_script)
 
             try:
-                script_response = urllib2.urlopen('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
-                newscript = script_response.read()
+                script_response = requests.get('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
+                newscript = script_response.text
                 dateline = next(l for l in newscript.split('\n') if l.startswith('# <updated>'))
                 timereg = re.compile(r'# <updated>(.*)<.updated>')
 
@@ -5559,7 +5503,7 @@ def corpkit_gui():
     note.focus_on(tab1)
     #root.after(50, start_update_check) # 500
     
-    root.deiconify()
+    #root.deiconify()
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     #root.lift()
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
@@ -5567,5 +5511,29 @@ def corpkit_gui():
     root.mainloop()
 
 if __name__ == "__main__":
-    corpkit_gui()
+    import traceback
+    import sys
+    try:
+        corpkit_gui()
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print "*** print_tb:"
+        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+        print "*** print_exception:"
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stdout)
+        print "*** print_exc:"
+        traceback.print_exc()
+        print "*** format_exc, first and last line:"
+        formatted_lines = traceback.format_exc().splitlines()
+        print formatted_lines[0]
+        print formatted_lines[-1]
+        print "*** format_exception:"
+        print repr(traceback.format_exception(exc_type, exc_value,
+                                              exc_traceback))
+        print "*** extract_tb:"
+        print repr(traceback.extract_tb(exc_traceback))
+        print "*** format_tb:"
+        print repr(traceback.format_tb(exc_traceback))
+        print "*** tb_lineno:", exc_traceback.tb_lineno
 

@@ -1233,15 +1233,18 @@ def get_gui_resource_dir():
     extens = '.%s' % fext
     apppath = corpath.split(extens , 1)
     resource_path = ''
+    # if not an .app
     if len(apppath) == 1:
         resource_path = os.path.dirname(corpath)
     else:
         apppath = apppath[0] + extens
         appdir = os.path.dirname(apppath)
         if sys.platform == 'darwin':
-            resource_path = os.path.join(apppath, 'Contents', 'Resources')
+            #resource_path = os.path.join(apppath, 'Contents', 'Resources')
+            resource_path = os.path.join(apppath, 'Contents', 'MacOS')
         else:
             resource_path = appdir
+    print resource_path
     return resource_path
 
 def get_fullpath_to_jars(path_var):
