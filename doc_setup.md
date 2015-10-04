@@ -7,7 +7,7 @@ last_updated: 2015-09-01
 
 ## Opening the app
 
-All you have to do is open the app to begin using *corpkit*. If you get an "unidentified developer" error, simply `control-click` or `right-click`, and select `Open` that way. 
+All you have to do is open the app to begin using *corpkit*. If you get an "unidentified developer" error when you try to open the app, close the error message, and `control-click`/`right-click` the app and select `Open` that way.
 
 ## Extras
 
