@@ -24,3 +24,11 @@ If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically 
 ### Screen size issues
 
 Currently, there are fairly limited options for the size of the corpkit main window. If you can't see the status bar, it may be useful try switching the Dock to auto hide (via `System Preferences`), and reopening *corpkit*.
+
+### Various errors
+
+If the console at the bottom is showing some kind of error, and it doesn't make much sense to you, it's probably a bug in the code. The best thing to do is to use the `Save log` button to generate a report of the issue, and then to send that to the author, preferably via [GitHub Issues](https://github.com/interrogator/corpkit/issues), so that problems and solutions are organised and available to others.
+
+### Undocumented things
+
+There are features in *corpkit* that are not fully documented. If you can't find any information about a feature on this site, please follow the steps above to contact the author. Good documentation is important!
