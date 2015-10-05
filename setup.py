@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 class CustomInstallCommand(install):
-    """Customized setuptools install command - prints a friendly greeting."""
+    """Customized setuptools install command."""
     def run(self):
 
         def install_with_pip(package_name, package):
@@ -13,10 +13,18 @@ class CustomInstallCommand(install):
                 import pip
                 pip.main(['install', package])
 
-        install.run(self)
+        #install.run(self)
         install_with_pip('corenlp_xml', 'git+git://github.com/interrogator/corenlp-xml-lib.git')
         install_with_pip('tkintertable', 'git+git://github.com/interrogator/tkintertable.git')
         install_with_pip('PIL', 'http://effbot.org/media/downloads/Imaging-1.1.7.tar.gz')
+        install_with_pip('matplotlib', 'matplotlib')
+        install_with_pip('nltk', 'nltk')
+        install_with_pip('joblib', 'joblib')
+        install_with_pip('pandas', 'pandas')
+        install_with_pip('mpld3', 'mpld3')
+        install_with_pip('beautifulsoup4', 'beautifulsoup4')
+        install_with_pip('lxml', 'lxml')
+        install_with_pip('blessings', 'blessings')
 
         # since nltk may have just been install
         # we need to update our PYTHONPATH
@@ -47,17 +55,17 @@ setup(name='corpkit',
                     'dictionaries': ['*.p', 'dictionaries/*.p']},
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
-    cmdclass={'install': CustomInstallCommand,
+    cmdclass={'install': CustomInstallCommand},
     packages=['corpkit', 'dictionaries'],
-    install_requires=[  "matplotlib >= 1.4.3",
-                        "nltk >= 3.0.0",
-                        "joblib",
-                        "pandas >= 0.16.1",
-                        "mpld3 >= 0.2", 
-                        "beautifulsoup4>=4.3.2",
-                        "lxml>=3.4.4",
-                        "blessings>=1.6"],
-                        # chardet
-                        # requests
-                        # ...
+    #install_requires=[  "matplotlib >= 1.4.3",
+    #                    "nltk >= 3.0.0",
+    #                    "joblib",
+    #                    "pandas >= 0.16.1",
+    #                    "mpld3 >= 0.2", 
+    #                    "beautifulsoup4>=4.3.2",
+    #                    "lxml>=3.4.4",
+    #                    "blessings>=1.6"],
+    #                    # chardet
+    #                    # requests
+    #                    # ...
     zip_safe = False)
