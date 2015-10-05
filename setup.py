@@ -1,3 +1,4 @@
+import setuptools
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
@@ -13,7 +14,7 @@ class CustomInstallCommand(install):
                 import pip
                 pip.main(['install', package])
 
-        #install.run(self)
+        install.run(self)
         install_with_pip('corenlp_xml', 'git+git://github.com/interrogator/corenlp-xml-lib.git')
         install_with_pip('tkintertable', 'git+git://github.com/interrogator/tkintertable.git')
         install_with_pip('PIL', 'http://effbot.org/media/downloads/Imaging-1.1.7.tar.gz')
@@ -46,7 +47,7 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-    version='1.62',
+    version='1.66',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
@@ -55,9 +56,10 @@ setup(name='corpkit',
                     'dictionaries': ['*.p', 'dictionaries/*.p']},
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
-    cmdclass={'install': CustomInstallCommand},
+    cmdclass={'install': CustomInstallCommand,},
+    keywords = ['corpus', 'linguistics', 'nlp'],
     packages=['corpkit', 'dictionaries'],
-    #install_requires=[  "matplotlib >= 1.4.3",
+    install_requires=["matplotlib >= 1.4.3"])
     #                    "nltk >= 3.0.0",
     #                    "joblib",
     #                    "pandas >= 0.16.1",
@@ -68,4 +70,4 @@ setup(name='corpkit',
     #                    # chardet
     #                    # requests
     #                    # ...
-    zip_safe = False)
+    #)
