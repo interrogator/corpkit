@@ -423,8 +423,8 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
     print 'Done!'
 
 def download_large_file(proj_path, url, actually_download = True, root = False, **kwargs):
+    """download something to proj_path"""
     import corpkit
-    """download corenlp to proj_path"""
     import os
     import urllib2
     from time import localtime, strftime
@@ -434,7 +434,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     if 'stanford' in url:
         downloaded_dir = os.path.join(home, 'corenlp')
     else:
-        downloaded_dir = os.path.join(home, 'temp')
+        downloaded_dir = os.path.join(proj_path, 'temp')
     fullfile = os.path.join(downloaded_dir, file_name)
     try:
         os.makedirs(downloaded_dir)

@@ -22,7 +22,6 @@ from PIL import ImageTk
 
 from corpkit.other import get_gui_resource_dir
 import os
-rd = '/users/daniel/Work/corpkit/dist/corpkit-1.61.app/Contents/MacOS'
 
 ########################################################################
 
@@ -36,9 +35,11 @@ class RedirectText(object):
         def dumfun():
             pass
 
+
         self.output = text_ctrl
         self.log = log_text
         self.flush = dumfun
+        self.fileno = dumfun
  
     #----------------------------------------------------------------------
     def write(self, string):
@@ -205,11 +206,13 @@ def corpkit_gui():
     from nltk.draw.table import MultiListbox, Table
     from collections import OrderedDict
     import requests
+    requests.packages.urllib3.disable_warnings()
     import traceback
     import dateutil
 
     # unused
     from hashlib import md5
+    import chardet
     #import OpenSSL
     #import crypto
     #import rand
@@ -237,13 +240,19 @@ def corpkit_gui():
     def adjustCanvas(someVariable = None):
         fontLabel["font"] = ("arial", var.get())
 
-    # key binding
+    # key binding, path setting
+    rd = sys.argv[0]
     if sys.platform == 'darwin':
         key = 'Mod1'
         fext = 'app'
+        if '.app' in rd:
+            rd = os.path.join(rd.split('.app', 1)[0] + '.app', 'Contents', 'MacOS')
     else:
         key = 'Control'
         fext = 'exe'
+    
+    if '.py' in rd:
+        rd = os.path.dirname(os.path.join(rd.split('.py', 1)[0]))
 
     root.title("corpkit")
     root.imagewatched = StringVar()
@@ -420,7 +429,7 @@ def corpkit_gui():
 
     from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
     resource_path = StringVar()
-    resource_path.set('/users/daniel/Work/corpkit/dist/corpkit-1.61.app/Contents/MacOS')
+    resource_path.set(rd)
 
     def refresh_images(*args):
         """get list of images saved in images folder"""
@@ -2640,8 +2649,6 @@ def corpkit_gui():
         formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
         fmters = {'l':formatl, 'm': formatm,'r':formatr}
 
-        print 'test...........'
-
         # only do left align when long result ...
         # removed because it's no big deal if always left aligned, and this
         # copes when people search for 'root' or something.
@@ -3791,7 +3798,13 @@ def corpkit_gui():
     exported_fullpath = StringVar()
     exported_fullpath.set('')  
     log_fullpath = StringVar()
-    log_fullpath.set('')        
+    import os
+    home = os.path.expanduser("~")
+    try:
+        os.makedirs(os.path.join(home, 'corpkit-logs'))
+    except:
+        pass
+    log_fullpath.set(os.path.join(home, 'corpkit-logs'))    
     image_fullpath = StringVar()
     image_fullpath.set('')
     image_basepath = StringVar()
@@ -5099,7 +5112,7 @@ def corpkit_gui():
             if newpath.endswith('.py'):
                 opener = 'python'
                 if 'daniel/Work/corpkit' in newpath:
-                    opener = '/Users/daniel/virtenvs/corpkit-env/bin/python'
+                    opener = '/Users/daniel/virtenvs/ssled/bin/python'
                 cmd = [opener, newpath]
             else:
                 if sys.platform == "darwin":
@@ -5133,7 +5146,8 @@ def corpkit_gui():
         import inspect
         from corpkit.build import download_large_file
         # get path to this script
-        corpath = inspect.getfile(inspect.currentframe())
+        corpath = rd
+        #corpath = inspect.getfile(inspect.currentframe())
         
         # check we're using executable version, because .py users can
         # use github to update
@@ -5214,25 +5228,30 @@ def corpkit_gui():
 
     def check_updates(showfalse = True, lateprint = False, auto = False):
         """check for updates, minor and major."""
-
+        import os
+        import re
+        import datetime
+        from dateutil.parser import parse
+        import sys
+        
         # weird hacky way to not repeat request
         if do_auto_update.get() == 1 and auto is True:
             return
         if auto is False:
             do_auto_update.set(1)
 
-        import corpkit
-        # get current version as float
-        oldstver = str(corpkit.__version__)
-        ver = make_float_from_version(oldstver)
-        import re
-        import datetime
-        from dateutil.parser import parse
-        import os
 
-        # CHECK FOR MAJOR UPDATE
+        # get version as float
         try:
-            response = requests.get('https://www.github.com/interrogator/corpkit-app')
+            oldstver = open(os.path.join(rd, 'VERSION.txt'), 'r').read().strip()
+        except:
+            import corpkit
+            oldstver = str(corpkit.__version__)
+        ver = make_float_from_version(oldstver)
+
+        # check for major update
+        try:
+            response = requests.get('https://www.github.com/interrogator/corpkit-app', verify=False)
             html = response.text
         except:
             if showfalse:
@@ -5259,15 +5278,25 @@ def corpkit_gui():
         
         # check for minor update
         else:
-            import inspect
-            this_script = inspect.getfile(inspect.currentframe())
-            olddate = modification_date(this_script)
+            import sys
+            timereg = re.compile(r'# <updated>(.*)<.updated>')
+
+            if '.py' in sys.argv[0] and sys.platform == 'darwin':
+                oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
+            elif '.app' in sys.argv[0]:
+                oldd = open(os.path.join(rd, 'corpkit', 'corpkit-gui.py'), 'r').read()
+
+            dateline = next(l for l in oldd.split('\n') if l.startswith('# <updated>'))
+            dat = re.search(timereg, dateline).group(1)
+            try:
+                olddate = parse(dat)
+            except:
+                olddate = modification_date(sys.argv[0])
 
             try:
-                script_response = requests.get('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py')
+                script_response = requests.get('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py', verify=False)
                 newscript = script_response.text
                 dateline = next(l for l in newscript.split('\n') if l.startswith('# <updated>'))
-                timereg = re.compile(r'# <updated>(.*)<.updated>')
 
             except:
                 if showfalse:
@@ -5291,32 +5320,38 @@ def corpkit_gui():
             if newdate > olddate:
                 timestring('Minor update found: corpkit %s' % stver)
                 download_update = tkMessageBox.askyesno("Minor update available",
-                              "Minor update available: corpkit %s\n\n Apply now?" % stver)
+                              "Minor update available: corpkit %s\n\n Download and apply now?" % stver)
                 if download_update:
-                    if not this_script.endswith('corpkit-gui.py'):
-                        with open(this_script, "w") as fo:
-                            fo.write(newscript)
+                    url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-%s' % oldstver
+
+                    dir_containing_ex, execut = download_large_file(project_fullpath.get(), 
+                                                 url = url, root = root, note = note)
+
+                    if not sys.argv[0].endswith('corpkit-gui.py'):
+                        os.remove(os.path.join(rd, 'corpkit-%s' % oldstver))
+                        shutil.move(execut, os.path.join(rd, 'corpkit-%s' % oldstver))
+                        shutil.rmtree(dir_containing_ex)
                     else:
                         timestring("Can't replace developer copy, sorry.")
                         return
-                    import inspect
-                    corpath = inspect.getfile(inspect.currentframe())
-                    extens = '.%s' % fext
-                    if extens not in corpath and sys.platform != 'darwin':
-                        timestring("Get it from GitHub: https://www.github.com/interrogator/corpkit")
-                        return
-                    # split on .app or .exe, then re-add .app
-                    apppath = corpath.split(extens , 1)[0] + extens
-                    restart(apppath)
+                    #import inspect
+                    #sys.argv[0]
+                    #extens = '.%s' % fext
+                    #if extens not in corpath and sys.platform != 'darwin':
+                    #    timestring("Get it from GitHub: https://www.github.com/interrogator/corpkit")
+                    #    return
+                    ## split on .app or .exe, then re-add .app
+                    #apppath = corpath.split(extens , 1)[0] + extens
+                    restart(sys.argv[0].split('.app', 1)[0] + '.app')
                     return
                 else:
-                    timestring('Minor update found: corpkit %s, %s. Not downloaded.' % (stver, dat))
+                    timestring('Minor update found: corpkit %s, %s. Not downloaded.' % (stver, dat.replace('T', ', ')))
                     return
 
         if showfalse:
             tkMessageBox.showinfo(
             "Up to date!",
-            "corpkit (version %s) up to date!" % ver)
+            "corpkit (version %s) up to date!" % oldstver)
             timestring('corpkit (version %s) up to date.' % oldstver)
             return
 
@@ -5328,6 +5363,7 @@ def corpkit_gui():
         root.attributes('-topmost', False)
 
     root.after(1000, unmax)
+    
     root.after(100000, start_update_check)
 
     def set_corenlp_path():
@@ -5404,6 +5440,7 @@ def corpkit_gui():
     #filemenu.add_separator()
 
     filemenu.add_command(label="Check for updates", command=check_updates)
+    #filemenu.entryconfig("Check for updates", state="disabled")
     #filemenu.add_separator()
     #filemenu.add_command(label="Restart tool", command=restart)
     filemenu.add_separator()
@@ -5440,10 +5477,14 @@ def corpkit_gui():
     #    root.createcommand('tk::mac::ShowPreferences', showMyPreferencesDialog)
 
     def about_box():
-        import corpkit
-        ver = corpkit.__version__
-        tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit/\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
-                              'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % ver)
+        import os
+        try:
+            oldstver = str(open(os.path.join(rd, 'VERSION.txt'), 'r').read().strip())
+        except:
+            import corpkit
+            oldstver = str(corpkit.__version__)
+        tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
+                              'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % oldstver)
 
     def show_log():
         import os
@@ -5506,7 +5547,7 @@ def corpkit_gui():
     #root.deiconify()
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     #root.lift()
-    #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     #the_splash.__exit__()
     root.mainloop()
 
