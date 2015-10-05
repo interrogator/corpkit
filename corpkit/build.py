@@ -450,49 +450,49 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     
     if actually_download:
         try:
-            u = urllib2.urlopen(url)
-            f = open(fullfile, 'wb')
-            meta = u.info()
-            file_size = int(meta.getheaders("Content-Length")[0])
-            if root:
-                root.update()
-            if 'note' in kwargs.keys():
-                kwargs['note'].progvar.set(0)
-            else:
-                p = TextProgressBar(int(file_size))
+            import requests
+            # NOTE the stream=True parameter
+            r = requests.get(url, stream=True, verify=False)
+            file_size = int(r.headers['content-length'])
+            file_size_dl = 0
+            block_sz = 8192
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Downloading ... ' % thetime
-            file_size_dl = 0
-            block_sz = 8192
-            while True:
-                buffer = u.read(block_sz)
-                if not buffer:
-                    break
-                file_size_dl += len(buffer)
-                f.write(buffer)
-                #status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-                #status = status + chr(8)*(len(status)+1)
-                if 'note' in kwargs.keys():
-                    kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
-                else:
-                    p.animate(file_size_dl)
-                if root:
-                    root.update()
-            if 'note' in kwargs.keys():  
-                kwargs['note'].progvar.set(100)
-            else:    
-                p.animate(int(file_size))
-        except:
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Downloaded failed: bad connection.' % time
-            f.close()
+            with open(fullfile, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=block_sz): 
+                    if chunk: # filter out keep-alive new chunks
+                        f.write(chunk)
+                        file_size_dl += len(chunk)
+                        #print file_size_dl * 100.0 / file_size
+                        if 'note' in kwargs.keys():
+                            kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
+                        else:
+                            p.animate(file_size_dl)
+                        if root:
+                            root.update()
+        except Exception, err:
+            import traceback
+            print traceback.format_exc()
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Downloaded failed' % thetime
+            try:
+                f.close()
+            except:
+                pass
             if root:
                 root.update()
             return
-        time = strftime("%H:%M:%S", localtime())
-        print '%s: Downloaded successully.' % time
-        f.close()
+        if 'note' in kwargs.keys():  
+            kwargs['note'].progvar.set(100)
+        else:    
+            p.animate(int(file_size))
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Downloaded successully.' % thetime
+        try:
+            f.close()
+        except:
+            pass
     return downloaded_dir, fullfile
 
 def extract_cnlp(fullfilepath, corenlppath = False, root = False):
@@ -670,7 +670,8 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
     if 'note' in kwargs.keys():
         kwargs['note'].progvar.set(100)
     sys.stdout = stdout
-    print 'Parsing finished. Moving parsed files into place ...'
+    thetime = strftime("%H:%M:%S", localtime())
+    print '%s: Parsing finished. Moving parsed files into place ...' % thetime
     os.chdir(proj_path)
     return new_corpus_path
 

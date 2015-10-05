@@ -3,25 +3,29 @@
 # corpkit GUI
 # Daniel McDonald
 
-# A date is stored here, for update checking:
+# This file conains the frontend side of the corpkit gui.
+# You can use py2app or pyinstaller on it to make a .app
+
+# Below is a string that is used to determine when minor
+# updates are available on github for automatic download:
 # <updated>DATE-REPLACE</updated>
 
-# Template created by: 
+# Tabbed notebook template created by: 
 # Patrick T. Cossette <cold_soul79078@yahoo.com>
 
+import sys
+import string
+import time
+import os
+import threading
 import Tkinter
 from Tkinter import *
-import sys,string
-import threading
 import ScrolledText
-import time
 from ttk import Progressbar, Style
-
 from PIL import Image
 from PIL import ImageTk
-
+# obsolete:
 from corpkit.other import get_gui_resource_dir
-import os
 
 ########################################################################
 
@@ -32,9 +36,10 @@ class RedirectText(object):
     #----------------------------------------------------------------------
     def __init__(self, text_ctrl, log_text):
         """Constructor"""
+        
         def dumfun():
+            """to satisfy ipython, sys"""
             pass
-
 
         self.output = text_ctrl
         self.log = log_text
@@ -45,13 +50,16 @@ class RedirectText(object):
     def write(self, string):
         """""" 
         import re
+        # don't show blank lines
         show_reg = re.compile(r'^\s*$')
+        # delete lobal abs paths from traceback
+        del_reg = re.compile(r'^/*Users.*/(site-packages|corpkit/corpkit/)')
         if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
             if not re.match(show_reg, string):
-                self.log.append(string)
+                self.log.append(re.sub(del_reg, '', string))
         # remove blank lines
         if not re.match(show_reg, string):
-            self.output.set(string)
+            self.output.set(re.sub(del_reg, '', string))
             #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
 
 class Notebook(Frame):
@@ -191,26 +199,31 @@ class Notebook(Frame):
 def corpkit_gui():
     
     root = Tk()
-    #the_splash = SplashScreen(root, r'loading_image.png', 3.0)
 
+    # if making a splash screen:
+    #the_splash = SplashScreen(root, r'loading_image.png', 3.0)
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     #root.withdraw( )
     #the_splash.__enter__()
 
-    import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
-    from Tkinter import StringVar, Listbox, Text
+    import traceback
+    import dateutil
     import sys
-    from tkintertable import TableCanvas, TableModel
     import os
     import corpkit
+
+    import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
+    from Tkinter import StringVar, Listbox, Text
+
+    from tkintertable import TableCanvas, TableModel
+
     from nltk.draw.table import MultiListbox, Table
     from collections import OrderedDict
     import requests
+    # stop warning when insecure download is performed
     requests.packages.urllib3.disable_warnings()
-    import traceback
-    import dateutil
-
-    # unused
+    
+    # unused in the gui, dummy imports for pyinstaller
     from hashlib import md5
     import chardet
     #import OpenSSL
@@ -241,6 +254,7 @@ def corpkit_gui():
         fontLabel["font"] = ("arial", var.get())
 
     # key binding, path setting
+    # to do: make into function
     rd = sys.argv[0]
     if sys.platform == 'darwin':
         key = 'Mod1'
@@ -257,9 +271,7 @@ def corpkit_gui():
     root.title("corpkit")
     root.imagewatched = StringVar()
     #root.overrideredirect(True)
-    root.resizable(FALSE,FALSE)
-
-    #HWHW h 550
+    #root.resizable(FALSE,FALSE)
     note = Notebook(root, width= 1365, height = 660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
     note.grid()
     tab0 = note.add_tab(text = "Build")
@@ -272,7 +284,6 @@ def corpkit_gui():
 
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     #root.overrideredirect(True)
-
     #root.lift()
     #root.attributes('-topmost', True)
 
@@ -280,10 +291,13 @@ def corpkit_gui():
     #    VARIABLES    #     #    VARIABLES    #     #    VARIABLES    #     #    VARIABLES    #
     ###################     ###################     ###################     ###################
 
+    # in this section, some recurring, empty variables are defined
+    # to do: compress most of the dicts into one
+
     # round up text so we can bing keys to them later
     all_text_widgets = []
 
-    # build tab stuff
+    # for the build tab (could be cleaned up)
     chosen_f = []
     sentdict = {}
     boxes = []
@@ -296,14 +310,20 @@ def corpkit_gui():
     # a dict of the editor frame names and models
     editor_tables = {}
     currently_in_each_frame = {}
+    # for conc sort toggle
     sort_direction = True
+
+    # don't look for updates if the user manually clicked
     do_auto_update = IntVar()
     do_auto_update.set(0)
     subc_sel_vals = []
+
+    # store every interrogation and conc in this session    
     all_interrogations = OrderedDict()
     all_conc = OrderedDict()
     all_images = []
     all_interrogations['None'] = 'None'
+
     # corpus path setter
     corpus_fullpath = StringVar()
     corpus_fullpath.set('')
@@ -316,6 +336,7 @@ def corpkit_gui():
     oldplotframe = []
     
     # conc
+    # to do: more consistent use of globals!
     itemcoldict = {}
     current_conc = ['None']
     global conc_saved
@@ -355,26 +376,28 @@ def corpkit_gui():
                   9: '#000000',
                   0: '#F4F4F4'}
 
+    # translate search option for interrogator()
     transdict = {
-            'Get distance from root for regex match': 'a',
-            'Get tag and word of match': 'b',
-            'Count matches': 'c',
-            'Get role of match': 'f',
-            'Get "role:dependent", matching governor': 'd',
-            'Get ngrams': 'j',
-            'Get "role:governor", matching dependent': 'g',
-            'Get lemmata matching regex': 'l',
-            'Get tokens by role': 'm',
+            'Get distance from root for regex match':           'a',
+            'Get tag and word of match':                        'b',
+            'Count matches':                                    'c',
+            'Get role of match':                                'f',
+            'Get "role:dependent", matching governor':          'd',
+            'Get ngrams':                                       'j',
+            'Get "role:governor", matching dependent':          'g',
+            'Get lemmata matching regex':                       'l',
+            'Get tokens by role':                               'm',
             'Get dependency index of regular expression match': 'n',
-            'Get part-of-speech tag': 'p',
-            'Regular expression search': 'r',
-            'Simple search string search': 's',
-            'Get tokens matching regex': 't',
-            'Get stats': 'v',
-            'Get words': 'w',
-            'Get tokens by regex': 'h',
-            'Get tokens matching list': 'e'}
+            'Get part-of-speech tag':                           'p',
+            'Regular expression search':                        'r',
+            'Simple search string search':                      's',
+            'Get tokens matching regex':                        't',
+            'Get stats':                                        'v',
+            'Get words':                                        'w',
+            'Get tokens by regex':                              'h',
+            'Get tokens matching list':                         'e'}
 
+    # kinds of search for kinds of data
     option_dict = {'Trees': ['Get words', 
                              'Get tag and word of match', 
                              'Count matches', 
@@ -394,6 +417,7 @@ def corpkit_gui():
                             ['Regular expression search', 
                              'Simple search string search']}
 
+    # translate sort_by for editor
     sort_trans = {'None':           False,
                   'Total':          'total',
                   'Inverse total':  'infreq',
@@ -403,12 +427,14 @@ def corpkit_gui():
                   'Static':         'static',
                   'Turbulent':      'turbulent'}
 
+    # translate special queries for interrogator()
     spec_quer_translate = {'Participants': 'participants',
                            'Any':          'any',
                            'Processes':    'processes',
                            'Subjects':     'subjects',
                            'Entities':     'entities'}
 
+    # for the 'stats' option: define a series of queries
     from dictionaries.process_types import processes
     from corpkit.other import as_regex
     tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< /VB(D|G|Z|N)/ !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/ !<< (/(?i)^thank/ . /(?i)^you/)',
@@ -419,17 +445,16 @@ def corpkit_gui():
                      'Verbal processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.verbal, boundaries = 'w'),
                      'Relational processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.relational, boundaries = 'w')}
 
+    # dependency search names
     depdict = {'Basic': 'basic-dependencies', 
-                   'Collapsed': 'collapsed-dependencies', 
-                   'CC-processed': 'collapsed-ccprocessed-dependencies'}
+               'Collapsed': 'collapsed-dependencies', 
+               'CC-processed': 'collapsed-ccprocessed-dependencies'}
 
     ###################     ###################     ###################     ###################
     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
     ###################     ###################     ###################     ###################
 
     from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
-    resource_path = StringVar()
-    resource_path.set(rd)
 
     def refresh_images(*args):
         """get list of images saved in images folder"""
@@ -1313,6 +1338,7 @@ def corpkit_gui():
         interrobut.config(state = NORMAL)
         concbut.config(state = NORMAL)
         timestring('Set corpus directory: "%s"' % os.path.basename(fp))
+        editf.set('Edit file: ')
 
     Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
     current_corpus = StringVar()
@@ -1602,7 +1628,7 @@ def corpkit_gui():
     def query_help():
         import webbrowser
         #webbrowser.open('file://' + resource_path('user_guide.html').replace('corpkit/corpkit/corpkit', 'corpkit/corpkit'), new = 0)
-        webbrowser.open_new('http://interrogator.github.io/corpkit')
+        webbrowser.open_new('http://interrogator.github.io/corpkit/doc_interrogate.html#trees')
 
     # query help, interrogate button
     #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
@@ -1635,13 +1661,12 @@ def corpkit_gui():
     ##############    ##############     ##############     ##############     ############## 
 
     def do_editing():
-        edbut.config(state = DISABLED)
         """what happens when you press edit"""
+        import os
+        edbut.config(state = DISABLED)
         import pandas
         from corpkit import editor
         
-        import os
-
         # translate operation into interrogator input
         operation_text = opp.get()
         if operation_text == 'None' or operation_text == 'Select an operation':
@@ -3074,7 +3099,8 @@ def corpkit_gui():
     parser_opts = StringVar()
 
     def parser_options():
-        """a popup with corenlp options"""
+        """a popup with corenlp options, to display before parsing.
+        this is a good candidate for 'preferences'"""
         from Tkinter import Toplevel
         global poptions
         poptions = Toplevel()
@@ -3102,12 +3128,6 @@ def corpkit_gui():
                   'parse': 5,
                   'dcoref': 6}
 
-            # select higher buttons
-            #vals = [i.get() for i in butvar.values() if i.get() is not False and i.get() != 0 and i.get() != '0']
-            #vals = sorted(vals, key=lambda x:orders[x])
-            #the_opts = ','.join(vals)
-            #print the_opts
-
         for index, (k, v) in enumerate(popt.items()):
             tmp = StringVar()
             but = Checkbutton(poptions, text=k, variable=tmp, onvalue = v, offvalue = False)
@@ -3129,8 +3149,9 @@ def corpkit_gui():
         stopbut = Button(poptions, text = 'Done', command=optionspicked)
         stopbut.grid()
 
-        #poptions.protocol("WM_DELETE_WINDOW", on_closing)
-
+    ##############    ##############     ##############     ##############     ############## 
+    # WORDLISTS  #    # WORDLISTS  #     # WORDLISTS  #     # WORDLISTS  #     # WORDLISTS  # 
+    ##############    ##############     ##############     ##############     ############## 
 
     def custom_lists():
         """a popup for defining custom wordlists"""
@@ -3277,7 +3298,6 @@ def corpkit_gui():
         Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E, padx = (0, 7))
         Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E, padx = (0, 7))
 
-
         def have_unsaved_list():
             """finds out if there is an unsaved list"""
             global tb
@@ -3295,9 +3315,12 @@ def corpkit_gui():
                     return        
             popup.destroy()
 
-
         stopbut = Button(popup, text = 'Done', command=quit_listing)
         stopbut.grid(column = 0, columnspan = 2, row = 7, pady = 7)
+
+    ##############    ##############     ##############     ##############     ############## 
+    # COLSCHEMES #    # COLSCHEMES #     # COLSCHEMES #     # COLSCHEMES #     # COLSCHEMES # 
+    ##############    ##############     ##############     ##############     ############## 
 
     # a place for the toplevel entry info
     entryboxes = OrderedDict()
@@ -3314,7 +3337,6 @@ def corpkit_gui():
             toplevel.destroy()
         except:
             pass
-
 
         from Tkinter import Toplevel
         toplevel = Toplevel()
@@ -3340,11 +3362,10 @@ def corpkit_gui():
                 tmp.focus_set()
             tmp.grid(row = index + 1, column = 1, padx = 10)
 
-
         toplevel.bind("<Return>", quit_coding)
         toplevel.bind("<Tab>", focus_next_window)
 
-    # conc box
+    # conc box needs to be defined up here
     fsize = IntVar()
     fsize.set(12)
     cfrm = Frame(tab4, height = 450, width = 1360)
@@ -3540,10 +3561,6 @@ def corpkit_gui():
     speaker_listbox_conc.pack()
     cscrollbar.config(command=speaker_listbox_conc.yview)
     speaker_listbox_conc.configure(state = DISABLED)
-
-    # random
-    #random_conc_option = IntVar()
-    #Checkbutton(tab4, text="Randomise", variable=random_conc_option, onvalue = True, offvalue = False).grid(row = 3, column = 3, sticky = E)
 
     # trees
     show_trees = IntVar()
@@ -4184,7 +4201,7 @@ def corpkit_gui():
         conc_fullpath.set(os.path.join(fp, 'saved_concordances'))
         exported_fullpath.set(os.path.join(fp, 'exported'))
         corpora_fullpath.set(os.path.join(fp, 'data'))
-        log_fullpath.set(os.path.join(project_fullpath.get(), 'logs'))
+        log_fullpath.set(os.path.join(fp, 'logs'))
 
         if not os.path.isdir(savedinterro_fullpath.get()):
             timestring('Selected folder does not contain corpkit project.')    
@@ -4454,8 +4471,6 @@ def corpkit_gui():
     # default: w option
     every_image_listbox.select_set(0)
 
-    # Set interrogation option
-
     new_proj_basepath = StringVar()
     new_proj_basepath.set('New project')
     open_proj_basepath = StringVar()
@@ -4467,25 +4482,27 @@ def corpkit_gui():
     #Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 24)
     Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 25)
 
-
     ##############     ##############     ##############     ##############     ############## 
     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
     ##############     ##############     ##############     ##############     ############## 
     
-    from corpkit.build import download_large_file, extract_cnlp, get_corpus_filepaths, check_jdk, parse_corpus, move_parsed_files, corenlp_exists
+    from corpkit.build import download_large_file, extract_cnlp, get_corpus_filepaths, \
+        check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
     def create_tokenised_text():
         note.progvar.set(0)
-        tokbut = Button(tab0, textvariable = tokenise_button_text, command=ignore, width = 33)
-        tokbut.grid(row = 6, column = 0, sticky=W)
+        #tokbut.config(state = DISABLED)
+        #tokbut = Button(tab0, textvariable = tokenise_button_text, command=ignore, width = 33)
+        #tokbut.grid(row = 6, column = 0, sticky=W)
         unparsed_corpus_path = corpus_fullpath.get()
         if speakseg.get():
-            unparsed_corpus_path = unparsed_corpus_path + '-stripped'
+            timestring('Speaker segmentation has no effect when tokenising corpus.')
+            #unparsed_corpus_path = unparsed_corpus_path + '-stripped'
         filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
         outdir = parse_corpus(project_fullpath.get(), 
                               unparsed_corpus_path, 
                               filelist, 
-                              corenlppath = get_fullpath_to_jars(corenlppath.get()),
+                              corenlppath = corenlppath.get(),
                               root = root, 
                               stdout = sys.stdout, 
                               note = note, 
@@ -4500,8 +4517,6 @@ def corpkit_gui():
         #else:
             #timestring('Error: no files created in "%s"' % os.path.basename(outdir))
         update_available_corpora()
-        tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33)
-        tokbut.grid(row = 6, column = 0, sticky=W)
 
     def create_parsed_corpus():
         """make sure things are installed, do speaker id work, then parse, then structure"""
@@ -4512,7 +4527,6 @@ def corpkit_gui():
         note.progvar.set(0)
         import os
         import re
-        parsebut.config(state = DISABLED)
         unparsed_corpus_path = corpus_fullpath.get()
 
         if speakseg.get():
@@ -4522,12 +4536,13 @@ def corpkit_gui():
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             unparsed_corpus_path = unparsed_corpus_path + '-stripped'
             
-        if not get_fullpath_to_jars(corenlppath.get()):
+        if not get_fullpath_to_jars(corenlppath):
             downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                           "CoreNLP parser not found. Download/install it?")
             if downstall_nlp:
                 corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
-                stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, root = root, note = note)
+                stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, 
+                    root = root, note = note, actually_download = True)
                 extract_cnlp(cnlp_zipfile, corenlppath = corenlppath.get(), root = root)
             else:
                 timestring('Cannot parse data without Stanford CoreNLP.')
@@ -4553,13 +4568,16 @@ def corpkit_gui():
         
         if filelist is False:
             # zero files...
-            timestring('Error: no text files found in "%s"' % unparsed_corpus_path)
+            if speakseg.get():
+                timestring('Error: no speaker names found in "%s"' % corpus_fullpath.get())
+            else:
+                timestring('Error: no text files found in "%s"' % unparsed_corpus_path)
             return
 
         parsed_dir = parse_corpus(project_fullpath.get(),
                                   unparsed_corpus_path, 
                                   filelist, 
-                                  corenlppath = get_fullpath_to_jars(corenlppath.get()),
+                                  corenlppath = corenlppath.get(),
                                   operations = parser_opts.get(),
                                   root = root, 
                                   stdout = sys.stdout, 
@@ -4718,8 +4736,9 @@ def corpkit_gui():
     parsebut.grid(row = 6, column = 0, sticky=W)
     parsebut.config(command=lambda: runner(parsebut, create_parsed_corpus))
     #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
-    tokbut = Button(tab0, textvariable = tokenise_button_text, command=create_tokenised_text, width = 33, state = DISABLED)
+    tokbut = Button(tab0, textvariable = tokenise_button_text, width = 33, state = DISABLED)
     tokbut.grid(row = 7, column = 0, sticky=W)
+    tokbut.config(command=lambda: runner(tokbut, create_tokenised_text))
 
     # a list of every interrogation
     def onselect_subc_build(evt = False):
@@ -5002,7 +5021,7 @@ def corpkit_gui():
 
     def get_tool_pref_file():
         """get the location of the tool preferences files"""
-        return os.path.join(resource_path.get(), 'tool_settings.ini')
+        return os.path.join(rd, 'tool_settings.ini')
 
     def save_tool_prefs(printout = True):
         """save any preferences to tool preferences"""
@@ -5240,7 +5259,6 @@ def corpkit_gui():
         if auto is False:
             do_auto_update.set(1)
 
-
         # get version as float
         try:
             oldstver = open(os.path.join(rd, 'VERSION.txt'), 'r').read().strip()
@@ -5312,8 +5330,8 @@ def corpkit_gui():
             except:
                 if showfalse:
                     tkMessageBox.showinfo(
-                    "Error.",
-                    "Error.")
+                    "Error checking for update.",
+                    "Error checking for update.")
                 return
             # testing code
             #if 2 == 2:
@@ -5326,6 +5344,10 @@ def corpkit_gui():
 
                     dir_containing_ex, execut = download_large_file(project_fullpath.get(), 
                                                  url = url, root = root, note = note)
+
+                    # make sure we can execute the new script
+                    import os
+                    os.chmod(execut, 0777)
 
                     if not sys.argv[0].endswith('corpkit-gui.py'):
                         os.remove(os.path.join(rd, 'corpkit-%s' % oldstver))
@@ -5363,7 +5385,6 @@ def corpkit_gui():
         root.attributes('-topmost', False)
 
     root.after(1000, unmax)
-    
     root.after(100000, start_update_check)
 
     def set_corenlp_path():
@@ -5372,7 +5393,7 @@ def corpkit_gui():
                                        message = 'Select folder containing the CoreNLP parser.')
         if fp and fp != '':
             corenlppath.set(fp)
-            if not get_fullpath_to_jars(corenlppath.get()):
+            if not get_fullpath_to_jars(corenlppath):
                 recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
                             message = "CoreNLP not found in %s." % fp )
                 timestring("CoreNLP not found in %s." % fp )
@@ -5434,7 +5455,6 @@ def corpkit_gui():
     filemenu.add_separator()
 
     #filemenu.add_command(label="Coding scheme print", command=print_entryboxes)
-
     
     # broken on deployed version ... path to self stuff
     #filemenu.add_separator()
@@ -5488,15 +5508,15 @@ def corpkit_gui():
 
     def show_log():
         import os
-        input = '\n'.join([x for x in note.log_stream])
-        #input = note.text.get("1.0",END)
+        the_input = '\n'.join([x for x in note.log_stream])
+        #the_input = note.text.get("1.0",END)
         c = 0
         logpath = os.path.join(log_fullpath.get(), 'log-%s.txt' % str(c).zfill(2))
         while os.path.isfile(logpath):
             logpath = os.path.join(log_fullpath.get(), 'log-%s.txt' % str(c).zfill(2))
             c += 1
         with open(logpath, "w") as fo:
-            fo.write(input)
+            fo.write(the_input)
             prnt = os.path.join('logs', os.path.basename(logpath))
             timestring('Log saved to "%s".' % prnt)
         import sys
@@ -5552,6 +5572,7 @@ def corpkit_gui():
     root.mainloop()
 
 if __name__ == "__main__":
+    # the traceback is mostly for debugging pyinstaller errors
     import traceback
     import sys
     try:

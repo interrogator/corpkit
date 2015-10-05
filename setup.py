@@ -54,7 +54,7 @@ from setuptools.command.develop import develop as _develop
 #                     msg="Installing NLTK data, etc.")
 
 setup(name='corpkit',
-    version='1.61',
+    version='1.62',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',

@@ -1215,9 +1215,11 @@ def add_nltk_data_to_nltk_path(**kwargs):
             path_within_gui = os.path.join(nltkpath.split('/lib/python2.7')[0], 'nltk_data')
             if path_within_gui not in nltk.data.path:
                 nltk.data.path.append(path_within_gui)
+            if path_within_gui.replace('/nltk/', '/', 1) not in nltk.data.path:
+                nltk.data.path.append(path_within_gui.replace('/nltk/', '/', 1))
 
     # very temporary! -- for using .py
-    nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
+    #nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
 
 def get_gui_resource_dir():
     import inspect
@@ -1253,22 +1255,31 @@ def get_fullpath_to_jars(path_var):
     important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
                    'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
     
-    # if user selected file in parser dir rather than dir
-    if os.path.isfile(path_var):
-        corenlppath.set(os.path.dirname(path_var.rstrip('/')))
+    # if user selected file in parser dir rather than dir,
+    # get the containing dir
+    path_var_str = path_var.get()
+
+    if os.path.isfile(path_var_str):
+        path_var_str = os.path.dirname(path_var_str.rstrip('/'))
     # if the user selected the subdir:
-    if all(os.path.isfile(os.path.join(path_var, f)) for f in important_files):
-        return path_var
+    if all(os.path.isfile(os.path.join(path_var_str, f)) for f in important_files):
+        path_var.set(path_var_str)
+        return True
     # if the user selected the parent dir:
-    else:
-        find_install = [d for d in os.listdir(path_var) \
-           if os.path.isdir(os.path.join(path_var, d)) \
-           and os.path.isfile(os.path.join(path_var, d, 'jollyday.jar'))]
+    if os.path.isdir(path_var_str):
+        # get subdirs containing the jar
+        try:
+            find_install = [d for d in os.listdir(path_var_str) \
+                if os.path.isdir(os.path.join(path_var_str, d)) \
+                and os.path.isfile(os.path.join(path_var_str, d, 'jollyday.jar'))]
+        except OSError:
+            return False
         if len(find_install) > 0:
-            return os.path.join(path_var, find_install[0])
+            path_var.set(os.path.join(path_var_str, find_install[0]))
+            return True
 
     # otherwise, return false.
-    recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
-                        message = "CoreNLP not found in %s." % path_var)
-    timestring("CoreNLP not found in %s." % path_var)
+    #recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
+    #                    message = "CoreNLP not found in %s." % path_var)
+    #timestring("CoreNLP not found in %s." % path_var)
     return False
