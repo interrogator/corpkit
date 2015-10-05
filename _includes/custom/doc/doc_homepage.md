@@ -122,7 +122,7 @@ The final key difference between *corpkit* and most current corpus linguistic so
 
 Currently, *corpkit* works for Mac, and presumably Linux. Windows support is coming soon.
 
-{{warning}}Users are noting problems getting the software up and running, with an error on startup. This seems to be caused by some differences between the current SSL framework and the version being shipped with OSX. Anyway, I'm on it. Expect a fix soon!{{end}}
+{{warning}}Users have been noting problems getting the software up and running, with an error on startup. This issue has hopefully been fixed in the most recent versions of the tool. Please get in contact, however, if you find that any problems remain.{{end}}
 
 To download the OSX version, click the link in the menu bar. See the [Setup page](doc_setup.html) for (very simple) installation instructions.
 
