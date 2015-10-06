@@ -14,7 +14,7 @@ The best way to look at *corpkit* is as an rickety little open-source bridge bet
 
 ## Testers, contributors, helpers, friends
 
-Special thanks to James Davidson, who has contributed documentation to the project. Also to Marvin Lam, Sigrid Klerke, and anybody else who has been using *corpkit* in its early, buggy stages without telling me. There's also Jin Huang, who absolutely nailed the "*interro-gator*" logo. Finally, Mick O'Donnell (creator of UAM Corpus Tool) deserves a lot of thanks for not only his advice, but also his tireless commitment to developing software for functional linguists.
+Special thanks to James Davidson, who has contributed documentation to the project. Also to Marvin Lam, Sigrid Klerke, and anybody else who has been using *corpkit* in its early, buggy stages without telling me. Stephen Skalicky's comprehensive testing and feature suggestions have proven invaluable. There's also Jin Huang, who absolutely nailed the "*interro-gator*" logo. Finally, Mick O'Donnell (creator of UAM Corpus Tool) deserves a lot of thanks for not only his advice, but also his tireless commitment to developing software for functional linguists.
 
 ## Me
 
