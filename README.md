@@ -40,16 +40,18 @@
 <a name="whats-in-here"></a>
 ## What's in here?
 
-Essentially, the module contains a bunch of functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:
+Essentially, the module contains functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
 | `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `conc()`          | complex concordancing of subcorpora | 
-| `editor()`       | edit `interrogator()` or `conc()` results, calculate keywords      |
+| `editor()`        | edit `interrogator()` or `conc()` results, calculate keywords      |
 
-There are also some lists of words and dependency roles, which can be used to match systemic-functional process types. These are explained in more detail [here](#systemic-functional-stuff).
+There are also helper functions for making regular expressions, saving and loading data, making new projects, and so on.
+
+Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
 
 While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
