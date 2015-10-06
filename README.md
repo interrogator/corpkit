@@ -166,19 +166,15 @@ python setup.py install
 pip install corpkit
 ```
 
-To interrogate corpora and plot results, you need *Java*, *NLTK* and *matplotlib*. Dependency searching needs *Beautiful Soup*. Tabling results needs *Pandas*, etc. For NLTK, you can also use pip:
+*corpkit* should install all the necessary dependencies, including *pandas*, *NLTK*, *matplotlib*, etc, as well as some NLTK data files. 
 
-```shell
-# might need sudo
-pip install -U nltk
-```
-
-The `pip` installation of NLTK does not come with the data needed for NLTK's tokeniser, so you'll also need to install that from Python:
+If you get an NLTK error, you might need to manually download the tokeniser and lemmatiser data:
 
 ```python
 >>> import nltk
 # change 'punkt' to 'all' to get everything
 >>> nltk.download('punkt')
+>>> nltk.download('wordnet')
 ```
 
 <a name="unpacking-the-orientation-data"></a>
@@ -201,7 +197,7 @@ The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, an
 ipython notebook orientation.ipynb
 ```
 
-Or, just use *(I)Python* (more difficult, less fun):
+Or, just use *(I)Python*:
 
 ```python
 >>> import corpkit
@@ -285,7 +281,7 @@ You can use this output as a dictionary, or extract keywords and ngrams from it,
 <a name="systemic-functional-stuff"></a>
 ### Systemic functional stuff
 
-Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, `pattern.en` will get all their inflections automatically.
+Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, corpkit will get their inflections automatically.
 
 ```python
 >>> from corpkit import quickview
