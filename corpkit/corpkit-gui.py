@@ -42,7 +42,6 @@ if '.py' in rd:
     py_script = True
     rd = os.path.dirname(os.path.join(rd.split('.py', 1)[0]))
 
-
 ########################################################################
 
 class SplashScreen( object ):
@@ -97,8 +96,6 @@ class SplashScreen( object ):
       # Display the application window
       #self._root.deiconify( )
 
-
-
 # stdout to app
 class RedirectText(object):
     """send text to app from stdout"""
@@ -133,7 +130,6 @@ class RedirectText(object):
             #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
 
 class Notebook(Frame):
-
     """Notebook Widget"""
     def __init__(self, parent, activerelief = RAISED, inactiverelief = FLAT, 
                 xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', 
@@ -268,24 +264,24 @@ class Notebook(Frame):
 
 def corpkit_gui():
     
+    # make app
     root = Tk()
 
-    #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+    #minimise it
     root.withdraw( )
 
+    # generate splash
     with SplashScreen(root, 'loading_image.png', 3.0):
 
-        # if making a splash screen:
-        #the_splash = SplashScreen(root, r'loading_image.png', 3.0)
+        # set size
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-        #root.withdraw( )
-        #the_splash.__enter__()
 
         import traceback
         import dateutil
         import sys
         import os
         import corpkit
+        from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
 
         import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
         from Tkinter import StringVar, Listbox, Text
@@ -294,23 +290,35 @@ def corpkit_gui():
 
         from nltk.draw.table import MultiListbox, Table
         from collections import OrderedDict
-        import requests
+        
         # stop warning when insecure download is performed
+        import requests
         requests.packages.urllib3.disable_warnings()
         
         # unused in the gui, dummy imports for pyinstaller
         from hashlib import md5
         import chardet
         import pyparsing
+        # a try statement in case not bundling scipy
         try:
             from scipy.stats import linregress
         except:
             pass
-        #import OpenSSL
-        #import crypto
-        #import rand
 
-        # add tregex to path
+        # add tregex and some other bits to path
+        paths = ['', 'dictionaries', 'corpkit', 'nltk_data']
+        for p in paths:
+            fullp = os.path.join(rd, p).rstrip('/')
+            if not fullp in sys.path:
+                sys.path.append(fullp)
+
+        # nltk data
+        import nltk
+        nltk_data_path = os.path.join(rd, 'nltk_data')
+        if nltk_data_path not in nltk.data.path:
+            nltk.data.path.append(os.path.join(rd, 'nltk_data'))
+
+        # not sure if needed anymore: more path setting        
         corpath = os.path.dirname(corpkit.__file__)
         baspat = os.path.dirname(os.path.dirname(corpkit.__file__))
         dicpath = os.path.join(baspat, 'dictionaries')
@@ -319,41 +327,6 @@ def corpkit_gui():
         sys.path.append(dicpath)
         sys.path.append(baspat)
 
-        def runner(button, command):
-            """runs the command of a button, disabling the button till it is done,
-            whether it returns early or not"""
-            try:
-                command()
-            except Exception, err:
-                import traceback
-                print traceback.format_exc()
-                note.progvar.set(0)
-            button.config(state = NORMAL)
-
-        def adjustCanvas(someVariable = None):
-            fontLabel["font"] = ("arial", var.get())
-
-        # key binding, path setting
-        # to do: make into function
-        py_script = False
-        rd = sys.argv[0]
-        if sys.platform == 'darwin':
-            key = 'Mod1'
-            fext = 'app'
-            if '.app' in rd:
-                rd = os.path.join(rd.split('.app', 1)[0] + '.app', 'Contents', 'MacOS')
-        else:
-            key = 'Control'
-            fext = 'exe'
-
-        if '.py' in rd:
-            py_script = True
-            rd = os.path.dirname(os.path.join(rd.split('.py', 1)[0]))
-
-        import nltk
-        nltk_data_path = os.path.join(rd, 'nltk_data')
-        if nltk_data_path not in nltk.data.path:
-            nltk.data.path.append(os.path.join(rd, 'nltk_data'))
 
         root.title("corpkit")
         root.imagewatched = StringVar()
@@ -369,11 +342,6 @@ def corpkit_gui():
         tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
         note.text.update_idletasks()
 
-        #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-        #root.overrideredirect(True)
-        #root.lift()
-        #root.attributes('-topmost', True)
-
         ###################     ###################     ###################     ###################
         #    VARIABLES    #     #    VARIABLES    #     #    VARIABLES    #     #    VARIABLES    #
         ###################     ###################     ###################     ###################
@@ -381,7 +349,7 @@ def corpkit_gui():
         # in this section, some recurring, empty variables are defined
         # to do: compress most of the dicts into one
 
-        # round up text so we can bing keys to them later
+        # round up text so we can bind keys to them later
         all_text_widgets = []
 
         # for the build tab (could be cleaned up)
@@ -401,8 +369,10 @@ def corpkit_gui():
         sort_direction = True
 
         # don't look for updates if the user manually clicked
+        # there must be a better way
         do_auto_update = IntVar()
         do_auto_update.set(0)
+
         subc_sel_vals = []
 
         # store every interrogation and conc in this session    
@@ -542,7 +512,18 @@ def corpkit_gui():
         #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
         ###################     ###################     ###################     ###################
 
-        from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
+        # some functions used throughout the gui
+
+        def runner(button, command):
+            """runs the command of a button, disabling the button till it is done,
+            whether it returns early or not"""
+            try:
+                command()
+            except Exception, err:
+                import traceback
+                print traceback.format_exc()
+                note.progvar.set(0)
+            button.config(state = NORMAL)
 
         def refresh_images(*args):
             """get list of images saved in images folder"""
@@ -553,6 +534,9 @@ def corpkit_gui():
                     all_images.append(iname.replace('.png', ''))
             refresh()
 
+        # if the dummy variable imagewatched is changed, refresh images
+        # this connects to matplotlib's save button, if the modified
+        # matplotlib is installed. a better way to do this would be good!
         root.imagewatched.trace("w", refresh_images)
 
         def timestring(input):
@@ -562,6 +546,7 @@ def corpkit_gui():
             print '%s: %s' % (thetime, input.lstrip())
 
         def conmap(cnfg, section):
+            """helper for load settings"""
             dict1 = {}
             options = cnfg.options(section)
             for option in options:
@@ -596,10 +581,14 @@ def corpkit_gui():
 
             return dict_obj
 
-        def update_spreadsheet(frame_to_update, df_to_show = None, model = False, height = 140, width = False, indexwidth = 70, just_default_sort = False):
-            """refresh a spreadsheet in the editor window"""
+        def update_spreadsheet(frame_to_update, df_to_show = None, model = False, 
+                               height = 140, width = False, indexwidth = 70, 
+                               just_default_sort = False):
+            """refresh a spreadsheet"""
             from collections import OrderedDict
             import pandas
+
+            # colours for tkintertable
             kwarg = {'cellbackgr':              '#F7F7FA',
                       'grid_color':             '#c5c5c5',
                       'entrybackgr':            '#F4F4F4',
@@ -663,6 +652,7 @@ def corpkit_gui():
                 editor_tables[frame_to_update] = model
                 currently_in_each_frame[frame_to_update] = df_to_show
                 return
+
             if model:
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
@@ -683,22 +673,33 @@ def corpkit_gui():
                 table.redrawTable()
 
         def remake_special_query(query):
-            """turn special queries into appropriate regexes, lists, etc"""
+            """turn special queries (LIST:NAME) into appropriate regexes, lists, etc"""
             # for custom queries
             from collections import namedtuple
+
             def convert(dictionary):
+                """convert dict to named tuple"""
                 return namedtuple('outputnames', dictionary.keys())(**dictionary)
 
-            lst_of_specials = ['PROCESSES:', 'ROLES:', 'WORDLISTS:', 'CUSTOM:', 'LIST:']
+            # possible identifiers of special queries---some obsolete or undocumented
+            lst_of_specials = ['PROCESSES:',
+                               'ROLES:',
+                               'WORDLISTS:',
+                               'CUSTOM:',
+                               'LIST:']
+
             if any([special in query for special in lst_of_specials]):
-                
                 timestring('Special query detected. Loading wordlists ... ')
                 
+                # get all our lists, and a regex maker for them
                 from dictionaries.process_types import processes
                 from dictionaries.roles import roles
                 from dictionaries.wordlists import wordlists
-                from corpkit import as_regex
+                from corpkit.other import as_regex
+
                 customs = convert(custom_special_dict)
+
+                # map the special query type to the named tuple ... largely obsolete
                 dict_of_specials = {'PROCESSES:': processes,
                                     'ROLES:': roles, 
                                     'WORDLISTS:': wordlists,
@@ -797,18 +798,28 @@ def corpkit_gui():
                 newdata = make_df_totals(newdata)
             return newdata
 
-        def color_saved(lb, savepath = False, colour1 = '#D9DDDB', colour2 = 'white', ext = '.p', lists = False):
-            """make saved items in listbox have colour background"""
+        def color_saved(lb, savepath = False, colour1 = '#D9DDDB', colour2 = 'white', 
+                        ext = '.p', lists = False):
+            """make saved items in listbox have colour background
+
+            lb: listbox to colour
+            savepath: where to look for existing files
+            colour1, colour2: what to colour foundd and not found
+            ext: what to append to filenames when searching for them
+            lists: if working with wordlists, things need to be done differently, more colours"""
             all_items = [lb.get(i) for i in range(len(lb.get(0, END)))]
+
+            # define colours for permanent lists in wordlists
             if lists:
                 colour3 = '#ffffcc'
                 colour4 = '#fed9a6'
             for index, item in enumerate(all_items):
+                # check if saved
                 if not lists:
                     issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+                # for lists, check if permanently stored
                 else:
                     issaved = item in saved_special_dict.keys()
-
                 if issaved:
                     lb.itemconfig(index, {'bg':colour1})
                 else:
@@ -823,6 +834,7 @@ def corpkit_gui():
             lb.selection_clear(0, END)
 
         def paste_into_textwidget(*args):
+            """paste function for widgets ... doesn't seem to work as expected"""
             try:
                 start = args[0].widget.index("sel.first")
                 end = args[0].widget.index("sel.last")
@@ -838,16 +850,19 @@ def corpkit_gui():
                 pass
 
         def copy_from_textwidget(*args):
+            """more commands for textwidgets"""
             #args[0].widget.clipboard_clear()
             text = args[0].widget.get("sel.first", "sel.last").rstrip('\n')
             args[0].widget.clipboard_append(text)
 
         def cut_from_textwidget(*args):
+            """more commands for textwidgets"""
             text = args[0].widget.get("sel.first", "sel.last")
             args[0].widget.clipboard_append(text)
             args[0].widget.delete("sel.first", "sel.last")
 
         def select_all_text(*args):
+            """more commands for textwidgets"""
             try:
                 args[0].widget.selection_range(0, END)
             except:
@@ -954,6 +969,7 @@ def corpkit_gui():
             return the_name
 
         def show_prev():
+            """show previous interrogation"""
             import pandas
             global prev
             global nex
@@ -979,6 +995,7 @@ def corpkit_gui():
                 nex.configure(state = NORMAL)
 
         def show_next():
+            """show next interrogation"""
             import pandas
             global prev
             global nex
@@ -1004,6 +1021,8 @@ def corpkit_gui():
                 prev.configure(state=NORMAL)
 
         def save_as_dictionary():
+            """save a word frequency dict of current interrogation for 
+               use as reference corpus"""
             import os
             import pandas
             import pickle
@@ -1122,7 +1141,7 @@ def corpkit_gui():
             timestring('Updated spreadsheet display in edit window.')
 
         def is_number(s):
-            """check if str can be added for the below"""
+            """check if str can be can be made into float/int"""
             try:
                 float(s) # for int, long and float
             except ValueError:
@@ -1136,14 +1155,17 @@ def corpkit_gui():
         # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
         ###################     ###################     ###################     ###################
 
+        # hopefully weighting the two columns, not sure if works
         tab1.grid_columnconfigure(2, weight=5)
 
         def do_interrogation():
+            """the main function: calls interrogator()"""
+            # no pressing while running
             interrobut.config(state = DISABLED)
+            # progbar to zero
             note.progvar.set(0)
-            """performs an interrogation"""
+
             import pandas
-            
             from corpkit import interrogator
 
             prev_num_interrogations = len(all_interrogations.keys())
@@ -1155,10 +1177,11 @@ def corpkit_gui():
             
             # lemmatag: do i need to add as button if trees?
             lemmatag = False
-            
+
+            # just in case
             query = False
 
-            # special query: add to this list!
+            # special queries via dropdown
             if special_queries.get() != 'Off' and special_queries.get() != 'Stats':
                 query = spec_quer_translate[special_queries.get()]
 
@@ -1184,7 +1207,7 @@ def corpkit_gui():
             else:
                 ff = False
 
-            # make name
+            # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
             selected_option = transdict[searchtype()]
@@ -1192,6 +1215,8 @@ def corpkit_gui():
                 timestring('You need to select a search type.')
                 return
 
+            # default interrogator args: root and note pass the gui itself for updating
+            # progress bar and so on.
             interrogator_args = {'query': query,
                                  'lemmatise': lem.get(),
                                  'phrases': phras.get(),
@@ -1205,7 +1230,7 @@ def corpkit_gui():
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
 
-            #loop_updates = False
+            # speaker ids
             if only_sel_speakers.get():
                 ids = [int(i) for i in speaker_listbox.curselection()]
                 jspeak = [speaker_listbox.get(i) for i in ids]
@@ -1213,34 +1238,32 @@ def corpkit_gui():
                 if 'ALL' in jspeak:
                     jspeak = 'each'
                 interrogator_args['just_speakers'] = jspeak
-                #loop_updates = True
+            
+            # translate lemmatag
+            tagdict = {'Noun': 'n',
+                       'Adjective': 'a',
+                       'Verb': 'v',
+                       'Adverb': 'r',
+                       'None': False,
+                       '': False}
 
-            lemmatag = False
-            if lemtag.get() != 'None':
-                if lemtag.get() == 'Noun':
-                    lemmatag = 'n'
-                if lemtag.get() == 'Adjective':
-                    lemmatag = 'a'
-                if lemtag.get() == 'Verb':
-                    lemmatag = 'v'
-                if lemtag.get() == 'Adverb':
-                    lemmatag = 'r'
-            if lemmatag is not False:
-                interrogator_args['lemmatag'] = lemmatag
+            interrogator_args['lemmatag'] = tagdict[lemtag.get()]
 
+            # get pos filter
             pf = posfil.get()
             if pf is not False and pf != '':
                 interrogator_args['pos_filter'] = pf
 
             if corpus_fullpath.get() == '':
                 timestring('You need to select a corpus.')
-            
                 return
 
+            # stats preset is actually a search type
             if special_queries.get() == 'Stats':
                 selected_option = 'v'
                 interrogator_args['query'] = 'any'
 
+            # if ngramming, there are two extra options
             if selected_option == 'j':
                 global ngmsize
                 if (ngmsize.var).get() != 'Size':
@@ -1252,16 +1275,20 @@ def corpkit_gui():
                 elif (split_contract.var).get() == 'Yes':
                     interrogator_args['split_contractions'] = True
 
-
+            # do interrogation
             interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
             
+            # make sure we're redirecting stdout again
             sys.stdout = note.redir
+
+            # update spreadsheets
             if not interrodata or interrodata == 'Bad query':
                 update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
                 update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)            
                 return
 
-            # make non-dict results into dict, so we can iterate
+            # make non-dict results into dict, so we can iterate no matter
+            # if there were multiple results or not
             interrogation_returned_dict = False
             if type(interrodata) != dict:
                 dict_of_results = {the_name: interrodata}
@@ -1277,7 +1304,7 @@ def corpkit_gui():
 
             # post-process each result and add to master list
             for nm, r in sorted(dict_of_results.items()):
-                # drop over 1000?
+                # drop over 9999?
                 # type check probably redundant now
                 if 'results' in r._asdict().keys():
                     large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
@@ -1285,7 +1312,7 @@ def corpkit_gui():
                     r.results.drop('Total', errors = 'ignore', inplace = True)
                     r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
 
-                # add interrogation to master
+                # add interrogation to master list
                 if interrogation_returned_dict:
                     all_interrogations[the_name + '-' + nm] = r
                 else:
@@ -1353,7 +1380,7 @@ def corpkit_gui():
                 timestring('Interrogation finished, with multiple results.')
 
         class MyOptionMenu(OptionMenu):
-            """Simple OptionMenu for things that don't change"""
+            """Simple OptionMenu for things that don't change."""
             def __init__(self, tab1, status, *options):
                 self.var = StringVar(tab1)
                 self.var.set(status)
@@ -1482,17 +1509,14 @@ def corpkit_gui():
         #lemtag.trace("w", d_callback)
 
         def togglespeaker(*args):
-            """this adds names to the speaker listboxes"""
-            #from corpkit.build import get_speaker_names_from_xml_corpus
+            """this adds names to the speaker listboxes when it's switched on
+            it gets the info from settings.ini, via corpus_names_and_speakers"""
             import os
             if os.path.isdir(corpus_fullpath.get()):
-
                 ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
-            #except Key
-            #if os.path.isdir(corpus_fullpath.get()):
-            #    ns = get_speaker_names_from_xml_corpus(corpus_fullpath.get())
             else:
                 return
+
             # figure out which list we need to add to, and which we should del from
             lbs = []
             delfrom = []
@@ -1518,16 +1542,19 @@ def corpkit_gui():
                 lb.configure(state = DISABLED)
 
         # speaker names
-        # save these with project!
+        # button
         only_sel_speakers = IntVar()
         speakcheck = Checkbutton(tab1, text='Speakers', variable=only_sel_speakers, command = togglespeaker)
         speakcheck.grid(column = 0, row = 13, sticky=W, pady = (15, 0))
+        # add data on press
         only_sel_speakers.trace("w", togglespeaker)
-
+        # frame to hold speaker names listbox
         spk_scrl = Frame(tab1)
         spk_scrl.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
+        # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
+        # listbox itself
         speaker_listbox = Listbox(spk_scrl, selectmode = EXTENDED, width = 32, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                                   yscrollcommand=spk_sbar.set, exportselection = False)
         speaker_listbox.pack()
@@ -1555,12 +1582,14 @@ def corpkit_gui():
         all_text_widgets.append(qa)
 
         def entry_callback(*args):
+            """when entry is changed, add it to the textbox"""
             qa.config(state = NORMAL)
             qa.delete(1.0, END)
             qa.insert(END, entrytext.get())
-
         entrytext.trace("w", entry_callback)
 
+
+        # these are example queries for each data type
         def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
                        'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
@@ -1569,6 +1598,7 @@ def corpkit_gui():
                        'other2': r'\b(amod|nn|advm|vmod|tmod)\b',
                        'other3': 'any'}
 
+        # these are more specific examples for particular options
         special_examples = {'Get tokens by role': r'\b(amod|nn|advm|vmod|tmod)\b',
                                 'Simple search string search': r'[cat,cats,mouse,mice,cheese]',
                                 'Regular expression search': r'(m.n|wom.n|child(ren)?)',
@@ -1577,6 +1607,8 @@ def corpkit_gui():
                                 'Get ngrams': 'any'}
 
         def onselect(evt):
+            """when an option is selected, add the example query
+            for ngrams, add the special ngram options"""
             w = evt.widget
             index = int(w.curselection()[0])
             value = w.get(index)
@@ -1589,8 +1621,6 @@ def corpkit_gui():
                     entrytext.set(special_examples[value])
                 except KeyError:
                     entrytext.set(def_queries[datatype_picked.get()])
-
-            # add a contractions option here
 
             if value == 'Get ngrams':
                 global ngmsize
@@ -1613,7 +1643,7 @@ def corpkit_gui():
                 except:
                     pass
 
-        # boolean interrogation arguments need fixing...
+        # boolean interrogation arguments need fixing, right now use 0 and 1
         lem = IntVar()
         lbut = Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
         lbut.grid(column = 0, row = 7, sticky=W)
@@ -1672,7 +1702,6 @@ def corpkit_gui():
         dtscrollbar = Scrollbar(frm)
         dtscrollbar.pack(side=RIGHT, fill=Y)
 
-        # 
         datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 38, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                             yscrollcommand=dtscrollbar.set, exportselection = False)
         datatype_listbox.pack()
@@ -1692,7 +1721,6 @@ def corpkit_gui():
                 return datatype_listbox.get(index)
             else:
                 return ''
-
 
         def q_callback(*args):
             if special_queries.get() == 'Off':
@@ -2942,7 +2970,7 @@ def corpkit_gui():
             if type(current_conc[0]) == str:
                 timestring('Nothing to export.')
                 return
-            if project_fullpath.get() ==  '':
+            if in_a_project.get() == 0:
                 home = os.path.expanduser("~")
                 docpath = os.path.join(home, 'Documents')
             else:
@@ -3905,17 +3933,22 @@ def corpkit_gui():
                 load_project(path = project_fullpath.get())
 
         def projchange(*args):
-            """if user changes projects, add to recent list and save prefes"""
+            """if user changes projects, add to recent list and save prefs"""
             if project_fullpath.get() != '' and project_fullpath.get() not in most_recent_projects \
                                             and 'Contents/MacOS' not in project_fullpath.get():
+                in_a_project.set(1)
                 most_recent_projects.append(project_fullpath.get())
                 save_tool_prefs(printout = False)
+            else:
+                in_a_project.set(0)
 
         # corpus path setter
         savedinterro_fullpath = StringVar()
         savedinterro_fullpath.set('')
         data_basepath = StringVar()
         data_basepath.set('Select data directory')
+        in_a_project = IntVar()
+        in_a_project.set(0)
         project_fullpath = StringVar()
         project_fullpath.set(rd)
         project_fullpath.trace("w", projchange)
@@ -4149,7 +4182,7 @@ def corpkit_gui():
                 else:  
                     data = all_interrogations[i]
                     keys = data._asdict().keys()
-                    if project_fullpath.get() == '' or project_fullpath.get() is None:
+                    if in_a_project.get() == 0:
                         fp = tkFileDialog.askdirectory(title = 'Choose save directory',
                             message = 'Choose save directory for exported interrogation')
                         if fp == '':
@@ -4714,7 +4747,7 @@ def corpkit_gui():
                 add_ids_to_xml(new_corpus_path, root = root, note = note)
                 corpus_names = get_speaker_names_from_xml_corpus(new_corpus_path)
                 corpus_names_and_speakers[os.path.basename(new_corpus_path)] = corpus_names
-                if project_fullpath.get() != '':
+                if in_a_project.get() == 1:
                     save_config()
                 timestring('Names found: %s' %', '.join(corpus_names))
             
@@ -5219,7 +5252,7 @@ def corpkit_gui():
             timestring('Project settings saved to settings.ini.')
 
         def quitfunc():
-            if project_fullpath.get() != '':
+            if in_a_project.get() == 1:
                 save_ask = tkMessageBox.askyesno("Save project settings.", 
                               "Save settings before quitting?")
                 if save_ask:
@@ -5413,6 +5446,7 @@ def corpkit_gui():
             stver = str(re.search(reg, html).group(1))
             vnum = make_float_from_version(stver)
             
+            # check for major update
             #if 2 == 2:
             if vnum > ver:
                 timestring('Update found: corpkit %s' % stver)
@@ -5556,7 +5590,7 @@ def corpkit_gui():
                     filemenu.entryconfig("Select corpus", state="disabled")
             else:
                 filemenu.entryconfig("Select corpus", state="disabled")
-            if project_fullpath.get() ==  '':
+            if in_a_project.get() == 0:
                 filemenu.entryconfig("Save project settings", state="disabled")
                 filemenu.entryconfig("Load project settings", state="disabled")
                 #filemenu.entryconfig("Set CoreNLP path", state="disabled")
