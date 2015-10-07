@@ -428,7 +428,7 @@ def new_project(name, loc = '.', root = False):
     except:
         if root:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Directory already exists: "%s"' %( time, fullpath)
+            print '%s: Directory already exists: "%s"' %( thetime, fullpath)
             return
         else:
             raise
@@ -1250,7 +1250,8 @@ def get_gui_resource_dir():
     return resource_path
 
 def get_fullpath_to_jars(path_var):
-    """when corenlp is needed, this returns the *abs path to jar files*"""
+    """when corenlp is needed, this sets corenlppath as the path to jar files,
+    or returns false if not found"""
     import os
     important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
                    'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
@@ -1266,6 +1267,7 @@ def get_fullpath_to_jars(path_var):
         path_var.set(path_var_str)
         return True
     # if the user selected the parent dir:
+
     if os.path.isdir(path_var_str):
         # get subdirs containing the jar
         try:
@@ -1273,13 +1275,27 @@ def get_fullpath_to_jars(path_var):
                 if os.path.isdir(os.path.join(path_var_str, d)) \
                 and os.path.isfile(os.path.join(path_var_str, d, 'jollyday.jar'))]
         except OSError:
-            return False
+            pass
         if len(find_install) > 0:
             path_var.set(os.path.join(path_var_str, find_install[0]))
             return True
-
-    # otherwise, return false.
-    #recog = tkMessageBox.showwarning(title = 'CoreNLP not found', 
-    #                    message = "CoreNLP not found in %s." % path_var)
-    #timestring("CoreNLP not found in %s." % path_var)
+    # need to fix this duplicated code
+    try:
+        home = os.path.expanduser("~")
+        try_dir = os.path.join(home, 'corenlp')
+        if os.path.isdir(try_dir):
+            path_var_str = try_dir
+            # get subdirs containing the jar
+            try:
+                find_install = [d for d in os.listdir(path_var_str) \
+                    if os.path.isdir(os.path.join(path_var_str, d)) \
+                    and os.path.isfile(os.path.join(path_var_str, d, 'jollyday.jar'))]
+            except OSError:
+                pass
+            if len(find_install) > 0:
+                path_var.set(os.path.join(path_var_str, find_install[0]))
+                return True
+    except:
+        pass
+        
     return False

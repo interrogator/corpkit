@@ -429,24 +429,31 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     import urllib2
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
+    import shutil
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
     if 'stanford' in url:
         downloaded_dir = os.path.join(home, 'corenlp')
+        try:
+            os.makedirs(downloaded_dir)
+        except OSError:
+            if os.path.isdir(downloaded_dir):
+                if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(downloaded_dir):
+                    import zipfile
+                    the_zip_file = zipfile.ZipFile(fullfile)
+                    ret = the_zip_file.testzip()
+                    if ret is None:
+                        return downloaded_dir, fullfile
+                    else:
+                        os.remove(fullfile)
+                shutil.rmtree(downloaded_dir)
     else:
         downloaded_dir = os.path.join(proj_path, 'temp')
+        try:
+            os.makedirs(downloaded_dir)
+        except OSError:
+            pass
     fullfile = os.path.join(downloaded_dir, file_name)
-    try:
-        os.makedirs(downloaded_dir)
-    except OSError:
-        if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(downloaded_dir):
-            import zipfile
-            the_zip_file = zipfile.ZipFile(fullfile)
-            ret = the_zip_file.testzip()
-            if ret is None:
-                return downloaded_dir, fullfile
-            else:
-                os.remove(fullfile)
     
     if actually_download:
         try:
@@ -541,7 +548,7 @@ def check_jdk():
         return False
 
 def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operations = False,
-                 only_tokenise = False, root = False, stdout = False, **kwargs):
+                 only_tokenise = False, root = False, stdout = False, nltk_data_path = False, **kwargs):
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
@@ -556,12 +563,18 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
             print 'Need latest Java.'
             return
 
+    if nltk_data_path:
+        if only_tokenise:
+            if nltk_data_path not in nltk.data.path:
+                nltk.data.path.append(nltk_data_path)
+            from nltk import word_tokenize as tokenise
+
     # add nltk to path
-    td = {}
-    from corpkit.other import add_nltk_data_to_nltk_path
-    if 'note' in kwargs.keys():
-        td['note'] = kwargs['note']
-    add_nltk_data_to_nltk_path(**td)
+    #td = {}
+    #from corpkit.other import add_nltk_data_to_nltk_path
+    #if 'note' in kwargs.keys():
+    #    td['note'] = kwargs['note']
+    #add_nltk_data_to_nltk_path(**td)
 
     basecp = os.path.basename(corpuspath)
     if only_tokenise:
@@ -620,7 +633,7 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
             num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
             if num_parsed == 0:
                 print '%s: Initialising parser ... ' % (thetime)
-            if num_parsed > 0 and num_parsed <= num_files_to_parse:
+            if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
                 print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
@@ -631,7 +644,6 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
     else:
 
         # tokenise each file
-        from nltk import word_tokenize as tokenise
         import pickle
         fs = open(filelist).read().splitlines()
         dirs = sorted(list(set([os.path.basename(os.path.dirname(f)) for f in fs])))

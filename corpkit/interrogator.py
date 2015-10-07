@@ -163,9 +163,11 @@ def interrogator(path,
 
     td = {}
     from corpkit.other import add_nltk_data_to_nltk_path, add_corpkit_to_path
-    if 'note' in kwargs.keys() and kwargs['note'] is not False:
-        td['note'] = kwargs['note']
-    add_nltk_data_to_nltk_path(**td)
+
+    # nltk path
+    if 'nltk_data_path' in kwargs.keys():
+        if kwargs['nltk_data_path'] not in nltk.data.path:
+            nltk.data.path.append(kwargs['nltk_data_path'])
 
     try:
         from IPython.display import display, clear_output
@@ -210,7 +212,6 @@ def interrogator(path,
         if 'postcounts' in path:
             spelling = 'UK'
 
-    
     if root:
         shouldprint = False
     else:
@@ -248,7 +249,6 @@ def interrogator(path,
             d['num_proc'] = kwargs['num_proc']
 
         return pmultiquery(**d)
-
 
     if 'paralleling' in kwargs.keys():
         paralleling = kwargs['paralleling']
@@ -768,8 +768,7 @@ def interrogator(path,
     def get_stats(sents):
         """get a bunch of frequencies on interpersonal phenomena"""
         import os
-        import re
-        import bs4    
+        import re  
         # first, put the relevant trees into temp file
         if 'outname' in kwargs.keys():
             to_open = 'tmp-%s.txt' % kwargs['outname']
@@ -1070,7 +1069,8 @@ def interrogator(path,
     can_do_fast = False
     if using_tregex:
         if just_speakers is False:
-            can_do_fast = True
+            if statsmode is False:
+                can_do_fast = True
 
     if plaintext is True:
         try:
@@ -1327,7 +1327,7 @@ def interrogator(path,
             if dependency:
                 files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
             else:
-                files = [f for f in os.listdir(subcorpus)]
+                files = [f for f in os.listdir(subcorpus) if not f.startswith('.')]
             all_files.append([d, files])
         total_files = len([item for sublist in all_files for item in sublist[1]])
         sorted_dirs = all_files
@@ -1507,7 +1507,7 @@ def interrogator(path,
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
 
-        if dependency or plaintext or tokens or can_do_fast is False:
+        if dependency or plaintext or tokens or statsmode or can_do_fast is False:
             #if not root:
                 #p.animate(-1, str(0) + '/' + str(total_files))
             from collections import Counter
@@ -1545,7 +1545,11 @@ def interrogator(path,
                         with open(filepath, "rb") as text:
                             data = text.read()
                             from corenlp_xml.document import Document
-                            corenlp_xml = Document(data)
+                            try:
+                                corenlp_xml = Document(data)
+                            except:
+                                print 'Could not read file: %s' % filepath
+                                continue
                             #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
                             if just_speakers:  
                                 sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
@@ -1589,7 +1593,7 @@ def interrogator(path,
                         for entry in result_from_file:
                             result.append(entry)
 
-        if not keywording:
+        if not keywording and not statsmode:
             result.sort()
 
         # lowercaseing, encoding, lemmatisation, 
@@ -1883,15 +1887,6 @@ def interrogator(path,
         return output, d
     else:
         return output
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     interrogator(path, 
