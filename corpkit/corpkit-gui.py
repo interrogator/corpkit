@@ -1158,6 +1158,10 @@ def corpkit_gui():
         ###################     ###################     ###################     ###################
 
         # hopefully weighting the two columns, not sure if works
+
+        interro_opt = Frame(tab1)
+        interro_opt.grid(row = 0, column = 0)
+
         tab1.grid_columnconfigure(2, weight=5)
 
         def do_interrogation():
@@ -1351,16 +1355,16 @@ def corpkit_gui():
             
             global prev
             prev = Button(tab1, text = 'Previous', command = show_prev)
-            prev.grid(row = 17, column = 2, sticky = W, padx = (120, 0))
+            prev.grid(row = 3, column = 2, sticky = W, padx = (120, 0))
             global nex
             nex = Button(tab1, text = 'Next', command = show_next)
-            nex.grid(row = 17, column = 2, sticky = W, padx = (220, 0))
+            nex.grid(row = 3, column = 2, sticky = W, padx = (220, 0))
             if len(all_interrogations.keys()) < 2:
                 nex.configure(state = DISABLED)
                 prev.configure(state = DISABLED)
 
             savdict = Button(tab1, text = 'Save as dictionary', command = save_as_dictionary)
-            savdict.grid(row = 17, column = 2, sticky = E, padx = (0, 175))
+            savdict.grid(row = 3, column = 2, sticky = E, padx = (0, 175))
 
             ind = all_interrogations.keys().index(name_of_interro_spreadsheet.get())
             if ind == 0:
@@ -1387,7 +1391,7 @@ def corpkit_gui():
             #reset name
             nametext.set('untitled')
 
-            Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E, padx = (0, 20))
+            Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 3, column = 2, sticky = E, padx = (0, 20))
         
             if interrogation_returned_dict:
                 timestring('Interrogation finished, with multiple results.')
@@ -1478,16 +1482,16 @@ def corpkit_gui():
             timestring('Set corpus directory: "%s"' % corpus_name)
             editf.set('Edit file: ')
 
-        Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
+        Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
         current_corpus.set('Select corpus')
-        available_corpora = OptionMenu(tab1, current_corpus, *tuple(('Select corpus')))
+        available_corpora = OptionMenu(interro_opt, current_corpus, *tuple(('Select corpus')))
         available_corpora.config(width = 30, justify = CENTER, state = DISABLED)
         current_corpus.trace("w", corpus_callback)
         available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = E)
 
         # for build tab
-        #Label(tab1, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
+        #Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         #current_corpus = StringVar()
         #current_corpus.set('Select corpus')
         available_corpora_build = OptionMenu(tab0, current_corpus, *tuple(('Select corpus')))
@@ -1495,27 +1499,27 @@ def corpkit_gui():
         available_corpora_build.grid(row = 4, column = 0, sticky=W)
         # function filter
         funfil = StringVar()
-        Label(tab1, text = 'Function filter:').grid(row = 11, column = 0, sticky = W)
+        Label(interro_opt, text = 'Function filter:').grid(row = 11, column = 0, sticky = W)
         #funfil.set(r'(nsubj|nsubjpass)')
         funfil.set('')
-        q = Entry(tab1, textvariable = funfil, width = 31, state = DISABLED)
+        q = Entry(interro_opt, textvariable = funfil, width = 31, state = DISABLED)
         q.grid(row = 11, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(q)
 
         # pos filter
         posfil = StringVar()
-        Label(tab1, text = 'POS filter:').grid(row = 12, column = 0, sticky = W)
+        Label(interro_opt, text = 'POS filter:').grid(row = 12, column = 0, sticky = W)
         #posfil.set(r'^n')
         posfil.set(r'')
-        qr = Entry(tab1, textvariable = posfil, width = 31, state = DISABLED)
+        qr = Entry(interro_opt, textvariable = posfil, width = 31, state = DISABLED)
         qr.grid(row = 12, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(qr)
 
         blklst = StringVar()
-        Label(tab1, text = 'Blacklist:').grid(row = 10, column = 0, sticky = W)
+        Label(interro_opt, text = 'Blacklist:').grid(row = 10, column = 0, sticky = W)
         #blklst.set(r'^n')
         blklst.set(r'')
-        bkbx = Entry(tab1, textvariable = blklst, width = 31)
+        bkbx = Entry(interro_opt, textvariable = blklst, width = 31)
         bkbx.grid(row = 10, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(bkbx)
 
@@ -1523,8 +1527,8 @@ def corpkit_gui():
         lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
         lemtag = StringVar(root)
         lemtag.set('')
-        Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 13, column = 0, columnspan = 2, sticky = W)
-        lmt = OptionMenu(tab1, lemtag, *lemtags)
+        Label(interro_opt, text = 'Result word class (for lemmatisation):').grid(row = 13, column = 0, columnspan = 2, sticky = W)
+        lmt = OptionMenu(interro_opt, lemtag, *lemtags)
         lmt.config(state = NORMAL, width = 10)
         lmt.grid(row = 13, column = 1, sticky=E)
         #lemtag.trace("w", d_callback)
@@ -1565,12 +1569,12 @@ def corpkit_gui():
         # speaker names
         # button
         only_sel_speakers = IntVar()
-        speakcheck = Checkbutton(tab1, text='Speakers', variable=only_sel_speakers, command = togglespeaker)
+        speakcheck = Checkbutton(interro_opt, text='Speakers', variable=only_sel_speakers, command = togglespeaker)
         speakcheck.grid(column = 0, row = 14, sticky=W, pady = (15, 0))
         # add data on press
         only_sel_speakers.trace("w", togglespeaker)
         # frame to hold speaker names listbox
-        spk_scrl = Frame(tab1)
+        spk_scrl = Frame(interro_opt)
         spk_scrl.grid(row = 14, column = 0, rowspan = 2, columnspan = 2, sticky = E)
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
@@ -1586,8 +1590,8 @@ def corpkit_gui():
         dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
         kind_of_dep = StringVar(root)
         kind_of_dep.set('CC-processed')
-        Label(tab1, text = 'Dependency type:').grid(row = 16, column = 0, sticky = W)
-        pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
+        Label(interro_opt, text = 'Dependency type:').grid(row = 16, column = 0, sticky = W)
+        pick_dep_type = OptionMenu(interro_opt, kind_of_dep, *dep_types)
         pick_dep_type.config(state = DISABLED)
         pick_dep_type.grid(row = 16, column = 1, sticky=E)
         #kind_of_dep.trace("w", d_callback)
@@ -1595,11 +1599,11 @@ def corpkit_gui():
         # query
         entrytext = StringVar()
 
-        Label(tab1, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW')
+        Label(interro_opt, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW', pady = (5,0))
         entrytext.set(r'JJ > (NP <<# /NN.?/)')
-        qa = Text(tab1, width = 45, height = 4, borderwidth = 0.5, 
+        qa = Text(interro_opt, width = 41, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD)
-        qa.grid(row = 5, column = 0, columnspan = 2, sticky = E)
+        qa.grid(row = 4, column = 0, columnspan = 2, sticky = E, pady = (5,0))
         all_text_widgets.append(qa)
 
         def entry_callback(*args):
@@ -1646,8 +1650,16 @@ def corpkit_gui():
 
             if 'ngram' in value:
                 lbut.config(state = DISABLED)
+                ngmsize.config(state = NORMAL)
+                split_contract.config(state = NORMAL)
+
             else:
-                lbut.config(state = NORMAL)
+                if 'stats' not in value:
+                    lbut.config(state = NORMAL)
+                else:
+                    lbut.config(state = DISABLED)
+                ngmsize.config(state = DISABLED)
+                split_contract.config(state = DISABLED)
                 #try:
                 #    ngmsize.destroy()
                 #except:
@@ -1659,32 +1671,34 @@ def corpkit_gui():
 
         # boolean interrogation arguments need fixing, right now use 0 and 1
         lem = IntVar()
-        lbut = Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
+        lbut = Checkbutton(interro_opt, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
         lbut.grid(column = 0, row = 8, sticky=W)
         phras = IntVar()
-        mwbut = Checkbutton(tab1, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
+        mwbut = Checkbutton(interro_opt, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
         mwbut.grid(column = 1, row = 8, sticky=E)
         tit_fil = IntVar()
-        tfbut = Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
+        tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
         tfbut.grid(row = 9, column = 0, sticky=W)
         case_sensitive = IntVar()
-        Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
+        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
 
         global ngmsize
 
-        Label(tab1, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
-        ngmsize = MyOptionMenu(tab1, 'Size','2','3','4','5','6','7','8')
+        Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
+        ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
         ngmsize.configure(width = 10)
         ngmsize.grid(row = 7, column = 0, sticky = W, padx = (85, 0))
+        ngmsize.config(state=DISABLED)
         global split_contract
-        Label(tab1, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 90)) 
-        split_contract = MyOptionMenu(tab1, 'No', 'Yes')
+        Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 90)) 
+        split_contract = MyOptionMenu(interro_opt, 'No', 'Yes')
         split_contract.configure(width = 10)
         split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
+        split_contract.config(state=DISABLED)
 
 
-        Label(tab1, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 90))
-        spl = MyOptionMenu(tab1, 'Off','UK','US')
+        Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 90))
+        spl = MyOptionMenu(interro_opt, 'Off','UK','US')
         spl.configure(width = 10)
         spl.grid(row = 6, column = 1, sticky = E)
 
@@ -1717,19 +1731,19 @@ def corpkit_gui():
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
-        Label(tab1, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(tab1, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
+        Label(interro_opt, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
         datatype_picked.trace("w", callback)
 
-        Label(tab1, text = 'Search\ntype:').grid(row = 3, column = 0, sticky = 'NW')
-        frm = Frame(tab1)
+        Label(interro_opt, text = 'Search\ntype:').grid(row = 3, column = 0, sticky = 'NW')
+        frm = Frame(interro_opt)
         frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
         dtscrollbar = Scrollbar(frm)
         dtscrollbar.pack(side=RIGHT, fill=Y)
 
-        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 38, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 45, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                             yscrollcommand=dtscrollbar.set, exportselection = False)
         datatype_listbox.pack()
         dtscrollbar.config(command=datatype_listbox.yview)
@@ -1765,8 +1779,8 @@ def corpkit_gui():
         queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
         special_queries = StringVar(root)
         special_queries.set('Off')
-        Label(tab1, text = ' Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
-        pick_a_query = OptionMenu(tab1, special_queries, *queries)
+        Label(interro_opt, text = ' Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
+        pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
         pick_a_query.grid(row = 6, column = 0, padx = (85, 0), columnspan = 2, sticky = W)
         special_queries.trace("w", q_callback)
 
@@ -1774,8 +1788,8 @@ def corpkit_gui():
         # Interrogation name
         nametext = StringVar()
         nametext.set('untitled')
-        Label(tab1, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
-        tmp = Entry(tab1, textvariable = nametext)
+        Label(interro_opt, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
+        tmp = Entry(interro_opt, textvariable = nametext)
         tmp.grid(row = 17, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
@@ -1787,8 +1801,8 @@ def corpkit_gui():
             webbrowser.open_new(kindict[kind])
 
         # query help, interrogate button
-        #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
-        interrobut = Button(tab1, text = 'Interrogate')
+        #Button(interro_opt, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
+        interrobut = Button(interro_opt, text = 'Interrogate')
         interrobut.config(command = lambda: runner(interrobut, do_interrogation), state = DISABLED)
         interrobut.grid(row = 18, column = 1, sticky = E)
 
@@ -1796,17 +1810,20 @@ def corpkit_gui():
         i_resultname = StringVar()
         name_of_interro_spreadsheet = StringVar()
         name_of_interro_spreadsheet.set('')
-        i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
-        Label(tab1, textvariable = i_resultname, 
-              font = ("Helvetica", 13, "bold")).grid(row = 0, 
-               column = 2, sticky = W, padx=20, pady=0)    
+        i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))  
         
         # make spreadsheet frames for interrogate pane
         interro_results = Frame(tab1, height = 45, width = 25, borderwidth = 2)
-        interro_results.grid(column = 2, row = 1, rowspan=14, padx=20, pady=5)
+        interro_results.grid(column = 2, row = 0, rowspan=5, padx=20, pady=(20,0), sticky = 'N')
 
         interro_totals = Frame(tab1, height = 1, width = 20, borderwidth = 2)
-        interro_totals.grid(column = 2, row = 15, rowspan=2, padx=20, pady=5)
+        interro_totals.grid(column = 2, row = 0, rowspan=1, padx=20, pady=(530,0), sticky = 'N')
+
+        llab = Label(tab1, textvariable = i_resultname, 
+              font = ("Helvetica", 13, "bold"))
+        llab.grid(row = 0, 
+               column = 2, sticky = 'NW', padx=20, pady=0)
+        llab.lift()
 
         # show nothing in them yet
         update_spreadsheet(interro_results, df_to_show = None, height = 450, width = 800)
@@ -3702,7 +3719,7 @@ def corpkit_gui():
         conc_dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
         conc_kind_of_dep = StringVar(root)
         conc_kind_of_dep.set('CC-processed')
-        Label(tab1, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
+        #Label(interro_opt, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
         conc_pick_dep_type = OptionMenu(tab4, conc_kind_of_dep, *dep_types)
         conc_pick_dep_type.config(state = DISABLED, width = 22)
         conc_pick_dep_type.grid(row = 5, column = 0, sticky=W)
@@ -3751,7 +3768,7 @@ def corpkit_gui():
         conc_queries = tuple(('Preset query', 'Imperatives', 'Modalised declaratives', 'Unmodalised declaratives', 'Interrogatives', 'Mental processes', 'Verbal processes', 'Relational processes'))
         conc_special_queries = StringVar(root)
         conc_special_queries.set('Preset query')
-        #Label(tab1, text = 'Preset query:').grid(row = 3, column = 0, sticky = W, columnspan = 2)
+        #Label(interro_opt, text = 'Preset query:').grid(row = 3, column = 0, sticky = W, columnspan = 2)
         conc_pick_a_query = OptionMenu(tab4, conc_special_queries, *conc_queries)
         conc_pick_a_query.grid(row = 3, column = 0, sticky=W)
         conc_pick_a_query.configure(width = 22)
