@@ -36,6 +36,10 @@ def plotter(title,
     import corpkit
     import os
     import matplotlib as mpl
+    try:
+        import seaborn as sns
+    except:
+        pass   
     if interactive:
         import matplotlib.pyplot as plt, mpld3
     else:
@@ -161,15 +165,23 @@ def plotter(title,
     if colours is True:
         colours = 'Paired'
 
-    styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight']
+    styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
     if style not in styles:
-        raise ValueError('Style %s not found. Use %s' % (style, ', '.join(styles)))
+        raise ValueError('Style %s not found. Use %s' % (str(style), ', '.join(styles)))
+
+    if style == 'mpl-white':
+        try:
+            sns.set_style("whitegrid")
+        except:
+            pass
+        style = 'matplotlib'
 
     if 'savepath' in kwargs.keys():
         mpl.rcParams['savefig.directory'] = kwargs['savepath']
         del kwargs['savepath']
 
     mpl.rcParams['savefig.bbox'] = 'tight'
+    mpl.rcParams.update({'figure.autolayout': True})
 
     # try to use tex
     # TO DO:
@@ -589,8 +601,9 @@ def plotter(title,
         kwargs['legend'] = False
 
     # cumulative grab first col
-    if cumulative:
-        kwargs['y'] = list(dataframe.columns)[0]
+    # why was i doing this?
+    #if cumulative:
+    #    kwargs['y'] = list(dataframe.columns)[0]
 
     # line highlighting option for interactive!
     if interactive:
@@ -652,7 +665,13 @@ def plotter(title,
 
     # use styles and plot
 
-    with plt.style.context((style)):
+    class dummy_context_mgr():
+        def __enter__(self):
+            return None
+        def __exit__(self, one, two, three):
+            return False
+
+    with plt.style.context((style)) if style != 'matplotlib' else dummy_context_mgr():
 
         if not sbplt:
             # check if negative values, no stacked if so
@@ -683,7 +702,7 @@ def plotter(title,
 
         if black_and_white:
             #plt.grid()
-            plt.gca().set_axis_bgcolor('w')
+            #plt.gca().set_axis_bgcolor('w')
             if kwargs['kind'] == 'line':
                 # white background
 
@@ -762,7 +781,6 @@ def plotter(title,
             plt.axis('equal')
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
-
 
     # add x label
     # this could be revised now!
@@ -859,6 +877,14 @@ def plotter(title,
                 a.axes.get_xaxis().set_visible(False)
                 a.axes.get_yaxis().set_visible(False)
                 a.axis('equal')
+
+            # show grid?
+            if 'grid' in kwargs.keys():
+                if kwargs['grid'] is False:
+                    a.grid(b=False)
+                else:
+                    a.grid(b=True)
+                del kwargs['grid']
     
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
@@ -867,6 +893,14 @@ def plotter(title,
         if 'kind' in kwargs:
             if kwargs['kind'].startswith('bar'):
                 width = ax.containers[0][0].get_width()
+
+        # show grid?
+        if 'grid' in kwargs.keys():
+            if kwargs['grid'] is False:
+                ax.grid(b=False)
+            else:
+                ax.grid(b=True)
+            del kwargs['grid']
 
     if was_series:
         the_y_limit = plt.ylim()[1]
@@ -910,10 +944,10 @@ def plotter(title,
 
     plt.subplots_adjust(left=0.1)
     plt.subplots_adjust(bottom=0.18)
+
     #if 'layout' not in kwargs:
-        #plt.tight_layout()
-
-
+        #if not sbplt:
+            #plt.tight_layout()
 
     if save:
         import os
