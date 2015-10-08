@@ -739,6 +739,7 @@ def tregex_engine(corpus = False,
     from corpkit.tests import check_dit
     from dictionaries.word_transforms import wordlist
     import os
+    import sys
 
     on_cloud = check_dit()
 
@@ -759,27 +760,25 @@ def tregex_engine(corpus = False,
     # if check_query, enter the while loop
     # if not, get out of it
     an_error_occurred = True
+
+    # site pack path
+    corpath = os.path.join(os.path.dirname(corpkit.__file__), 'tregex.sh')
+
+    # pyinstaller
+    pyi = sys.argv[0].split('Contents/MacOS')[0] + 'Contents/MacOS/tregex.sh'
+
+    possible_paths = ['tregex.sh', corpath, pyi]
+
     while an_error_occurred:
-        if on_cloud:
-            tregex_command = ["sh", "tregex.sh"]
-        if not on_cloud:
-            tregex_command = ["tregex.sh"]
-        if root:
-            #for py2app
-            corpath = os.path.dirname(corpkit.__file__)
-            corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
-            tregex_command = [os.path.join(corpath, "tregex.sh")]
-            # for pyinstaller
-            if not os.path.isfile(os.path.join(corpath, "tregex.sh")):            
-                def resource_path(relative):
-                    return os.path.join(
-                        os.environ.get(
-                            "_MEIPASS2",
-                            os.path.abspath(".")
-                        ),
-                        relative
-                    )
-                tregex_command = [resource_path("tregex.sh")]
+        tregex_file_found = False
+        for i in possible_paths:
+            if os.path.isfile(i):
+                tregex_command = [i]
+                tregex_file_found = True
+        if not tregex_file_found:
+            thetime = strftime("%H:%M:%S", localtime())
+            print "%s: Couldn't find Tregex in %s." % (thetime, ', '.join(possible_paths))
+            return False
 
         if not query:
             query = 'NP'
@@ -1246,7 +1245,6 @@ def get_gui_resource_dir():
             resource_path = os.path.join(apppath, 'Contents', 'MacOS')
         else:
             resource_path = appdir
-    print resource_path
     return resource_path
 
 def get_fullpath_to_jars(path_var):
