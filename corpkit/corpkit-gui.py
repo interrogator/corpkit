@@ -441,11 +441,11 @@ def corpkit_gui():
                 'Count matches':                                    'c',
                 'Get role of match':                                'f',
                 'Get "role:dependent", matching governor':          'd',
-                'Get ngrams':                                       'j',
+                'Get ngrams from tokens':                           'j',
                 'Get "role:governor", matching dependent':          'g',
                 'Get lemmata matching regex':                       'l',
                 'Get tokens by role':                               'm',
-                'Get dependency index of regular expression match': 'n',
+                'Get ngrams from trees':                            'n',
                 'Get part-of-speech tag':                           'p',
                 'Regular expression search':                        'r',
                 'Simple search string search':                      's',
@@ -460,10 +460,11 @@ def corpkit_gui():
                                  'Get tag and word of match', 
                                  'Count matches', 
                                  'Get part-of-speech tag',
-                                 'Get stats'],
+                                 'Get stats',
+                                 'Get ngrams from trees'],
                        'Tokens': ['Get tokens by regex', 
                                  'Get tokens matching list',
-                                 'Get ngrams'], 
+                                 'Get ngrams from tokens'], 
                        'Dependencies':
                                 ['Get role of match',
                                  'Get lemmata matching regex',
@@ -1208,6 +1209,16 @@ def corpkit_gui():
             else:
                 ff = False
 
+            if blklst.get() is not False and blklst.get() != '':
+                if blklst.get().startswith('[') and blklst.get().endswith(']'):
+                    blackl = blklst.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                else:
+                    blackl = remake_special_query(blklst.get())
+                if blackl is False:
+                    return
+            else:
+                blackl = False
+
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
@@ -1228,6 +1239,7 @@ def corpkit_gui():
                                  'note': note,
                                  'df1_always_df': True,
                                  'function_filter': ff,
+                                 'blacklist': blackl,
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
 
@@ -1265,7 +1277,7 @@ def corpkit_gui():
                 interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
-            if selected_option == 'j':
+            if selected_option in ['j', 'n']:
                 global ngmsize
                 if (ngmsize.var).get() != 'Size':
                     interrogator_args['gramsize'] = int((ngmsize.var).get())
@@ -1375,7 +1387,7 @@ def corpkit_gui():
             #reset name
             nametext.set('untitled')
 
-            Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E)
+            Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 17, column = 2, sticky = E, padx = (0, 20))
         
             if interrogation_returned_dict:
                 timestring('Interrogation finished, with multiple results.')
@@ -1483,30 +1495,38 @@ def corpkit_gui():
         available_corpora_build.grid(row = 4, column = 0, sticky=W)
         # function filter
         funfil = StringVar()
-        Label(tab1, text = 'Function filter:').grid(row = 10, column = 0, sticky = W)
+        Label(tab1, text = 'Function filter:').grid(row = 11, column = 0, sticky = W)
         #funfil.set(r'(nsubj|nsubjpass)')
         funfil.set('')
         q = Entry(tab1, textvariable = funfil, width = 31, state = DISABLED)
-        q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+        q.grid(row = 11, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(q)
 
         # pos filter
         posfil = StringVar()
-        Label(tab1, text = 'POS filter:').grid(row = 11, column = 0, sticky = W)
+        Label(tab1, text = 'POS filter:').grid(row = 12, column = 0, sticky = W)
         #posfil.set(r'^n')
         posfil.set(r'')
         qr = Entry(tab1, textvariable = posfil, width = 31, state = DISABLED)
-        qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
+        qr.grid(row = 12, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(qr)
+
+        blklst = StringVar()
+        Label(tab1, text = 'Blacklist:').grid(row = 10, column = 0, sticky = W)
+        #blklst.set(r'^n')
+        blklst.set(r'')
+        bkbx = Entry(tab1, textvariable = blklst, width = 31)
+        bkbx.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+        all_text_widgets.append(bkbx)
 
         # lemma tags
         lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
         lemtag = StringVar(root)
         lemtag.set('')
-        Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 12, column = 0, columnspan = 2, sticky = W)
+        Label(tab1, text = 'Result word class (for lemmatisation):').grid(row = 13, column = 0, columnspan = 2, sticky = W)
         lmt = OptionMenu(tab1, lemtag, *lemtags)
         lmt.config(state = NORMAL, width = 10)
-        lmt.grid(row = 12, column = 1, sticky=E)
+        lmt.grid(row = 13, column = 1, sticky=E)
         #lemtag.trace("w", d_callback)
 
         def togglespeaker(*args):
@@ -1546,12 +1566,12 @@ def corpkit_gui():
         # button
         only_sel_speakers = IntVar()
         speakcheck = Checkbutton(tab1, text='Speakers', variable=only_sel_speakers, command = togglespeaker)
-        speakcheck.grid(column = 0, row = 13, sticky=W, pady = (15, 0))
+        speakcheck.grid(column = 0, row = 14, sticky=W, pady = (15, 0))
         # add data on press
         only_sel_speakers.trace("w", togglespeaker)
         # frame to hold speaker names listbox
         spk_scrl = Frame(tab1)
-        spk_scrl.grid(row = 13, column = 0, rowspan = 2, columnspan = 2, sticky = E)
+        spk_scrl.grid(row = 14, column = 0, rowspan = 2, columnspan = 2, sticky = E)
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
@@ -1566,10 +1586,10 @@ def corpkit_gui():
         dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
         kind_of_dep = StringVar(root)
         kind_of_dep.set('CC-processed')
-        Label(tab1, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
+        Label(tab1, text = 'Dependency type:').grid(row = 16, column = 0, sticky = W)
         pick_dep_type = OptionMenu(tab1, kind_of_dep, *dep_types)
         pick_dep_type.config(state = DISABLED)
-        pick_dep_type.grid(row = 15, column = 1, sticky=E)
+        pick_dep_type.grid(row = 16, column = 1, sticky=E)
         #kind_of_dep.trace("w", d_callback)
 
         # query
@@ -1605,7 +1625,8 @@ def corpkit_gui():
                                 'Regular expression search': r'(m.n|wom.n|child(ren)?)',
                                 'Get tokens by regex': r'(m.n|wom.n|child(ren)?)',
                                 'Get tokens matching list': r'[cat,cats,mouse,mice,cheese]',
-                                'Get ngrams': 'any'}
+                                'Get ngrams from tokens': 'any',
+                                'Get ngrams from trees': 'any'}
 
         def onselect(evt):
             """when an option is selected, add the example query
@@ -1623,44 +1644,49 @@ def corpkit_gui():
                 except KeyError:
                     entrytext.set(def_queries[datatype_picked.get()])
 
-            if value == 'Get ngrams':
-                global ngmsize
-                ngmsize = MyOptionMenu(tab1, 'Size','2','3','4','5','6','7','8')
-                ngmsize.configure(width = 8)
-                ngmsize.grid(row = 3, column = 0, sticky = 'W', pady = (0, 10), padx = (2, 0))
+            if 'ngram' in value:
                 lbut.config(state = DISABLED)
-                global split_contract
-                split_contract = MyOptionMenu(tab1, 'Split', 'Yes', 'No')
-                split_contract.configure(width = 8)
-                split_contract.grid(row = 3, column = 0, sticky = 'SW', pady = (0, 3), padx = (2, 0))
             else:
                 lbut.config(state = NORMAL)
-                try:
-                    ngmsize.destroy()
-                except:
-                    pass
-                try:
-                    split_contract.destroy()
-                except:
-                    pass
+                #try:
+                #    ngmsize.destroy()
+                #except:
+                #    pass
+                #try:
+                #    split_contract.destroy()
+                #except:
+                #    pass
 
         # boolean interrogation arguments need fixing, right now use 0 and 1
         lem = IntVar()
         lbut = Checkbutton(tab1, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
-        lbut.grid(column = 0, row = 7, sticky=W)
+        lbut.grid(column = 0, row = 8, sticky=W)
         phras = IntVar()
         mwbut = Checkbutton(tab1, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
-        mwbut.grid(column = 1, row = 7, sticky=E)
+        mwbut.grid(column = 1, row = 8, sticky=E)
         tit_fil = IntVar()
         tfbut = Checkbutton(tab1, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
-        tfbut.grid(row = 8, column = 0, sticky=W)
+        tfbut.grid(row = 9, column = 0, sticky=W)
         case_sensitive = IntVar()
-        Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 8, column = 1, sticky=E)
+        Checkbutton(tab1, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
 
-        Label(tab1, text = 'Normalise spelling:').grid(row = 9, column = 0, sticky = W)
+        global ngmsize
+
+        Label(tab1, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
+        ngmsize = MyOptionMenu(tab1, 'Size','2','3','4','5','6','7','8')
+        ngmsize.configure(width = 10)
+        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (85, 0))
+        global split_contract
+        Label(tab1, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 90)) 
+        split_contract = MyOptionMenu(tab1, 'No', 'Yes')
+        split_contract.configure(width = 10)
+        split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
+
+
+        Label(tab1, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 90))
         spl = MyOptionMenu(tab1, 'Off','UK','US')
         spl.configure(width = 10)
-        spl.grid(row = 9, column = 1, sticky = E)
+        spl.grid(row = 6, column = 1, sticky = E)
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
@@ -1739,17 +1765,18 @@ def corpkit_gui():
         queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
         special_queries = StringVar(root)
         special_queries.set('Off')
-        Label(tab1, text = 'Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
+        Label(tab1, text = ' Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
         pick_a_query = OptionMenu(tab1, special_queries, *queries)
-        pick_a_query.grid(row = 6, column = 1, sticky=E)
+        pick_a_query.grid(row = 6, column = 0, padx = (85, 0), columnspan = 2, sticky = W)
         special_queries.trace("w", q_callback)
+
 
         # Interrogation name
         nametext = StringVar()
         nametext.set('untitled')
-        Label(tab1, text = 'Interrogation name:').grid(row = 16, column = 0, sticky = W)
+        Label(tab1, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
         tmp = Entry(tab1, textvariable = nametext)
-        tmp.grid(row = 16, column = 1, sticky = E)
+        tmp.grid(row = 17, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
         def show_help(kind):
@@ -1763,7 +1790,7 @@ def corpkit_gui():
         #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
         interrobut = Button(tab1, text = 'Interrogate')
         interrobut.config(command = lambda: runner(interrobut, do_interrogation), state = DISABLED)
-        interrobut.grid(row = 17, column = 1, sticky = E)
+        interrobut.grid(row = 18, column = 1, sticky = E)
 
         # name to show above spreadsheet 0
         i_resultname = StringVar()
@@ -2129,6 +2156,11 @@ def corpkit_gui():
         keeptopbox = Entry(tab2, textvariable = keeptopnum, width = 5)
         keeptopbox.grid(column = 1, row = 6, sticky = E)
         all_text_widgets.append(keeptopbox)
+
+
+
+
+
 
         # currently broken: just totals button
         just_tot_setting = IntVar()
