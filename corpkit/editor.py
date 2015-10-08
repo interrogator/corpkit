@@ -177,17 +177,42 @@ def editor(dataframe1,
             if operation == '%':
                 totals = df.sum() * 100.0 / float(df.sum().sum())
                 df = df * 100.0
-                df = df.div(denom, axis = 0)
+                try:
+                    df = df.div(denom, axis = 0)
+                except ValueError:
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
             elif operation == '+':
-                df = df.add(denom, axis = 0)
+                try:
+                    df = df.add(denom, axis = 0)
+                except ValueError:
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
             elif operation == '-':
-                df = df.sub(denom, axis = 0)
+                try:
+                    df = df.sub(denom, axis = 0)
+                except ValueError:
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
             elif operation == '*':
                 totals = df.sum() * float(df.sum().sum())
-                df = df.mul(denom, axis = 0)
+                try:
+                    df = df.mul(denom, axis = 0)
+                except ValueError:
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
             elif operation == '/':
-                totals = df.sum() / float(df.sum().sum())
-                df = df.div(denom, axis = 0)
+                try:
+                    totals = df.sum() / float(df.sum().sum())
+                    df = df.div(denom, axis = 0)
+                except ValueError:
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
             elif operation == 'd':
                 #df.ix['Combined total'] = df.sum()
                 #to_drop = to_drop = list(df.T[df.T['Combined total'] < threshold].index)
@@ -247,7 +272,14 @@ def editor(dataframe1,
                     import warnings
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        df = pandas.concat([df, df2], axis = 1)
+                        d = pd.concat([df.T, df2.T]).sort()
+                        # make index nums
+                        d = d.reset_index()
+                        # sum and remove duplicates
+                        d = d.groupby('index').sum()
+                        dx = d.reset_index('index')
+                        dx.index = list(dx['index'])
+                        df = dx.drop('index', axis = 1).T
 
                 for index, entry in enumerate(list(df.columns)):
                     #p.animate(index)
@@ -872,11 +904,22 @@ def editor(dataframe1,
             pass
 
     # remove totals and tkinter order
-    if not df1_istotals:
-        for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+    for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+        try:
             df = df.drop(name, axis = ax, errors = 'ignore')
-            if using_totals and ax == 1 and not single_totals:
-                df2 = df2.drop(name, axis = ax, errors = 'ignore')
+        except:
+            pass
+    for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+        try:
+            df2 = df2.drop(name, axis = ax, errors = 'ignore')
+        except:
+            pass
+
+    #if not df1_istotals:
+    #    for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+    #        df = df.drop(name, axis = ax, errors = 'ignore')
+    #        if using_totals and ax == 1 and not single_totals:
+    #            df2 = df2.drop(name, axis = ax, errors = 'ignore')
 
     # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
@@ -1067,6 +1110,7 @@ def editor(dataframe1,
     def add_tkt_index(df):
         if type(df) != pandas.core.series.Series:
             df = df.T
+            df = df.drop('tkintertable-order', errors = 'ignore', axis = 0)
             df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
             df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
             df = df.T
