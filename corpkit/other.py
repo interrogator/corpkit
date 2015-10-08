@@ -722,7 +722,8 @@ def tregex_engine(corpus = False,
                   just_content_words = False,
                   return_tuples = False,
                   root = False,
-                  preserve_case = False):
+                  preserve_case = False,
+                  **kwargs):
     """This does a tregex query.
     query: tregex query
     options: list of tregex options
