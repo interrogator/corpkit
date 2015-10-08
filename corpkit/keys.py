@@ -196,8 +196,12 @@ def ngrams(data,
            clear = True, 
            printstatus = True, 
            n = 'all',
+           calc_all = True,
+           blacklist = False,
+           split_contractions = True,
+           gramsize = 2,
            **kwargs):
-    """Feed this function some data and get its keywords.
+    """Feed this function some data and get ngrams.
 
     You can use dictmaker() to build a new reference_corpus 
     to serve as reference corpus, or use bnc.p
@@ -209,14 +213,21 @@ def ngrams(data,
     import re
     import time
     from time import localtime, strftime
-    from dictionaries.stopwords import stopwords as my_stopwords
 
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
 
-    from keys import keywords_and_ngrams, turn_input_into_counter
+    stopwords = False
+    if blacklist is not False:
+        if blacklist is True:
+            from dictionaries.stopwords import stopwords as my_stopwords
+            stopwords = [i.lower() for i in my_stopwords]
+        else:
+            stopwords = [i.lower() for i in blacklist]
+
+    from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
     from other import datareader
 
     loaded_ref_corpus = turn_input_into_counter(reference_corpus)
@@ -227,13 +238,39 @@ def ngrams(data,
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
         print "\n%s: Generating ngrams... \n" % time
+    
     good = datareader(data, **kwargs)
 
-    regex_nonword_filter = re.compile("[A-Za-z-\']")
-    good = [i for i in good if re.search(regex_nonword_filter, i) and i not in my_stopwords] 
+    regex_nonword_filter = re.compile("[0-9A-Za-z-\']")
 
-    ngrams = keywords_and_ngrams(good, reference_corpus = reference_corpus, 
-                                 calc_all = calc_all, show = 'ngrams', **kwargs)
+    good = [i for i in good if re.search(regex_nonword_filter, i)]
+
+    #print ' '.join(good[:500])
+
+    def unsplitter(lst):
+        unsplit = []
+        for index, t in enumerate(lst):
+            if index == 0 or index == len(lst) - 1:
+                unsplit.append(t)
+                continue
+            if "'" in t and not t.endswith("'"):
+                rejoined = ''.join([lst[index - 1], t])
+                unsplit.append(rejoined)
+            else:
+                if not "'" in lst[index + 1]:
+                    unsplit.append(t)
+        return unsplit
+
+    if not split_contractions:
+        good = unsplitter(good)
+
+    #print ' '.join(good[:500])
+
+    #if stopwords:
+    #    good = [i for i in good if i not in stopwords]
+
+    ngrams = keywords_and_ngrams(good, reference_corpus = loaded_ref_corpus, stopwords = stopwords,
+                                 calc_all = calc_all, show = 'ngrams', gramsize = gramsize, **kwargs)
 
     import pandas as pd
     out = pd.Series([s for k, s in ngrams], index = [k for k, s in ngrams])
@@ -260,6 +297,8 @@ def keywords_and_ngrams(target_corpus,
                         calc_all = True, 
                         thresholdBigrams=2, 
                         show = 'keywords', 
+                        stopwords = False,
+                        gramsize = 2,
                         **kwargs):
     import collections
     from collections import Counter
@@ -268,89 +307,98 @@ def keywords_and_ngrams(target_corpus,
     import json
     import os
     import cPickle as pickle
-    from dictionaries.stopwords import stopwords as my_stopwords
 
     # from Spindle: just altered reference_corpus stuff and number to show
     def spindle_ngrams(words, n=2, nngram = 'all'):
         return (tuple(words[i:i+n]) for i in range(0, len(words) - (n - 1)))
 
     # total number of words in target corpus
-    target_sum = sum(target_corpus.itervalues())
+    if type(target_corpus) == list:
+        n_gramming = True
+        target_sum = len(target_corpus)
+    else:
+        n_gramming = False
+        target_sum = sum(target_corpus.itervalues())
     
     # Total number of words in reference qcorpus
     ref_sum = sum(reference_corpus.itervalues())
 
-    dicLL = {}
-    if calc_all:
-        wordlist = list(set(target_corpus.keys() + reference_corpus.keys()))
-    else:
-        wordlist = target_corpus.keys()
-    for w in wordlist:
-        # this try for non-Counter dicts, which return keyerror if no result
-        try:
-            a = reference_corpus[w]
-        except:
-            a = 0
-        try:
-            b = target_corpus[w]
-        except:
-            b = 0
-        if 'only_words_in_both_corpora' in kwargs:
-            if a == 0 and kwargs['only_words_in_both_corpora'] is True:
-                continue
-        c = ref_sum
-        d = target_sum
-        if a == None:
-            a = 0
-        if b == None:
-            b = 0
-
-        # my test for if pos or neg
-        # try catches the unlikely 0.0 error
-        neg = False
-        try:
-            if (b / float(d)) < (a / float(c)):
-                neg = True
-        except:
-            pass
-
-        E1 = float(c)*((float(a)+float(b))/ (float(c)+float(d)))
-        E2 = float(d)*((float(a)+float(b))/ (float(c)+float(d)))
-
-        if a == 0:
-            logaE1 = 0
-        else:
-            logaE1 = math.log(a/E1)  
-        if b == 0:
-            logaE2 = 0
-        else:
-            logaE2 = math.log(b/E2)  
-        score = float(2* ((a*logaE1)+(b*logaE2)))
-        if neg:
-            score = -score
-        dicLL[w] = score
-    sortedLL = sorted(dicLL, key=dicLL.__getitem__, reverse=True)
-    listKeywords = [(k, dicLL[k]) for k in sortedLL]
-
-    # list of keywords
-    keywords = [keyw[0] for keyw in listKeywords]
-    
     if show == 'keywords':
+        dicLL = {}
+        if calc_all:
+            wordlist = list(set(target_corpus.keys() + reference_corpus.keys()))
+        else:
+            wordlist = target_corpus.keys()
+        for w in wordlist:
+            # this try for non-Counter dicts, which return keyerror if no result
+            try:
+                a = reference_corpus[w]
+            except:
+                a = 0
+            try:
+                b = target_corpus[w]
+            except:
+                b = 0
+            if 'only_words_in_both_corpora' in kwargs:
+                if a == 0 and kwargs['only_words_in_both_corpora'] is True:
+                    continue
+            c = ref_sum
+            d = target_sum
+            if a == None:
+                a = 0
+            if b == None:
+                b = 0
+
+            # my test for if pos or neg
+            # try catches the unlikely 0.0 error
+            neg = False
+            try:
+                if (b / float(d)) < (a / float(c)):
+                    neg = True
+            except:
+                pass
+
+            E1 = float(c)*((float(a)+float(b))/ (float(c)+float(d)))
+            E2 = float(d)*((float(a)+float(b))/ (float(c)+float(d)))
+
+            if a == 0:
+                logaE1 = 0
+            else:
+                logaE1 = math.log(a/E1)  
+            if b == 0:
+                logaE2 = 0
+            else:
+                logaE2 = math.log(b/E2)  
+            score = float(2* ((a*logaE1)+(b*logaE2)))
+            if neg:
+                score = -score
+            dicLL[w] = score
+
+        sortedLL = sorted(dicLL, key=dicLL.__getitem__, reverse=True)
+        listKeywords = [(k, dicLL[k]) for k in sortedLL]
         return listKeywords
     
     elif show == 'ngrams':
-        ngms = spindle_ngrams(target_corpus, 2)
+        ngms = spindle_ngrams(target_corpus, gramsize)
         counter_ngrams = Counter(ngms)
-        regex_nonword_filter = re.compile("[A-Za-z]")
-        # this doesn't do much now, because everything is in keywords!
+        regex_nonword_filter = re.compile("[0-9A-Za-z\']")
+
         listBigrams = []
         for c, ng in sorted(((c, ng) for ng, c in counter_ngrams.items()), reverse=True):
             w0 = ng[0]
             w1 = ng[1]
-            if (all([i not in my_stopwords for i in ng]) 
-                and all([re.search(regex_nonword_filter, i) for i in ng]) 
-                and c>thresholdBigrams):
-                listBigrams.append((' '.join(ng), c))
+            if 'whitelist' in kwargs.keys():
+                if kwargs['whitelist'] != 'any':
+                    quereg = re.compile(kwargs['whitelist'])
+                    if not any(re.search(quereg, w) for w in ng):
+                        continue
+            if stopwords:
+                if (all([i.lower() not in stopwords for i in ng]) 
+                    and c>thresholdBigrams):
+                    listBigrams.append((' '.join(ng), c))
+            else:
+                if c>thresholdBigrams:
+                    listBigrams.append((' '.join(ng), c))
         return listBigrams
 
 def turn_input_into_counter(data, **kwargs):
@@ -361,7 +409,7 @@ def turn_input_into_counter(data, **kwargs):
     import collections
     import pickle
     import pandas
-    from other import datareader
+    from corpkit.other import datareader
     
     dict_found = False
 
@@ -412,7 +460,7 @@ def turn_input_into_counter(data, **kwargs):
                 return ref_corp_dict
             except IOError:
                 try:
-                    ref_corp_dict = pickle.load( open( os.path.join('data/dictionaries', data), "rb" ) )
+                    ref_corp_dict = pickle.load( open( os.path.join('dictionaries', data), "rb" ) )
                     dict_found = True
                     return ref_corp_dict
                 except IOError:
@@ -430,7 +478,7 @@ def turn_input_into_counter(data, **kwargs):
             dict_of_dicts = {}
             d_for_print = []
             
-            dicts = [f for f in os.listdir('data/dictionaries') if f.endswith('.p')]
+            dicts = [f for f in os.listdir('dictionaries') if f.endswith('.p')]
             for index, d in enumerate(dicts):
                 dict_of_dicts[index] = d
                 d_for_print.append('    % 2d) %s' % (index, d))
