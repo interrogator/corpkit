@@ -282,6 +282,21 @@ def interrogator(path,
         import subprocess
         have_ipython = False
 
+    def unsplitter(lst):
+        """unsplit contractions and apostophes from tokenised text"""
+        unsplit = []
+        for index, t in enumerate(lst):
+            if index == 0 or index == len(lst) - 1:
+                unsplit.append(t)
+                continue
+            if "'" in t and not t.endswith("'"):
+                rejoined = ''.join([lst[index - 1], t])
+                unsplit.append(rejoined)
+            else:
+                if not "'" in lst[index + 1]:
+                    unsplit.append(t)
+        return unsplit
+
     def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
                  init = False, length = False):
         """animates progress bar in unique position in terminal"""
@@ -360,9 +375,10 @@ def interrogator(path,
         list_of_matches.sort()
         
         # tokenise if multiword:
-        if phrases:
+        if phrases and not n_gramming:
             from nltk import word_tokenize as word_tokenize
             list_of_matches = [word_tokenize(i) for i in list_of_matches]
+
         if lemmatise:
             tag = gettag(query, lemmatag = lemmatag)
             list_of_matches = lemmatiser(list_of_matches, tag)
@@ -370,6 +386,25 @@ def interrogator(path,
             list_of_matches = titlefilterer(list_of_matches)
         if spelling:
             list_of_matches = convert_spelling(list_of_matches, spelling = spelling)
+
+        # use blacklist option in gui
+        if 'blacklist' in kwargs.keys():
+            stopwords = False
+            if kwargs['blacklist'] is not False:
+                if kwargs['blacklist'] is True:
+                    from dictionaries.stopwords import stopwords as my_stopwords
+                    stopwords = [i.lower() for i in my_stopwords]
+                    list_of_matches = [w for w in list_of_matches if w not in stopwords]
+                else:
+                    if type(kwargs['blacklist']) == list:
+                        stopwords = [i.lower() for i in kwargs['blacklist']]
+                        list_of_matches = [w for w in list_of_matches if w not in stopwords]
+                    else:
+                        regexblacklist = re.compile(kwargs['blacklist'])
+                        list_of_matches = [w for w in list_of_matches if not re.search(regexblacklist, w)]
+
+        #if not split_con:
+        #    list_of_matches = unsplitter(list_of_matches)
         
         # turn every result into a single string again if need be:
         if phrases:
@@ -649,20 +684,9 @@ def interrogator(path,
         result = []
         # if it's not a compiled regex
         list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
-        if not split_contractions:
-            unsplit = []
-            for index, t in enumerate(list_of_toks):
-                if index == 0 or index == len(list_of_toks) - 1:
-                    unsplit.append(t)
-                    continue
-                if "'" in t:
-                    rejoined = ''.join([list_of_toks[index - 1], t])
-                    unsplit.append(rejoined)
-                else:
 
-                    if not "'" in list_of_toks[index + 1]:
-                        unsplit.append(t)
-            list_of_toks = unsplit
+        if not split_contractions:
+            list_of_toks = unsplitter(list_of_toks)
             
             #list_of_toks = [x for x in list_of_toks if "'" not in x]
         for index, w in enumerate(list_of_toks):
@@ -856,6 +880,7 @@ def interrogator(path,
     tokens = False
     depnum = False
     statsmode = False
+    split_con = True
 
     # some empty lists we'll need
     dicts = []
@@ -942,7 +967,7 @@ def interrogator(path,
         elif option.lower().startswith('n'):
             translated_option = 'n'
             n_gramming = True
-            phrases = True
+            using_tregex = True
             optiontext = 'n-grams only.'
             if type(query) == list:
                 query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
@@ -1258,7 +1283,7 @@ def interrogator(path,
             else:
                 lem = ''
             reference_corpus = os.path.basename(path) + lem + '.p'
-            dictpath = 'data/dictionaries'
+            dictpath = 'dictionaries'
             import pickle
             try:
                 dic = pickle.load( open( os.path.join(dictpath, reference_corpus), "rb" ) )
@@ -1360,12 +1385,13 @@ def interrogator(path,
     # check for valid query. so ugly.
     if using_tregex:
         if query:
-            query = tregex_engine(corpus = False, query = query, options = '-t', check_query = True, root = root)
-            if query is False:
-                if root:
-                    return 'Bad query'
-                else:
-                    return
+            if not n_gramming:
+                query = tregex_engine(corpus = False, query = query, options = '-t', check_query = True, root = root)
+                if query is False:
+                    if root:
+                        return 'Bad query'
+                    else:
+                        return
     
     else:
         if dependency or translated_option == 'r' or translated_option == 'h':
@@ -1435,9 +1461,11 @@ def interrogator(path,
     global numdone
     numdone = 0
 
+
+
     for index, d in enumerate(sorted_dirs):
         if using_tregex or keywording or n_gramming:
-            if can_do_fast:
+            if can_do_fast or keywording or n_gramming:
                 subcorpus_name = d
                 subcorpus_names.append(subcorpus_name)
                 if not root:
@@ -1464,7 +1492,7 @@ def interrogator(path,
                     subcorpus = os.path.join(path,subcorpus_name)
                 if keywording:
                     result = []
-                    from corpkit import keywords
+                    from corpkit.keys import keywords
                     spindle_out = keywords(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
                                             printstatus = False, clear = False, lemmatise = lemmatise)
                     for w in list(spindle_out.index):
@@ -1477,9 +1505,30 @@ def interrogator(path,
 
                 elif n_gramming:
                     result = []
-                    from corpkit import ngrams
-                    spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
-                                            printstatus = False, clear = False, lemmatise = lemmatise)
+                    if 'split_contractions' in kwargs.keys():
+                        if kwargs['split_contractions'] is True:
+                            split_con = True
+                        elif kwargs['split_contractions'] is False:
+                            split_con = False
+                    from corpkit.keys import ngrams
+                    if 'blacklist' in kwargs.keys():
+                        the_blacklist = kwargs['blacklist']
+                    else:
+                        the_blacklist = Falseq
+                    if 'gramsize' in kwargs.keys():
+                        gramsz = kwargs['gramsize']
+                    else:
+                        gramsz = 2
+                    spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, 
+                                                    just_content_words = jcw, 
+                                                    blacklist = the_blacklist,
+                                                    printstatus = False, 
+                                                    clear = False, 
+                                                    lemmatise = lemmatise, 
+                                                    split_contractions = split_con, 
+                                                    whitelist = query,
+                                                    gramsize = gramsz
+                                                    )
                     for w in list(spindle_out.index):
                         if query != 'any':
                             if re.search(query, w):
@@ -1507,7 +1556,7 @@ def interrogator(path,
         # for dependencies, d[0] is the subcorpus name 
         # and d[1] is its file list ... 
 
-        if dependency or plaintext or tokens or statsmode or can_do_fast is False:
+        elif dependency or plaintext or tokens or statsmode or can_do_fast is False:
             #if not root:
                 #p.animate(-1, str(0) + '/' + str(total_files))
             from collections import Counter
