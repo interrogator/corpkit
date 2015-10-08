@@ -123,10 +123,10 @@ class RedirectText(object):
         del_reg = re.compile(r'^/*(Users|usr).*/(site-packages|corpkit/corpkit/)')
         if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
             if not re.match(show_reg, string):
-                self.log.append(re.sub(del_reg, '', string))
+                self.log.append(re.sub(del_reg, '', string).rstrip('\n'))
         # remove blank lines
         if not re.match(show_reg, string):
-            self.output.set(re.sub(del_reg, '', string))
+            self.output.set(re.sub(del_reg, '', string).rstrip('\n'))
             #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
 
 class Notebook(Frame):
@@ -296,6 +296,7 @@ def corpkit_gui():
         requests.packages.urllib3.disable_warnings()
         
         # unused in the gui, dummy imports for pyinstaller
+        import seaborn
         from hashlib import md5
         import chardet
         import pyparsing
@@ -1042,7 +1043,7 @@ def corpkit_gui():
                 as_series = data.results.sum()
                 with open(fpn, 'w') as fo: 
                     pickle.dump(as_series, fo)
-                timestring('Dictionary created: %s\n' % (os.path.join('dictionaries', fname)))
+                timestring('Dictionary created: %s' % (os.path.join('dictionaries', fname)))
                 refresh()
             else:
                 timestring('No results branch found, sorry.')
@@ -1751,10 +1752,12 @@ def corpkit_gui():
         tmp.grid(row = 16, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
-        def query_help():
+        def show_help(kind):
+            kindict = {'h': 'http://interrogator.github.io/corpkit/doc_help.html',
+                       'q': 'http://interrogator.github.io/corpkit/doc_interrogate.html#trees',
+                       't': 'http://interrogator.github.io/corpkit/doc_troubleshooting.html'}
             import webbrowser
-            #webbrowser.open('file://' + resource_path('user_guide.html').replace('corpkit/corpkit/corpkit', 'corpkit/corpkit'), new = 0)
-            webbrowser.open_new('http://interrogator.github.io/corpkit/doc_interrogate.html#trees')
+            webbrowser.open_new(kindict[kind])
 
         # query help, interrogate button
         #Button(tab1, text = 'Query help', command = query_help).grid(row = 14, column = 0, sticky = W)
@@ -1804,6 +1807,8 @@ def corpkit_gui():
             if opp.get() == u"\u00D7":
                 operation_text = '*'
             if opp.get() == '%-diff':
+                operation_text = 'd'
+            if opp.get() == 'rel. dist.':
                 operation_text = 'a'
 
             using_dict = False
@@ -2080,7 +2085,7 @@ def corpkit_gui():
         # operation for editor
         opp = StringVar(root)
         opp.set('None')
-        operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'd')
+        operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'rel. dist.')
         Label(tab2, text='Operation and denominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
         ops = OptionMenu(tab2, opp, *operations)
         ops.grid(row = 3, column = 0, sticky = W)
@@ -2302,6 +2307,9 @@ def corpkit_gui():
         # VISUALISE TAB #       # VISUALISE TAB #      # VISUALISE TAB #      # VISUALISE TAB #  
         #################       #################      #################      #################  
 
+        plot_option_frame = Frame(tab3)
+        plot_option_frame.grid(row = 0, column = 0, sticky = 'NW')
+
         def do_plotting():
             """when you press plot"""
             plotbut.config(state = DISABLED)
@@ -2323,15 +2331,15 @@ def corpkit_gui():
 
             if plotbranch.get() == 'results':
                 if not 'results' in all_interrogations[data_to_plot.get()]._asdict().keys():
-                    timestring('No results branch to plot.')
-                    
+                    timestring('No results branch to plot.')   
                     return
+
                 what_to_plot = all_interrogations[data_to_plot.get()].results
             elif plotbranch.get() == 'totals':
                 if not 'totals' in all_interrogations[data_to_plot.get()]._asdict().keys():
                     timestring('No totals branch to plot.')
-                    
                     return
+
                 what_to_plot = all_interrogations[data_to_plot.get()].totals
             
             if transpose_vis.get():
@@ -2357,8 +2365,12 @@ def corpkit_gui():
                 the_kind = 'line'
             # plotter options
             d = {'num_to_plot': num,
-                 'kind': the_kind}
+                 'kind': the_kind,
+                 'indices': False}
 
+            #the_style = 
+            #if the_style == 'matplotlib':
+            #lgd = plt.legend(handles[:    the_style = False
             d['style'] = plot_style.get()
 
             # explode option
@@ -2383,6 +2395,15 @@ def corpkit_gui():
             if sbplt.get() == 1:
                 d['subplots'] = True
 
+            if gridv.get() == 1:
+                d['grid'] = True
+            else:
+                d['grid'] = False
+
+            if stackd.get() == 1:
+                d['stacked'] = True
+
+
             if log_x.get() == 1:
                 d['logx'] = True
             if log_y.get() == 1:
@@ -2403,7 +2424,7 @@ def corpkit_gui():
             d['colours'] = chart_cols.get()
 
             legend_loc = legloc.get()
-            if legend_loc == 'None':
+            if legend_loc == 'none':
                 d['legend'] = False
             else:
                 d['legend_pos'] = legend_loc
@@ -2418,7 +2439,10 @@ def corpkit_gui():
 
             d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
             try:
-                f = plotter(plotnametext.get(), what_to_plot, **d)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    f = plotter(plotnametext.get(), what_to_plot, **d)
             # latex error
             except RuntimeError as e:
                 s = str(e)
@@ -2437,8 +2461,6 @@ def corpkit_gui():
             
             del oldplotframe[:]
 
-            toolbar_frame = Tkinter.Frame(tab3, borderwidth = 0)
-            toolbar_frame.grid(row=22, column=2, columnspan = 3, sticky = 'NW', padx = (400,0))
             canvas = FigureCanvasTkAgg(f.gcf(), tab3)
             try:
                 canvas.show()
@@ -2452,20 +2474,23 @@ def corpkit_gui():
                     timestring('No TeX distribution found. Disabling TeX option.')
                     texuse.set(0)
                     tbut.config(state = DISABLED)
-                
                 return
                 
-            canvas.get_tk_widget().grid(column = 2, row = 1, rowspan = 20, padx = (40, 20), columnspan = 3)
+            canvas.get_tk_widget().grid(column = 2, row = 0, rowspan = 1, padx = (40, 20), pady = (20, 0), columnspan = 3, sticky = N)
             oldplotframe.append(canvas.get_tk_widget())
+
+            del thefig[:]
+            
+            toolbar_frame = Tkinter.Frame(tab3, borderwidth = 0)
+            toolbar_frame.grid(row=0, column=2, columnspan = 3, sticky = 'NW', padx = (400,0), pady = (600,0))
+            toolbar_frame.lift()
+
             oldplotframe.append(toolbar_frame)
             toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
             toolbar.update()
 
-            del thefig[:]
-            
             thefig.append(f.gcf())
             savedplot.set('Saved image: ')
-            
 
         images = {'the_current_fig': -1}
 
@@ -2556,7 +2581,7 @@ def corpkit_gui():
             image = image.resize(newdimensions)
             image = ImageTk.PhotoImage(image)
             frm = Frame(tab3, height = 500, width = 1000)
-            frm.grid(column = 2, row = 1, rowspan = 20, padx = (padxleft, padxright), \
+            frm.grid(column = 2, row = 0, rowspan = 1, padx = (padxleft, padxright), \
                       pady = padytop, columnspan = 3)
             gallframe = Label(frm, image = image, justify = CENTER)
             gallframe.pack(anchor = 'center', fill=BOTH)
@@ -2569,10 +2594,10 @@ def corpkit_gui():
 
         savedplot = StringVar()
         savedplot.set('View saved images: ')
-        Label(tab3, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (15, 0), sticky = W)
-        pbut = Button(tab3, text='Previous', command=lambda: move(direction = 'back'))
+        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (55, 0), sticky = W)
+        pbut = Button(plot_option_frame, text='Previous', command=lambda: move(direction = 'back'))
         pbut.grid(row = 23, column = 0, sticky = W)
-        nbut = Button(tab3, text='Next', command=lambda: move(direction = 'forward'))
+        nbut = Button(plot_option_frame, text='Next', command=lambda: move(direction = 'forward'))
         nbut.grid(row = 23, column = 1, sticky = E)
         
         # not in use while using the toolbar instead...
@@ -2596,11 +2621,12 @@ def corpkit_gui():
         #    timestring('%s saved to %s.' % (fo, image_fullpath.get()))
 
         # title tab
-        Label(tab3, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (35, 0))
+
+        Label(plot_option_frame, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (10, 0))
         plotnametext = StringVar()
         plotnametext.set('Untitled')
-        tmp = Entry(tab3, textvariable = plotnametext)
-        tmp.grid(row = 0, column = 1, pady = (35, 0))
+        tmp = Entry(plot_option_frame, textvariable = plotnametext)
+        tmp.grid(row = 0, column = 1, pady = (10, 0))
         all_text_widgets.append(tmp)
 
         def plot_callback(*args):
@@ -2615,12 +2641,12 @@ def corpkit_gui():
                 plotbranch.set('totals')
                 plotbox.config(state = DISABLED)
 
-        Label(tab3, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Data to plot:').grid(row = 1, column = 0, sticky = W)
         # select result to plot
         data_to_plot = StringVar(root)
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
         data_to_plot.set(most_recent)
-        every_interrogation = OptionMenu(tab3, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
+        every_interrogation = OptionMenu(plot_option_frame, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
         every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
         data_to_plot.trace("w", plot_callback)
 
@@ -2628,16 +2654,16 @@ def corpkit_gui():
         # branch selection
         plotbranch = StringVar(root)
         plotbranch.set('results')
-        plotbox = OptionMenu(tab3, plotbranch, 'results', 'totals')
+        plotbox = OptionMenu(plot_option_frame, plotbranch, 'results', 'totals')
         #plotbox.config(state = DISABLED)
         plotbox.grid(row = 2, column = 0, sticky = E, columnspan = 2)
 
 
         # num_to_plot
-        Label(tab3, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
         number_to_plot = StringVar()
         number_to_plot.set('7')
-        tmp = Entry(tab3, textvariable = number_to_plot, width = 3)
+        tmp = Entry(plot_option_frame, textvariable = number_to_plot, width = 3)
         tmp.grid(row = 4, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
@@ -2647,68 +2673,83 @@ def corpkit_gui():
             else:
                 explbox.config(state = DISABLED)
 
+            if charttype.get().startswith('bar'):
+                stackbut.config(state = NORMAL)
+            else:
+                stackbut.config(state = DISABLED)
+
         # chart type
-        Label(tab3, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
+        Label(plot_option_frame, text='Kind of chart').grid(row = 5, column = 0, sticky = W)
         charttype = StringVar(root)
         charttype.set('line')
         kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
-        chart_kind = OptionMenu(tab3, charttype, *kinds_of_chart)
+        chart_kind = OptionMenu(plot_option_frame, charttype, *kinds_of_chart)
         chart_kind.grid(row = 5, column = 1, sticky = E)
         charttype.trace("w", pie_callback)
 
         # axes
-        Label(tab3, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'x axis label:').grid(row = 6, column = 0, sticky = W)
         x_axis_l = StringVar()
         x_axis_l.set('')
-        tmp = Entry(tab3, textvariable = x_axis_l, font = ("Courier New", 14), width = 18)
+        tmp = Entry(plot_option_frame, textvariable = x_axis_l, font = ("Courier New", 14), width = 18)
         tmp.grid(row = 6, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
-        Label(tab3, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'y axis label:').grid(row = 7, column = 0, sticky = W)
         y_axis_l = StringVar()
         y_axis_l.set('')
-        tmp = Entry(tab3, textvariable = y_axis_l, font = ("Courier New", 14), width = 18)
+        tmp = Entry(plot_option_frame, textvariable = y_axis_l, font = ("Courier New", 14), width = 18)
         tmp.grid(row = 7, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
-        Label(tab3, text = 'Explode:').grid(row = 8, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Explode:').grid(row = 8, column = 0, sticky = W)
         explval = StringVar()
         explval.set('')
-        explbox = Entry(tab3, textvariable = explval, font = ("Courier New", 14), width = 18)
+        explbox = Entry(plot_option_frame, textvariable = explval, font = ("Courier New", 14), width = 18)
         explbox.grid(row = 8, column = 1, sticky = E)
         all_text_widgets.append(explbox)
         explbox.config(state = DISABLED)
 
         # log options
         log_x = IntVar()
-        Checkbutton(tab3, text="Log x axis", variable=log_x).grid(column = 0, row = 9, sticky = W)
+        Checkbutton(plot_option_frame, text="Log x axis", variable=log_x).grid(column = 0, row = 9, sticky = W)
         log_y = IntVar()
-        Checkbutton(tab3, text="Log y axis", variable=log_y, width = 13).grid(column = 1, row = 9, sticky = E)
+        Checkbutton(plot_option_frame, text="Log y axis", variable=log_y, width = 13).grid(column = 1, row = 9, sticky = E)
 
         # transpose
         transpose_vis = IntVar()
-        trans_but_vis = Checkbutton(tab3, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width = 13)
+        trans_but_vis = Checkbutton(plot_option_frame, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width = 13)
         trans_but_vis.grid(column = 1, row = 10, sticky = E)
 
         cumul = IntVar()
-        cumulbutton = Checkbutton(tab3, text="Cumulative", variable=cumul, onvalue = True, offvalue = False)
+        cumulbutton = Checkbutton(plot_option_frame, text="Cumulative", variable=cumul, onvalue = True, offvalue = False)
         cumulbutton.grid(column = 0, row = 10, sticky = W)
 
         bw = IntVar()
-        Checkbutton(tab3, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 11, sticky = W)
+        Checkbutton(plot_option_frame, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column = 0, row = 11, sticky = W)
         texuse = IntVar()
-        tbut = Checkbutton(tab3, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 13)
+        tbut = Checkbutton(plot_option_frame, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 13)
         tbut.grid(column = 1, row = 11, sticky = E)
         if not py_script:
             tbut.config(state = DISABLED)
 
         rl = IntVar()
-        Checkbutton(tab3, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column = 0, row = 12, sticky = W)
+        Checkbutton(plot_option_frame, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column = 0, row = 12, sticky = W)
         sbplt = IntVar()
-        Checkbutton(tab3, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13).grid(column = 1, row = 12, sticky = E)
+        Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13).grid(column = 1, row = 12, sticky = E)
+
+        gridv = IntVar()
+        gridbut = Checkbutton(plot_option_frame, text="Grid", variable=gridv, onvalue = True, offvalue = False)
+        gridbut.select()
+        gridbut.grid(column = 0, row = 13, sticky = W)
+
+        stackd = IntVar()
+        stackbut = Checkbutton(plot_option_frame, text="Stacked", variable=stackd, onvalue = True, offvalue = False, width = 13)
+        stackbut.grid(column = 1, row = 13, sticky = E)
+        stackbut.config(state = DISABLED)
 
         # chart type
-        Label(tab3, text='Colour scheme:').grid(row = 13, column = 0, sticky = W)
+        Label(plot_option_frame, text='Colour scheme:').grid(row = 14, column = 0, sticky = W)
         chart_cols = StringVar(root)
         chart_cols.set('Paired')
         schemes = tuple(sorted(('Paired', 'Spectral', 'summer', 'Set1', 'Set2', 'Set3', 
@@ -2721,51 +2762,51 @@ def corpkit_gui():
                     'BrBG', 'Reds', 'RdGy', 'PuRd', 'Blues', 'autumn', 'ocean', 'pink', 'binary', 
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
                     'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot')))
-        ch_col = OptionMenu(tab3, chart_cols, *schemes)
-        ch_col.grid(row = 13, column = 1, sticky = E)
+        ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
+        ch_col.grid(row = 14, column = 1, sticky = E)
 
         # style
-        stys = tuple(('ggplot', 'fivethirtyeight', 'bmh'))
+        stys = tuple(('ggplot', 'fivethirtyeight', 'bmh', 'matplotlib', 'mpl-white'))
         plot_style = StringVar(root)
         plot_style.set('ggplot')
-        Label(tab3, text = 'Plot style:').grid(row = 14, column = 0, sticky = W)
-        pick_a_style = OptionMenu(tab3, plot_style, *stys)
-        pick_a_style.grid(row = 14, column = 1, sticky=E)
+        Label(plot_option_frame, text = 'Plot style:').grid(row = 15, column = 0, sticky = W)
+        pick_a_style = OptionMenu(plot_option_frame, plot_style, *stys)
+        pick_a_style.grid(row = 15, column = 1, sticky=E)
 
         # legend pos
-        Label(tab3, text='Legend position:').grid(row = 15, column = 0, sticky = W)
+        Label(plot_option_frame, text='Legend position:').grid(row = 16, column = 0, sticky = W)
         legloc = StringVar(root)
         legloc.set('best')
         locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
-        loc_options = OptionMenu(tab3, legloc, *locs)
-        loc_options.grid(row = 15, column = 1, sticky = E)
+        loc_options = OptionMenu(plot_option_frame, legloc, *locs)
+        loc_options.grid(row = 16, column = 1, sticky = E)
 
         # figure size
-        Label(tab3, text='Figure size:').grid(row = 16, column = 0, sticky = W)
+        Label(plot_option_frame, text='Figure size:').grid(row = 17, column = 0, sticky = W)
         figsiz1 = StringVar(root)
         figsiz1.set('12')
         figsizes = tuple(('2', '4', '6', '8', '10', '12', '14', '16', '18'))
-        fig1 = OptionMenu(tab3, figsiz1, *figsizes)
+        fig1 = OptionMenu(plot_option_frame, figsiz1, *figsizes)
         fig1.configure(width = 6)
-        fig1.grid(row = 16, column = 1, sticky = W, padx = (27, 0))
-        Label(tab3, text=u"\u00D7").grid(row = 16, column = 1, padx = (30, 0))
+        fig1.grid(row = 17, column = 1, sticky = W, padx = (27, 0))
+        Label(plot_option_frame, text=u"\u00D7").grid(row = 17, column = 1, padx = (30, 0))
         figsiz2 = StringVar(root)
         figsiz2.set('6')
-        fig2 = OptionMenu(tab3, figsiz2, *figsizes)
+        fig2 = OptionMenu(plot_option_frame, figsiz2, *figsizes)
         fig2.configure(width = 6)
-        fig2.grid(row = 16, column = 1, sticky = E)
+        fig2.grid(row = 17, column = 1, sticky = E)
 
         # show_totals option
-        Label(tab3, text='Show totals: ').grid(row = 17, column = 0, sticky = W)
+        Label(plot_option_frame, text='Show totals: ').grid(row = 18, column = 0, sticky = W)
         showtot = StringVar(root)
         showtot.set('Off')
         showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
-        show_tot_menu = OptionMenu(tab3, showtot, *showtot_options)
-        show_tot_menu.grid(row = 17, column = 1, sticky = E)
+        show_tot_menu = OptionMenu(plot_option_frame, showtot, *showtot_options)
+        show_tot_menu.grid(row = 18, column = 1, sticky = E)
 
         # plot button
-        plotbut = Button(tab3, text = 'Plot')
-        plotbut.grid(row = 18, column = 1, sticky = E)
+        plotbut = Button(plot_option_frame, text = 'Plot')
+        plotbut.grid(row = 19, column = 1, sticky = E)
         plotbut.config(command = lambda: runner(plotbut, do_plotting), state = DISABLED)
 
         ###################     ###################     ###################     ###################
@@ -3712,7 +3753,7 @@ def corpkit_gui():
         # edit conc lines
         Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0), sticky = E)
         Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10, sticky = E)
-        Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11, columnspan = 2, sticky = W, padx = (15, 20))
+        Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11, columnspan = 2, sticky = W, padx = (11, 20))
 
         def toggle_filenames(*args):
             if type(current_conc[0]) == str:
@@ -5331,7 +5372,6 @@ def corpkit_gui():
             # get new version and the abs path of the download dir and the tar file
             url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-%s.tar.gz' % stver
  
-
             path_to_app_parent = sys.argv[0]
             if sys.platform == 'darwin':
                 if '.app' in path_to_app_parent:
@@ -5464,10 +5504,10 @@ def corpkit_gui():
                 import sys
                 timereg = re.compile(r'# <updated>(.*)<.updated>')
 
-                if '.py' in sys.argv[0] and sys.platform == 'darwin':
-                    oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
-                elif '.app' in sys.argv[0]:
-                    oldd = open(os.path.join(rd, 'corpkit', 'corpkit-gui.py'), 'r').read()
+                #if '.py' in sys.argv[0] and sys.platform == 'darwin':
+                    #oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
+                #elif '.app' in sys.argv[0]:
+                oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
 
                 dateline = next(l for l in oldd.split('\n') if l.startswith('# <updated>'))
                 dat = re.search(timereg, dateline).group(1)
@@ -5710,7 +5750,9 @@ def corpkit_gui():
         load_tool_prefs()
 
         helpmenu = Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="Help", command=query_help)
+        helpmenu.add_command(label="Help", command=lambda: show_help('h'))
+        helpmenu.add_command(label="Query writing", command=lambda: show_help('q'))
+        helpmenu.add_command(label="Troubleshooting", command=lambda: show_help('t'))
         helpmenu.add_command(label="Save log", command=show_log)
         helpmenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
         helpmenu.add_separator()
