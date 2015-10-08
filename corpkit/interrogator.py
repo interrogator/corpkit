@@ -1914,6 +1914,10 @@ if __name__ == '__main__':
                 just_speakers = False,
                 **kwargs)
 
+    # the below is designed as a shell interface to corpkit. it's pretty much obselete now,
+    # now that there is a gui, and many features probably don't work properly any more :(
+        
+
     #import argparse
 #
     #epi = "Example usage:\n\npython interrogator.py 'path/to/corpus' 'words' '/NN.?/ >># (NP << /\brisk/)' np_heads --lemmatise --spelling 'UK'" \
