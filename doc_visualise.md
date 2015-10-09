@@ -56,7 +56,7 @@ Render the figure in black and white. For line charts, try to create unique-look
 
 {{note}}You could also use a greyscale colour scheme with a line plot, in order to produce a black and white figure without the complex line types{{end}}
 
-## TeX 
+### TeX 
 
 Checking the `Use TeX` option will mean that the plotter will try to use `LaTeX` to typeset the text in the chart. If you have a TeX distribution, but this option isn't working for you, you may need to use the command-line version of `corpkit`.
 

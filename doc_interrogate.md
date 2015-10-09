@@ -94,7 +94,7 @@ Which would return:
 | Count matches       | 1 (added to total)       |
 | Get part-of-speech tag       |  JJ      |
 
-### Ngramming via trees
+#### Ngramming via trees
 
 You can also use trees to get n-grams or clusters. If you choose the search type `Get ngrams from trees`, the default query becomes 'any', which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
 
@@ -220,7 +220,7 @@ This can be powerful when used in conjunction with Tregex or dependency queries.
 
 These wordlists can be used in various places in *corpkit*. If you want to remove closed class words from your n-gram search, you can enter `LIST:CLOSEDCLASS` in the `Blacklist` field. 
 
-#### Creating and modifying wordlists
+### Creating and modifying wordlists
 
 If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists. To make a new list, simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in a query with the  `LIST:NAME` syntax.
 
