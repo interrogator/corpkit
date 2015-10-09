@@ -4716,7 +4716,7 @@ def corpkit_gui():
                 for datum in list_of_entries:
                     manage_listbox.insert(END, datum)
                 color_saved(manage_listbox, the_path, '#ccebc5', '#fbb4ae', ext = the_ext)
-                timestring('Managing %s' % os.path.basename(project_fullpath.get()))
+                #timestring('Managing %s' % os.path.basename(project_fullpath.get()))
 
             manage_type.trace("w", manage_callback)
 
@@ -4981,11 +4981,11 @@ def corpkit_gui():
         #speakcheck_build.grid(column = 0, row = 5, sticky=W)
         
         parsebut = Button(tab0, textvariable = parse_button_text, width = 33, state = DISABLED)
-        parsebut.grid(row = 6, column = 0, sticky=W)
+        parsebut.grid(row = 5, column = 0, sticky=W)
         parsebut.config(command=lambda: runner(parsebut, create_parsed_corpus))
         #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
         tokbut = Button(tab0, textvariable = tokenise_button_text, width = 33, state = DISABLED)
-        tokbut.grid(row = 7, column = 0, sticky=W)
+        tokbut.grid(row = 6, column = 0, sticky=W)
         tokbut.config(command=lambda: runner(tokbut, create_tokenised_text))
 
         def onselect_subc_build(evt = False):
@@ -5028,10 +5028,10 @@ def corpkit_gui():
                 f_in_s.set('Files in corpus: %s' % os.path.basename(path_to_new_unparsed_corpus.get()))
 
         # a listbox of subcorpora
-        Label(tab0, text = 'Subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 8, column = 0, sticky=W)
+        Label(tab0, text = 'Subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 7, column = 0, sticky=W)
 
         build_sub_f = Frame(tab0, width = 34, height = 24)
-        build_sub_f.grid(row = 9, column = 0, sticky = W, rowspan = 2)
+        build_sub_f.grid(row = 8, column = 0, sticky = W, rowspan = 2)
         build_sub_sb = Scrollbar(build_sub_f)
         build_sub_sb.pack(side=RIGHT, fill=Y)
         subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height = 24, state = DISABLED, relief = SUNKEN, bg = '#F4F4F4',
@@ -5647,7 +5647,8 @@ def corpkit_gui():
             root.attributes('-topmost', False)
 
         root.after(1000, unmax)
-        root.after(100000, start_update_check)
+        if not '.py' in sys.argv[0]:
+            root.after(100000, start_update_check)
 
         def set_corenlp_path():
             fp = tkFileDialog.askdirectory(title = 'CoreNLP path',
@@ -5827,7 +5828,10 @@ def corpkit_gui():
             ver = corpkit.__version__
             corpath = os.path.dirname(corpkit.__file__)
             if not corpath.startswith('/Library/Python') and not 'corpkit/corpkit/corpkit' in corpath:
-                subprocess.call('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "corpkit-%s" to true' ''' % ver, shell = True)
+                try:
+                    subprocess.call('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "corpkit-%s" to true' ''' % ver, shell = True)
+                except:
+                    pass
         
         root.config(menu=menubar)
         note.focus_on(tab1)
