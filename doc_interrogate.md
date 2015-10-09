@@ -12,6 +12,8 @@ last_updated: 2015-09-01
 
 If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the menu.
 
+Your choice will constrain the kinds of data that you can search.
+
 ## Selecting a kind of data
 
 *corpkit* can presently work with four kinds of data:
@@ -23,37 +25,37 @@ If you were working in the `Build` tab, *corpkit* will try to guess the corpus y
 
 The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. The fourth is your corpus as a list of tokens, which can be created via the `Build` tab.
 
-When you select a kind of data, the kinds of search that are available to you change, as do the kinds of queries that can be understood. These will be explained in the next secitons.
+When you select a kind of data, the kinds of search that are available to you change, as do the kinds of queries that can be understood. These will be explained in the next sections.
 
 ### Trees
 
-If you want to search for information in `trees`, you need to write a Tregex query. Tregex is a language for searching syntax trees like this one:
+If you want to search for information in `trees`, you'll need to write a *Tregex query*. Tregex is a language for searching syntax trees like this one:
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png"  height="400" width="400"/>
 </p>
 
-To write a Tregex query, you specify **words and/or tags** you want to match, in combination with **operators** that link them together.
+To write a Tregex query, you specify **words and/or tags** you want to match, in combination with **operators** that link them together. First, let's understand the Tregex syntax.
 
 To match any adjective, you can simply write:
 
 > `JJ`
 
-If you want to get NPs containing adjectives, you might use:
+with `JJ` representing adjective as per the [Penn Treebank tagset](https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html). If you want to get NPs containing adjectives, you might use:
 
 > `NP < JJ`
  
-Where `<` means `with a child/immediately below`. These operators can be reversed: If we wanted to show the adjectives within these NPs only, we could use:
+where `<` means `with a child/immediately below`. These operators can be reversed: If we wanted to show the adjectives within NPs only, we could use:
 
 > `JJ > NP`
 
-It's good to remember that the output will always be the left-most part of your query.
+It's good to remember that **the output will always be the left-most part of your query**.
 
 If you only want to match Subject NPs, you can use bracketting, and the `$` operator, which means `sister/directly to the left/right of`:
 
 > `JJ > (NP $ VP)`
 
-In this way, you build more complex queries. The query below finds adjectives modifying `book`:
+In this way, you build more complex queries, which can extent all the way from a sentence's *root* to particular tokens. The query below, for example, finds adjectives modifying `book`:
 
 > `JJ > (NP <<# /book/)`
 
@@ -71,7 +73,32 @@ Though it is unfortunately beyond the scope of this guide to teach Regular Expre
 
 Detailed documentation for Tregex usage (with more complex queries and operators) can be found [here](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html). If you want to learn Regular Expressions, there are hundreds of free resources online, including [Regular Expression Crosswords](http://regexcrossword.com/)!
 
-If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the `Build` tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.
+{{tip}}If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the <code>Build</code> tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.{{end}}
+
+#### Search types
+
+Though you can use the same Tregex query for most Tree search types, you'll get different output for each. For the sentence:
+
+> `These are prosperous times.`
+
+you could write a query:
+
+> "`JJ < __`"
+
+Which would return:
+
+| Search type       | Output      |
+|--------|--------|
+| Get words       | prosperous       |
+| Get tag and word of match       | (JJ prosperous)       |
+| Count matches       | 1 (added to total)       |
+| Get part-of-speech tag       |  JJ      |
+
+### Ngramming via trees
+
+You can also use trees to get n-grams or clusters. If you choose the search type `Get ngrams from trees`, the default query becomes 'any', which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
+
+When n-gramming, two extra options are enabled. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
 
 #### Tree searching options
  
@@ -90,6 +117,16 @@ In dependency grammar, words in sentences are connected in a series of governor-
 </p>
 
 The best source of information and dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
+
+#### Dependency queries
+
+When writing queries for dependencies, you can either use Regular Expressions or a list of words. To write a list, use square brackets and commas:
+
+> `[cat,dog,fish]`
+
+Using regular expressions, you could do something more complex, like get both the singular and plural forms:
+
+> `(cats?|dogs?|fish)`
 
 #### Dependency grammars
 
@@ -119,7 +156,6 @@ Below is a basic explanation of what each kind of query matches, and what it out
 | Get "role:dependent", matching governor  |  Governor  | role:dependent      |
 | Get "role:governor", matching dependent  |  Dependent | role:governor       |
 
-
 #### Dependency options
 
 Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
@@ -148,59 +184,45 @@ So, to give some examples of output based on the sentence above:
 
 ### Plain text
 
-Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. When writing simple queries, you can search for a list of words by entering:
+Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. Lists can be used as queries in either mode.
 
 > `[cat,dog,fish]`
 
-Using regular expressions, you could do something more complex, like get both the singular and plural forms:
-
-> `(cats?|dogs?|fish)`
-
-This kind of search has drawbacks, though. Lemmatisation, for example, will not work very well, because *corpkit* won't know the word classes of the words you're finding.
+Plain text searching is language independent, but otherwise not very powerful. Lemmatisation, for example, will not work very well, because *corpkit* won't know the word classes of the words you're finding.
 
 ### Tokens
 
-As with plain text, you can use either a list of a regular expression to match tokens.
+As with plain text, you can use either a list or a regular expression to match tokens.
 
-An additional option, however, is to *Get n-grams*. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted.
-
-Two extra options appear when ngramming is selected. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
+An additional option, however, is to *Get n-grams*. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted. The behaviour is the same as when getting n-grams via trees.
 
 {{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, though they in general allow less sophisticated interrogation, and are not a high priorty. {{end}}
 
-### Plaintext
+## Preset queries
 
-You can also search the plain text version of the corpus using simple or regular expression based searches.
-
-## Special queries
-
-*corpkit* also has some pre-programmed queries and query parts, based mostly around concepts from systemic-functional grammar. 
-
-### Preset queries
-
-`'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar.
+Below the query box, there is a dropdown list of preset queries. `'Any'` will match any word, tag or function, depending on the search type. `Participants` and `Processes` approximate notions from systemic functional grammar.
 
 {{tip}} One of the first things you might like to do with your data is calculate the total number of tokens in each subcorpus. The easiest way to do this is to use the <code>Count tokens</code> option in the <code>Trees</code> search type, and to select <code>Any</code> as the preset query. You can then use this data, in combination with a different interrogation, to calculate the relative frequencies of specific words in the corpus. See <a href="doc_edit.html"><i>Edit</i></a> for more details.{{end}}
 
-`Stats` will get the absolute frequencies for different moods and process types. It involves many sub-interrogations (for different process types and grammatical moods, mostly), and may take a long time.
+`Stats` will get the absolute frequencies for general features (number of sentences, clauses, tokens) different moods (imperatives, declaratives, interrogatives) and process types (verbal, relational, mental). It involves many sub-interrogations, and may take a long time.
 
-### Wordlists
+## Wordlists
 
-*corpkit* also ships with a number of different lists of words or dependency roles that can be added into queries. The query below will match any of the closed class words in the `CLOSEDCLASS` list:
+*corpkit* also ships with a number of different lists of words or dependency roles that can be added into queries. The query below will match any of the closed class words in a predefined list of closed-class words, called `CLOSEDCLASS`:
 
 > `LIST:CLOSEDCLASS`
-
- You can, for example, enter:
 
 This can be powerful when used in conjunction with Tregex or dependency queries. The query below will get any predicator matching a list of mental processes:
 
 > `VP <<# /LIST:MENTAL/ $ NP`
 
-If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists, including those outlined in the previous section. Simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in a query with the  `LIST:NAME` syntax.
-
 {{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /LIST:MENTAL/"</code> will work, but <code>"/VB.?/ < LIST:MENTAL"</code> will not. {{end}}
 
-### Creating and modifying wordlists
+These wordlists can be used in various places in *corpkit*. If you want to remove closed class words from your n-gram search, you can enter `LIST:CLOSEDCLASS` in the `Blacklist` field. 
+
+#### Creating and modifying wordlists
+
+If you select `Schemes` &rarr; `Wordlists` from the menu bar, you can define your own wordlists, or edit existing lists. To make a new list, simply enter words of interest (or paste them in from another file, one per line), give the list a name, and hit `Store`. You can then use this wordlist in a query with the  `LIST:NAME` syntax.
 
 You can easily select a predefined list, modify and rename it, and access it via `LIST:NAME`. The `Get inflections` buttons will help you make queries that match all possible forms of the lemmata of interest. You can highlight particular words to get inflections for, or leave the text box unselected in order to inflect every word.
 
