@@ -106,7 +106,7 @@ The visualised output:
 
 ## Combining results
 
-You can use the `combine` operation to add two results together. By default, this happens on the y axis. If you have multiple columns with the same names, results may be merged. If you want to merge on the x-axis, use the `Transpose` option for each dataset, and then `combine`.
+You can use the `combine` operation to add two results together. By default, this happens on the y axis. If you have multiple columns with the same names, these will be aggregated.
 
 ## Sorting
 
