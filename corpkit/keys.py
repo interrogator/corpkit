@@ -1,3 +1,8 @@
+# this file contains methods for keywording and ngramming.
+
+# it works, but would like a bit of refactoring. the joint use of
+# the keywords_and_ngrams() function is not needed anymore.
+
 def keywords(data, 
              reference_corpus = 'bnc.p', 
              clear = True, 

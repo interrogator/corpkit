@@ -168,6 +168,9 @@ def interrogator(path,
     if 'nltk_data_path' in kwargs.keys():
         if kwargs['nltk_data_path'] not in nltk.data.path:
             nltk.data.path.append(kwargs['nltk_data_path'])
+    locdir = '/Users/daniel/work/corpkit/nltk_data'
+    if locdir not in nltk.data.path:
+        nltk.data.path.append(locdir)
 
     try:
         from IPython.display import display, clear_output

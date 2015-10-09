@@ -340,7 +340,7 @@ def corpkit_gui():
         tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
         tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
         tab4 = note.add_tab(text = "Concordance")                                                 #Create a tab with the text "Tab Four"
-        tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
+        #tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
         note.text.update_idletasks()
 
         ###################     ###################     ###################     ###################
@@ -402,10 +402,7 @@ def corpkit_gui():
         import itertools
         toggle = itertools.cycle([True, False]).next
 
-        # manage pane
-        sel_vals_interro = []
-        sel_vals_conc = []
-        sel_vals_images = []
+        # manage pane: obsolete
         manage_box = {}
 
         # custom lists
@@ -530,11 +527,15 @@ def corpkit_gui():
         def refresh_images(*args):
             """get list of images saved in images folder"""
             import os
-            image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
-            for iname in image_list:
-                if iname not in all_images:
-                    all_images.append(iname.replace('.png', ''))
-            refresh()
+            if os.path.isdir(image_fullpath.get()):
+                image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
+                for iname in image_list:
+                    if iname.replace('.png', '') not in all_images:
+                        all_images.append(iname.replace('.png', ''))
+            else:
+                for i in all_images:
+                    all_images.pop(i)
+            #refresh()
 
         # if the dummy variable imagewatched is changed, refresh images
         # this connects to matplotlib's save button, if the modified
@@ -870,7 +871,7 @@ def corpkit_gui():
             except:
                 args[0].widget.tag_add("sel","1.0","end")
 
-        def update_available_corpora():
+        def update_available_corpora(delete = False):
             """updates corpora in project, and returns a list of them"""
             import os
             fp = corpora_fullpath.get()
@@ -878,8 +879,10 @@ def corpkit_gui():
             for om in [available_corpora, available_corpora_build]:
                 om.config(state = NORMAL)
                 om['menu'].delete(0, 'end')
-                for corp in all_corpora:
-                    om['menu'].add_command(label=corp, command=Tkinter._setit(current_corpus, corp))
+                if not delete:
+                    for corp in all_corpora:
+                        om['menu'].add_command(label=corp, command=Tkinter._setit(current_corpus, corp))
+
             return all_corpora
 
         def refresh():
@@ -900,8 +903,8 @@ def corpkit_gui():
                 plotbut.config(state = DISABLED)
 
             every_interrogation['menu'].delete(0, 'end')
-            every_interro_listbox.delete(0, 'end')
-            every_image_listbox.delete(0, 'end')
+            #every_interro_listbox.delete(0, 'end')
+            #every_image_listbox.delete(0, 'end')
             new_choices = []
             for interro in all_interrogations.keys():
                 new_choices.append(interro)
@@ -917,37 +920,8 @@ def corpkit_gui():
                 dataframe1s['menu'].add_command(label=choice, command=Tkinter._setit(selected_to_edit, choice))
                 dataframe2s['menu'].add_command(label=choice, command=Tkinter._setit(data2_pick, choice))
                 every_interrogation['menu'].add_command(label=choice, command=Tkinter._setit(data_to_plot, choice))
-                #every_interro_listbox.delete(0, END)
-                if choice != 'None':
-                    every_interro_listbox.insert(END, choice)
 
-            # CLEAN THIS UP! duplicating below
-            new_clines = []
-            ev_conc_listbox.delete(0, 'end')
-            prev_conc_listbox.delete(0, 'end')
-            for cline in all_conc.keys():
-                new_clines.append(cline)
-            new_clines = tuple(new_clines)
-            for choice in new_clines:
-                #every_interro_listbox.delete(0, END)
-                if choice != 'None':
-                    ev_conc_listbox.insert(END, choice)
-                    prev_conc_listbox.insert(END, choice)
-
-            new_images = []
-            every_image_listbox.delete(0, 'end')
-            for cline in all_images:
-                new_images.append(cline.replace('.png', ''))
-            new_images = tuple(new_images)
-            for choice in new_images:
-                #every_interro_listbox.delete(0, END)
-                if choice != 'None':
-                    every_image_listbox.insert(END, choice)
-
-            color_saved(every_interro_listbox, savedinterro_fullpath.get(), '#ccebc5', '#fbb4ae')
-            color_saved(ev_conc_listbox, conc_fullpath.get(), '#ccebc5', '#fbb4ae')
-            # all are saved inherently!
-            color_saved(every_image_listbox, image_fullpath.get(), '#ccebc5', '#fbb4ae', ext = '.png')
+            refresh_images()
 
         def add_tkt_index(df):
             """add order to df for tkintertable"""
@@ -1436,18 +1410,26 @@ def corpkit_gui():
             #add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
             # why is it setting itself?
             #current_corpus.set(os.path.basename(fp))
-            if not corpus_name.endswith('-parsed'):
+            if not corpus_name.endswith('-parsed') and not corpus_name.endswith('-tokenised'):
                 parsebut.config(state = NORMAL)
-                speakcheck_build.config(state = NORMAL)
+                tokbut.config(state = NORMAL)
                 parse_button_text.set('Parse: %s' % os.path.basename(fp))
+                tokenise_button_text.set('Tokenise: %s' % corpus_name)
+            else:
+                parsebut.config(state = DISABLED)
+                tokbut.config(state = DISABLED)
 
+            if not corpus_name.endswith('-parsed'):
+                #parsebut.config(state = NORMAL)
+                #speakcheck_build.config(state = NORMAL)
+                pass
             else:
                 pick_a_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(datatype_picked, 'Trees'))
                 pick_a_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(datatype_picked, 'Dependencies'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(corpus_search_type, 'Dependencies'))
-                parsebut.config(state = DISABLED)
-                speakcheck_build.config(state = DISABLED)
+                #parsebut.config(state = DISABLED)
+                #speakcheck_build.config(state = DISABLED)
                 datatype_picked.set('Dependencies')
                 corpus_search_type.set('Dependencies')
             if not corpus_name.endswith('-tokenised'):
@@ -1456,13 +1438,12 @@ def corpkit_gui():
                     pick_a_conc_datatype['menu'].add_command(label = 'Plaintext', command=Tkinter._setit(datatype_picked, 'Plaintext'))
                     datatype_picked.set('Plaintext')
                     corpus_search_type.set('Plaintext')
-                    tokbut.config(state = NORMAL)
-                    tokenise_button_text.set('Tokenise: %s' % corpus_name)
+                    
             else:
                 pick_a_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
                 corpus_search_type.set('Tokens')
-                tokbut.config(state = DISABLED)
+                #tokbut.config(state = DISABLED)
                 datatype_picked.set('Tokens')
             
             add_subcorpora_to_build_box(fp)
@@ -1486,9 +1467,9 @@ def corpkit_gui():
         current_corpus = StringVar()
         current_corpus.set('Select corpus')
         available_corpora = OptionMenu(interro_opt, current_corpus, *tuple(('Select corpus')))
-        available_corpora.config(width = 30, justify = CENTER, state = DISABLED)
+        available_corpora.config(width = 30, state = DISABLED, justify = CENTER)
         current_corpus.trace("w", corpus_callback)
-        available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = E)
+        available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = W, padx = (136,0))
 
         # for build tab
         #Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
@@ -1601,7 +1582,7 @@ def corpkit_gui():
 
         Label(interro_opt, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW', pady = (5,0))
         entrytext.set(r'JJ > (NP <<# /NN.?/)')
-        qa = Text(interro_opt, width = 41, height = 4, borderwidth = 0.5, 
+        qa = Text(interro_opt, width = 36, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD)
         qa.grid(row = 4, column = 0, columnspan = 2, sticky = E, pady = (5,0))
         all_text_widgets.append(qa)
@@ -1687,7 +1668,7 @@ def corpkit_gui():
         Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
         ngmsize.configure(width = 10)
-        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (85, 0))
+        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (70, 0))
         ngmsize.config(state=DISABLED)
         global split_contract
         Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 90)) 
@@ -1734,16 +1715,16 @@ def corpkit_gui():
         Label(interro_opt, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
-        pick_a_datatype.grid(row = 1, column = 1, columnspan = 1, sticky = E)
+        pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
 
         Label(interro_opt, text = 'Search\ntype:').grid(row = 3, column = 0, sticky = 'NW')
         frm = Frame(interro_opt)
-        frm.grid(row = 3, column = 0, columnspan = 2, sticky = E)
+        frm.grid(row = 3, column = 0, columnspan = 2, sticky = E, padx = (4,0))
         dtscrollbar = Scrollbar(frm)
         dtscrollbar.pack(side=RIGHT, fill=Y)
 
-        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 45, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 40, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                             yscrollcommand=dtscrollbar.set, exportselection = False)
         datatype_listbox.pack()
         dtscrollbar.config(command=datatype_listbox.yview)
@@ -3325,6 +3306,7 @@ def corpkit_gui():
 
 
         parser_opts = StringVar()
+        speakseg = IntVar()
 
         def parser_options():
             """a popup with corenlp options, to display before parsing.
@@ -3366,6 +3348,8 @@ def corpkit_gui():
                     but.deselect()
                 butbut[index] = but
                 butvar[index] = tmp
+            
+            Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue = True, offvalue = False).grid(sticky = W)
 
             def optionspicked(*args):
                 vals = [i.get() for i in butvar.values() if i.get() is not False and i.get() != 0 and i.get() != '0']
@@ -3986,10 +3970,11 @@ def corpkit_gui():
             #load_project(path = os.path.join(fp, name))
             timestring('Project "%s" created.' % name)
             note.focus_on(tab0)
+            #current_corpus.set('Select corpus')
+            update_available_corpora()
 
-        def get_saved_results(kind = 'interrogation'):
+        def get_saved_results(kind = 'interrogation', add_to = False):
             from corpkit import load_all_results
-            
             if kind == 'interrogation':
                 datad = savedinterro_fullpath.get()
             elif kind == 'concordance':
@@ -4001,7 +3986,7 @@ def corpkit_gui():
             if kind == 'image':
                 image_list = sorted([f for f in os.listdir(image_fullpath.get()) if f.endswith('.png')])
                 for iname in image_list:
-                    if iname not in all_images:
+                    if iname.replace('.png', '') not in all_images:
                         all_images.append(iname.replace('.png', ''))
             else:
                 if kind == 'interrogation':
@@ -4014,6 +3999,7 @@ def corpkit_gui():
                             all_interrogations[name] = loaded
                         else:
                             all_conc[name] = loaded
+
             refresh()
         
         def recentchange(*args):
@@ -4024,11 +4010,12 @@ def corpkit_gui():
 
         def projchange(*args):
             """if user changes projects, add to recent list and save prefs"""
-            if project_fullpath.get() != '' and project_fullpath.get() not in most_recent_projects \
-                                            and 'Contents/MacOS' not in project_fullpath.get():
+            if project_fullpath.get() != '' and 'Contents/MacOS' not in project_fullpath.get():
                 in_a_project.set(1)
-                most_recent_projects.append(project_fullpath.get())
+                if project_fullpath.get() not in most_recent_projects:
+                    most_recent_projects.append(project_fullpath.get())
                 save_tool_prefs(printout = False)
+                #update_available_corpora()
             else:
                 in_a_project.set(0)
 
@@ -4091,10 +4078,7 @@ def corpkit_gui():
             timestring('Set image directory: %s' % os.path.basename(fp))
 
         def save_one_or_more(kind = 'interrogation'):
-            if kind == 'interrogation':
-                sel_vals = sel_vals_interro
-            else:
-                sel_vals = sel_vals_conc
+            sel_vals = manage_listbox_vals
             if len(sel_vals) == 0:
                 timestring('Nothing selected to save.')
                 return
@@ -4123,12 +4107,11 @@ def corpkit_gui():
                 else:
                     timestring('%d %ss saved, %d already existed' % (saved, kind, existing))
             refresh()
+            manage_callback()
+
 
         def remove_one_or_more(window = False, kind = 'interrogation'):
-            if kind == 'interrogation':
-                sel_vals = sel_vals_interro
-            else:
-                sel_vals = sel_vals_conc
+            sel_vals = manage_listbox_vals
             if window is not False:
                 toget = prev_conc_listbox.curselection()
                 sel_vals = [prev_conc_listbox.get(toget)]
@@ -4147,19 +4130,20 @@ def corpkit_gui():
                 timestring('%s removed.' % sel_vals[0])
             else:
                 timestring('%d interrogations removed.' % len(sel_vals))
+            if kind == 'image':
+                refresh_images()
             refresh()
+            manage_callback()
 
         def del_one_or_more(kind = 'interrogation'):
+            sel_vals = manage_listbox_vals
             ext = '.p'
             if kind == 'interrogation':
-                sel_vals = sel_vals_interro
                 p = savedinterro_fullpath.get()
             elif kind == 'image':
-                sel_vals = sel_vals_images
                 p = image_fullpath.get()
                 ext = '.png'
             else:
-                sel_vals = sel_vals_conc
                 p = conc_fullpath.get()
             if len(sel_vals) == 0:
                 timestring('No interrogations selected.')
@@ -4182,6 +4166,7 @@ def corpkit_gui():
             else:
                 timestring('%d %ss deleted.' % (kind, len(sel_vals)))
             refresh()
+            manage_callback()
 
         def urlify(s):
             "Turn title into filename"
@@ -4194,15 +4179,13 @@ def corpkit_gui():
 
         def rename_one_or_more(kind = 'interrogation'):
             ext = '.p'
+            sel_vals = manage_listbox_vals
             if kind == 'interrogation':
-                sel_vals = sel_vals_interro
                 p = savedinterro_fullpath.get()
             elif kind == 'image':
-                sel_vals = sel_vals_images
                 p = image_fullpath.get()
                 ext = '.png'
             else:
-                sel_vals = sel_vals_conc
                 p = conc_fullpath.get()
             if len(sel_vals) == 0:
                 timestring('No items selected.')
@@ -4243,20 +4226,19 @@ def corpkit_gui():
                     if name_of_n_ed_spread.get() == i:
                         name_of_n_ed_spread.set(answer)
                         #update_spreadsheet(n_editor_results, all_interrogations[answer].results)
+            
+            if kind == 'image':
+                refresh_images()
 
             if len(sel_vals) == 1:
                 timestring('%s %srenamed as %s.' % (sel_vals[0], perm_text, answer))
             else:
                 timestring('%d items %srenamed.' % (len(sel_vals), perm_text))
             refresh()
+            manage_callback()
 
         def export_interrogation(kind = 'interrogation'):
-            if kind == 'interrogation':
-                sel_vals = sel_vals_interro
-            elif kind == 'concordance':
-                sel_vals = sel_vals_conc
-            else:
-                sel_vals = sel_vals_images
+            sel_vals = manage_listbox_vals
             """save dataframes and options to file"""
             import os
             import pandas
@@ -4306,6 +4288,7 @@ def corpkit_gui():
             savedplot.set('Saved images: ')
             open_proj_basepath.set('Open project')
             corpus_fullpath.set('')
+            current_corpus.set('')
             corpora_fullpath.set('')
             project_fullpath.set(rd)
 
@@ -4325,12 +4308,12 @@ def corpkit_gui():
             # concordance
             conclistbox.delete(0, END)
             # every interrogation
-            every_interro_listbox.delete(0, END)
+            #every_interro_listbox.delete(0, END)
             # every conc
-            ev_conc_listbox.delete(0, END)
+            #ev_conc_listbox.delete(0, END)
             prev_conc_listbox.delete(0, END)
             # images
-            every_image_listbox.delete(0, END)
+            #every_image_listbox.delete(0, END)
             every_interrogation['menu'].delete(0, 'end')
             pick_subcorpora['menu'].delete(0, 'end')
             # speaker listboxes
@@ -4341,6 +4324,7 @@ def corpkit_gui():
                 del all_conc[e]
             for e in all_images:
                 all_images.remove(e)
+            #update_available_corpora(delete = True)
             refresh()
 
         def convert_speakdict_to_string(dictionary):
@@ -4453,7 +4437,7 @@ def corpkit_gui():
             list_of_corpora = update_available_corpora()
             addbut.config(state=NORMAL)
             
-            get_saved_results()
+            get_saved_results(kind = 'interrogation')
             get_saved_results(kind = 'concordance')
             get_saved_results(kind = 'image')
             open_proj_basepath.set('Loaded: "%s"' % os.path.basename(fp))
@@ -4516,24 +4500,28 @@ def corpkit_gui():
 
             load_custom_list_json()
 
-        def view_query():
-            if len(sel_vals_interro) == 0:
+        def view_query(kind = False):
+            if len(manage_listbox_vals) == 0:
                 return
-            if len(sel_vals_interro) > 1:
+            if len(manage_listbox_vals) > 1:
                 timestring('Can only view one interrogation at a time.')
                 return
 
-            Label(tab5, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 4, padx = (65, 0))
-            mlb = Table(tab5, ['Option', 'Value'],
+            global frame_to_the_right
+            frame_to_the_right = Frame(manage_pop)
+            frame_to_the_right.grid(column = 2, row = 0, rowspan = 6)
+
+            Label(frame_to_the_right, text = 'Query information', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 0, padx = (10,0))
+            mlb = Table(frame_to_the_right, ['Option', 'Value'],
                       column_weights=[1, 1], height = 70, width = 30)
-            mlb.grid(sticky = N, column = 4, row = 1, rowspan = 40, padx = (50, 0))
+            mlb.grid(sticky = N, column = 0, row = 1)
             for i in mlb._mlb.listboxes:
                 i.config(height = 29)
 
             mlb.columnconfig('Option', background='#afa')
             mlb.columnconfig('Value', background='#efe')
 
-            q_dict = dict(all_interrogations[sel_vals_interro[0]].query)
+            q_dict = dict(all_interrogations[manage_listbox_vals[0]].query)
             mlb.clear()
             #show_query_vals.delete(0, 'end')
             flipped_trans = {v: k for k, v in transdict.items()}
@@ -4576,8 +4564,8 @@ def corpkit_gui():
                 mlb.append([k, v])
 
             if 'query' in q_dict.keys():
-                qubox = Text(tab5, font = ("Courier New", 14), relief = SUNKEN, wrap = WORD, width = 40, height = 5, undo = True)
-                qubox.grid(column = 4, row = 23, rowspan = 5, padx = (65, 0))
+                qubox = Text(frame_to_the_right, font = ("Courier New", 14), relief = SUNKEN, wrap = WORD, width = 40, height = 5, undo = True)
+                qubox.grid(column = 0, row = 2, rowspan = 1, padx = (10,0))
                 qubox.delete(1.0, END)
                 qubox.insert(END, q_dict['query'])
                 manage_box['qubox'] = qubox
@@ -4595,134 +4583,149 @@ def corpkit_gui():
                 except:
                     pass
 
-        # a list of every interrogation
-        def onselect_interro(evt):
+        manage_listbox_vals = []
+        def onselect_manage(evt):
             # remove old vals
-            for i in sel_vals_interro:
-                sel_vals_interro.pop()
+            for i in manage_listbox_vals:
+                manage_listbox_vals.pop()
             wx = evt.widget
             indices = wx.curselection()
             for index in indices:
                 value = wx.get(index)
-                if value not in sel_vals_interro:
-                    sel_vals_interro.append(value)
-
-        # a list of every concordance
-        def onselect_conc(evt):
-            # remove old vals
-            for i in sel_vals_conc:
-                sel_vals_conc.pop()
-            wx = evt.widget
-            indices = wx.curselection()
-            for index in indices:
-                value = wx.get(index)
-                if value not in sel_vals_conc:
-                    sel_vals_conc.append(value)
-
-        # a list of every image
-        def onselect_image(evt):
-            # remove old vals
-            for i in sel_vals_images:
-                sel_vals_images.pop()
-            wx = evt.widget
-            indices = wx.curselection()
-            for index in indices:
-                value = wx.get(index)
-                if value not in sel_vals_images:
-                    sel_vals_images.append(value)
-
-
-
-                    
-
-        ev_int_box = Frame(tab5, height = 30)
-        ev_int_box.grid(sticky = E, column = 1, row = 1, rowspan = 20)
-        ev_int_sb = Scrollbar(ev_int_box)
-        ev_int_sb.pack(side=RIGHT, fill=Y)
-        every_interro_listbox = Listbox(ev_int_box, selectmode = SINGLE, height = 30, width = 23, relief = SUNKEN, bg = '#F4F4F4',
-                                        yscrollcommand=ev_int_sb.set, exportselection=False)
-        every_interro_listbox.pack(fill=BOTH)
-        every_interro_listbox.select_set(0)
-        ev_int_sb.config(command=every_interro_listbox.yview)   
-        xx = every_interro_listbox.bind('<<ListboxSelect>>', onselect_interro)
-        # default: w option
-        every_interro_listbox.select_set(0)
-
-        # Set interrogation option
+                if value not in manage_listbox_vals:
+                    manage_listbox_vals.append(value)
 
         new_proj_basepath = StringVar()
         new_proj_basepath.set('New project')
         open_proj_basepath = StringVar()
         open_proj_basepath.set('Open project')
 
-        Label(tab5, text = 'Saved interrogations', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 1)
-        Button(tab5, text = 'Get saved interrogations', command = lambda: get_saved_results(), width = 22).grid(row = 22, column = 1)
+        the_current_kind = StringVar()
 
-        #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
-        Button(tab5, text = 'Save', command = lambda: save_one_or_more()).grid(sticky = W, column = 1, row = 23)
-        Button(tab5, text = 'View', command = lambda: view_query()).grid(sticky = W, column = 1, row = 24)
-        Button(tab5, text = 'Rename', command = lambda: rename_one_or_more()).grid(sticky = W, column = 1, row = 25)
-        perm = IntVar()
-        #Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 16, sticky=W)
-        Button(tab5, text = 'Export', command = lambda: export_interrogation()).grid(sticky = E, column = 1, row = 23)
-        #Label(tab5, text = 'Remove selected: '()).grid(sticky = W, row = 4, column = 0)
-        Button(tab5, text = 'Remove', command= lambda: remove_one_or_more()).grid(sticky = E, column = 1, row = 24)
-        #Label(tab5, text = 'Delete selected: '()).grid(sticky = E, row = 5, column = 1)
-        Button(tab5, text = 'Delete', command = lambda: del_one_or_more()).grid(sticky = E, column = 1, row = 25)
+        def manage_popup():
+            from Tkinter import Toplevel
+            global manage_pop
+            manage_pop = Toplevel()
+            manage_pop.geometry('+400+40')
+            manage_pop.title("Manage data: %s" % os.path.basename(project_fullpath.get()))
+            manage_pop.wm_attributes('-topmost', 1)
 
-        Label(tab5, text = 'Saved concordances', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 2, padx = 50)
+            manage_what = StringVar()
+            manage_what.set('Manage: ')
+            #Label(manage_pop, textvariable = manage_what).grid(row = 0, column = 0, sticky = 'W', padx = (5, 0))
 
-        ev_conc_box = Frame(tab5, height = 30)
-        ev_conc_box.grid(sticky = E, column = 2, row = 1, rowspan = 20, padx = 50)
-        ev_conc_sb = Scrollbar(ev_conc_box)
-        ev_conc_sb.pack(side=RIGHT, fill=Y)
-        ev_conc_listbox = Listbox(ev_conc_box, selectmode = SINGLE, height = 30, width = 23, relief = SUNKEN, bg = '#F4F4F4',
-                                  yscrollcommand=ev_conc_sb.set, exportselection = False)
-        ev_conc_listbox.pack(fill=BOTH)
-        ev_conc_listbox.select_set(0)
-        ev_conc_sb.config(command=ev_conc_listbox.yview)   
-        xxa = ev_conc_listbox.bind('<<ListboxSelect>>', onselect_conc)
+            manag_frame = Frame(manage_pop, height = 30)
+            manag_frame.grid(column = 0, row = 1, rowspan = 1, columnspan = 2, sticky = 'NW', padx = 10)
+            manage_scroll = Scrollbar(manag_frame)
+            manage_scroll.pack(side=RIGHT, fill=Y)
+            manage_listbox = Listbox(manag_frame, selectmode = SINGLE, height = 30, width = 30, relief = SUNKEN, bg = '#F4F4F4',
+                                            yscrollcommand=manage_scroll.set, exportselection=False)
+            manage_listbox.pack(fill=BOTH)
+            manage_listbox.select_set(0)
+            manage_scroll.config(command=manage_listbox.yview)   
+            xx = manage_listbox.bind('<<ListboxSelect>>', onselect_manage)
+            # default: w option
+            manage_listbox.select_set(0)
+            the_current_kind.set('interrogation')
+            #gtsv = StringVar()
+            #gtsv.set('Get saved')    
+            #getbut = Button(manage_pop, textvariable = gtsv, command = lambda: get_saved_results(), width = 22)
+            #getbut.grid(row = 2, column = 0, columnspan = 2)
 
-        Button(tab5, text = 'Get saved concordances', command = lambda: get_saved_results(kind = 'concordance'), width = 22).grid(row = 22, column = 2, padx = (50, 50))
+            manage_type = StringVar()
+            manage_type.set('Interrogations')
 
-        #Label(tab5, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
-        Button(tab5, text = 'Save', command = lambda: save_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 23, padx = (50, 50) )
-        #Button(tab5, text = 'View', command = lambda: view_query(kind = 'concordance')).grid(sticky = W, column = 2, row = 23, padx = (50, 50) )
-        Button(tab5, text = 'Rename', command = lambda: rename_one_or_more(kind = 'concordance')).grid(sticky = W, column = 2, row = 25, padx = (50, 50) )
-        perm = IntVar()
-        #Checkbutton(tab5, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 2, row = 16, sticky=W)
-        Button(tab5, text = 'Export', command = lambda: export_interrogation(kind = 'concordance')).grid(sticky = E, column = 2, row = 23, padx = (50, 50) )
-        #Label(tab5, text = 'Remove selected: '(kind = 'concordance')).grid(sticky = W, row = 4, column = 0)
-        Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 24, padx = (50, 50) )
-        #Label(tab5, text = 'Delete selected: '(kind = 'concordance')).grid(sticky = E, row = 5, column = 2)
-        Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 25, padx = (50, 50) )
+            #Label(manage_pop, text = 'Save selected: ').grid(sticky = E, row = 6, column = 1)
+            savebut = Button(manage_pop, text = 'Save', command = lambda: save_one_or_more(kind = the_current_kind.get()))
+            savebut.grid(padx = 15, sticky = W, column = 0, row = 3)
+            viewbut = Button(manage_pop, text = 'View', command = lambda: view_query(kind = the_current_kind.get()))
+            viewbut.grid(padx = 15, sticky = W, column = 0, row = 4)
+            renamebut = Button(manage_pop, text = 'Rename', command = lambda: rename_one_or_more(kind = the_current_kind.get()))
+            renamebut.grid(padx = 15, sticky = W, column = 0, row = 5)
 
+            #Checkbutton(manage_pop, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column = 1, row = 16, padx = 15, sticky=W)
+            exportbut = Button(manage_pop, text = 'Export', command = lambda: export_interrogation(kind = the_current_kind.get()))
+            exportbut.grid(padx = 15, sticky = E, column = 1, row = 3)
+            #Label(manage_pop, text = 'Remove selected: '()).grid(padx = 15, sticky = W, row = 4, column = 0)
+            removebut = Button(manage_pop, text = 'Remove', command= lambda: remove_one_or_more(kind = the_current_kind.get()))
+            removebut.grid(padx = 15, sticky = E, column = 1, row = 4)
+            #Label(manage_pop, text = 'Delete selected: '()).grid(padx = 15, sticky = E, row = 5, column = 1)
+            deletebut = Button(manage_pop, text = 'Delete', command = lambda: del_one_or_more(kind = the_current_kind.get()))
+            deletebut.grid(padx = 15, sticky = E, column = 1, row = 5)
 
+            to_manage = OptionMenu(manage_pop, manage_type, *tuple(('Interrogations', 'Concordances', 'Images')))
+            to_manage.config(width = 32, justify = CENTER)
+            to_manage.grid(row = 0, column = 0, columnspan = 2)
 
+            def managed(*args):
+                #vals = [i.get() for i in butvar.values() if i.get() is not False and i.get() != 0 and i.get() != '0']
+                #vals = sorted(vals, key=lambda x:orders[x])
+                #the_opts = ','.join(vals)]
+                manage_pop.destroy()
+                try:
+                    del manage_callback
+                except:
+                    pass
 
-        ev_image_box = Frame(tab5, height = 30)
-        ev_image_box.grid(sticky = E, column = 3, row = 1, rowspan = 20)
-        ev_image_sb = Scrollbar(ev_image_box)
-        ev_image_sb.pack(side=RIGHT, fill=Y)
-        every_image_listbox = Listbox(ev_image_box, selectmode = SINGLE, height = 30, width = 23, relief = SUNKEN, bg = '#F4F4F4',
-                                        yscrollcommand=ev_image_sb.set, exportselection=False)
-        every_image_listbox.pack(fill=BOTH)
-        every_image_listbox.select_set(0)
-        ev_image_sb.config(command=every_image_listbox.yview)   
-        xx = every_image_listbox.bind('<<ListboxSelect>>', onselect_image)
-        # default: w option
-        every_image_listbox.select_set(0)
+            global manage_callback
+            def manage_callback(*args):
+                import os
+                """show correct listbox, enable disable buttons below"""
+                # set text
+                #manage_what.set('Manage %s' % manage_type.get().lower())
+                #gtsv.set('Get saved %s' % manage_type.get().lower())
+                # set correct action for buttons
+                the_current_kind.set(manage_type.get().lower().rstrip('s'))
+                #get_saved_results(kind = the_current_kind.get())
+                # enable all buttons
+                #getbut.config(state = NORMAL)
+                #try:
+                savebut.config(state = NORMAL)
+                viewbut.config(state = NORMAL)
+                renamebut.config(state = NORMAL)
+                exportbut.config(state = NORMAL)
+                removebut.config(state = NORMAL)
+                deletebut.config(state = NORMAL)
+                manage_listbox.delete(0, 'end')
+                if the_current_kind.get() == 'interrogation':
+                    the_path = savedinterro_fullpath.get()
+                    the_ext = '.p'
+                    list_of_entries = all_interrogations.keys()
+                elif the_current_kind.get() == 'concordance':
+                    the_path = conc_fullpath.get()
+                    the_ext = '.p'
+                    list_of_entries = all_conc.keys()
+                    viewbut.config(state = DISABLED)
+                    try:
+                        frame_to_the_right.destroy()
+                    except:
+                        pass
+                elif the_current_kind.get() == 'image':
+                    the_path = image_fullpath.get()
+                    the_ext = '.png'
+                    refresh_images()
+                    list_of_entries = all_images
+                    viewbut.config(state = DISABLED)
+                    savebut.config(state = DISABLED)
+                    exportbut.config(state = DISABLED)
+                    removebut.config(state = DISABLED)
+                    try:
+                        frame_to_the_right.destroy()
+                    except:
+                        pass
+                for datum in list_of_entries:
+                    manage_listbox.insert(END, datum)
+                color_saved(manage_listbox, the_path, '#ccebc5', '#fbb4ae', ext = the_ext)
+                timestring('Managing %s' % os.path.basename(project_fullpath.get()))
 
-        new_proj_basepath = StringVar()
-        new_proj_basepath.set('New project')
-        open_proj_basepath = StringVar()
-        open_proj_basepath.set('Open project')
+            manage_type.trace("w", manage_callback)
 
-        Label(tab5, text = 'Saved images', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 3)
-        Button(tab5, text = 'Get saved images', command = lambda: get_saved_results(kind = 'image'), width = 22).grid(row = 22, column = 3)
-        Button(tab5, text = 'Rename', command = lambda: rename_one_or_more()).grid(sticky = W, column = 3, row = 25)
-        #Button(tab5, text = 'Remove', command= lambda: remove_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 24)
-        Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'image')).grid(sticky = E, column = 3, row = 25)
+            manage_type.set('Interrogations')
+            #stopbut = Button(manage_pop, text = 'Done', command=managed)
+            #stopbut.grid(columnspan = 2, row = 6, column = 0)
+            #manage_pop("WM_DELETE_WINDOW", managed)
+            #manage_callback()
+
 
         ##############     ##############     ##############     ##############     ############## 
         # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
@@ -4860,7 +4863,7 @@ def corpkit_gui():
             timestring('Corpus parsed and ready to interrogate: "%s"' % os.path.basename(new_corpus_path))
 
         parse_button_text = StringVar()
-        parse_button_text.set('Created parsed corpus')
+        parse_button_text.set('Create parsed corpus')
 
         tokenise_button_text = StringVar()
         tokenise_button_text.set('Create tokenised corpus')
@@ -4974,9 +4977,8 @@ def corpkit_gui():
         #Label(tab0, text = 'Corpus to parse: ').grid(row = 6, column = 0, sticky=W)
         #Button(tab0, textvariable = sel_corpus_button, command=select_corpus, width = 33).grid(row = 4, column = 0, sticky=W)
         #Label(tab0, text = 'Parse: ').grid(row = 8, column = 0, sticky=W)
-        speakseg = IntVar()
-        speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg, state = DISABLED)
-        speakcheck_build.grid(column = 0, row = 5, sticky=W)
+        #speakcheck_build = Checkbutton(tab0, text="Speaker segmentation", variable=speakseg, state = DISABLED)
+        #speakcheck_build.grid(column = 0, row = 5, sticky=W)
         
         parsebut = Button(tab0, textvariable = parse_button_text, width = 33, state = DISABLED)
         parsebut.grid(row = 6, column = 0, sticky=W)
@@ -5685,13 +5687,17 @@ def corpkit_gui():
                     filemenu.entryconfig("Select corpus", state="disabled")
             else:
                 filemenu.entryconfig("Select corpus", state="disabled")
+                #filemenu.entryconfig("Manage project", state="disabled")
             if in_a_project.get() == 0:
                 filemenu.entryconfig("Save project settings", state="disabled")
                 filemenu.entryconfig("Load project settings", state="disabled")
+                filemenu.entryconfig("Manage project", state="disabled")
                 #filemenu.entryconfig("Set CoreNLP path", state="disabled")
             else:
                 filemenu.entryconfig("Save project settings", state="normal")
                 filemenu.entryconfig("Load project settings", state="normal")
+                filemenu.entryconfig("Manage project", state="normal")
+
                 #filemenu.entryconfig("Set CoreNLP path", state="normal")
         
         menubar = Menu(root)
@@ -5713,7 +5719,8 @@ def corpkit_gui():
         filemenu.add_command(label="Load project settings", command=load_config)
         filemenu.add_command(label="Save tool preferences", command=save_tool_prefs)
         filemenu.add_separator()
-
+        filemenu.add_command(label="Manage project", command=manage_popup)
+        filemenu.add_separator()
         #filemenu.add_command(label="Coding scheme print", command=print_entryboxes)
         
         # broken on deployed version ... path to self stuff
