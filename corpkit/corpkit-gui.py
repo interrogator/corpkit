@@ -425,12 +425,12 @@ def corpkit_gui():
         # concordance colours
         colourdict = {1: '#fbb4ae',
                       2: '#b3cde3',
-                      3: '#D9DDDB',
+                      3: '#ccebc5',
                       4: '#decbe4',
                       5: '#fed9a6',
                       6: '#ffffcc',
                       7: '#e5d8bd',
-                      8: '#fddaec',
+                      8: '#D9DDDB',
                       9: '#000000',
                       0: '#F4F4F4'}
 
@@ -460,7 +460,7 @@ def corpkit_gui():
                                  'Get tag and word of match', 
                                  'Count matches', 
                                  'Get part-of-speech tag',
-                                 'Get stats',
+                                 #'Get stats',
                                  'Get ngrams from trees'],
                        'Tokens': ['Get tokens by regex', 
                                  'Get tokens matching list',
@@ -2428,6 +2428,7 @@ def corpkit_gui():
                     explval = explbox.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     explval = [explbox.get().strip()]
+                    explval = remake_special_query(explval)
                 d['explode'] = explval
             
             texu = texuse.get()
@@ -3986,7 +3987,6 @@ def corpkit_gui():
             timestring('Project "%s" created.' % name)
             note.focus_on(tab0)
 
-
         def get_saved_results(kind = 'interrogation'):
             from corpkit import load_all_results
             
@@ -4607,6 +4607,34 @@ def corpkit_gui():
                 if value not in sel_vals_interro:
                     sel_vals_interro.append(value)
 
+        # a list of every concordance
+        def onselect_conc(evt):
+            # remove old vals
+            for i in sel_vals_conc:
+                sel_vals_conc.pop()
+            wx = evt.widget
+            indices = wx.curselection()
+            for index in indices:
+                value = wx.get(index)
+                if value not in sel_vals_conc:
+                    sel_vals_conc.append(value)
+
+        # a list of every image
+        def onselect_image(evt):
+            # remove old vals
+            for i in sel_vals_images:
+                sel_vals_images.pop()
+            wx = evt.widget
+            indices = wx.curselection()
+            for index in indices:
+                value = wx.get(index)
+                if value not in sel_vals_images:
+                    sel_vals_images.append(value)
+
+
+
+                    
+
         ev_int_box = Frame(tab5, height = 30)
         ev_int_box.grid(sticky = E, column = 1, row = 1, rowspan = 20)
         ev_int_sb = Scrollbar(ev_int_box)
@@ -4644,18 +4672,6 @@ def corpkit_gui():
 
         Label(tab5, text = 'Saved concordances', font = ("Helvetica", 13, "bold")).grid(sticky = W, row = 0, column = 2, padx = 50)
 
-        # a list of every interrogation
-        def onselect_conc(evt):
-            # remove old vals
-            for i in sel_vals_conc:
-                sel_vals_conc.pop()
-            wx = evt.widget
-            indices = wx.curselection()
-            for index in indices:
-                value = wx.get(index)
-                if value not in sel_vals_conc:
-                    sel_vals_conc.append(value)
-
         ev_conc_box = Frame(tab5, height = 30)
         ev_conc_box.grid(sticky = E, column = 2, row = 1, rowspan = 20, padx = 50)
         ev_conc_sb = Scrollbar(ev_conc_box)
@@ -4682,17 +4698,7 @@ def corpkit_gui():
         Button(tab5, text = 'Delete', command = lambda: del_one_or_more(kind = 'concordance')).grid(sticky = E, column = 2, row = 25, padx = (50, 50) )
 
 
-    # a list of every interrogation
-        def onselect_image(evt):
-            # remove old vals
-            for i in sel_vals_images:
-                sel_vals_images.pop()
-            wx = evt.widget
-            indices = wx.curselection()
-            for index in indices:
-                value = wx.get(index)
-                if value not in sel_vals_images:
-                    sel_vals_images.append(value)
+
 
         ev_image_box = Frame(tab5, height = 30)
         ev_image_box.grid(sticky = E, column = 3, row = 1, rowspan = 20)
