@@ -675,7 +675,7 @@ def corpkit_gui():
                 table.createTableFrame()            # sorts by total freq, ok for now
                 table.redrawTable()
 
-        def remake_special_query(query):
+        def remake_special_query(query, return_list = False):
             """turn special queries (LIST:NAME) into appropriate regexes, lists, etc"""
             # for custom queries
             from collections import namedtuple
@@ -725,6 +725,8 @@ def corpkit_gui():
                                 lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4).lower()]
                             else:
                                 lst_of_matches = dict_of_specials[special]._asdict()[divided.group(4)]
+                            if return_list:
+                                return lst_of_matches
                             asr = as_regex(lst_of_matches, 
                                            boundaries = the_bound, 
                                            case_sensitive = case_sensitive.get(), 
@@ -876,7 +878,7 @@ def corpkit_gui():
             import os
             fp = corpora_fullpath.get()
             all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
-            for om in [available_corpora, available_corpora_build]:
+            for om in [available_corpora, available_corpora_build, available_corpora_conc]:
                 om.config(state = NORMAL)
                 om['menu'].delete(0, 'end')
                 if not delete:
@@ -923,6 +925,10 @@ def corpkit_gui():
 
             refresh_images()
 
+            # refresh 
+            prev_conc_listbox.delete(0, 'end')
+            for i in sorted(all_conc.keys()):
+                prev_conc_listbox.insert(END, i)
         def add_tkt_index(df):
             """add order to df for tkintertable"""
             import pandas
@@ -1383,6 +1389,8 @@ def corpkit_gui():
             """on selecting a corpus, set everything appropriately.
             also, disable some kinds of search based on the name"""
             import os
+            if current_corpus.get() == '':
+                return
             corpus_name = current_corpus.get()
             fp = os.path.join(corpora_fullpath.get(), corpus_name)
             corpus_fullpath.set(fp)
@@ -1420,12 +1428,19 @@ def corpkit_gui():
                 tokenise_button_text.set('Tokenise corpus')
                 parsebut.config(state = DISABLED)
                 tokbut.config(state = DISABLED)
-
             if not corpus_name.endswith('-parsed'):
+                conc_pick_dep_type.config(state = DISABLED)
+                pick_dep_type.config(state = DISABLED)
                 #parsebut.config(state = NORMAL)
                 #speakcheck_build.config(state = NORMAL)
-                pass
+                concbut.config(state = DISABLED)
+                conc_pick_a_query.configure(state = DISABLED)
+                sensplitbut.config(state = NORMAL)
             else:
+                sensplitbut.config(state = DISABLED)
+                conc_pick_dep_type.config(state = NORMAL)
+                conc_pick_a_query.configure(state = NORMAL)
+                concbut.config(state = DISABLED)
                 pick_a_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(datatype_picked, 'Trees'))
                 pick_a_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(datatype_picked, 'Dependencies'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
@@ -1451,7 +1466,7 @@ def corpkit_gui():
             add_subcorpora_to_build_box(fp)
 
             note.progvar.set(0)
-            lab.set('Concordancing: %s' % corpus_name)
+            #lab.set('Concordancing: %s' % corpus_name)
             
             if corpus_name in corpus_names_and_speakers.keys():
                 togglespeaker()
@@ -2876,6 +2891,7 @@ def corpkit_gui():
                 if any(t != '' for t in themelist):
                     data.insert(0, 't', themelist)
 
+
             formatl = lambda x: "{0}".format(x[-window:])
             formatm = '{{:<{}s}}'.format(data['m'].str.len().max()).format
             formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
@@ -2942,7 +2958,7 @@ def corpkit_gui():
             elif option == 'Plaintext':
                 option = 'p'
             elif option == 'Tokens':
-                option == 'l'
+                option = 'l'
 
             query = query_text.get()
             if not query or query == '':
@@ -2981,7 +2997,7 @@ def corpkit_gui():
             if query.startswith('[') and query.endswith(']'):
                     query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
-                query = remake_special_query(query)
+                query = remake_special_query(query, return_list = True)
                 if query is False:
                     return
 
@@ -2993,6 +3009,13 @@ def corpkit_gui():
 
             if jspeak_conc is not False:
                 showspkbut.select()
+
+            if sensplit.get() == 0:
+                d['split_sents'] = False
+            elif sensplit.get() == 1:
+                d['split_sents'] = True
+            else:
+                pass
 
             r = conc(corpus, query, **d)
             if r is not None and r is not False:
@@ -3650,10 +3673,14 @@ def corpkit_gui():
         conclistbox.bind("0", lambda x: color_conc(colour = 0))
 
         # these were 'generate' and 'edit', but they look ugly right now. the spaces are nice though.
-        lab = StringVar()
-        lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
-        Label(tab4, textvariable = lab, font = ("Helvetica", 13, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
-        Label(tab4, text = ' ', font = ("Helvetica", 13, "bold")).grid(row = 1, column = 9, columnspan = 2)
+        #lab = StringVar()
+        #lab.set('Concordancing: %s' % os.path.basename(corpus_fullpath.get()))
+        #Label(tab4, textvariable = lab, font = ("Helvetica", 13, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
+        #Label(tab4, text = ' ', font = ("Helvetica", 13, "bold")).grid(row = 1, column = 9, columnspan = 2)
+
+        available_corpora_conc = OptionMenu(tab4, current_corpus, *tuple(('Select corpus')))
+        available_corpora_conc.config(width = 22, state = DISABLED)
+        available_corpora_conc.grid(row = 1, column = 0, padx = 0, pady = (5, 0), columnspan = 5, sticky = W)
 
         # select subcorpus
         # add whole corpus option
@@ -3677,6 +3704,7 @@ def corpkit_gui():
                 ebox.config(state = NORMAL)
             else:
                 ebox.config(state = DISABLED)
+                conc_pick_dep_type.config(state = DISABLED)
 
             if corpus_search_type.get() == 'Trees':
                 speakcheck_conc.config(state = NORMAL)
@@ -3692,7 +3720,7 @@ def corpkit_gui():
                 query_text.set(r'(garbage|rubbish|trash)')
 
             if corpus_search_type.get() == 'Plaintext':
-                conc_pick_dep_type.config(state = NORMAL)
+                #conc_pick_dep_type.config(state = NORMAL)
                 query_text.set(r'(garbage|rubbish|trash)')
 
         # kind of data
@@ -3708,7 +3736,7 @@ def corpkit_gui():
         conc_kind_of_dep.set('CC-processed')
         #Label(interro_opt, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
         conc_pick_dep_type = OptionMenu(tab4, conc_kind_of_dep, *dep_types)
-        conc_pick_dep_type.config(state = DISABLED, width = 22)
+        conc_pick_dep_type.config(state = NORMAL, width = 22)
         conc_pick_dep_type.grid(row = 5, column = 0, sticky=W)
 
         # query:
@@ -3739,19 +3767,16 @@ def corpkit_gui():
                 cqb.config(state = NORMAL)
                 query_text.set(tregex_qs[conc_special_queries.get()])
                 cqb.config(state = DISABLED)
-                pick_a_conc_datatype.config(state = NORMAL)
                 corpus_search_type.set('Trees')
                 pick_a_conc_datatype.config(state = DISABLED)
                 conc_pick_dep_type.config(state = DISABLED)
                 ebox.config(state = DISABLED)
-                conc_pick_dep_type.config(state = DISABLED)
             else:
                 pick_a_conc_datatype.config(state = NORMAL)
                 cqb.config(state = NORMAL)
-                conc_pick_dep_type.config(state = NORMAL)
                 ebox.config(state = NORMAL)
-                conc_pick_dep_type.config(state = NORMAL)
-                conc_pick_dep_type.config(state = NORMAL)
+                if current_corpus.get().endswith('-parsed'):
+                    conc_pick_dep_type.config(state = NORMAL)
 
         conc_queries = tuple(('Preset query', 'Imperatives', 'Modalised declaratives', 'Unmodalised declaratives', 'Interrogatives', 'Mental processes', 'Verbal processes', 'Relational processes'))
         conc_special_queries = StringVar(root)
@@ -3767,6 +3792,12 @@ def corpkit_gui():
         speakcheck_conc.grid(column = 1, row = 3, sticky=W)
         only_sel_speakers_conc.trace("w", togglespeaker)
 
+
+        sensplit = IntVar()
+        sensplitbut = Checkbutton(tab4, text='Split sentences', variable=sensplit)
+        sensplitbut.grid(column = 2, row = 3, sticky=W, padx = (30, 0))
+
+
         scfrm = Frame(tab4)
         scfrm.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W)
         scscrollbar = Scrollbar(scfrm)
@@ -3780,11 +3811,11 @@ def corpkit_gui():
         # trees
         show_trees = IntVar()
         trs = Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False)
-        trs.grid(row = 3, column = 1, columnspan = 3, padx = (200, 0))
+        trs.grid(row = 3, column = 1, columnspan = 3, padx = (190, 0))
 
         # run button
         concbut = Button(tab4, text = 'Run')
-        concbut.grid(row = 3, column = 4, sticky = E)
+        concbut.grid(row = 3, column = 3, columnspan = 2, padx = (120, 0))
         concbut.config(command = lambda: runner(concbut, do_concordancing), state = DISABLED)
 
         # edit conc lines
@@ -4438,7 +4469,7 @@ def corpkit_gui():
 
             os.chdir(fp)
             list_of_corpora = update_available_corpora()
-            addbut.config(state=NORMAL)
+            addbut.config(state=NORMAL) 
             
             get_saved_results(kind = 'interrogation')
             get_saved_results(kind = 'concordance')
@@ -4478,7 +4509,7 @@ def corpkit_gui():
             else:
                 subdrs = []       
 
-            lab.set('Concordancing: %s' % corpus_name)
+            #lab.set('Concordancing: %s' % corpus_name)
             pick_subcorpora['menu'].delete(0, 'end')
 
             if len(subdrs) > 0:
