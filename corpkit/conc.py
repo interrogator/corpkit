@@ -6,6 +6,7 @@ def conc(corpus,
         dep_type = 'basic-dependencies',
         n = 100, 
         random = False, 
+        split_sents = True,
         window = 100, 
         trees = False,
         plaintext = False, #'guess',
@@ -47,6 +48,7 @@ def conc(corpus,
             query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
         else:
             query = as_regex(query, boundaries = 'w')
+            print query
 
     can_do_fast = False
     if option.startswith('t'):
@@ -94,12 +96,17 @@ def conc(corpus,
             conc_lines.append([os.path.basename(f), speakr, start, middle, end])
     else:
 
+        if query.startswith(r'\b'):
+            query = query[2:]
+        if query.endswith(r'\b'):
+            query = query[:-2]
+
         fs_to_conc = []
         for r, dirs, fs in os.walk(corpus):
             for f in fs:
                 if not os.path.isfile(os.path.join(r, f)):
                     continue
-                if not f.endswith('.txt') and not f.endswith('.xml'):
+                if not f.endswith('.txt') and not f.endswith('.xml') and not f.endswith('.p'):
                     continue
                 fs_to_conc.append(os.path.join(r, f))
 
@@ -118,95 +125,128 @@ def conc(corpus,
             if num_fs > 1:
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((index) * 100.0 / num_fs)
-            from time import localtime, strftime
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Extracting data from %s ...' % (thetime, f)
+            if print_status:
+                from time import localtime, strftime
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Extracting data from %s ...' % (thetime, f)
             if root:
                 root.update()
-            with open(filepath, "rb") as text:
+            with open(filepath, "r") as text:
                 parsetreedict = {}
                 data = text.read()
+                if option.startswith('p'):
+                    import chardet
+                    enc = chardet.detect(data)
+                    data = unicode(data, enc['encoding'], errors = 'ignore')
                 if option.startswith('p') or option.startswith('l'):
                     if option.startswith('l'):
-                        lstokens = pickle.load(open(filepath, 'rb'))
-                        data = ' '.join(tokens)
-                        data = data.split(' . ')
+                        import pickle
+                        try:
+                            lstokens = pickle.load(open(filepath, 'rb'))
+                        except EOFError:
+                            thetime = strftime("%H:%M:%S", localtime())
+                            print '%s: File "%s" could not be opened.' % (thetime, os.path.basename(filepath))
+                        data = ' '.join(lstokens)
+                        if split_sents:
+                            lines = data.split(' . ')
+                        else:
+                            lines = [data.replace('\n', '')]
                     else:
-                        lines = data.splitlines()
+                        if split_sents:
+                            lines = data.splitlines()
+                        else:
+                            lines = [data.replace('\n', '')]
                     for l in lines:
-                        m = re.compile(r'^(.*?)(' + query + r')(.*)$', re.IGNORECASE)
-                        mat = re.search(m, l)
-                        if mat:
-                            conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(3)])
-                    continue
-                from corenlp_xml.document import Document
-                corenlp_xml = Document(data)
-                #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
-                if just_speakers:
-                    for s in just_speakers:
-                        parsetreedict[s] = []
-                    sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
-                    #sents = [s for s in corenlp_xml.find_all('sentence') \
-                    #if s.speakername.text.strip() in just_speakers]
-                else:
-                    sents = corenlp_xml.sentences
-                nsents = len(sents)
-                for i, s in enumerate(sents):
-                    if num_fs == 1:
-                        if 'note' in kwargs.keys():
-                            kwargs['note'].progvar.set((index) * 100.0 / nsents)
-                            if root:
-                                root.update()
-                    try:
-                        speakr = s.speakername.strip()
-                    except:
-                        speakr = '' 
-                    parsetree = s.parse_string
-                    if option.startswith('t'):
-                        parsetreedict[speakr].append(parsetree)
-                        continue
-                    elif option.startswith('d'): 
-                        #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                        deps = get_deps(s, dep_type)
-                        if dep_function == 'any' or dep_function is False:
-                            wdsmatching = [l.dependent.text.strip() for l in deps.links \
-                                           if re.match(query, l.dependent.text.strip())]
+                        if split_sents:
+                            m = re.compile(r'(?i)^(.*?)(\b' + query + r'\b)(.*)$', re.UNICODE)
                         else:
-                            comped = re.compile(dep_function, re.IGNORECASE)
-                            #goodsent = any(re.match(query, l.dependent.text.strip()) for l in deps.links if re.match(comped, l.type.strip()))
-                            wdsmatching = [l.dependent.text.strip() for l in deps.links \
-                                           if re.match(comped, l.type.strip()) and \
-                                           re.match(query, l.dependent.text.strip())]
-                        # this is shit, needs indexing or something
-                        for wd in wdsmatching:
-                            line = normalise(parsetree)
-                            start, middle, end = re.split(r'(' + wd + r')', line, 1)
-                            conc_lines.append([f, speakr, start, middle, end])
+                            m = re.compile(r'(?i)(.{,%s})(\b' % window + query + r'\b)(.{,%s})' % window, re.UNICODE)
+                        if split_sents:
+                            mat = re.search(m, l)
+                        else:
+                            mat = re.findall(m, l)
+                        if split_sents:
+                            if mat:
+                                last_num = len(mat.groups())
+                                conc_lines.append([f, '', mat.group(1), mat.group(2), mat.group(last_num)])
+                        else:
+                            if mat:
+                                #print len(mat)
+                                for ent in mat:
+                                    #print len(ent)
+                                    last_num = len(ent) - 1
+                                    conc_lines.append([f, '', ent[0], ent[1], ent[last_num]])
 
-                if option.startswith('t'):
-                    for speakr, dt in parsetreedict.items():
-                        trees_as_string = '\n'.join(dt)
-                        if trees:
-                            options = '-s'
-                        else:
-                            options = '-t'
-                        with open('tmp.txt', 'w') as fo:
-                            fo.write(trees_as_string.encode('utf-8', errors = 'ignore'))
-                        tregex_engine(query = query, check_query = True, root = root)
-                        wholes = tregex_engine(query = query, 
-                                    options = ['-o', '-w', options], 
-                                    corpus = 'tmp.txt',
-                                    preserve_case = True,
-                                    root = root)
-                        middle_column_result = tregex_engine(query = query, 
-                                    options = ['-o', options], 
-                                    corpus = 'tmp.txt',
-                                    preserve_case = True,
-                                    root = root)
-                        for whole, mid in zip(wholes, middle_column_result):
-                            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
-                            start, middle, end = re.split(reg, whole, 1)
-                            conc_lines.append([f, speakr, start, middle, end])
+
+                if any(f.endswith('.xml') for f in fs_to_conc):
+                    from corenlp_xml.document import Document
+                    corenlp_xml = Document(data)
+                    #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
+                    if just_speakers:
+                        for s in just_speakers:
+                            parsetreedict[s] = []
+                        sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                        #sents = [s for s in corenlp_xml.find_all('sentence') \
+                        #if s.speakername.text.strip() in just_speakers]
+                    else:
+                        sents = corenlp_xml.sentences
+                    nsents = len(sents)
+                    for i, s in enumerate(sents):
+                        if num_fs == 1:
+                            if 'note' in kwargs.keys():
+                                kwargs['note'].progvar.set((index) * 100.0 / nsents)
+                                if root:
+                                    root.update()
+                        try:
+                            speakr = s.speakername.strip()
+                        except:
+                            speakr = '' 
+                        parsetree = s.parse_string
+                        if option.startswith('t'):
+                            parsetreedict[speakr].append(parsetree)
+                            continue
+                        elif option.startswith('d'): 
+                            #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
+                            deps = get_deps(s, dep_type)
+                            if dep_function == 'any' or dep_function is False:
+                                wdsmatching = [l.dependent.text.strip() for l in deps.links \
+                                               if re.match(query, l.dependent.text.strip())]
+                            else:
+                                comped = re.compile(dep_function, re.IGNORECASE)
+                                #goodsent = any(re.match(query, l.dependent.text.strip()) for l in deps.links if re.match(comped, l.type.strip()))
+                                wdsmatching = [l.dependent.text.strip() for l in deps.links \
+                                               if re.match(comped, l.type.strip()) and \
+                                               re.match(query, l.dependent.text.strip())]
+                            # this is shit, needs indexing or something
+                            for wd in wdsmatching:
+                                line = normalise(parsetree)
+                                start, middle, end = re.split(r'(' + wd + r')', line, 1)
+                                conc_lines.append([f, speakr, start, middle, end])
+
+                    if option.startswith('t'):
+                        for speakr, dt in parsetreedict.items():
+                            trees_as_string = '\n'.join(dt)
+                            if trees:
+                                options = '-s'
+                            else:
+                                options = '-t'
+                            with open('tmp.txt', 'w') as fo:
+                                fo.write(trees_as_string.encode('utf-8', errors = 'ignore'))
+                            tregex_engine(query = query, check_query = True, root = root)
+                            wholes = tregex_engine(query = query, 
+                                        options = ['-o', '-w', options], 
+                                        corpus = 'tmp.txt',
+                                        preserve_case = True,
+                                        root = root)
+                            middle_column_result = tregex_engine(query = query, 
+                                        options = ['-o', options], 
+                                        corpus = 'tmp.txt',
+                                        preserve_case = True,
+                                        root = root)
+                            for whole, mid in zip(wholes, middle_column_result):
+                                reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
+                                start, middle, end = re.split(reg, whole, 1)
+                                conc_lines.append([f, speakr, start, middle, end])
 
     # does not keep results ordered!
     try:
@@ -221,18 +261,23 @@ def conc(corpus,
     pindex = 'f s l m r'.encode('utf-8').split()
 
     for fname, spkr, start, word, end in unique_results:
-        import os
+        spkr = unicode(spkr, errors = 'ignore')
         fname = os.path.basename(fname)
         start = start.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         word = word.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         end = end.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         #spaces = ' ' * (maximum / 2 - (len(word) / 2))
         #new_word = spaces + word + spaces
-        series.append(pd.Series([fname.encode('utf-8', errors = 'ignore'), \
-                                 spkr.encode('utf-8', errors = 'ignore'), \
-                                 start.encode('utf-8', errors = 'ignore'), \
-                                 word.encode('utf-8', errors = 'ignore'), \
-                                 end.encode('utf-8', errors = 'ignore')], index = pindex))
+
+        # the use of ascii here makes sure the string formats ok, but will also screw over
+        # anyone doing non-english work. so, change to utf-8, then fix errors as they come
+        # in the corpkit-gui "add_conc_lines_to_window" function
+
+        series.append(pd.Series([fname.encode('ascii', errors = 'ignore'), \
+                                 spkr.encode('ascii', errors = 'ignore'), \
+                                 start.encode('ascii', errors = 'ignore'), \
+                                 word.encode('ascii', errors = 'ignore'), \
+                                 end.encode('ascii', errors = 'ignore')], index = pindex))
 
     # randomise results...
     if random:
@@ -248,7 +293,6 @@ def conc(corpus,
 
     df = pd.concat(series, axis = 1).T
 
-
     if not add_links:
         df.columns = ['f', 's', 'l', 'm', 'r']
     else:
@@ -257,51 +301,48 @@ def conc(corpus,
     if all(x == '' for x in list(df['s'].values)):
         df.drop('s', axis = 1, inplace = True)
 
-    formatl = lambda x: "{0}".format(x[-window:])
-    formatf = lambda x: "{0}".format(x[-20:])
-    #formatr = lambda x: 
-    formatr = lambda x: "{{:<{}s}}".format(df['r'].str.len().max()).format(x[:window])
-    st = df.head(n).to_string(header = False, formatters={'l': formatl,
-                                                          'r': formatr,
-                                                          'f': formatf}).splitlines()
-    
-    # hack because i can't figure out formatter:
-    rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
-    if print_output:
-        print rem
-
     if 'note' in kwargs.keys():
         kwargs['note'].progvar.set(100)
 
-    return df
+    if print_output:
 
-    if add_links:
-
-        def _add_links(lines, links = False, show = 'thread'):
-            link = "http://www.healthboards.com/boards/bipolar-disorder/695089-labels.html"
-            linktext = '<a href="%s>link</a>' % link
-            import pandas as pd
-            inds = list(df.index)
-            num_objects = len(list(df.index))
-            ser = pd.Series([link for n in range(num_objects)], index = inds)
-            lines['link'] = ser
-            return lines
+        formatl = lambda x: "{0}".format(x[-window:])
+        formatf = lambda x: "{0}".format(x[-20:])
+        #formatr = lambda x: 
+        formatr = lambda x: "{{:<{}s}}".format(df['r'].str.len().max()).format(x[:window])
+        st = df.head(n).to_string(header = False, formatters={'l': formatl,
+                                                              'r': formatr,
+                                                              'f': formatf}).splitlines()
         
-        df = _add_links(df)
+        # hack because i can't figure out formatter:
+        rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
+        print rem
 
-    if add_links:
-        if not show_links:
-            if print_output:
-                print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
-        else:
-            if print_output:
-                print HTML(df.to_html(escape=False))
-    else:
-        if print_output:
-            print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
-
-    if not add_links:
-        df.columns = ['f', 'l', 'm', 'r']
-    else:
-        df.columns = ['f', 'l', 'm', 'r', 'link']
     return df
+
+    #if add_links:
+
+    #    def _add_links(lines, links = False, show = 'thread'):
+    #        link = "http://www.healthboards.com/boards/bipolar-disorder/695089-labels.html"
+    #        linktext = '<a href="%s>link</a>' % link
+    #        import pandas as pd
+    #        inds = list(df.index)
+    #        num_objects = len(list(df.index))
+    #        ser = pd.Series([link for n in range(num_objects)], index = inds)
+    #        lines['link'] = ser
+    #        return lines
+    #    
+    #    df = _add_links(df)
+#
+    #if add_links:
+    #    if not show_links:
+    #        if print_output:
+    #            print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+    #    else:
+    #        if print_output:
+    #            print HTML(df.to_html(escape=False))
+    #else:
+    #    if print_output:
+    #        print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
+
+
