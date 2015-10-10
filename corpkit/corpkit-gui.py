@@ -1416,6 +1416,8 @@ def corpkit_gui():
                 parse_button_text.set('Parse: %s' % os.path.basename(fp))
                 tokenise_button_text.set('Tokenise: %s' % corpus_name)
             else:
+                parse_button_text.set('Parse corpus')
+                tokenise_button_text.set('Tokenise corpus')
                 parsebut.config(state = DISABLED)
                 tokbut.config(state = DISABLED)
 
@@ -1668,20 +1670,20 @@ def corpkit_gui():
         Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
         ngmsize.configure(width = 10)
-        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (70, 0))
+        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (85, 0))
         ngmsize.config(state=DISABLED)
         global split_contract
-        Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 90)) 
+        Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 75)) 
         split_contract = MyOptionMenu(interro_opt, 'No', 'Yes')
-        split_contract.configure(width = 10)
+        split_contract.configure(width = 7)
         split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
         split_contract.config(state=DISABLED)
 
 
-        Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 90))
+        Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 88))
         spl = MyOptionMenu(interro_opt, 'Off','UK','US')
-        spl.configure(width = 10)
-        spl.grid(row = 6, column = 1, sticky = E)
+        spl.configure(width = 7)
+        spl.grid(row = 6, column = 1, sticky = E, padx = (2, 0))
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
@@ -2145,7 +2147,7 @@ def corpkit_gui():
         Label(tab2, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
         spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
         spl_editor.grid(row = 5, column = 1, sticky = E)
-        spl_editor.configure(width = 13)
+        spl_editor.configure(width = 10)
 
         # keep_top
         Label(tab2, text = 'Keep top results:').grid(row = 6, column = 0, sticky = W)
@@ -3728,6 +3730,7 @@ def corpkit_gui():
         win = StringVar()
         win.set('Window size')
         wind_size = OptionMenu(tab4, win, *tuple(('Window size', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+        wind_size.config(width = 15)
         wind_size.grid(row = 3, column = 12, columnspan = 2, sticky = E)
         win.trace("w", conc_sort)
 
@@ -4905,7 +4908,7 @@ def corpkit_gui():
             ---not used anymore"""
             from os.path import join as pjoin
             from os.path import basename as bn
-            parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
+            #parse_button_text.set('Parse: "%s"' % bn(unparsed_corpus_path))
             tokenise_button_text.set('Tokenise: "%s"' % bn(unparsed_corpus_path))
             path_to_new_unparsed_corpus.set(unparsed_corpus_path)
             #add_corpus_button.set('Added: %s' % bn(unparsed_corpus_path))
