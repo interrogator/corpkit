@@ -210,6 +210,9 @@ def interrogator(path,
             if len(just_speakers) > 1:
                 is_multiquery = True
 
+    # regex type
+    retype = type(re.compile('hello, world'))
+
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
         if 'postcounts' in path:
@@ -716,13 +719,12 @@ def interrogator(path,
 
     def plaintext_regex_search(pattern, plaintext_data):
         """search for regex in plaintext corpora"""
-        if type(pattern) == str:
-            pattern = [pattern]
         result = []
-        for p in pattern:
-            matches = re.findall(p, plaintext_data)
-            for m in matches:
-                result.append(m)
+        matches = re.findall(pattern, plaintext_data)
+        for m in matches:
+            if type(m) == tuple:
+                m = m[0]
+            result.append(m)
         return result
 
     def plaintext_simple_search(pattern, plaintext_data):
@@ -732,12 +734,12 @@ def interrogator(path,
         result = []
         for p in pattern:
             if case_sensitive:
-                pat = re.compile(r'\b' + re.escape(p) + '\b')
+                pat = re.compile(r'\b' + re.escape(p) + r'\b')
             else:
-                pat = re.compile(r'\b' + re.escape(p) + '\b', re.IGNORECASE)
+                pat = re.compile(r'\b' + re.escape(p) + r'\b', re.IGNORECASE)
             if not any_plaintext_word:
                 matches = re.findall(pat, plaintext_data)
-                for m in range(matches):
+                for m in range(len(matches)):
                     result.append(p)
             else:
                 for m in plaintext_data.split():
@@ -949,6 +951,8 @@ def interrogator(path,
             translated_option = 'r'
             if query == 'any':
                 query = r'.*'
+            if type(query) == list:
+                query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
 
         elif option.lower().startswith('s'):
             plaintext = True
@@ -1402,6 +1406,10 @@ def interrogator(path,
             try:
                 if translated_option == 'r':
                     if type(query) == str:
+                        if query.startswith(r'\b'):
+                            query = query[2:]
+                        if query.endswith(r'\b'):
+                            query = query[:-2]
                         if case_sensitive:
                             regex = re.compile(r'\b' + query + r'\b')
                         else:
@@ -1463,8 +1471,6 @@ def interrogator(path,
 
     global numdone
     numdone = 0
-
-
 
     for index, d in enumerate(sorted_dirs):
         if using_tregex or keywording or n_gramming:

@@ -5641,7 +5641,6 @@ def corpkit_gui():
                 "corpkit (version %s) up to date!" % oldstver)
                 timestring('corpkit (version %s) up to date.' % oldstver)
                 return
-
         def start_update_check():
             check_updates(showfalse = False, lateprint = True, auto = True)
 
