@@ -45,7 +45,7 @@ The example below shows how members of an online support group increasingly pref
 </a>
 </center>
 
-It was made in three few simple steps:
+It was made in three simple steps:
 
 1. Searching for predicators when the subject is human pronominal and the complement is headed by *bipolar*, using automatic lemmatisation to collapse verb forms
 2. Merging every result aside from *be* and *have* as *Other processes*
