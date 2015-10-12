@@ -205,7 +205,20 @@ def conc(corpus,
                         if option.startswith('t'):
                             parsetreedict[speakr].append(parsetree)
                             continue
-                        elif option.startswith('d'): 
+                        elif option.startswith('d'):
+                            try:
+                                compiled_query = re.compile(query)
+                            except:
+                                import traceback
+                                import sys
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                lst = traceback.format_exception(exc_type, exc_value,
+                                              exc_traceback)
+                                error_message = lst[-1]
+                                thetime = strftime("%H:%M:%S", localtime())
+                                print '%s: Query %s' % (thetime, error_message)
+                                return
+        
                             #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
                             deps = get_deps(s, dep_type)
                             if dep_function == 'any' or dep_function is False:

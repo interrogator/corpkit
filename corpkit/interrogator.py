@@ -715,12 +715,37 @@ def interrogator(path,
 
     def tok_by_reg(pattern, list_of_toks):
         """search for regex in plaintext corpora"""
-        return [m for m in list_of_toks if re.search(pattern, m)]
+        try:
+            comped = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+
+        return [m for m in list_of_toks if re.search(comped, m)]
 
     def plaintext_regex_search(pattern, plaintext_data):
         """search for regex in plaintext corpora"""
         result = []
-        matches = re.findall(pattern, plaintext_data)
+        try:
+            compiled_pattern = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+        matches = re.findall(compiled_pattern, plaintext_data)
         for m in matches:
             if type(m) == tuple:
                 m = m[0]
@@ -732,6 +757,19 @@ def interrogator(path,
         if type(pattern) == str:
             pattern = [pattern]
         result = []
+        try:
+            tmp = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+
         for p in pattern:
             if case_sensitive:
                 pat = re.compile(r'\b' + re.escape(p) + r'\b')
@@ -1053,10 +1091,21 @@ def interrogator(path,
             if type(query) == list:
                 query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
             else:
-                if not case_sensitive:
-                    query = re.compile(query, re.IGNORECASE)
-                else:
-                    query = re.compile(query)
+                try:
+                    if not case_sensitive:
+                        query = re.compile(query, re.IGNORECASE)
+                    else:
+                        query = re.compile(query)
+                except:
+                    import traceback
+                    import sys
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    lst = traceback.format_exception(exc_type, exc_value,
+                                  exc_traceback)
+                    error_message = lst[-1]
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: Query %s' % (thetime, error_message)
+                    return 'Bad query'
             global gramsize
             if 'gramsize' in kwargs.keys():
                 gramsize = kwargs['gramsize']
@@ -1211,6 +1260,17 @@ def interrogator(path,
             is_valid = True
         except:
             is_valid = False
+            if root:
+                import traceback
+                import sys
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                lst = traceback.format_exception(exc_type, exc_value,
+                              exc_traceback)
+                error_message = lst[-1]
+                thetime = strftime("%H:%M:%S", localtime())
+                print '%s: Filter %s' % (thetime, error_message)
+                return 'Bad query'
+        
         while not is_valid:
             if root:
                 time = strftime("%H:%M:%S", localtime())
@@ -1424,6 +1484,16 @@ def interrogator(path,
                 is_valid = True
             except re.error:
                 is_valid = False
+                if root:
+                    import traceback
+                    import sys
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    lst = traceback.format_exception(exc_type, exc_value,
+                                  exc_traceback)
+                    error_message = lst[-1]
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: Query %s' % (thetime, error_message)
+                    return "Bad query"
             while not is_valid:
                 time = strftime("%H:%M:%S", localtime())
                 if root:

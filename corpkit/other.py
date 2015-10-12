@@ -776,6 +776,7 @@ def tregex_engine(corpus = False,
             if os.path.isfile(i):
                 tregex_command = [i]
                 tregex_file_found = True
+                break
         if not tregex_file_found:
             thetime = strftime("%H:%M:%S", localtime())
             print "%s: Couldn't find Tregex in %s." % (thetime, ', '.join(possible_paths))

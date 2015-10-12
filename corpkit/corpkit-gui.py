@@ -115,19 +115,52 @@ class RedirectText(object):
  
     #----------------------------------------------------------------------
     def write(self, string):
-        """""" 
+        """add stdout and stderr to log and/or to console""" 
         import re
         # don't show blank lines
         show_reg = re.compile(r'^\s*$')
         # delete lobal abs paths from traceback
         del_reg = re.compile(r'^/*(Users|usr).*/(site-packages|corpkit/corpkit/)')
-        if 'Parsing file' not in string and 'Initialising parser' not in string and not 'Interrogating subcorpus' in string:
+        if 'Parsing file' not in string and 'Initialising parser' not in string \
+            and not 'Interrogating subcorpus' in string:
             if not re.match(show_reg, string):
-                self.log.append(re.sub(del_reg, '', string).rstrip('\n'))
-        # remove blank lines
+                string = re.sub(del_reg, '', string)
+                self.log.append(string.rstrip('\n'))
         if not re.match(show_reg, string):
-            self.output.set(re.sub(del_reg, '', string).rstrip('\n'))
-            #self.output.insert(Tkinter.END, '\n' + string.replace('\r', ''))
+            if not string.lstrip().startswith('#') and not string.lstrip().startswith('import'):
+                string = re.sub(del_reg, '', string)
+                self.output.set(string.rstrip('\n'))
+
+from Tkinter import *
+
+
+# hyperlinks
+class HyperlinkManager:
+    def __init__(self, text):
+        self.text = text
+        self.text.tag_config("hyper", foreground="blue", underline=1)
+        self.text.tag_bind("hyper", "<Enter>", self._enter)
+        self.text.tag_bind("hyper", "<Leave>", self._leave)
+        self.text.tag_bind("hyper", "<Button-1>", self._click)
+        self.reset()
+    def reset(self):
+        self.links = {}
+    def add(self, action):
+        # add an action to the manager.  returns tags to use in
+        # associated text widget
+        tag = "hyper-%d" % len(self.links)
+        self.links[tag] = action
+        return "hyper", tag
+    def _enter(self, event):
+        self.text.config(cursor="hand2")
+    def _leave(self, event):
+        self.text.config(cursor="")
+    def _click(self, event):
+        for tag in self.text.tag_names(CURRENT):
+            if tag[:6] == "hyper-":
+                self.links[tag]()
+                return
+
 
 class Notebook(Frame):
     """Notebook Widget"""
@@ -306,7 +339,7 @@ def corpkit_gui():
         except:
             pass
 
-        # add tregex and some other bits to path
+        ## add tregex and some other bits to path
         paths = ['', 'dictionaries', 'corpkit', 'nltk_data']
         for p in paths:
             fullp = os.path.join(rd, p).rstrip('/')
@@ -953,16 +986,19 @@ def corpkit_gui():
         def show_prev():
             """show previous interrogation"""
             import pandas
-            global prev
-            global nex
             currentname = name_of_interro_spreadsheet.get()
+            # get index of current index
             ind = all_interrogations.keys().index(currentname)
+            # if it's higher than zero
             if ind > 0:
                 if ind == 1:
                     prev.configure(state=DISABLED)
                     nex.configure(state = NORMAL)
                 else:
+                    if ind + 1 < len(all_interrogations.keys()):
+                        nex.configure(state = NORMAL)
                     prev.configure(state=NORMAL)
+
                 newname = all_interrogations.keys()[ind - 1]
                 newdata = all_interrogations[newname]
                 name_of_interro_spreadsheet.set(newname)
@@ -979,10 +1015,13 @@ def corpkit_gui():
         def show_next():
             """show next interrogation"""
             import pandas
-            global prev
-            global nex
             currentname = name_of_interro_spreadsheet.get()
-            ind = all_interrogations.keys().index(currentname)
+            if currentname:
+                ind = all_interrogations.keys().index(currentname)
+            else:
+                ind = 0
+            if ind > 0:
+                prev.configure(state=NORMAL)
             if ind + 1 < len(all_interrogations.keys()):
                 if ind + 2 == len(all_interrogations.keys()):
                     nex.configure(state=DISABLED)
@@ -1106,13 +1145,13 @@ def corpkit_gui():
                 except:
                     pass
                 if 'results' in the_data._asdict().keys():
-                    update_spreadsheet(o_editor_results, the_data.results, height = 138, indexwidth = 70, width = 800)
-                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 800)
+                    update_spreadsheet(o_editor_results, the_data.results, height = 138, indexwidth = 70, width = 750)
+                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, indexwidth = 70, width = 750)
                 if there_is_new_data:
                     if newdata != 'None' and newdata != '':
                         if 'results' in the_data._asdict().keys():
-                            update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 180, width = 800)
-                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 800)
+                            update_spreadsheet(n_editor_results, newdata.results, indexwidth = 70, height = 180, width = 750)
+                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, indexwidth = 70, width = 750)
                 if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
                     the_data = all_interrogations[name_of_interro_spreadsheet.get()]
                     tot = pandas.DataFrame(the_data.totals, dtype = object)
@@ -1333,19 +1372,6 @@ def corpkit_gui():
 
             update_spreadsheet(interro_totals, totals_as_df, height = 10, indexwidth = 70, width = 650)
             
-            global prev
-            prev = Button(tab1, text = 'Previous', command = show_prev)
-            prev.grid(row = 3, column = 2, sticky = W, padx = (120, 0))
-            global nex
-            nex = Button(tab1, text = 'Next', command = show_next)
-            nex.grid(row = 3, column = 2, sticky = W, padx = (220, 0))
-            if len(all_interrogations.keys()) < 2:
-                nex.configure(state = DISABLED)
-                prev.configure(state = DISABLED)
-
-            savdict = Button(tab1, text = 'Save as dictionary', command = save_as_dictionary)
-            savdict.grid(row = 3, column = 2, sticky = E, padx = (0, 175))
-
             ind = all_interrogations.keys().index(name_of_interro_spreadsheet.get())
             if ind == 0:
                 prev.configure(state=DISABLED)
@@ -1370,8 +1396,6 @@ def corpkit_gui():
 
             #reset name
             nametext.set('untitled')
-
-            Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate')).grid(row = 3, column = 2, sticky = E, padx = (0, 20))
         
             if interrogation_returned_dict:
                 timestring('Interrogation finished, with multiple results.')
@@ -1599,7 +1623,7 @@ def corpkit_gui():
 
         Label(interro_opt, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW', pady = (5,0))
         entrytext.set(r'JJ > (NP <<# /NN.?/)')
-        qa = Text(interro_opt, width = 36, height = 4, borderwidth = 0.5, 
+        qa = Text(interro_opt, width = 40, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD)
         qa.grid(row = 4, column = 0, columnspan = 2, sticky = E, pady = (5,0))
         all_text_widgets.append(qa)
@@ -1681,11 +1705,10 @@ def corpkit_gui():
         Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
 
         global ngmsize
-
         Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
-        ngmsize.configure(width = 10)
-        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (85, 0))
+        ngmsize.configure(width = 9)
+        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (90, 0))
         ngmsize.config(state=DISABLED)
         global split_contract
         Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 75)) 
@@ -1693,7 +1716,6 @@ def corpkit_gui():
         split_contract.configure(width = 7)
         split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
         split_contract.config(state=DISABLED)
-
 
         Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 88))
         spl = MyOptionMenu(interro_opt, 'Off','UK','US')
@@ -1729,19 +1751,19 @@ def corpkit_gui():
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
-        Label(interro_opt, text = 'Kind of data:').grid(row = 1, column = 0, sticky = W)
+        Label(interro_opt, text = 'Data type:').grid(row = 1, column = 0, sticky = W)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
 
-        Label(interro_opt, text = 'Search\ntype:').grid(row = 3, column = 0, sticky = 'NW')
+        Label(interro_opt, text = 'Search type:').grid(row = 3, column = 0, sticky = 'NW')
         frm = Frame(interro_opt)
-        frm.grid(row = 3, column = 0, columnspan = 2, sticky = E, padx = (4,0))
+        frm.grid(row = 3, column = 0, columnspan = 2, sticky = E, padx = (4,4))
         dtscrollbar = Scrollbar(frm)
         dtscrollbar.pack(side=RIGHT, fill=Y)
 
-        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 40, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 34, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                             yscrollcommand=dtscrollbar.set, exportselection = False)
         datatype_listbox.pack()
         dtscrollbar.config(command=datatype_listbox.yview)
@@ -1777,11 +1799,10 @@ def corpkit_gui():
         queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
         special_queries = StringVar(root)
         special_queries.set('Off')
-        Label(interro_opt, text = ' Preset query:', width = 10).grid(row = 6, column = 0, sticky = W)
+        Label(interro_opt, text = 'Preset query:').grid(row = 6, column = 0, sticky = W)
         pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
-        pick_a_query.grid(row = 6, column = 0, padx = (85, 0), columnspan = 2, sticky = W)
+        pick_a_query.grid(row = 6, column = 0, padx = (90, 0), columnspan = 2, sticky = W)
         special_queries.trace("w", q_callback)
-
 
         # Interrogation name
         nametext = StringVar()
@@ -1806,8 +1827,18 @@ def corpkit_gui():
 
         # name to show above spreadsheet 0
         i_resultname = StringVar()
+
+        def change_interro_spread(*args):
+            if name_of_interro_spreadsheet.get():
+                savdict.config(state = NORMAL)
+                updbut.config(state = NORMAL)
+            else:
+                savdict.config(state = DISABLED)
+                updbut.config(state = DISABLED)
+
         name_of_interro_spreadsheet = StringVar()
         name_of_interro_spreadsheet.set('')
+        name_of_interro_spreadsheet.trace("w", change_interro_spread)
         i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))  
         
         # make spreadsheet frames for interrogate pane
@@ -1824,12 +1855,34 @@ def corpkit_gui():
         llab.lift()
 
         # show nothing in them yet
-        update_spreadsheet(interro_results, df_to_show = None, height = 450, width = 800)
-        update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 800)
+        update_spreadsheet(interro_results, df_to_show = None, height = 450, width = 750)
+        update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 750)
+
+        #global prev
+        prev = Button(tab1, text = 'Previous', command = show_prev)
+        prev.grid(row = 3, column = 2, sticky = W, padx = (120, 0))
+        #global nex
+        nex = Button(tab1, text = 'Next', command = show_next)
+        nex.grid(row = 3, column = 2, sticky = W, padx = (220, 0))
+        if len(all_interrogations.keys()) < 2:
+            nex.configure(state = DISABLED)
+            prev.configure(state = DISABLED)
+
+        savdict = Button(tab1, text = 'Save as dictionary', command = save_as_dictionary)
+        savdict.config(state = DISABLED)
+        savdict.grid(row = 3, column = 2, sticky = W, padx = (500,0))
+
+        updbut = Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate'))
+        updbut.grid(row = 3, column = 2, sticky = W, padx = (650,0))
+        updbut.config(state = DISABLED)
 
         ##############    ##############     ##############     ##############     ############## 
         # EDITOR TAB #    # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB #     # EDITOR TAB # 
         ##############    ##############     ##############     ##############     ############## 
+
+
+        editor_buttons = Frame(tab2)
+        editor_buttons.grid(row = 0, column = 0, sticky = 'NW')
 
         def do_editing():
             """what happens when you press edit"""
@@ -2030,13 +2083,9 @@ def corpkit_gui():
             # update edited spreadsheets
             most_recent = all_interrogations[all_interrogations.keys()[-1]]
             if 'results' in most_recent._asdict().keys():
-                update_spreadsheet(n_editor_results, most_recent.results, height = 180, width = 800)
-            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 800)
-            
-            # add button to update
-            tmp = Button(tab2, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit'))
-            tmp.grid(row = 20, column = 2, sticky = E, padx = (0, 50), pady = (10, 0))
-            
+                update_spreadsheet(n_editor_results, most_recent.results, height = 180, width = 750)
+            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 750)
+                        
             # finish up
             refresh()
             # reset some buttons that the user probably wants reset
@@ -2066,25 +2115,25 @@ def corpkit_gui():
                 thisdata = all_interrogations[selected_to_edit.get()]
                 resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
                 if 'results' in thisdata._asdict().keys():
-                    update_spreadsheet(o_editor_results, thisdata.results, height = 138, width = 800)
+                    update_spreadsheet(o_editor_results, thisdata.results, height = 138, width = 750)
                     df1box.config(state = NORMAL)
                 else:
                     df1box.config(state = NORMAL)
                     df1branch.set('totals')
                     df1box.config(state = DISABLED)
-                    update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 800)
+                    update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
                 if 'totals' in thisdata._asdict().keys():
-                    update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 800)
+                    update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 750)
                     #df1box.config(state = NORMAL)
                 #else:
-                    #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
+                    #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
                     #df1box.config(state = NORMAL)
                     #df1branch.set('results')
                     #df1box.config(state = DISABLED)
             name_of_n_ed_spread.set('')
             editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 800)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
             for subcl in [subc_listbox]:
                 subcl.configure(state = NORMAL)
                 subcl.delete(0, 'end')
@@ -2103,23 +2152,26 @@ def corpkit_gui():
         tup = tuple([i for i in all_interrogations.keys()])    
         selected_to_edit = StringVar(root)
         selected_to_edit.set('None')
-        x = Label(tab2, text = 'To edit', font = ("Helvetica", 13, "bold"))
+        x = Label(editor_buttons, text = 'To edit', font = ("Helvetica", 13, "bold"))
         x.grid(row = 0, column = 0, sticky = W)
-        dataframe1s = OptionMenu(tab2, selected_to_edit, *tup)
-        dataframe1s.grid(row = 1, column = 0, sticky=W)
+        dataframe1s = OptionMenu(editor_buttons, selected_to_edit, *tup)
+        dataframe1s.config(width = 25)
+        dataframe1s.grid(row = 1, column = 0, columnspan = 2, sticky=W)
         selected_to_edit.trace("w", df_callback)
 
         # DF1 branch selection
         df1branch = StringVar()
         df1branch.set('results')
-        df1box = OptionMenu(tab2, df1branch, 'results', 'totals')
-        df1box.config(width = 19, state = DISABLED)
+        df1box = OptionMenu(editor_buttons, df1branch, 'results', 'totals')
+        df1box.config(width = 11, state = DISABLED)
         df1box.grid(row = 1, column = 1, sticky = E)
 
         def op_callback(*args):
             if opp.get() != 'None':
                 dataframe2s.config(state = NORMAL)
                 df2box.config(state = NORMAL)
+                if opp.get() == 'keywords' or opp.get() == '%-diff':
+                    df2branch.set('results')
             elif opp.get() == 'None':
                 dataframe2s.config(state = DISABLED)
                 df2box.config(state = DISABLED)
@@ -2128,8 +2180,8 @@ def corpkit_gui():
         opp = StringVar(root)
         opp.set('None')
         operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'rel. dist.')
-        Label(tab2, text='Operation and denominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
-        ops = OptionMenu(tab2, opp, *operations)
+        Label(editor_buttons, text='Operation and denominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W)
+        ops = OptionMenu(editor_buttons, opp, *operations)
         ops.grid(row = 3, column = 0, sticky = W)
         opp.trace("w", op_callback)
 
@@ -2138,94 +2190,90 @@ def corpkit_gui():
         data2_pick = StringVar(root)
         data2_pick.set('Self')
         #Label(tab2, text = 'Denominator:').grid(row = 3, column = 0, sticky = W)
-        dataframe2s = OptionMenu(tab2, data2_pick, *tups)
-        dataframe2s.config(state = DISABLED, width = 13)
-        dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = N)
+        dataframe2s = OptionMenu(editor_buttons, data2_pick, *tups)
+        dataframe2s.config(state = DISABLED, width = 16)
+        dataframe2s.grid(row = 3, column = 0, columnspan = 2, sticky = 'NW', padx = (110,0))
         data2_pick.trace("w", df2_callback)
 
         # DF2 branch selection
         df2branch = StringVar(root)
         df2branch.set('totals')
-        df2box = OptionMenu(tab2, df2branch, 'results', 'totals')
-        df2box.config(state = DISABLED, width = 13)
+        df2box = OptionMenu(editor_buttons, df2branch, 'results', 'totals')
+        df2box.config(state = DISABLED, width = 11)
         df2box.grid(row = 3, column = 1, sticky = E)
 
         # sort by
-        Label(tab2, text = 'Sort results by', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Sort results by', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 0, sticky = W)
         sort_val = StringVar(root)
         sort_val.set('None')
-        sorts = OptionMenu(tab2, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
-        sorts.config(width = 13)
+        sorts = OptionMenu(editor_buttons, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
+        sorts.config(width = 11)
         sorts.grid(row = 4, column = 1, sticky = E)
 
         # spelling again
-        Label(tab2, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
-        spl_editor = MyOptionMenu(tab2, 'Off','UK','US')
+        Label(editor_buttons, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
+        spl_editor = MyOptionMenu(editor_buttons, 'Off','UK','US')
         spl_editor.grid(row = 5, column = 1, sticky = E)
         spl_editor.configure(width = 10)
 
         # keep_top
-        Label(tab2, text = 'Keep top results:').grid(row = 6, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Keep top results:').grid(row = 6, column = 0, sticky = W)
         keeptopnum = StringVar()
         keeptopnum.set('all')
-        keeptopbox = Entry(tab2, textvariable = keeptopnum, width = 5)
+        keeptopbox = Entry(editor_buttons, textvariable = keeptopnum, width = 5)
         keeptopbox.grid(column = 1, row = 6, sticky = E)
         all_text_widgets.append(keeptopbox)
 
 
-
-
-
-
         # currently broken: just totals button
         just_tot_setting = IntVar()
-        just_tot_but = Checkbutton(tab2, text="Just totals", variable=just_tot_setting, state = DISABLED)
+        just_tot_but = Checkbutton(editor_buttons, text="Just totals", variable=just_tot_setting, state = DISABLED)
         #just_tot_but.select()
         just_tot_but.grid(column = 0, row = 7, sticky = W)
 
         keep_stats_setting = IntVar()
-        keep_stat_but = Checkbutton(tab2, text="Keep stats", variable=keep_stats_setting)
+        keep_stat_but = Checkbutton(editor_buttons, text="Keep stats", variable=keep_stats_setting)
         #keep_stat_but.select()
         keep_stat_but.grid(column = 1, row = 7, sticky = E)
 
         rem_abv_p_set = IntVar()
-        rem_abv_p_but = Checkbutton(tab2, text="Remove above p", variable=rem_abv_p_set)
+        rem_abv_p_but = Checkbutton(editor_buttons, text="Remove above p", variable=rem_abv_p_set)
         #rem_abv_p_but.select()
         rem_abv_p_but.grid(column = 0, row = 8, sticky = W)
 
         # transpose
         transpose = IntVar()
-        trans_but = Checkbutton(tab2, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
+        trans_but = Checkbutton(editor_buttons, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
         trans_but.grid(column = 1, row = 8, sticky = E)
 
         # entries + entry field for regex, off, skip, keep, merge
-        Label(tab2, text = 'Edit entries', font = ("Helvetica", 13, "bold")).grid(row = 9, column = 0, sticky = W, pady = (10, 0))
+        Label(editor_buttons, text = 'Edit entries', font = ("Helvetica", 13, "bold")).grid(row = 9, column = 0, sticky = W, pady = (10, 0))
         
         # edit entries regex box
         entry_regex = StringVar()
         entry_regex.set(r'.*ing$')
-        edit_box = Entry(tab2, textvariable = entry_regex, state = DISABLED, font = ("Courier New", 13))
+        edit_box = Entry(editor_buttons, textvariable = entry_regex, state = DISABLED, font = ("Courier New", 13))
         edit_box.grid(row = 10, column = 1, sticky = E)
         all_text_widgets.append(edit_box)
 
         # merge entries newname
-        Label(tab2, text = 'Merge name:').grid(row = 11, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Merge name:').grid(row = 11, column = 0, sticky = W)
         newname_var = StringVar()
         newname_var.set('')
-        mergen = Entry(tab2, textvariable = newname_var, state = DISABLED, font = ("Courier New", 13))
+        mergen = Entry(editor_buttons, textvariable = newname_var, state = DISABLED, font = ("Courier New", 13))
         mergen.grid(row = 11, column = 1, sticky = E)
         all_text_widgets.append(mergen)
 
-        Label(tab2, text = 'Replace in entry names:').grid(row = 12, column = 0, sticky = W)
-        Label(tab2, text = 'Replace with:').grid(row = 12, column = 1, sticky = W)
+        Label(editor_buttons, text = 'Replace in entry names:').grid(row = 12, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Replace with:').grid(row = 12, column = 1, sticky = W)
         toreplace_string = StringVar()
         toreplace_string.set('')
         replacewith_string = StringVar()
         replacewith_string.set('')
-        toreplace = Entry(tab2, textvariable = toreplace_string, font = ("Courier New", 13))
+        toreplace = Entry(editor_buttons, textvariable = toreplace_string, font = ("Courier New", 13))
         toreplace.grid(row = 13, column = 0, sticky = W)
         all_text_widgets.append(toreplace)
-        replacewith = Entry(tab2, textvariable = replacewith_string, font = ("Courier New", 13))
+        replacewith = Entry(editor_buttons, textvariable = replacewith_string, font = ("Courier New", 13))
         replacewith.grid(row = 13, column = 1, sticky = E)
         all_text_widgets.append(replacewith)    
         
@@ -2244,7 +2292,7 @@ def corpkit_gui():
         do_with_entries = StringVar(root)
         do_with_entries.set('Off')
         edit_ent_op = ('Off', 'Skip', 'Keep', 'Merge')
-        ed_op = OptionMenu(tab2, do_with_entries, *edit_ent_op)
+        ed_op = OptionMenu(editor_buttons, do_with_entries, *edit_ent_op)
         ed_op.grid(row = 10, column = 0, sticky = W)
         do_with_entries.trace("w", do_w_callback)
 
@@ -2274,9 +2322,9 @@ def corpkit_gui():
                 merge.configure(state = DISABLED)
 
         # subcorpora + optionmenu off, skip, keep
-        Label(tab2, text = 'Edit subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 14, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Edit subcorpora', font = ("Helvetica", 13, "bold")).grid(row = 14, column = 0, sticky = W)
         
-        edit_sub_f = Frame(tab2)
+        edit_sub_f = Frame(editor_buttons)
         edit_sub_f.grid(row = 14, column = 1, rowspan = 5, sticky = E, pady = (20,0))
         edsub_scbr = Scrollbar(edit_sub_f)
         edsub_scbr.pack(side=RIGHT, fill=Y)
@@ -2291,64 +2339,80 @@ def corpkit_gui():
         # subcorpora edit options
         do_sub = StringVar(root)
         do_sub.set('Off')
-        do_with_subc = OptionMenu(tab2, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
+        do_with_subc = OptionMenu(editor_buttons, do_sub, *('Off', 'Skip', 'Keep', 'Merge', 'Span'))
         do_with_subc.grid(row = 15, column = 0, sticky = W)
         do_sub.trace("w", do_s_callback)
 
         # subcorpora merge name    
-        Label(tab2, text = 'Merge name:').grid(row = 16, column = 0, sticky = 'NW')
+        Label(editor_buttons, text = 'Merge name:').grid(row = 16, column = 0, sticky = 'NW')
         new_subc_name = StringVar()
         new_subc_name.set('')
-        merge = Entry(tab2, textvariable = new_subc_name, state = DISABLED, font = ("Courier New", 13))
+        merge = Entry(editor_buttons, textvariable = new_subc_name, state = DISABLED, font = ("Courier New", 13))
         merge.grid(row = 17, column = 0, sticky = W, pady = (0, 10))
         all_text_widgets.append(merge)
         
         # name the edit
         edit_nametext = StringVar()
         edit_nametext.set('untitled')
-        Label(tab2, text = 'Edit name', font = ("Helvetica", 13, "bold")).grid(row = 19, column = 0, sticky = W)
-        msn = Entry(tab2, textvariable = edit_nametext)
+        Label(editor_buttons, text = 'Edit name', font = ("Helvetica", 13, "bold")).grid(row = 19, column = 0, sticky = W)
+        msn = Entry(editor_buttons, textvariable = edit_nametext)
         msn.grid(row = 20, column = 0, sticky = W)
         all_text_widgets.append(msn)
 
         # edit button
-        edbut = Button(tab2, text = 'Edit')
+        edbut = Button(editor_buttons, text = 'Edit')
         edbut.config(command = lambda: runner(edbut, do_editing), state = DISABLED)
         edbut.grid(row = 20, column = 1, sticky = E)
 
+        def editor_spreadsheet_showing_something(*args):
+            """if there is anything in an editor window, allow spreadsheet edit button"""
+            if name_of_o_ed_spread.get():
+                upd_ed_but.config(state = NORMAL)
+            else:
+                upd_ed_but.config(state = DISABLED)
+
+
         # show spreadsheets
+        editor_sheets = Frame(tab2)
+        editor_sheets.grid(column = 1, row = 0, sticky = 'NE')
         resultname = StringVar()
         name_of_o_ed_spread = StringVar()
         name_of_o_ed_spread.set('')
+        name_of_o_ed_spread.trace("w", editor_spreadsheet_showing_something)
         resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
-        o_editor_results = Frame(tab2, height = 14, width = 20)
-        o_editor_results.grid(column = 2, row = 1, rowspan=8, padx = 20, sticky = N)
-        Label(tab2, textvariable = resultname, 
+        o_editor_results = Frame(editor_sheets, height = 14, width = 20)
+        o_editor_results.grid(column = 1, row = 1, rowspan=1, padx = 20, sticky = N)
+        Label(editor_sheets, textvariable = resultname, 
               font = ("Helvetica", 13, "bold")).grid(row = 0, 
-               column = 2, sticky = W, padx = 20)    
-        #Label(tab2, text = 'Totals to edit:', 
+               column = 1, sticky = 'NW', padx = 20)    
+        #Label(editor_sheets, text = 'Totals to edit:', 
               #font = ("Helvetica", 13, "bold")).grid(row = 4, 
-               #column = 2, sticky = W, pady=0)
-        o_editor_totals = Frame(tab2, height = 1, width = 20)
-        o_editor_totals.grid(column = 2, row = 7, rowspan=2, padx = 20, sticky = S, pady = (20,0))
-        update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 800)
-        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
+               #column = 1, sticky = W, pady=0)
+        o_editor_totals = Frame(editor_sheets, height = 1, width = 20)
+        o_editor_totals.grid(column = 1, row = 2, rowspan=1, padx = 20, sticky = S, pady = (20,0))
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
         editoname = StringVar()
         name_of_n_ed_spread = StringVar()
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
-        Label(tab2, textvariable = editoname, 
-              font = ("Helvetica", 13, "bold")).grid(row = 9, 
-               column = 2, sticky = W, padx = 20)        
-        n_editor_results = Frame(tab2, height = 28, width = 20)
-        n_editor_results.grid(column = 2, row = 10, rowspan=8, sticky = 'NW', padx = 20)
-        #Label(tab2, text = 'Edited totals:', 
+        Label(editor_sheets, textvariable = editoname, 
+              font = ("Helvetica", 13, "bold")).grid(row = 3, 
+               column = 1, sticky = W, padx = 20)        
+        n_editor_results = Frame(editor_sheets, height = 28, width = 20)
+        n_editor_results.grid(column = 1, row = 4, rowspan=1, sticky = 'NW', padx = 20)
+        #Label(editor_sheets, text = 'Edited totals:', 
               #font = ("Helvetica", 13, "bold")).grid(row = 15, 
-               #column = 2, sticky = W, padx=20, pady=0)
-        n_editor_totals = Frame(tab2, height = 1, width = 20)
-        n_editor_totals.grid(column = 2, row = 19, rowspan=1, padx = 20)
-        update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 800)
-        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
+               #column = 1, sticky = W, padx=20, pady=0)
+        n_editor_totals = Frame(editor_sheets, height = 1, width = 20)
+        n_editor_totals.grid(column = 1, row = 5, rowspan=1, padx = 20)
+        update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
+        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
+
+        # add button to update
+        upd_ed_but = Button(editor_sheets, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit'))
+        upd_ed_but.grid(row = 6, column = 1, sticky = E, padx = (0, 50), pady = (10, 0))
+        upd_ed_but.config(state = DISABLED)
 
         #################       #################      #################      #################  
         # VISUALISE TAB #       # VISUALISE TAB #      # VISUALISE TAB #      # VISUALISE TAB #  
@@ -2388,6 +2452,9 @@ def corpkit_gui():
                     return
 
                 what_to_plot = all_interrogations[data_to_plot.get()].totals
+
+            if single_entry.get() != 'None':
+                what_to_plot = what_to_plot[single_entry.get()]
             
             if transpose_vis.get():
                 if plotbranch.get() != 'totals':
@@ -2425,7 +2492,7 @@ def corpkit_gui():
                 if explbox.get().startswith('[') and explbox.get().endswith(']'):
                     explval = explbox.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
-                    explval = [explbox.get().strip()]
+                    explval = explbox.get().strip()
                     explval = remake_special_query(explval)
                 d['explode'] = explval
             
@@ -2509,9 +2576,50 @@ def corpkit_gui():
             
             del oldplotframe[:]
 
-            canvas = FigureCanvasTkAgg(f.gcf(), tab3)
+            def getScrollingCanvas(frame):
+                """
+                    Adds a new canvas with scroll bars to the argument frame
+                    NB: uses grid layout
+                    @return: the newly created canvas
+                """
+
+                frame.grid(column = 2, row = 0, rowspan = 1, padx = (10, 20), pady = (50, 0), columnspan = 3, sticky = 'NW')
+                #frame.rowconfigure(0, weight=9)
+                #frame.columnconfigure(0, weight=9)
+                canvas = Canvas(frame, width = 980, height = 500)
+                xScrollbar = Scrollbar(frame, orient=HORIZONTAL)
+                yScrollbar = Scrollbar(frame)
+                xScrollbar.pack(side=BOTTOM,fill=X)
+                yScrollbar.pack(side=RIGHT,fill=Y)
+                canvas.config(xscrollcommand=xScrollbar.set)
+                xScrollbar.config(command=canvas.xview)
+                canvas.config(yscrollcommand=yScrollbar.set)
+                yScrollbar.config(command=canvas.yview)
+                canvas.pack(side=LEFT,expand=True,fill=BOTH)
+                return canvas
+
+            frame_for_fig = Frame(tab3)
+            #frame_for_fig
+            scrollC = getScrollingCanvas(frame_for_fig) 
+            mplCanvas = FigureCanvasTkAgg(f.gcf(), frame_for_fig)
+            mplCanvas._tkcanvas.config(highlightthickness=0)
+            canvas = mplCanvas.get_tk_widget()
+            canvas.grid(sticky=NSEW)
+
+            scrollC.create_window(0, 0, window=canvas)
+            scrollC.config(scrollregion=scrollC.bbox(ALL)) 
+
+            #hbar=Scrollbar(frame_for_fig,orient=HORIZONTAL)
+            #hbar.pack(side=BOTTOM,fill=X)
+            #hbar.config(command=canvas.get_tk_widget().xview)
+            #vbar=Scrollbar(frame_for_fig,orient=VERTICAL)
+            #vbar.pack(side=RIGHT,fill=Y)
+            #vbar.config(command=canvas.get_tk_widget().yview)
+            ##canvas.config(width=300,height=300)
+            #canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
+            #canvas.pack(side=LEFT,expand=True,fill=BOTH)
             try:
-                canvas.show()
+                mplCanvas.show()
             except RuntimeError as e:
                 s = str(e)
                 print s
@@ -2524,8 +2632,7 @@ def corpkit_gui():
                     tbut.config(state = DISABLED)
                 return
                 
-            canvas.get_tk_widget().grid(column = 2, row = 0, rowspan = 1, padx = (40, 20), pady = (20, 0), columnspan = 3, sticky = N)
-            oldplotframe.append(canvas.get_tk_widget())
+            oldplotframe.append(mplCanvas.get_tk_widget())
 
             del thefig[:]
             
@@ -2534,7 +2641,7 @@ def corpkit_gui():
             toolbar_frame.lift()
 
             oldplotframe.append(toolbar_frame)
-            toolbar = NavigationToolbar2TkAgg(canvas,toolbar_frame)
+            toolbar = NavigationToolbar2TkAgg(mplCanvas,toolbar_frame)
             toolbar.update()
 
             thefig.append(f.gcf())
@@ -2642,12 +2749,14 @@ def corpkit_gui():
 
         savedplot = StringVar()
         savedplot.set('View saved images: ')
-        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (55, 0), sticky = W)
+        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (40, 0), sticky = W)
         pbut = Button(plot_option_frame, text='Previous', command=lambda: move(direction = 'back'))
         pbut.grid(row = 23, column = 0, sticky = W)
+        pbut.config(state = DISABLED)
         nbut = Button(plot_option_frame, text='Next', command=lambda: move(direction = 'forward'))
         nbut.grid(row = 23, column = 1, sticky = E)
-        
+        nbut.config(state = DISABLED)
+
         # not in use while using the toolbar instead...
         #def save_current_image():
         #    import os
@@ -2673,18 +2782,28 @@ def corpkit_gui():
         Label(plot_option_frame, text = 'Image title:').grid(row = 0, column = 0, sticky = 'W', pady = (10, 0))
         plotnametext = StringVar()
         plotnametext.set('Untitled')
-        tmp = Entry(plot_option_frame, textvariable = plotnametext)
-        tmp.grid(row = 0, column = 1, pady = (10, 0))
-        all_text_widgets.append(tmp)
+        image_title_entry = Entry(plot_option_frame, textvariable = plotnametext)
+        image_title_entry.grid(row = 0, column = 1, pady = (10, 0))
+        all_text_widgets.append(image_title_entry)
 
         def plot_callback(*args):
             try:
                 thisdata = all_interrogations[data_to_plot.get()]
             except KeyError:
                 return
+            single_entry.set('None')
             if 'results' in thisdata._asdict().keys():
                 plotbox.config(state = NORMAL)
+                single_ent_optmenu.config(state = NORMAL)
+                single_ent_optmenu['menu'].delete(0, 'end')
+                single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
+                for corp in list(thisdata.results.columns)[:100]:
+                    single_ent_optmenu['menu'].add_command(label=corp, command=Tkinter._setit(single_entry, corp))
             else:
+                single_ent_optmenu.config(state = NORMAL)
+                single_ent_optmenu['menu'].delete(0, 'end')
+                single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
+                single_ent_optmenu.config(state = DISABLED)
                 plotbox.config(state = NORMAL)
                 plotbranch.set('totals')
                 plotbox.config(state = DISABLED)
@@ -2695,8 +2814,37 @@ def corpkit_gui():
         most_recent = all_interrogations[all_interrogations.keys()[-1]]
         data_to_plot.set(most_recent)
         every_interrogation = OptionMenu(plot_option_frame, data_to_plot, *tuple([i for i in all_interrogations.keys()]))
+        every_interrogation.config(width = 20)
         every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
         data_to_plot.trace("w", plot_callback)
+
+        Label(plot_option_frame, text = 'Single entry:').grid(row = 3, column = 0, sticky = W)
+        single_entry = StringVar(root)
+        single_entry.set('None')
+        #most_recent = all_interrogations[all_interrogations.keys()[-1]]
+        #single_entry.set(most_recent)
+        single_ent_optmenu = OptionMenu(plot_option_frame, single_entry, *tuple(['']))
+        single_ent_optmenu.config(width = 20, state = DISABLED)
+        single_ent_optmenu.grid(column = 1, row = 3, sticky = E)
+
+        def single_entry_plot_callback(*args):
+            """turn off things if single entry selected"""
+            if single_entry.get() != 'None':
+                sbpl_but.config(state = NORMAL)
+                sbplt.set(0)
+                sbpl_but.config(state = DISABLED)
+                num_to_plot_box.config(state = NORMAL)
+                number_to_plot.set('1')
+                num_to_plot_box.config(state = DISABLED)
+                if plotnametext.get() == 'Untitled':
+                    plotnametext.set(single_entry.get())
+            else:
+                plotnametext.set('Untitled')
+                sbpl_but.config(state = NORMAL)
+                number_to_plot.set('7')
+                num_to_plot_box.config(state = NORMAL)
+
+        single_entry.trace("w", single_entry_plot_callback)
 
 
         # branch selection
@@ -2711,9 +2859,9 @@ def corpkit_gui():
         Label(plot_option_frame, text = 'Results to show:').grid(row = 4, column = 0, sticky = W)
         number_to_plot = StringVar()
         number_to_plot.set('7')
-        tmp = Entry(plot_option_frame, textvariable = number_to_plot, width = 3)
-        tmp.grid(row = 4, column = 1, sticky = E)
-        all_text_widgets.append(tmp)
+        num_to_plot_box = Entry(plot_option_frame, textvariable = number_to_plot, width = 3)
+        num_to_plot_box.grid(row = 4, column = 1, sticky = E)
+        all_text_widgets.append(num_to_plot_box)
 
         def pie_callback(*args):
             if charttype.get() == 'pie':
@@ -2778,13 +2926,15 @@ def corpkit_gui():
         texuse = IntVar()
         tbut = Checkbutton(plot_option_frame, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width = 13)
         tbut.grid(column = 1, row = 11, sticky = E)
+        tbut.deselect()
         if not py_script:
             tbut.config(state = DISABLED)
 
         rl = IntVar()
         Checkbutton(plot_option_frame, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column = 0, row = 12, sticky = W)
         sbplt = IntVar()
-        Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13).grid(column = 1, row = 12, sticky = E)
+        sbpl_but = Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13)
+        sbpl_but.grid(column = 1, row = 12, sticky = E)
 
         gridv = IntVar()
         gridbut = Checkbutton(plot_option_frame, text="Grid", variable=gridv, onvalue = True, offvalue = False)
@@ -2825,7 +2975,7 @@ def corpkit_gui():
         Label(plot_option_frame, text='Legend position:').grid(row = 16, column = 0, sticky = W)
         legloc = StringVar(root)
         legloc.set('best')
-        locs = tuple(('best', 'outside right', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
+        locs = tuple(('best', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
         loc_options = OptionMenu(plot_option_frame, legloc, *locs)
         loc_options.grid(row = 16, column = 1, sticky = E)
 
@@ -2869,7 +3019,7 @@ def corpkit_gui():
             #pd.set_option('display.width', 1000)
             pd.set_option('display.max_colwidth', 200)
             current_conc[0] = data
-            if win.get() == 'Window size':
+            if win.get() == 'Window':
                 window = 70
             else:
                 window = int(win.get())
@@ -2960,7 +3110,7 @@ def corpkit_gui():
             elif option == 'Tokens':
                 option = 'l'
 
-            query = query_text.get()
+            query = cqb.get(1.0, END).strip('\n').strip()
             if not query or query == '':
                 query = 'any'
             tree = show_trees.get()
@@ -2997,7 +3147,10 @@ def corpkit_gui():
             if query.startswith('[') and query.endswith(']'):
                     query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
-                query = remake_special_query(query, return_list = True)
+                if option == 'l' or query == 'p':
+                    query = remake_special_query(query, return_list = True)
+                else:
+                    query = remake_special_query(query)
                 if query is False:
                     return
 
@@ -3026,6 +3179,7 @@ def corpkit_gui():
                     if truncate:
                         r = r.head(1000)
                 add_conc_lines_to_window(r, preserve_colour = False)
+            
             global conc_saved
             conc_saved = False
             
@@ -3678,7 +3832,14 @@ def corpkit_gui():
         #Label(tab4, textvariable = lab, font = ("Helvetica", 13, "bold")).grid(row = 1, column = 0, padx = 20, pady = 10, columnspan = 5, sticky = W)
         #Label(tab4, text = ' ', font = ("Helvetica", 13, "bold")).grid(row = 1, column = 9, columnspan = 2)
 
-        available_corpora_conc = OptionMenu(tab4, current_corpus, *tuple(('Select corpus')))
+
+        conc_left_button_frame = Frame(tab4)
+        conc_left_button_frame.grid(row = 1, column = 0)
+
+        conc_right_button_frame = Frame(tab4)
+        conc_right_button_frame.grid(row = 1, column = 1, padx = (155,0), sticky = E)
+
+        available_corpora_conc = OptionMenu(conc_left_button_frame, current_corpus, *tuple(('Select corpus')))
         available_corpora_conc.config(width = 22, state = DISABLED)
         available_corpora_conc.grid(row = 1, column = 0, padx = 0, pady = (5, 0), columnspan = 5, sticky = W)
 
@@ -3690,7 +3851,7 @@ def corpkit_gui():
             current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
         else:
             current_subcorpora = []
-        pick_subcorpora = OptionMenu(tab4, subc_pick, *tuple(['All'] + current_subcorpora))
+        pick_subcorpora = OptionMenu(conc_left_button_frame, subc_pick, *tuple(['All'] + current_subcorpora))
         pick_subcorpora.configure(width = 22)
         pick_subcorpora.grid(row = 2, column = 0, sticky = W)
 
@@ -3700,7 +3861,7 @@ def corpkit_gui():
                 conc_pick_dep_type.config(state = NORMAL)
                 speakcheck_conc.config(state = NORMAL)
                 speaker_listbox_conc.config(state = NORMAL)
-                query_text.set(r'(garbage|rubbish|trash)')
+                query_text.set(r'(your|yours|ur|ya|yr)')
                 ebox.config(state = NORMAL)
             else:
                 ebox.config(state = DISABLED)
@@ -3717,16 +3878,16 @@ def corpkit_gui():
             if corpus_search_type.get() == 'Tokens':
                 speakcheck_conc.config(state = DISABLED)
                 speaker_listbox_conc.config(state = DISABLED)
-                query_text.set(r'(garbage|rubbish|trash)')
+                query_text.set(r'(your|yours|ur|ya|yr)')
 
             if corpus_search_type.get() == 'Plaintext':
                 #conc_pick_dep_type.config(state = NORMAL)
-                query_text.set(r'(garbage|rubbish|trash)')
+                query_text.set(r'(your|yours|ur|ya|yr)')
 
         # kind of data
         corpus_search_type = StringVar()
         corpus_search_type.set('Trees')
-        pick_a_conc_datatype = OptionMenu(tab4, corpus_search_type, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
+        pick_a_conc_datatype = OptionMenu(conc_left_button_frame, corpus_search_type, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
         pick_a_conc_datatype.configure(width = 22)
         pick_a_conc_datatype.grid(row = 4, column = 0, sticky=W)
         corpus_search_type.trace("w", conc_search_t)
@@ -3735,31 +3896,39 @@ def corpkit_gui():
         conc_kind_of_dep = StringVar(root)
         conc_kind_of_dep.set('CC-processed')
         #Label(interro_opt, text = 'Dependency type:').grid(row = 15, column = 0, sticky = W)
-        conc_pick_dep_type = OptionMenu(tab4, conc_kind_of_dep, *dep_types)
+        conc_pick_dep_type = OptionMenu(conc_left_button_frame, conc_kind_of_dep, *dep_types)
         conc_pick_dep_type.config(state = NORMAL, width = 22)
         conc_pick_dep_type.grid(row = 5, column = 0, sticky=W)
 
         # query:
         query_text = StringVar()
-        query_text.set('/NN.?/ >># NP')
-        cqb = Entry(tab4, textvariable = query_text, width = 50, font = ("Courier New", 14))
-        cqb.grid(row = 2, column = 1, columnspan = 4)
+
+        cqb = Text(conc_left_button_frame, width = 50, font = ("Courier New", 14), height = 3, borderwidth = 0.5, undo = True, relief = SUNKEN, wrap = WORD)
+        cqb.grid(row = 1, column = 1, rowspan = 2, columnspan = 4, sticky = N, pady = (10,0))
         all_text_widgets.append(cqb)
 
-        Label(tab4, text = 'Limit results to function:').grid(row = 4, column = 3, sticky = S, padx = (18,0))
+        def conc_entry_callback(*args):
+            """when entry is changed, add it to the textbox"""
+            cqb.config(state = NORMAL)
+            cqb.delete(1.0, END)
+            cqb.insert(END, query_text.get())
+        query_text.trace("w", conc_entry_callback)
+        query_text.set('/NN.?/ >># NP')
+
+        Label(conc_left_button_frame, text = 'Limit results to function:').grid(row = 4, column = 3, sticky = S, padx = (18,0), pady = (10,0))
         justdep = StringVar()
         justdep.set('nsubj(pass)?')
-        ebox = Entry(tab4, textvariable = justdep, width = 22, font = ("Courier New", 13))
+        ebox = Entry(conc_left_button_frame, textvariable = justdep, width = 22, font = ("Courier New", 13))
         ebox.config(state = DISABLED)
-        ebox.grid(row = 5, column = 3, columnspan = 2)
+        ebox.grid(row = 5, column = 3, columnspan = 2, sticky = S)
         all_text_widgets.append(ebox)
         
         # window size: change to dynamic!
         win = StringVar()
-        win.set('Window size')
-        wind_size = OptionMenu(tab4, win, *tuple(('Window size', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
-        wind_size.config(width = 15)
-        wind_size.grid(row = 3, column = 12, columnspan = 2, sticky = E)
+        win.set('Window')
+        wind_size = OptionMenu(conc_right_button_frame, win, *tuple(('Window', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+        wind_size.config(width = 10)
+        wind_size.grid(row = 1, column = 4)
         win.trace("w", conc_sort)
 
         def conc_preset_callback(*args):
@@ -3782,27 +3951,26 @@ def corpkit_gui():
         conc_special_queries = StringVar(root)
         conc_special_queries.set('Preset query')
         #Label(interro_opt, text = 'Preset query:').grid(row = 3, column = 0, sticky = W, columnspan = 2)
-        conc_pick_a_query = OptionMenu(tab4, conc_special_queries, *conc_queries)
+        conc_pick_a_query = OptionMenu(conc_left_button_frame, conc_special_queries, *conc_queries)
         conc_pick_a_query.grid(row = 3, column = 0, sticky=W)
         conc_pick_a_query.configure(width = 22)
         conc_special_queries.trace("w", conc_preset_callback)
 
         only_sel_speakers_conc = IntVar()
-        speakcheck_conc = Checkbutton(tab4, text='Speakers:', variable=only_sel_speakers_conc, command = togglespeaker)
-        speakcheck_conc.grid(column = 1, row = 3, sticky=W)
+        speakcheck_conc = Checkbutton(conc_left_button_frame, text='Speakers:', variable=only_sel_speakers_conc, command = togglespeaker)
+        speakcheck_conc.grid(column = 1, row = 3, sticky=W, padx = (10,0))
         only_sel_speakers_conc.trace("w", togglespeaker)
 
-
         sensplit = IntVar()
-        sensplitbut = Checkbutton(tab4, text='Split sentences', variable=sensplit)
+        sensplitbut = Checkbutton(conc_left_button_frame, text='Split sentences', variable=sensplit)
         sensplitbut.grid(column = 2, row = 3, sticky=W, padx = (30, 0))
 
 
-        scfrm = Frame(tab4)
-        scfrm.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W)
+        scfrm = Frame(conc_left_button_frame)
+        scfrm.grid(row = 4, column = 1, rowspan = 2, columnspan = 2, sticky = W, padx = (16,0))
         scscrollbar = Scrollbar(scfrm)
         scscrollbar.pack(side=RIGHT, fill=Y)
-        speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 25, height = 4, relief = SUNKEN, bg = '#F4F4F4',
+        speaker_listbox_conc = Listbox(scfrm, selectmode = EXTENDED, width = 20, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                                        yscrollcommand=scscrollbar.set, exportselection = False)
         speaker_listbox_conc.pack()
         cscrollbar.config(command=speaker_listbox_conc.yview)
@@ -3810,18 +3978,18 @@ def corpkit_gui():
 
         # trees
         show_trees = IntVar()
-        trs = Checkbutton(tab4, text="Show trees", variable=show_trees, onvalue = True, offvalue = False)
+        trs = Checkbutton(conc_left_button_frame, text="Show trees", variable=show_trees, onvalue = True, offvalue = False)
         trs.grid(row = 3, column = 1, columnspan = 3, padx = (190, 0))
 
         # run button
-        concbut = Button(tab4, text = 'Run')
+        concbut = Button(conc_left_button_frame, text = 'Run')
         concbut.grid(row = 3, column = 3, columnspan = 2, padx = (120, 0))
         concbut.config(command = lambda: runner(concbut, do_concordancing), state = DISABLED)
 
         # edit conc lines
-        Button(tab4, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 2, column = 9, padx = (220, 0), sticky = E)
-        Button(tab4, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 2, column = 10, sticky = E)
-        Button(tab4, text = 'Sort', command = lambda: conc_sort()).grid(row = 2, column = 11, columnspan = 2, sticky = W, padx = (11, 20))
+        Button(conc_right_button_frame, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 0, column = 0, sticky = W)
+        Button(conc_right_button_frame, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 0, column = 1)
+        Button(conc_right_button_frame, text = 'Sort', command = lambda: conc_sort()).grid(row = 0, column = 2)
 
         def toggle_filenames(*args):
             if type(current_conc[0]) == str:
@@ -3861,10 +4029,11 @@ def corpkit_gui():
             refresh()
 
         def merge_conclines():
+            toget = prev_conc_listbox.curselection()
             should_continue = True
             global conc_saved
             if not conc_saved:
-                if type(current_conc[0]) != str:
+                if type(current_conc[0]) != str and len(toget) > 1:
                     should_continue = tkMessageBox.askyesno("Unsaved data", 
                               "Unsaved concordance lines will be forgotten. Continue?")
                 else:
@@ -3873,12 +4042,16 @@ def corpkit_gui():
             if not should_continue:
                 return
             import pandas
-            toget = prev_conc_listbox.curselection()
+            
             dfs = []
             if toget != ():
                 if len(toget) < 2:
-                    timestring('Need multiple concordances to merge.' % name)
-                    return
+                    for item in toget:
+                        nm = prev_conc_listbox.get(item)
+                        dfs.append(all_conc[nm])
+                    dfs.append(current_conc[0])
+                    #timestring('Need multiple concordances to merge.' % name)
+                    #return
                 for item in toget:
                     nm = prev_conc_listbox.get(item)
                     dfs.append(all_conc[nm])
@@ -3892,50 +4065,6 @@ def corpkit_gui():
             if should_drop:
                 df = df.drop_duplicates(subset = ['l', 'm', 'r'])
             add_conc_lines_to_window(df)
-
-        Button(tab4, text = 'Remove', command= lambda: remove_one_or_more(window = 'conc', kind = 'concordance')).grid(row = 5, column = 9, columnspan = 2, padx = (235,0))
-        Button(tab4, text = 'Store as', command = concsave).grid(row = 5, column = 8, columnspan = 2, padx = (185,0))
-        Button(tab4, text = 'Merge', command = merge_conclines).grid(row = 5, column = 10, sticky = E)
-
-        show_filenames = IntVar()
-        fnbut = Checkbutton(tab4, text='Filenames', variable=show_filenames, command=toggle_filenames)
-        fnbut.grid(row = 3, column = 8, columnspan = 3, padx = (210, 0))
-        fnbut.select()
-        show_filenames.trace('w', toggle_filenames)
-
-        show_themes = IntVar()
-        themebut = Checkbutton(tab4, text='Scheme', variable=show_themes, command=toggle_filenames)
-        themebut.grid(row = 3, column = 9, columnspan = 3, padx = (320, 0))
-        #themebut.select()
-        show_themes.trace('w', toggle_filenames)
-
-        show_speaker = IntVar()
-        showspkbut = Checkbutton(tab4, text='Speakers', variable=show_speaker, command=toggle_filenames)
-        showspkbut.grid(row = 3, column = 10, columnspan = 3, padx = (50, 0))
-        #showspkbut.select()
-        show_speaker.trace('w', toggle_filenames)
-
-        show_index = IntVar()
-        indbut = Checkbutton(tab4, text='Index', variable=show_index, command=toggle_filenames)
-        indbut.grid(row = 3, column = 7, columnspan = 3, padx = (160, 0))
-        indbut.select()
-        # disabling because turning index off can cause problems when sorting, etc
-        indbut.config(state = DISABLED)
-        show_index.trace('w', toggle_filenames)
-
-        # possible sort
-        sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
-        sortval = StringVar()
-        sortval.set('M1')
-        prev_sortval = ['None']
-        srtkind = OptionMenu(tab4, sortval, *sort_vals)
-        srtkind.config(width = 10)
-        srtkind.grid(row = 2, column = 12, sticky = E)
-
-        # export to csv
-        Button(tab4, text = 'Export', command = lambda: conc_export()).grid(row = 2, column = 13, sticky = E)
-
-        Label(tab4, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 9, columnspan = 3, padx = (220,0), sticky=S)
 
         def load_saved_conc():
             should_continue = True
@@ -3958,18 +4087,65 @@ def corpkit_gui():
             else:
                 return
 
-        Button(tab4, text = 'Load', command = load_saved_conc).grid(row = 5, column = 11)
-        prev_conc = Frame(tab4)
-        prev_conc.grid(row = 4, column = 12, rowspan = 2, columnspan = 3, sticky = E)
+        
+        fourbuts = Frame(conc_right_button_frame)
+        fourbuts.grid(row = 3, column = 0, columnspan = 3, sticky = 'SW')
+        Button(fourbuts, text = 'Store as', command = concsave).grid(row = 0, column = 0)
+        Button(fourbuts, text = 'Remove', command= lambda: remove_one_or_more(window = 'conc', kind = 'concordance')).grid(row = 0, column = 1)
+        Button(fourbuts, text = 'Merge', command = merge_conclines).grid(row = 0, column = 2)
+        Button(fourbuts, text = 'Load', command = load_saved_conc).grid(row = 0, column = 3)
+
+        show_filenames = IntVar()
+        fnbut = Checkbutton(conc_right_button_frame, text='Filenames', variable=show_filenames, command=toggle_filenames)
+        fnbut.grid(row = 1, column = 0, columnspan = 3)
+        fnbut.select()
+        show_filenames.trace('w', toggle_filenames)
+
+        show_themes = IntVar()
+        themebut = Checkbutton(conc_right_button_frame, text='Scheme', variable=show_themes, command=toggle_filenames)
+        themebut.grid(row = 1, column = 2, sticky = E)
+        #themebut.select()
+        show_themes.trace('w', toggle_filenames)
+
+        show_speaker = IntVar()
+        showspkbut = Checkbutton(conc_right_button_frame, text='Speakers', variable=show_speaker, command=toggle_filenames)
+        showspkbut.grid(row = 1, column = 3)
+        #showspkbut.select()
+        show_speaker.trace('w', toggle_filenames)
+
+        show_index = IntVar()
+        indbut = Checkbutton(conc_right_button_frame, text='Index', variable=show_index, command=toggle_filenames)
+        indbut.grid(row = 1, column = 0, sticky = W)
+        indbut.select()
+        # disabling because turning index off can cause problems when sorting, etc
+        indbut.config(state = DISABLED)
+        show_index.trace('w', toggle_filenames)
+
+        # possible sort
+        sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
+        sortval = StringVar()
+        sortval.set('M1')
+        prev_sortval = ['None']
+        srtkind = OptionMenu(conc_right_button_frame, sortval, *sort_vals)
+        srtkind.config(width = 10)
+        srtkind.grid(row = 0, column = 3)
+
+        # export to csv
+        Button(conc_right_button_frame, text = 'Export', command = lambda: conc_export()).grid(row = 0, column = 4, sticky = E)
+
+        Label(conc_right_button_frame, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, rowspan = 2, columnspan = 2, padx = (40,0))
+
+        prev_conc = Frame(conc_right_button_frame)
+        prev_conc.grid(row = 2, column = 3, rowspan = 2, columnspan = 2, sticky = E, pady = (10,0))
         prevcbar = Scrollbar(prev_conc)
         prevcbar.pack(side=RIGHT, fill=Y)
-        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 25, height = 4, relief = SUNKEN, bg = '#F4F4F4',
+        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 20, height = 5, relief = SUNKEN, bg = '#F4F4F4',
                                     yscrollcommand=prevcbar.set, exportselection = False)
         prev_conc_listbox.pack()
-        cscrollbar.config(command=speaker_listbox.yview)
+        cscrollbar.config(command=prev_conc_listbox.yview)
 
         ##############     ##############     ##############     ##############     ############## 
-        # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB # 
+        # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE 'TAB' #     # MANAGE TAB # 
         ##############     ##############     ##############     ##############     ############## 
 
         def make_new_project():
@@ -4022,6 +4198,8 @@ def corpkit_gui():
                 for iname in image_list:
                     if iname.replace('.png', '') not in all_images:
                         all_images.append(iname.replace('.png', ''))
+                if len(image_list) > 0:
+                    nbut.config(state = NORMAL)
             else:
                 if kind == 'interrogation':
                     r = load_all_results(data_dir = datad, root = root, note = note)
@@ -4033,7 +4211,8 @@ def corpkit_gui():
                             all_interrogations[name] = loaded
                         else:
                             all_conc[name] = loaded
-
+                    if len(all_interrogations.keys()) > 0:
+                        nex.configure(state = NORMAL)
             refresh()
         
         def recentchange(*args):
@@ -4319,7 +4498,7 @@ def corpkit_gui():
             i_resultname.set('Interrogation results:')
             resultname.set('Results to edit:')
             editoname.set('Edited results:')
-            savedplot.set('Saved images: ')
+            savedplot.set('View saved images: ')
             open_proj_basepath.set('Open project')
             corpus_fullpath.set('')
             current_corpus.set('')
@@ -4329,13 +4508,15 @@ def corpkit_gui():
             # spreadsheets
             update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
             update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
-            update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 800)
-            update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 800)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
+            update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
+            update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
             # interrogations
             for e in all_interrogations.keys():
                 del all_interrogations[e]
+            # another way:
+            all_interrogations.clear()
             # subcorpora listbox
             subc_listbox.delete(0, END)
             subc_listbox_build.delete(0, END)
@@ -5372,7 +5553,7 @@ def corpkit_gui():
             Config.set('Concordance','font size', fsize.get())
             Config.set('Concordance','dependency type', conc_kind_of_dep.get())
             Config.set('Concordance','coding scheme', codscheme)
-            if win.get() == 'Window size':
+            if win.get() == 'Window':
                 window = 70
             else:
                 window = int(win.get())
@@ -5673,15 +5854,19 @@ def corpkit_gui():
                 timestring('corpkit (version %s) up to date.' % oldstver)
                 return
         def start_update_check():
-            check_updates(showfalse = False, lateprint = True, auto = True)
+            try:
+                check_updates(showfalse = False, lateprint = True, auto = True)
+            except:
+                filemenu.entryconfig("Check for updates", state="disabled")
 
         def unmax():
             """stop it being always on top"""
             root.attributes('-topmost', False)
 
         root.after(1000, unmax)
-        if not '.py' in sys.argv[0]:
-            root.after(100000, start_update_check)
+        #if not '.py' in sys.argv[0]:
+
+        root.after(10000, start_update_check)
 
         def set_corenlp_path():
             fp = tkFileDialog.askdirectory(title = 'CoreNLP path',
@@ -5804,6 +5989,10 @@ def corpkit_gui():
             except:
                 import corpkit
                 oldstver = str(corpkit.__version__)
+
+            about_tl = Toplevel()
+            about_text = Text(about_tl)
+                
             tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                                   'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % oldstver)
 
@@ -5868,7 +6057,6 @@ def corpkit_gui():
         
         root.config(menu=menubar)
         note.focus_on(tab1)
-    #root.after(50, start_update_check) # 500
     
     root.deiconify()
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
@@ -5877,6 +6065,10 @@ def corpkit_gui():
     #the_splash.__exit__()
     root.wm_state('normal')
     root.resizable(TRUE,TRUE)
+
+    #import certifi
+    #print certifi.where()
+
     root.mainloop()
 
 if __name__ == "__main__":
