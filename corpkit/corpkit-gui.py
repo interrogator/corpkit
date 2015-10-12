@@ -3563,7 +3563,7 @@ def corpkit_gui():
             global schemename
             schemename = StringVar()
             schemename.set('<Enter a name>')
-            scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER, width = 17, font = ("Courier New", 13))
+            scheme_name_field = Entry(popup, textvariable = schemename, justify = CENTER, width = 21, font = ("Courier New", 13))
             #scheme_name_field.bind('<Button-1>', select_all_text)
             scheme_name_field.grid(column = 0, row = 5, sticky = W, padx = (7, 0))
             global tb
@@ -3694,7 +3694,13 @@ def corpkit_gui():
             
             Button(popup, text = 'View/edit', command = show_this_custom_query, width = 17).grid(column = 1, row = 2, sticky = E, padx = (0, 7))
             Button(popup, text = 'Merge', command = merge_this_custom_query, width = 17).grid(column = 1, row = 3, sticky = E, padx = (0, 7))
-            Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17).grid(column = 1, row = 4, sticky = E, padx = (0, 7))
+            svb = Button(popup, text = 'Save', command = add_custom_query_to_json, width = 17)
+            svb.grid(column = 1, row = 4, sticky = E, padx = (0, 7))
+            if in_a_project.get() == 0:
+                svb.config(state=DISABLED)
+            else:
+                svb.config(state=NORMAL)
+
             Button(popup, text = 'Remove', command = remove_this_custom_query, width = 17).grid(column = 1, row = 5, sticky = E, padx = (0, 7))
             Button(popup, text = 'Delete', command = delete_this_custom_query, width = 17).grid(column = 1, row = 6, sticky = E, padx = (0, 7))
 
