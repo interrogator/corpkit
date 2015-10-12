@@ -7,17 +7,53 @@ last_updated: 2015-09-01
 ---
 {% include linkrefs.html %}
 
+## Quickstart: relative frequencies
+
+Before diving into the many features in the `Edit` tab, we'll start small. Let's use `Edit` to turn absolute frequencies to relative frequencies. Just follow these steps:
+
+1. Under `To edit`, select an interrogation that you performed previously. Its results and totals branches will be displayed on the right.
+2. Select `results` to edit its results, rather than its totals. 
+3. Under `Operation`, select `%`.
+4. For `Denominator`, select `Self`, and then the `totals` branch.
+5. Under `Edit name`, pick something memorable.
+6. Hit `Edit`.
+
+This will generate a relative frequency version of your original interrogation, and store it to memory under the name you chose. You can then do all sorts of things with it:
+
+1. Select it as the `To edit` data for more complex editing
+2. Manually alter the values in the spreadsheets and hit `Update interrogation(s)`
+3. Head to the `Visalise` tab to plot the results
+4. Go back to the `Interrogate` tab and use the `Previous` and `Next` buttons to see the results in a larger window
+5. Navigate to `Menu` &rarr; `Manage project` and:
+  * Save it permanently to `project/saved_interrogations`
+  * View the options that generated it
+  * Rename it
+  * Export it to CSV
+  * Remove it from memory
+  * Delete it from `project/saved_interrogations`
+
+You'll notice, however, that we just skipped over *a lot* of options and buttons. In the sections below, editing is outlined in more detail.
+
 ## Selecting data to edit
 
 You can select any interrogation or edited result to edit. After this, you need to select a `branch`, either `results` or `totals`. These correspond to the two spreadsheets in the `Interrogate` tab. Some kinds of searches do not generate both branches, however: `Count tokens`, for example, produces only a totals branch.
 
 ## Operations and denominators
 
-A common task is to turn absolute into relative frequencies. To do this, you simply select `'%'` as the operation, and `self`-`totals` as the denominator. To calculate a ratio, you could use '&divide;'.
+A very common task is to turn absolute into relative frequencies. To do this, you simply select `'%'` as the operation, and `self` `totals` as the denominator, as in the *Quickstart* example. To calculate a ratio, rather than a percentage, you could use the '&divide;' operator. The subtraction operator may be a useful way of removing a false positive result.
 
-### Relative frequencies: an example
+The other operations are:
 
-Perhaps you are interested in the most common plural nouns in each subcorpus of your corpus. Your subcorpora, however, vary quite a lot in size, so you think relative, rather than absolute, frequencies are more appropriate.
+1. `Combine`: join two interrogations, aggregating any column that appears in both.
+2. `Keywords`: perform log-likelihood keywording
+3. `%-diff`: perform percentage-difference keywording
+4. `rel. dist`.: To use on Interrogations produced with the `Distance from root` option
+
+Keywording is treated in more depth [here](http://interrogator.github.io/corpkit/doc_edit.html#keywording).
+
+### Relative frequencies: a more detailed example
+
+Perhaps you are interested in the **most common plural nouns** in each subcorpus of your corpus. Your subcorpora, however, vary quite a lot in size, so you think relative, rather than absolute, frequencies are more appropriate.
 
 You decide you want to get the relative frequency of plural nouns compared to:
 
@@ -25,7 +61,7 @@ You decide you want to get the relative frequency of plural nouns compared to:
 2. All nouns
 3. All tokens
 
-To do this, you perform three interrogations, all using the `Trees` data type. First, you use `Get words` with a query that will match plural nouns. You give the interrogation a memorable name: `list plural`:
+To do this, you need to go back to the `Interrogate` tab and perform three interrogations, all using the `Trees` data type. First, you use `Get words` with a query that will match plural nouns. You give the interrogation a memorable name: `list plural`:
 
 > `/NNP?S/ < __`
 
@@ -35,7 +71,7 @@ Second, you use the `Count tokens` search type, and define a query to match any 
 
 Finally, still using the `Count tokens` option, you select the preset query `Any`, which will match any token (name: `count token`).
 
-Now, in the editor pane, you perform three separate edits, creating three different spreadsheets:
+Now, back in the `Edit` pane, you perform three separate edits, creating three different spreadsheets:
 
 | Data     |  Branch    |  Operation    |  Denominator | Branch |   
 |----------|-----------:|:--------------:|-------------:|-------:|
@@ -43,23 +79,17 @@ Now, in the editor pane, you perform three separate edits, creating three differ
 | `list plural` |  `results`  |  `%`    |  `Count noun`        | `totals` |
 | `list plural` |  `results`  |  `%`    |  `Count token`        | `totals` |
 
-
-Because you can use any result/total as the denominator (provided it has the same subcorpora), you can calculate almost anything in your data. You could use the same general method, with slightly different queries and operations, to:
-
-* Calculate the ratio of nouns to verbs in your corpus, using the division operator
-* Calculate the average number of words per sentence
-* Subtract use of *Google* as a verb from your existing data, which counted all instances of *Google*
-* and so on ...
+*corpkit*'s ability to perform these kinds of operations means that you can generate useful and appropriate statistics from your data. **Why show passives as a percentage of all words, when you could show passives as a percentage of all clauses?**
 
 ## Results branch as denominator
 
-If you use a `results` branch as a denominator, things get a little more complex. Rather than being divided by the total from that subcorpus, each entry will be divided by the total occurrences of that particular entry in the denominator data. This is a hard thing to explain, though. It's easier to understand this feature through an actual use-case:
+So far, whenever we've picked a denominator, we've selected its `totals` branch. If you use a `results` branch as a denominator, things get a little more complex. Rather than being divided by the total from that subcorpus, each entry will be divided by the total occurrences of that particular entry in the denominator data. This is a hard thing to explain, though. It's easier to understand this feature through an actual use-case:
 
 ### Calculating risk and power
 
-In an investigation of risk language in *The New York Times*, exploratory analysis suggested that people in positions of power are often the ones doing risking. *Politicians risk votes*, but *shoppers* don't seem to *risk fatigue*. This seems like an interesting thing to measure ... but there is a problem. Some common nouns, like *person*, are much more frequent than *Obama* or *senator*. So, if we try to tally all riskers, *person* comes out on top.
+In an investigation of risk language in *The New York Times*, exploratory analysis suggested that people in positions of power are often the ones doing risking. *Politicians risk votes*, but *shoppers* don't seem to *risk fatigue*. This seems like an interesting thing to measure ... but there is a problem. Some common nouns, like *person*, are much more frequent than *Obama* or *senator*. So, if we try to tally all riskers, *person* keeps coming out on top.
 
-To work around this, the investigator performs two searches. The first counts all *Participants* in the corpus. The second counts all the *Participants* who are the actors in risk processes:
+To work around this, the investigator performs two searches. The first gets *Participants* in the corpus. The second gets just *Participants* who are the actors in risk processes:
 
 | # | Data type    | Search option | Query | Function filter | Lemmatise  | Name
 |:---:|:--------------:|:---------------:|:-------:|:-----------------:|:------------:|:-----:|
@@ -86,7 +116,7 @@ We also head to the `Wordlists` feature and define a list of people of interest,
 
 >    `baby`
 
-The two lists can then be mashed together:
+The two lists can then be mashed together in the `Edit` tab:
 
 | Data |  Branch    |  Operation    |  Denominator | Branch | Sort | Just totals | Just entries | 
 |:----------:|:-----------:|:--------------:|:-------------:|:-------:|:-------:|:-----:|:------:|
@@ -118,10 +148,12 @@ If you tick `Keep stats`, you'll be able to see the `slope`, `intercept`, `stder
 
 ## Keywording
 
-If you select the `keywords` operation, you can get log-likelihood keyness scores for the the dataset of interest, compared with the denominator as a reference corpus. When doing keywording, the reference corpus can be: 
+If you select the `keywords` operation, you can get log-likelihood keyness scores for the the dataset of interest, compared with the denominator as a reference corpus. When doing keywording, the reference corpus can be either:
 
 1. a results branch of any interrogation
 2. A dictionary from the `dictionaries` folder: either the BNC (included), or one you made yourself using the `Save as dictionary` button in the `Interrogate` tab.
+
+The main thing to re
 
 Using `Self`-`results` as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.
 
