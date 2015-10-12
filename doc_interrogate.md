@@ -250,7 +250,7 @@ If you have selected `ALL` speakers, or have highlighted more than one, multiple
 
 You are given the option of naming your interrogation. You don't *have to* to do this, but it will help you keep track of which interrogations contain which kinds of data.
 
-If you forgot to name an interrogation before running it, you can head to the `Manage` tab to rename it at any time.
+If you forgot to name an interrogation before running it, you can head to the `Manage project` window via the Menu to rename it at any time.
 
 ## Running interrogations
 
@@ -258,7 +258,7 @@ On large datasets, interrogations can take some time, especially for dependency 
 
 Be sure to name your interrogation, via the `Name interrogation` box. This makes it much easier to know at a glance what you'll be editing, plotting or exporting.
 
-{{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via the <code>Manage</code> tab. You can head there to access previous queries, or to save interrogations to disk. {{end}}
+{{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via <code>Manage project</code> in the Menu. You can head there to access previous queries, or to save interrogations to disk. {{end}}
 
 ## Editing spreadsheets
 
