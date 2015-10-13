@@ -158,70 +158,80 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations', print
     from time import localtime, strftime
     # import nltk
 
-    if type(interrogation) == str or type(interrogation) == unicode:
-        raise TypeError('First argument (i.e. the thing to save) cannot be a string.')
-
-    if savename.endswith('.p'):
-        savename = savename[:-2]
-
-    def urlify(s):
-        import corpkit
-        "Turn savename into filename"
-        import re
-        #s = s.lower()
-        s = re.sub(r"[^\w\s-]", '', s)
-        s = re.sub(r"\s+", '-', s)
-        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-        return s
-
-    savename = urlify(savename)
-
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
     
-    if not savename.endswith('.p'):
-        savename = savename + '.p'
+    if type(interrogation) == dict:
+        savedir = os.path.join(savedir, savename)
+        if not os.path.isdir(savedir):
+            os.makedirs(savedir)
+    else:
+        interrogation = {savename: interrogation}
 
-    # this feature creeps me out, i don't think it's needed any more
-    savename = savename.replace('lemmatised', '-lemmatised')
+    for savename, data in interrogation.items():
+        
+        if type(data) == str or type(data) == unicode:
+            raise TypeError('First argument (i.e. the thing to save) cannot be a string.')
 
-    fullpath = os.path.join(savedir, savename)
-    while os.path.isfile(fullpath):
-        selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
-        if selection == 'o' or selection == 'O':
-            import os
-            os.remove(fullpath)
-        else:
-            if not selection.endswith('.p'):
-                selection = selection + '.p'
-                fullpath = os.path.join(savedir, selection)
-    
-    # if it's just a table or series
+        if savename.endswith('.p'):
+            savename = savename[:-2]
 
-    if type(interrogation) == pandas.core.frame.DataFrame or \
-        type(interrogation) == pandas.core.series.Series or \
-        type(interrogation) == collections.Counter:
-        # removing this nltk support for now
-        # or \ type(interrogation) == nltk.text.Text:
-        temp_list = [interrogation]
-    elif len(interrogation) == 2:
-        temp_list = [interrogation.query, interrogation.totals]
-    elif len(interrogation) == 3:
-        if interrogation.query['function'] == 'interrogator':
-            if interrogation.query['query'].startswith('k'):
-                temp_list = [interrogation.query, interrogation.results, interrogation.table]
+        def urlify(s):
+            import corpkit
+            "Turn savename into filename"
+            import re
+            #s = s.lower()
+            s = re.sub(r"[^\w\s-]", '', s)
+            s = re.sub(r"\s+", '-', s)
+            s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+            return s
+
+        savename = urlify(savename)
+
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
+        
+        if not savename.endswith('.p'):
+            savename = savename + '.p'
+
+        # this feature creeps me out, i don't think it's needed any more
+        savename = savename.replace('lemmatised', '-lemmatised')
+
+        fullpath = os.path.join(savedir, savename)
+        while os.path.isfile(fullpath):
+            selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+            if selection == 'o' or selection == 'O':
+                import os
+                os.remove(fullpath)
             else:
-                temp_list = [interrogation.query, interrogation.results, interrogation.totals]
-        else:
-            temp_list = [interrogation.query, interrogation.results, interrogation.totals]
-    elif len(interrogation) == 4:
-        temp_list = [interrogation.query, interrogation.results, interrogation.totals, interrogation.table]
-    f = open(fullpath, 'w')
-    pickle.dump(temp_list, f)
-    time = strftime("%H:%M:%S", localtime())
-    if print_info:
-        print '\n%s: Data saved: %s\n' % (time, fullpath)
-    f.close()
+                if not selection.endswith('.p'):
+                    selection = selection + '.p'
+                    fullpath = os.path.join(savedir, selection)
+        
+        # if it's just a table or series
+
+        if type(data) == pandas.core.frame.DataFrame or \
+            type(data) == pandas.core.series.Series or \
+            type(data) == collections.Counter:
+            # removing this nltk support for now
+            # or \ type(data) == nltk.text.Text:
+            temp_list = [data]
+        elif len(data) == 2:
+            temp_list = [data.query, data.totals]
+        elif len(data) == 3:
+            if data.query['function'] == 'interrogator':
+                if data.query['query'].startswith('k'):
+                    temp_list = [data.query, data.results, data.table]
+                else:
+                    temp_list = [data.query, data.results, data.totals]
+            else:
+                temp_list = [data.query, data.results, data.totals]
+        elif len(data) == 4:
+            temp_list = [data.query, data.results, data.totals, data.table]
+        f = open(fullpath, 'w')
+        pickle.dump(temp_list, f)
+        time = strftime("%H:%M:%S", localtime())
+        if print_info:
+            print '\n%s: Data saved: %s\n' % (time, fullpath)
+        f.close()
 
 def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
     """Reloads a save_result as namedtuple. it needs a filename and path to saved files"""
