@@ -16,6 +16,7 @@
     - [`interrogator()`](#interrogator)
     - [`editor()`](#editor)
     - [`plotter()`](#plotter)
+    - [`make_corpus()`](#make_corpus)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -24,6 +25,8 @@
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [More detailed examples](#more-detailed-examples)
+  - [Building corpora](#building-corpora)
+    - [Speaker IDs](#speaker-ids)
   - [Concordancing](#concordancing)
   - [Systemic functional stuff](#systemic-functional-stuff)
   - [Keywording](#keywording)
@@ -40,7 +43,7 @@
 <a name="whats-in-here"></a>
 ## What's in here?
 
-Essentially, the module contains functions for interrogating corpora, then manipulating or visualising the results. The most important of them are:
+Essentially, the module contains functions for building and interrogating corpora, then manipulating or visualising the results. The most important of them are:
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
@@ -48,6 +51,7 @@ Essentially, the module contains functions for interrogating corpora, then manip
 | `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
 | `conc()`          | complex concordancing of subcorpora | 
 | `editor()`        | edit `interrogator()` or `conc()` results, calculate keywords      |
+| `make_corpus()`   | Use CoreNLP/NLTK to make to make parsed, speaker-segmented corpora      |
 
 There are also helper functions for making regular expressions, saving and loading data, making new projects, and so on.
 
@@ -107,9 +111,15 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
 * Save images to file, as `.pdf` or `.png`
 
+<a name="make_corpus"></a>
+#### `make_corpus()` 
+
+* A simple Python wrapper around CoreNLP
+* Creates a parsed version of a structured or unstructured plaintext corpus
+* Optionally detects speaker IDs and adds them to CoreNLP XML
+
 <a name="other-stuff"></a>
 #### Other stuff
-
 
 * View top results as a table via `Pandas`
 * Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
@@ -250,17 +260,65 @@ Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
 <br><br>
 
+<a name="building-corpora"></a>
+### Building corpora
+
+*corpkit* contains a modest function for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
+
+```python
+>>> parsed = make_corpus(unparsed, parse = True, tokenise = True,
+...    corenlppath = 'Downloads/corenlp', nltk_data_path = 'Downloads/nltk_data')
+```
+
+which creates the parsed corpora, and returns their paths. You can also optionally pass in a string of annotators:
+
+```python
+ans = 'tokenize,ssplit,pos'
+parsed = make_corpus(unparsed, operations = ans)
+```
+
+<a name="speaker-ids"></a>
+#### Speaker IDs
+
+Something novel about *corpkit* is that it can work with corpora containing speaker IDs (scripts, transcripts, logs, etc.), like this:
+
+    JOHN: Why did they change the signs above all the bins?
+    SPEAKER23: I know why. But I'm not telling.
+
+If you use:
+
+```python
+>>> parsed = make_corpus(path, speaker_segmentation = True)
+```
+
+The function will:
+
+1. Detect any IDs in any file
+2. Create a duplicate version of the corpus with IDs removed
+3. Parse this 'cleaned' corpus
+4. Add an XML tag to each sentence with the name of the speaker
+5. Return paths to the cleaned and parsed corpora
+
+When interrogating or concordancing, you can then pass in a keyword argument to restrict searches to one or more speakers:
+
+```python
+>>> npheads = interrogator(parsed, 'words', r'/NN.?/ >># NP'
+...    just_speakers = ['BRISCOE', 'LOGAN'])
+```
+
+This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
+
 <a name="concordancing"></a>
 ### Concordancing
 
-You can use Tregex queries to concordance things, too:
+Unlike most conocrdancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
 
 ```python
 >>> from corpkit import conc
 
 >>> subcorpus = 'data/nyt/years/2005'
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
->>> lines = conc(subcorpus, query, window = 50, n = 10, random = True)
+>>> lines = conc(subcorpus, 'tregex', query, window = 50, n = 10, random = True)
 ```
 
 Output (a `Pandas DataFrame`):
@@ -278,7 +336,22 @@ Output (a `Pandas DataFrame`):
 9     said that the agency 's continuing review of how         Guidant   treated patient risks posed by devices like the 
 ```
 
-You can use this output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`.
+When searching dependencies, you have the added ability to restrict to a particular role:
+
+```python
+>>> lines = conc(parsed, 'deps', r'fr?iend', dep_function = 'nsubj')
+```
+
+Or, you can search tokenised corpora or plaintext corpora:
+
+```python
+>>> lines = conc(parsed, 'plaintext', query)
+>>> lines = conc(parsed, 'tokens', query)
+```
+
+where `query` can be a regular expression or list of words to match.
+
+If you really wanted, you can then go on to use `conc()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour code and create thematic categories for concordance lines as well.
 
 <a name="systemic-functional-stuff"></a>
 ### Systemic functional stuff

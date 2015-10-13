@@ -432,7 +432,6 @@ def new_project(name, loc = '.', root = False):
             return
         else:
             raise
-
     # make other directories
     dirs_to_make = ['data', 'images', 'saved_interrogations', \
       'saved_concordances', 'dictionaries', 'exported', 'logs']
@@ -443,8 +442,9 @@ def new_project(name, loc = '.', root = False):
         #os.makedirs(os.path.join(fullpath, 'data', subdir))
     # copy the bnc dictionary to dictionaries
     if root:
-        import corpkit
 
+        # clean this up
+        import corpkit
         def resource_path(relative):
             import os
             return os.path.join(
@@ -454,7 +454,6 @@ def new_project(name, loc = '.', root = False):
                 ),
                 relative
             )
-
         corpath = os.path.dirname(corpkit.__file__)
         corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
         baspat = os.path.dirname(corpath)
@@ -463,27 +462,9 @@ def new_project(name, loc = '.', root = False):
             shutil.copy(os.path.join(dicpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
         except:
             shutil.copy(resource_path('bnc.p'), os.path.join(fullpath, 'dictionaries'))
+
     # if not GUI
     if not root:
-        shutil.copy(os.path.join(thepath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
-        # make a blank ish notebook
-        newnotebook_text = open(os.path.join(thepath, corpkitname, 'blanknotebook.ipynb')).read()
-        fixed_text = newnotebook_text.replace('blanknotebook', str(name))
-        with open(os.path.join(fullpath, name + '.ipynb'), 'wb') as handle:
-            handle.write(fixed_text)
-            handle.close
-        if platform.system() == 'Darwin':
-            shtext = '#!/bin/bash\n\npath=$0\ncd ${path%%/*.*}\nipython notebook %s.ipynb\n' % name
-            with open(os.path.join(fullpath, 'launcher.sh'), 'wb') as handle:
-                handle.write(shtext)
-                handle.close
-            # permissions for sh launcher
-            st = os.stat(os.path.join(fullpath, 'launcher.sh'))
-            os.chmod(os.path.join(fullpath, 'launcher.sh'), st.st_mode | 0111)
-            print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\nor run launcher.sh.\n\n' % (name, name)
-        else:
-            print '\nNew project made: %s\nTo begin, either use:\n\n    ipython notebook %s.ipynb\n\n' % (name, name)
-    else:
         time = strftime("%H:%M:%S", localtime())
         print '%s: New project created: "%s"' % (time, name)
 

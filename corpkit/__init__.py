@@ -14,7 +14,8 @@ __all__ = ["interrogator",
            "check_jdk", 
            "parse_corpus", 
            "move_parsed_files", 
-            "corenlp_exists"]
+           "corenlp_exists",
+           "make_corpus"]
 
 __version__ = "1.68"
 __author__ = "Daniel McDonald"
@@ -52,3 +53,4 @@ from build import check_jdk
 from build import parse_corpus
 from build import move_parsed_files
 from build import corenlp_exists
+from build import make_corpus

@@ -520,7 +520,7 @@ def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     time = strftime("%H:%M:%S", localtime())
     print '%s: CoreNLP extracted. ' % time
 
-def get_corpus_filepaths(proj_path, corpuspath):
+def get_corpus_filepaths(projpath = False, corpuspath = False):
     import corpkit
     import fnmatch
     import os
@@ -531,9 +531,17 @@ def get_corpus_filepaths(proj_path, corpuspath):
     if len(matches) == 0:
         return False
     matchstring = '\n'.join(matches)
-    with open(os.path.join(proj_path, 'data', 'corpus-filelist.txt'), "w") as f:
+
+    # maybe not good:
+    if projpath is False:
+        projpath = os.path.dirname(os.path.abspath(corpuspath.rstrip('/')))
+
+    fp = os.path.join(projpath, 'data', 'corpus-filelist.txt')
+    if os.path.join('data', 'data') in fp:
+        fp = fp.replace(os.path.join('data', 'data'), 'data')
+    with open(fp, "w") as f:
         f.write(matchstring)
-    return os.path.join(proj_path, 'data', 'corpus-filelist.txt')
+    return fp
 
 def check_jdk():
     import corpkit
@@ -547,7 +555,101 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operations = False,
+def make_corpus(unparsed_corpus_path,
+                parse = True,
+                tokenise = False,
+                corenlppath = False,
+                nltk_data_path = False,
+                operations = False,
+                speaker_segmentation = False,
+                root = False,
+                **kwargs):
+    """Create a parsed version of the unparsed_corpus
+
+    This is designed for command line use
+
+    unparsed_corpus_path: path to corpus containing text files, 
+                          or subdirs containing text files
+    corenlppath: folder containing corenlp jar files
+    nltk_data_path: path to tokeniser if tokenising
+    operations: which kinds of annotations to do
+    speaker_segmentation: use if your corpus is script like: assign speaker name to each paragraph
+    """
+
+    import sys
+    import os    
+    from corpkit.build import (get_corpus_filepaths, 
+                               check_jdk, 
+                               add_ids_to_xml, 
+                               rename_all_files,
+                               make_no_id_corpus)
+
+    # raise error if no tokeniser
+    if tokenise:
+        import nltk
+        if nltk_data_path:
+            if nltk_data_path not in nltk.data.path:
+                nltk.data.path.append(nltk_data_path)
+        try:
+            from nltk import word_tokenize as tokenise
+        except:
+            print '\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n'
+            raise
+
+    if sys.platform == "darwin":
+        if not check_jdk():
+            print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
+
+    # make absolute path to corpus
+    unparsed_corpus_path = os.path.abspath(unparsed_corpus_path)
+    if os.path.join('data', 'data') in unparsed_corpus_path:
+        unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
+
+    # generate filelist in the parent dir
+    filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
+                                    corpuspath = unparsed_corpus_path)
+
+    outpaths = []
+
+    if parse:
+        if speaker_segmentation:
+            print 'Processing speaker IDs...'
+            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
+            to_parse = unparsed_corpus_path + '-stripped'
+            outpaths.append(to_parse)
+        else:
+            to_parse = unparsed_corpus_path
+
+        new_parsed_corpus_path = parse_corpus(proj_path = False, 
+                                   corpuspath = to_parse,
+                                   filelist = filelist,
+                                   corenlppath = corenlppath,
+                                   nltk_data_path = nltk_data_path,
+                                   operations = operations)
+        if new_parsed_corpus_path is False:
+            return 
+        outpaths.append(new_parsed_corpus_path)
+
+        if speaker_segmentation:
+            add_ids_to_xml(new_parsed_corpus_path)
+
+    if tokenise:
+        new_tokenised_corpus_path = parse_corpus(proj_path = False, 
+                                   corpuspath = unparsed_corpus_path,
+                                   filelist = filelist,
+                                   nltk_data_path = nltk_data_path,
+                                   operations = operations,
+                                   only_tokenise = True)
+        if new_tokenised_corpus_path is False:
+            return   
+        outpaths.append(new_tokenised_corpus_path)
+
+    rename_all_files(outpaths)
+    print 'Done! Created %s' % ', '.join(outpaths)
+    return outpaths
+
+
+def parse_corpus(proj_path = False, corpuspath = False, filelist = False, corenlppath = False, operations = False,
                  only_tokenise = False, root = False, stdout = False, nltk_data_path = False, **kwargs):
     import corpkit
     import subprocess
@@ -563,8 +665,11 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
             print 'Need latest Java.'
             return
 
+    curdir = os.getcwd()
+
     if nltk_data_path:
         if only_tokenise:
+            import nltk
             if nltk_data_path not in nltk.data.path:
                 nltk.data.path.append(nltk_data_path)
             from nltk import word_tokenize as tokenise
@@ -576,11 +681,19 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
     #    td['note'] = kwargs['note']
     #add_nltk_data_to_nltk_path(**td)
 
+    if proj_path is False:
+        proj_path = os.path.dirname(os.path.abspath(corpuspath.rstrip('/')))
+
     basecp = os.path.basename(corpuspath)
+
     if only_tokenise:
         new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
     else:
         new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
+
+    if os.path.join('data', 'data') in new_corpus_path:
+        new_corpus_path = new_corpus_path.replace(os.path.join('data', 'data'), 'data')
+
     if not os.path.isdir(new_corpus_path):
         os.makedirs(new_corpus_path)
     else:
@@ -604,13 +717,18 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
         if len(find_install) > 0:
             corenlppath = os.path.join(corenlppath, find_install[0])
         else:
-            print 'No parser found.'
+            print 'No parser found. Try using the keyword arg "corenlp = <path>".'
             return
+
+    # if not gui, don't mess with stdout
+    if stdout is False:
+        stdout = sys.stdout
 
     if not only_tokenise:
         os.chdir(corenlppath)
-        root.update_idletasks()
-        reload(sys)
+        if root:
+            root.update_idletasks()
+            reload(sys)
         import os
         import time
         if operations is False:
@@ -632,17 +750,21 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
             thetime = strftime("%H:%M:%S", localtime())
             num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
             if num_parsed == 0:
-                print '%s: Initialising parser ... ' % (thetime)
+                if root:
+                    print '%s: Initialising parser ... ' % (thetime)
             if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
-                print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
+                if root:
+                    print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
                 #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
+            time.sleep(1)
             if root:
                 root.update()
-                time.sleep(1)
     else:
 
+
+        from nltk import word_tokenize as tokenise
         # tokenise each file
         import pickle
         fs = open(filelist).read().splitlines()
@@ -654,7 +776,7 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
         if any(os.path.isdir(os.path.join(new_corpus_path, d)) for d in dirs):
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Directory already exists. Delete it if need be.' % thetime
-            return
+            return False
         for d in dirs:
             os.makedirs(os.path.join(new_corpus_path, d))
         nfiles = len(fs)
@@ -684,7 +806,7 @@ def parse_corpus(proj_path, corpuspath, filelist, corenlppath = False, operation
     sys.stdout = stdout
     thetime = strftime("%H:%M:%S", localtime())
     print '%s: Parsing finished. Moving parsed files into place ...' % thetime
-    os.chdir(proj_path)
+    os.chdir(curdir)
     return new_corpus_path
 
 def move_parsed_files(proj_path, corpuspath, new_corpus_path):
@@ -831,17 +953,17 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
     files = get_filepaths(corpuspath, ext = 'xml')
     if note:
         note.progvar.set(0)
+    thetime = strftime("%H:%M:%S", localtime())
+    print '%s: Processing speaker IDs ...' % thetime
     if root:
-        thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Processing speaker IDs ...' % thetime
         root.update()
 
     for i, f in enumerate(files):
         if note:
             note.progvar.set(i * 100.0 / len(files))
+        thetime = strftime("%H:%M:%S", localtime())
+        print '%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files))
         if root:
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files))
             root.update()
         xmlf = open(f)
         data = xmlf.read()
@@ -918,10 +1040,12 @@ def rename_all_files(dirs_to_do):
     import os
     from corpkit.build import get_filepaths
     for d in dirs_to_do:
-        if not d.endswith('-parsed'):
-            ext = 'txt'
-        else:
+        if d.endswith('-parsed'):
             ext = 'txt.xml'
+        elif d.endswith('-tokenised'):
+            ext = '.p'
+        else:
+            ext = '.txt'
         fs = get_filepaths(d, ext)
         for f in fs:
             fname = os.path.basename(f)
