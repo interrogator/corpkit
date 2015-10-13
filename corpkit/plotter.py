@@ -161,6 +161,7 @@ def plotter(title,
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
             sbplt = True
+    kwargs['subplots'] = sbplt
 
     if colours is True:
         colours = 'Paired'
@@ -247,8 +248,6 @@ def plotter(title,
     #if piemode:
         #if partial_pie:
             #kwargs['startangle'] = 180
-
-    kwargs['subplots'] = sbplt
 
     # copy data, make series into df
     dataframe = df.copy()
@@ -688,7 +687,7 @@ def plotter(title,
                 handles, labels = plt.gca().get_legend_handles_labels()
                 plt.legend( handles, labels, loc = leg_options['loc'], bbox_to_anchor = (0,-0.1,1,1),
                 bbox_transform = plt.gcf().transFigure )
-                if not tk:
+                if not tk and not sbplt:
                     plt.show()
                     return
         if 'rot' in kwargs:
@@ -861,7 +860,6 @@ def plotter(title,
                     axes.append(bit)
     
         # set subplot titles
-    
         for index, a in enumerate(axes):
             try:
                 titletext = list(dataframe.columns)[index]
