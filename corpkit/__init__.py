@@ -17,7 +17,7 @@ __all__ = ["interrogator",
            "corenlp_exists",
            "make_corpus"]
 
-__version__ = "1.68"
+__version__ = "1.69"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
