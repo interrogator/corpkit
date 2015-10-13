@@ -311,7 +311,7 @@ This makes it possible to not only investigate individual speakers, but to form 
 <a name="concordancing"></a>
 ### Concordancing
 
-Unlike most conocrdancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
+Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
 
 ```python
 >>> from corpkit import conc
