@@ -5,7 +5,7 @@ def translator():
     # currently not getting finite!
     roledict = {
             'acomp': ['participant', 'goal', 'complement', 'participant2'],
-            'advcl': ['adjunct', 'circumstance'],
+            'advcl': ['adjunct', 'event', 'process'],
             'advmod': ['adjunct', 'circumstance'],
             'amod': ['epithet'],
             'appos': ['thing', 'participant'],
