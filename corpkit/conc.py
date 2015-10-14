@@ -1,7 +1,7 @@
 
 def conc(corpus, 
-        query, 
         option = 'tregex',
+        query = 'any', 
         dep_function = 'any',
         dep_type = 'basic-dependencies',
         n = 100, 
