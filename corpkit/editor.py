@@ -118,6 +118,14 @@ def editor(dataframe1,
                 #saved_args['print_info'] = True
             else:
                 saved_args['print_info'] = False
+            # if df2 is also a dict, get the relevant entry
+            if type(dataframe2) == dict:
+                if sorted(set([i.lower() for i in dataframe1.keys()])) == \
+                   sorted(set([i.lower() for i in dataframe2.keys()])):
+                   saved_args['dataframe2'] = dataframe2[k]
+                   if 'use_df2_totals' in kwargs.keys():
+                       if kwargs['use_df2_totals'] is True:
+                            saved_args['dataframe2'] = dataframe2[k].totals
             outdict[k] = editor(v.results, **saved_args)
         if print_info:
             from time import localtime, strftime
