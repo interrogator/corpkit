@@ -19,7 +19,7 @@ def plotter(title,
             interactive = False,
             black_and_white = False,
             show_p_val = False,
-            indices = 'guess',
+            indices = False,
             **kwargs):
     """plot interrogator() or editor() output.
 
@@ -379,7 +379,18 @@ def plotter(title,
             newnames = []
             for col in list(dataframe.columns):
                 pval = dataframe[col]['p']
-                newname = '%s (p=%s)' % (col, format(pval, '.5f'))
+
+                def p_string_formatter(val):
+                    if val < 0.001:
+                        if not using_tex:
+                            return 'p < 0.001'
+                        else:
+                            return r'p $<$ 0.001'
+                    else:
+                        return 'p = %s' % format(val, '.3f')
+
+                pstr = p_string_formatter(pval)
+                newname = '%s (%s)' % (col, pstr)
                 newnames.append(newname)
             dataframe.columns = newnames
             dataframe.drop(statfields, axis = 0, inplace = True)
@@ -495,11 +506,11 @@ def plotter(title,
                 kwargs['rot'] = 45
 
     # no title for subplots because ugly,
-    if sbplt:
-        if 'title' in kwargs:
-            del kwargs['title'] 
-    else:
+    if title and not sbplt:
         kwargs['title'] = title
+
+    #    if 'title' in kwargs:
+    #        del kwargs['title'] 
         
     # no interactive subplots yet:
 
@@ -848,7 +859,8 @@ def plotter(title,
     # hacky: turn legend into subplot titles :)
     if sbplt:
         # title the big plot
-        #plt.suptitle(title, fontsize = 16)
+        #plt.gca().suptitle(title, fontsize = 16)
+        #plt.subplots_adjust(top=0.9)
         # get all axes
         if 'layout' not in kwargs:
             axes = [l for index, l in enumerate(ax)]
