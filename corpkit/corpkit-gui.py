@@ -2215,7 +2215,7 @@ def corpkit_gui():
         sort_val.set('None')
         sorts = OptionMenu(editor_buttons, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
         sorts.config(width = 11)
-        sorts.grid(row = 4, column = 1, sticky = E)
+        sorts.grid(row = 4, column = 1, sticky = E, pady = (15,0))
 
         # spelling again
         Label(editor_buttons, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
@@ -3198,7 +3198,6 @@ def corpkit_gui():
                  'print_output': False,
                  'root': root,
                  'note': note,
-                 'option': option,
                  'dep_type': depdict[conc_kind_of_dep.get()]}
 
             if justdep.get() != '':
@@ -3236,7 +3235,7 @@ def corpkit_gui():
                 from dictionaries.process_types import processes
                 from corpkit.other import as_regex
                 query = tregex_qs[conc_special_queries.get()]
-                d['option'] = 't'
+                option = 't'
 
             if jspeak_conc is not False:
                 showspkbut.select()
@@ -3248,7 +3247,7 @@ def corpkit_gui():
             else:
                 pass
 
-            r = conc(corpus, query, **d)
+            r = conc(corpus = corpus, option = option, query = query, **d)
             if r is not None and r is not False:
                 numresults = len(r.index)
                 if numresults > 999:
