@@ -33,7 +33,7 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/plott.png" alt="Visualising" width="100" height="50"></a>
 </div> <br />
-<i>Visualising results as a line graph, using TeX</i>
+<i>Visualising results as a line graph</i>
 </td>
 
 <td align="center" valign="bottom">
