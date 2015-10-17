@@ -402,11 +402,6 @@ def corpkit_gui():
         # for conc sort toggle
         sort_direction = True
 
-        # don't look for updates if the user manually clicked
-        # there must be a better way
-        do_auto_update = IntVar()
-        do_auto_update.set(0)
-
         subc_sel_vals = []
 
         # store every interrogation and conc in this session    
@@ -546,6 +541,10 @@ def corpkit_gui():
 
         # some functions used throughout the gui
 
+        def focus_next_window(event):
+            event.widget.tk_focusNext().focus()
+            return "break"
+
         def runner(button, command):
             """runs the command of a button, disabling the button till it is done,
             whether it returns early or not"""
@@ -638,7 +637,6 @@ def corpkit_gui():
                 if need_make_totals:
                     df_to_show = make_df_totals(df_to_show)
             if df_to_show is not None:
-
                 if just_default_sort is False:    
                     # for abs freq, make total
                     model = TableModel()
@@ -655,7 +653,7 @@ def corpkit_gui():
                     table = TableCanvas(frame_to_update, model=model, 
                                         showkeynamesinheader=True, 
                                         height = height,
-                                        rowheaderwidth=100, cellwidth=50, **kwarg)
+                                        rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(), **kwarg)
                     table.createTableFrame()
                     model = table.model
                     model.importDict(raw_data)
@@ -679,7 +677,7 @@ def corpkit_gui():
                     table = TableCanvas(frame_to_update, model=model, 
                                         showkeynamesinheader=True, 
                                         height = height,
-                                        rowheaderwidth=indexwidth, cellwidth=60,
+                                        rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(),
                                         **kwarg)
                     table.createTableFrame()
                     table.sortTable(columnName = 'Total', reverse = direct())
@@ -693,7 +691,7 @@ def corpkit_gui():
                 table = TableCanvas(frame_to_update, model=model, 
                                     showkeynamesinheader=True, 
                                     height = height,
-                                    rowheaderwidth=indexwidth, cellwidth=60,
+                                    rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(),
                                     **kwarg)
                 table.createTableFrame()
                 try:
@@ -704,7 +702,8 @@ def corpkit_gui():
                 table.createTableFrame()            # sorts by total freq, ok for now
                 table.redrawTable()
             else:
-                table = TableCanvas(frame_to_update, height = height, cellwidth=60, **kwarg)
+                table = TableCanvas(frame_to_update, height = height, cellwidth=cell_width.get(), 
+                    showkeynamesinheader=True, rowheaderwidth=row_label_width.get(), **kwarg)
                 table.createTableFrame()            # sorts by total freq, ok for now
                 table.redrawTable()
 
@@ -854,7 +853,12 @@ def corpkit_gui():
             for index, item in enumerate(all_items):
                 # check if saved
                 if not lists:
-                    issaved = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+                    issavedfile = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+                    issaveddir = os.path.isdir(os.path.join(savepath, urlify(item)))
+                    if issaveddir or issavedfile:
+                        issaved = True
+                    else:
+                        issaved = False
                 # for lists, check if permanently stored
                 else:
                     issaved = item in saved_special_dict.keys()
@@ -1004,9 +1008,9 @@ def corpkit_gui():
                 name_of_interro_spreadsheet.set(newname)
                 i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
                 if 'results' in newdata._asdict().keys():
-                    update_spreadsheet(interro_results, newdata.results, height = 340, width = 650)
+                    update_spreadsheet(interro_results, newdata.results, height = 340)
                 totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
-                update_spreadsheet(interro_totals, totals_as_df, height = 10, width = 650)
+                update_spreadsheet(interro_totals, totals_as_df, height = 10)
                 refresh()
             else:
                 prev.configure(state=DISABLED)
@@ -1033,9 +1037,9 @@ def corpkit_gui():
                 name_of_interro_spreadsheet.set(newname)
                 i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
                 if 'results' in newdata._asdict().keys():
-                    update_spreadsheet(interro_results, newdata.results, height = 340, width = 650)
+                    update_spreadsheet(interro_results, newdata.results, height = 340)
                 totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
-                update_spreadsheet(interro_totals, totals_as_df, height = 10, width = 650)
+                update_spreadsheet(interro_totals, totals_as_df, height = 10)
                 refresh()
             else:
                 nex.configure(state=DISABLED)
@@ -1131,11 +1135,11 @@ def corpkit_gui():
                 tot = pandas.DataFrame(the_data.totals, dtype = object)
                 
                 if 'results' in the_data._asdict().keys():
-                    update_spreadsheet(interro_results, the_data.results, height = 340, width = 650)
+                    update_spreadsheet(interro_results, the_data.results, height = 340)
                 else:
-                    update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
+                    update_spreadsheet(interro_results, df_to_show = None, height = 340)
 
-                update_spreadsheet(interro_totals, tot, height = 10, width = 650)
+                update_spreadsheet(interro_totals, tot, height = 10)
             if pane == 'edit':
                 the_data = all_interrogations[name_of_o_ed_spread.get()]
                 there_is_new_data = False
@@ -1145,19 +1149,19 @@ def corpkit_gui():
                 except:
                     pass
                 if 'results' in the_data._asdict().keys():
-                    update_spreadsheet(o_editor_results, the_data.results, height = 138, width = 750)
-                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10, width = 750)
+                    update_spreadsheet(o_editor_results, the_data.results, height = 140)
+                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height = 10)
                 if there_is_new_data:
                     if newdata != 'None' and newdata != '':
                         if 'results' in the_data._asdict().keys():
-                            update_spreadsheet(n_editor_results, newdata.results, height = 180, width = 750)
-                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10, width = 750)
+                            update_spreadsheet(n_editor_results, newdata.results, height = 140)
+                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height = 10)
                 if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
                     the_data = all_interrogations[name_of_interro_spreadsheet.get()]
                     tot = pandas.DataFrame(the_data.totals, dtype = object)
                     if 'results' in the_data._asdict().keys():
-                        update_spreadsheet(interro_results, the_data.results, height = 340, width = 650)
-                    update_spreadsheet(interro_totals, tot, height = 10, width = 650)
+                        update_spreadsheet(interro_results, the_data.results, height = 340)
+                    update_spreadsheet(interro_totals, tot, height = 10)
             
             timestring('Updated spreadsheet display in edit window.')
 
@@ -1171,6 +1175,94 @@ def corpkit_gui():
                 except ValueError:
                     return False
             return True
+
+
+        ###################     ###################     ###################     ###################
+        #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#
+        ###################     ###################     ###################     ###################
+
+        # make variables with default values
+
+        do_auto_update = IntVar()
+        do_auto_update.set(1)
+
+        parser_memory = StringVar()
+        parser_memory.set(str(2024))
+
+        truncate_conc_after = IntVar()
+        truncate_conc_after.set(1000)
+
+        truncate_spreadsheet_after = IntVar()
+        truncate_spreadsheet_after.set(9999)
+
+        corenlppath = StringVar()
+        corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
+
+        row_label_width = IntVar()
+        row_label_width.set(100)
+
+        cell_width = IntVar()
+        cell_width.set(50)        
+
+
+        # a place for the toplevel entry info
+        entryboxes = OrderedDict()
+
+        # fill it with null data
+        for i in range(10):
+            tmp = StringVar()
+            tmp.set('')
+            entryboxes[i] = tmp
+
+        def preferences_popup():
+            try:
+                global toplevel
+                toplevel.destroy()
+            except:
+                pass
+
+            from Tkinter import Toplevel
+            pref_pop = Toplevel()
+            pref_pop.geometry('+300+100')
+            pref_pop.title("Preferences")
+            pref_pop.wm_attributes('-topmost', 1)
+            Label(pref_pop, text = '').grid(row=0, column=0, pady = 2)
+            
+            def quit_coding(*args):
+                save_tool_prefs(printout = True)
+                pref_pop.destroy()
+
+
+            Checkbutton(pref_pop, text = 'Automatically check for updates', variable = do_auto_update, onvalue = 1, offvalue = 0).grid(row=0, column=0, pady = (4,0))
+            
+            Label(pref_pop, text='Truncate concordance lines').grid(row=1, column = 0, sticky = W)
+            Entry(pref_pop, textvariable = truncate_conc_after, width = 7).grid(row = 1, column = 1, sticky = E)
+
+            Label(pref_pop, text='Truncate spreadsheets').grid(row=2, column = 0, sticky = W)
+            Entry(pref_pop, textvariable = truncate_spreadsheet_after, width = 7).grid(row = 2, column = 1, sticky = E)
+
+            Label(pref_pop, text='CoreNLP memory allocation (MB)').grid(row=3, column = 0, sticky = W)
+            Entry(pref_pop, textvariable = parser_memory, width = 7).grid(row = 3, column = 1, sticky = E)
+
+            Label(pref_pop, text='Spreadsheet cell width').grid(row=4, column = 0, sticky = W)
+            Entry(pref_pop, textvariable = cell_width, width = 7).grid(row = 4, column = 1, sticky = E)
+
+            Label(pref_pop, text='Spreadsheet row header width').grid(row=5, column = 0, sticky = W)
+            Entry(pref_pop, textvariable = row_label_width, width = 7).grid(row = 5, column = 1, sticky = E)
+
+            show_cnlp = StringVar()
+            show_cnlp.set('CoreNLP path:\n%s' %corenlppath.get())
+            Label(pref_pop, textvariable=show_cnlp, justify = LEFT).grid(row=6, column = 0, sticky = W, rowspan = 2)
+            Button(pref_pop, text = 'Change', command = set_corenlp_path, width =5).grid(row = 6, column = 1, sticky = E)
+
+            #set_corenlp_path
+
+
+            stopbut = Button(pref_pop, text = 'Done', command=quit_coding)
+            stopbut.grid(row = 12, column = 0, columnspan = 2, pady = 15)        
+
+            pref_pop.bind("<Return>", quit_coding)
+            pref_pop.bind("<Tab>", focus_next_window)
 
         ###################     ###################     ###################     ###################
         # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #     # INTERROGATE TAB #
@@ -1320,10 +1412,8 @@ def corpkit_gui():
 
             # update spreadsheets
             if not interrodata or interrodata == 'Bad query':
-                update_spreadsheet(interro_results, df_to_show = None, height = 340, 
-                                 width = 650)
-                update_spreadsheet(interro_totals, df_to_show = None, height = 10, 
-                                 width = 650)            
+                update_spreadsheet(interro_results, df_to_show = None, height = 340)
+                update_spreadsheet(interro_totals, df_to_show = None, height = 10)            
                 return
 
             # make non-dict results into dict, so we can iterate no matter
@@ -1346,7 +1436,7 @@ def corpkit_gui():
                 # drop over 9999?
                 # type check probably redundant now
                 if 'results' in r._asdict().keys():
-                    large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
+                    large = [n for i, n in enumerate(list(r.results.columns)) if i > truncate_spreadsheet_after.get()]
                     r.results.drop(large, axis = 1, inplace = True)
                     r.results.drop('Total', errors = 'ignore', inplace = True)
                     r.results.drop('Total', errors = 'ignore', inplace = True, axis = 1)
@@ -1369,11 +1459,11 @@ def corpkit_gui():
 
             # update spreadsheets
             if 'results' in recent_interrogation_data._asdict().keys():
-                update_spreadsheet(interro_results, recent_interrogation_data.results, height = 340, width = 650)
+                update_spreadsheet(interro_results, recent_interrogation_data.results, height = 340)
             else:
-                update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
+                update_spreadsheet(interro_results, df_to_show = None, height = 340)
 
-            update_spreadsheet(interro_totals, totals_as_df, height = 10, width = 650)
+            update_spreadsheet(interro_totals, totals_as_df, height = 10)
             
             ind = all_interrogations.keys().index(name_of_interro_spreadsheet.get())
             if ind == 0:
@@ -1862,8 +1952,8 @@ def corpkit_gui():
         llab.lift()
 
         # show nothing in them yet
-        update_spreadsheet(interro_results, df_to_show = None, height = 450, width = 750)
-        update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 750)
+        update_spreadsheet(interro_results, df_to_show = None, height = 450, width = 760)
+        update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 760)
 
         #global prev
         prev = Button(tab1, text = 'Previous', command = show_prev)
@@ -2090,8 +2180,8 @@ def corpkit_gui():
             # update edited spreadsheets
             most_recent = all_interrogations[all_interrogations.keys()[-1]]
             if 'results' in most_recent._asdict().keys():
-                update_spreadsheet(n_editor_results, most_recent.results, height = 180, width = 750)
-            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10, width = 750)
+                update_spreadsheet(n_editor_results, most_recent.results, height = 140)
+            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height = 10)
                         
             # finish up
             refresh()
@@ -2122,25 +2212,25 @@ def corpkit_gui():
                 thisdata = all_interrogations[selected_to_edit.get()]
                 resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
                 if 'results' in thisdata._asdict().keys():
-                    update_spreadsheet(o_editor_results, thisdata.results, height = 138, width = 750)
+                    update_spreadsheet(o_editor_results, thisdata.results, height = 140)
                     df1box.config(state = NORMAL)
                 else:
                     df1box.config(state = NORMAL)
                     df1branch.set('totals')
                     df1box.config(state = DISABLED)
-                    update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
+                    update_spreadsheet(o_editor_results, df_to_show = None, height = 140)
                 if 'totals' in thisdata._asdict().keys():
-                    update_spreadsheet(o_editor_totals, thisdata.totals, height = 10, width = 750)
+                    update_spreadsheet(o_editor_totals, thisdata.totals, height = 10)
                     #df1box.config(state = NORMAL)
                 #else:
-                    #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
+                    #update_spreadsheet(o_editor_totals, df_to_show = None, height = 10)
                     #df1box.config(state = NORMAL)
                     #df1branch.set('results')
                     #df1box.config(state = DISABLED)
             name_of_n_ed_spread.set('')
             editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 140)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10)
             for subcl in [subc_listbox]:
                 subcl.configure(state = NORMAL)
                 subcl.delete(0, 'end')
@@ -2218,9 +2308,9 @@ def corpkit_gui():
         sorts.grid(row = 4, column = 1, sticky = E, pady = (15,0))
 
         # spelling again
-        Label(editor_buttons, text = 'Spelling:').grid(row = 5, column = 0, sticky = W)
+        Label(editor_buttons, text = 'Spelling:').grid(row = 5, column = 0, sticky = W, pady = (15,0))
         spl_editor = MyOptionMenu(editor_buttons, 'Off','UK','US')
-        spl_editor.grid(row = 5, column = 1, sticky = E)
+        spl_editor.grid(row = 5, column = 1, sticky = E, pady = (15,0))
         spl_editor.configure(width = 10)
 
         # keep_top
@@ -2388,37 +2478,37 @@ def corpkit_gui():
         name_of_o_ed_spread.trace("w", editor_spreadsheet_showing_something)
         resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
         o_editor_results = Frame(editor_sheets, height = 14, width = 20)
-        o_editor_results.grid(column = 1, row = 1, rowspan=1, padx = 20, sticky = N)
+        o_editor_results.grid(column = 1, row = 1, rowspan=1, padx = (20, 0), sticky = N)
         Label(editor_sheets, textvariable = resultname, 
               font = ("Helvetica", 13, "bold")).grid(row = 0, 
-               column = 1, sticky = 'NW', padx = 20)    
+               column = 1, sticky = 'NW', padx = (20,0))    
         #Label(editor_sheets, text = 'Totals to edit:', 
               #font = ("Helvetica", 13, "bold")).grid(row = 4, 
                #column = 1, sticky = W, pady=0)
         o_editor_totals = Frame(editor_sheets, height = 1, width = 20)
-        o_editor_totals.grid(column = 1, row = 2, rowspan=1, padx = 20, sticky = S, pady = (20,0))
-        update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
-        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
+        o_editor_totals.grid(column = 1, row = 2, rowspan=1, padx = (20,0), sticky = S, pady = (10,0))
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 800)
+        update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
         editoname = StringVar()
         name_of_n_ed_spread = StringVar()
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         Label(editor_sheets, textvariable = editoname, 
               font = ("Helvetica", 13, "bold")).grid(row = 3, 
-               column = 1, sticky = W, padx = 20)        
+               column = 1, sticky = W, padx = (20,0))        
         n_editor_results = Frame(editor_sheets, height = 28, width = 20)
-        n_editor_results.grid(column = 1, row = 4, rowspan=1, sticky = 'NW', padx = 20)
+        n_editor_results.grid(column = 1, row = 4, rowspan=1, sticky = 'NW', padx = (20,0))
         #Label(editor_sheets, text = 'Edited totals:', 
               #font = ("Helvetica", 13, "bold")).grid(row = 15, 
                #column = 1, sticky = W, padx=20, pady=0)
         n_editor_totals = Frame(editor_sheets, height = 1, width = 20)
-        n_editor_totals.grid(column = 1, row = 5, rowspan=1, padx = 20)
-        update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
-        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
+        n_editor_totals.grid(column = 1, row = 5, rowspan=1, padx = (20,0))
+        update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 800)
+        update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
 
         # add button to update
         upd_ed_but = Button(editor_sheets, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit'))
-        upd_ed_but.grid(row = 6, column = 1, sticky = E, padx = (0, 50), pady = (10, 0))
+        upd_ed_but.grid(row = 6, column = 1, sticky = E, padx = (0, 50), pady = (5, 0))
         upd_ed_but.config(state = DISABLED)
 
         #################       #################      #################      #################  
@@ -2825,7 +2915,7 @@ def corpkit_gui():
                 single_ent_optmenu.config(state = NORMAL)
                 single_ent_optmenu['menu'].delete(0, 'end')
                 single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
-                for corp in list(thisdata.results.columns)[:100]:
+                for corp in list(thisdata.results.columns)[:200]:
                     single_ent_optmenu['menu'].add_command(label=corp, command=Tkinter._setit(single_entry, corp))
             else:
                 single_ent_optmenu.config(state = NORMAL)
@@ -3039,6 +3129,7 @@ def corpkit_gui():
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
                     'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot')))
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
+        ch_col.config(width = 15)
         ch_col.grid(row = 15, column = 1, sticky = E)
 
         # style
@@ -3047,6 +3138,7 @@ def corpkit_gui():
         plot_style.set('ggplot')
         Label(plot_option_frame, text = 'Plot style:').grid(row = 16, column = 0, sticky = W)
         pick_a_style = OptionMenu(plot_option_frame, plot_style, *stys)
+        pick_a_style.config(width = 15)
         pick_a_style.grid(row = 16, column = 1, sticky=E)
 
         # legend pos
@@ -3055,6 +3147,7 @@ def corpkit_gui():
         legloc.set('best')
         locs = tuple(('best', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
         loc_options = OptionMenu(plot_option_frame, legloc, *locs)
+        loc_options.config(width = 15)
         loc_options.grid(row = 17, column = 1, sticky = E)
 
         # figure size
@@ -3250,11 +3343,11 @@ def corpkit_gui():
             r = conc(corpus = corpus, option = option, query = query, **d)
             if r is not None and r is not False:
                 numresults = len(r.index)
-                if numresults > 999:
+                if numresults > truncate_conc_after.get() - 1:
                     truncate = tkMessageBox.askyesno("Long results list", 
-                              "%d unique results! Truncate to 1000?" % numresults)
+                              "%d unique results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
                     if truncate:
-                        r = r.head(1000)
+                        r = r.head(truncate_conc_after.get())
                 add_conc_lines_to_window(r, preserve_colour = False)
             
             global conc_saved
@@ -3462,10 +3555,6 @@ def corpkit_gui():
             timestring('%d concordance lines sorted.' % len(conclistbox.get(0, END)))
             global conc_saved
             conc_saved = False
-
-        def focus_next_window(event):
-            event.widget.tk_focusNext().focus()
-            return "break"
 
         def do_inflection(pos = 'v'):
             global tb
@@ -4292,7 +4381,11 @@ def corpkit_gui():
                 if r is not None:
                     for name, loaded in r.items():
                         if kind == 'interrogation':
-                            all_interrogations[name] = loaded
+                            if type(loaded) == dict:
+                                for subname, subloaded in loaded.items():
+                                    all_interrogations[name + '-' + subname] = subloaded
+                            else:
+                                all_interrogations[name] = loaded
                         else:
                             all_conc[name] = loaded
                     if len(all_interrogations.keys()) > 0:
@@ -4591,12 +4684,13 @@ def corpkit_gui():
             special_queries.set('Off')
 
             # spreadsheets
-            update_spreadsheet(interro_results, df_to_show = None, height = 340, width = 650)
-            update_spreadsheet(interro_totals, df_to_show = None, height = 10, width = 650)
-            update_spreadsheet(o_editor_results, df_to_show = None, height = 138, width = 750)
-            update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 750)
-            update_spreadsheet(n_editor_results, df_to_show = None, height = 180, width = 750)
-            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 750)
+            update_spreadsheet(interro_results, df_to_show = None, height = 340)
+            update_spreadsheet(interro_totals, df_to_show = None, height = 10)
+            update_spreadsheet(o_editor_results, df_to_show = None, height = 140)
+            update_spreadsheet(o_editor_totals, df_to_show = None, height = 10)
+            update_spreadsheet(n_editor_results, df_to_show = None, height = 140)
+            update_spreadsheet(n_editor_totals, df_to_show = None, height = 10)
+
             # interrogations
             for e in all_interrogations.keys():
                 del all_interrogations[e]
@@ -5130,7 +5224,8 @@ def corpkit_gui():
                                       operations = parser_opts.get(),
                                       root = root, 
                                       stdout = sys.stdout, 
-                                      note = note)
+                                      note = note,
+                                      memory_mb = parser_memory.get())
             if parsed_dir is False:
                 return
 
@@ -5583,9 +5678,24 @@ def corpkit_gui():
             Config.set('Projects','most recent', ';'.join(most_recent_projects[-5:]))
             Config.add_section('CoreNLP')
             Config.set('CoreNLP','Parser path', corenlppath.get())
+            Config.set('CoreNLP','Memory allocation', parser_memory.get())
             Config.add_section('Appearance')
+            Config.set('Appearance','Spreadsheet row header width', row_label_width.get())
+            Config.set('Appearance','Spreadsheet cell width', cell_width.get())
+            Config.add_section('Other')
+            Config.set('Other','Truncate concordance lines', truncate_conc_after.get())
+            Config.set('Other','Truncate spreadsheets', truncate_spreadsheet_after.get())
+            Config.set('Other','Automatic update check', do_auto_update.get())
             cfgfile = open(settingsfile ,'w')
             Config.write(cfgfile)
+
+            cell_width.get()
+            row_label_width.get()
+            truncate_conc_after.get()
+            truncate_spreadsheet_after.get()
+            do_auto_update.get()
+
+
             if printout:
                 timestring('Tool preferences saved.')
 
@@ -5600,16 +5710,38 @@ def corpkit_gui():
             if not os.path.isfile(settingsfile):
                 timestring('No settings file found at %s' % settingsfile)
                 return
+
+            def tryer(config, var, section, name):
+                try:
+                    if config.has_option(section,name):
+                        var.set(conmap(config, section)[name])
+                except:
+                    pass
+
             Config = ConfigParser.ConfigParser()
             Config.read(settingsfile)
-            parspath = conmap(Config, "CoreNLP")['parser path']
-            mostrec = conmap(Config, "Projects")['most recent'].split(';')
-            for i in mostrec:
-                most_recent_projects.append(i)
+            tryer(Config, parser_memory, "CoreNLP", "memory allocation")
+            tryer(Config, row_label_width, "Appearance", 'spreadsheet row header width')
+            tryer(Config, cell_width, "Appearance", 'spreadsheet cell width')
+            tryer(Config, do_auto_update, "Other", 'automatic update check')
+            tryer(Config, truncate_conc_after, "Other", 'truncate concordance lines')
+            tryer(Config, truncate_spreadsheet_after, "Other", 'truncate spreadsheets')
+            try:
+                parspath = conmap(Config, "CoreNLP")['parser path']
+            except:
+                parspath == 'default'
+            try:
+                mostrec = conmap(Config, "Projects")['most recent'].split(';')
+                for i in mostrec:
+                    most_recent_projects.append(i)
+            except:
+                pass
             if parspath == 'default':
                 corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
             else:
                 corenlppath.set(parspath)
+
+
             timestring('Tool preferences loaded.')
 
         def save_config():
@@ -5797,7 +5929,7 @@ def corpkit_gui():
             return float(ver[::-1].replace('.', '', ndots_to_delete)[::-1])
 
         def modification_date(filename):
-            """ get datetime of file modification"""
+            """get datetime of file modification"""
             import os
             import datetime
             t = os.path.getmtime(filename)
@@ -5813,10 +5945,11 @@ def corpkit_gui():
             import shutil
             
             # weird hacky way to not repeat request
-            if do_auto_update.get() == 1 and auto is True:
+            if do_auto_update.get() == 0 and auto is True:
                 return
+
             if auto is False:
-                do_auto_update.set(1)
+                do_auto_update.set(0)
 
             # get version as float
             try:
@@ -5947,6 +6080,8 @@ def corpkit_gui():
                 "corpkit (version %s) up to date!" % oldstver)
                 timestring('corpkit (version %s) up to date.' % oldstver)
                 return
+
+
         def start_update_check():
             try:
                 check_updates(showfalse = False, lateprint = True, auto = True)
@@ -5959,7 +6094,6 @@ def corpkit_gui():
 
         root.after(1000, unmax)
         
-
         if not '.py' in sys.argv[0]:
             root.after(10000, start_update_check)
 
@@ -6071,11 +6205,8 @@ def corpkit_gui():
         schemenu.add_command(label="Wordlists", command=custom_lists)
 
         # prefrences section
-        #if sys.platform == 'darwin':
-        #    def showMyPreferencesDialog():
-        #        tkMessageBox.showinfo("Preferences",
-        #                "Preferences here.")
-        #    root.createcommand('tk::mac::ShowPreferences', showMyPreferencesDialog)
+        if sys.platform == 'darwin':
+            root.createcommand('tk::mac::ShowPreferences', preferences_popup)
 
         def about_box():
             import os
@@ -6134,7 +6265,7 @@ def corpkit_gui():
         helpmenu.add_command(label="Query writing", command=lambda: show_help('q'))
         helpmenu.add_command(label="Troubleshooting", command=lambda: show_help('t'))
         helpmenu.add_command(label="Save log", command=show_log)
-        helpmenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
+        #helpmenu.add_command(label="Set CoreNLP path", command=set_corenlp_path)
         helpmenu.add_separator()
         helpmenu.add_command(label="About", command=about_box)
         menubar.add_cascade(label="Help", menu=helpmenu)

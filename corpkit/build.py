@@ -649,8 +649,17 @@ def make_corpus(unparsed_corpus_path,
     return outpaths
 
 
-def parse_corpus(proj_path = False, corpuspath = False, filelist = False, corenlppath = False, operations = False,
-                 only_tokenise = False, root = False, stdout = False, nltk_data_path = False, **kwargs):
+def parse_corpus(proj_path = False, 
+                corpuspath = False, 
+                filelist = False, 
+                corenlppath = False, 
+                operations = False,
+                only_tokenise = False, 
+                root = False, 
+                stdout = False, 
+                nltk_data_path = False, 
+                memory_mb = 2024,
+                **kwargs):
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
@@ -731,12 +740,14 @@ def parse_corpus(proj_path = False, corpuspath = False, filelist = False, corenl
             reload(sys)
         import os
         import time
+        if memory_mb is False:
+            memory_mb = 2024
         if operations is False:
             operations = 'tokenize,ssplit,pos,lemma,ner,parse,dcoref'
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
         proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
-                     '-Xmx2g', 
+                     '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
                      operations, 
