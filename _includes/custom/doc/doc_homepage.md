@@ -109,10 +109,10 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <div style="width:300px;height:180px;overflow:hidden;" >
 <a href="https://raw.githubusercontent.com/interrogator/risk/master/images/to-put-at-risk.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/to-put-at-risk.png" alt="To put at risk" width="90" height="50"></a>
 </div><br />
-<i>Using subplots to demonstrate the rise of "to put at risk" in U.S. news"</i>
+<i>Using subplots to demonstrate the rise of "to put at risk" in U.S. news</i>
 </td>
 </tr>
-
+f
 </table>
 </center>
 
