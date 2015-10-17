@@ -61,9 +61,6 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <i>Building corpora, viewing parse tree output</i>
 </td>
 </tr>
-
-
-
 </table>
 </center>
 
@@ -131,7 +128,7 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <i>Using subplots to demonstrate the rise of "to put at risk" in U.S. news</i>
 </td>
 </tr>
-f
+
 </table>
 </center>
 
