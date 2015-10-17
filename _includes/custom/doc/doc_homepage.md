@@ -98,6 +98,22 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <i>An ocean of modals in the NYT</i>
 </td>
 </tr>
+
+<td align="center" valign="bottom">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/to-put-at-risk.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/to-put-at-risk.png" alt="To put at risk" width="90" height="50"></a>
+</div>
+<br />
+<i>Using subplots to demonstrate the rise of <code>to put at risk</code></i>
+</td>
+<td align="center" valign="bottom">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-nyt.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-nyt.png" alt="Keyness" width="100" height="50"></a>
+</div> <br />
+<i>Using keywording with a list of politicians' names and no external reference corpus</i>
+</td>
+</tr>
+
 </table>
 </center>
 
