@@ -133,7 +133,6 @@ class RedirectText(object):
 
 from Tkinter import *
 
-
 # hyperlinks
 class HyperlinkManager:
     def __init__(self, text):
@@ -160,7 +159,6 @@ class HyperlinkManager:
             if tag[:6] == "hyper-":
                 self.links[tag]()
                 return
-
 
 class Notebook(Frame):
     """Notebook Widget"""
@@ -1186,6 +1184,9 @@ def corpkit_gui():
         do_auto_update = IntVar()
         do_auto_update.set(1)
 
+        do_auto_update_this_session = IntVar()
+        do_auto_update_this_session.set(1)
+
         parser_memory = StringVar()
         parser_memory.set(str(2024))
 
@@ -1233,7 +1234,10 @@ def corpkit_gui():
                 pref_pop.destroy()
 
 
-            Checkbutton(pref_pop, text = 'Automatically check for updates', variable = do_auto_update, onvalue = 1, offvalue = 0).grid(row=0, column=0, pady = (4,0))
+            tmp = Checkbutton(pref_pop, text = 'Automatically check for updates', variable = do_auto_update, onvalue = 1, offvalue = 0)
+            if do_auto_update.get() == 1:
+                tmp.select()
+            tmp.grid(row=0, column=0, pady = (4,0))
             
             Label(pref_pop, text='Truncate concordance lines').grid(row=1, column = 0, sticky = W)
             Entry(pref_pop, textvariable = truncate_conc_after, width = 7).grid(row = 1, column = 1, sticky = E)
@@ -5948,8 +5952,12 @@ def corpkit_gui():
             if do_auto_update.get() == 0 and auto is True:
                 return
 
+            if do_auto_update_this_session.get() is False and auto is True:
+                return
+
+            # cancel auto if manual
             if auto is False:
-                do_auto_update.set(0)
+                do_auto_update_this_session.set(0)
 
             # get version as float
             try:
@@ -6216,8 +6224,8 @@ def corpkit_gui():
                 import corpkit
                 oldstver = str(corpkit.__version__)
 
-            about_tl = Toplevel()
-            about_text = Text(about_tl)
+            #about_tl = Toplevel()
+            #about_text = Text(about_tl)
 
             tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                                   'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % oldstver)
