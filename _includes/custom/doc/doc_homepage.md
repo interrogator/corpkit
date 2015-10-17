@@ -45,6 +45,25 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <i>Concordancing with constituency queries, manually coding results</i>
 </td>
 </tr>
+<tr>
+<td align="center" valign="bottom">
+<div style="width:120px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/corpkit/gh-pages/images/custom_wordlists.png" > <img src="https://raw.githubusercontent.com/interrogator/corpkit/gh-pages/images/custom_wordlists.png" alt="Defining wordlists" width="100" height="50"></a>
+</div> <br />
+<i>Defining pre-installed and custom wordlists</i>
+</td>
+
+<td align="center" valign="bottom">
+<div style="width:300px;height:180px;overflow:hidden;" >
+<a href="https://raw.githubusercontent.com/interrogator/corpkit/gh-pages/images/treeview.png" > <img src="https://raw.githubusercontent.com/interrogator/corpkit/gh-pages/images/treeview.png" alt="Building, viewing trees" width="90" height="50"></a>
+</div>
+<br />
+<i>Building corpora, viewing parse tree output</i>
+</td>
+</tr>
+
+
+
 </table>
 </center>
 
