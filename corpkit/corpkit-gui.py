@@ -541,6 +541,10 @@ def corpkit_gui():
 
         def focus_next_window(event):
             event.widget.tk_focusNext().focus()
+            try:
+                event.widget.tk_focusNext().selection_range(0, END)
+            except:
+                pass
             return "break"
 
         def runner(button, command):
@@ -1188,7 +1192,7 @@ def corpkit_gui():
         do_auto_update_this_session.set(1)
 
         parser_memory = StringVar()
-        parser_memory.set(str(2024))
+        parser_memory.set(str(2000))
 
         truncate_conc_after = IntVar()
         truncate_conc_after.set(1000)
@@ -1203,8 +1207,10 @@ def corpkit_gui():
         row_label_width.set(100)
 
         cell_width = IntVar()
-        cell_width.set(50)        
+        cell_width.set(50)
 
+        p_val = DoubleVar()
+        p_val.set(0.05)        
 
         # a place for the toplevel entry info
         entryboxes = OrderedDict()
@@ -1237,30 +1243,43 @@ def corpkit_gui():
             tmp = Checkbutton(pref_pop, text = 'Automatically check for updates', variable = do_auto_update, onvalue = 1, offvalue = 0)
             if do_auto_update.get() == 1:
                 tmp.select()
-            tmp.grid(row=0, column=0, pady = (4,0))
+            all_text_widgets.append(tmp)
+            tmp.grid(row=0, column=0, pady = (4,0), sticky = E)
             
             Label(pref_pop, text='Truncate concordance lines').grid(row=1, column = 0, sticky = W)
-            Entry(pref_pop, textvariable = truncate_conc_after, width = 7).grid(row = 1, column = 1, sticky = E)
+            tmp = Entry(pref_pop, textvariable = truncate_conc_after, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 1, column = 1, sticky = E)
 
             Label(pref_pop, text='Truncate spreadsheets').grid(row=2, column = 0, sticky = W)
-            Entry(pref_pop, textvariable = truncate_spreadsheet_after, width = 7).grid(row = 2, column = 1, sticky = E)
+            tmp = Entry(pref_pop, textvariable = truncate_spreadsheet_after, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 2, column = 1, sticky = E)
 
             Label(pref_pop, text='CoreNLP memory allocation (MB)').grid(row=3, column = 0, sticky = W)
-            Entry(pref_pop, textvariable = parser_memory, width = 7).grid(row = 3, column = 1, sticky = E)
+            tmp = Entry(pref_pop, textvariable = parser_memory, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 3, column = 1, sticky = E)
 
             Label(pref_pop, text='Spreadsheet cell width').grid(row=4, column = 0, sticky = W)
-            Entry(pref_pop, textvariable = cell_width, width = 7).grid(row = 4, column = 1, sticky = E)
+            tmp = Entry(pref_pop, textvariable = cell_width, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 4, column = 1, sticky = E)
 
             Label(pref_pop, text='Spreadsheet row header width').grid(row=5, column = 0, sticky = W)
-            Entry(pref_pop, textvariable = row_label_width, width = 7).grid(row = 5, column = 1, sticky = E)
+            tmp = Entry(pref_pop, textvariable = row_label_width, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 5, column = 1, sticky = E)
 
-            show_cnlp = StringVar()
-            show_cnlp.set('CoreNLP path:\n%s' %corenlppath.get())
-            Label(pref_pop, textvariable=show_cnlp, justify = LEFT).grid(row=6, column = 0, sticky = W, rowspan = 2)
-            Button(pref_pop, text = 'Change', command = set_corenlp_path, width =5).grid(row = 6, column = 1, sticky = E)
+            Label(pref_pop, text='p value').grid(row=6, column = 0, sticky = W)
+            tmp = Entry(pref_pop, textvariable = p_val, width = 7)
+            all_text_widgets.append(tmp)
+            tmp.grid(row = 6, column = 1, sticky = E)
 
+            Label(pref_pop, text = 'CoreNLP path:', justify = LEFT).grid(row=7, column = 0, sticky = W, rowspan = 1)
+            Button(pref_pop, text = 'Change', command = set_corenlp_path, width =5).grid(row = 7, column = 1, sticky = E)
+            Label(pref_pop, textvariable = corenlppath, justify = LEFT).grid(row=8, column=0, sticky = W)
             #set_corenlp_path
-
 
             stopbut = Button(pref_pop, text = 'Done', command=quit_coding)
             stopbut.grid(row = 12, column = 0, columnspan = 2, pady = 15)        
@@ -2068,7 +2087,8 @@ def corpkit_gui():
                            'df1_always_df': True,
                            'root': root,
                            'note': note,
-                           'packdir': rd}
+                           'packdir': rd,
+                           'p': p_val.get()}
 
             if do_sub.get() == 'Merge':
                 editor_args['merge_subcorpora'] = subc_sel_vals
@@ -2096,7 +2116,7 @@ def corpkit_gui():
                 entry_do_with = entry_do_with.lower().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
                 # convert special stuff
-                entry_do_with = remake_special_query(entry_do_with)
+                entry_do_with = remake_special_query(entry_do_with, return_list = True)
                 if entry_do_with is False:
                     return
 
@@ -2481,7 +2501,7 @@ def corpkit_gui():
         name_of_o_ed_spread.set('')
         name_of_o_ed_spread.trace("w", editor_spreadsheet_showing_something)
         resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
-        o_editor_results = Frame(editor_sheets, height = 14, width = 20)
+        o_editor_results = Frame(editor_sheets, height = 28, width = 20)
         o_editor_results.grid(column = 1, row = 1, rowspan=1, padx = (20, 0), sticky = N)
         Label(editor_sheets, textvariable = resultname, 
               font = ("Helvetica", 13, "bold")).grid(row = 0, 
@@ -2490,29 +2510,29 @@ def corpkit_gui():
               #font = ("Helvetica", 13, "bold")).grid(row = 4, 
                #column = 1, sticky = W, pady=0)
         o_editor_totals = Frame(editor_sheets, height = 1, width = 20)
-        o_editor_totals.grid(column = 1, row = 2, rowspan=1, padx = (20,0), sticky = S, pady = (10,0))
-        update_spreadsheet(o_editor_results, df_to_show = None, height = 140, width = 800)
+        o_editor_totals.grid(column = 1, row = 1, rowspan=1, padx = (20,0), sticky = N, pady = (220,0))
+        update_spreadsheet(o_editor_results, df_to_show = None, height = 160, width = 800)
         update_spreadsheet(o_editor_totals, df_to_show = None, height = 10, width = 800)
         editoname = StringVar()
         name_of_n_ed_spread = StringVar()
         name_of_n_ed_spread.set('')
         editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
         Label(editor_sheets, textvariable = editoname, 
-              font = ("Helvetica", 13, "bold")).grid(row = 3, 
-               column = 1, sticky = W, padx = (20,0))        
+              font = ("Helvetica", 13, "bold")).grid(row = 1, 
+               column = 1, sticky = 'NW', padx = (20,0), pady = (290,0))        
         n_editor_results = Frame(editor_sheets, height = 28, width = 20)
-        n_editor_results.grid(column = 1, row = 4, rowspan=1, sticky = 'NW', padx = (20,0))
+        n_editor_results.grid(column = 1, row = 1, rowspan=1, sticky = N, padx = (20,0), pady = (310,0))
         #Label(editor_sheets, text = 'Edited totals:', 
               #font = ("Helvetica", 13, "bold")).grid(row = 15, 
                #column = 1, sticky = W, padx=20, pady=0)
         n_editor_totals = Frame(editor_sheets, height = 1, width = 20)
-        n_editor_totals.grid(column = 1, row = 5, rowspan=1, padx = (20,0))
-        update_spreadsheet(n_editor_results, df_to_show = None, height = 140, width = 800)
+        n_editor_totals.grid(column = 1, row = 1, rowspan=1, padx = (20,0), pady = (500,0))
+        update_spreadsheet(n_editor_results, df_to_show = None, height = 160, width = 800)
         update_spreadsheet(n_editor_totals, df_to_show = None, height = 10, width = 800)
 
         # add button to update
         upd_ed_but = Button(editor_sheets, text = 'Update interrogation(s)', command = lambda: update_all_interrogations(pane = 'edit'))
-        upd_ed_but.grid(row = 6, column = 1, sticky = E, padx = (0, 50), pady = (5, 0))
+        upd_ed_but.grid(row = 1, column = 1, sticky = E, padx = (0, 40), pady = (594, 0))
         upd_ed_but.config(state = DISABLED)
 
         #################       #################      #################      #################  
@@ -2855,7 +2875,7 @@ def corpkit_gui():
 
         savedplot = StringVar()
         savedplot.set('View saved images: ')
-        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (15, 0), sticky = W)
+        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (10, 0), sticky = W)
         pbut = Button(plot_option_frame, text='Previous', command=lambda: move(direction = 'back'))
         pbut.grid(row = 23, column = 0, sticky = W)
         pbut.config(state = DISABLED)
@@ -3735,15 +3755,7 @@ def corpkit_gui():
             tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
                       bg = '#F4F4F4', width = 20, height = 26, font = ("Courier New", 13))
             cwscrbar.config(command=tb.yview)
-            for box in [tb, scheme_name_field]:
-                box.bind("<%s-a>" % key, select_all_text)
-                box.bind("<%s-A>" % key, select_all_text)
-                box.bind("<%s-v>" % key, paste_into_textwidget)
-                box.bind("<%s-V>" % key, paste_into_textwidget)
-                box.bind("<%s-x>" % key, cut_from_textwidget)
-                box.bind("<%s-X>" % key, cut_from_textwidget)
-                box.bind("<%s-c>" % key, copy_from_textwidget)
-                box.bind("<%s-C>" % key, copy_from_textwidget)
+            bind_textfuncts_to_widgets([tb, scheme_name_field])
             tb.pack(side=LEFT, fill=BOTH)
             tmp = Button(popup, text = 'Get verb inflections', command = lambda: do_inflection(pos = 'v'), width = 17)
             tmp.grid(row = 2, column = 0, sticky = W, padx = (7, 0))
@@ -3935,14 +3947,14 @@ def corpkit_gui():
         # conc box needs to be defined up here
         fsize = IntVar()
         fsize.set(12)
-        cfrm = Frame(tab4, height = 450, width = 1360)
+        cfrm = Frame(tab4, height = 475, width = 1360)
         cfrm.grid(column = 0, columnspan = 60, row = 0)
         cscrollbar = Scrollbar(cfrm)
         cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
         cscrollbar.pack(side=RIGHT, fill=Y)
         cscrollbarx.pack(side=BOTTOM, fill=X)
         conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief = SUNKEN, bg = '#F4F4F4',
-                              xscrollcommand=cscrollbarx.set, height = 450, 
+                              xscrollcommand=cscrollbarx.set, height = 475, 
                               width = 1050, font = ('Courier New', fsize.get()), 
                               selectmode = EXTENDED)
         conclistbox.pack(fill=BOTH)
@@ -4013,7 +4025,7 @@ def corpkit_gui():
         conc_left_button_frame.grid(row = 1, column = 0)
 
         conc_right_button_frame = Frame(tab4)
-        conc_right_button_frame.grid(row = 1, column = 1, padx = (155,0), sticky = E)
+        conc_right_button_frame.grid(row = 1, column = 1, padx = (170,0), sticky = E)
 
         available_corpora_conc = OptionMenu(conc_left_button_frame, current_corpus, *tuple(('Select corpus')))
         available_corpora_conc.config(width = 22, state = DISABLED)
@@ -4967,14 +4979,7 @@ def corpkit_gui():
                 qubox.delete(1.0, END)
                 qubox.insert(END, q_dict['query'])
                 manage_box['qubox'] = qubox
-                qubox.bind("<%s-a>" % key, select_all_text)
-                qubox.bind("<%s-A>" % key, select_all_text)
-                qubox.bind("<%s-v>" % key, paste_into_textwidget)
-                qubox.bind("<%s-V>" % key, paste_into_textwidget)
-                qubox.bind("<%s-x>" % key, cut_from_textwidget)
-                qubox.bind("<%s-X>" % key, cut_from_textwidget)
-                qubox.bind("<%s-c>" % key, copy_from_textwidget)
-                qubox.bind("<%s-C>" % key, copy_from_textwidget)
+                bind_textfuncts_to_widgets([qubox])
             else:
                 try:
                     manage_box['qubox'].destroy()
@@ -5517,15 +5522,7 @@ def corpkit_gui():
                 # needs a scrollbar
                 editor = Text(tab0, height = 32)
 
-                # have to do this every time! so horrible.
-                editor.bind("<%s-a>" % key, select_all_text)
-                editor.bind("<%s-A>" % key, select_all_text)
-                editor.bind("<%s-v>" % key, paste_into_textwidget)
-                editor.bind("<%s-V>" % key, paste_into_textwidget)
-                editor.bind("<%s-x>" % key, cut_from_textwidget)
-                editor.bind("<%s-X>" % key, cut_from_textwidget)
-                editor.bind("<%s-c>" % key, copy_from_textwidget)
-                editor.bind("<%s-C>" % key, copy_from_textwidget)
+                bind_textfuncts_to_widgets([editor])
 
                 buildbits['editor'] = editor
                 editor.grid(row = 1, column = 2, rowspan = 9, pady = (10,0), padx = (20, 0))
@@ -5690,6 +5687,7 @@ def corpkit_gui():
             Config.set('Other','Truncate concordance lines', truncate_conc_after.get())
             Config.set('Other','Truncate spreadsheets', truncate_spreadsheet_after.get())
             Config.set('Other','Automatic update check', do_auto_update.get())
+            Config.set('Other','p value', p_val.get())
             cfgfile = open(settingsfile ,'w')
             Config.write(cfgfile)
 
@@ -5716,6 +5714,7 @@ def corpkit_gui():
                 return
 
             def tryer(config, var, section, name):
+                """attempt to load a value, fail gracefully if not there"""
                 try:
                     if config.has_option(section,name):
                         var.set(conmap(config, section)[name])
@@ -5730,6 +5729,7 @@ def corpkit_gui():
             tryer(Config, do_auto_update, "Other", 'automatic update check')
             tryer(Config, truncate_conc_after, "Other", 'truncate concordance lines')
             tryer(Config, truncate_spreadsheet_after, "Other", 'truncate spreadsheets')
+            tryer(Config, p_val, "Other", 'p value')
             try:
                 parspath = conmap(Config, "CoreNLP")['parser path']
             except:
@@ -5744,8 +5744,6 @@ def corpkit_gui():
                 corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
             else:
                 corenlppath.set(parspath)
-
-
             timestring('Tool preferences loaded.')
 
         def save_config():
@@ -6173,6 +6171,7 @@ def corpkit_gui():
         filemenu.add_separator()
         filemenu.add_command(label="Save project settings", command=save_config)
         filemenu.add_command(label="Load project settings", command=load_config)
+        filemenu.add_separator()
         filemenu.add_command(label="Save tool preferences", command=save_tool_prefs)
         filemenu.add_separator()
         filemenu.add_command(label="Manage project", command=manage_popup)
@@ -6251,19 +6250,21 @@ def corpkit_gui():
                 os.startfile(logpath)
 
         # bind select all for every possible widget
-        for i in all_text_widgets:
-            i.bind("<%s-a>" % key, select_all_text)
-            i.bind("<%s-A>" % key, select_all_text)
-            i.bind("<%s-v>" % key, paste_into_textwidget)
-            i.bind("<%s-V>" % key, paste_into_textwidget)
-            i.bind("<%s-x>" % key, cut_from_textwidget)
-            i.bind("<%s-X>" % key, cut_from_textwidget)
-            i.bind("<%s-c>" % key, copy_from_textwidget)
-            i.bind("<%s-C>" % key, copy_from_textwidget)
-            try:
-                i.config(undo = True)
-            except:
-                pass
+
+        def bind_textfuncts_to_widgets(lst):
+            for i in lst:
+                i.bind("<%s-a>" % key, select_all_text)
+                i.bind("<%s-A>" % key, select_all_text)
+                i.bind("<%s-v>" % key, paste_into_textwidget)
+                i.bind("<%s-V>" % key, paste_into_textwidget)
+                i.bind("<%s-x>" % key, cut_from_textwidget)
+                i.bind("<%s-X>" % key, cut_from_textwidget)
+                i.bind("<%s-c>" % key, copy_from_textwidget)
+                i.bind("<%s-C>" % key, copy_from_textwidget)
+                try:
+                    i.config(undo = True)
+                except:
+                    pass
 
         # load preferences
         load_tool_prefs()
