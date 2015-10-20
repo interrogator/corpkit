@@ -9,7 +9,7 @@ summary: "This page lists common errors and the steps needed to troubleshoot the
 
 ## Unidentified developer message
 
-If you can't open *corpkit* because it is from an unidentified developer, simply `control-click` or `right-click` it and select open that way. There's a little more information about this weirdness on the [Apple website](https://support.apple.com/kb/PH14369?locale=en_US)
+If you can't open *corpkit* because it is from an unidentified developer, simply `control-click` or `right-click` it and select open that way. There's a little more information about this weirdness on the [Apple website](https://support.apple.com/kb/PH14369?locale=en_US).
 
 ## Missing dependencies: Java, CoreNLP, TeX
 
@@ -19,7 +19,7 @@ For example, when searching parse trees, your Mac will pop up a message if you d
 
 ## CoreNLP path
 
-If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can tell *corpkit* where the parser is via the `Set CoreNLP path` option in the menu.
+If you move the `corenlp/` folder somewhere else, *corpkit* won't automatically find it. You can tell *corpkit* where the parser is via the `Set CoreNLP path` option in `Preferences`.
 
 ## Screen size issues
 
