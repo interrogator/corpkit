@@ -555,7 +555,9 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def make_corpus(unparsed_corpus_path,
+def make_corpus(
+                unparsed_corpus_path,
+                project_path = None,
                 parse = True,
                 tokenise = False,
                 corenlppath = False,
@@ -578,11 +580,15 @@ def make_corpus(unparsed_corpus_path,
 
     import sys
     import os    
+    import shutil
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
                                rename_all_files,
                                make_no_id_corpus)
+
+    if project_path is None:
+        project_path = os.getcwd()
 
     # raise error if no tokeniser
     if tokenise:
@@ -602,10 +608,19 @@ def make_corpus(unparsed_corpus_path,
 
     # make absolute path to corpus
     unparsed_corpus_path = os.path.abspath(unparsed_corpus_path)
+
+    # move it into project
+    if not root:
+        print 'Copying files to project ...'
+    shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
+    unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
+
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
     # generate filelist in the parent dir
+    if not root:
+        print 'Making list of files ... '
     filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                     corpuspath = unparsed_corpus_path)
 
@@ -613,14 +628,14 @@ def make_corpus(unparsed_corpus_path,
 
     if parse:
         if speaker_segmentation:
-            print 'Processing speaker IDs...'
+            print 'Processing speaker IDs ...'
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             to_parse = unparsed_corpus_path + '-stripped'
             outpaths.append(to_parse)
         else:
             to_parse = unparsed_corpus_path
 
-        new_parsed_corpus_path = parse_corpus(proj_path = False, 
+        new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = to_parse,
                                    filelist = filelist,
                                    corenlppath = corenlppath,
@@ -634,7 +649,7 @@ def make_corpus(unparsed_corpus_path,
             add_ids_to_xml(new_parsed_corpus_path)
 
     if tokenise:
-        new_tokenised_corpus_path = parse_corpus(proj_path = False, 
+        new_tokenised_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = unparsed_corpus_path,
                                    filelist = filelist,
                                    nltk_data_path = nltk_data_path,
