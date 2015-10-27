@@ -167,8 +167,8 @@ def plotter(title,
         colours = 'Paired'
 
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
-    if style not in styles:
-        raise ValueError('Style %s not found. Use %s' % (str(style), ', '.join(styles)))
+    #if style not in styles:
+        #raise ValueError('Style %s not found. Use %s' % (str(style), ', '.join(styles)))
 
     if style == 'mpl-white':
         try:
@@ -176,6 +176,9 @@ def plotter(title,
         except:
             pass
         style = 'matplotlib'
+
+    if style is not False and style.startswith('seaborn'):
+        colours = False
 
     if 'savepath' in kwargs.keys():
         mpl.rcParams['savefig.directory'] = kwargs['savepath']
@@ -818,28 +821,42 @@ def plotter(title,
             if not piemode:
                 plt.xlabel(x_label)
 
-    # no offsets for numerical x and y values
+    # for now, always turn off sci notation
+    from matplotlib.ticker import ScalarFormatter
     if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
         try:
-            # check if x axis can be an int
-            check_x_axis = list(dataframe.index)[0]
-            can_it_be_int = int(check_x_axis)
-            # if so, set these things
-            from matplotlib.ticker import ScalarFormatter
             plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
         except:
             pass
-
-    # same for y axis
     try:
-        # check if x axis can be an int
-        check_y_axis = list(dataframe.columns)[0]
-        can_it_be_int = int(check_y_axis)
-        # if so, set these things
-        from matplotlib.ticker import ScalarFormatter
         plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
     except:
         pass
+
+    # no offsets for numerical x and y values
+    #if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
+    #    try:
+    #        # check if x axis can be an int
+    #        check_x_axis = list(dataframe.index)[0]
+    #        can_it_be_int = int(check_x_axis)
+    #        # if so, set these things
+    #        from matplotlib.ticker import ScalarFormatter
+    #        plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
+    #    except:
+    #        pass
+    ## same for y axis --- fix me for was_series
+    #try:
+    #    # check if x axis can be an int
+    #    try:
+    #        check_y_axis = list(dataframe.columns)[0]
+    #    except:
+    #        check_y_axis = list(dataframe.index)[0]
+    #    can_it_be_int = int(check_y_axis)
+    #    # if so, set these things
+    #    from matplotlib.ticker import ScalarFormatter
+    #    plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
+    #except:
+    #    pass
 
     # y labelling
     y_l = False
