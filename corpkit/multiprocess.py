@@ -1,4 +1,3 @@
-    
 def pmultiquery(path, 
     option = 'c', 
     query = 'any', 
@@ -121,7 +120,7 @@ def pmultiquery(path,
             a_dict = dict(d)
             a_dict['path'] = p
             a_dict['query'] = query
-            a_dict['outname'] = name
+            a_dict['outname'] = name.replace('-parsed', '')
             a_dict['just_speakers'] = just_speakers
             a_dict['paralleling'] = index
             a_dict['printstatus'] = False
