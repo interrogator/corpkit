@@ -618,12 +618,6 @@ def make_corpus(
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
-    # generate filelist in the parent dir
-    if not root:
-        print 'Making list of files ... '
-    filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
-                                    corpuspath = unparsed_corpus_path)
-
     outpaths = []
 
     if parse:
@@ -631,9 +625,15 @@ def make_corpus(
             print 'Processing speaker IDs ...'
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             to_parse = unparsed_corpus_path + '-stripped'
-            outpaths.append(to_parse)
         else:
             to_parse = unparsed_corpus_path
+
+        if not root:
+            print 'Making list of files ... '
+    
+        filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
+                                corpuspath = to_parse)
+        outpaths.append(to_parse)
 
         new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = to_parse,
@@ -647,6 +647,9 @@ def make_corpus(
 
         if speaker_segmentation:
             add_ids_to_xml(new_parsed_corpus_path)
+    else:
+        filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
+                                corpuspath = unparsed_corpus_path)
 
     if tokenise:
         new_tokenised_corpus_path = parse_corpus(proj_path = project_path, 
