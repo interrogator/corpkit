@@ -129,7 +129,8 @@ class RedirectText(object):
         if not re.match(show_reg, string):
             if not string.lstrip().startswith('#') and not string.lstrip().startswith('import'):
                 string = re.sub(del_reg, '', string)
-                self.output.set(string.rstrip('\n'))
+                string = string.split('\n')[-1]
+                self.output.set(string.lstrip().rstrip('\n'))
 
 from Tkinter import *
 
@@ -307,6 +308,9 @@ def corpkit_gui():
         # set size
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
 
+        import warnings
+        warnings.filterwarnings("ignore")
+
         import traceback
         import dateutil
         import sys
@@ -327,7 +331,10 @@ def corpkit_gui():
         requests.packages.urllib3.disable_warnings()
         
         # unused in the gui, dummy imports for pyinstaller
-        import seaborn
+        #import seaborn
+        import locale
+        #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
         from hashlib import md5
         import chardet
         import pyparsing
@@ -358,7 +365,6 @@ def corpkit_gui():
         sys.path.append(corpath)
         sys.path.append(dicpath)
         sys.path.append(baspat)
-
 
         root.title("corpkit")
         root.imagewatched = StringVar()
@@ -1230,8 +1236,10 @@ def corpkit_gui():
 
             from Tkinter import Toplevel
             pref_pop = Toplevel()
+            #pref_pop.config(background = '#F4F4F4')
             pref_pop.geometry('+300+100')
             pref_pop.title("Preferences")
+            #pref_pop.overrideredirect(1)
             pref_pop.wm_attributes('-topmost', 1)
             Label(pref_pop, text = '').grid(row=0, column=0, pady = 2)
             
@@ -1244,7 +1252,7 @@ def corpkit_gui():
             if do_auto_update.get() == 1:
                 tmp.select()
             all_text_widgets.append(tmp)
-            tmp.grid(row=0, column=0, pady = (4,0), sticky = E)
+            tmp.grid(row=0, column=0, pady = (9,0), sticky = E)
             
             Label(pref_pop, text='Truncate concordance lines').grid(row=1, column = 0, sticky = W)
             tmp = Entry(pref_pop, textvariable = truncate_conc_after, width = 7)
@@ -1271,7 +1279,7 @@ def corpkit_gui():
             all_text_widgets.append(tmp)
             tmp.grid(row = 5, column = 1, sticky = E)
 
-            Label(pref_pop, text='p value').grid(row=6, column = 0, sticky = W)
+            Label(pref_pop, text='P value').grid(row=6, column = 0, sticky = W)
             tmp = Entry(pref_pop, textvariable = p_val, width = 7)
             all_text_widgets.append(tmp)
             tmp.grid(row = 6, column = 1, sticky = E)
@@ -3157,13 +3165,27 @@ def corpkit_gui():
         ch_col.grid(row = 15, column = 1, sticky = E)
 
         # style
-        stys = tuple(('ggplot', 'fivethirtyeight', 'bmh', 'matplotlib', 'mpl-white'))
+        if not py_script:
+            mplsty_path = os.path.join(rd, 'matplotlib', 'mpl-data', 'stylelib')
+            stys = tuple(sorted([i.split('.')[0] for i in os.listdir(mplsty_path) if i.endswith('.mplstyle')]))
+        else:
+            stys = tuple(('ggplot', 'fivethirtyeight', 'bmh', 'matplotlib', \
+                          'mpl-white', 'seaborn-dark', 'classic', 'seaborn-talk'))
         plot_style = StringVar(root)
         plot_style.set('ggplot')
         Label(plot_option_frame, text = 'Plot style:').grid(row = 16, column = 0, sticky = W)
         pick_a_style = OptionMenu(plot_option_frame, plot_style, *stys)
         pick_a_style.config(width = 15)
         pick_a_style.grid(row = 16, column = 1, sticky=E)
+
+        def ps_callback(*args):
+            if plot_style.get().startswith('seaborn'):
+                chart_cols.set('Default')
+                ch_col.config(state=DISABLED)
+            else:
+                ch_col.config(state=NORMAL)
+
+        plot_style.trace("w", ps_callback)
 
         # legend pos
         Label(plot_option_frame, text='Legend position:').grid(row = 17, column = 0, sticky = W)
