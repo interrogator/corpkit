@@ -960,11 +960,17 @@ def make_no_id_corpus(pth, newpth):
                     good_data.append(matched.group(2))
         with open(f, "w") as fo:
             fo.write('\n'.join(good_data))
+
+    from time import localtime, strftime
+    thetime = strftime("%H:%M:%S", localtime())
     if len(names) == 0:
-        from time import localtime, strftime
-        thetime = strftime("%H:%M:%S", localtime())
         print '%s: No speaker names found. Turn off speaker segmentation.' % thetime
         shutil.rmtree(newpth)
+    else:
+        if len(sorted(set(names))) < 19:
+            print '%s: Speaker names found: %s' % (thetime, ', '.join(sorted(set(names))))
+        else:
+            print '%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20]))))
 
 def add_ids_to_xml(corpuspath, root = False, note = False):
     """add ids to the xml in corpuspath
