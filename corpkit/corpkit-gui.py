@@ -5811,7 +5811,7 @@ def corpkit_gui():
                               "Save settings before quitting?")
                 if save_ask:
                     save_config()
-                save_tool_prefs()
+            save_tool_prefs()
             realquit.set(1)
             root.quit()
 
@@ -6326,7 +6326,7 @@ def corpkit_gui():
     #the_splash.__exit__()
     root.wm_state('normal')
     root.resizable(TRUE,TRUE)
-    
+
     # overwrite quitting behaviour, prompt to save settings
     root.createcommand('exit', quitfunc)
     root.mainloop()
