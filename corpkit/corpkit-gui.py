@@ -4814,7 +4814,8 @@ def corpkit_gui():
             chart_cols.set(conmap(Config, "Visualise")['colour scheme'])
             rel_corpuspath = conmap(Config, "Interrogate")['corpus path']
             corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
-            corpus_fullpath.set(corpa)
+            #corpus_fullpath.set(corpa)
+            current_corpus.set(os.path.basename(corpa))
             spk = conmap(Config, "Interrogate")['speakers']
             corpora_speakers = parse_speakdict(spk)
             for i, v in corpora_speakers.items():
@@ -5810,8 +5811,11 @@ def corpkit_gui():
                               "Save settings before quitting?")
                 if save_ask:
                     save_config()
+                save_tool_prefs()
             realquit.set(1)
             root.quit()
+
+        root.protocol("WM_DELETE_WINDOW", quitfunc)
 
         def restart(newpath = False):
             """restarts corpkit .py or gui, designed for version updates"""
@@ -6322,10 +6326,9 @@ def corpkit_gui():
     #the_splash.__exit__()
     root.wm_state('normal')
     root.resizable(TRUE,TRUE)
-
-    #import certifi
-    #print certifi.where()
-
+    
+    # overwrite quitting behaviour, prompt to save settings
+    root.createcommand('exit', quitfunc)
     root.mainloop()
 
 if __name__ == "__main__":
