@@ -810,6 +810,7 @@ def tregex_engine(corpus = False,
                 p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
                 res = p.communicate()[0].splitlines()
                 p.stdin.close()
+                print res
         else:
             p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
             p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))

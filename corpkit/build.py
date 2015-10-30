@@ -641,8 +641,12 @@ def make_corpus(
                                    corenlppath = corenlppath,
                                    nltk_data_path = nltk_data_path,
                                    operations = operations)
+
         if new_parsed_corpus_path is False:
             return 
+        
+        move_parsed_files(project_path, to_parse, new_parsed_corpus_path)
+
         outpaths.append(new_parsed_corpus_path)
 
         if speaker_segmentation:
@@ -1051,19 +1055,34 @@ def get_speaker_names_from_xml_corpus(path):
     import os
     import re
     from bs4 import BeautifulSoup
+    
+    list_of_files = []
     names = []
+
     # parsing html with regular expression! :)
     speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
-    for (root, dirs, fs) in os.walk(path):
-        for f in fs:
-            with open(os.path.join(root, f), 'r') as fo:
-                txt = fo.read()
-                res = re.findall(speakid, txt)
-                if res:
-                    res = [i.strip() for i in res]
-                    for i in res:
-                        if i not in names:
-                            names.append(i)
+
+    def get_names(filepath):
+        """get a list of speaker names from a file"""
+        with open(filepath, 'r') as fo:
+            txt = fo.read()
+            res = re.findall(speakid, txt)
+            if res:
+                return list(sorted(set([i.strip() for i in res])))
+
+    # if passed a dir, do it for every file
+    if os.path.isdir(path):
+        for (root, dirs, fs) in os.walk(path):
+            for f in fs:
+                list_of_files.append(os.path.join(root, f))
+    elif os.path.isfile(path):
+        list_of_files.append(path)
+
+    for filepath in list_of_files:
+        res = get_names(filepath)
+        for i in res:
+            if i not in names:
+                names.append(i)
     return list(sorted(set(names)))
 
 def get_speakers(path):
@@ -1088,3 +1107,10 @@ def rename_all_files(dirs_to_do):
             subcorpus = os.path.basename(justdir)
             newname = fname.replace('-%s.%s' % (subcorpus, ext), '.%s' % ext)
             os.rename(f, os.path.join(justdir, newname))
+
+def flatten_treestring(tree):
+    import re
+    tree = re.sub(r'\(.*? ', '', tree).replace(')', '')
+    tree = tree.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+    return tree
+    
