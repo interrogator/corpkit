@@ -15,7 +15,8 @@ __all__ = ["interrogator",
            "parse_corpus", 
            "move_parsed_files", 
            "corenlp_exists",
-           "make_corpus"]
+           "make_corpus",
+           "flatten_treestring"]
 
 __version__ = "1.72"
 __author__ = "Daniel McDonald"
@@ -54,3 +55,4 @@ from build import parse_corpus
 from build import move_parsed_files
 from build import corenlp_exists
 from build import make_corpus
+from build import flatten_treestring
