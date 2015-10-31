@@ -1067,7 +1067,7 @@ def interrogator(path,
             dep_funct = deprole
         elif option.lower().startswith('v'):
             translated_option = 'v'
-            using_tregex = True
+            #using_tregex = True
             statsmode = True
             optiontext = 'Getting general stats.'
             dep_funct = get_stats
@@ -1420,6 +1420,17 @@ def interrogator(path,
                 files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
             else:
                 files = [f for f in os.listdir(subcorpus) if not f.startswith('.')]
+            
+            # skip files not containing speakers...
+            if just_speakers:
+                rem = []
+                for f in files:
+                    fp = os.path.join(subcorpus, f)
+                    data = open(fp, 'r').read()
+                    if any('<speakername>' + name in data for name in just_speakers):
+                        rem.append(f)
+                files = rem
+
             all_files.append([d, files])
         total_files = len([item for sublist in all_files for item in sublist[1]])
         sorted_dirs = all_files
@@ -1681,6 +1692,8 @@ def interrogator(path,
                             #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
                             if just_speakers:  
                                 sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                                if not sents:
+                                    continue
                                 #sents = [s for s in corenlp_xml.find_all('sentence') \
                                 #if s.speakername.text.strip() in just_speakers]
                             else:

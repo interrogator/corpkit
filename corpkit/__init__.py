@@ -16,7 +16,8 @@ __all__ = ["interrogator",
            "move_parsed_files", 
            "corenlp_exists",
            "make_corpus",
-           "flatten_treestring"]
+           "flatten_treestring",
+           "interroplot"]
 
 __version__ = "1.72"
 __author__ = "Daniel McDonald"
@@ -47,6 +48,7 @@ from other import load_all_results
 from other import quickview
 from other import as_regex
 from other import new_project
+from other import interroplot
 from build import download_large_file
 from build import extract_cnlp
 from build import get_corpus_filepaths
