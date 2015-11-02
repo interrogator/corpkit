@@ -277,7 +277,10 @@ def plotter(title,
     # remove totals and tkinter order
     if not was_series:
         for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
-            dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+            try:
+                dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+            except:
+                pass
     else:
         dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
         dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
