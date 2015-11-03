@@ -342,7 +342,7 @@ def editor(dataframe1,
             except:
                 pass
             the_input = [the_input]
-        elif type(the_input) == str:
+        elif type(the_input) == str or type(the_input) == unicode:
             try:
                 regex = re.compile(the_input)
                 parsed_input = [w for w in list(df) if re.search(regex, w)]
@@ -936,13 +936,21 @@ def editor(dataframe1,
 
     # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
-        if type(merge_entries) != dict:
-            merge_entries = {newname: merge_entries}
-        for name, the_input in sorted(merge_entries.items()):
-            the_newname = newname_getter(df, parse_input(df, the_input), newname = name, prinf = print_info)
-            df = merge_these_entries(df, parse_input(df, the_input), the_newname, prinf = print_info)
-            if not single_totals:
-                df2 = merge_these_entries(df2, parse_input(df2, the_input), the_newname, prinf = False)
+        if type(merge_entries) != list:
+            if type(merge_entries) == str or type(merge_entries) == unicode:
+                merge_entries = {newname: merge_entries}
+            # for newname, criteria    
+            for name, the_input in sorted(merge_entries.items()):
+                the_newname = newname_getter(df, parse_input(df, the_input), newname = name, prinf = print_info)
+                df = merge_these_entries(df, parse_input(df, the_input), the_newname, prinf = print_info)
+                if not single_totals:
+                    df2 = merge_these_entries(df2, parse_input(df2, the_input), the_newname, prinf = False)
+        else:
+            for i in merge_entries:
+                the_newname = newname_getter(df, parse_input(df, merge_entries), newname = newname, prinf = print_info)
+                df = merge_these_entries(df, parse_input(df, merge_entries), the_newname, prinf = print_info)
+                if not single_totals:
+                    df2 = merge_these_entries(df2, parse_input(df2, merge_entries), the_newname, prinf = False)
     
     if merge_subcorpora:
         if type(merge_subcorpora) != dict:
