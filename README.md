@@ -451,12 +451,13 @@ Output:
 We can also merge subcorpora. Let's look for changes in gendered pronouns:
 
 ```python
->>> subcorpora_to_merge = [('1960s', r'^196'), 
-...    ('1980s', r'^198'), ('1990s', r'^199'), 
-...    ('2000s', r'^200'), ('2010s', r'^201')]
+>>> merges = {'1960s': r'^196', 
+...           '1980s': r'^198', 
+...           '1990s': r'^199', 
+...           '2000s': r'^200',
+...           '2010s': r'^201'}
 
->>> for subcorp, search in subcorpora_to_merge:
-...    sayers = editor(sayers.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
+>>> sayers = editor(sayers.results, merge_subcorpora = merges)
 
 # now, get relative frequencies for he and she
 >>> genders = editor(sayers.results, '%', sayers.totals, just_entries = ['he', 'she'])
@@ -753,18 +754,20 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 
 # complex stuff: merge results
 >>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m', r'^sh']
->>> for regex in entries_to_merge:
-...    modals = editor(modals.results, merge_entries = regex)
+>>> modals = editor(modals.results, merge_entries = entries_to_merge)
     
 # complex stuff: merge subcorpora
->>> subcorpora_to_merge = [('1960s', r'^196'), ('1980s', r'^198'), ('1990s', r'^199'), 
-...    ('2000s', r'^200'), ('2010s', r'^201')]
->>> for subcorp, search in subcorpora_to_merge:
-...    modals = editor(modals.results, merge_subcorpora = search, new_subcorpus_name=subcorp)
+>>> merges = {'1960s': r'^196', 
+...           '1980s': r'^198', 
+...           '1990s': r'^199', 
+...           '2000s': r'^200',
+...           '2010s': r'^201'}
+
+>>> modals = editor(sayers.results, merge_subcorpora = merges)
     
 # make relative, sort, remove what we don't want
 >>> modals = editor(modals.results, '%', modals.totals, keep_stats = False,
-...    just_subcorpora = [n for n, s in subcorpora_to_merge], sort_by = 'total', keep_top = 4)
+...    just_subcorpora = merges.keys(), sort_by = 'total', keep_top = 4)
 
 # show results
 >>> print rel_modals.results, each_md.results, modals.results
