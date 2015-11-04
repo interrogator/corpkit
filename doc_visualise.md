@@ -79,6 +79,14 @@ Show or hide the grid in the figure's background.
 
 For bar charts, stack entries on top of each other, rather than beside each other.
 
+### Partial pie
+
+If you're making a pie chart, and the percentages don't sum to 100%, this option will allow the plotting of pie 'slices', rather than entire pies.
+
+### Filled
+
+When making stacked bar or area plots, you can use this option to make every entry sum to 100%.
+
 ### Colour scheme
 
 Choose the colourmap for plotted entries.
@@ -94,6 +102,10 @@ Choose where in the figure the legend should sit, or let it float around with `b
 ### Figure size
 
 Choose dimensions for the figure. Equal dimensions is probably a good idea for pie charts.
+
+### Subplot layout
+
+If you're using the `Subplots` option, this allows you to specify the grid shape for the canvas as a whole.
 
 ### Show totals
 
