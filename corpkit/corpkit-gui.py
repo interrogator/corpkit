@@ -27,6 +27,7 @@ from PIL import ImageTk
 # obsolete:
 from corpkit.other import get_gui_resource_dir
 
+# determine path to gui resources:
 py_script = False
 rd = sys.argv[0]
 if sys.platform == 'darwin':
@@ -37,7 +38,6 @@ if sys.platform == 'darwin':
 else:
     key = 'Control'
     fext = 'exe'
-
 if '.py' in rd:
     py_script = True
     rd = os.path.dirname(os.path.join(rd.split('.py', 1)[0]))
@@ -45,6 +45,7 @@ if '.py' in rd:
 ########################################################################
 
 class SplashScreen( object ):
+    """a splash screen to display before corpkit is loaded"""
     def __init__( self, tkRoot, imageFilename, minSplashTime=0 ):
         import os
         self._root              = tkRoot
@@ -96,11 +97,9 @@ class SplashScreen( object ):
       # Display the application window
       #self._root.deiconify( )
 
-# stdout to app
 class RedirectText(object):
-    """send text to app from stdout"""
+    """send text to app from stdout, for the log and the status bar"""
 
-    #----------------------------------------------------------------------
     def __init__(self, text_ctrl, log_text):
         """Constructor"""
         
@@ -113,7 +112,6 @@ class RedirectText(object):
         self.flush = dumfun
         self.fileno = dumfun
  
-    #----------------------------------------------------------------------
     def write(self, string):
         """add stdout and stderr to log and/or to console""" 
         import re
@@ -130,7 +128,7 @@ class RedirectText(object):
             if not string.lstrip().startswith('#') and not string.lstrip().startswith('import'):
                 string = re.sub(del_reg, '', string)
                 string = string.split('\n')[-1]
-                self.output.set(string.lstrip().rstrip('\n'))
+                self.output.set(string.lstrip().rstrip('\n').rstrip())
 
 from Tkinter import *
 
@@ -168,7 +166,8 @@ class Notebook(Frame):
                 activefc = ("Helvetica", 14, "bold"), inactivefc = ("Helvetica", 14), **kw):
         """Construct a Notebook Widget
 
-        Notebook(self, parent, activerelief = RAISED, inactiverelief = RIDGE, xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', **kw)        
+        Notebook(self, parent, activerelief = RAISED, inactiverelief = RIDGE, 
+                 xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', **kw)        
     
         Valid resource names: background, bd, bg, borderwidth, class,
         colormap, container, cursor, height, highlightbackground,
@@ -180,7 +179,6 @@ class Notebook(Frame):
         color the text on the tabs when they are selected, and when they are not
 
         """
-                                                                                           #Make various argument available to the rest of the class
         self.activefg = activefg                                                           
         self.inactivefg = inactivefg
         self.activefc = activefc
@@ -191,8 +189,8 @@ class Notebook(Frame):
         self.activerelief = activerelief
         self.inactiverelief = inactiverelief                                               
         self.kwargs = kw                                                                   
-        self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
-        self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
+        self.tabVars = {}                                 
+        self.tabs = 0                                                                              
         self.progvar = DoubleVar()
         self.progvar.set(0)
         self.style = Style()
@@ -202,9 +200,9 @@ class Notebook(Frame):
         self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
         self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
         # the notebook, with its tabs, middle, status bars
-        self.noteBookFrame = Frame(parent, bg = '#c5c5c5')                                                 #Create a frame to hold everything together
+        self.noteBookFrame = Frame(parent, bg = '#c5c5c5')                                 #Create a frame to hold everything together
         self.BFrame = Frame(self.noteBookFrame, bg = '#c5c5c5')
-        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, bg = '#F4F4F4')                                            #Create a frame to put the "tabs" in
+        self.statusbar = Frame(self.noteBookFrame, bd = 2, height = 25, bg = '#F4F4F4')    #Create a frame to put the "tabs" in
         self.progbarspace = Frame(self.noteBookFrame, relief = RAISED, bd = 2, height = 25)
         self.noteBook = Frame(self.noteBookFrame, relief = RAISED, bd = 2, **kw)           #Create the frame that will parent the frames for each tab
         self.noteBook.grid_propagate(0)
@@ -221,11 +219,12 @@ class Notebook(Frame):
                            length = 500, mode = 'determinate', variable = self.progvar, 
                            style="TProgressbar")
         self.progbar.grid(sticky = E)
+        
+        # redirect stdout for log
         self.redir = RedirectText(self.status_text, self.log_stream)
         sys.stdout = self.redir
         sys.stderr = self.redir
 
-        #self.statusbar.grid_propagate(0)                                                    #self.noteBook has a bad habit of resizing itself, this line prevents that
         Frame.__init__(self)
         self.noteBookFrame.grid()
         self.BFrame.grid(row = 0, column = 0, columnspan = 27, sticky = N) # ", column = 13)" puts the tabs in the middle!
@@ -254,7 +253,6 @@ class Notebook(Frame):
     def add_tab(self, width = 2, **kw):
         import Tkinter
         """Creates a new tab, and returns its corresponding frame
-
         """
         
         temp = self.tabs
@@ -269,7 +267,6 @@ class Notebook(Frame):
 
     def destroy_tab(self, tab):
         """Delete a tab from the notebook, as well as it's corresponding frame
-
         """
         
         self.iteratedTabs = 0                                                              #Keep track of the number of loops made
@@ -284,9 +281,7 @@ class Notebook(Frame):
     def focus_on(self, tab):
         """Locate the IDNum of the given tab and use
         change_tab to give it focus
-
         """
-        
         self.iteratedTabs = 0                                                              #Keep track of the number of loops made
         for b in self.tabVars.values():                                                    #Iterate through the dictionary of tabs
             if b[1] == tab:                                                                #Find the NumID of the given tab
@@ -298,31 +293,23 @@ def corpkit_gui():
     
     # make app
     root = Tk()
-
     #minimise it
     root.withdraw( )
-
     # generate splash
     with SplashScreen(root, 'loading_image.png', 3.0):
-
-        # set size
+        # set app size
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-
         import warnings
         warnings.filterwarnings("ignore")
-
         import traceback
         import dateutil
         import sys
         import os
         import corpkit
         from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
-
         import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
         from Tkinter import StringVar, Listbox, Text
-
         from tkintertable import TableCanvas, TableModel
-
         from nltk.draw.table import MultiListbox, Table
         from collections import OrderedDict
         
@@ -338,7 +325,8 @@ def corpkit_gui():
         from hashlib import md5
         import chardet
         import pyparsing
-        # a try statement in case not bundling scipy
+        # a try statement in case not bundling scipy, which
+        # tends to bloat the .app
         try:
             from scipy.stats import linregress
         except:
@@ -351,7 +339,7 @@ def corpkit_gui():
             if not fullp in sys.path:
                 sys.path.append(fullp)
 
-        # nltk data
+        # add nltk data to path
         import nltk
         nltk_data_path = os.path.join(rd, 'nltk_data')
         if nltk_data_path not in nltk.data.path:
@@ -373,11 +361,10 @@ def corpkit_gui():
         note = Notebook(root, width= 1365, height = 660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
         note.grid()
         tab0 = note.add_tab(text = "Build")
-        tab1 = note.add_tab(text = "Interrogate")                                                  #Create a tab with the text "Tab One"
-        tab2 = note.add_tab(text = "Edit")                                                  #Create a tab with the text "Tab Two"
-        tab3 = note.add_tab(text = "Visualise")                                                    #Create a tab with the text "Tab Three"
-        tab4 = note.add_tab(text = "Concordance")                                                 #Create a tab with the text "Tab Four"
-        #tab5 = note.add_tab(text = "Manage")                                                 #Create a tab with the text "Tab Five"
+        tab1 = note.add_tab(text = "Interrogate")
+        tab2 = note.add_tab(text = "Edit")       
+        tab3 = note.add_tab(text = "Visualise")  
+        tab4 = note.add_tab(text = "Concordance")
         note.text.update_idletasks()
 
         ###################     ###################     ###################     ###################
@@ -397,8 +384,6 @@ def corpkit_gui():
         buildbits = {}
         most_recent_projects = []
 
-        subc_sel_vals_build = []
-
         # some variables that will get used throughout the gui
         # a dict of the editor frame names and models
         editor_tables = {}
@@ -407,6 +392,7 @@ def corpkit_gui():
         sort_direction = True
 
         subc_sel_vals = []
+        subc_sel_vals_build = []
 
         # store every interrogation and conc in this session    
         all_interrogations = OrderedDict()
@@ -424,6 +410,7 @@ def corpkit_gui():
         # where to put the current figure and frame
         thefig = []
         oldplotframe = []
+        single_entry_or_subcorpus = {}
         
         # conc
         # to do: more consistent use of globals!
@@ -546,6 +533,7 @@ def corpkit_gui():
         # some functions used throughout the gui
 
         def focus_next_window(event):
+            """tab to next widget"""
             event.widget.tk_focusNext().focus()
             try:
                 event.widget.tk_focusNext().selection_range(0, END)
@@ -2641,6 +2629,7 @@ def corpkit_gui():
             
             if sbplt.get() == 1:
                 d['subplots'] = True
+                d['layout'] = (int(lay1.get()), int(lay2.get()))
 
             if gridv.get() == 1:
                 d['grid'] = True
@@ -2650,6 +2639,11 @@ def corpkit_gui():
             if stackd.get() == 1:
                 d['stacked'] = True
 
+            if part_pie.get() == 1:
+                d['partial_pie'] = True
+
+            if filledvar.get() == 1:
+                d['filled'] = True
 
             if log_x.get() == 1:
                 d['logx'] = True
@@ -2715,7 +2709,7 @@ def corpkit_gui():
                     @return: the newly created canvas
                 """
 
-                frame.grid(column = 2, row = 0, rowspan = 1, padx = (15, 15), pady = (40, 0), columnspan = 3, sticky = 'NW')
+                frame.grid(column = 1, row = 0, rowspan = 1, padx = (15, 15), pady = (40, 0), columnspan = 3, sticky = 'NW')
                 #frame.rowconfigure(0, weight=9)
                 #frame.columnconfigure(0, weight=9)
                 canvas = Canvas(frame, width = 980, height = 500)
@@ -2771,7 +2765,7 @@ def corpkit_gui():
             del thefig[:]
             
             toolbar_frame = Tkinter.Frame(tab3, borderwidth = 0)
-            toolbar_frame.grid(row=0, column=2, columnspan = 3, sticky = 'NW', padx = (400,0), pady = (600,0))
+            toolbar_frame.grid(row=0, column=1, columnspan = 3, sticky = 'NW', padx = (400,0), pady = (600,0))
             toolbar_frame.lift()
 
             oldplotframe.append(toolbar_frame)
@@ -2870,7 +2864,7 @@ def corpkit_gui():
             image = image.resize(newdimensions)
             image = ImageTk.PhotoImage(image)
             frm = Frame(tab3, height = 500, width = 1000)
-            frm.grid(column = 2, row = 0, rowspan = 1, padx = (padxleft, padxright), \
+            frm.grid(column = 1, row = 0, rowspan = 1, padx = (padxleft, padxright), \
                       pady = padytop, columnspan = 3)
             gallframe = Label(frm, image = image, justify = CENTER)
             gallframe.pack(anchor = 'center', fill=BOTH)
@@ -2883,12 +2877,12 @@ def corpkit_gui():
 
         savedplot = StringVar()
         savedplot.set('View saved images: ')
-        Label(plot_option_frame, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 22, column = 0, columnspan = 2, pady = (10, 0), sticky = W)
-        pbut = Button(plot_option_frame, text='Previous', command=lambda: move(direction = 'back'))
-        pbut.grid(row = 23, column = 0, sticky = W)
+        Label(tab3, textvariable = savedplot, font = ("Helvetica", 13, "bold")).grid(row = 0, column = 1, padx = (40,0), pady = (566,0), sticky = W)
+        pbut = Button(tab3, text='Previous', command=lambda: move(direction = 'back'))
+        pbut.grid(row = 0, column = 1, padx = (40,0), pady = (616,0), sticky = W)
         pbut.config(state = DISABLED)
-        nbut = Button(plot_option_frame, text='Next', command=lambda: move(direction = 'forward'))
-        nbut.grid(row = 23, column = 1, sticky = E)
+        nbut = Button(tab3, text='Next', command=lambda: move(direction = 'forward'))
+        nbut.grid(row = 0, column = 1, padx = (160,0), pady = (616,0), sticky = W)
         nbut.config(state = DISABLED)
 
         # not in use while using the toolbar instead...
@@ -2933,13 +2927,18 @@ def corpkit_gui():
                             if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]))
             
             single_sbcp_optmenu.config(state = NORMAL)
+            single_sbcp_optmenu['menu'].delete(0, 'end')
             single_sbcp_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_sbcp, 'None'))
+            lst = []
             if len(subdrs) > 0:
-                single_sbcp_optmenu['menu'].delete(0, 'end')
                 for c in subdrs:
+                    lst.append(c)
                     single_sbcp_optmenu['menu'].add_command(label=c, command=Tkinter._setit(single_sbcp, c))
+                single_entry_or_subcorpus['subcorpora'] = lst
             else:
+                single_sbcp_optmenu.config(state = NORMAL)
                 single_sbcp_optmenu['menu'].delete(0, 'end')
+                single_sbcp_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_sbcp, 'None'))
                 single_sbcp_optmenu.config(state = DISABLED)
 
             if 'results' in thisdata._asdict().keys():
@@ -2947,8 +2946,11 @@ def corpkit_gui():
                 single_ent_optmenu.config(state = NORMAL)
                 single_ent_optmenu['menu'].delete(0, 'end')
                 single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
+                lst = []
                 for corp in list(thisdata.results.columns)[:200]:
+                    lst.append(corp)
                     single_ent_optmenu['menu'].add_command(label=corp, command=Tkinter._setit(single_entry, corp))
+                single_entry_or_subcorpus['entries'] = lst
             else:
                 single_ent_optmenu.config(state = NORMAL)
                 single_ent_optmenu['menu'].delete(0, 'end')
@@ -2987,7 +2989,8 @@ def corpkit_gui():
                 number_to_plot.set('1')
                 num_to_plot_box.config(state = DISABLED)
                 single_sbcp_optmenu.config(state=DISABLED)
-                if plotnametext.get() == 'Untitled':
+                entries = single_entry_or_subcorpus['entries']
+                if plotnametext.get() == 'Untitled' or plotnametext.get() in entries:
                     plotnametext.set(single_entry.get())
             else:
                 plotnametext.set('Untitled')
@@ -3018,7 +3021,8 @@ def corpkit_gui():
                 #num_to_plot_box.config(state = DISABLED)
                 single_ent_optmenu.config(state=DISABLED)
                 charttype.set('bar')
-                if plotnametext.get() == 'Untitled':
+                entries = single_entry_or_subcorpus['subcorpora']
+                if plotnametext.get() == 'Untitled' or plotnametext.get() in entries:
                     plotnametext.set(single_sbcp.get())
             else:
                 plotnametext.set('Untitled')
@@ -3066,13 +3070,26 @@ def corpkit_gui():
         def pie_callback(*args):
             if charttype.get() == 'pie':
                 explbox.config(state = NORMAL)
+                ppie_but.config(state = NORMAL)
             else:
                 explbox.config(state = DISABLED)
+                ppie_but.config(state = DISABLED)
 
             if charttype.get().startswith('bar'):
                 stackbut.config(state = NORMAL)
+                filledbut.config(state = NORMAL)
             else:
                 stackbut.config(state = DISABLED)
+                filledbut.config(state = DISABLED)
+
+            # can't do log y with area according to mpl
+            if charttype.get() == 'area':
+                logybut.unselect()
+                logybut.config(state = DISABLED)
+                filledbut.config(state = NORMAL)
+            else:
+                logybut.config(state = NORMAL)
+                filledbut.config(state = DISABLED)
 
         # chart type
         Label(plot_option_frame, text='Kind of chart').grid(row = 6, column = 0, sticky = W)
@@ -3110,7 +3127,8 @@ def corpkit_gui():
         log_x = IntVar()
         Checkbutton(plot_option_frame, text="Log x axis", variable=log_x).grid(column = 0, row = 10, sticky = W)
         log_y = IntVar()
-        Checkbutton(plot_option_frame, text="Log y axis", variable=log_y, width = 13).grid(column = 1, row = 10, sticky = E)
+        logybut = Checkbutton(plot_option_frame, text="Log y axis", variable=log_y, width = 13)
+        logybut.grid(column = 1, row = 10, sticky = E)
 
         # transpose
         transpose_vis = IntVar()
@@ -3136,6 +3154,18 @@ def corpkit_gui():
         sbpl_but = Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width = 13)
         sbpl_but.grid(column = 1, row = 13, sticky = E)
 
+        def sbplt_callback(*args):
+            """if subplots are happening, allow layout"""
+            if sbplt.get():
+                lay1menu.config(state = NORMAL)
+                lay2menu.config(state = NORMAL)
+            else:
+                lay1menu.config(state = DISABLED)
+                lay2menu.config(state = DISABLED)
+
+        sbplt.trace("w", sbplt_callback)
+
+
         gridv = IntVar()
         gridbut = Checkbutton(plot_option_frame, text="Grid", variable=gridv, onvalue = True, offvalue = False)
         gridbut.select()
@@ -3146,8 +3176,19 @@ def corpkit_gui():
         stackbut.grid(column = 1, row = 14, sticky = E)
         stackbut.config(state = DISABLED)
 
+        part_pie = IntVar()
+        ppie_but = Checkbutton(plot_option_frame, text="Partial pie", variable=part_pie, onvalue = True, offvalue = False)
+        ppie_but.grid(column = 0, row = 15, sticky = W)
+        ppie_but.config(state = DISABLED)
+
+        filledvar = IntVar()
+        filledbut = Checkbutton(plot_option_frame, text="Filled", variable=filledvar, onvalue = True, offvalue = False, width = 13)
+        filledbut.grid(column = 1, row = 15, sticky = E)
+        filledbut.config(state = DISABLED)
+
+
         # chart type
-        Label(plot_option_frame, text='Colour scheme:').grid(row = 15, column = 0, sticky = W)
+        Label(plot_option_frame, text='Colour scheme:').grid(row = 16, column = 0, sticky = W)
         chart_cols = StringVar(root)
         chart_cols.set('Paired')
         schemes = tuple(sorted(('Paired', 'Spectral', 'summer', 'Set1', 'Set2', 'Set3', 
@@ -3161,8 +3202,8 @@ def corpkit_gui():
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
                     'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot')))
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
-        ch_col.config(width = 15)
-        ch_col.grid(row = 15, column = 1, sticky = E)
+        ch_col.config(width = 16)
+        ch_col.grid(row = 16, column = 1, sticky = E)
 
         # style
         if not py_script:
@@ -3173,10 +3214,10 @@ def corpkit_gui():
                           'mpl-white', 'seaborn-dark', 'classic', 'seaborn-talk'))
         plot_style = StringVar(root)
         plot_style.set('ggplot')
-        Label(plot_option_frame, text = 'Plot style:').grid(row = 16, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Plot style:').grid(row = 17, column = 0, sticky = W)
         pick_a_style = OptionMenu(plot_option_frame, plot_style, *stys)
         pick_a_style.config(width = 15)
-        pick_a_style.grid(row = 16, column = 1, sticky=E)
+        pick_a_style.grid(row = 17, column = 1, sticky=E)
 
         def ps_callback(*args):
             if plot_style.get().startswith('seaborn'):
@@ -3188,40 +3229,57 @@ def corpkit_gui():
         plot_style.trace("w", ps_callback)
 
         # legend pos
-        Label(plot_option_frame, text='Legend position:').grid(row = 17, column = 0, sticky = W)
+        Label(plot_option_frame, text='Legend position:').grid(row = 18, column = 0, sticky = W)
         legloc = StringVar(root)
         legloc.set('best')
         locs = tuple(('best', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
         loc_options = OptionMenu(plot_option_frame, legloc, *locs)
         loc_options.config(width = 15)
-        loc_options.grid(row = 17, column = 1, sticky = E)
+        loc_options.grid(row = 18, column = 1, sticky = E)
 
         # figure size
-        Label(plot_option_frame, text='Figure size:').grid(row = 18, column = 0, sticky = W)
+        Label(plot_option_frame, text='Figure size:').grid(row = 19, column = 0, sticky = W)
         figsiz1 = StringVar(root)
         figsiz1.set('12')
         figsizes = tuple(('2', '4', '6', '8', '10', '12', '14', '16', '18'))
         fig1 = OptionMenu(plot_option_frame, figsiz1, *figsizes)
         fig1.configure(width = 6)
-        fig1.grid(row = 18, column = 1, sticky = W, padx = (27, 0))
-        Label(plot_option_frame, text=u"\u00D7").grid(row = 18, column = 1, padx = (30, 0))
+        fig1.grid(row = 19, column = 1, sticky = W, padx = (27, 0))
+        Label(plot_option_frame, text=u"\u00D7").grid(row = 19, column = 1, padx = (30, 0))
         figsiz2 = StringVar(root)
         figsiz2.set('6')
         fig2 = OptionMenu(plot_option_frame, figsiz2, *figsizes)
         fig2.configure(width = 6)
-        fig2.grid(row = 18, column = 1, sticky = E)
+        fig2.grid(row = 19, column = 1, sticky = E)
+
+        # subplots layout
+        Label(plot_option_frame, text='Subplot layout:').grid(row = 20, column = 0, sticky = W)
+        lay1 = StringVar(root)
+        lay1.set('3')
+        figsizes = tuple([str(i) for i in range(1, 20)])
+        lay1menu = OptionMenu(plot_option_frame, lay1, *figsizes)
+        lay1menu.configure(width = 6)
+        lay1menu.grid(row = 20, column = 1, sticky = W, padx = (27, 0))
+        Label(plot_option_frame, text=u"\u00D7").grid(row = 20, column = 1, padx = (30, 0))
+        lay2 = StringVar(root)
+        lay2.set('3')
+        lay2menu = OptionMenu(plot_option_frame, lay2, *figsizes)
+        lay2menu.configure(width = 6)
+        lay2menu.grid(row = 20, column = 1, sticky = E)
+        lay1menu.config(state = DISABLED)
+        lay2menu.config(state = DISABLED)
 
         # show_totals option
-        Label(plot_option_frame, text='Show totals: ').grid(row = 19, column = 0, sticky = W)
+        Label(plot_option_frame, text='Show totals: ').grid(row = 21, column = 0, sticky = W)
         showtot = StringVar(root)
         showtot.set('Off')
         showtot_options = tuple(('Off', 'legend', 'plot', 'legend + plot'))
         show_tot_menu = OptionMenu(plot_option_frame, showtot, *showtot_options)
-        show_tot_menu.grid(row = 19, column = 1, sticky = E)
+        show_tot_menu.grid(row = 21, column = 1, sticky = E)
 
         # plot button
         plotbut = Button(plot_option_frame, text = 'Plot')
-        plotbut.grid(row = 20, column = 1, sticky = E)
+        plotbut.grid(row = 22, column = 1, sticky = E)
         plotbut.config(command = lambda: runner(plotbut, do_plotting), state = DISABLED)
 
         ###################     ###################     ###################     ###################
@@ -3448,11 +3506,15 @@ def corpkit_gui():
             else:
                 thedata = all_conc[data]
                 thedata = thedata.to_csv(header = False, sep = '\t')
+            if sys.platform == 'darwin':
+                the_kwargs = {'message': 'Choose a name and place for your exported data.'}
+            else:
+                the_kwargs = {}
             savepath = tkFileDialog.asksaveasfilename(title = 'Save file',
                                            initialdir = exported_fullpath.get(),
-                                           message = 'Choose a name and place for your exported data.',
                                            defaultextension = '.csv',
-                                           initialfile = 'data.csv')
+                                           initialfile = 'data.csv',
+                                           **the_kwargs)
             if savepath == '':
                 return
             with open(savepath, "w") as fo:
@@ -4368,9 +4430,13 @@ def corpkit_gui():
                 return
             home = os.path.expanduser("~")
             docpath = os.path.join(home, 'Documents')
+            if sys.platform == 'darwin':
+                the_kwargs = {'message': 'Choose a directory in which to create your new project'}
+            else:
+                the_kwargs = {}
             fp = tkFileDialog.askdirectory(title = 'New project location',
                                            initialdir = docpath,
-                                           message = 'Choose a directory in which to create your new project')
+                                           **kwargs)
             if not fp:
                 return
             new_proj_basepath.set('New project: "%s"' % name)
@@ -4683,8 +4749,11 @@ def corpkit_gui():
                     data = all_interrogations[i]
                     keys = data._asdict().keys()
                     if in_a_project.get() == 0:
-                        fp = tkFileDialog.askdirectory(title = 'Choose save directory',
-                            message = 'Choose save directory for exported interrogation')
+                        if sys.platform == 'darwin':
+                            the_kwargs = {'message': 'Choose save directory for exported interrogation'}
+                        else:
+                            the_kwargs = {}
+                        fp = tkFileDialog.askdirectory(title = 'Choose save directory', **the_kwargs)
                         if fp == '':
                             return
                     else:
@@ -4841,8 +4910,12 @@ def corpkit_gui():
         def load_project(path = False):
             import os
             if path is False:
+                if sys.platform == 'darwin':
+                    the_kwargs = {'message': 'Choose project directory'}
+                else:
+                    the_kwargs = {}
                 fp = tkFileDialog.askdirectory(title = 'Open project',
-                                           message = 'Choose project directory')
+                                           **the_kwargs)
             else:
                 fp = path
             if not fp or fp == '':
@@ -5349,9 +5422,13 @@ def corpkit_gui():
             import os
             home = os.path.expanduser("~")
             docpath = os.path.join(home, 'Documents')
+            if sys.platform == 'darwin':
+                the_kwargs = {'message': 'Select your corpus of unparsed text files.'}
+            else:
+                the_kwargs = {}
             fp = tkFileDialog.askdirectory(title = 'Path to unparsed corpus',
                                            initialdir = docpath,
-                                           message = 'Select your corpus of unparsed text files.')
+                                           **the_kwargs)
             where_to_put_corpus = os.path.join(project_fullpath.get(), 'data')
             newc = os.path.join(where_to_put_corpus, os.path.basename(fp))
             try:
@@ -6130,9 +6207,13 @@ def corpkit_gui():
             root.after(10000, start_update_check)
 
         def set_corenlp_path():
+            if sys.platform == 'darwin':
+                the_kwargs = {'message': 'Select folder containing the CoreNLP parser.'}
+            else:
+                the_kwargs = {}
             fp = tkFileDialog.askdirectory(title = 'CoreNLP path',
                                            initialdir = os.path.expanduser("~"),
-                                           message = 'Select folder containing the CoreNLP parser.')
+                                           **the_kwargs)
             if fp and fp != '':
                 corenlppath.set(fp)
                 if not get_fullpath_to_jars(corenlppath):
