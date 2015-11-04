@@ -19,7 +19,7 @@ __all__ = ["interrogator",
            "flatten_treestring",
            "interroplot"]
 
-__version__ = "1.73"
+__version__ = "1.74"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
