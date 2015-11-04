@@ -180,6 +180,14 @@ def plotter(title,
     if style is not False and style.startswith('seaborn'):
         colours = False
 
+    # use 'draggable = True' to make a draggable legend
+    dragmode = False
+    if 'draggable' in kwargs.keys():
+        if kwargs['draggable'] is True:
+            dragmode = True
+        del kwargs['draggable']
+
+
     if 'savepath' in kwargs.keys():
         mpl.rcParams['savefig.directory'] = kwargs['savepath']
         del kwargs['savepath']
@@ -461,7 +469,7 @@ def plotter(title,
                         the_range = np.linspace(0, 1, num_to_plot)
                         cmap = plt.get_cmap(colours)
                         kwargs['colors'] = [cmap(n) for n in the_range]
-                    # make a bar width ... ?
+                    # make a bar width ... ? ...
                     #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
 
@@ -486,6 +494,11 @@ def plotter(title,
                 rev_leg = True
     if not 'rev_leg' in locals():
         rev_leg = False
+
+    #if 'kind' in kwargs:
+    #    if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
+
+
 
     # the default legend placement
     if legend_pos is True:
@@ -608,10 +621,17 @@ def plotter(title,
                 else:
                     leg_options['labels'] = list(dataframe.index)   
     
+    def filler(df):
+        pby = df.T.copy()
+        for i in list(pby.columns):
+            tot = pby[i].sum()
+            pby[i] = pby[i] * 100.0 / tot
+        return pby.T
+
     areamode = False
     if 'kind' in kwargs:
         if kwargs['kind'] == 'area':
-            areamode = True        
+            areamode = True
 
     if legend is False:
         kwargs['legend'] = False
@@ -641,6 +661,12 @@ def plotter(title,
                 if 2050 > int(list(dataframe.index)[0]):
                     n = pd.PeriodIndex([d for d in list(dataframe.index)], freq='A')
                     dataframe = dataframe.set_index(n)
+
+        if 'filled' in kwargs.keys():
+            if areamode or kwargs['kind'].startswith('bar'):
+                if kwargs['filled'] is True:
+                    dataframe = filler(dataframe)
+            del kwargs['filled']
 
     MARKERSIZE = 4
     COLORMAP = {
@@ -682,21 +708,31 @@ def plotter(title,
     # use styles and plot
 
     class dummy_context_mgr():
+        """a fake context for plotting without style
+        perhaps made obsolete by 'classic' style in new mpl"""
         def __enter__(self):
             return None
         def __exit__(self, one, two, three):
             return False
+
+    # stop duplicated legend entries in areamode!
 
     with plt.style.context((style)) if style != 'matplotlib' else dummy_context_mgr():
 
         if not sbplt:
             # check if negative values, no stacked if so
             if areamode:
+                kwargs['legend'] = False
                 if dataframe.applymap(lambda x: x < 0.0).any().any():
                     kwargs['stacked'] = False
                     rev_leg = False
             ax = dataframe.plot(figsize = figsize, **kwargs)
+            if areamode:
+                handles, labels = plt.gca().get_legend_handles_labels()
+                del handles
+                del labels
         else:
+            plt.gcf().set_tight_layout(False)
             if not piemode and not sbplt:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
             else:
@@ -704,9 +740,11 @@ def plotter(title,
                 handles, labels = plt.gca().get_legend_handles_labels()
                 plt.legend( handles, labels, loc = leg_options['loc'], bbox_to_anchor = (0,-0.1,1,1),
                 bbox_transform = plt.gcf().transFigure )
-                if not tk and not sbplt:
-                    plt.show()
-                    return
+
+                # this line allows layouts with missing plots
+                # i.e. layout = (5, 2) with only nine plots
+                plt.gcf().set_tight_layout(False)
+                
         if 'rot' in kwargs:
             if kwargs['rot'] != 0 and kwargs['rot'] != 90:
                 labels = [item.get_text() for item in ax.get_xticklabels()]
@@ -734,14 +772,22 @@ def plotter(title,
                     if c == len(COLORMAP.keys()):
                         c = 0
 
+        # draw legend with proper placement etc
         if legend:
             if not piemode and not sbplt:
                 if 3 not in interactive_types:
-                    if not rev_leg:
-                        lgd = plt.legend(**leg_options)
-                    else:
-                        handles, labels = plt.gca().get_legend_handles_labels()
-                        lgd = plt.legend(handles[::-1], labels[::-1], **leg_options)
+                    handles, labels = plt.gca().get_legend_handles_labels()
+                    # area doubles the handles and labels. this removes half:
+                    if areamode:
+                        handles = handles[-num_to_plot:]
+                        labels = labels[-num_to_plot:]
+                        print handles
+                        print labels
+                    if rev_leg:
+                        handles = handles[::-1]
+                        labels = labels[::-1]
+                    lgd = plt.legend(handles, labels, **leg_options)
+
 
             #if black_and_white:
                 #lgd.set_facecolor('w')
@@ -975,9 +1021,9 @@ def plotter(title,
     plt.subplots_adjust(left=0.1)
     plt.subplots_adjust(bottom=0.18)
 
-    #if 'layout' not in kwargs:
-        #if not sbplt:
-            #plt.tight_layout()
+    if 'layout' not in kwargs:
+        if not sbplt:
+            plt.tight_layout()
 
     if save:
         import os
@@ -1001,6 +1047,9 @@ def plotter(title,
             print '\n' + time + ": " + savename + " created."
         else:
             raise ValueError("Error making %s." % savename)
+
+    if dragmode:
+        plt.legend().draggable()
 
     if not interactive and not running_python_tex and not running_spider and not tk:
         plt.show()
