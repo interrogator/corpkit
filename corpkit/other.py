@@ -999,7 +999,7 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
     for index, finding in enumerate(fs):
         try:
             tmp = load_result(finding, loaddir = data_dir, only_concs = only_concs)
-            if type(tmp) != pandas.core.frame.DataFrame:
+            if type(tmp) != pandas.core.frame.DataFrame and type(tmp) != pandas.core.series.Series:
                 if not tmp:
                     continue
             r[os.path.splitext(finding)[0]] = tmp
