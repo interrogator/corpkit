@@ -126,7 +126,7 @@ class RedirectText(object):
                 self.log.append(string.rstrip('\n'))
         if not re.match(show_reg, string):
             if not string.lstrip().startswith('#') and not string.lstrip().startswith('import'):
-                string = re.sub(del_reg, '', string)
+                string = re.sub(del_reg, '', string).rstrip('\n').rstrip()
                 string = string.split('\n')[-1]
                 self.output.set(string.lstrip().rstrip('\n').rstrip())
 
@@ -296,7 +296,7 @@ def corpkit_gui():
     #minimise it
     root.withdraw( )
     # generate splash
-    with SplashScreen(root, 'loading_image.png', 3.0):
+    with SplashScreen(root, 'loading_image.png', 1.0):
         # set app size
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
         import warnings
@@ -410,6 +410,9 @@ def corpkit_gui():
         # where to put the current figure and frame
         thefig = []
         oldplotframe = []
+
+        # for visualise, this holds a list of subcorpora or entries,
+        # so that the title will dynamically change at the right time
         single_entry_or_subcorpus = {}
         
         # conc
@@ -762,7 +765,7 @@ def corpkit_gui():
                             query = divided.group(1) + asr + divided.group(5)
                         except:
                             timestring('"%s" not found in wordlists.' % divided.group(4))
-                            return False
+                            return False                
             return query
 
         def ignore():
@@ -929,14 +932,6 @@ def corpkit_gui():
                 selected_to_edit.set(all_interrogations.keys()[-1])
             dataframe1s['menu'].delete(0, 'end')
             dataframe2s['menu'].delete(0, 'end')
-            if len(all_interrogations.keys()) > 0:
-                data_to_plot.set(all_interrogations.keys()[-1])
-                edbut.config(state = NORMAL)
-                plotbut.config(state = NORMAL)
-            else:
-                edbut.config(state = DISABLED)
-                plotbut.config(state = DISABLED)
-
             every_interrogation['menu'].delete(0, 'end')
             #every_interro_listbox.delete(0, 'end')
             #every_image_listbox.delete(0, 'end')
@@ -2112,6 +2107,7 @@ def corpkit_gui():
                 entry_do_with = entry_do_with.lower().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
                 # convert special stuff
+                re.compile(entry_do_with)
                 entry_do_with = remake_special_query(entry_do_with, return_list = True)
                 if entry_do_with is False:
                     return
@@ -2228,6 +2224,7 @@ def corpkit_gui():
             """show names and spreadsheets for what is selected as result to edit
                also, hide the edited results section"""
             if selected_to_edit.get() != 'None':
+                edbut.config(state = NORMAL)
                 name_of_o_ed_spread.set(selected_to_edit.get())
                 thisdata = all_interrogations[selected_to_edit.get()]
                 resultname.set('Results to edit: %s' % str(name_of_o_ed_spread.get()))
@@ -2247,6 +2244,8 @@ def corpkit_gui():
                     #df1box.config(state = NORMAL)
                     #df1branch.set('results')
                     #df1box.config(state = DISABLED)
+            else:
+                edbut.config(state = DISABLED)
             name_of_n_ed_spread.set('')
             editoname.set('Edited results: %s' % str(name_of_n_ed_spread.get()))
             update_spreadsheet(n_editor_results, df_to_show = None, height = 140)
@@ -2916,6 +2915,10 @@ def corpkit_gui():
 
         def plot_callback(*args):
             """enable/disable based on selected dataset for plotting"""
+            if data_to_plot.get() == 'None':
+                plotbut.config(state = DISABLED)
+            else:
+                plotbut.config(state = NORMAL)
             try:
                 thisdata = all_interrogations[data_to_plot.get()]
             except KeyError:
@@ -3401,6 +3404,7 @@ def corpkit_gui():
                 if justdep.get().startswith('[') and justdep.get().endswith(']'):
                     jdep = justdep.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
+                    re.compile(justdep.get())
                     jdep = remake_special_query(justdep.get())
                     if jdep is False:
                         return
@@ -3443,6 +3447,9 @@ def corpkit_gui():
                 d['split_sents'] = True
             else:
                 pass
+
+            if option == 'd':
+                re.compile(query)
 
             r = conc(corpus = corpus, option = option, query = query, **d)
             if r is not None and r is not False:
@@ -4436,7 +4443,7 @@ def corpkit_gui():
                 the_kwargs = {}
             fp = tkFileDialog.askdirectory(title = 'New project location',
                                            initialdir = docpath,
-                                           **kwargs)
+                                           **the_kwargs)
             if not fp:
                 return
             new_proj_basepath.set('New project: "%s"' % name)
@@ -6404,7 +6411,10 @@ def corpkit_gui():
     #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     root.lift()
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-    #the_splash.__exit__()
+    try:
+        root._splash.__exit__()
+    except:
+        pass
     root.wm_state('normal')
     root.resizable(TRUE,TRUE)
 

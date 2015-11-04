@@ -233,7 +233,10 @@ def conc(corpus,
                             # this is shit, needs indexing or something
                             for wd in wdsmatching:
                                 line = normalise(parsetree)
-                                start, middle, end = re.split(r'(' + wd + r')', line, 1)
+                                try:
+                                    start, middle, end = re.split(r'(' + wd + r')', line, 1)
+                                except ValueError:
+                                    continue
                                 conc_lines.append([f, speakr, start, middle, end])
 
                     if option.startswith('t'):
