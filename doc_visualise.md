@@ -85,7 +85,7 @@ Choose the colourmap for plotted entries.
 
 ### Plot style
 
-Slight aesthetic changes to the plot: background colour, line size, etc.
+Aesthetic changes to the plot: background colour, line size, etc. If using a *seaborn* style, colours cannot be manually selected.
 
 ### Legend position
 

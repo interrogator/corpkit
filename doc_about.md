@@ -8,7 +8,7 @@ tags: [getting-started]
 
 ## *corpkit*
 
-*corpkit* grew organically out of the code I had developed to make sense of the data I encountered in my research projects. I made a basic command line interface for interrogating, editing and plotting corpora, and described it alongside my research project findings whenever I presented my research. Many people seemed interested in some of tools and methods, but most didn't know how to program. So, for them, I'm putting together this graphical interface, as well as its documentation.
+*corpkit* grew organically out of the code I had developed to make sense of the data I encountered in my research projects. I made a basic command line interface for interrogating, editing and plotting corpora, and described it alongside my research project findings whenever I presented my research. Many people seemed interested in some of tools and methods, but most didn't know how to program. So, for them, I've put together this graphical interface, as well as its documentation.
 
 The best way to look at *corpkit* is as an rickety little open-source bridge between applied, systemic, corpus and computational linguistics.
 
