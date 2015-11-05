@@ -3,13 +3,13 @@ def conc(corpus,
         option = 'tregex',
         query = 'any', 
         dep_function = 'any',
-        dep_type = 'basic-dependencies',
+        dep_type = 'collapsed-ccprocessed-dependencies',
         n = 100, 
         random = False, 
         split_sents = True,
         window = 100, 
         trees = False,
-        plaintext = False, #'guess',
+        plaintext = False,
         add_links = False,
         show_links = False,
         print_status = True,
@@ -288,7 +288,6 @@ def conc(corpus,
         # the use of ascii here makes sure the string formats ok, but will also screw over
         # anyone doing non-english work. so, change to utf-8, then fix errors as they come
         # in the corpkit-gui "add_conc_lines_to_window" function
-
         series.append(pd.Series([fname.encode('ascii', errors = 'ignore'), \
                                  spkr.encode('ascii', errors = 'ignore'), \
                                  start.encode('ascii', errors = 'ignore'), \
@@ -335,30 +334,3 @@ def conc(corpus,
         print rem
 
     return df
-
-    #if add_links:
-
-    #    def _add_links(lines, links = False, show = 'thread'):
-    #        link = "http://www.healthboards.com/boards/bipolar-disorder/695089-labels.html"
-    #        linktext = '<a href="%s>link</a>' % link
-    #        import pandas as pd
-    #        inds = list(df.index)
-    #        num_objects = len(list(df.index))
-    #        ser = pd.Series([link for n in range(num_objects)], index = inds)
-    #        lines['link'] = ser
-    #        return lines
-    #    
-    #    df = _add_links(df)
-#
-    #if add_links:
-    #    if not show_links:
-    #        if print_output:
-    #            print df.drop('link', axis = 1).head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
-    #    else:
-    #        if print_output:
-    #            print HTML(df.to_html(escape=False))
-    #else:
-    #    if print_output:
-    #        print df.head(n).to_string(header = False, formatters={rname:'{{:<{}s}}'.format(df[rname].str.len().max()).format})
-
-

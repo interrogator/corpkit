@@ -15,7 +15,6 @@ def interrogator(path,
                 pos_filter = False,
                 table_size = 50,
                 quicksave = False,
-                add_to = False,
                 add_pos_to_g_d_option = False,
                 custom_engine = False,
                 post_process = False,
@@ -93,34 +92,39 @@ def interrogator(path,
 
     """
     import corpkit
-    from other import add_corpkit_to_path
+    from corpkit.other import add_corpkit_to_path
+    from corpkit.other import tregex_engine
+    from corpkit.other import add_nltk_data_to_nltk_path
+    
+    # some non-Python resources need to explicitly be added to path
     add_corpkit_to_path()
+
     import os
     import re
     import signal
-    import numpy
+    import gc
+
     import collections
     import warnings
+    import nltk
+    import numpy
+
+    import pandas as pd
     from collections import Counter
     from time import localtime, strftime
-    import pandas as pd
     from pandas import DataFrame, Series
-    import nltk
-    import os
-    import corpkit
-    import gc
+
     from corpkit.tests import check_pytex, check_t_kinter
-    from textprogressbar import TextProgressBar
-    from other import tregex_engine
+    from corpkit.textprogressbar import TextProgressBar
+
     import dictionaries
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
                                               taglemma)
 
     td = {}
-    from corpkit.other import add_nltk_data_to_nltk_path, add_corpkit_to_path
 
-    # nltk path
+    # nltk data path for tokeniser/lemmatiser
     if 'nltk_data_path' in kwargs.keys():
         if kwargs['nltk_data_path'] not in nltk.data.path:
             nltk.data.path.append(kwargs['nltk_data_path'])
@@ -128,13 +132,15 @@ def interrogator(path,
     if locdir not in nltk.data.path:
         nltk.data.path.append(locdir)
 
+    # prefer ipython to python if the user has it
     try:
         from IPython.display import display, clear_output
     except ImportError:
         pass
-
-    add_corpkit_to_path()
+    
+    # check for gui, pythontex
     tk = check_t_kinter()
+    have_python_tex = check_pytex()
 
     # multiprocessing progress bar
     if 'denominator' in kwargs.keys():
@@ -174,6 +180,7 @@ def interrogator(path,
         if 'postcounts' in path:
             spelling = 'UK'
 
+    # don't print so much stdout in the GUI
     if root:
         shouldprint = False
     else:
@@ -196,7 +203,6 @@ def interrogator(path,
               'function_filter': function_filter, 
               'table_size': table_size, 
               'quicksave': quicksave, 
-              'add_to': add_to, 
               'add_pos_to_g_d_option': add_pos_to_g_d_option, 
               'custom_engine': custom_engine,
               'df1_always_df': df1_always_df,
@@ -227,6 +233,7 @@ def interrogator(path,
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
+    # initialise nltk lemmatiser only once
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
@@ -292,7 +299,7 @@ def interrogator(path,
     signal.signal(signal.SIGINT, signal_handler)
     
     def gettag(query, lemmatag = False):
-        """find tag for lemmatisation"""
+        """find tag for wordnet lemmatisation"""
         import re
         if lemmatag is False:
             tag = 'n' # same default as wordnet
@@ -320,11 +327,10 @@ def interrogator(path,
                     '              r: (adverb)' \
                     '              v: (verb)\n\nYour selection: ' % (time, lemmatag))
                 lemmatag = selection
-         
         return tag
     
     def processwords(list_of_matches):
-        """edit matches from interrogations"""
+        """normalise matches from interrogations"""
 
         if post_process is not False:
             list_of_matches = [post_process(m) for m in list_of_matches]
@@ -413,7 +419,7 @@ def interrogator(path,
         output = []
         for result in list_of_matches:
             head = result[-1]
-            non_head = len(result) - 1 # ???
+            non_head = len(result) - 1
             title_stripped = [token for token in result[:non_head] if token.rstrip('.') not in badwords]
             title_stripped.append(head)
             output.append(title_stripped)
@@ -840,8 +846,6 @@ def interrogator(path,
                 if 'outname' in kwargs.keys():
                     tot_string = '%s: %s' % (kwargs['outname'], tot_string)
                 animator(p, numdone, tot_string, **par_args)
-                #p.animate(numdone)
-            # this should show progress more often
             if 'note' in kwargs.keys() and kwargs['note'] is not False:
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
@@ -884,9 +888,6 @@ def interrogator(path,
     # some empty lists we'll need
     dicts = []
     allwords_list = []
-
-    # check if pythontex is being used:
-    have_python_tex = check_pytex()
     
     regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
 
@@ -1351,19 +1352,6 @@ def interrogator(path,
         except:
             pass
 
-    # plaintext guessing
-    # if plaintext == 'guess':
-    #     if not one_big_corpus:
-    #         # set to last subcorpus, just to make 'guess' quicker in my case
-    #         subcorpus = os.path.join(path,sorted_dirs[-1])
-    #     else:
-    #         # horrible for large corpora
-    #         subcorpus = path
-    #     if not tregex_engine(corpus = subcorpus, check_for_trees = True, root = root):
-    #         plaintext = True
-    #     else:
-    #         plaintext = False
-
     # if doing dependencies, make list of all files, and a progress bar
     if dependency or plaintext or tokens or can_do_fast is False:
         all_files = []
@@ -1672,7 +1660,6 @@ def interrogator(path,
                             result_from_file = plaintext_simple_search(query, data)
                 if tokens:
                     import pickle
-                    import os
                     data = pickle.load(open(filepath, "rb"))
                     #print data
                     if translated_option == 'h':
@@ -1708,8 +1695,6 @@ def interrogator(path,
             else:
                 allwords_list.append([w for w in statsmode_results.keys()])
 
-            # add results master list and to results list
-        
         if keywording:
             little_dict = {}
             for word, score in result:
@@ -1813,12 +1798,7 @@ def interrogator(path,
             if not tk:
                 print ''
 
-        if add_to:
-            d = add_to[0]
-            d[add_to[1]] = output
-            return output, d
-        else:
-            return output
+        return output
 
     # flatten and sort master list, in order to make a list of unique words
     allwords = [item for sublist in allwords_list for item in sublist]
@@ -1978,12 +1958,7 @@ def interrogator(path,
                 from other import save_result
                 save_result(output, quicksave)
 
-    if add_to:
-        d = add_to[0]
-        d[add_to[1]] = output
-        return output, d
-    else:
-        return output
+    return output
 
 if __name__ == '__main__':
     interrogator(path, 
@@ -2001,7 +1976,6 @@ if __name__ == '__main__':
                 pos_filter = False,
                 table_size = 50,
                 quicksave = False,
-                add_to = False,
                 add_pos_to_g_d_option = False,
                 custom_engine = False,
                 post_process = False,
@@ -2010,129 +1984,3 @@ if __name__ == '__main__':
                 df1_always_df = False,
                 just_speakers = False,
                 **kwargs)
-
-    # the below is designed as a shell interface to corpkit. it's pretty much obselete now,
-    # now that there is a gui, and many features probably don't work properly any more :(
-        
-
-    #import argparse
-#
-    #epi = "Example usage:\n\npython interrogator.py 'path/to/corpus' 'words' '/NN.?/ >># (NP << /\brisk/)' np_heads --lemmatise --spelling 'UK'" \
-    #"\n\nTranslation: 'interrogate path/to/corpus for words that are heads of NPs that contain risk.\n" \
-    #"Lemmatise each result, and save the result as a set of CSV files in np_heads.'\n\n"
-#
-    #parser = argparse.ArgumentParser(description='Interrogate a linguistic corpus in sophisticated ways', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=epi)
-    #import sys
-    #if len(sys.argv) == 1:
-    #    parser.add_argument('-p', '--path', metavar='P', type=str,
-    #                             help='Path to the corpus')
-    #    parser.add_argument('-o', '--option', metavar='O', type=str,
-    #                             help='Search type')
-    #    parser.add_argument('-q', '--query', metavar='Q',
-    #                             help='Tregex or Regex query')
-    #    parser.add_argument('-s', '--quicksave', type=str, metavar='S',
-    #                             help='A name for the interrogation and the files it produces')
-    #else:
-    #    parser.add_argument('-path', metavar='P', type=str,
-    #                             help='Path to the corpus')
-    #    parser.add_argument('-option', metavar='O', type=str,
-    #                             help='Search type')
-    #    parser.add_argument('-query', metavar='Q',
-    #                             help='Tregex or Regex query')
-    #    parser.add_argument('-quicksave', type=str, metavar='S',
-    #                             help='A name for the interrogation and the files it produces')        
-#
-    #parser.add_argument('-l', '--lemmatise',
-    #                         help='Do lemmatisation?', action='store_true')
-    #parser.add_argument('-dict', '--reference_corpus', type=str, default='bnc.p',
-    #                         help='A reference_corpus file to use as a reference corpus when keywording')
-    #parser.add_argument('-sp', '--spelling', type=str,
-    #                         help='Normalise to US/UK spelling')
-    #parser.add_argument('-t', '--titlefilter',
-    #                         help='Remove some common prefixes from names, etc.', action='store_true')
-    #parser.add_argument('-ph', '--phrases',
-    #                         help='Tell interrogator() that you are expecting multi word results')
-#
-    #parser.add_argument('-dt', '--dep_type', type=str,
-    #                         help='The kind of Stanford dependencies you want to search')
-    #
-    #args = parser.parse_args()
-#
-    #if not vars(args)['quicksave'] and not vars(args)['path'] and not vars(args)['option'] and not vars(args)['query']:
-    #    print "\nWelcome to corpkit!\n\nThis function is called interrogator().\n\nIt allows you to search constituency trees with Tregex, Stanford Dependency parses, or plain text corpora with Regular Expressions.\n\nYou're about to be prompted for some information:\n    1) a name for the interrogation\n    2) a path to your corpus\n    3) a Tregex query or regular expression\n    4) an option, specifying the kind of search you want to do.\n"
-    #    ready = raw_input("When you're ready, type 'start', or 'exit' to cancel: ")
-    #    if ready.startswith('e') or ready.startswith('E'):
-    #        print '\n    OK ... come back soon!\n'
-    #        import sys
-    #        sys.exit(0)
-#
-    #all_args = {}
-#
-    #def urlify(s):
-    #    "Turn title into filename"
-    #    import re
-    #    s = s.lower()
-    #    s = re.sub(r"[^\w\s-]", '', s)
-    #    s = re.sub(r"\s+", '-', s)
-    #    s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-    #    return s     
-#
-    #if not vars(args)['quicksave']:
-    #    name = raw_input('\nName for this interrogation: ')
-    #    all_args['quicksave'] = urlify(name)
-    #if not vars(args)['path']:
-    #    all_args['path'] = raw_input('\nPath to the corpus: ')
-    #if not vars(args)['query']:
-    #    print '\nFor the following sentence:\n\n    "The sunny days have come at last."\n\nyou could perform a number of kinds of searches:\n\n    - Tregex queries will search the parse tree:\n        "/NNS/" locates "days", a plural noun\n        "/NN.?/ $ (JJ < /(?i)sunny/)" locates days, sister to adjectival "sunny"\n    - Regex options are used for searching plaintext or dependencies:\n        "[A-Za-z]+s\b" will return "days"\n' 
-    #    all_args['query'] = raw_input('\nQuery: ')
-    #if not vars(args)['option']:
-    #    print '\nSelect search option. For the following sentence:\n\n    "Some sunny days have come at last."\n\nyou could:\n\n' \
-    #                      '    b) Get tag and word of Tregex match ("(nns days)"\n' \
-    #                      '    c) count Tregex matches\n' \
-    #                      '    d) Get dependent of regular expression match and the r/ship ("amod:sunny")\n' \
-    #                      '    f) Get dependency function of regular expression match ("nsubj")\n' \
-    #                      '    g) get governor of regular expression match and the r/ship ("nsubj:have")\n' \
-    #                      '    n) get dependency index of regular expression match ("1")\n' \
-    #                      '    p) get part-of-speech tag with Tregex ("nns")\n' \
-    #                      '    r) regular expression, for plaintext corpora\n' \
-    #                      '    w) get word(s) returned by Tregex/keywords/ngrams ("day/s")\n' \
-    #                      '    x) exit\n' 
-    #    all_args['option'] = raw_input('\nQuery option: ')
-    #    if 'x' in all_args['option']:
-    #        import sys
-    #        sys.exit(0)
-#
-    #for entry in vars(args).keys():
-    #    if entry not in all_args.keys():
-    #        all_args[entry] = vars(args)[entry]
-#
-    #conf = raw_input("OK, we're ready to interrogate. If you want to exit now, type 'exit'. Otherwise, press enter to begin!")
-    #if conf:
-    #    if conf.startswith('e'):
-    #        import sys
-    #        sys.exit(0)
-#
-    #res = interrogator(**all_args)
-    ## what to do with it!?
-    #if res:
-    #    import os
-    #    import pandas as pd
-    #    csv_path = 'data/csv_results'
-    #    if not os.path.isdir(csv_path):
-    #        os.makedirs(csv_path)
-    #    interrogation_name = all_args['quicksave']
-    #    savepath = os.path.join(csv_path, interrogation_name)
-    #    if not os.path.isdir(savepath):
-    #        os.makedirs(savepath)
-    #    results_filename = os.path.join(savepath, '%s-results.csv' % interrogation_name)
-    #    totals_filename = os.path.join(savepath, '%s-totals.csv' % interrogation_name)
-    #    top_table_filename = os.path.join(savepath, '%s-top-table.csv' % interrogation_name)
-    #    if res.query['translated_option'] != 'C':
-    #        res.results.to_csv(results_filename, sep = '\t')
-    #        res.table.to_csv(top_table_filename, sep = '\t')
-    #    if res.query['query'] != 'keywords':
-    #        res.totals.to_csv(totals_filename, sep = '\t')
-    #    from time import localtime, strftime
-    #    time = strftime("%H:%M:%S", localtime())
-    #    print '%s: Created CSV files in %s\n' % (time, savepath)
-

@@ -5784,7 +5784,7 @@ def corpkit_gui():
                 return
 
             Config.add_section('Projects')
-            Config.set('Projects','most recent', ';'.join(most_recent_projects[-5:]))
+            Config.set('Projects','most recent', ';'.join(most_recent_projects[-5:]).lstrip(';'))
             Config.add_section('CoreNLP')
             Config.set('CoreNLP','Parser path', corenlppath.get())
             Config.set('CoreNLP','Memory allocation', parser_memory.get())
@@ -5843,12 +5843,12 @@ def corpkit_gui():
             except:
                 parspath == 'default'
             try:
-                mostrec = conmap(Config, "Projects")['most recent'].split(';')
+                mostrec = conmap(Config, "Projects")['most recent'].lstrip(';').split(';')
                 for i in mostrec:
                     most_recent_projects.append(i)
             except:
                 pass
-            if parspath == 'default':
+            if parspath == 'default' or parspath == '':
                 corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
             else:
                 corenlppath.set(parspath)
@@ -5892,11 +5892,11 @@ def corpkit_gui():
 
         def quitfunc():
             if in_a_project.get() == 1:
-                save_ask = tkMessageBox.askyesno("Save project settings.", 
+                save_ask = tkMessageBox.askyesno("Save settings", 
                               "Save settings before quitting?")
                 if save_ask:
                     save_config()
-            save_tool_prefs()
+                    save_tool_prefs()
             realquit.set(1)
             root.quit()
 

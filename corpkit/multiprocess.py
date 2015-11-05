@@ -23,7 +23,6 @@ def pmultiquery(path,
     
     import collections
     import os
-    import pandas
     import pandas as pd
     import collections
     from collections import namedtuple

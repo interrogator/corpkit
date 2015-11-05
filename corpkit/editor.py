@@ -131,17 +131,20 @@ def editor(dataframe1,
     :returns: Edited interrogation
     """
 
+    # grab arguments, in case we get dict input and have to iterate
     saved_args = locals()
 
     import corpkit
     import pandas
     import signal
-    import pandas as pd
-    import numpy as np
     import re
     import collections
+    import pandas as pd
+    import numpy as np
+
     from pandas import DataFrame, Series
     from time import localtime, strftime
+    
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -188,20 +191,6 @@ def editor(dataframe1,
     from corpkit.tests import check_pytex
     if check_pytex():
         print_info = False
-
-    def signal_handler(signal, frame):
-        """pause on ctrl+c, rather than just stop loop"""
-        import signal
-        import sys
-        from time import localtime, strftime
-        time = strftime("%H:%M:%S", localtime())
-        sel = raw_input('\n\n%s: Paused. Press return to resume, or type exit to quit: \n' % time)
-        if sel.startswith('e') or sel.startswith('E'):
-            sys.exit(0)
-        else:
-            time = strftime("%H:%M:%S", localtime())
-            print '%s: Interrogation resumed.\n' % time
-    signal.signal(signal.SIGINT, signal_handler)
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
         """mash df and df2 together in appropriate way"""
@@ -678,10 +667,9 @@ def editor(dataframe1,
         return df
 
     def resort(df, sort_by = False, keep_stats = False):
-        """sort results"""
-        # translate options and make sure they are parseable
+        """sort results, potentially using scipy's linregress"""
         
-
+        # translate options and make sure they are parseable
         options = ['total', 'name', 'infreq', 'increase', 'turbulent',
                    'decrease', 'static', 'most', 'least', 'none']
 
@@ -796,8 +784,6 @@ def editor(dataframe1,
         if prinf:
             print 'Threshold: %d\n' % the_threshold
         return the_threshold
-
-#####################################################
 
     # check if we're in concordance mode
     try:
@@ -979,12 +965,6 @@ def editor(dataframe1,
             df2 = df2.drop(name, axis = ax, errors = 'ignore')
         except:
             pass
-
-    #if not df1_istotals:
-    #    for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
-    #        df = df.drop(name, axis = ax, errors = 'ignore')
-    #        if using_totals and ax == 1 and not single_totals:
-    #            df2 = df2.drop(name, axis = ax, errors = 'ignore')
 
     # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
@@ -1254,20 +1234,6 @@ def editor(dataframe1,
 
     return output
 
-    #def get_superordinate_word(word, pos = 'n', depth = 1):
-    #    import nltk
-    #    from nltk.corpus import wordnet as wn
-    #    entry = wn.synset('.'.join([word, pos, '01']))
-    #    hyper = lambda s: s.hypernyms()
-    #    #subord = list(set([w.replace('_', ' ') for s in entry.closure(hypo, depth = d) for w in s.lemma_names()]))
-    #    supers = list(entry.closure(hyper))[-depth]
-    #    rightdepth = sorted(supers.lemma_names())[0].replace('_', ' ')
-    #    #supord = list(set([w.replace('_', ' ') for s in entry.closure(hyper, depth = d) for w in s.lemma_names()]))
-    #    return rightdepth
-    #    print "Synonyms:", ", ".join(j.lemma_names())
-
-#entry = wn.synset('car.n.01')
-#entry.hypernyms()
 
 
 

@@ -1,5 +1,5 @@
 def check_pytex():
-    """checks for pytex, i hope"""
+    """checks for pytex"""
     import inspect
     thestack = []
     for bit in inspect.stack():
@@ -12,7 +12,7 @@ def check_pytex():
         return False
 
 def check_t_kinter():
-    """checks for tkinter i hope"""
+    """checks for tkinter"""
     import inspect
     thestack = []
     for bit in inspect.stack():
@@ -25,7 +25,7 @@ def check_t_kinter():
         return False
 
 def check_spider():
-    """checks for spyder, i hope"""
+    """checks for spyder"""
     import inspect
     thestack = []
     for bit in inspect.stack():
@@ -51,6 +51,7 @@ def check_dit():
         return False
  
 def check_tex(have_ipython = True):
+    """see if tex is available"""
     import os
     if have_ipython:
         checktex_command = 'which latex'

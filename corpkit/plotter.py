@@ -86,17 +86,20 @@ def plotter(title,
     import corpkit
     import os
     import matplotlib as mpl
+    from matplotlib import rc
+
+    # prefer seaborn plotting
     try:
         import seaborn as sns
     except:
         pass   
+    
     if interactive:
         import matplotlib.pyplot as plt, mpld3
     else:
         import matplotlib.pyplot as plt
-    from matplotlib import rc
+    
     import pandas
-    import pandas as pd
     from pandas import DataFrame
 
     import numpy
@@ -109,10 +112,9 @@ def plotter(title,
         from mpld3 import plugins, utils
         from plugins import InteractiveLegendPlugin, HighlightLines
 
+    # check what environment we're in
     tk = check_t_kinter()
-
     running_python_tex = check_pytex()
-    # incorrect spelling of spider on purpose
     running_spider = check_spider()
 
     def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -183,7 +185,7 @@ def plotter(title,
             dataframe.columns = the_labs
         else:
             vals = list(dataframe[list(dataframe.columns)[0]].values)
-            dataframe = pd.DataFrame(vals, index = the_labs)
+            dataframe = pandas.DataFrame(vals, index = the_labs)
             dataframe.columns = ['Total']
         return dataframe
 
@@ -206,7 +208,7 @@ def plotter(title,
                 output[index] = 0.1
         return output
 
-    # are we doing subplots?
+    # check if we're doing subplots
     sbplt = False
     if 'subplots' in kwargs:
         if kwargs['subplots'] is True:
@@ -216,6 +218,7 @@ def plotter(title,
     if colours is True:
         colours = 'Paired'
 
+    # todo: get this dynamically instead.
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
     #if style not in styles:
         #raise ValueError('Style %s not found. Use %s' % (str(style), ', '.join(styles)))
@@ -305,10 +308,6 @@ def plotter(title,
                     kwargs['autopct'] = r'%1.1f\%%'
                 else:
                     kwargs['autopct'] = '%1.1f%%'
-
-    #if piemode:
-        #if partial_pie:
-            #kwargs['startangle'] = 180
 
     # copy data, make series into df
     dataframe = df.copy()
@@ -502,12 +501,6 @@ def plotter(title,
                 if colours == 'Default':
                     colours = 'Paired'
                 kwargs['colormap'] = colours
-        #else:
-            #if len(dataframe.T.columns) < 8:
-                #try:
-                    #del kwargs['colormap']
-                #except:
-                    #pass
     
     # multicoloured bar charts
     if 'kind' in kwargs:
@@ -545,11 +538,6 @@ def plotter(title,
     if not 'rev_leg' in locals():
         rev_leg = False
 
-    #if 'kind' in kwargs:
-    #    if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
-
-
-
     # the default legend placement
     if legend_pos is True:
         legend_pos = 'best'
@@ -577,13 +565,8 @@ def plotter(title,
     # no title for subplots because ugly,
     if title and not sbplt:
         kwargs['title'] = title
-
-    #    if 'title' in kwargs:
-    #        del kwargs['title'] 
         
     # no interactive subplots yet:
-
-
     if sbplt and interactive:
         import warnings
         interactive = False
@@ -686,11 +669,6 @@ def plotter(title,
     if legend is False:
         kwargs['legend'] = False
 
-    # cumulative grab first col
-    # why was i doing this?
-    #if cumulative:
-    #    kwargs['y'] = list(dataframe.columns)[0]
-
     # line highlighting option for interactive!
     if interactive:
         if 2 in interactive_types:
@@ -709,7 +687,7 @@ def plotter(title,
         if can_be_int:
             if 1500 < int(list(dataframe.index)[0]):
                 if 2050 > int(list(dataframe.index)[0]):
-                    n = pd.PeriodIndex([d for d in list(dataframe.index)], freq='A')
+                    n = pandas.PeriodIndex([d for d in list(dataframe.index)], freq='A')
                     dataframe = dataframe.set_index(n)
 
         if 'filled' in kwargs.keys():
@@ -755,8 +733,6 @@ def plotter(title,
                 new_cmap = truncate_colormap(cmap, 0.70, 0.90)
         kwargs['colormap'] = new_cmap
 
-    # use styles and plot
-
     class dummy_context_mgr():
         """a fake context for plotting without style
         perhaps made obsolete by 'classic' style in new mpl"""
@@ -764,8 +740,6 @@ def plotter(title,
             return None
         def __exit__(self, one, two, three):
             return False
-
-    # stop duplicated legend entries in areamode!
 
     with plt.style.context((style)) if style != 'matplotlib' else dummy_context_mgr():
 
@@ -805,11 +779,8 @@ def plotter(title,
             plt.gcf().patch.set_alpha(0)
 
         if black_and_white:
-            #plt.grid()
-            #plt.gca().set_axis_bgcolor('w')
             if kwargs['kind'] == 'line':
                 # white background
-
                 # change everything to black and white with interesting dashes and markers
                 c = 0
                 for line in ax.get_lines():
@@ -837,17 +808,6 @@ def plotter(title,
                         handles = handles[::-1]
                         labels = labels[::-1]
                     lgd = plt.legend(handles, labels, **leg_options)
-
-
-            #if black_and_white:
-                #lgd.set_facecolor('w')
-
-        #if interactive:
-            #if legend:
-                #lgd.set_title("")
-        #if not sbplt:
-            #if 'layout' not in kwargs:
-                #plt.tight_layout()
 
     if interactive:
         # 1 = highlight lines
@@ -880,14 +840,6 @@ def plotter(title,
                     tooltip_point = mpld3.plugins.PointLabelTooltip(l, labels = ls)
                     mpld3.plugins.connect(plt.gcf(), tooltip_point)
         
-            # works:
-            #plugins.connect(plt.gcf(), plugins.LineLabelTooltip(l, labels[i]))
-
-
-        #labels = ["Point {0}".format(i) for i in range(num_to_plot)]
-        #tooltip = plugins.LineLabelTooltip(lines)
-        #mpld3.plugins.connect(plt.gcf(), mpld3.plugins.PointLabelTooltip(lines))
-
     if piemode:
         if not sbplt:
             plt.axis('equal')
@@ -931,31 +883,6 @@ def plotter(title,
         plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
     except:
         pass
-
-    # no offsets for numerical x and y values
-    #if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
-    #    try:
-    #        # check if x axis can be an int
-    #        check_x_axis = list(dataframe.index)[0]
-    #        can_it_be_int = int(check_x_axis)
-    #        # if so, set these things
-    #        from matplotlib.ticker import ScalarFormatter
-    #        plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
-    #    except:
-    #        pass
-    ## same for y axis --- fix me for was_series
-    #try:
-    #    # check if x axis can be an int
-    #    try:
-    #        check_y_axis = list(dataframe.columns)[0]
-    #    except:
-    #        check_y_axis = list(dataframe.index)[0]
-    #    can_it_be_int = int(check_y_axis)
-    #    # if so, set these things
-    #    from matplotlib.ticker import ScalarFormatter
-    #    plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
-    #except:
-    #    pass
 
     # y labelling
     y_l = False
@@ -1064,9 +991,6 @@ def plotter(title,
                     plt.annotate('%.2f' % score, (i, score), ha = 'center', va = 'bottom')
                 else:
                     plt.annotate(score, (i, score), ha = 'center', va = 'bottom')        
-
-    #if not running_python_tex:
-        #plt.gcf().show()
 
     plt.subplots_adjust(left=0.1)
     plt.subplots_adjust(bottom=0.18)

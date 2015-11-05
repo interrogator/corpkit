@@ -1,17 +1,14 @@
 #!/usr/bin/python
 
-# progress bar for various corpling_tools
-# from http://nbviewer.ipython.org/github/ipython/ipython/blob/3607712653c66d63e0d7f13f073bde8c0f209ba8/docs/examples/notebooks/Animations_and_Progress.ipynb
-# there is dirname as a second arg, which will display the subcorpus in the progress bar
-# daniel mcdonald
-
 class TextProgressBar:
+    """a text progress bar for CLI operations"""
     from time import localtime, strftime
     try:
         from IPython.display import display, clear_output
         have_ipython = True
     except ImportError:
         have_ipython = False
+        
     def __init__(self, iterations, dirname = False):
         from time import localtime, strftime
         try:

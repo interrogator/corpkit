@@ -1,9 +1,5 @@
 #!/usr/bin/python
 
-#   Building parsed corpora for discourse analysis
-#   Author: Daniel McDonald
-
-
 def dictmaker(path, 
               dictname,
               query = 'any',
