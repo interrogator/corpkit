@@ -1,10 +1,13 @@
 def quickview(results, n = 25):
-    import corpkit
     """view top n results of results.
 
-    Ideally, pass it interrogator() or plotter output. It will also accept DatFrames
-    or Series (i.e. .results or .totals branches."""
+    :param results: Interrogation/edited result to view
+    :type results: pandas.core.frame.DataFrame
+    :param n: Show top *n* results
+    :type n: int
+    """
 
+    import corpkit
     import pandas
     import numpy
     import os
@@ -120,11 +123,9 @@ def quickview(results, n = 25):
                 tot = results_branch[w]
             print '%s: %s (n=%d)' %(fildex, w, tot)
 
-
-
 def concprinter(df, kind = 'string', n = 100):
+    """Print conc lines nicely, to string, latex or csv"""
     import corpkit
-    """print conc lines nicely, to string, latex or csv"""
     if n > len(df):
         n = len(df)
     if not kind.startswith('l') and kind.startswith('c') and kind.startswith('s'):
@@ -148,8 +149,19 @@ def concprinter(df, kind = 'string', n = 100):
     print ''
 
 def save_result(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
+    """Save an interrogation as pickle to *savedir*.
+
+    :param interrogation: Corpus interrogation to save
+    :type interrogation: corpkit interogation/edited result
+    :param savename: A name for the saved file
+    :type savename: str
+    :param savedir: Relative path to directory in which to save file
+    :type savedir: str
+    :param print_info: Show/hide stdout
+    :type print_info: bool
+    :returns: None
+    """
     import corpkit
-    """Save an interrogation as pickle to savedir"""
     import collections
     from collections import namedtuple, Counter
     import pickle
@@ -234,7 +246,15 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations', print
         f.close()
 
 def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
-    """Reloads a save_result as namedtuple. it needs a filename and path to saved files"""
+    """Load saved data into memory
+
+    :param savename: Filename with or without extension
+    :type savename: str
+    :param loaddir: Relative path to the directory containg *savename*
+    :type loaddir: str
+    :param only_concs: Set to True if loading concordance lines
+    :type only_concs: bool
+    """
     import corpkit
     import collections
     import pickle
@@ -330,7 +350,8 @@ def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
 
 def report_display():
     import corpkit
-    """Displays/downloads the risk report, depending on your browser settings"""
+    """Displays/downloads the risk report in Jupyter Notebook, 
+       depending on your browser settings"""
     class PDF(object):
         def __init__(self, pdf, size=(200,200)):
             import corpkit
@@ -420,8 +441,14 @@ def pytoipy(inputfile):
     print 'Done!\n'
 
 def new_project(name, loc = '.', root = False):
+    """Make a new project in ./*loc*
+
+    :param name: A name for the project
+    :type name: str
+    :param loc: Relative path to directory in which project will be made
+    :type loc: str
+    """
     import corpkit
-    """make a new project in current directory"""
     import os
     import shutil
     import stat
@@ -586,7 +613,18 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
 
 def interroplot(path, query):
     import corpkit
-    """Interrogates path with Tregex query, gets relative frequencies, and plots the top seven results"""
+    """Demo function for interrogator/plotter.
+
+    1. Interrogates path with Tregex query, 
+    2. Gets relative frequencies
+    3. Plots the top seven results
+
+    :param path: Path to corpus
+    :type path: str
+    :param query: Tregex query
+    :type query: str
+
+    """
     from corpkit import interrogator, editor, plotter
     quickstart = interrogator(path, 'words', query)
     edited = editor(quickstart.results, '%', quickstart.totals, print_info = False)
@@ -1128,8 +1166,21 @@ def synonym_dictmaker(df):
     return syn_dict
 
 def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
+    """Turns a wordlist into an uncompiled regular expression
+
+    :param lst: A wordlist to convert
+    :type lst: list
+    :param boundaries:
+    :type boundaries: str -- 'word'/'line'/'space'; tuple -- (leftboundary, rightboundary)
+    :param case_sensitive: Make regular expression case sensitive
+    :type case_sensitive: bool
+    :param inverse: Make regular expression inverse matching
+    :type inverse: bool
+
+    :returns: regular expression as string
+    """
     import corpkit
-    """turns a wordlist into an uncompiled regular expression"""
+
     import re
     if case_sensitive:
         case = r''

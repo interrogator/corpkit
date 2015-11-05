@@ -28,19 +28,38 @@ def editor(dataframe1,
             calc_all = True,
             **kwargs
             ):
-    """
-    Edit results of interrogations, calculate slopes, do keywording, sort, etc.
+    """Edit results of interrogations, do keywording, sort, etc.
 
-    dataframe1:         list of results or totals to edit
-    operation:          kind of maths to do on inputted lists:
+    ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
+
+    * str: treated as regular expression to match
+    * list: 
+
+      * of integers: indices to match
+      * of strings: entries/subcorpora to match
+
+    ``merge_entries`` and ``merge_subcorpora``, however, are best entered as dicts:
+
+    ``{newname: criteria, newname2: criteria2}```
+
+    where criteria is a string, list, etc.
+
+    :param dataframe1: Results to edit
+    :type dataframe1: pandas.core.frame.DataFrame
+    
+    :param operation: Kind of maths to do on inputted lists:
                             '+', '-', '/', '*', '%': self explanatory
                             'k': log likelihood (keywords)
                             'a': get distance metric (for use with interrogator 'a' option)
                             'd': get percent difference (alternative approach to keywording)
-    dataframe2:         list of results or totals
-                            if list of results, for each entry in dataframe 1, locate
+    :type operation: str
+    
+    :param dataframe2: List of results or totals.
+                            If list of results, for each entry in dataframe 1, locate
                             entry with same name in dataframe 2, and do maths there
-    sort_by:            calculate slope, stderr, r, p values, then sort by:
+    :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict
+    
+    :param sort_by: Calculate slope, stderr, r, p values, then sort by:
                             increase: highest to lowest slope value
                             decrease: lowest to highest slope value
                             turbulent: most change in y axis values
@@ -48,40 +67,68 @@ def editor(dataframe1,
                             total/most: largest number first
                             infreq/least: smallest number first
                             name: alphabetically
-    keep_stats:         keep/drop stats values from dataframe after sorting
-    keep_top:           after sorting, remove all but the top n results
-    just_totals:        sum each column and work with sums
-    threshold:          when using results list as dataframe 2, drop values occurring
+    :type sort_by: str
+
+    :param keep_stats: Keep/drop stats values from dataframe after sorting
+    :type keep_stats: bool
+    
+    :param keep_top: After sorting, remove all but the top *keep_top* results
+    :type keep_top: int
+    
+    :param just_totals: Sum each column and work with sums
+    :type just_totals: bool
+    
+    :param threshold: When using results list as dataframe 2, drop values occurring
                         fewer than n times. If not keywording, you can use:
-                            'high': dataframe2 total / 2500
-                            'medium': dataframe2 total / 5000
-                            'low': dataframe2 total / 10000
+                            ``'high'``: dataframe2 total / 2500
+                            ``'medium'``: dataframe2 total / 5000
+                            ``'low'``: dataframe2 total / 10000
                         Note: if keywording, there are smaller default thresholds
-    just_entries:       keep only entries specified using:
-                            regex, list of indices, list of words
-    skip_entries:       as above
-    merge_entries:      as above, or can take a dictionary of:
-                        {newname: regex/wordlist/indexlist}
-    newname:            new name for merged entries
-    just_subcorpora:    as above
-    skip_subcorpora:    as above
-    span_subcorpora:    If numerical subcorpus names, give a tuple and get all
-                        numbers in between
-    merge_subcorpora:   as above
-    new_subcorpus_name: as above
-    replace_names:      edit result names and then merge duplicate names. Use either:
-                        a tuple: (r'regex-to-match', 'replacement text')
-                        a string: a regex to delete
-                        you can use a dict to do multiple replaces.
-    projection:         a tuple of ('subcorpus-name', n) to multiply results in subcorpus by n
-    remove_above_p:     delete any result over p
-    p:                  set the p value
-    revert_year:        when doing linear regression on years, turn annual subcorpora into 1, 2 ...
-    print_info:         print stuff to console showing what's being edited
-    spelling:           convert/normalise spelling:
-                            'US' or 'UK'
-    selfdrop:           when keywording, try to remove target corpus from reference corpus
-    calc_all:           when keywording, calculate words that appear in either corpus
+    :type threshold: int/bool
+    :param just_entries: Keep matching entries
+    :type just_entries: see above
+    :param skip_entries: Skip matching entries
+    :type skip_entries: see above
+    :param merge_entries: Merge matching entries
+    :type merge_entries: see above
+    :param newname: New name for merged entries
+    :type newname: str/'combine'
+    :param just_subcorpora: Keep matching subcorpora
+    :type just_subcorpora: see above
+    :param skip_subcorpora: Skip matching subcorpora
+    :type skip_subcorpora: see above
+    :param span_subcorpora: If subcorpora are numerically named, span all from *int* to *int2*, inclusive
+    :type span_subcorpora: tuple -- ``(int, int2)``
+    :param merge_subcorpora: Merge matching subcorpora
+    :type merge_subcorpora: see above
+    :param new_subcorpus_name: Name for merged subcorpora
+    :type new_subcorpus_name: str/``'combine'``
+
+    :param replace_names: Edit result names and then merge duplicate names.
+    :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a regex to delete from names
+    :param projection:         a  to multiply results in subcorpus by n
+    :type projection: tuple -- ``(subcorpus_name, n)``
+    :param remove_above_p: Delete any result over p
+    :type remove_above_p: bool
+    :param p:                  set the p value
+    :type p: float
+    
+    :param revert_year:        when doing linear regression on years, turn annual subcorpora into 1, 2 ...
+    :type revert_year: bool
+    
+    :param print_info: Print stuff to console showing what's being edited
+    :type print_info: bool
+    
+    :param spelling: Convert/normalise spelling:
+    :type spelling: str -- ``'US'``/``'UK'``
+    
+    :param selfdrop: When keywording, try to remove target corpus from reference corpus
+    :type selfdrop: bool
+    
+    :param calc_all: When keywording, calculate words that appear in either corpus
+    :type calc_all: bool
+
+    :returns: Edited interrogation
     """
 
     saved_args = locals()
@@ -551,7 +598,12 @@ def editor(dataframe1,
 
     def projector(df, list_of_tuples, prinf = True):
         """project abs values"""
-        for subcorpus, projection_value in list_of_tuples:
+        if type(list_of_tuples) == list:
+            tdict = {}
+            for a, b in list_of_tuples:
+                tdict[a] = b
+            list_of_tuples = tdict
+        for subcorpus, projection_value in list_of_tuples.items():
             if type(subcorpus) == int:
                 subcorpus = str(subcorpus)
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value

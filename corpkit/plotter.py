@@ -21,18 +21,68 @@ def plotter(title,
             show_p_val = False,
             indices = False,
             **kwargs):
-    """plot interrogator() or editor() output.
+    """Visualise corpus interrogations.
 
-    **kwargs are for pandas first, which can then send them through to matplotlib.plot():
-
-    http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.plot.html
-    http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.plot
-
-    pie_legend: False to label slices rather than give legend
-    show_totals: where to show percent/abs frequencies: False, 'plot', 'legend', or 'both'
-
+    :param title: A title for the plot
+    :type title: str
+    :param df: Data to be plotted
+    :type df: pandas.core.frame.DataFrame
+    :param x_label: A label for the x axis
+    :type x_label: str
+    :param y_label: A label for the y axis
+    :type y_label: str
+    :param kind: The kind of chart to make
+    :type kind: str ('line'/'bar'/'barh'/'pie'/'area')
+    :param style: Visual theme of plot
+    :type style: str ('ggplot'/'bmh'/'fivethirtyeight'/'seaborn-talk'/etc)
+    :param figsize: Size of plot
+    :type figsize: tuple (int, int)
+    :param save: If bool, save with *title* as name; if str, use str as name
+    :type save: bool/str
+    :param legend_pos: Where to place legend
+    :type legend_pos: str ('upper right'/'outside right'/etc)
+    :param reverse_legend: Reverse the order of the legend
+    :type reverse_legend: bool
+    :param num_to_plot: How many columns to plot
+    :type num_to_plot: int/'all'
+    :param tex: Use TeX to draw plot text
+    :type tex: bool
+    :param colours: Colourmap for lines/bars/slices
+    :type colours: str
+    :param cumulative: Plot values cumulatively
+    :type cumulative: bool
+    :param pie_legend: Show a legend for pie chart
+    :type pie_legend: bool
+    :param partial_pie: Allow plotting of pie slices only
+    :type partial_pie: bool
+    :param show_totals: Print sums in plot where possible
+    :type show_totals: str -- 'legend'/'plot'/'both'
+    :param transparent: Transparent .png background
+    :type transparent: bool
+    :param output_format: File format for saved image
+    :type output_format: str -- 'png'/'pdf'
+    :param black_and_white: Create black and white line styles
+    :type black_and_white: bool
+    :param show_p_val: Attempt to print p values in legend if contained in df
+    :type show_p_val: bool
+    :param indices: To use when plotting "distance from root"
+    :type indices: bool
+    :param stacked: When making bar chart, stack bars on top of one another
+    :type stacked: str
+    :param filled: For area and bar charts, make every column sum to 100
+    :type filled: str
+    :param legend: Show a legend
+    :type legend: bool
+    :param rot: Rotate x axis ticks by *rot* degrees
+    :type rot: int
+    :param subplots: Plot each column separately
+    :type subplots: bool
+    :param layout: Grid shape to use when *subplots* is True
+    :type layout: tuple -- (int, int)
+    :param interactive: Experimental interactive options
+    :type interactive: list -- [1, 2 3]
+    :returns: matplotlib figure
     """
-
     import corpkit
     import os
     import matplotlib as mpl

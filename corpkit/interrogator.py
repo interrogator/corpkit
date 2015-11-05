@@ -24,29 +24,12 @@ def interrogator(path,
                 df1_always_df = False,
                 just_speakers = False,
                 **kwargs):
-    """
-    Interrogate a parsed corpus using Tregex queries, dependencies, or for
-    keywords/ngrams
+    """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
-    Output: a named tuple, with 'branches':
-        variable_name.query = a record of what query generated the results
-        variable_name.results = a table of results, sorted by total freq
-        variable_name.totals = a list of totals for each subcorpus (except when keywording)
-        variable_name.table = a DataFrame showing top results in each subcorpus
-        of top <table_size> results
-
-    Parameters
-    ----------
-
-    path : str
-        path to a corpus. If it contains subfolders, these will be treated
-        as subcorpora. If not, the corpus will be treated as unstructured.
-        if a list, it will be understood as a list of corpora.
-        parallel processing will be done on each corpus. a single result will
-        be outputted for the 'c' option, or else a dict will be returned, with
-        corpus names as keys.
+    :param path: Path to a corpus
+    :type path: str -- corpus path; list of strings -- list of paths
     
-    option : (can type letter or word): 
+    :param option: 
         - Tregex output option:
             c/count: only *count*
             w/words: only *words*
@@ -70,70 +53,43 @@ def interrogator(path,
             k/keywords: search for keywords, using reference_corpus as the reference corpus
                         use 'self' to make the whole corpus into a reference_corpus
             n/ngrams: search for ngrams in trees   
-    query : str
-        - a Tregex query (if using a Tregex option)
-        - A regex to match a token/tokens (if using a dependencies, plaintext, or keywords/ngrams)
-        - A list of words or parts of words to match (e.g. ['cat', 'dog', 'cow'])
+    :type option: str
+    
+    :param query: A search query for the interrogation 
+    :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
 
-    lemmatise : Boolean
-        Do lemmatisation on results. Uses WordNet for constituency, or CoreNLP for dependency
-    lemmatag : False/'n'/'v'/'a'/'r'
-        explicitly pass a pos to lemmatiser
-    titlefilter : Boolean
-        strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
-    spelling : False/'US'/'UK'
-        convert all to U.S. or U.K. English
-    phrases : Boolean
-        Use if your expected results are multiword and thus need tokenising
-    reference_corpus : string
-        The name of a reference_corpus for keywording.
-        BNC included as default.
-        'self' will make a reference_corpus from the whole corpus
-    dep_type : str
-        the kind of Stanford CoreNLP dependency parses you want to use:
-        - 'basic-dependencies'/'a'
-        - 'collapsed-dependencies'/'b'
-        - 'collapsed-ccprocessed-dependencies'/'c'
-    function_filter : Bool/regex
-        If you set this to a regex, for the 'g' and 'd' options, only words 
-        whose function matches the regex will be kept, and the tag will not be printed
-    quicksave : str
-       save result after interrogation has finished, using str as file name. If multiple
-       results (i.e. a list of corpora or dict of queries), a folder named str will
-       be created, with results for each corpus/query name.
-    custom_engine : function
-       pass a function to process every xml file and return a list of results
-    post_process : function
-       pass a function that processes every item in the list of results
-    ** kwargs : Mostly exists to allow users to pass in earlier interrogation
-                settings in order to reperform the search.
-                gramsize: get ngrams larger than 2
-                tokenizer: which tokeniser to use
+    :param lemmatise: Do lemmatisation on results
+    :type lemmatise: bool
+        
+    :param lemmatag: Explicitly pass a pos to lemmatiser
+    :type lemmatag: False/'n'/'v'/'a'/'r'
+    
+    :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
+    :type titlefilter: bool
+    
+    :param spelling: Convert all to U.S. or U.K. English
+    :type spelling: False/'US'/'UK'
+        
+    :param phrases: Use if your expected results are multiword and thus need tokenising
+    :type phrases: bool
+        
+    :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use:
+    :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
+    
+    :param function_filter: If you set this to a regex, for the 'g' and 'd' options, only words whose function matches the regex will be kept, and the tag will not be printed
+    :type function_filter: Bool/regex
 
-    Example 1: Tree querying
-    --------
-    from corpkit import interrogator, plotter
-    corpus = 'path/to/corpus'
-    ion_nouns = interrogator(corpus, 'w', r'/NN.?/ < /(?i)ion\b'/)
-    quickview(ion_nouns, 5)
-    plotter('Common -ion words', ion_nouns.results, fract_of = ion_nouns.totals)
+    :param quicksave: Save result as pickle to saved_interrogations/*quicksave* on completion
+    :type quicksave: str
+    
+    :param custom_engine: Pass a function to process every xml file and return a list of results
+    :type custom_engine: function
+       
+    :param post_process: Pass a function that processes every item in the list of results
+    :type post_process: function
 
-    Output:
-
-    0: election: (n=22)
-    1: decision: (n=14)
-    2: question: (n=10)
-    3: nomination: (n=8)
-    4: recession: (n=8)
-
-    <matplotlib figure>
-
-    Example 2: Dependencies querying
-    -----------------------
-    risk_functions = interrogator(corpus, 'f', r'(?i)\brisk')
-    plotter('Functions of risk words', risk_functions.results, num_to_plot = 15)
-
-    <matplotlib figure>
+    :returns: A named tuple, with ``.query``, ``.results``, ``.totals`` attributes. 
+              If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.
 
     """
     import corpkit

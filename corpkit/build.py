@@ -680,8 +680,11 @@ def parse_corpus(proj_path = False,
                 root = False, 
                 stdout = False, 
                 nltk_data_path = False, 
-                memory_mb = 2024,
+                memory_mb = 2000,
                 **kwargs):
+    """
+    Create a CoreNLP-parsed and/or NLTK tokenised corpus
+    """
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
