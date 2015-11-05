@@ -153,8 +153,6 @@ If you select the `keywords` operation, you can get log-likelihood keyness score
 1. a results branch of any interrogation
 2. A dictionary from the `dictionaries` folder: either the BNC (included), or one you made yourself using the `Save as dictionary` button in the `Interrogate` tab.
 
-The main thing to re
-
 Using `Self`-`results` as denominator will determine which words are key in each subcorpus. Each subcorpus is dropped from the reference corpus in turn in order to calculate these values.
 
 {{tip}} Negative keywords exist, too: try sorting by inverse total to find out which words are uncommon in the target data. {{end}}
