@@ -16,9 +16,10 @@ Below are explanations of the various options.
 
 Here, you select the interrogation or edited result you want to plot, as well its branch.
 
-### Single entry
+### Single entry/subcorpus
 
-You can sel
+If you like, you can plot only a single entry or subcorpus from an interrogation or edited result.
+
 ### Results to show
 
 Plot only the top `n` entries from the results of interest. If you don't want these, go back to the `Edit` tab and remove/sort the results some more. You can type in `all` to get every result&mdash;but be warned, this often won't look so good!
