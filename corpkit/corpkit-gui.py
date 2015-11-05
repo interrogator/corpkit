@@ -2569,10 +2569,10 @@ def corpkit_gui():
 
                 what_to_plot = all_interrogations[data_to_plot.get()].totals
 
-            if single_entry.get() != 'None':
+            if single_entry.get() != 'All':
                 what_to_plot = what_to_plot[single_entry.get()]
 
-            if single_sbcp.get() != 'None':
+            if single_sbcp.get() != 'All':
                 what_to_plot = what_to_plot.ix[single_sbcp.get()]
             
             if transpose_vis.get():
@@ -2589,6 +2589,7 @@ def corpkit_gui():
                         num = 'all'
                     else:
                         num = 7
+                        number_to_plot.set('7')
                 return num
 
             num = determine_num_to_plot(number_to_plot.get())
@@ -2923,15 +2924,15 @@ def corpkit_gui():
                 thisdata = all_interrogations[data_to_plot.get()]
             except KeyError:
                 return
-            single_entry.set('None')
-            single_sbcp.set('None')
+            single_entry.set('All')
+            single_sbcp.set('All')
 
             subdrs = sorted(set([d for d in os.listdir(corpus_fullpath.get()) \
                             if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]))
             
             single_sbcp_optmenu.config(state = NORMAL)
             single_sbcp_optmenu['menu'].delete(0, 'end')
-            single_sbcp_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_sbcp, 'None'))
+            single_sbcp_optmenu['menu'].add_command(label='All', command=Tkinter._setit(single_sbcp, 'All'))
             lst = []
             if len(subdrs) > 0:
                 for c in subdrs:
@@ -2941,14 +2942,14 @@ def corpkit_gui():
             else:
                 single_sbcp_optmenu.config(state = NORMAL)
                 single_sbcp_optmenu['menu'].delete(0, 'end')
-                single_sbcp_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_sbcp, 'None'))
+                single_sbcp_optmenu['menu'].add_command(label='All', command=Tkinter._setit(single_sbcp, 'All'))
                 single_sbcp_optmenu.config(state = DISABLED)
 
             if 'results' in thisdata._asdict().keys():
                 plotbox.config(state = NORMAL)
                 single_ent_optmenu.config(state = NORMAL)
                 single_ent_optmenu['menu'].delete(0, 'end')
-                single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
+                single_ent_optmenu['menu'].add_command(label='All', command=Tkinter._setit(single_entry, 'All'))
                 lst = []
                 for corp in list(thisdata.results.columns)[:200]:
                     lst.append(corp)
@@ -2957,7 +2958,7 @@ def corpkit_gui():
             else:
                 single_ent_optmenu.config(state = NORMAL)
                 single_ent_optmenu['menu'].delete(0, 'end')
-                single_ent_optmenu['menu'].add_command(label='None', command=Tkinter._setit(single_entry, 'None'))
+                single_ent_optmenu['menu'].add_command(label='All', command=Tkinter._setit(single_entry, 'All'))
                 single_ent_optmenu.config(state = DISABLED)
                 plotbox.config(state = NORMAL)
                 plotbranch.set('totals')
@@ -2973,9 +2974,9 @@ def corpkit_gui():
         every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
         data_to_plot.trace("w", plot_callback)
 
-        Label(plot_option_frame, text = 'Single entry:').grid(row = 3, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Entry:').grid(row = 3, column = 0, sticky = W)
         single_entry = StringVar(root)
-        single_entry.set('None')
+        single_entry.set('All')
         #most_recent = all_interrogations[all_interrogations.keys()[-1]]
         #single_entry.set(most_recent)
         single_ent_optmenu = OptionMenu(plot_option_frame, single_entry, *tuple(['']))
@@ -2984,7 +2985,7 @@ def corpkit_gui():
 
         def single_entry_plot_callback(*args):
             """turn off things if single entry selected"""
-            if single_entry.get() != 'None':
+            if single_entry.get() != 'All':
                 sbpl_but.config(state = NORMAL)
                 sbplt.set(0)
                 sbpl_but.config(state = DISABLED)
@@ -3004,9 +3005,9 @@ def corpkit_gui():
 
         single_entry.trace("w", single_entry_plot_callback)
 
-        Label(plot_option_frame, text = 'Single subcorpus:').grid(row = 4, column = 0, sticky = W)
+        Label(plot_option_frame, text = 'Subcorpus:').grid(row = 4, column = 0, sticky = W)
         single_sbcp = StringVar(root)
-        single_sbcp.set('None')
+        single_sbcp.set('All')
         #most_recent = all_interrogations[all_interrogations.keys()[-1]]
         #single_sbcp.set(most_recent)
         single_sbcp_optmenu = OptionMenu(plot_option_frame, single_sbcp, *tuple(['']))
@@ -3015,7 +3016,7 @@ def corpkit_gui():
 
         def single_sbcp_plot_callback(*args):
             """turn off things if single entry selected"""
-            if single_sbcp.get() != 'None':
+            if single_sbcp.get() != 'All':
                 sbpl_but.config(state = NORMAL)
                 sbplt.set(0)
                 sbpl_but.config(state = DISABLED)
@@ -3205,7 +3206,7 @@ def corpkit_gui():
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
                     'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot')))
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
-        ch_col.config(width = 16)
+        ch_col.config(width = 17)
         ch_col.grid(row = 16, column = 1, sticky = E)
 
         # style
@@ -3219,7 +3220,7 @@ def corpkit_gui():
         plot_style.set('ggplot')
         Label(plot_option_frame, text = 'Plot style:').grid(row = 17, column = 0, sticky = W)
         pick_a_style = OptionMenu(plot_option_frame, plot_style, *stys)
-        pick_a_style.config(width = 15)
+        pick_a_style.config(width = 17)
         pick_a_style.grid(row = 17, column = 1, sticky=E)
 
         def ps_callback(*args):
@@ -3237,7 +3238,7 @@ def corpkit_gui():
         legloc.set('best')
         locs = tuple(('best', 'upper right', 'right', 'lower right', 'lower left', 'upper left', 'middle', 'none'))
         loc_options = OptionMenu(plot_option_frame, legloc, *locs)
-        loc_options.config(width = 15)
+        loc_options.config(width = 17)
         loc_options.grid(row = 18, column = 1, sticky = E)
 
         # figure size
