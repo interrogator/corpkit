@@ -2,7 +2,6 @@
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit)
 
-
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
 > Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
@@ -140,7 +139,7 @@ One of the main reasons for these tools was to make it quicker and easier to exp
 * Use `interrogator()` output or subset of output as target or reference corpus
 * and so on ...
 
-Included here is a sample project, `orientation`, which you can run in order to familiarise yourself with the `corpkit` module. It uses a corpus of paragraphs of the NYT containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package.
+Included here is `orientation/orientation.ipynb`, which is a Jupyter Notebook version of this readme. In `orientation/data` is a sample corpus of paragraph from *The New York Times* containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package. With the notebook and the data, you can easily run all the code in this document yourself.
 
 <a name="installation"></a>
 ## Installation
@@ -203,7 +202,7 @@ gzip -dc data/nyt.tar.gz | tar -xf - -C data
 <a name="quickstart"></a>
 ## Quickstart
 
-The best way to use `corpkit` is by opening `orientation.ipynb` with IPython, and executing the first few cells:
+The best way to use `corpkit` is by opening `orientation/orientation.ipynb` with Jupyter, and executing the relevant cells:
 
 ```shell
 ipython notebook orientation.ipynb
