@@ -12,10 +12,10 @@
 
 - [What's in here?](#whats-in-here)
   - [Key features](#key-features)
+    - [`make_corpus()`](#make_corpus)
     - [`interrogator()`](#interrogator)
     - [`editor()`](#editor)
     - [`plotter()`](#plotter)
-    - [`make_corpus()`](#make_corpus)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -46,28 +46,35 @@ Essentially, the module contains functions for building and interrogating corpor
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
-| `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams | 
-| `plotter()`       | visualise `interrogator()` results with *matplotlib* | 
-| `conc()`          | complex concordancing of subcorpora | 
-| `editor()`        | edit `interrogator()` or `conc()` results, calculate keywords      |
-| `make_corpus()`   | Use CoreNLP/NLTK to make to make parsed, speaker-segmented corpora      |
+| `make_corpus()`   | Use CoreNLP/NLTK to make to make parsed, speaker-segmented corpora from plain text files      |
+| `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams in parsed corpora | 
+| `editor()`        | edit `interrogator()` or `conc()` results, calculate keywords, sort using linear regression, etc. |
+| `plotter()`       | visualise results via *matplotlib* | 
+| `conc()`          | Lexicogrammatical concordancing via constituency/dependency annotations | 
 
-There are also helper functions for making regular expressions, saving and loading data, making new projects, and so on.
+There are also quite a few helper functions for making regular expressions, saving and loading data, making new projects, and so on.
 
 Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
 
-While most of the tools are designed to work with corpora that are parsed (by e.g. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
+While most of the tools are designed to work with corpora that are parsed (by [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
-The idea is to run the tools from an [IPython Notebook](http://ipython.org/notebook.html), but you could also operate the toolkit from the command line if you wanted to have less fun.
+The idea is to run the tools from a [Jupyter Notebook](http://jupyter.org), but you could also operate the toolkit from the command line if you wanted to have less fun.
 
 The most comprehensive use of `corpkit` to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of `corpkit` can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
 <a name="key-features"></a>
 ### Key features
 
+<a name="make_corpus"></a>
+#### `make_corpus()` 
+
+* A simple Python wrapper around CoreNLP
+* Creates a parsed version of a structured or unstructured plaintext corpus
+* Optionally detects speaker IDs and adds them to CoreNLP XML
+
+
 <a name="interrogator"></a>
 #### `interrogator()`
-
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
@@ -81,7 +88,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 
 <a name="editor"></a>
 #### `editor()`
-
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -98,7 +104,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 <a name="plotter"></a>
 #### `plotter()` 
 
-
 * Plot using *Pandas*/*Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
@@ -109,13 +114,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * Use log scales if you really want
 * Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
 * Save images to file, as `.pdf` or `.png`
-
-<a name="make_corpus"></a>
-#### `make_corpus()` 
-
-* A simple Python wrapper around CoreNLP
-* Creates a parsed version of a structured or unstructured plaintext corpus
-* Optionally detects speaker IDs and adds them to CoreNLP XML
 
 <a name="other-stuff"></a>
 #### Other stuff
@@ -160,7 +158,7 @@ python setup.py install
 <a name="by-cloning-the-repository"></a>
 ### By cloning the repository
 
-Clone the repo, ``cd`` into it and run the setup:
+Clone the repo, `cd` into it and run the setup:
 
 ```shell
 git clone https://github.com/interrogator/corpkit.git
@@ -301,8 +299,8 @@ The function will:
 When interrogating or concordancing, you can then pass in a keyword argument to restrict searches to one or more speakers:
 
 ```python
->>> npheads = interrogator(parsed, 'words', r'/NN.?/ >># NP'
-...    just_speakers = ['BRISCOE', 'LOGAN'])
+>>> s = ['BRISCOE', 'LOGAN']
+>>> npheads = interrogator(parsed, 'words', r'/NN.?/ >># NP', just_speakers = s)
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
@@ -338,19 +336,20 @@ Output (a `Pandas DataFrame`):
 When searching dependencies, you have the added ability to restrict to a particular role:
 
 ```python
->>> lines = conc(parsed, 'deps', r'fr?iend', dep_function = 'nsubj')
+>>> query = r'\bm(a|e)n\b'
+>>> lines = conc(subcorpus, 'deps', query, dep_function = 'nsubj')
 ```
 
 Or, you can search tokenised corpora or plaintext corpora:
 
 ```python
->>> lines = conc(parsed, 'plaintext', query)
->>> lines = conc(parsed, 'tokens', query)
+>>> lines = conc(subcorpus, 'plaintext', query)
+>>> lines = conc(subcorpus, 'tokens', query)
 ```
 
 where `query` can be a regular expression or list of words to match.
 
-If you really wanted, you can then go on to use `conc()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour code and create thematic categories for concordance lines as well.
+If you really wanted, you can then go on to use `conc()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
 
 <a name="systemic-functional-stuff"></a>
 ### Systemic functional stuff
