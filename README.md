@@ -4,7 +4,7 @@
 
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
-> Because I kept building new tools and functions for my linguistic research, I decided to put them together into `corpkit`, a simple toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools and functions for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
 > **Recently, I've been working on a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
@@ -60,7 +60,7 @@ While most of the tools are designed to work with corpora that are parsed (by [S
 
 The idea is to run the tools from a [Jupyter Notebook](http://jupyter.org), but you could also operate the toolkit from the command line if you wanted to have less fun.
 
-The most comprehensive use of `corpkit` to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of `corpkit` can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
+The most comprehensive use of *corpkit* to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of *corpkit* can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
 <a name="key-features"></a>
 ### Key features
@@ -71,7 +71,6 @@ The most comprehensive use of `corpkit` to date has been for an investigation of
 * A simple Python wrapper around CoreNLP
 * Creates a parsed version of a structured or unstructured plaintext corpus
 * Optionally detects speaker IDs and adds them to CoreNLP XML
-
 
 <a name="interrogator"></a>
 #### `interrogator()`
@@ -142,7 +141,7 @@ Included here is `orientation/orientation.ipynb`, which is a Jupyter Notebook ve
 <a name="installation"></a>
 ## Installation
 
-You can get `corpkit` running by downloading or cloning this repository, or via `pip`.
+You can get *corpkit* running by downloading or cloning this repository, or via `pip`.
 
 <a name="by-downloading-the-repository"></a>
 ### By downloading the repository
@@ -200,7 +199,7 @@ gzip -dc data/nyt.tar.gz | tar -xf - -C data
 <a name="quickstart"></a>
 ## Quickstart
 
-The best way to use `corpkit` is by opening `orientation/orientation.ipynb` with Jupyter, and executing the relevant cells:
+The best way to use *corpkit* is by opening `orientation/orientation.ipynb` with Jupyter, and executing the relevant cells:
 
 ```shell
 ipython notebook orientation.ipynb
@@ -477,7 +476,7 @@ Woohoo, a decreasing gender divide!
 
 As I see it, there are two main problems with keywording, as typically performed in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
 
-So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With `corpkit`, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
+So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With *corpkit*, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
 ```python
 # just heads of participants (no pronouns, though!)
@@ -503,8 +502,8 @@ Let's have a look at how these options change the output:
 ...            'threshold': False}
 
 >>> for k, v in options.items():
-...    k = editor(p.results, 'keywords', 'self', k = v)
-...    print k.results.ix['2011'].order(ascending = False)
+...    key = editor(p.results, 'keywords', 'self', k = v)
+...    print key.results.ix['2011'].order(ascending = False)
 
 ```
 Output:
@@ -525,7 +524,7 @@ Output:
 
 As you can see, slight variations on keywording give different impressions of the same corpus!
 
-A key strength of `corpkit`'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
+A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
 
 ```python
 >>> yrs = ['2011', '2012', '2013', '2014']
@@ -626,7 +625,7 @@ Finally, for the record, you could also use `interrogator()` or `keywords()` to 
 
 ```python
 >>> from corpkit import keywords
->>> keys = keywords(p.results.ix['2002'], reference_corpus = p.results])
+>>> keys = keywords(p.results.ix['2002'], reference_corpus = p.results)
 >>> keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
 ```
 
@@ -641,13 +640,13 @@ Finally, for the record, you could also use `interrogator()` or `keywords()` to 
 Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
 ```python
->>> query = {'risk': r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)', 
-...    'take risk': r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
-...    'run risk': r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
-...    'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
-...    'pose risk': r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
+>>> q = {'risk':        r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)', 
+...      'take risk':   r'VP <<# (/VB.?/ < /(?i)\b(take|takes|taking|took|taken)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
+...      'run risk':    r'VP <<# (/VB.?/ < /(?i)\b(run|runs|running|ran)+\b/) < (NP <<# /(?i).?\brisk.?\b/)', 
+...      'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
+...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
->>> processes = interrogator(corpus, 'count', query)
+>>> processes = interrogator(corpus, 'count', q)
 >>> proc_rel = editor(processes.results, '%', processes.totals)
 >>> plotter('Risk processes', proc_rel.results)
 ```
@@ -829,12 +828,12 @@ Output:
 Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
 
 1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk) (most `corpkit` use)
+2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk) (most *corpkit* use)
 3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 <a name="cite"></a>
 ## Cite
 
-If you want to cite `corpkit`, please use:
+If you want to cite *corpkit*, please use:
 
 > `McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
