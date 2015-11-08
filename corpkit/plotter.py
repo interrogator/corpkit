@@ -802,8 +802,6 @@ def plotter(title,
                     if areamode:
                         handles = handles[-num_to_plot:]
                         labels = labels[-num_to_plot:]
-                        print handles
-                        print labels
                     if rev_leg:
                         handles = handles[::-1]
                         labels = labels[::-1]
