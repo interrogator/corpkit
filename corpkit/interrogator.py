@@ -22,6 +22,8 @@ def interrogator(path,
                 root = False,
                 df1_always_df = False,
                 just_speakers = False,
+                search = False,
+                show = False,
                 **kwargs):
     """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
@@ -499,6 +501,88 @@ def interrogator(path,
                             c += 1
                     if c < 30:
                         result.append(c)
+        return result
+
+    def dep_searcher(sents):
+        """search 'search' keyword arg, return : sep list of 'show' keyword arg"""
+        result = []
+        for s in sents:
+            deps = get_deps(s, dep_type)
+            if search.lower().startswith('g'):
+                lks = [l for l in deps.links if re.match(regex, l.governor.text)]
+            if search.lower().startswith('d'):
+                lks = [l for l in deps.links if re.match(regex, l.dependent.text)]
+            if search.lower().startswith('f'):
+                lks = [l for l in deps.links if re.match(regex, l.type)]
+            
+            # something broken here, not getting enough results
+            if search.lower().startswith('p'):
+                lks = []
+                for i in deps.links:
+                    try:
+                        pos = s.get_token_by_id(i.governor.idx).pos
+                        if re.match(regex, pos):
+                            lks.append(i)
+                    except:
+                        pass
+            if search.lower().startswith('l'):
+                lks = [l for l in deps.links \
+                      if re.match(regex, s.get_token_by_id(l.governor.idx).lemma)]
+
+            if only_count:
+                result.append(len(lks))
+                continue
+
+            # now we have all links, we have to get all possible results
+            # remember that there could be more than one match (i.e. multiple dependents)
+            all_dependents = []
+            if 'd' in show:
+                for lk in lks:
+                    depends = lk.governor._dependents.values()
+                    for depend in depends:
+                        try:
+                            print depend[0]
+                            all_dependents.append(depend[0])
+                        except:
+                            pass
+                lks = all_dependents
+
+            for lk in lks:
+                single_result = []
+                if 'g' in show:
+                    if lemmatise:
+                        single_result.append(s.get_token_by_id(lk.governor.idx).lemma)
+                    else:
+                        single_result.append(lk.governor.text)
+                if 'd' in show:
+                    if lemmatise:
+                        single_result.append(s.get_token_by_id(lk).lemma)
+                    else:
+                        single_result.append(lk.text)
+                if 'p' in show:
+                    postag = s.get_token_by_id(lk.governor.idx).pos
+                    if lemmatise:
+                        if postag in taglemma.keys():
+                            single_result.append(taglemma[postag])
+                        else:
+                            single_result.append(postag)
+                    else:
+                        single_result.append(postag)
+
+                if 'f' in show:
+                    if 'd' not in show:
+                        single_result.append(lk.type)
+                    else:
+                        pass
+                if 'l' in show:
+                    if search.lower().startswith('g'):
+                        single_result.append(s.get_token_by_id(lk.governor.idx).lemma)
+                if not only_count:
+                    result.append(':'.join(single_result))
+        
+        if 'c' in show:
+            result = sum(result)
+
         return result
 
     def govrole(sents):
@@ -1038,11 +1122,22 @@ def interrogator(path,
             tokens = True
             optiontext = 'Tokens via list.'
             dep_funct = tok_by_list
+        
+        elif option.lower().startswith('y'):
+            translated_option = 'y'
+            dependency = True
+            optiontext = 'Experimental.'
+            dep_funct = dep_searcher
+            if 'c' in show:
+                count_results = {}
+                only_count = True
+
         elif option.lower().startswith('j'):
             translated_option = 'j'
             tokens = True
             lemmatise = False
             optiontext = 'Get ngrams from tokens.'
+
             if query == 'any':
                 query = r'.*'
             if type(query) == list:
@@ -1069,32 +1164,33 @@ def interrogator(path,
             else:
                 gramsize = 2
             dep_funct = tok_ngrams
-        else:
-            time = strftime("%H:%M:%S", localtime())
-            selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
-                          '              a) Get distance from root for regex match\n' \
-                          '              b) Get tag and word of Tregex match\n' \
-                          '              c) count Tregex matches\n' \
-                          '              d) Get dependent of regular expression match and the r/ship\n' \
-                          '              e) Get tokens from tokenised text by list\n' \
-                          '              f) Get dependency function of regular expression match\n' \
-                          '              g) get governor of regular expression match and the r/ship\n' \
-                          '              h) get tokens from tokenised text by regular expression\n' \
-                          '              i) get dependency index\n '\
-                          '              k) get keywords\n' \
-                          '              l) get lemmata via dependencies\n'
-                          '              m) get tokens by dependency role \n' \
-                          '              n) get ngrams\n' \
-                          '              n) get \n' \
-                          '              p) get part-of-speech tag with Tregex\n' \
-                          '              r) regular expression, for plaintext corpora\n' \
-                          '              s) simple search string, for plaintext corpora\n' \
-                          '              t) match tokens via dependencies \n' \
-                          '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
-                          '              x) exit\n\nYour selection: ' % (time, option))
-            if selection.startswith('x'):
-                return
-            option = selection
+        
+        #else:
+        #    time = strftime("%H:%M:%S", localtime())
+        #    selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
+        #                  '              a) Get distance from root for regex match\n' \
+        #                  '              b) Get tag and word of Tregex match\n' \
+        #                  '              c) count Tregex matches\n' \
+        #                  '              d) Get dependent of regular expression match and the r/ship\n' \
+        #                  '              e) Get tokens from tokenised text by list\n' \
+        #                  '              f) Get dependency function of regular expression match\n' \
+        #                  '              g) get governor of regular expression match and the r/ship\n' \
+        #                  '              h) get tokens from tokenised text by regular expression\n' \
+        #                  '              i) get dependency index\n '\
+        #                  '              k) get keywords\n' \
+        #                  '              l) get lemmata via dependencies\n'
+        #                  '              m) get tokens by dependency role \n' \
+        #                  '              n) get ngrams\n' \
+        #                  '              n) get \n' \
+        #                  '              p) get part-of-speech tag with Tregex\n' \
+        #                  '              r) regular expression, for plaintext corpora\n' \
+        #                  '              s) simple search string, for plaintext corpora\n' \
+        #                  '              t) match tokens via dependencies \n' \
+        #                  '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
+        #                  '              x) exit\n\nYour selection: ' % (time, option))
+        #    if selection.startswith('x'):
+        #        return
+        #    option = selection
 
     if dependency:
         if type(query) == list:
@@ -1645,6 +1741,8 @@ def interrogator(path,
                             # run whichever function has been called
 
                             result_from_file = dep_funct(sents)
+                            if only_count:
+                                count_results[subcorpus_name] = result_from_file
 
                             # memory problems
                             corenlp_xml = None
@@ -1673,11 +1771,11 @@ def interrogator(path,
                                 split_con = True
                         result_from_file = tok_ngrams(query, data, split_contractions = split_con)
                 if result_from_file:
-                    if not statsmode:
+                    if not statsmode and not only_count:
                         for entry in result_from_file:
                             result.append(entry)
 
-        if not keywording and not statsmode:
+        if not keywording and not statsmode and 'c' not in show:
             result.sort()
 
         # lowercaseing, encoding, lemmatisation, 
