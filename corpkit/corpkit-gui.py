@@ -957,6 +957,7 @@ def corpkit_gui():
             prev_conc_listbox.delete(0, 'end')
             for i in sorted(all_conc.keys()):
                 prev_conc_listbox.insert(END, i)
+
         def add_tkt_index(df):
             """add order to df for tkintertable"""
             import pandas
@@ -1351,7 +1352,7 @@ def corpkit_gui():
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
-            selected_option = datatype_picked.get()
+            selected_option = datatype_picked.get().lower()
 
             if selected_option == '':
                 timestring('You need to select a search type.')
@@ -1374,7 +1375,8 @@ def corpkit_gui():
                                  'nltk_data_path': nltk_data_path}
 
             poss_returns = [return_token, return_lemma, return_pos, return_tree, \
-                            return_index, return_distance, return_function, return_count]
+                            return_index, return_distance, return_function, return_count,
+                            return_gov, return_dep]
 
             to_show = [i.get() for i in poss_returns if i.get() != '']
             interrogator_args['show'] = to_show
@@ -1577,26 +1579,28 @@ def corpkit_gui():
                 conc_pick_a_query.configure(state = DISABLED)
                 sensplitbut.config(state = NORMAL)
             else:
+                if datatype_picked.get() not in ['Trees', 'N-grams']:
+                    pick_dep_type.config(state = NORMAL)
                 sensplitbut.config(state = DISABLED)
                 conc_pick_dep_type.config(state = NORMAL)
                 conc_pick_a_query.configure(state = NORMAL)
                 concbut.config(state = DISABLED)
-                for i in ['trees', 'words', 'POS', 'lemmata', 'governors', \
-                    'dependents', 'functions', 'n-grams', 'stats']:
+                for i in ['Trees', 'Words', 'POS', 'Lemmata', 'Governors', \
+                    'Dependents', 'Functions', 'N-grams', 'Stats', 'Index']:
                     pick_a_datatype['menu'].add_command(label = i, command=Tkinter._setit(datatype_picked, i))
                 
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(corpus_search_type, 'Dependencies'))
                 #parsebut.config(state = DISABLED)
                 #speakcheck_build.config(state = DISABLED)
-                datatype_picked.set('words')
+                datatype_picked.set('Words')
                 corpus_search_type.set('Dependencies')
             if not corpus_name.endswith('-tokenised'):
                 if not corpus_name.endswith('-parsed'):
-                    pick_a_datatype['menu'].add_command(label = 'words', command=Tkinter._setit(datatype_picked, 'words'))
-                    pick_a_conc_datatype['menu'].add_command(label = 'words', command=Tkinter._setit(datatype_picked, 'words'))
-                    datatype_picked.set('words')
-                    corpus_search_type.set('words')
+                    pick_a_datatype['menu'].add_command(label = 'Words', command=Tkinter._setit(datatype_picked, 'Words'))
+                    pick_a_conc_datatype['menu'].add_command(label = 'Words', command=Tkinter._setit(datatype_picked, 'Words'))
+                    datatype_picked.set('Words')
+                    corpus_search_type.set('Words')
                     
             else:
                 pick_a_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
@@ -1621,6 +1625,34 @@ def corpkit_gui():
             concbut.config(state = NORMAL)
             timestring('Set corpus directory: "%s"' % corpus_name)
             editf.set('Edit file: ')
+
+            if not corpus_name.endswith('-parsed'):
+                ck1.config(state=NORMAL)
+                ck2.config(state=NORMAL)
+                ck3.config(state=DISABLED)
+                ck4.config(state=DISABLED)
+                ck5.config(state=DISABLED)
+                ck6.config(state=DISABLED)
+                ck7.config(state=DISABLED)
+                ck8.config(state=NORMAL)
+                ck9.config(state=DISABLED)
+                ck10.config(state=DISABLED)
+            else:
+                ck1.config(state=NORMAL)
+                ck2.config(state=NORMAL)
+                ck3.config(state=NORMAL)
+                ck4.config(state=NORMAL)
+                ck5.config(state=NORMAL)
+                ck6.config(state=NORMAL)
+                ck7.config(state=NORMAL)
+                ck8.config(state=NORMAL)
+                ck9.config(state=NORMAL)
+                ck10.config(state=NORMAL)
+            if datatype_picked.get() == 'Trees':
+                ck4.config(state=NORMAL)
+            else:
+                ck4.config(state=DISABLED)
+
 
         Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
@@ -1759,10 +1791,19 @@ def corpkit_gui():
         # these are example queries for each data type
         def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
                        'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
+                       'Governors': r'\b(m.n|wom.n|child(ren)?)\b',
+                       'Dependents': r'\b(m.n|wom.n|child(ren)?)\b',
+                       'Words': r'\b(m.n|wom.n|child(ren)?)\b',
+                       'Lemmata': r'\b(want|desire|need)\b',
                        'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Tokens': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Other': r'[cat,cats,mouse,mice,cheese]',
                        'other2': r'\b(amod|nn|advm|vmod|tmod)\b',
+                       'Functions': r'\b(amod|nn|advm|vmod|tmod)\b',
+                       'N-grams': r'any',
+                       'Index': r'[012345]',
+                       'POS': r'^[NJR]',
+                       'Functions': r'\b(amod|nn|advm|vmod|tmod)',
                        'other3': 'any'}
 
         # these are more specific examples for particular options
@@ -1782,8 +1823,8 @@ def corpkit_gui():
             value = w.get(index)
             w.see(index)
             #datatype_chosen_option.set(value)
-            datatype_listbox.select_set(index)
-            datatype_listbox.see(index)
+            #datatype_listbox.select_set(index)
+            #datatype_listbox.see(index)
             if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
                 try:
                     entrytext.set(special_examples[value])
@@ -1844,31 +1885,78 @@ def corpkit_gui():
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
-            datatype_listbox.delete(0, 'end')
+            #datatype_listbox.delete(0, 'end')
 
             chosen = datatype_picked.get()
-            lst = option_dict[chosen]
-            for e in lst:
-                datatype_listbox.insert(END, e)
+            #lst = option_dict[chosen]
+            #for e in lst:
+            #    datatype_listbox.insert(END, e)
 
-            if chosen == 'Dependencies':
-                pick_dep_type.configure(state = NORMAL)
-                q.configure(state = NORMAL)
-                qr.configure(state = NORMAL)
-                lmt.configure(state = DISABLED)
-                mwbut.configure(state = DISABLED)
-                tfbut.configure(state = DISABLED)
-            else:
-                pick_dep_type.configure(state = DISABLED)
-                q.configure(state = DISABLED)
-                qr.configure(state = DISABLED)
-                lmt.configure(state = NORMAL)
-                mwbut.configure(state = NORMAL)
-                tfbut.configure(state = NORMAL)
+            if chosen == 'Trees':
+                ck1.config(state=NORMAL)
+                ck1.select()
+                ck2.config(state=NORMAL)
+                ck3.config(state=NORMAL)
+                ck4.config(state=NORMAL)
+                ck5.config(state=NORMAL)
+                ck5.deselect()
+                ck6.config(state=NORMAL)
+                ck6.deselect()
+                ck7.config(state=NORMAL)
+                ck7.deselect()
+                ck5.config(state=DISABLED)
+                ck6.config(state=DISABLED)
+                ck7.config(state=DISABLED)
+
+                ck8.config(state=NORMAL)
+                ck9.config(state=NORMAL)
+                ck9.deselect()
+                ck9.config(state=DISABLED)
+                ck8.config(state=NORMAL)
+                ck10.config(state=NORMAL)
+                ck10.deselect()
+                ck10.config(state=DISABLED)
+
+            elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
+                          'Index', 'Distance', 'POS', 'Lemmata']:
+                ck1.config(state=NORMAL)
+                ck2.config(state=NORMAL)
+                ck3.config(state=NORMAL)
+                ck4.config(state=DISABLED)
+                ck5.config(state=NORMAL)
+                ck6.config(state=NORMAL)
+                ck7.config(state=NORMAL)
+                ck8.config(state=NORMAL)
+                ck9.config(state=NORMAL)
+                ck10.config(state=NORMAL)
+            if chosen == 'Governors':
+                ck9.config(state=DISABLED)
+            #else:
+                #ck10.config(state=NORMAL)
+            if chosen == 'Dependents':
+                ck10.config(state=DISABLED)
+            #else:
+                #ck9.config(state=NORMAL)
+
+            if chosen == 'Stats' or chosen == 'N-grams':
+                ck1.config(state=NORMAL)
+                ck1.select()
+                ck1.config(state=DISABLED)
+                ck2.config(state=DISABLED)
+                ck3.config(state=DISABLED)
+                ck4.config(state=DISABLED)
+                ck5.config(state=DISABLED)
+                ck6.config(state=DISABLED)
+                ck7.config(state=DISABLED)
+                ck8.config(state=DISABLED)
+                ck9.config(state=DISABLED)
+                ck10.config(state=DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
-            entrytext.set(def_queries[chosen])
-            datatype_listbox.select_set(0)
+            try:
+                entrytext.set(def_queries[chosen])
+            except:
+                entrytext.set('')
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
@@ -1878,52 +1966,132 @@ def corpkit_gui():
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
 
-        Label(interro_opt, text = 'Return:').grid(row = 4, column = 0, sticky = 'NW', pady = 10)
-
+        
         # trees, words, functions, governors, dependents, pos, lemma, count
         frm = Frame(interro_opt)
-        frm.grid(row = 4, column = 0, columnspan = 2, sticky = E, padx = (4,20), pady = 10)
+        Label(frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW', pady = 3)
+        frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
 
         return_token = StringVar()
         return_token.set('')
         ck1 = Checkbutton(frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
         ck1.select()
-        ck1.grid(row = 0, column = 0, sticky = W)
+        ck1.grid(row = 1, column = 0, sticky = W)
+
+        def return_token_callback(*args):
+            if datatype_picked.get() == 'Trees':
+                if return_token.get():
+                    for but in [ck2, ck3, ck4, ck8]:
+                        but.config(state=NORMAL)
+                        but.deselect()
+        return_token.trace("w", return_token_callback)
 
         return_lemma = StringVar()
         return_lemma.set('')
         ck2 = Checkbutton(frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
-        ck2.grid(row = 0, column = 1, sticky = W)
+        ck2.grid(row = 1, column = 1, sticky = W)
+
+        def return_lemma_callback(*args):
+            if datatype_picked.get() == 'Trees':
+                if return_lemma.get():
+                    for but in [ck1, ck3, ck4, ck8]:
+                        but.config(state=NORMAL)
+                        but.deselect()
+        return_lemma.trace("w", return_lemma_callback)
 
         return_pos = StringVar()
         return_pos.set('')
         ck3 = Checkbutton(frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
-        ck3.grid(row = 0, column = 2, sticky = W)
+        ck3.grid(row = 1, column = 2, sticky = W)
+
+        def return_pos_callback(*args):
+            if datatype_picked.get() == 'Trees':
+                if return_pos.get():
+                    for but in [ck1, ck2, ck4, ck8]:
+                        but.config(state=NORMAL)
+                        but.deselect()
+        return_pos.trace("w", return_pos_callback)
 
         return_tree = StringVar()
         return_tree.set('')
         ck4 = Checkbutton(frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
-        ck4.grid(row = 0, column = 3, sticky = W)
+        ck4.grid(row = 1, column = 3, sticky = W)
+
+        def return_tree_callback(*args):
+            if datatype_picked.get() == 'Trees':
+                if return_tree.get():
+                    for but in [ck1, ck2, ck3, ck8]:
+                        but.config(state=NORMAL)
+                        but.deselect()
+        return_tree.trace("w", return_tree_callback)
 
         return_index = StringVar()
         return_index.set('')
         ck5 = Checkbutton(frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
-        ck5.grid(row = 1, column = 0, sticky = W)
+        ck5.grid(row = 2, column = 0, sticky = W)
 
         return_distance = StringVar()
         return_distance.set('')
-        ck6 = Checkbutton(frm, text = 'Distance', variable = return_distance, onvalue = 'a', offvalue = '')
-        ck6.grid(row = 1, column = 1, sticky = W)
+        ck6 = Checkbutton(frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
+        ck6.grid(row = 2, column = 1, sticky = W)
 
         return_function = StringVar()
         return_function.set('')
         ck7 = Checkbutton(frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
-        ck7.grid(row = 1, column = 2, sticky = W)
+        ck7.grid(row = 2, column = 2, sticky = W)
 
         return_count = StringVar()
         return_count.set('')
         ck8 = Checkbutton(frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
-        ck8.grid(row = 1, column = 3, sticky = W)
+        ck8.grid(row = 1, column = 4, sticky = W)
+
+        def countmode(*args):
+            if datatype_picked.get() != 'Trees':
+                buttons = [ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck9, ck10]
+                if return_count.get() == 'c':
+                    for b in buttons:
+                        b.deselect()
+                        b.config(state=DISABLED)
+                    ck8.config(state=NORMAL)
+                else:
+                    for b in buttons:
+                        b.config(state=NORMAL)
+                    callback()
+            else:
+                if return_count.get():
+                    for but in [ck1, ck2, ck3, ck4]:
+                        but.config(state=NORMAL)
+                        but.deselect()
+
+        return_count.trace("w", countmode)
+
+        return_gov = StringVar()
+        return_gov.set('')
+        ck9 = Checkbutton(frm, text = 'Governor', variable = return_gov, onvalue = 'g', offvalue = '')
+        ck9.grid(row = 2, column = 3, sticky = W)
+
+        #def r#eturn_gov_callback(*args):
+        #    if return_gov.get():
+        #        ck10.config(state=NORMAL)
+        #        ck10.deselect()
+        #        ck10.config(state=DISABLED)
+        #    else:
+        #        ck10.config(state=NORMAL)
+        #return_gov.trace("w", return_gov_callback)
+
+        return_dep = StringVar()
+        return_dep.set('')
+        ck10 = Checkbutton(frm, text = 'Dependent', variable = return_dep, onvalue = 'd', offvalue = '')
+        ck10.grid(row = 2, column = 4, sticky = W)
+
+        #def return_dep_callback(*args):
+        #    if return_gov.get():
+        #        ck9.config(state=NORMAL)
+        #        ck9.deselect()
+        #        ck9.config(state=DISABLED)
+        #    else:
+        #        ck9.config(state=NORMAL)
+        #return_dep.trace("w", return_dep_callback)
 
         #dtscrollbar = Scrollbar(frm)
         #dtscrollbar.pack(side=RIGHT, fill=Y)
@@ -1939,14 +2107,6 @@ def corpkit_gui():
         # hack: change it now to populate below 
         datatype_picked.set('Trees')
         #datatype_listbox.select_set(0)
-
-        def searchtype():
-            i = datatype_listbox.curselection()
-            if len(i) > 0:
-                index = int(i[0])
-                return datatype_listbox.get(index)
-            else:
-                return ''
 
         def q_callback(*args):
             if special_queries.get() == 'Off':
@@ -5016,27 +5176,29 @@ def corpkit_gui():
             #if corpus_fullpath.get() == '':
                 # check if there are already (parsed) corpora
             
-            parsed_corp = [d for d in list_of_corpora if d.endswith('-parsed')]
-            # select 
-            first = False
-            if len(parsed_corp) > 0:
-                first = parsed_corp[0]
-            else:
-                if len(list_of_corpora) > 0:
-                    first = list_of_corpora[0]
+            if not current_corpus.get():
+                parsed_corp = [d for d in list_of_corpora if d.endswith('-parsed')]
+                # select 
+                first = False
+                if len(parsed_corp) > 0:
+                    first = parsed_corp[0]
                 else:
-                    first = False
-            if first:
-                corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
-                current_corpus.set(first)
-            else:
-                corpus_fullpath.set('')
-                # no corpora, so go to build...
-                note.focus_on(tab0)
-            #else:
-            #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
-            
+                    if len(list_of_corpora) > 0:
+                        first = list_of_corpora[0]
+                    else:
+                        first = False
+                if first:
+                    corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
+                    current_corpus.set(first)
+                else:
+                    corpus_fullpath.set('')
+                    # no corpora, so go to build...
+                    note.focus_on(tab0)
+                #else:
+                #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
+                
             corpus_name = os.path.basename(corpus_fullpath.get())
+            current_corpus.set(corpus_name)
 
             if corpus_fullpath.get() != '':
                 subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
