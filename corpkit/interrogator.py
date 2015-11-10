@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-def interrogator(path, 
-                option, 
+def interrogator(path,
+                search,
                 query = 'any', 
+                show = 'words',
                 case_sensitive = False,
                 lemmatise = False, 
                 reference_corpus = 'bnc.p', 
@@ -22,42 +23,38 @@ def interrogator(path,
                 root = False,
                 df1_always_df = False,
                 just_speakers = False,
-                search = False,
-                show = False,
                 **kwargs):
     """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
     :param path: Path to a corpus
     :type path: str -- corpus path; list of strings -- list of paths
     
-    :param option: 
-        - Tregex output option:
-            c/count: only *count*
-            w/words: only *words*
-            p/pos: only *pos* tag
-            b/both: *both* words and tags
-        - dependency option:
-            a: get the distance from the root for each match
-            i/index: get the index of words
-                i.e. root = 0
-            f/funct: get the semantic *function*
-            g/gov: get *governor* role and governor:
-                r'^good$' might return amod:day
-            d/dep: get dependent and its role:
-                r'^day$' might return amod:sunny
-            t/token: get tokens from dependency data
-            m: search by label, returning tokens
-        - plaintext:
-            r/regex: search plain text with query as regex
-            s/simple: search for word or list of words in plaintext files
-        - other:
-            k/keywords: search for keywords, using reference_corpus as the reference corpus
-                        use 'self' to make the whole corpus into a reference_corpus
-            n/ngrams: search for ngrams in trees   
+    :param search: What query should be matching
+        - t/tregex
+        - w/word
+        - l/lemma
+        - g/governor
+        - d/dependent
+        - f/function
+        - p/pos
+        - i/index
+        - n/ngrams
     :type option: str
     
-    :param query: A search query for the interrogation 
+    :param query: A search query for the interrogation
     :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
+
+    :param show: What to output. If multiple strings are passed, results will be colon-separated, in order
+        - t/tree
+        - w/word
+        - l/lemma
+        - g/governor
+        - d/dependent
+        - f/function
+        - p/pos
+        - i/index
+        - a/distance from root
+    :type show: list of strings
 
     :param lemmatise: Do lemmatisation on results
     :type lemmatise: bool
@@ -123,8 +120,6 @@ def interrogator(path,
     from dictionaries.word_transforms import (wordlist, 
                                               usa_convert, 
                                               taglemma)
-
-    td = {}
 
     # nltk data path for tokeniser/lemmatiser
     if 'nltk_data_path' in kwargs.keys():
@@ -192,10 +187,10 @@ def interrogator(path,
     if is_multiquery:
         from corpkit.multiprocess import pmultiquery
         d = { 'path': path, 
-              'option': option, 
               'query': query, 
+              'show': show,
+              'search': search,
               'lemmatise': lemmatise, 
-              'reference_corpus': reference_corpus, 
               'titlefilter': titlefilter, 
               'lemmatag': lemmatag, 
               'print_info': shouldprint, 
@@ -205,12 +200,9 @@ def interrogator(path,
               'function_filter': function_filter, 
               'table_size': table_size, 
               'quicksave': quicksave, 
-              'add_pos_to_g_d_option': add_pos_to_g_d_option, 
-              'custom_engine': custom_engine,
               'df1_always_df': df1_always_df,
               'just_speakers': just_speakers, 
-              'root': root,
-              'post_process': post_process }
+              'root': root,}
         
         if 'note' in kwargs.keys() and kwargs['note'] is not False:
             d['note'] = kwargs['note']
@@ -239,10 +231,6 @@ def interrogator(path,
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
-
-    # put me in a more appropriate spot
-    if custom_engine is not False:
-        option = 'z'
     
     # check if we are in ipython
     try:
@@ -461,50 +449,53 @@ def interrogator(path,
                     output.append(result)
             return output
 
-    def distancer(sents):
-        import re
-        """return distance from root for words matching query (root = 0)"""
-        result = []
-        for sindex, s in enumerate(sents):
-            deps = get_deps(s, dep_type)
-            # skip really long sents
-            if len([i for i in deps.links]) > 99:
-                skipped_sents += 1
-                continue
-
-            lks = [l for l in deps.links]
-            for lk in lks:
-                if re.match(regex, lk.dependent.text):
-                    role = lk.type
-                    # stop if role is bad
-                    if function_filter:
-                        if not re.match(funfil_regex, role):
-                            continue
-                    if pos_filter:
-                        pos = s.get_token_by_id(lk.governor.idx).pos
-                        if re.match(pos_regex, pos):
-                            continue
-                    c = 0
-                    # get the gov index, stop when it's zero
-                    root_found = False
-                    while not root_found:
-                        if c == 0:
-                            link_to_check = lk
-                        gov_index = link_to_check.governor.idx
-                        if gov_index == 0:
-                            root_found = True
-                        else:
-                            if c > 29:
-                                root_found = True
-                                break
-                            link_to_check = [l for l in lks if l.dependent.idx == gov_index][0]
-                            c += 1
-                    if c < 30:
-                        result.append(c)
-        return result
+    def distancer(lks, lk):
+        "determine number of jumps to root"      
+        c = 0
+        # get the gov index, stop when it's zero
+        root_found = False
+        while not root_found:
+            if c == 0:
+                link_to_check = lk
+            gov_index = link_to_check.governor.idx
+            if gov_index == 0:
+                root_found = True
+            else:
+                if c > 29:
+                    root_found = True
+                    break
+                link_to_check = [l for l in lks if l.dependent.idx == gov_index]
+                if len(link_to_check) > 0:
+                    link_to_check = link_to_check[0]
+                else:
+                    break
+                c += 1
+        if c < 30:
+            return c
 
     def dep_searcher(sents):
-        """search 'search' keyword arg, return : sep list of 'show' keyword arg"""
+        """search for 'search' keyword arg
+
+           governor
+           dependent
+           function
+           pos
+           lemma
+           word
+           index
+
+           return ':'-sep list of 'show' keyword arg:
+
+           governor
+           dependent
+           function
+           pos
+           lemma
+           word
+           index
+           distance
+           count"""
+        
         result = []
         for s in sents:
             deps = get_deps(s, dep_type)
@@ -527,7 +518,16 @@ def interrogator(path,
                         pass
             if search.lower().startswith('l'):
                 lks = [l for l in deps.links \
-                      if re.match(regex, s.get_token_by_id(l.governor.idx).lemma)]
+                      if s.get_token_by_id(l.governor.idx) and \
+                      re.match(regex, s.get_token_by_id(l.governor.idx).lemma)]
+
+            if search.lower().startswith('w'):
+                lks = [l for l in deps.links \
+                      if s.get_token_by_id(l.governor.idx) and \
+                      re.match(regex, s.get_token_by_id(l.governor.idx).word)]
+
+            if search.lower().startswith('i'):
+                lks = [l for l in deps.links if re.match(regex, str(l.governor.idx))]
 
             if only_count:
                 result.append(len(lks))
@@ -547,175 +547,75 @@ def interrogator(path,
                             pass
                 lks = all_dependents
 
+            # make a dict of show type and result
             for lk in lks:
-                single_result = []
+                single_result = {}
                 if 'g' in show:
                     if lemmatise:
-                        single_result.append(s.get_token_by_id(lk.governor.idx).lemma)
+                        try:
+                            single_result['g'] = s.get_token_by_id(lk.governor.idx).lemma
+                        # is root? #
+                        except:
+                            single_result['g'] = 'root'
                     else:
-                        single_result.append(lk.governor.text)
+                        single_result['g'] = lk.governor.text
                 if 'd' in show:
                     if lemmatise:
-                        single_result.append(s.get_token_by_id(lk).lemma)
+                        single_result['d'] = s.get_token_by_id(lk).lemma
                     else:
-                        single_result.append(lk.text)
+                        single_result['d'] = lk.text
+                # ? #
+                if 'w' in show:
+                    if lemmatise:
+                        single_result['w'] = s.get_token_by_id(lk.governor.idx).lemma
+                    else:
+                        single_result['w'] = lk.governor.text
+
                 if 'p' in show:
                     postag = s.get_token_by_id(lk.governor.idx).pos
-                    if lemmatise:
-                        if postag in taglemma.keys():
-                            single_result.append(taglemma[postag])
-                        else:
-                            single_result.append(postag)
+                    if not postag:
+                        single_result['p'] = 'none'
                     else:
-                        single_result.append(postag)
+                        if lemmatise:
+                            if postag in taglemma.keys():
+                                single_result['p'] = taglemma[postag]
+                            else:
+                                single_result['p'] = postag
+                        else:
+                            single_result['p'] = postag
 
                 if 'f' in show:
-                    if 'd' not in show:
-                        single_result.append(lk.type)
-                    else:
-                        pass
+                    single_result['f'] = lk.type
+
                 if 'l' in show:
-                    if search.lower().startswith('g'):
-                        single_result.append(s.get_token_by_id(lk.governor.idx).lemma)
+                    if search.lower().startswith('d'):
+                        single_result['l'] = s.get_token_by_id(lk.dependent.idx).lemma
+                    else:
+                        single_result['l'] = s.get_token_by_id(lk.governor.idx).lemma
+                
+                if 'r' in show:
+                    all_lks = [l for l in deps.links]
+                    distance = distancer(all_lks, lk)
+                    if distance:
+                        single_result['r'] = str(distance)
+                    else:
+                        single_result['r'] = '-1'
+
+                if 'i' in show:
+                    single_result['i'] = str(lk.governor.idx)
+
                 if not only_count:
-                    result.append(':'.join(single_result))
+                    
+                    # add them in order
+                    out = []
+                    for i in show:
+                        out.append(single_result[i])
+
+                    result.append(':'.join(out))
         
         if 'c' in show:
             result = sum(result)
 
-        return result
-
-    def govrole(sents):
-        """print funct:gov, using good lemmatisation"""
-        # for each sentence
-        result = []
-        for s in sents:
-            deps = get_deps(s, dep_type)
-            # get links matching gov
-            lks = [l for l in deps.links if re.match(regex, l.dependent.text)]
-            for lk in lks:
-                # get role
-                role = lk.type
-                if role == 'root':
-                    result.append(u'root:root')
-                    continue
-                # stop if role is bad
-                if function_filter:
-                    if not re.match(funfil_regex, role):
-                        continue
-                # get word or lemma
-                if not lemmatise:
-                    word = lk.governor.text
-                else:
-                    word = s.get_token_by_id(lk.governor.idx).lemma
-                # stop if pos_filtering
-                if pos_filter:
-                    pos = s.get_token_by_id(lk.governor.idx).pos
-                    if re.match(pos_regex, pos):
-                        continue
-                # make result
-                if not function_filter:
-                    res = role + u':' + word
-                else:
-                    res = word
-                result.append(res)
-        return result
-
-    def get_lemmata(sents):
-        """search for lemmata to count"""
-        from bs4 import BeautifulSoup
-        import gc
-        result = []
-        for sent in sents:
-            res = [w.lemma for w in sent.tokens if re.match(regex, w.lemma)]
-            for w in res:
-                result.append(w)
-        return result
-
-    def tokener(sents):
-        """get tokens or lemmata from dependencies"""
-        from bs4 import BeautifulSoup
-        import gc
-        open_classes = ['N', 'V', 'R', 'J']
-        result = []
-        for sent in sents:
-            if lemmatise:
-                res = [w.lemma for w in sent.tokens if re.match(regex, w.word)]
-            else:
-                res = [w.word for w in sent.tokens if re.match(regex, w.word)]
-            for w in res:
-                result.append(w)
-        return result
-
-    def deprole(sents):
-        """print funct:dep, using good lemmatisation"""
-        result = []
-        for s in sents:
-            deps = get_deps(s, dep_type)
-
-            # get links matching gov
-            lks = [l for l in deps.links if re.match(regex, l.governor.text)]
-            for lk in lks:
-                # get role
-                role = lk.type
-                # stop if role is bad
-                if function_filter:
-                    if not re.match(funfil_regex, role):
-                        continue
-                # get word or lemma
-                if not lemmatise:
-                    word = lk.dependent.text
-                else:
-                    word = s.get_token_by_id(lk.dependent.idx).lemma
-
-                # stop if pos_filtering
-                if pos_filter:
-                    pos = s.get_token_by_id(lk.dependent.idx).pos
-                    if re.match(pos_regex, pos):
-                        continue
-                # make result
-                if not function_filter:
-                    res = role + u':' + word
-                else:
-                    res = word
-                result.append(res)
-        return result
-
-    def words_by_function(sents):
-        """print match by function, using good lemmatisation"""
-
-        # if function matches query, return word or lemma
-        result = []
-        for s in sents:
-            deps = get_deps(s, dep_type)
-            if not pos_filter and not lemmatise:
-                to_return = [r.dependent.text for r in deps.links if re.match(regex, r.type)]
-            else:
-                if lemmatise and pos_filter:
-                    to_return = [s.get_token_by_id(r.dependent.idx).lemma for r in deps.links \
-                               if re.match(regex, r.type) and \
-                               re.search(pos_regex, s.get_token_by_id(r.dependent.idx).pos)]
-                elif lemmatise and not pos_filter:
-                    to_return = [s.get_token_by_id(r.dependent.idx).lemma for r in deps.links \
-                               if re.match(regex, r.type)]
-                elif pos_filter and not lemmatise:
-                    to_return = [r.dependent.text for r in deps.links if re.match(regex, r.type) \
-                    and re.search(pos_regex, s.get_token_by_id(r.dependent.idx).pos)]
-            
-            for r in to_return:
-                result.append(r)
-        return result
-
-    def funct(sents):
-        """print functional role of regex match"""
-        result = []
-        for s in sents:
-            deps = get_deps(s, dep_type)
-            roles = [r.type for r in deps.links if re.match(regex, r.dependent.text)]
-            if function_filter:
-                roles = [r for r in roles if not re.search(funfil_regex, r)]                    
-            for r in roles:
-                result.append(r)
         return result
 
     def tok_by_list(pattern, list_of_toks):
@@ -934,18 +834,6 @@ def interrogator(path,
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
 
-    def depnummer(sents):
-        """get index of word in sentence?"""
-        result = []
-        for sent in sents:
-            right_deps = sent.find("dependencies", {"type":dep_type})
-            for index, dep in enumerate(right_deps.find_all('dep')):
-                for dependent in dep.find_all('dependent', limit = 1):
-                    word = dependent.get_text().strip()
-                    if re.match(regex, word):
-                        result.append(index + 1)
-        return result
-
     def tabler(subcorpus_names, list_of_dicts, num_rows):
         """make a word table showing num_rows results"""
         import pandas as pd
@@ -959,15 +847,15 @@ def interrogator(path,
     # a few things are off by default:
     only_count = False
     using_tregex = False
-    keywording = False
     n_gramming = False
     dependency = False
-    distance_mode = False
     plaintext = False
     tokens = False
-    depnum = False
     statsmode = False
     split_con = True
+
+    from corpkit.other import determine_datatype
+    datatype = determine_datatype(path)
 
     # some empty lists we'll need
     dicts = []
@@ -975,17 +863,30 @@ def interrogator(path,
     
     regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
 
-    # parse option
-    # handle hyphen at start
-    if option.startswith('-'):
-        translated_option = option[1:]
-    
+    search = search[0]
+
+    if type(show) == str or type(show) == unicode:
+        show = [show]
+
+    cutshort = []
+    for i in show:
+        cutshort.append(i[0].lower())
+
     # Tregex option:
     translated_option = False
-    from other import as_regex
-    while not translated_option:
-        if option.lower().startswith('p'):
+    from corpkit.other import as_regex
+    
+    if search.lower().startswith('t'):
+        if datatype == 'parse':
             using_tregex = True
+
+    if datatype == 'plaintext':
+        plaintext = True
+    elif datatype == 'tokens':
+        tokens = True
+
+    if using_tregex:
+        if 'p' in show:
             dep_funct = slow_tregex
             optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
@@ -993,8 +894,7 @@ def interrogator(path,
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-        elif option.lower().startswith('b'):
-            using_tregex = True
+        elif 't' in show:
             dep_funct = slow_tregex
             optiontext = 'Tags and words.'
             translated_option = 'o'
@@ -1002,8 +902,7 @@ def interrogator(path,
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-        elif option.lower().startswith('w'):
-            using_tregex = True
+        elif 'w' in show:
             dep_funct = slow_tregex
             optiontext = 'Words only.'
             translated_option = 't'
@@ -1011,8 +910,7 @@ def interrogator(path,
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
-        elif option.lower().startswith('c'):
-            using_tregex = True
+        elif 'c' in show:
             dep_funct = slow_tregex
             count_results = {}
             only_count = True
@@ -1023,148 +921,99 @@ def interrogator(path,
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
-        #plaintext options
-        elif option.lower().startswith('r'):
-            plaintext = True
-            optiontext = 'Regular expression matches only.'
-            translated_option = 'r'
-            if query == 'any':
-                query = r'.*'
-            if type(query) == list:
-                query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
-
-        elif option.lower().startswith('s'):
-            plaintext = True
-            optiontext = 'Simple plain-text search.'
-            translated_option = 's'
-            if query == 'any':
-                any_plaintext_word = True
-            else:
-                any_plaintext_word = False
-
-        #keywording and n_gramming options
-        elif option.lower().startswith('k'):
-            translated_option = 'k'
-            keywording = True
-            optiontext = 'Keywords only.'
-            if type(query) == list:
-                query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
-
-        elif option.lower().startswith('n'):
+        elif 'n' in search:
             translated_option = 'n'
             n_gramming = True
-            using_tregex = True
             optiontext = 'n-grams only.'
             if type(query) == list:
                 query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
 
-        # dependency option:
-        elif option.lower().startswith('z'):
-            translated_option = 'z'
-            dependency = True
-            optiontext = 'Using custom dependency query engine.'
-            dep_funct = custom_engine
-        elif option.lower().startswith('i'):
-            translated_option = 'i'
-            depnum = True
-            dependency = True
-            optiontext = 'Dependency index number only.'
-            dep_funct = depnummer
-        elif option.lower().startswith('a'):
-            translated_option = 'a'
-            distance_mode = True
-            dependency = True
-            optiontext = 'Distance from root.'
-            dep_funct = distancer
-        elif option.lower().startswith('f'):
-            translated_option = 'f'
-            dependency = True
-            optiontext = 'Functional role only.'
-            dep_funct = funct
-        elif option.lower().startswith('m'):
-            translated_option = 'm'
-            dependency = True
-            optiontext = 'Matching tokens by function label.'
-            dep_funct = words_by_function
-        elif option.lower().startswith('g'):
-            translated_option = 'g'
-            dependency = True
-            optiontext = 'Role and governor.'
-            dep_funct = govrole
-        elif option.lower().startswith('l'):
-            translated_option = 'l'
-            dependency = True
-            optiontext = 'Lemmata only.'
-            dep_funct = get_lemmata
-        elif option.lower().startswith('t'):
-            translated_option = 'q' # dummy
-            dependency = True
-            optiontext = 'Tokens only.'
-            dep_funct = tokener
-        elif option.lower().startswith('d'):
-            translated_option = 'd'
-            dependency = True
-            optiontext = 'Dependent and its role.'
-            dep_funct = deprole
-        elif option.lower().startswith('v'):
-            translated_option = 'v'
-            #using_tregex = True
-            statsmode = True
-            optiontext = 'Getting general stats.'
-            dep_funct = get_stats
-        elif option.lower().startswith('h'):
-            translated_option = 'h'
-            tokens = True
-            optiontext = 'Tokens via regular expression.'
-            dep_funct = tok_by_reg
-        elif option.lower().startswith('e'):
-            translated_option = 'e'
-            tokens = True
-            optiontext = 'Tokens via list.'
-            dep_funct = tok_by_list
-        
-        elif option.lower().startswith('y'):
-            translated_option = 'y'
-            dependency = True
-            optiontext = 'Experimental.'
-            dep_funct = dep_searcher
-            if 'c' in show:
-                count_results = {}
-                only_count = True
-
-        elif option.lower().startswith('j'):
-            translated_option = 'j'
-            tokens = True
-            lemmatise = False
-            optiontext = 'Get ngrams from tokens.'
-
-            if query == 'any':
-                query = r'.*'
-            if type(query) == list:
-                query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
+    elif datatype == 'plaintext':
+        if 'w' in show:
+            if 'regex' in kwargs.keys() and kwargs['regex'] is False:
+                plaintext = True
+                optiontext = 'Simple plain-text search.'
+                translated_option = 's'
+                if query == 'any':
+                    any_plaintext_word = True
+                else:
+                    any_plaintext_word = False
             else:
-                try:
-                    if not case_sensitive:
-                        query = re.compile(query, re.IGNORECASE)
-                    else:
-                        query = re.compile(query)
-                except:
-                    import traceback
-                    import sys
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    lst = traceback.format_exception(exc_type, exc_value,
-                                  exc_traceback)
-                    error_message = lst[-1]
-                    thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: Query %s' % (thetime, error_message)
-                    return 'Bad query'
-            global gramsize
-            if 'gramsize' in kwargs.keys():
-                gramsize = kwargs['gramsize']
-            else:
-                gramsize = 2
-            dep_funct = tok_ngrams
-        
+                plaintext = True
+                optiontext = 'Regular expression matches only.'
+                translated_option = 'r'
+                if query == 'any':
+                    query = r'.*'
+                if type(query) == list:
+                    query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+
+    elif datatype == 'tokens':
+        pass
+
+    #elif option.lower().startswith('h'):
+    #    translated_option = 'h'
+    #    tokens = True
+    #    optiontext = 'Tokens via regular expression.'
+    #    dep_funct = tok_by_reg
+
+    #elif option.lower().startswith('e'):
+    #    translated_option = 'e'
+    #    tokens = True
+    #    optiontext = 'Tokens via list.'
+    #    dep_funct = tok_by_list
+
+
+    #elif option.lower().startswith('j'):
+    #    translated_option = 'j'
+    #    tokens = True
+    #    lemmatise = False
+    #    optiontext = 'Get ngrams from tokens.'
+    #    if query == 'any':
+    #        query = r'.*'
+    #    if type(query) == list:
+    #        query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
+    #    else:
+    #        try:
+    #            if not case_sensitive:
+    #                query = re.compile(query, re.IGNORECASE)
+    #            else:
+    #                query = re.compile(query)
+    #        except:
+    #            import traceback
+    #            import sys
+    #            exc_type, exc_value, exc_traceback = sys.exc_info()
+    #            lst = traceback.format_exception(exc_type, exc_value,
+    #                          exc_traceback)
+    #            error_message = lst[-1]
+    #            thetime = strftime("%H:%M:%S", localtime())
+    #            print '%s: Query %s' % (thetime, error_message)
+    #            return 'Bad query'
+    #    global gramsize
+    #    if 'gramsize' in kwargs.keys():
+    #        gramsize = kwargs['gramsize']
+    #    else:
+    #        gramsize = 2
+    #    dep_funct = tok_ngrams
+
+    elif datatype == 'parse':
+        translated_option = 'y'
+        dependency = True
+        optiontext = 'Dependency querying...'
+        dep_funct = dep_searcher
+        if 'c' in show:
+            count_results = {}
+            only_count = True
+
+    if 's' in search:
+        translated_option = 'v'
+        #using_tregex = True
+        statsmode = True
+        optiontext = 'Getting general stats.'
+        dep_funct = get_stats
+        if datatype != 'parse':
+            print 'Need parsed corpus for this.'
+            return
+    
         #else:
         #    time = strftime("%H:%M:%S", localtime())
         #    selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
@@ -1391,28 +1240,6 @@ def interrogator(path,
             else:
                 pass
 
-    if keywording or n_gramming:
-        jcw = False
-        if 'just_content_words' in kwargs:
-            if kwargs['just_content_words'] is True:
-                jcw = True
-
-        if reference_corpus.startswith('self') or reference_corpus == os.path.basename(path):
-            if lemmatise:
-                lem = '-lemmatised'
-            else:
-                lem = ''
-            reference_corpus = os.path.basename(path) + lem + '.p'
-            dictpath = 'dictionaries'
-            import pickle
-            try:
-                dic = pickle.load( open( os.path.join(dictpath, reference_corpus), "rb" ) )
-            except:
-                from build import dictmaker
-                time = strftime("%H:%M:%S", localtime())
-                print '\n%s: Making reference corpus ...' % time
-                dictmaker(path, reference_corpus, query, lemmatise = lemmatise, just_content_words = jcw)
-    
     # get list of subcorpora and sort them ... user input if no corpus found
     got_corpus = False
     while got_corpus is False:
@@ -1594,8 +1421,8 @@ def interrogator(path,
     numdone = 0
 
     for index, d in enumerate(sorted_dirs):
-        if using_tregex or keywording or n_gramming:
-            if can_do_fast or keywording or n_gramming:
+        if using_tregex or n_gramming:
+            if can_do_fast or n_gramming:
                 subcorpus_name = d
                 subcorpus_names.append(subcorpus_name)
                 if not root:
@@ -1620,20 +1447,8 @@ def interrogator(path,
                     subcorpus = path
                 else:
                     subcorpus = os.path.join(path,subcorpus_name)
-                if keywording:
-                    result = []
-                    from corpkit.keys import keywords
-                    spindle_out = keywords(subcorpus, reference_corpus = reference_corpus, just_content_words = jcw,
-                                            printstatus = False, clear = False, lemmatise = lemmatise)
-                    for w in list(spindle_out.index):
-
-                        if query != 'any':
-                            if re.search(query, w):
-                                result.append([w, spindle_out[w]])
-                        else:
-                            result.append([w, spindle_out[w]])
-
-                elif n_gramming:
+        
+                if n_gramming:
                     result = []
                     if 'split_contractions' in kwargs.keys():
                         if kwargs['split_contractions'] is True:
@@ -1775,33 +1590,21 @@ def interrogator(path,
                         for entry in result_from_file:
                             result.append(entry)
 
-        if not keywording and not statsmode and 'c' not in show:
+        if not statsmode and 'c' not in show:
             result.sort()
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not keywording and not depnum and not distance_mode and not statsmode:
+        if not statsmode and 'x' not in show:
             processed_result = processwords(result)
-        if depnum or distance_mode:
-            processed_result = result
             
-        if keywording:
-            allwords_list.append([w for w, score in result])
-        else:
-            if not statsmode:
-                allwords_list.append(processed_result)
-            else:
-                allwords_list.append([w for w in statsmode_results.keys()])
 
-        if keywording:
-            little_dict = {}
-            for word, score in result:
-                little_dict[word] = score
-            dicts.append(Counter(little_dict))
-        if not keywording and not statsmode:
+        if not statsmode:
+            allwords_list.append(processed_result)
             dicts.append(Counter(processed_result))
         if statsmode:
             dicts.append(statsmode_results)
+            allwords_list.append([w for w in statsmode_results.keys()])
 
     if not plaintext:
         if not root:
@@ -1856,28 +1659,26 @@ def interrogator(path,
         outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
         # add option to named tuple
-        the_options = {}
-        the_options['path'] = path
-        the_options['option'] = option
-        the_options['datatype'] = stotals.dtype
+        the_options = {'path': path,
+                       'search': search,
+                       'show': show,
+                       'datatype': stotals.dtype,
+                       'query': query ,
+                       'lemmatise': lemmatise,
+                       'titlefilter': titlefilter,
+                       'lemmatag': lemmatag,
+                       'spelling': spelling,
+                       'phrases': phrases,
+                       'dep_type': dep_type,
+                       'table_size': table_size,
+                       'quicksave': quicksave,
+                       'time_started': the_time_started,
+                       'time_ended': the_time_ended}
+
         try:
             the_options['translated_option'] = translated_option
         except:
             the_options['translated_options'] = translated_options
-        the_options['query'] = query 
-        the_options['lemmatise'] = lemmatise
-        the_options['reference_corpus'] = reference_corpus
-        the_options['titlefilter'] = titlefilter 
-        the_options['lemmatag'] = lemmatag
-        the_options['spelling'] = spelling
-        the_options['phrases'] = phrases
-        the_options['dep_type'] = dep_type
-        the_options['function_filter'] = function_filter
-        the_options['table_size'] = table_size
-        the_options['plaintext'] = plaintext
-        the_options['quicksave'] = quicksave
-        the_options['time_started'] = the_time_started
-        the_options['time_ended'] = the_time_ended
 
         output = outputnames(the_options, stotals)
         if 'outname' in kwargs:
@@ -1921,8 +1722,7 @@ def interrogator(path,
         if not one_big_corpus:
             df.ix['Total'] = df.sum()
             tot = df.ix['Total']
-            if not depnum and not distance_mode:
-                df = df[tot.argsort()[::-1]]
+            df = df[tot.argsort()[::-1]]
             df = df.drop('Total', axis = 0)
     except:
         pass
@@ -1937,26 +1737,16 @@ def interrogator(path,
             df = df.ix[subcorpus_names[0]]
         except:
             pass
-        #df.name = query
-        if not distance_mode:
-            df.sort(ascending = False)
-        else:
-            df = df.sort_index()
+        df.sort(ascending = False)
 
     # add sort info for tk
     if tk:
         df = df.T
         df['tkintertable-order'] = pd.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
         df = df.T
-
-    # return pandas/csv table of most common results in each subcorpus
-    if not depnum and not distance_mode:
-        if table_size > max([len(d) for d in dicts]):
-            table_size = max([len(d) for d in dicts])
-        word_table = tabler(subcorpus_names, dicts, table_size)
     
     # print skipped sent information for distance_mode
-    if printstatus and distance_mode and skipped_sents > 0:
+    if printstatus and 'r' in show and skipped_sents > 0:
         print '\n          %d sentences over 99 words skipped.\n' % skipped_sents
 
     if type(paralleling) == int:
@@ -1965,43 +1755,29 @@ def interrogator(path,
     #make results into named tuple
     # add option to named tuple
     the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
-    the_options = {}
-    the_options['function'] = 'interrogator'
-    the_options['path'] = path
-    the_options['option'] = option
-    try:
-        the_options['datatype'] = df.iloc[0].dtype
-    except:
-        the_options['datatype'] = int
+    the_options = {'path': path,
+                       'search': search,
+                       'show': show,
+                       'datatype': df.iloc[0].dtype,
+                       'query': query,
+                       'lemmatise': lemmatise,
+                       'titlefilter': titlefilter,
+                       'lemmatag': lemmatag,
+                       'spelling': spelling,
+                       'phrases': phrases,
+                       'dep_type': dep_type,
+                       'quicksave': quicksave,
+                       'time_started': the_time_started,
+                       'time_ended': the_time_ended}
+
     try:
         the_options['translated_option'] = translated_option
     except:
         the_options['translated_options'] = translated_options
-    the_options['query'] = query 
-    the_options['lemmatise'] = lemmatise
-    the_options['reference_corpus'] = reference_corpus
-    the_options['titlefilter'] = titlefilter 
-    the_options['lemmatag'] = lemmatag
-    the_options['spelling'] = spelling
-    the_options['phrases'] = phrases
-    the_options['dep_type'] = dep_type
-    the_options['function_filter'] = function_filter
-    the_options['table_size'] = table_size
-    the_options['plaintext'] = plaintext
-    the_options['quicksave'] = quicksave
-    the_options['time_started'] = the_time_started
-    the_options['time_ended'] = the_time_ended
 
-    if not keywording and not depnum and not distance_mode:
-        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals', 'table'])
-        output = outputnames(the_options, df, stotals, word_table)
-    if keywording:
-        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'table'])
-        output = outputnames(the_options, df, word_table)
-    if depnum or distance_mode:
-        outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-        output = outputnames(the_options, df, stotals)        
-
+    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+    output = outputnames(the_options, df, stotals)
+     
     if have_ipython:
         clear_output()
 
@@ -2024,44 +1800,33 @@ def interrogator(path,
             print '%s: Interrogation produced no results, sorry.' % time
         return False
 
-    if not keywording:
-        if stotals.sum() == 0:
-            if not root:
-                print ''
-                warnings.warn('No totals produced. Maybe your query needs work.')
-            else:
-                time = strftime("%H:%M:%S", localtime())
-                print '%s: Interrogation produced no results, sorry.' % time
-            return False
+    if stotals.sum() == 0:
+        if not root:
+            print ''
+            warnings.warn('No totals produced. Maybe your query needs work.')
+        else:
+            time = strftime("%H:%M:%S", localtime())
+            print '%s: Interrogation produced no results, sorry.' % time
+        return False
 
     time = strftime("%H:%M:%S", localtime())
-    if not keywording:
-        if printstatus:
-            print '%s: Interrogation finished! %d unique results, %d total.' % (time, num_diff_results, stotals.sum())
-            if not tk:
-                print ''
-    else:
-        if printstatus:
-            print '%s: Interrogation finished! %d unique results.' % (time, num_diff_results)
-            if not tk:
-                print ''
+    if printstatus:
+        print '%s: Interrogation finished! %d unique results, %d total.' % (time, num_diff_results, stotals.sum())
+        if not tk:
+            print ''
 
     if quicksave:
-        if not keywording:
-            if stotals.sum() > 0 and num_diff_results > 0:
-                from other import save_result
-                save_result(output, quicksave)
-        else:
-            if num_diff_results > 0:
-                from other import save_result
-                save_result(output, quicksave)
+        if stotals.sum() > 0 and num_diff_results > 0:
+            from other import save_result
+            save_result(output, quicksave)
 
     return output
 
 if __name__ == '__main__':
     interrogator(path, 
-                option, 
+                search = 'words',
                 query = 'any', 
+                show = 'words',
                 case_sensitive = False,
                 lemmatise = False, 
                 reference_corpus = 'bnc.p', 
@@ -2072,7 +1837,6 @@ if __name__ == '__main__':
                 dep_type = 'basic-dependencies',
                 function_filter = False,
                 pos_filter = False,
-                table_size = 50,
                 quicksave = False,
                 add_pos_to_g_d_option = False,
                 custom_engine = False,
