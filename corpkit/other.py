@@ -1342,3 +1342,26 @@ def get_fullpath_to_jars(path_var):
         pass
         
     return False
+
+def determine_datatype(path):
+    """determine if plaintext, tokens or parsed xml"""
+    import os
+    from collections import Counter
+    allowed = ['.txt', '.xml', '.p']
+    exts = []
+    for (root, dirs, fs) in os.walk(path):
+        for f in fs:
+            try:
+                ext = os.path.splitext(f)[1]
+                exts.append(ext)
+            except:
+                pass
+    counted = Counter(exts)
+    mc = counted.most_common(1)[0][0]
+    if mc == '.xml':
+        return 'parse'
+    elif mc == '.txt':
+        return 'plaintext'
+    elif mc == '.p':
+        return 'tokens'
+        
