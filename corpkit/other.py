@@ -815,7 +815,7 @@ def tregex_engine(corpus = False,
             query = 'NP'
         # if checking for trees, use the -T option
         if check_for_trees:
-            options = ['-T']
+            options = ['-o', '-T', '-s']
 
         filenaming = False
         try:
@@ -825,13 +825,15 @@ def tregex_engine(corpus = False,
             pass
 
         if return_tuples or lemmatise:
-            options = ['-o']
+            options = ['-o', '-s']
         # append list of options to query 
         if options:
+            if '-s' not in options:
+                options.append('-s')
             [tregex_command.append(o) for o in options]
         # dummy option
         else:
-            options = ['-t']
+            options = ['-o', '-t', '-s']
         if query:
             tregex_command.append(query)
         if corpus:
@@ -929,6 +931,7 @@ def tregex_engine(corpus = False,
         std_last_index = res.index(next(s for s in res \
                         if s.startswith('Parsed representation:')))
     res = res[std_last_index + n:]
+    res = [r.lstrip().rstrip() for r in res]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
