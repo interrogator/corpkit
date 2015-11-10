@@ -541,7 +541,6 @@ def interrogator(path,
                     depends = lk.governor._dependents.values()
                     for depend in depends:
                         try:
-                            print depend[0]
                             all_dependents.append(depend[0])
                         except:
                             pass
@@ -561,9 +560,9 @@ def interrogator(path,
                         single_result['g'] = lk.governor.text
                 if 'd' in show:
                     if lemmatise:
-                        single_result['d'] = s.get_token_by_id(lk).lemma
+                        single_result['d'] = s.get_token_by_id(lk.dependent.idx).lemma
                     else:
-                        single_result['d'] = lk.text
+                        single_result['d'] = lk.dependent.text
                 # ? #
                 if 'w' in show:
                     if lemmatise:
@@ -591,7 +590,10 @@ def interrogator(path,
                     if search.lower().startswith('d'):
                         single_result['l'] = s.get_token_by_id(lk.dependent.idx).lemma
                     else:
-                        single_result['l'] = s.get_token_by_id(lk.governor.idx).lemma
+                        try:
+                            single_result['l'] = s.get_token_by_id(lk.governor.idx).lemma
+                        except:
+                            single_result['l'] = 'root'
                 
                 if 'r' in show:
                     all_lks = [l for l in deps.links]
@@ -863,7 +865,7 @@ def interrogator(path,
     
     regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
 
-    search = search[0]
+    search = search[0].lower()
 
     if type(show) == str or type(show) == unicode:
         show = [show]
@@ -871,6 +873,11 @@ def interrogator(path,
     cutshort = []
     for i in show:
         cutshort.append(i[0].lower())
+
+    if search == 'g' and 'g' in show:
+        raise ValueError("Can't show governor of governor")
+    if search == 'd' and 'd' in show:
+        raise ValueError("Can't show dependent of dependent")
 
     # Tregex option:
     translated_option = False
@@ -918,6 +925,17 @@ def interrogator(path,
             optiontext = 'Counts only.'
             if type(query) == list:
                 query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+            if query == 'any':
+                query = r'/.?[A-Za-z0-9].?/ !< __'
+        elif 'l' in show:
+            dep_funct = slow_tregex
+            translated_option = 't'
+            optiontext = 'Words, lemmatised.'
+            lemmatise = True
+            from nltk.stem.wordnet import WordNetLemmatizer
+            lmtzr=WordNetLemmatizer()
+            if type(query) == list:
+                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
@@ -1331,7 +1349,7 @@ def interrogator(path,
     if using_tregex:
         if query:
             if not n_gramming:
-                query = tregex_engine(corpus = False, query = query, options = '-t', check_query = True, root = root)
+                query = tregex_engine(corpus = False, query = query, options = ['-t'], check_query = True, root = root)
                 if query is False:
                     if root:
                         return 'Bad query'
