@@ -1323,8 +1323,8 @@ def corpkit_gui():
                     # allow list queries
                     if query.startswith('[') and query.endswith(']'):
                         query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                    elif transdict[searchtype()] in ['e', 's']:
-                        query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                    #elif transdict[searchtype()] in ['e', 's']:
+                        #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                     else:
                         # convert special stuff
                         query = remake_special_query(query)
@@ -1351,7 +1351,8 @@ def corpkit_gui():
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
-            selected_option = transdict[searchtype()]
+            selected_option = datatype_picked.get()
+
             if selected_option == '':
                 timestring('You need to select a search type.')
                 return
@@ -1371,6 +1372,12 @@ def corpkit_gui():
                                  'blacklist': blackl,
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
+
+            poss_returns = [return_token, return_lemma, return_pos, return_tree, \
+                            return_index, return_distance, return_function, return_count]
+
+            to_show = [i.get() for i in poss_returns if i.get() != '']
+            interrogator_args['show'] = to_show
 
             # speaker ids
             if only_sel_speakers.get():
@@ -1403,7 +1410,7 @@ def corpkit_gui():
 
             # stats preset is actually a search type
             if special_queries.get() == 'Stats':
-                selected_option = 'v'
+                selected_option = 's'
                 interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
@@ -1547,7 +1554,7 @@ def corpkit_gui():
 
             path_to_new_unparsed_corpus.set(fp)
             #add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
-            # why is it setting itself?
+            # why is it setting itself? #
             #current_corpus.set(os.path.basename(fp))
             if not corpus_name.endswith('-parsed') and not corpus_name.endswith('-tokenised'):
                 parsebut.config(state = NORMAL)
@@ -1574,20 +1581,22 @@ def corpkit_gui():
                 conc_pick_dep_type.config(state = NORMAL)
                 conc_pick_a_query.configure(state = NORMAL)
                 concbut.config(state = DISABLED)
-                pick_a_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(datatype_picked, 'Trees'))
-                pick_a_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(datatype_picked, 'Dependencies'))
+                for i in ['trees', 'words', 'POS', 'lemmata', 'governors', \
+                    'dependents', 'functions', 'n-grams', 'stats']:
+                    pick_a_datatype['menu'].add_command(label = i, command=Tkinter._setit(datatype_picked, i))
+                
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
                 pick_a_conc_datatype['menu'].add_command(label = 'Dependencies', command=Tkinter._setit(corpus_search_type, 'Dependencies'))
                 #parsebut.config(state = DISABLED)
                 #speakcheck_build.config(state = DISABLED)
-                datatype_picked.set('Dependencies')
+                datatype_picked.set('words')
                 corpus_search_type.set('Dependencies')
             if not corpus_name.endswith('-tokenised'):
                 if not corpus_name.endswith('-parsed'):
-                    pick_a_datatype['menu'].add_command(label = 'Plaintext', command=Tkinter._setit(datatype_picked, 'Plaintext'))
-                    pick_a_conc_datatype['menu'].add_command(label = 'Plaintext', command=Tkinter._setit(datatype_picked, 'Plaintext'))
-                    datatype_picked.set('Plaintext')
-                    corpus_search_type.set('Plaintext')
+                    pick_a_datatype['menu'].add_command(label = 'words', command=Tkinter._setit(datatype_picked, 'words'))
+                    pick_a_conc_datatype['menu'].add_command(label = 'words', command=Tkinter._setit(datatype_picked, 'words'))
+                    datatype_picked.set('words')
+                    corpus_search_type.set('words')
                     
             else:
                 pick_a_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
@@ -1732,11 +1741,11 @@ def corpkit_gui():
         # query
         entrytext = StringVar()
 
-        Label(interro_opt, text = 'Query:').grid(row = 4, column = 0, sticky = 'NW', pady = (5,0))
+        Label(interro_opt, text = 'Query:').grid(row = 3, column = 0, sticky = 'NW', pady = (5,0))
         entrytext.set(r'JJ > (NP <<# /NN.?/)')
         qa = Text(interro_opt, width = 40, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD, highlightthickness=0)
-        qa.grid(row = 4, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
+        qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
         all_text_widgets.append(qa)
 
         def entry_callback(*args):
@@ -1836,6 +1845,7 @@ def corpkit_gui():
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
             datatype_listbox.delete(0, 'end')
+
             chosen = datatype_picked.get()
             lst = option_dict[chosen]
             for e in lst:
@@ -1862,29 +1872,73 @@ def corpkit_gui():
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
-        Label(interro_opt, text = 'Data type:').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Dependencies', 'Tokens', 'Plaintext')))
+        Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Governors', 'Dependents', 'Functions', 'N-grams', 'Index', 'Stats')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
 
-        Label(interro_opt, text = 'Search type:').grid(row = 3, column = 0, sticky = 'NW')
-        frm = Frame(interro_opt)
-        frm.grid(row = 3, column = 0, columnspan = 2, sticky = E, padx = (4,4))
-        dtscrollbar = Scrollbar(frm)
-        dtscrollbar.pack(side=RIGHT, fill=Y)
+        Label(interro_opt, text = 'Return:').grid(row = 4, column = 0, sticky = 'NW', pady = 10)
 
-        datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 34, height = 5, relief = SUNKEN, bg = '#F4F4F4',
-                            yscrollcommand=dtscrollbar.set, exportselection = False)
-        datatype_listbox.pack()
-        dtscrollbar.config(command=datatype_listbox.yview)
+        # trees, words, functions, governors, dependents, pos, lemma, count
+        frm = Frame(interro_opt)
+        frm.grid(row = 4, column = 0, columnspan = 2, sticky = E, padx = (4,20), pady = 10)
+
+        return_token = StringVar()
+        return_token.set('')
+        ck1 = Checkbutton(frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
+        ck1.select()
+        ck1.grid(row = 0, column = 0, sticky = W)
+
+        return_lemma = StringVar()
+        return_lemma.set('')
+        ck2 = Checkbutton(frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
+        ck2.grid(row = 0, column = 1, sticky = W)
+
+        return_pos = StringVar()
+        return_pos.set('')
+        ck3 = Checkbutton(frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
+        ck3.grid(row = 0, column = 2, sticky = W)
+
+        return_tree = StringVar()
+        return_tree.set('')
+        ck4 = Checkbutton(frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
+        ck4.grid(row = 0, column = 3, sticky = W)
+
+        return_index = StringVar()
+        return_index.set('')
+        ck5 = Checkbutton(frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
+        ck5.grid(row = 1, column = 0, sticky = W)
+
+        return_distance = StringVar()
+        return_distance.set('')
+        ck6 = Checkbutton(frm, text = 'Distance', variable = return_distance, onvalue = 'a', offvalue = '')
+        ck6.grid(row = 1, column = 1, sticky = W)
+
+        return_function = StringVar()
+        return_function.set('')
+        ck7 = Checkbutton(frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
+        ck7.grid(row = 1, column = 2, sticky = W)
+
+        return_count = StringVar()
+        return_count.set('')
+        ck8 = Checkbutton(frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
+        ck8.grid(row = 1, column = 3, sticky = W)
+
+        #dtscrollbar = Scrollbar(frm)
+        #dtscrollbar.pack(side=RIGHT, fill=Y)
+
+        #datatype_listbox = Listbox(frm, selectmode = BROWSE, width = 34, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+        #                    yscrollcommand=dtscrollbar.set, exportselection = False)
+        #datatype_listbox.pack()
+        #dtscrollbar.config(command=datatype_listbox.yview)
         #datatype_chosen_option = StringVar()
         #datatype_chosen_option.set('Get words')
         #datatype_chosen_option.set('w')
-        x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
+        #x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
         # hack: change it now to populate below 
         datatype_picked.set('Trees')
-        datatype_listbox.select_set(0)
+        #datatype_listbox.select_set(0)
 
         def searchtype():
             i = datatype_listbox.curselection()
