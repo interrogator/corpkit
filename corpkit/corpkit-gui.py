@@ -6580,11 +6580,13 @@ def corpkit_gui():
                 prnt = os.path.join('logs', os.path.basename(logpath))
                 timestring('Log saved to "%s".' % prnt)
             import sys
-            if sys.platform == 'darwin':
+            
+            if sys.platform == "win32":
+                os.startfile(logpath)
+            else:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
                 import subprocess
                 subprocess.call(['open', logpath])
-            else:
-                os.startfile(logpath)
 
         # bind select all for every possible widget
 

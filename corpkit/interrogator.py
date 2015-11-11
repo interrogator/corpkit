@@ -187,8 +187,8 @@ def interrogator(path,
     if is_multiquery:
         from corpkit.multiprocess import pmultiquery
         d = { 'path': path, 
-              'query': query, 
               'show': show,
+              'query': query,
               'search': search,
               'lemmatise': lemmatise, 
               'titlefilter': titlefilter, 
@@ -568,6 +568,9 @@ def interrogator(path,
                             single_result['p'] = postag
                     else:
                         single_result['p'] = postag
+                    if not single_result['p']:
+                        single_result['p'] == 'no_pos'
+
 
                 if 'f' in show or function_filter:
                     single_result['f'] = ''
@@ -607,7 +610,7 @@ def interrogator(path,
                         single_result['r'] = '-1'
 
                 if 'i' in show:
-                    single_result['i'] = str(lk.idx)
+                    single_result['i'] = str(lk.id)
 
                 if function_filter:
                     if not re.match(funfil_regex, single_result['f']):
@@ -1587,8 +1590,10 @@ def interrogator(path,
                             else:
                                 sents = corenlp_xml.sentences
                             # run whichever function has been called
-
-                            result_from_file = dep_funct(sents)
+                            if translated_option == 'y':
+                                result_from_file = dep_searcher(sents)
+                            else:
+                                result_from_file = dep_funct(sents)
                             if only_count:
                                 count_results[subcorpus_name] = result_from_file
 
@@ -1618,6 +1623,7 @@ def interrogator(path,
                             if kwargs['split_contractions'] is True:
                                 split_con = True
                         result_from_file = tok_ngrams(query, data, split_contractions = split_con)
+                
                 if result_from_file:
                     if not statsmode and not only_count:
                         for entry in result_from_file:
@@ -1781,9 +1787,6 @@ def interrogator(path,
     # print skipped sent information for distance_mode
     if printstatus and 'r' in show and skipped_sents > 0:
         print '\n          %d sentences over 99 words skipped.\n' % skipped_sents
-
-    if type(paralleling) == int:
-        return (kwargs['outname'], df)
         
     #make results into named tuple
     # add option to named tuple
@@ -1810,6 +1813,9 @@ def interrogator(path,
 
     outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     output = outputnames(the_options, df, stotals)
+
+    if type(paralleling) == int:
+        return (kwargs['outname'], df, stotals)
      
     if have_ipython:
         clear_output()

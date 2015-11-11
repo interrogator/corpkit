@@ -1,5 +1,6 @@
 def pmultiquery(path, 
-    option = 'c', 
+    search,
+    show = 'words',
     query = 'any', 
     sort_by = 'total', 
     quicksave = False,
@@ -99,7 +100,7 @@ def pmultiquery(path,
         raise ValueError('quicksave must be string when using pmultiquery.')
     
     # the options that don't change
-    d = {'option': option,
+    d = {
          #'paralleling': True,
          'function': 'interrogator',
          'root': root,
@@ -118,7 +119,9 @@ def pmultiquery(path,
             name = os.path.basename(p)
             a_dict = dict(d)
             a_dict['path'] = p
+            a_dict['search'] = search
             a_dict['query'] = query
+            a_dict['show'] = show
             a_dict['outname'] = name.replace('-parsed', '')
             a_dict['just_speakers'] = just_speakers
             a_dict['paralleling'] = index
@@ -128,7 +131,9 @@ def pmultiquery(path,
         for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
             a_dict['path'] = path
+            a_dict['search'] = search
             a_dict['query'] = q
+            a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
             a_dict['paralleling'] = index
@@ -138,7 +143,9 @@ def pmultiquery(path,
         for index, (name, q) in enumerate(function_filter.items()):
             a_dict = dict(d)
             a_dict['path'] = path
+            a_dict['search'] = search
             a_dict['query'] = query
+            a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
             a_dict['paralleling'] = index
@@ -149,7 +156,9 @@ def pmultiquery(path,
         for index, name in enumerate(just_speakers):
             a_dict = dict(d)
             a_dict['path'] = path
+            a_dict['search'] = search
             a_dict['query'] = query
+            a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = [name]
             a_dict['function_filter'] = function_filter
@@ -245,26 +254,17 @@ def pmultiquery(path,
 
     # turn list into dict of results, make query and total branches,
     # save and return
-    if not option.startswith('c'):
+    if 'c' not in show:
         out = {}
         #print ''
-        for (name, data), d in zip(res, ds):
+        for (name, data, stotal), d in zip(res, ds):
             for unpicklable in ['note', 'root']:
                 try:
                     del d[unpicklable]
                 except KeyError:
                     pass
-            if not option.startswith('k'):
-                outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-                try:
-                    stotal = data.sum(axis = 1)
-                    stotal.name = u'Total'
-                except ValueError:
-                    stotal = data.sum()
-                output = outputnames(d, data, stotal)
-            else:
-                outputnames = collections.namedtuple('interrogation', ['query', 'results'])
-                output = outputnames(d, data)
+            outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+            output = outputnames(d, data, stotal)
             out[name] = output
     
         # could be wrong for unstructured corpora?
@@ -301,9 +301,10 @@ def pmultiquery(path,
         return out
 
 if __name__ == '__main__':
-    pmultiquery(path, 
-    option = False, 
-    query = False, 
+    pmultiquery(path,
+    search,
+    query = False,
+    show = 'words', 
     sort_by = False, 
     quicksave = False,
     num_proc = False, 
