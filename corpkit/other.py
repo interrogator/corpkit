@@ -1367,3 +1367,47 @@ def determine_datatype(path):
     elif mc == '.p':
         return 'tokens'
         
+def make_multi(interrogation):    
+    """make multiindex version of an interrogation (for pandas geeks)"""
+
+    # get proper names for index if possible
+    translator = {'f': 'Function',
+                  'l': 'Lemma',
+                  'a': 'Distance',
+                  'w': 'Word',
+                  't': 'Trees',
+                  'i': 'Index',
+                  'n': 'N-grams',
+                  'p': 'POS',
+                  'g': 'Governor',
+                  'd': 'Dependent'}
+    import numpy as np
+    import pandas as pd
+    # determine datatype, get df and cols
+    indexnames = False
+    if type(interrogation) == pd.core.frame.DataFrame:
+        df = interrogation
+        cols = list(interrogation.columns)
+    elif type(interrogation) == pd.core.series.Series:
+        cols = list(interrogation.index)
+        df = pd.DataFrame(interrogation).T
+    else:
+        cols = list(interrogation.results.columns)
+        df = interrogation.results
+        # set indexnames if we have them
+        indexnames = [translator[i] for i in interrogation.query['show']]
+
+    # split column names on slash
+    for index, i in enumerate(cols):
+        cols[index] = i.split('/')
+
+    # make numpy arrays
+    arrays = []
+    for i in range(len(cols[0])):
+        arrays.append(np.array([x[i] for x in cols]))
+    
+    # make output df, add names if we have them
+    newdf = pd.DataFrame(df.T.as_matrix(), index=arrays).T
+    if indexnames:
+        newdf.columns.names = indexnames
+    return newdf

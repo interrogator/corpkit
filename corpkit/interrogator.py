@@ -423,7 +423,7 @@ def interrogator(path,
         # if we have funct:word, spellfix the word only
         if dependency and not function_filter:
             for result in list_of_matches:
-                funct, word = result.split(':', 1)
+                funct, word = result.split('/', 1)
                 try:
                     word = usa_convert[word]
                     result = u'%s:%s' % (funct, word)
@@ -489,7 +489,7 @@ def interrogator(path,
            word
            index
 
-           return ':'-sep list of 'show' keyword arg:
+           return '/'-sep list of 'show' keyword arg:
 
            governor
            dependent
@@ -631,7 +631,7 @@ def interrogator(path,
                     for i in show:
                         out.append(single_result[i])
 
-                    result.append(':'.join(out))
+                    result.append('/'.join(out))
         
         if 'c' in show:
             result = sum(result)
