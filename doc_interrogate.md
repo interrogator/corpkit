@@ -179,17 +179,17 @@ So, to give some examples of output based on the sentence above:
 
 | Search  | Query  | Return | Function filter  | POS filter  | Output |
 |---|---:|---:|---:|---:|---:|
-| <i>Function</i>  | `lead\b`  | |   |   | <b>`dobj`</b>  |
-| <i>Function</i>  | `LIST:CLOSEDCLASS`  | | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
-| <i>Function</i> | `any`  | | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
-| <i>Function</i>  | LIST:PARTICIPANT  | <i>Word</i> |  |   | <b>`I`</b>, <b>`lead`</b>  |
-| <i>Function</i>  | LIST:PARTICIPANT  | <i>Word</i> |  | `^P`  | <b>`I`</b> |
-| <i>Words</i> | `^to$` | <i>Distance</i>  |  |  | <b>2</b>  |
-| <i>Lemmata</i>  | `\bfollow.*`  | <i>Function</i>, <i>Dependent</i> |  |  | <b>`to`, `lead`</b>  |
-| <i>Lemmata</i>  | `\bfollow.*`  | <i>Word</i>  |  | `^N.*`  | <b>`lead`</b>  |
-| <i>Lemmata</i>  | `^tr`  |  <i>Function</i>, <i>Lemma</i>|  | `MD`  | <b>`aux:would`</b>  |
-| <i>Words</i> | <code>^(would&#124;will&#124;wo)</code> | <i>Function</i>, <i>Governor</i>   |  |   |  <b>`aux:try` </b>  |
-| <i>Function</i> | <code>(dobj&#124;nsubj)</code>  | <i>Governor</i> | |  |  <b>`try`, `follow`</b>   |
+| <code>Function</code>  | `lead\b`  | |   |   | <b>`dobj`</b>  |
+| <code>Function</code>  | `LIST:CLOSEDCLASS`  | | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <code>Function</code> | `any`  | <code>Lemmata</code> | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
+| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  |   | <b>`I`</b>, <b>`lead`</b>  |
+| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  | `^P`  | <b>`I`</b> |
+| <code>Words</code> | `^to$` | <code>Distance</code>  |  |  | <b>2</b>  |
+| <code>Lemmata</code>  | `\bfollow.*`  | <code>Function</code>, <code>Dependent</code> |  |  | <b>`to`, `lead`</b>  |
+| <code>Lemmata</code>  | `\bfollow.*`  | <code>Word</code>  |  | `^N.*`  | <b>`lead`</b>  |
+| <code>Lemmata</code>  | `^tr`  |  <code>Function</code>, <code>Lemma</code>|  | `MD`  | <b>`aux:would`</b>  |
+| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |   |  <b>`aux:try` </b>  |
+| <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  |  <b>`try`, `follow`</b>   |
 
 ### Plain text
 
