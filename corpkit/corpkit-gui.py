@@ -1582,6 +1582,9 @@ def corpkit_gui():
             else:
                 if datatype_picked.get() not in ['Trees', 'N-grams']:
                     pick_dep_type.config(state = NORMAL)
+                    q.config(state = NORMAL)
+                else:
+                    q.config(state = DISABLED)
                 sensplitbut.config(state = DISABLED)
                 conc_pick_dep_type.config(state = NORMAL)
                 conc_pick_a_query.configure(state = NORMAL)
@@ -1653,7 +1656,6 @@ def corpkit_gui():
                 ck4.config(state=NORMAL)
             else:
                 ck4.config(state=DISABLED)
-
 
         Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
@@ -1917,9 +1919,13 @@ def corpkit_gui():
                 ck10.config(state=NORMAL)
                 ck10.deselect()
                 ck10.config(state=DISABLED)
+                q.config(state=DISABLED)
+                qr.config(state=DISABLED)
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                           'Index', 'Distance', 'POS', 'Lemmata']:
+                q.config(state=NORMAL)
+                qr.config(state=NORMAL)
                 ck1.config(state=NORMAL)
                 ck2.config(state=NORMAL)
                 ck3.config(state=NORMAL)
