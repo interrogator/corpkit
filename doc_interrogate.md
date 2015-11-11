@@ -177,19 +177,19 @@ For the `role:governor` and `role:dependent` search options, if you use a functi
 
 So, to give some examples of output based on the sentence above:
 
-| Option  | Query  | Function filter  | POS filter  | Output |
-|---|---:|---:|---:|---:|
-| <i>Get role of match</i>  | `lead\b`  |   |   | <b>`dobj`</b>  |
-| <i>Get role of match</i>  | `LIST:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
-| <i>Get tokens by role</i> | `any`  | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
-| <i>Get tokens by role</i>  | LIST:PARTICIPANT  |   |   | <b>`I`, `lead`  |
-| <i>Get tokens by role</i>  | LIST:PARTICIPANT  |   | `^P`  | <b>`I`</b> |
-| <i>Get distance from root</i> | `^to$` |   |   | <b>2</b>  |
-| <i>Get "role:dependent"</i>  | `\bfollow.*`  |   |  | <b>`to`, `lead`</b>  |
-| <i>Get "role:dependent"</i>  | `\bfollow.*`  |   | `^N.*`  | <b>`lead`</b>  |
-| <i>Get "role:dependent"</i>  | `^tr`  |   | `MD`  | <b>`aux:would`</b>  |
-| <i>Get "role:governor"</i> | <code>^(would&#124;will&#124;wo)</code> |    |    |  <b>`aux:try` </b>  |
-| <i>Get "role:governor"</i> | `any` | <code>(dobj&#124;nsubj)</code>  |   |  <b>`try`, `follow`</b>   |
+| Search  | Query  | Return | Function filter  | POS filter  | Output |
+|---|---:|---:|---:|---:|---:|
+| <i>Function</i>  | `lead\b`  | |   |   | <b>`dobj`</b>  |
+| <i>Function</i>  | `LIST:CLOSEDCLASS`  | | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <i>Function</i> | `any`  | | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
+| <i>Function</i>  | LIST:PARTICIPANT  | <i>Word</i> |  |   | <b>`I`</b>, <b>`lead`</b>  |
+| <i>Function</i>  | LIST:PARTICIPANT  | <i>Word</i> |  | `^P`  | <b>`I`</b> |
+| <i>Words</i> | `^to$` | <i>Distance</i>  |  |  | <b>2</b>  |
+| <i>Lemmata</i>  | `\bfollow.*`  | <i>Function</i>, <i>Dependent</i> |  |  | <b>`to`, `lead`</b>  |
+| <i>Lemmata</i>  | `\bfollow.*`  | <i>Word</i>  |  | `^N.*`  | <b>`lead`</b>  |
+| <i>Lemmata</i>  | `^tr`  |  <i>Function</i>, <i>Lemma</i>|  | `MD`  | <b>`aux:would`</b>  |
+| <i>Words</i> | <code>^(would&#124;will&#124;wo)</code> | <i>Function</i>, <i>Governor</i>   |  |   |  <b>`aux:try` </b>  |
+| <i>Function</i> | <code>(dobj&#124;nsubj)</code>  | <i>Governor</i> | |  |  <b>`try`, `follow`</b>   |
 
 ### Plain text
 
