@@ -2,7 +2,7 @@ def quickview(results, n = 25):
     """view top n results of results.
 
     :param results: Interrogation/edited result to view
-    :type results: pandas.core.frame.DataFrame
+    :type results: corpkit.interrogation/pandas.core.frame.DataFrame
     :param n: Show top *n* results
     :type n: int
     """
@@ -1311,8 +1311,8 @@ def get_fullpath_to_jars(path_var):
     if all(os.path.isfile(os.path.join(path_var_str, f)) for f in important_files):
         path_var.set(path_var_str)
         return True
-    # if the user selected the parent dir:
 
+    # if the user selected the parent dir:
     if os.path.isdir(path_var_str):
         # get subdirs containing the jar
         try:
@@ -1324,6 +1324,7 @@ def get_fullpath_to_jars(path_var):
         if len(find_install) > 0:
             path_var.set(os.path.join(path_var_str, find_install[0]))
             return True
+
     # need to fix this duplicated code
     try:
         home = os.path.expanduser("~")
@@ -1342,7 +1343,6 @@ def get_fullpath_to_jars(path_var):
                 return True
     except:
         pass
-        
     return False
 
 def determine_datatype(path):
@@ -1366,9 +1366,19 @@ def determine_datatype(path):
         return 'plaintext'
     elif mc == '.p':
         return 'tokens'
-        
-def make_multi(interrogation):    
-    """make multiindex version of an interrogation (for pandas geeks)"""
+
+
+def make_multi(interrogation, indexnames = None):    
+    """
+    make pd.multiindex version of an interrogation (for pandas geeks)
+
+    :param interrogation: a corpkit interrogation
+    :type interrogation: a corpkit interrogation, pd.DataFrame or pd.Series
+
+    :param indexnames: pass in a list of names for the multiindex;
+                       leave as None to get them if possible from interrogation
+                       use False to explicitly not get them
+    :type indexnames: list of strings/None/False"""
 
     # get proper names for index if possible
     translator = {'f': 'Function',
@@ -1384,7 +1394,6 @@ def make_multi(interrogation):
     import numpy as np
     import pandas as pd
     # determine datatype, get df and cols
-    indexnames = False
     if type(interrogation) == pd.core.frame.DataFrame:
         df = interrogation
         cols = list(interrogation.columns)
@@ -1395,7 +1404,8 @@ def make_multi(interrogation):
         cols = list(interrogation.results.columns)
         df = interrogation.results
         # set indexnames if we have them
-        indexnames = [translator[i] for i in interrogation.query['show']]
+        if indexnames is not False:
+            indexnames = [translator[i] for i in interrogation.query['show']]
 
     # split column names on slash
     for index, i in enumerate(cols):
@@ -1410,4 +1420,5 @@ def make_multi(interrogation):
     newdf = pd.DataFrame(df.T.as_matrix(), index=arrays).T
     if indexnames:
         newdf.columns.names = indexnames
+    pd.set_option('display.multi_sparse', False)
     return newdf
