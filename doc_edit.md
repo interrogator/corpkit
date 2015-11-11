@@ -61,11 +61,11 @@ You decide you want to get the relative frequency of plural nouns compared to:
 2. All nouns
 3. All tokens
 
-To do this, you need to go back to the `Interrogate` tab and perform three interrogations, all using the `Trees` data type. First, you use `Get words` with a query that will match plural nouns. You give the interrogation a memorable name: `list plural`:
+To do this, you need to go back to the `Interrogate` tab and perform three interrogations, all using the `Trees` search type. First, you use `Get words` with a query that will match plural nouns. You give the interrogation a memorable name: `list plural`:
 
 > `/NNP?S/ < __`
 
-Second, you use the `Count tokens` search type, and define a query to match any noun (name: `count noun`):
+Second, you select `Count` as the return value, and define a query to match any noun (name: `count noun`):
 
 > `/NN.?/ < __`
 
