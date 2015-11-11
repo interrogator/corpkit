@@ -139,7 +139,7 @@ In dependency grammar, words in sentences are connected in a series of governor-
 <img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png"  height="60" width="400"/>
 </p>
 
-The best source of information and dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
+The best source of information on CoreNLP's dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
 
 #### Dependency queries
 
