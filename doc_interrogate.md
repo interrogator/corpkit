@@ -14,22 +14,43 @@ If you were working in the `Build` tab, *corpkit* will try to guess the corpus y
 
 Your choice will constrain the kinds of data that you can search.
 
-## Selecting a kind of data
+## Selecting something to search
 
-*corpkit* can presently work with four kinds of data:
+*corpkit* is designed to deal with *parsed* corpora. As such, you can search many more things than simply the text itself. Options here will be enabled or disabled depending on whether or not the corpus selected is parsed, tokenised, or plaintext. The most options are available when working with parsed corpora. Currently, you can search:
 
-1. Constituency parse trees
-2. Dependency parses
-3. Plain text
-4. Tokenised corpora
+| Search           | Description |
+|------------------------|---------------------------------------------------|
+| `Trees` | Search parse trees using Tregex syntax
+| `Words`      | Words/tokens as they originally appeared in the text          |
+| `Lemma`      | Search lemmatised forms of each token      |
+| `POS`      |  Search by part-of-speech tag      |
+| `Function` | Find tokens by their dependency function |
+| `Index`      | Search by position in sentence (0 == leftmost, etc)       |
+| `N-gramming`      | Find n-grams/clusters       |
+| `Stats` | Get general stats (number of tokens, clauses, etc.) | 
 
-The first two can both be found inside the parsed version of a corpus. The third is the unparsed version of the corpus. The fourth is your corpus as a list of tokens, which can be created via the `Build` tab.
+### Choosing what to return
 
-When you select a kind of data, the kinds of search that are available to you change, as do the kinds of queries that can be understood. These will be explained in the next sections.
+Once *corpkit* matches your search query, you can tell it what you'd like it to give you back. You may want the lexical items themselves, but you could also get their lemma form, index, POS, function, etc.
+
+In addition to the above options, you can also choose to return:
+
+| Search           | Description |
+|------------------------|---------------------------------------------------|
+| `Governor` | Get the token governing *match* |
+| `Dependent` | Get the token(s) dependent on *match* |
+| `Distance` | Number of links needed to get from *match* to *parse root* |
+| `Count` | Count occurrences only |
+
+Notice that you can choose to return multiple values. These are strung together using a colon as a separator. If you search for `'think`' as lemma, and select `POS`, `Lemma` and `Word`, you might get:
+
+> `vbz:think:thinks`
+
+You can then use the `edit` tab to process these results in complex ways.
 
 ### Trees
 
-If you want to search for information in `trees`, you'll need to write a *Tregex query*. Tregex is a language for searching syntax trees like this one:
+If you have elected to search `Trees`, you'll need to write a *Tregex query*. Tregex is a language for searching syntax trees like this one:
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png"  height="400" width="400"/>
@@ -77,7 +98,7 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 #### Search types
 
-Though you can use the same Tregex query for most Tree search types, you'll get different output for each. For the sentence:
+Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value.
 
 > `These are prosperous times.`
 
@@ -89,14 +110,14 @@ Which would return:
 
 | Search type       | Output      |
 |--------|--------|
-| Get words       | `prosperous`       |
-| Get tag and word of match       | `(JJ prosperous)`       |
-| Count matches       | `1` (added to total)       |
-| Get part-of-speech tag       |  `JJ`      |
+| Words       | `prosperous`       |
+| Tree       | `(JJ prosperous)`       |
+| Count       | `1` (added to total)       |
+| POS       |  `JJ`      |
 
 #### Ngramming via trees
 
-You can also use trees to get n-grams or clusters. If you choose the search type `Get ngrams from trees`, the default query becomes 'any', which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
+You can also use trees to get n-grams or clusters. If you choose the `N-grams` search type, the default query becomes 'any', which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
 
 When n-gramming, two extra options are enabled. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
 
@@ -109,6 +130,8 @@ When searching with trees, there are a few extra options available.
 When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people.
 
 ### Dependencies
+
+When you search `Words`, `Lemma`, `Function`, 'Index' or `POS`, *corpkit* will be interrogating dependency parses.
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -138,23 +161,9 @@ Your data has actually been annotated with three slightly different dependency g
 
 For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
-#### Dependency search types
+#### Dependency return values
 
-There are many potentially interesting things in dependency annotations, and, accordingly, many different kinds of search available for them. 
-
-The different options match and print different combinations of *governors*, *dependents* and *relationships*. In each case, the kind of query you'll write is a Regular Expression or list.
-
-Below is a basic explanation of what each kind of query matches, and what it outputs.
-
-| Search type            | Query matches | Output                             |
-|------------------------|----------|-----------------------------------------|
-| Get role of match      | Token   |  Token's role                            |
-| Get lemmata of match   | Token   |  Token's lemma form                      |
-| Get tokens             | Token   |  Token                                   |
-| Get tokens by role     | Role    |  Role's dependent                        |
-| Get distance from root | Token   |  Number of steps away from root position |
-| Get "role:dependent", matching governor  |  Governor  | role:dependent      |
-| Get "role:governor", matching dependent  |  Dependent | role:governor       |
+You can choose which 
 
 #### Dependency options
 
