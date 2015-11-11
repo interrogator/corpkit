@@ -131,7 +131,7 @@ When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`
 
 ### Dependencies
 
-When you search `Words`, `Lemma`, `Function`, 'Index' or `POS`, *corpkit* will be interrogating dependency parses.
+When you search `Words`, `Lemma`, `Function`, `Index` or `POS`, *corpkit* will be interrogating dependency parses.
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -203,7 +203,7 @@ Plain text searching is language independent, but otherwise not very powerful. L
 
 As with plain text, you can use either a list or a regular expression to match tokens.
 
-An additional option, however, is to *Get n-grams*. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted. The behaviour is the same as when getting n-grams via trees.
+An additional option, however, is `N-grams`. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted. The behaviour is the same as when getting n-grams via trees.
 
 {{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, though they in general allow less sophisticated interrogation, and are not a high priorty. {{end}}
 
