@@ -456,7 +456,12 @@ def interrogator(path,
         root_found = False
         while not root_found:
             if c == 0:
-                link_to_check = lk
+                try:
+                    link_to_check = next(i for i in lks if i.dependent.idx == lk.id)
+                except StopIteration:
+                    root_found = True
+                    break
+                #link_to_check = lk
             gov_index = link_to_check.governor.idx
             if gov_index == 0:
                 root_found = True
@@ -494,107 +499,105 @@ def interrogator(path,
            word
            index
            distance
-           count"""
+           
+           ... or just return int count.
+
+           the way to get this done is to get the matching entity as **token class**.
+           then, there is an unambiguous thing to print every time"""
         
         result = []
         for s in sents:
+            lks = []
             deps = get_deps(s, dep_type)
+            tokens = s.tokens
             if search.lower().startswith('g'):
-                lks = [l for l in deps.links if re.match(regex, l.governor.text)]
-            if search.lower().startswith('d'):
-                lks = [l for l in deps.links if re.match(regex, l.dependent.text)]
-            if search.lower().startswith('f'):
-                lks = [l for l in deps.links if re.match(regex, l.type)]
-            
-            # something broken here, not getting enough results
-            if search.lower().startswith('p'):
-                lks = []
-                for i in deps.links:
-                    try:
-                        pos = s.get_token_by_id(i.governor.idx).pos
-                        if re.match(regex, pos):
-                            lks.append(i)
-                    except:
-                        pass
-            if search.lower().startswith('l'):
-                lks = [l for l in deps.links \
-                      if s.get_token_by_id(l.governor.idx) and \
-                      re.match(regex, s.get_token_by_id(l.governor.idx).lemma)]
+                for l in deps.links:
+                    if re.match(regex, l.governor.text):
+                        lks.append(s.get_token_by_id(l.governor.idx))
+            elif search.lower().startswith('d'):
+                for l in deps.links:
+                    if re.match(regex, l.dependent.text):
+                        lks.append(s.get_token_by_id(l.dependent.idx))
+            elif search.lower().startswith('f'):
+                for l in deps.links:
+                    if re.match(regex, l.type):
+                        lks.append(s.get_token_by_id(l.dependent.idx))
 
-            if search.lower().startswith('w'):
-                lks = [l for l in deps.links \
-                      if s.get_token_by_id(l.governor.idx) and \
-                      re.match(regex, s.get_token_by_id(l.governor.idx).word)]
+            elif search.lower().startswith('p'):
+                for tok in tokens:
+                    if re.match(regex, tok.pos):
+                        lks.append(tok)
+            elif search.lower().startswith('l'):
+                for tok in tokens:
+                    if re.match(regex, tok.lemma):
+                        lks.append(tok)
+            elif search.lower().startswith('w'):
+                for tok in tokens:
+                    if re.match(regex, tok.word):
+                        lks.append(tok)
+            elif search.lower().startswith('i'):
+                for tok in tokens:
+                    if re.match(regex, str(tok.id)):
+                        lks.append(tok)
 
-            if search.lower().startswith('i'):
-                lks = [l for l in deps.links if re.match(regex, str(l.governor.idx))]
+            lks = [x for x in lks if re.search(regex_nonword_filter, x.word)]
 
             if only_count:
                 result.append(len(lks))
                 continue
 
-            # now we have all links, we have to get all possible results
-            # remember that there could be more than one match (i.e. multiple dependents)
-            all_dependents = []
-            if 'd' in show:
-                for lk in lks:
-                    depends = lk.governor._dependents.values()
-                    for depend in depends:
-                        try:
-                            all_dependents.append(depend[0])
-                        except:
-                            pass
-                lks = all_dependents
-
-            # make a dict of show type and result
             for lk in lks:
                 single_result = {}
-                if 'g' in show:
-                    if lemmatise:
-                        try:
-                            single_result['g'] = s.get_token_by_id(lk.governor.idx).lemma
-                        # is root? #
-                        except:
-                            single_result['g'] = 'root'
-                    else:
-                        single_result['g'] = lk.governor.text
-                if 'd' in show:
-                    if lemmatise:
-                        single_result['d'] = s.get_token_by_id(lk.dependent.idx).lemma
-                    else:
-                        single_result['d'] = lk.dependent.text
-                # ? #
+                node = deps.get_node_by_idx(lk.id)
+
                 if 'w' in show:
                     if lemmatise:
-                        single_result['w'] = s.get_token_by_id(lk.governor.idx).lemma
+                        single_result['w'] = lk.lemma
                     else:
-                        single_result['w'] = lk.governor.text
-
-                if 'p' in show:
-                    postag = s.get_token_by_id(lk.governor.idx).pos
-                    if not postag:
-                        single_result['p'] = 'none'
-                    else:
-                        if lemmatise:
-                            if postag in taglemma.keys():
-                                single_result['p'] = taglemma[postag]
-                            else:
-                                single_result['p'] = postag
-                        else:
-                            single_result['p'] = postag
-
-                if 'f' in show:
-                    single_result['f'] = lk.type
+                        single_result['w'] = lk.word
 
                 if 'l' in show:
-                    if search.lower().startswith('d'):
-                        single_result['l'] = s.get_token_by_id(lk.dependent.idx).lemma
+                    single_result['l'] = lk.lemma
+
+                if 'p' in show or pos_filter:
+                    postag = lk.pos
+                    if lemmatise:
+                        if postag in taglemma.keys():
+                            single_result['p'] = taglemma[postag]
+                        else:
+                            single_result['p'] = postag
                     else:
-                        try:
-                            single_result['l'] = s.get_token_by_id(lk.governor.idx).lemma
-                        except:
-                            single_result['l'] = 'root'
-                
+                        single_result['p'] = postag
+
+                if 'f' in show or function_filter:
+                    single_result['f'] = ''
+                    for i in deps.links:
+                        if i.dependent.idx == lk.id:
+                            single_result['f'] = i.type
+                            break
+                    if single_result['f'] == '':
+                        single_result['f'] = 'root'
+
+                if 'g' in show:
+                    single_result['g'] = 'none'
+                    for i in deps.links:
+                        if i.dependent.idx == lk.id:
+                            if lemmatise:
+                                single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
+                            else:
+                                single_result['g'] = i.governor.text
+                            break
+
+                if 'd' in show:
+                    single_result['d'] = 'none'
+                    for i in deps.links:
+                        if i.governor.idx == lk.id:
+                            if lemmatise:
+                                single_result['d'] = s.get_token_by_id(i.dependent.idx).lemma
+                            else:
+                                single_result['d'] = i.dependent.text
+                            break
+
                 if 'r' in show:
                     all_lks = [l for l in deps.links]
                     distance = distancer(all_lks, lk)
@@ -604,7 +607,19 @@ def interrogator(path,
                         single_result['r'] = '-1'
 
                 if 'i' in show:
-                    single_result['i'] = str(lk.governor.idx)
+                    single_result['i'] = str(lk.idx)
+
+                if function_filter:
+                    if not re.match(funfil_regex, single_result['f']):
+                        if 'f' not in show:
+                            del single_result['f']
+                        continue
+
+                if pos_filter:
+                    if not re.match(pos_regex, single_result['p']):
+                        if 'p' not in show:
+                            del single_result['p']
+                        continue
 
                 if not only_count:
                     
@@ -874,10 +889,10 @@ def interrogator(path,
     for i in show:
         cutshort.append(i[0].lower())
 
-    if search == 'g' and 'g' in show:
-        raise ValueError("Can't show governor of governor")
-    if search == 'd' and 'd' in show:
-        raise ValueError("Can't show dependent of dependent")
+    #if search == 'g' and 'g' in show:
+    #    raise ValueError("Can't show governor of governor")
+    #if search == 'd' and 'd' in show:
+    #    raise ValueError("Can't show dependent of dependent")
 
     # Tregex option:
     translated_option = False

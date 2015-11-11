@@ -608,11 +608,7 @@ def multiquery(corpus, query, sort_by = 'total', quicksave = False):
         save_result(results, quicksave)
     return results
 
-
-    # if nothing, the query's fine! 
-
 def interroplot(path, query):
-    import corpkit
     """Demo function for interrogator/plotter.
 
     1. Interrogates path with Tregex query, 
@@ -625,8 +621,11 @@ def interroplot(path, query):
     :type query: str
 
     """
+    
+    
+    import corpkit
     from corpkit import interrogator, editor, plotter
-    quickstart = interrogator(path, 'words', query)
+    quickstart = interrogator(path, 'words', query, show = ['w'])
     edited = editor(quickstart.results, '%', quickstart.totals, print_info = False)
     plotter(str(path), edited.results)
 
@@ -815,7 +814,7 @@ def tregex_engine(corpus = False,
             query = 'NP'
         # if checking for trees, use the -T option
         if check_for_trees:
-            options = ['-o', '-T', '-s']
+            options = ['-o', '-T']
 
         filenaming = False
         try:
@@ -825,15 +824,15 @@ def tregex_engine(corpus = False,
             pass
 
         if return_tuples or lemmatise:
-            options = ['-o', '-s']
+            options = ['-o']
         # append list of options to query 
         if options:
-            if '-s' not in options:
+            if '-s' not in options and '-t' not in options:
                 options.append('-s')
             [tregex_command.append(o) for o in options]
         # dummy option
         else:
-            options = ['-o', '-t', '-s']
+            options = ['-o', '-t']
         if query:
             tregex_command.append(query)
         if corpus:

@@ -75,8 +75,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 <a name="interrogator"></a>
 #### `interrogator()`
 
-* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees or plain text for complex lexicogrammatical phenomena
-* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent or index of a token matching a regular expression
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
+* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
 * Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
 * Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code)), and chart their keyness
@@ -240,8 +240,8 @@ Here's an example of the three functions at work on the NYT corpus:
 # in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
-# count terminals/leaves of trees only, and do lemmatisation:
->>> risk_of = interrogator(corpus, 'words', q, lemmatise = True)
+# search trees, output lemma
+>>> risk_of = interrogator(corpus, 'trees', q, show = ['l'])
 
 # use editor to turn absolute into relative frequencies
 >>> to_plot = editor(risk_of.results, '%', risk_of.totals)
@@ -299,7 +299,7 @@ When interrogating or concordancing, you can then pass in a keyword argument to 
 
 ```python
 >>> s = ['BRISCOE', 'LOGAN']
->>> npheads = interrogator(parsed, 'words', r'/NN.?/ >># NP', just_speakers = s)
+>>> npheads = interrogator(parsed, 'trees', r'/NN.?/ >># NP', just_speakers = s)
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
@@ -362,7 +362,7 @@ Because I mostly use systemic functional grammar, there is also a simple tool fo
 # use verbal process regex as the query
 # deprole finds the dependent of verbal processes, and its functional role
 # keep only results matching function_filter regex
->>> sayers = interrogator(corpus, 'd', processes.verbal, 
+>>> sayers = interrogator(corpus, 'lemmata', processes.verbal, show = 'dependent',
 ...    function_filter = r'^nsubj$', lemmatise = True)
 
 # have a look at the top results
@@ -479,9 +479,9 @@ As I see it, there are two main problems with keywording, as typically performed
 So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With *corpkit*, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
 ```python
-# just heads of participants (no pronouns, though!)
+# just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
->>> p = interrogator(corpus, 'words', part, lemmatise = True)
+>>> p = interrogator(corpus, 'trees', part, show = 'l')
 ```
 
 When using `editor()` to calculate keywords, there are a few default parameters that can be easily changed:
@@ -621,14 +621,6 @@ erm           -2429.29            thought   -255.72
 yeah          -3179.90            will      -679.06
 ```
 
-Finally, for the record, you could also use `interrogator()` or `keywords()` to calculate keywords, though these options may offer less flexibility:
-
-```python
->>> from corpkit import keywords
->>> keys = keywords(p.results.ix['2002'], reference_corpus = p.results)
->>> keys = interrogator(corpus, 'keywords', 'any', reference_corpus = 'self')
-```
-
 <a name="parallel-processing"></a>
 ### Parallel processing
 
@@ -646,7 +638,7 @@ Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *p
 ...      'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
->>> processes = interrogator(corpus, 'count', q)
+>>> processes = interrogator(corpus, 'trees', q, show = 'count')
 >>> proc_rel = editor(processes.results, '%', processes.totals)
 >>> plotter('Risk processes', proc_rel.results)
 ```
@@ -666,7 +658,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
->>> noun_riskers = interrogator(c, 'words', query, lemmatise = True)
+>>> noun_riskers = interrogator(c, 'trees', query, show = 'l')
  
 >>> quickview(noun_riskers, 10)
 ```
@@ -716,7 +708,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```python
 # find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
->>> noun_lemmata = interrogator(corpus, 'words', query, lemmatise = True)
+>>> noun_lemmata = interrogator(corpus, 'trees', query, show = 'l')
 
 # get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
@@ -740,7 +732,7 @@ Output:
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
->>> modals = interrogator(annual_trees, 'words', 'MD < __')
+>>> modals = interrogator(annual_trees, 'trees', 'MD < __', show = 'l')
 # simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = editor(modals.results, '%', modals.totals)
 

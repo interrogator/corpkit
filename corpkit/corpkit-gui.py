@@ -1322,7 +1322,7 @@ def corpkit_gui():
                     query = qa.get(1.0, END)
                     query = query.replace('\n', '')
                     # allow list queries
-                    if query.startswith('[') and query.endswith(']'):
+                    if query.startswith('[') and query.endswith(']') and ',' in query:
                         query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                     #elif transdict[searchtype()] in ['e', 's']:
                         #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
@@ -1340,7 +1340,7 @@ def corpkit_gui():
                 ff = False
 
             if blklst.get() is not False and blklst.get() != '':
-                if blklst.get().startswith('[') and blklst.get().endswith(']'):
+                if blklst.get().startswith('[') and blklst.get().endswith(']') and ',' in blklst.get():
                     blackl = blklst.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     blackl = remake_special_query(blklst.get())
@@ -1374,9 +1374,10 @@ def corpkit_gui():
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
 
-            poss_returns = [return_token, return_lemma, return_pos, return_tree, \
-                            return_index, return_distance, return_function, return_count,
-                            return_gov, return_dep]
+            # to do: make this order customisable for the gui too
+            poss_returns = [return_function, return_pos, return_lemma, return_token, \
+                            return_gov, return_dep, return_tree, \
+                            return_index, return_distance, return_count]
 
             to_show = [i.get() for i in poss_returns if i.get() != '']
             interrogator_args['show'] = to_show
@@ -1585,8 +1586,8 @@ def corpkit_gui():
                 conc_pick_dep_type.config(state = NORMAL)
                 conc_pick_a_query.configure(state = NORMAL)
                 concbut.config(state = DISABLED)
-                for i in ['Trees', 'Words', 'POS', 'Lemmata', 'Governors', \
-                    'Dependents', 'Functions', 'N-grams', 'Stats', 'Index']:
+                for i in ['Trees', 'Words', 'POS', 'Lemmata', \
+                          'Functions', 'N-grams', 'Stats', 'Index']:
                     pick_a_datatype['menu'].add_command(label = i, command=Tkinter._setit(datatype_picked, i))
                 
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
@@ -1961,11 +1962,10 @@ def corpkit_gui():
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
         Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Governors', 'Dependents', 'Functions', 'N-grams', 'Index', 'Stats')))
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Functions', 'N-grams', 'Index', 'Stats')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
-
         
         # trees, words, functions, governors, dependents, pos, lemma, count
         frm = Frame(interro_opt)
@@ -2317,7 +2317,7 @@ def corpkit_gui():
             
             entry_do_with = entry_regex.get()
             # allow list queries
-            if entry_do_with.startswith('[') and entry_do_with.endswith(']'):
+            if entry_do_with.startswith('[') and entry_do_with.endswith(']') and ',' in entry_do_with:
                 entry_do_with = entry_do_with.lower().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
                 # convert special stuff
@@ -2823,7 +2823,7 @@ def corpkit_gui():
 
             # explode option
             if explbox.get() != '' and charttype.get() == 'pie':
-                if explbox.get().startswith('[') and explbox.get().endswith(']'):
+                if explbox.get().startswith('[') and explbox.get().endswith(']') and ',' in explbox.get():
                     explval = explbox.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     explval = explbox.get().strip()
@@ -3616,7 +3616,7 @@ def corpkit_gui():
                  'dep_type': depdict[conc_kind_of_dep.get()]}
 
             if justdep.get() != '':
-                if justdep.get().startswith('[') and justdep.get().endswith(']'):
+                if justdep.get().startswith('[') and justdep.get().endswith(']') and ',' in justdep.get():
                     jdep = justdep.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     re.compile(justdep.get())
@@ -3637,7 +3637,7 @@ def corpkit_gui():
                 d['just_speakers'] = jspeak_conc
             
             # special kinds of query
-            if query.startswith('[') and query.endswith(']'):
+            if query.startswith('[') and query.endswith(']') and ',' in query:
                     query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
             else:
                 if option == 'l' or query == 'p':
