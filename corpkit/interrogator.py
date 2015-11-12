@@ -4,25 +4,21 @@ def interrogator(path,
                 search,
                 query = 'any', 
                 show = 'words',
+                exclude = False,
                 case_sensitive = False,
                 lemmatise = False, 
-                reference_corpus = 'bnc.p', 
                 titlefilter = False, 
                 lemmatag = False, 
                 spelling = False, 
                 phrases = False, 
                 dep_type = 'collapsed-ccprocessed-dependencies',
-                function_filter = False,
-                pos_filter = False,
-                table_size = 50,
                 quicksave = False,
-                add_pos_to_g_d_option = False,
-                custom_engine = False,
-                post_process = False,
                 printstatus = True,
                 root = False,
                 df1_always_df = False,
                 just_speakers = False,
+                excludemode = 'any',
+                searchmode = 'all',
                 **kwargs):
     """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
@@ -33,13 +29,20 @@ def interrogator(path,
         - t/tregex
         - w/word
         - l/lemma
-        - g/governor
-        - d/dependent
         - f/function
         - p/pos
         - i/index
         - n/ngrams
-    :type option: str
+    :type search: str, or, for dependencies, a dict like {'w': 'help', 'p': r'^V'}
+
+    :param searchmode: Return results matching any/all criteria
+    :type searchmode: str ('any'/'all')
+
+    :param exclude: The inverse of `search`, removing results from search
+    :type exclude: dict -- {'l': 'be'}
+
+    :param excludemode: Exclude results matching any/all criteria
+    :type excludemode: str ('any'/'all')
     
     :param query: A search query for the interrogation
     :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
@@ -59,32 +62,30 @@ def interrogator(path,
     :param lemmatise: Do lemmatisation on results
     :type lemmatise: bool
         
-    :param lemmatag: Explicitly pass a pos to lemmatiser
+    :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
     :type lemmatag: False/'n'/'v'/'a'/'r'
     
-    :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from results (turns 'phrases' on)
+    :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results (turns 'phrases' on)
     :type titlefilter: bool
     
     :param spelling: Convert all to U.S. or U.K. English
     :type spelling: False/'US'/'UK'
         
-    :param phrases: Use if your expected results are multiword and thus need tokenising
+    :param phrases: Use if your expected results are multiword (e.g. searching for NP, with
+                    show as 'w'), and thus need tokenising
     :type phrases: bool
         
     :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use:
     :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
     
-    :param function_filter: If you set this to a regex, for the 'g' and 'd' options, only words whose function matches the regex will be kept, and the tag will not be printed
-    :type function_filter: Bool/regex
-
     :param quicksave: Save result as pickle to saved_interrogations/*quicksave* on completion
     :type quicksave: str
     
-    :param custom_engine: Pass a function to process every xml file and return a list of results
-    :type custom_engine: function
-       
-    :param post_process: Pass a function that processes every item in the list of results
-    :type post_process: function
+    :param gramsize: size of ngrams (default 2)
+    :type gramsize: int
+
+    :param split_contractions: make "don't" et al into two tokens
+    :type split_contractions: bool
 
     :returns: A named tuple, with ``.query``, ``.results``, ``.totals`` attributes. 
               If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.
@@ -157,8 +158,6 @@ def interrogator(path,
             spelling = 'UK'
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
-    if hasattr(function_filter, '__iter__'):
-        is_multiquery = True
     if just_speakers:
         if just_speakers == 'each':
             is_multiquery = True
@@ -197,7 +196,6 @@ def interrogator(path,
               'spelling': spelling, 
               'phrases': phrases, 
               'dep_type': dep_type, 
-              'function_filter': function_filter, 
               'table_size': table_size, 
               'quicksave': quicksave, 
               'df1_always_df': df1_always_df,
@@ -226,11 +224,6 @@ def interrogator(path,
         par_args['linenum'] = paralleling
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
-
-    # initialise nltk lemmatiser only once
-    if lemmatise:
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr=WordNetLemmatizer()
     
     # check if we are in ipython
     try:
@@ -319,17 +312,14 @@ def interrogator(path,
                 lemmatag = selection
         return tag
     
-    def processwords(list_of_matches):
+    def processwords(list_of_matches, lemmatag = False):
         """normalise matches from interrogations"""
 
-        if post_process is not False:
-            list_of_matches = [post_process(m) for m in list_of_matches]
-        else:
-            list_of_matches = [w.lower() for w in list_of_matches]
-            # remove nonwords, strip . to normalise "dr."
-            if translated_option != 'o' and translated_option != 'u':
-                list_of_matches = [w.lstrip('.').rstrip('.') for w in list_of_matches if re.search(regex_nonword_filter, w)]
-        
+        list_of_matches = [w.lower() for w in list_of_matches]
+        # remove nonwords, strip . to normalise "dr."
+        if translated_option != 'o' and translated_option != 'u':
+            list_of_matches = [w.lstrip('.').rstrip('.') for w in list_of_matches if re.search(regex_nonword_filter, w)]
+    
         list_of_matches.sort()
         
         # tokenise if multiword:
@@ -337,9 +327,30 @@ def interrogator(path,
             from nltk import word_tokenize as word_tokenize
             list_of_matches = [word_tokenize(i) for i in list_of_matches]
 
-        if lemmatise and not dependency:
-            tag = gettag(query, lemmatag = lemmatag)
-            list_of_matches = lemmatiser(list_of_matches, tag)
+        # this is just for plaintext ... should convert to unicode on file open
+        if datatype == 'plaintext':
+            try:
+                list_of_matches = [unicode(w, errors = 'ignore') for w in list_of_matches]
+            except TypeError:
+                pass
+
+        if lemmatise or 'l' in show:
+            if not dependency:
+                tag = gettag(query, lemmatag = lemmatag)
+                lemmata = lemmatiser(list_of_matches, tag)
+                tups = zip(list_of_matches, lemmata)
+                lemmatag = gettag(query, lemmatag)
+                res = []
+                for w, l in tups:
+                    single_result = []
+                    if 'w' in show:
+                        single_result.append(w)
+                    if 'l' in show:
+                        single_result.append(l)
+                    single_result = '/'.join(single_result)
+                    res.append(single_result)
+                list_of_matches = res
+
         if titlefilter and not dependency:
             list_of_matches = titlefilterer(list_of_matches)
         if spelling:
@@ -376,6 +387,7 @@ def interrogator(path,
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
+        
         output = []
         for entry in list_of_words:
             if phrases:
@@ -388,12 +400,12 @@ def interrogator(path,
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser when appropriate
-            if using_tregex:
+            if not dependency:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
             # do the manual_lemmatisation
-            if dependency:
+            else:
                 if word in wordlist:
                     word = wordlist[word]
             if phrases:
@@ -421,7 +433,7 @@ def interrogator(path,
             usa_convert = {v: k for k, v in usa_convert.items()}
         output = []
         # if we have funct:word, spellfix the word only
-        if dependency and not function_filter:
+        if dependency:
             for result in list_of_matches:
                 funct, word = result.split('/', 1)
                 try:
@@ -479,8 +491,9 @@ def interrogator(path,
             return c
 
     def dep_searcher(sents):
-        """search for 'search' keyword arg
-
+        """
+        search corenlp dependency parse
+        1. search for 'search' keyword arg
            governor
            dependent
            function
@@ -489,8 +502,9 @@ def interrogator(path,
            word
            index
 
-           return '/'-sep list of 'show' keyword arg:
+        2. exclude entries if need be
 
+        3. return '/'-sep list of 'show' keyword arg:
            governor
            dependent
            function
@@ -501,50 +515,99 @@ def interrogator(path,
            distance
            
            ... or just return int count.
-
-           the way to get this done is to get the matching entity as **token class**.
-           then, there is an unambiguous thing to print every time"""
+           """
         
         result = []
         for s in sents:
             lks = []
             deps = get_deps(s, dep_type)
             tokens = s.tokens
-            if search.lower().startswith('g'):
-                for l in deps.links:
-                    if re.match(regex, l.governor.text):
-                        lks.append(s.get_token_by_id(l.governor.idx))
-            elif search.lower().startswith('d'):
-                for l in deps.links:
-                    if re.match(regex, l.dependent.text):
-                        lks.append(s.get_token_by_id(l.dependent.idx))
-            elif search.lower().startswith('f'):
-                for l in deps.links:
-                    if re.match(regex, l.type):
-                        lks.append(s.get_token_by_id(l.dependent.idx))
-            elif search.lower().startswith('p'):
-                for tok in tokens:
-                    if re.match(regex, tok.pos):
-                        lks.append(tok)
-            elif search.lower().startswith('l'):
-                for tok in tokens:
-                    if re.match(regex, tok.lemma):
-                        lks.append(tok)
-            elif search.lower().startswith('w'):
-                for tok in tokens:
-                    if re.match(regex, tok.word):
-                        lks.append(tok)
-            elif search.lower().startswith('i'):
-                for tok in tokens:
-                    if re.match(regex, str(tok.id)):
-                        lks.append(tok)
+            for opt, pat in search.items():
+                pat = filtermaker(pat)
+                if opt == 'g':
+                    for l in deps.links:
+                        if re.match(pat, l.governor.text):
+                            lks.append(s.get_token_by_id(l.governor.idx))
+                elif opt == 'd':
+                    for l in deps.links:
+                        if re.match(pat, l.dependent.text):
+                            lks.append(s.get_token_by_id(l.dependent.idx))
+                elif opt == 'f':
+                    for l in deps.links:
+                        if re.match(pat, l.type):
+                            lks.append(s.get_token_by_id(l.dependent.idx))
+                elif opt == 'p':
+                    for tok in tokens:
+                        if re.match(pat, tok.pos):
+                            lks.append(tok)
+                elif opt == 'l':
+                    for tok in tokens:
+                        if re.match(pat, tok.lemma):
+                            lks.append(tok)
+                elif opt == 'w':
+                    for tok in tokens:
+                        if re.match(pat, tok.word):
+                            lks.append(tok)
+                elif opt == 'i':
+                    for tok in tokens:
+                        if re.match(pat, str(tok.id)):
+                            lks.append(tok)
 
-            lks = [x for x in lks if re.search(regex_nonword_filter, x.word)]
+            # only return results if all conditions are met
+            if searchmode == 'all':
+                counted = Counter(lks)
+                lks = [k for k, v in counted.items() if v >= len(search.keys())]
+
+            lks = list(set([x for x in lks if re.search(regex_nonword_filter, x.word)]))
+
+            if exclude is not False:
+                to_remove = []
+                for op, pat in exclude.items():
+                    pat = filtermaker(pat)
+                    for tok in lks:
+                        if op == 'g':
+                            for l in deps.links:
+                                if re.match(pat, l.governor.text):
+                                    to_remove.append(s.get_token_by_id(l.governor.idx))
+                        elif op == 'd':
+                            for l in deps.links:
+                                if re.match(pat, l.dependent.text):
+                                    to_remove.append(s.get_token_by_id(l.dependent.idx))
+                        elif op == 'f':
+                            for l in deps.links:
+                                if re.match(pat, l.type):
+                                    to_remove.append(s.get_token_by_id(l.dependent.idx))
+                        elif op == 'p':
+                            for tok in tokens:
+                                if re.match(pat, tok.pos):
+                                    to_remove.append(tok)
+                        elif op == 'l':
+                            for tok in tokens:
+                                if re.match(pat, tok.lemma):
+                                    to_remove.append(tok)
+                        elif op == 'w':
+                            for tok in tokens:
+                                if re.match(pat, tok.word):
+                                    to_remove.append(tok)
+                        elif op == 'i':
+                            for tok in tokens:
+                                if re.match(pat, str(tok.id)):
+                                    to_remove.append(tok)
+
+                if excludemode == 'all':
+                    counted = Counter(to_remove)
+                    to_remove = [k for k, v in counted.items() if v >= len(exclude.keys())]
+                for i in to_remove:
+                    try:
+                        lks.remove(i)
+                    except ValueError:
+                        pass
 
             if only_count:
                 result.append(len(lks))
                 continue
 
+            # figure out what to show
             for lk in lks:
                 single_result = {}
                 node = deps.get_node_by_idx(lk.id)
@@ -559,7 +622,7 @@ def interrogator(path,
                 if 'l' in show:
                     single_result['l'] = lk.lemma
 
-                if 'p' in show or pos_filter:
+                if 'p' in show:
                     single_result['p'] = 'none'
                     postag = lk.pos
                     if lemmatise:
@@ -572,7 +635,7 @@ def interrogator(path,
                     if not single_result['p']:
                         single_result['p'] == 'none'
 
-                if 'f' in show or function_filter:
+                if 'f' in show:
                     single_result['f'] = 'none'
                     for i in deps.links:
                         if i.dependent.idx == lk.id:
@@ -615,18 +678,6 @@ def interrogator(path,
 
                 if 'i' in show:
                     single_result['i'] = str(lk.id)
-
-                if function_filter:
-                    if not re.match(funfil_regex, single_result['f']):
-                        if 'f' not in show:
-                            del single_result['f']
-                        continue
-
-                if pos_filter:
-                    if not re.match(pos_regex, single_result['p']):
-                        if 'p' not in show:
-                            del single_result['p']
-                        continue
 
                 if not only_count:
                     
@@ -698,9 +749,11 @@ def interrogator(path,
             print '%s: Query %s' % (thetime, error_message)
             return 'Bad query'
 
-        return [m for m in list_of_toks if re.search(comped, m)]
+        matches = [m for m in list_of_toks if re.search(comped, m)]
 
-    def plaintext_regex_search(pattern, plaintext_data, lemmatag = False):
+        return matches
+
+    def plaintext_regex_search(pattern, plaintext_data):
         """search for regex in plaintext corpora"""
         result = []
         #if not pattern.startswith(r'\b') and not pattern.endswith(r'\b'):
@@ -718,19 +771,7 @@ def interrogator(path,
             print '%s: Query %s' % (thetime, error_message)
             return 'Bad query'
         matches = re.findall(compiled_pattern, plaintext_data)
-        for m in matches:
-            single_result = []
-            if type(m) == tuple:
-                m = m[0]
-            m = unicode(m, errors = 'ignore')
-            if 'w' in show:
-                single_result.append(m)
-            if 'l' in show:
-                lemmatag = gettag(query, lemmatag)
-                single_result.append(lmtzr.lemmatize(m, lemmatag))
-            single_result = '/'.join(single_result)
-            result.append(single_result)
-        return result
+        return matches
 
     def plaintext_simple_search(pattern, plaintext_data):
         """search for tokens in plaintext corpora"""
@@ -897,7 +938,12 @@ def interrogator(path,
     
     regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
 
-    search = search[0].lower()
+    if type(search) == str:
+        search = search[0].lower()
+        if not search.lower().startswith('t') and datatype == 'parse':
+            if query == 'any':
+                query = r'.*'
+        search = {search: query}
 
     if type(show) == str or type(show) == unicode:
         show = [show]
@@ -909,17 +955,16 @@ def interrogator(path,
     translated_option = False
     from corpkit.other import as_regex
     
-    if search.lower().startswith('t'):
-        if datatype == 'parse':
+    if datatype == 'parse':
+        if 't' in search.keys():
             using_tregex = True
 
     if datatype == 'plaintext':
         plaintext = True
-        if 'l' in show:
-            from nltk.stem.wordnet import WordNetLemmatizer
-            lmtzr=WordNetLemmatizer()
+
     elif datatype == 'tokens':
         tokens = True
+
 
     if using_tregex:
         if 'p' in show:
@@ -961,8 +1006,6 @@ def interrogator(path,
             translated_option = 't'
             optiontext = 'Words, lemmatised.'
             lemmatise = True
-            from nltk.stem.wordnet import WordNetLemmatizer
-            lmtzr=WordNetLemmatizer()
             if type(query) == list:
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
@@ -984,7 +1027,7 @@ def interrogator(path,
                 query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             
     elif datatype == 'tokens':
-        if search.lower().startswith('w'):
+        if 'w' in search.keys():
             tokens = True
             if type(query) == list:
                 translated_option = 'e'
@@ -994,7 +1037,7 @@ def interrogator(path,
                 translated_option = 'h'
                 optiontext = 'Tokens via regular expression.'
                 dep_funct = tok_by_reg
-        if search.lower().startswith('n'):
+        if 'n' in search.keys():
             translated_option = 'j'
             tokens = True
             lemmatise = False
@@ -1026,26 +1069,32 @@ def interrogator(path,
                 gramsize = 2
             dep_funct = tok_ngrams
 
-    elif datatype == 'parse' and not search.startswith('n'):
-        translated_option = 'y'
-        dependency = True
-        optiontext = 'Dependency querying...'
-        dep_funct = dep_searcher
-        if 'c' in show:
-            count_results = {}
-            only_count = True
+    elif datatype == 'parse':
+        if 'n' not in search.keys() and 't' not in search.keys():
+            translated_option = 'y'
+            dependency = True
+            optiontext = 'Dependency querying...'
+            dep_funct = dep_searcher
+            if 'c' in show:
+                count_results = {}
+                only_count = True
 
-    if search.startswith('s'):
-        translated_option = 'v'
-        #using_tregex = True
-        statsmode = True
-        optiontext = 'Getting general stats.'
-        dep_funct = get_stats
-        if datatype != 'parse':
-            print 'Need parsed corpus for this.'
-            return
+        if 's' in search.keys():
+            translated_option = 'v'
+            #using_tregex = True
+            statsmode = True
+            optiontext = 'Getting general stats.'
+            dep_funct = get_stats
+            if datatype != 'parse':
+                print 'Need parsed corpus for this.'
+                return
 
-    if search.startswith('n'):
+    # initialise nltk lemmatiser only once
+    if lemmatise or ('l' in show and not dependency):
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lmtzr=WordNetLemmatizer()
+
+    if 'n' in search.keys():
         if datatype == 'parse':
             translated_option = 'n'
             using_tregex = True
@@ -1122,8 +1171,7 @@ def interrogator(path,
             loaded.query['titlefilter'] == titlefilter and \
             loaded.query['spelling'] == spelling and \
             loaded.query['dep_type'] == dep_type and \
-            loaded.query['function'] == 'interrogator' and \
-            loaded.query['function_filter'] == function_filter:
+            loaded.query['function'] == 'interrogator':
                 dup_non_i = 'Duplicate'
             else:
                 dup_non_i = 'Non-identical'
@@ -1212,11 +1260,6 @@ def interrogator(path,
                 return False
         return output
 
-    if pos_filter:
-        pos_regex = filtermaker(pos_filter)
-        if pos_regex is False:
-            return
-
     # dependencies:
     # can't be phrases
     # check if regex valid
@@ -1226,11 +1269,6 @@ def interrogator(path,
             names = get_speaker_names_from_xml_corpus(path)
         
         phrases = False
-
-        if function_filter:
-            funfil_regex = filtermaker(function_filter)
-            if funfil_regex is False:
-                return
         
         allowed_dep_types = ['basic-dependencies', 'collapsed-dependencies', 'collapsed-ccprocessed-dependencies']
         
@@ -1587,7 +1625,7 @@ def interrogator(path,
                     with open(filepath, "rb") as text:
                         data = text.read()
                         if translated_option == 'r':
-                            result_from_file = plaintext_regex_search(regex, data, lemmatag = lemmatag)
+                            result_from_file = plaintext_regex_search(regex, data)
                         if translated_option == 's':
                             result_from_file = plaintext_simple_search(query, data)
                 if tokens:
@@ -1616,7 +1654,7 @@ def interrogator(path,
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
         if not statsmode:
-            processed_result = processwords(result)
+            processed_result = processwords(result, lemmatag = lemmatag)
             
         if not statsmode:
             allwords_list.append(processed_result)
@@ -1853,18 +1891,12 @@ if __name__ == '__main__':
                 show = 'words',
                 case_sensitive = False,
                 lemmatise = False, 
-                reference_corpus = 'bnc.p', 
                 titlefilter = False, 
                 lemmatag = False, 
                 spelling = False, 
                 phrases = False, 
                 dep_type = 'basic-dependencies',
-                function_filter = False,
-                pos_filter = False,
                 quicksave = False,
-                add_pos_to_g_d_option = False,
-                custom_engine = False,
-                post_process = False,
                 printstatus = True,
                 root = False,
                 df1_always_df = False,
