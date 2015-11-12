@@ -45,17 +45,16 @@ if '.py' in rd:
 ########################################################################
 
 class SplashScreen( object ):
-    """a splash screen to display before corpkit is loaded"""
+    """A simple splash screen to display before corpkit is loaded"""
     def __init__( self, tkRoot, imageFilename, minSplashTime=0 ):
         import os
         self._root              = tkRoot
-        #image = Image.open(os.path.join(imageFilename))
-            #image_to_measure = ImageTk.PhotoImage(image)
         self._image             = ImageTk.PhotoImage(file = os.path.join(rd, imageFilename))
         self._splash            = None
         self._minSplashTime     = time.time() + minSplashTime
       
     def __enter__( self ):
+
         # Remove the app window from the display
         #self._root.withdraw( )
         
@@ -98,13 +97,13 @@ class SplashScreen( object ):
       #self._root.deiconify( )
 
 class RedirectText(object):
-    """send text to app from stdout, for the log and the status bar"""
+    """Send text to app from stdout, for the log and the status bar"""
 
     def __init__(self, text_ctrl, log_text):
         """Constructor"""
         
         def dumfun():
-            """to satisfy ipython, sys"""
+            """to satisfy ipython, sys, which look for a flush method"""
             pass
 
         self.output = text_ctrl
@@ -113,7 +112,7 @@ class RedirectText(object):
         self.fileno = dumfun
  
     def write(self, string):
-        """add stdout and stderr to log and/or to console""" 
+        """Add stdout and stderr to log and/or to console""" 
         import re
         # don't show blank lines
         show_reg = re.compile(r'^\s*$')
@@ -132,8 +131,8 @@ class RedirectText(object):
 
 from Tkinter import *
 
-# hyperlinks
 class HyperlinkManager:
+    """Hyperlinking for About"""
     def __init__(self, text):
         self.text = text
         self.text.tag_config("hyper", foreground="blue", underline=1)
@@ -1417,7 +1416,7 @@ def corpkit_gui():
                 interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
-            if selected_option in ['j', 'n']:
+            if selected_option.startswith('n'):
                 global ngmsize
                 if (ngmsize.var).get() != 'Size':
                     interrogator_args['gramsize'] = int((ngmsize.var).get())
@@ -1834,18 +1833,6 @@ def corpkit_gui():
                 except KeyError:
                     entrytext.set(def_queries[datatype_picked.get()])
 
-            if 'ngram' in value:
-                lbut.config(state = DISABLED)
-                ngmsize.config(state = NORMAL)
-                split_contract.config(state = NORMAL)
-
-            else:
-                if 'stats' not in value:
-                    lbut.config(state = NORMAL)
-                else:
-                    lbut.config(state = DISABLED)
-                ngmsize.config(state = DISABLED)
-                split_contract.config(state = DISABLED)
                 #try:
                 #    ngmsize.destroy()
                 #except:
@@ -1958,6 +1945,17 @@ def corpkit_gui():
                 ck8.config(state=DISABLED)
                 ck9.config(state=DISABLED)
                 ck10.config(state=DISABLED)
+                if chosen == 'N-grams':
+                    lbut.config(state = DISABLED)
+                    ngmsize.config(state = NORMAL)
+                    split_contract.config(state = NORMAL)
+                else:
+                    if chosen != 'Stats' not in value:
+                        lbut.config(state = NORMAL)
+                    else:
+                        lbut.config(state = DISABLED)
+                    ngmsize.config(state = DISABLED)
+                    split_contract.config(state = DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
             try:
@@ -6553,6 +6551,7 @@ def corpkit_gui():
             root.createcommand('tk::mac::ShowPreferences', preferences_popup)
 
         def about_box():
+            """About message with current corpkit version"""
             import os
             try:
                 oldstver = str(open(os.path.join(rd, 'VERSION.txt'), 'r').read().strip())
@@ -6560,13 +6559,11 @@ def corpkit_gui():
                 import corpkit
                 oldstver = str(corpkit.__version__)
 
-            #about_tl = Toplevel()
-            #about_text = Text(about_tl)
-
             tkMessageBox.showinfo('About', 'corpkit %s\n\ninterrogator.github.io/corpkit\ngithub.com/interrogator/corpkit\npypi.python.org/pypi/corpkit\n\n' \
                                   'Creator: Daniel McDonald\nmcdonaldd@unimelb.edu.au' % oldstver)
 
         def show_log():
+            """save log text as txt file and open it"""
             import os
             the_input = '\n'.join([x for x in note.log_stream])
             #the_input = note.text.get("1.0",END)
@@ -6588,9 +6585,8 @@ def corpkit_gui():
                 import subprocess
                 subprocess.call(['open', logpath])
 
-        # bind select all for every possible widget
-
         def bind_textfuncts_to_widgets(lst):
+            """add basic cut copy paste to text entry widgets"""
             for i in lst:
                 i.bind("<%s-a>" % key, select_all_text)
                 i.bind("<%s-A>" % key, select_all_text)
@@ -6633,7 +6629,6 @@ def corpkit_gui():
         note.focus_on(tab1)
     
     root.deiconify()
-    #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     root.lift()
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     try:
