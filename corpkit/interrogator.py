@@ -550,6 +550,7 @@ def interrogator(path,
                 node = deps.get_node_by_idx(lk.id)
 
                 if 'w' in show:
+                    single_result['w'] = 'none'
                     if lemmatise:
                         single_result['w'] = lk.lemma
                     else:
@@ -559,6 +560,7 @@ def interrogator(path,
                     single_result['l'] = lk.lemma
 
                 if 'p' in show or pos_filter:
+                    single_result['p'] = 'none'
                     postag = lk.pos
                     if lemmatise:
                         if postag.lower() in taglemma.keys():
@@ -568,11 +570,10 @@ def interrogator(path,
                     else:
                         single_result['p'] = postag
                     if not single_result['p']:
-                        single_result['p'] == 'no_pos'
-
+                        single_result['p'] == 'none'
 
                 if 'f' in show or function_filter:
-                    single_result['f'] = ''
+                    single_result['f'] = 'none'
                     for i in deps.links:
                         if i.dependent.idx == lk.id:
                             single_result['f'] = i.type
@@ -584,20 +585,24 @@ def interrogator(path,
                     single_result['g'] = 'none'
                     for i in deps.links:
                         if i.dependent.idx == lk.id:
-                            if lemmatise:
-                                single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
+                            if s.get_token_by_id(i.governor.idx):
+                                if lemmatise:                          
+                                        single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
+                                else:
+                                    single_result['g'] = i.governor.text
                             else:
-                                single_result['g'] = i.governor.text
+                                single_result['g'] = 'root'
                             break
 
                 if 'd' in show:
                     single_result['d'] = 'none'
                     for i in deps.links:
                         if i.governor.idx == lk.id:
-                            if lemmatise:
-                                single_result['d'] = s.get_token_by_id(i.dependent.idx).lemma
-                            else:
-                                single_result['d'] = i.dependent.text
+                            if s.get_token_by_id(i.dependent.idx):       
+                                if lemmatise:
+                                    single_result['d'] = s.get_token_by_id(i.dependent.idx).lemma
+                                else:
+                                    single_result['d'] = i.dependent.text
                             break
 
                 if 'r' in show:
@@ -1776,6 +1781,11 @@ def interrogator(path,
         except:
             pass
         df.sort(ascending = False)
+
+    # if numerical colnames, sort numerically
+    if show == ['r'] or show == ['i']:
+       intcols = sorted([int(c) for c in list(df.columns)])
+       df.columns = [str(c) for c in intcols]
 
     # add sort info for tk
     if tk:
