@@ -522,7 +522,6 @@ def interrogator(path,
                 for l in deps.links:
                     if re.match(regex, l.type):
                         lks.append(s.get_token_by_id(l.dependent.idx))
-
             elif search.lower().startswith('p'):
                 for tok in tokens:
                     if re.match(regex, tok.pos):
@@ -562,10 +561,10 @@ def interrogator(path,
                 if 'p' in show or pos_filter:
                     postag = lk.pos
                     if lemmatise:
-                        if postag in taglemma.keys():
-                            single_result['p'] = taglemma[postag]
+                        if postag.lower() in taglemma.keys():
+                            single_result['p'] = taglemma[postag.lower()]
                         else:
-                            single_result['p'] = postag
+                            single_result['p'] = postag.lower()
                     else:
                         single_result['p'] = postag
                     if not single_result['p']:
