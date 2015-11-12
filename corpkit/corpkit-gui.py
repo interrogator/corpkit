@@ -1330,7 +1330,7 @@ def corpkit_gui():
                         query = remake_special_query(query)
                         if query is False:
                             return
-
+            #remake_special_query(entry_do_with, return_list = True)
             if funfil.get() is not False and funfil.get() != '':
                 ff = remake_special_query(funfil.get())
                 if ff is False:
@@ -1351,15 +1351,17 @@ def corpkit_gui():
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
-            selected_option = datatype_picked.get().lower()
+            selected_option = datatype_picked.get().lower()[0]
 
             if selected_option == '':
                 timestring('You need to select a search type.')
                 return
 
+            queryd = {selected_option: query}
+
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
-            interrogator_args = {'query': query,
+            interrogator_args = {'search': queryd,
                                  'lemmatise': lem.get(),
                                  'phrases': phras.get(),
                                  'titlefilter': tit_fil.get(),
@@ -1372,6 +1374,14 @@ def corpkit_gui():
                                  'blacklist': blackl,
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
+
+            if secondary_op.get() != 'None':
+                op = secondary_op.get().lower()[0]
+                interrogator_args['search'][op] = secondary_str.get().strip()
+
+            if exclude_op.get() != 'None':
+                op = exclude_op.get().lower()[0]
+                interrogator_args['exclude'] = {op: exclude_str.get().strip()}
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1674,30 +1684,36 @@ def corpkit_gui():
         available_corpora_build.config(width = 25, justify = CENTER, state = DISABLED)
         available_corpora_build.grid(row = 4, column = 0, sticky=W)
 
-        # function filter
-        funfil = StringVar()
-        Label(interro_opt, text = 'Function filter:').grid(row = 11, column = 0, sticky = W)
-        #funfil.set(r'(nsubj|nsubjpass)')
-        funfil.set('')
-        q = Entry(interro_opt, textvariable = funfil, width = 31, state = DISABLED)
-        q.grid(row = 11, column = 0, columnspan = 2, sticky = E)
+        # Secondary match
+        secondary_op = StringVar()
+        secondary_op.set('None')
+        Label(interro_opt, text = 'Refine:').grid(row = 10, column = 0, sticky = W)
+        sec_match = OptionMenu(interro_opt, secondary_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
+        sec_match.grid(row = 10, column = 0, sticky = W, padx = (110,0))
+        secondary_str = StringVar()
+        secondary_str.set('')
+        q = Entry(interro_opt, textvariable = secondary_str, width = 22, state = DISABLED)
+        q.grid(row = 10, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(q)
 
-        # pos filter
-        posfil = StringVar()
-        Label(interro_opt, text = 'POS filter:').grid(row = 12, column = 0, sticky = W)
-        #posfil.set(r'^n')
-        posfil.set(r'')
-        qr = Entry(interro_opt, textvariable = posfil, width = 31, state = DISABLED)
-        qr.grid(row = 12, column = 0, columnspan = 2, sticky = E)
+        # Exclude
+        exclude_str = StringVar()
+        exclude_str.set('')
+        Label(interro_opt, text = 'Exclude:').grid(row = 11, column = 0, sticky = W)
+        exclude_op = StringVar()
+        exclude_op.set('None')
+        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
+        exclude.grid(row = 11, column = 0, sticky = W, padx = (110,0))
+        qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
+        qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(qr)
 
         blklst = StringVar()
-        Label(interro_opt, text = 'Blacklist:').grid(row = 10, column = 0, sticky = W)
+        Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
         #blklst.set(r'^n')
         blklst.set(r'')
-        bkbx = Entry(interro_opt, textvariable = blklst, width = 31)
-        bkbx.grid(row = 10, column = 0, columnspan = 2, sticky = E)
+        bkbx = Entry(interro_opt, textvariable = blklst, width = 22)
+        bkbx.grid(row = 12, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(bkbx)
 
         # lemma tags
