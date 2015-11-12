@@ -981,52 +981,48 @@ def interrogator(path,
                     query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
 
     elif datatype == 'tokens':
-        pass
 
-    #elif option.lower().startswith('h'):
-    #    translated_option = 'h'
-    #    tokens = True
-    #    optiontext = 'Tokens via regular expression.'
-    #    dep_funct = tok_by_reg
-
-    #elif option.lower().startswith('e'):
-    #    translated_option = 'e'
-    #    tokens = True
-    #    optiontext = 'Tokens via list.'
-    #    dep_funct = tok_by_list
-
-
-    #elif option.lower().startswith('j'):
-    #    translated_option = 'j'
-    #    tokens = True
-    #    lemmatise = False
-    #    optiontext = 'Get ngrams from tokens.'
-    #    if query == 'any':
-    #        query = r'.*'
-    #    if type(query) == list:
-    #        query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
-    #    else:
-    #        try:
-    #            if not case_sensitive:
-    #                query = re.compile(query, re.IGNORECASE)
-    #            else:
-    #                query = re.compile(query)
-    #        except:
-    #            import traceback
-    #            import sys
-    #            exc_type, exc_value, exc_traceback = sys.exc_info()
-    #            lst = traceback.format_exception(exc_type, exc_value,
-    #                          exc_traceback)
-    #            error_message = lst[-1]
-    #            thetime = strftime("%H:%M:%S", localtime())
-    #            print '%s: Query %s' % (thetime, error_message)
-    #            return 'Bad query'
-    #    global gramsize
-    #    if 'gramsize' in kwargs.keys():
-    #        gramsize = kwargs['gramsize']
-    #    else:
-    #        gramsize = 2
-    #    dep_funct = tok_ngrams
+        if search.lower().startswith('w'):
+            tokens = True
+            if type(query) == list:
+                translated_option = 'e'
+                optiontext = 'Tokens via list.'
+                dep_funct = tok_by_list
+            else:
+                translated_option = 'h'
+                optiontext = 'Tokens via regular expression.'
+                dep_funct = tok_by_reg
+        if search.lower().startswith('n'):
+            translated_option = 'j'
+            tokens = True
+            lemmatise = False
+            optiontext = 'Get ngrams from tokens.'
+            if query == 'any':
+                query = r'.*'
+            if type(query) == list:
+                query = as_regex(query, boundaries = 'l', case_sensitive = case_sensitive)
+            else:
+                try:
+                    if not case_sensitive:
+                        query = re.compile(query, re.IGNORECASE)
+                    else:
+                        query = re.compile(query)
+                except:
+                    import traceback
+                    import sys
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    lst = traceback.format_exception(exc_type, exc_value,
+                                  exc_traceback)
+                    error_message = lst[-1]
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: Query %s' % (thetime, error_message)
+                    return 'Bad query'
+            global gramsize
+            if 'gramsize' in kwargs.keys():
+                gramsize = kwargs['gramsize']
+            else:
+                gramsize = 2
+            dep_funct = tok_ngrams
 
     elif datatype == 'parse' and not search.startswith('n'):
         translated_option = 'y'
@@ -1048,43 +1044,17 @@ def interrogator(path,
             return
 
     if search.startswith('n'):
-        translated_option = 'n'
-        n_gramming = True
         if datatype == 'parse':
+            translated_option = 'n'
             using_tregex = True
+            optiontext = 'n-grams only.'
+            n_gramming = True
         if datatype == 'tokens':
+            translated_option = 'j'
             using_tregex = False
-        optiontext = 'n-grams only.'
+        
         if type(query) == list:
             query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
-
-    
-        #else:
-        #    time = strftime("%H:%M:%S", localtime())
-        #    selection = raw_input('\n%s: "%s" option not recognised. Option can be any of: \n\n' \
-        #                  '              a) Get distance from root for regex match\n' \
-        #                  '              b) Get tag and word of Tregex match\n' \
-        #                  '              c) count Tregex matches\n' \
-        #                  '              d) Get dependent of regular expression match and the r/ship\n' \
-        #                  '              e) Get tokens from tokenised text by list\n' \
-        #                  '              f) Get dependency function of regular expression match\n' \
-        #                  '              g) get governor of regular expression match and the r/ship\n' \
-        #                  '              h) get tokens from tokenised text by regular expression\n' \
-        #                  '              i) get dependency index\n '\
-        #                  '              k) get keywords\n' \
-        #                  '              l) get lemmata via dependencies\n'
-        #                  '              m) get tokens by dependency role \n' \
-        #                  '              n) get ngrams\n' \
-        #                  '              n) get \n' \
-        #                  '              p) get part-of-speech tag with Tregex\n' \
-        #                  '              r) regular expression, for plaintext corpora\n' \
-        #                  '              s) simple search string, for plaintext corpora\n' \
-        #                  '              t) match tokens via dependencies \n' \
-        #                  '              w) get word(s) returned by Tregex/keywords/ngrams\n' \
-        #                  '              x) exit\n\nYour selection: ' % (time, option))
-        #    if selection.startswith('x'):
-        #        return
-        #    option = selection
 
     if dependency:
         if type(query) == list:
