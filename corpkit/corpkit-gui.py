@@ -1606,11 +1606,12 @@ def corpkit_gui():
                     corpus_search_type.set('Words')
                     
             else:
-                pick_a_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
-                pick_a_conc_datatype['menu'].add_command(label = 'Tokens', command=Tkinter._setit(corpus_search_type, 'Tokens'))
+                for i in ['Words', 'N-grams']:
+                    pick_a_datatype['menu'].add_command(label = i, command=Tkinter._setit(datatype_picked, i))
+                pick_a_conc_datatype['menu'].add_command(label = 'Words', command=Tkinter._setit(corpus_search_type, 'Words'))
                 corpus_search_type.set('Tokens')
                 #tokbut.config(state = DISABLED)
-                datatype_picked.set('Tokens')
+                datatype_picked.set('Words')
             
             add_subcorpora_to_build_box(fp)
 
