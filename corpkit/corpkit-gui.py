@@ -1912,18 +1912,19 @@ def corpkit_gui():
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                           'Index', 'Distance', 'POS', 'Lemmata']:
-                q.config(state=NORMAL)
-                qr.config(state=NORMAL)
-                ck1.config(state=NORMAL)
-                ck2.config(state=NORMAL)
-                ck3.config(state=NORMAL)
-                ck4.config(state=DISABLED)
-                ck5.config(state=NORMAL)
-                ck6.config(state=NORMAL)
-                ck7.config(state=NORMAL)
-                ck8.config(state=NORMAL)
-                ck9.config(state=NORMAL)
-                ck10.config(state=NORMAL)
+                if current_corpus.get().endswith('-parsed'):                
+                    q.config(state=NORMAL)
+                    qr.config(state=NORMAL)
+                    ck1.config(state=NORMAL)
+                    ck2.config(state=NORMAL)
+                    ck3.config(state=NORMAL)
+                    ck4.config(state=DISABLED)
+                    ck5.config(state=NORMAL)
+                    ck6.config(state=NORMAL)
+                    ck7.config(state=NORMAL)
+                    ck8.config(state=NORMAL)
+                    ck9.config(state=NORMAL)
+                    ck10.config(state=NORMAL)
             if chosen == 'Governors':
                 ck9.config(state=DISABLED)
             #else:
