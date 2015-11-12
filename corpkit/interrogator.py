@@ -187,9 +187,9 @@ def interrogator(path,
     if is_multiquery:
         from corpkit.multiprocess import pmultiquery
         d = { 'path': path, 
-              'show': show,
-              'query': query,
               'search': search,
+              'query': query,
+              'show': show,
               'lemmatise': lemmatise, 
               'titlefilter': titlefilter, 
               'lemmatag': lemmatag, 
@@ -961,13 +961,6 @@ def interrogator(path,
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
-        elif 'n' in search:
-            translated_option = 'n'
-            n_gramming = True
-            optiontext = 'n-grams only.'
-            if type(query) == list:
-                query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
-
     elif datatype == 'plaintext':
         if 'w' in show:
             if 'regex' in kwargs.keys() and kwargs['regex'] is False:
@@ -1035,7 +1028,7 @@ def interrogator(path,
     #        gramsize = 2
     #    dep_funct = tok_ngrams
 
-    elif datatype == 'parse':
+    elif datatype == 'parse' and not search.startswith('n'):
         translated_option = 'y'
         dependency = True
         optiontext = 'Dependency querying...'
@@ -1044,7 +1037,7 @@ def interrogator(path,
             count_results = {}
             only_count = True
 
-    if 's' in search:
+    if search.startswith('s'):
         translated_option = 'v'
         #using_tregex = True
         statsmode = True
@@ -1053,6 +1046,14 @@ def interrogator(path,
         if datatype != 'parse':
             print 'Need parsed corpus for this.'
             return
+
+    if search.startswith('n'):
+        translated_option = 'n'
+        n_gramming = True
+        optiontext = 'n-grams only.'
+        if type(query) == list:
+            query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
+
     
         #else:
         #    time = strftime("%H:%M:%S", localtime())
@@ -1514,6 +1515,7 @@ def interrogator(path,
                                                     whitelist = query,
                                                     gramsize = gramsz
                                                     )
+                    print spindle_out
                     for w in list(spindle_out.index):
                         if query != 'any':
                             if re.search(query, w):

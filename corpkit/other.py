@@ -1351,6 +1351,8 @@ def determine_datatype(path):
     from collections import Counter
     allowed = ['.txt', '.xml', '.p']
     exts = []
+    if not os.path.isdir(path):
+        raise ValueError("Corpus path '%s' doesn't exist." % path)
     for (root, dirs, fs) in os.walk(path):
         for f in fs:
             try:
