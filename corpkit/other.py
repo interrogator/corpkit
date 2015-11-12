@@ -1378,7 +1378,8 @@ def make_multi(interrogation, indexnames = None):
     :param indexnames: pass in a list of names for the multiindex;
                        leave as None to get them if possible from interrogation
                        use False to explicitly not get them
-    :type indexnames: list of strings/None/False"""
+    :type indexnames: list of strings/None/False
+    :returns: pd.DataFrame with multiindex"""
 
     # get proper names for index if possible
     translator = {'f': 'Function',
