@@ -197,7 +197,6 @@ def keywords(data,
     return out[:n]
 
 def ngrams(data,
-           reference_corpus = 'bnc.p',
            clear = True, 
            printstatus = True, 
            n = 'all',
@@ -235,7 +234,7 @@ def ngrams(data,
     from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
     from other import datareader
 
-    loaded_ref_corpus = turn_input_into_counter(reference_corpus)
+    #loaded_ref_corpus = turn_input_into_counter(reference_corpus)
 
     if n == 'all':
         n = 99999
@@ -273,8 +272,7 @@ def ngrams(data,
 
     #if stopwords:
     #    good = [i for i in good if i not in stopwords]
-
-    ngrams = keywords_and_ngrams(good, reference_corpus = loaded_ref_corpus, stopwords = stopwords,
+    ngrams = keywords_and_ngrams(good, stopwords = stopwords,
                                  calc_all = calc_all, show = 'ngrams', gramsize = gramsize, **kwargs)
 
     import pandas as pd
@@ -325,10 +323,9 @@ def keywords_and_ngrams(target_corpus,
         n_gramming = False
         target_sum = sum(target_corpus.itervalues())
     
-    # Total number of words in reference qcorpus
-    ref_sum = sum(reference_corpus.itervalues())
-
     if show == 'keywords':
+        # Total number of words in reference qcorpus
+        ref_sum = sum(reference_corpus.itervalues())
         dicLL = {}
         if calc_all:
             wordlist = list(set(target_corpus.keys() + reference_corpus.keys()))

@@ -388,7 +388,7 @@ def interrogator(path,
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser when appropriate
-            if translated_option.startswith('t') or translated_option.startswith('w') or 'keyword' in query or 'ngram' in query:
+            if translated_option.startswith('t') or translated_option.startswith('w'):
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
@@ -1050,6 +1050,10 @@ def interrogator(path,
     if search.startswith('n'):
         translated_option = 'n'
         n_gramming = True
+        if datatype == 'parse':
+            using_tregex = True
+        if datatype == 'tokens':
+            using_tregex = False
         optiontext = 'n-grams only.'
         if type(query) == list:
             query = as_regex(query, boundaries = 'word', case_sensitive = case_sensitive)
@@ -1500,13 +1504,13 @@ def interrogator(path,
                     if 'blacklist' in kwargs.keys():
                         the_blacklist = kwargs['blacklist']
                     else:
-                        the_blacklist = Falseq
+                        the_blacklist = False
                     if 'gramsize' in kwargs.keys():
                         gramsz = kwargs['gramsize']
                     else:
                         gramsz = 2
-                    spindle_out = ngrams(subcorpus, reference_corpus = reference_corpus, 
-                                                    just_content_words = jcw, 
+
+                    spindle_out = ngrams(subcorpus, reference_corpus = False, 
                                                     blacklist = the_blacklist,
                                                     printstatus = False, 
                                                     clear = False, 
@@ -1515,7 +1519,6 @@ def interrogator(path,
                                                     whitelist = query,
                                                     gramsize = gramsz
                                                     )
-                    print spindle_out
                     for w in list(spindle_out.index):
                         if query != 'any':
                             if re.search(query, w):
