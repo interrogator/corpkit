@@ -337,10 +337,10 @@ def interrogator(path,
             from nltk import word_tokenize as word_tokenize
             list_of_matches = [word_tokenize(i) for i in list_of_matches]
 
-        if lemmatise:
+        if lemmatise and not dependency:
             tag = gettag(query, lemmatag = lemmatag)
             list_of_matches = lemmatiser(list_of_matches, tag)
-        if titlefilter:
+        if titlefilter and not dependency:
             list_of_matches = titlefilterer(list_of_matches)
         if spelling:
             list_of_matches = convert_spelling(list_of_matches, spelling = spelling)
@@ -388,7 +388,7 @@ def interrogator(path,
                 if word in taglemma:
                     word = taglemma[word]
             # only use wordnet lemmatiser when appropriate
-            if translated_option.startswith('t') or translated_option.startswith('w'):
+            if using_tregex:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
@@ -700,9 +700,11 @@ def interrogator(path,
 
         return [m for m in list_of_toks if re.search(comped, m)]
 
-    def plaintext_regex_search(pattern, plaintext_data):
+    def plaintext_regex_search(pattern, plaintext_data, lemmatag = False):
         """search for regex in plaintext corpora"""
         result = []
+        #if not pattern.startswith(r'\b') and not pattern.endswith(r'\b'):
+            #pattern = r'\b' + pattern + '\b'
         try:
             compiled_pattern = re.compile(pattern)
         except:
@@ -717,9 +719,17 @@ def interrogator(path,
             return 'Bad query'
         matches = re.findall(compiled_pattern, plaintext_data)
         for m in matches:
+            single_result = []
             if type(m) == tuple:
                 m = m[0]
-            result.append(m)
+            m = unicode(m, errors = 'ignore')
+            if 'w' in show:
+                single_result.append(m)
+            if 'l' in show:
+                lemmatag = gettag(query, lemmatag)
+                single_result.append(lmtzr.lemmatize(m, lemmatag))
+            single_result = '/'.join(single_result)
+            result.append(single_result)
         return result
 
     def plaintext_simple_search(pattern, plaintext_data):
@@ -892,14 +902,8 @@ def interrogator(path,
     if type(show) == str or type(show) == unicode:
         show = [show]
 
-    cutshort = []
-    for i in show:
-        cutshort.append(i[0].lower())
-
-    #if search == 'g' and 'g' in show:
-    #    raise ValueError("Can't show governor of governor")
-    #if search == 'd' and 'd' in show:
-    #    raise ValueError("Can't show dependent of dependent")
+    for index, t in enumerate(show):
+        show[index] = t.lower()[0]
 
     # Tregex option:
     translated_option = False
@@ -911,6 +915,9 @@ def interrogator(path,
 
     if datatype == 'plaintext':
         plaintext = True
+        if 'l' in show:
+            from nltk.stem.wordnet import WordNetLemmatizer
+            lmtzr=WordNetLemmatizer()
     elif datatype == 'tokens':
         tokens = True
 
@@ -962,26 +969,21 @@ def interrogator(path,
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
     elif datatype == 'plaintext':
-        if 'w' in show:
-            if 'regex' in kwargs.keys() and kwargs['regex'] is False:
-                plaintext = True
-                optiontext = 'Simple plain-text search.'
-                translated_option = 's'
-                if query == 'any':
-                    any_plaintext_word = True
-                else:
-                    any_plaintext_word = False
+        optiontext = 'Searching plaintext corpus'
+        if 'regex' in kwargs.keys() and kwargs['regex'] is False:
+            translated_option = 's'
+            if query == 'any':
+                any_plaintext_word = True
             else:
-                plaintext = True
-                optiontext = 'Regular expression matches only.'
-                translated_option = 'r'
-                if query == 'any':
-                    query = r'.*'
-                if type(query) == list:
-                    query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
-
+                any_plaintext_word = False
+        else:
+            translated_option = 'r'
+            if query == 'any':
+                query = r'[^\s]+'
+            if type(query) == list:
+                query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+            
     elif datatype == 'tokens':
-
         if search.lower().startswith('w'):
             tokens = True
             if type(query) == list:
@@ -1585,7 +1587,7 @@ def interrogator(path,
                     with open(filepath, "rb") as text:
                         data = text.read()
                         if translated_option == 'r':
-                            result_from_file = plaintext_regex_search(regex, data)
+                            result_from_file = plaintext_regex_search(regex, data, lemmatag = lemmatag)
                         if translated_option == 's':
                             result_from_file = plaintext_simple_search(query, data)
                 if tokens:
@@ -1613,10 +1615,9 @@ def interrogator(path,
 
         # lowercaseing, encoding, lemmatisation, 
         # titlewords removal, usa_english, etc.
-        if not statsmode and 'x' not in show:
+        if not statsmode:
             processed_result = processwords(result)
             
-
         if not statsmode:
             allwords_list.append(processed_result)
             dicts.append(Counter(processed_result))
