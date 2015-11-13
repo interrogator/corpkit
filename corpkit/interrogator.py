@@ -314,7 +314,6 @@ def interrogator(path,
     
     def processwords(list_of_matches, lemmatag = False):
         """normalise matches from interrogations"""
-
         list_of_matches = [w.lower() for w in list_of_matches]
         # remove nonwords, strip . to normalise "dr."
         if translated_option != 'o' and translated_option != 'u':
@@ -771,6 +770,9 @@ def interrogator(path,
             print '%s: Query %s' % (thetime, error_message)
             return 'Bad query'
         matches = re.findall(compiled_pattern, plaintext_data)
+        for index, i in enumerate(matches):
+            if type(i) == tuple:
+                matches[index] = i[0]
         return matches
 
     def plaintext_simple_search(pattern, plaintext_data):
@@ -836,7 +838,8 @@ def interrogator(path,
         to_write = '\n'.join([sent._parse_string.strip() for sent in sents if sent.parse_string is not None]).encode('utf-8', errors = 'ignore')
         with open(to_open, "w") as fo:
             fo.write(to_write)
-        res = tregex_engine(query = query, 
+        q = search.values()[0]
+        res = tregex_engine(query = q, 
                             options = ['-o', '-%s' % translated_option], 
                             corpus = to_open,
                             root = root)
@@ -928,6 +931,7 @@ def interrogator(path,
     tokens = False
     statsmode = False
     split_con = True
+    search_iterable = False
 
     from corpkit.other import determine_datatype
     datatype = determine_datatype(path)
@@ -940,10 +944,15 @@ def interrogator(path,
 
     if type(search) == str:
         search = search[0].lower()
-        if not search.lower().startswith('t') and datatype == 'parse':
+        if not search.lower().startswith('t') and not search.lower().startswith('n') \
+                                              and datatype == 'parse':
+            search_iterable = True
             if query == 'any':
                 query = r'.*'
         search = {search: query}
+
+    if not search_iterable:
+        query = search.values()[0]
 
     if type(show) == str or type(show) == unicode:
         show = [show]
@@ -1386,7 +1395,8 @@ def interrogator(path,
     if using_tregex:
         if query:
             if not n_gramming:
-                query = tregex_engine(corpus = False, query = query, options = ['-t'], check_query = True, root = root)
+                q = search.values()[0]
+                query = tregex_engine(corpus = False, query = q, options = ['-t'], check_query = True, root = root)
                 if query is False:
                     if root:
                         return 'Bad query'
@@ -1542,7 +1552,8 @@ def interrogator(path,
                 else:
                     if not statsmode:
                         op = ['-o', '-' + translated_option]
-                        result = tregex_engine(query = query, options = op, 
+                        q = search.values()[0]
+                        result = tregex_engine(query = q, options = op, 
                                            corpus = subcorpus, root = root)
                         if result is False:
                             return
