@@ -18,7 +18,7 @@ Corpus interrogations can be quickly edited and visualised in complex ways, or s
 <tr>
 <td align="center" valign="bottom">
 <div style="width:300px;height:180px;overflow:hidden;" >
-<a href="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="100" height="50"></a>
+<a href="https://raw.githubusercontent.com/interrogator/corpkit/gh-pages/images/interrogate.png" > <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/interro.png" alt="Interrogating" width="100" height="50"></a>
 </div> <br />
 <i>Searching a corpus using constituency parses</i>
 </td>
