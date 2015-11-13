@@ -496,8 +496,7 @@ Let's have a look at how these options change the output:
 
 ```python
 # 'self' as reference corpus uses p.results
->>> options = {'selfdrop': True, 
-...            'selfdrop': False, 
+>>> options = {'selfdrop': False, 
 ...            'calc_all': False, 
 ...            'threshold': False}
 
