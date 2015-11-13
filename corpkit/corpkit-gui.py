@@ -1330,13 +1330,7 @@ def corpkit_gui():
                         query = remake_special_query(query)
                         if query is False:
                             return
-            #remake_special_query(entry_do_with, return_list = True)
-            if funfil.get() is not False and funfil.get() != '':
-                ff = remake_special_query(funfil.get())
-                if ff is False:
-                    return
-            else:
-                ff = False
+
 
             if blklst.get() is not False and blklst.get() != '':
                 if blklst.get().startswith('[') and blklst.get().endswith(']') and ',' in blklst.get():
@@ -1370,18 +1364,19 @@ def corpkit_gui():
                                  'root': root,
                                  'note': note,
                                  'df1_always_df': True,
-                                 'function_filter': ff,
                                  'blacklist': blackl,
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
 
             if secondary_op.get() != 'None':
                 op = secondary_op.get().lower()[0]
-                interrogator_args['search'][op] = secondary_str.get().strip()
+                secondary_val = remake_special_query(secondary_str.get(), return_list = True)
+                interrogator_args['search'][op] = secondary_val.strip()
 
             if exclude_op.get() != 'None':
                 op = exclude_op.get().lower()[0]
-                interrogator_args['exclude'] = {op: exclude_str.get().strip()}
+                exclude_val = remake_special_query(exclude_str.get(), return_list = True)
+                interrogator_args['exclude'] = {op: exclude_val.strip()}
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1411,10 +1406,6 @@ def corpkit_gui():
 
             interrogator_args['lemmatag'] = tagdict[lemtag.get()]
 
-            # get pos filter
-            pf = posfil.get()
-            if pf is not False and pf != '':
-                interrogator_args['pos_filter'] = pf
 
             if corpus_fullpath.get() == '':
                 timestring('You need to select a corpus.')
@@ -1438,7 +1429,7 @@ def corpkit_gui():
                     interrogator_args['split_contractions'] = True
 
             # do interrogation
-            interrodata = interrogator(corpus_fullpath.get(), selected_option, **interrogator_args)
+            interrodata = interrogator(corpus_fullpath.get(), **interrogator_args)
             
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
@@ -1689,7 +1680,7 @@ def corpkit_gui():
         secondary_op.set('None')
         Label(interro_opt, text = 'Refine:').grid(row = 10, column = 0, sticky = W)
         sec_match = OptionMenu(interro_opt, secondary_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
-        sec_match.grid(row = 10, column = 0, sticky = W, padx = (110,0))
+        sec_match.grid(row = 10, column = 0, sticky = W, padx = (90, 0))
         secondary_str = StringVar()
         secondary_str.set('')
         q = Entry(interro_opt, textvariable = secondary_str, width = 22, state = DISABLED)
@@ -1703,7 +1694,7 @@ def corpkit_gui():
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
-        exclude.grid(row = 11, column = 0, sticky = W, padx = (110,0))
+        exclude.grid(row = 11, column = 0, sticky = W, padx = (90, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
         qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(qr)
@@ -1925,6 +1916,8 @@ def corpkit_gui():
                 ck10.config(state=DISABLED)
                 q.config(state=DISABLED)
                 qr.config(state=DISABLED)
+                exclude.config(state = DISABLED)
+                sec_match.config(state = DISABLED)
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                           'Index', 'Distance', 'POS', 'Lemmata']:
@@ -1941,6 +1934,8 @@ def corpkit_gui():
                     ck8.config(state=NORMAL)
                     ck9.config(state=NORMAL)
                     ck10.config(state=NORMAL)
+                    exclude.config(state = NORMAL)
+                    sec_match.config(state = NORMAL)
             if chosen == 'Governors':
                 ck9.config(state=DISABLED)
             #else:
