@@ -1591,9 +1591,9 @@ def corpkit_gui():
             else:
                 if datatype_picked.get() not in ['Trees', 'N-grams']:
                     pick_dep_type.config(state = NORMAL)
-                    q.config(state = NORMAL)
-                else:
-                    q.config(state = DISABLED)
+                    #q.config(state = NORMAL)
+                #else:
+                    #q.config(state = DISABLED)
                 sensplitbut.config(state = DISABLED)
                 conc_pick_dep_type.config(state = NORMAL)
                 conc_pick_a_query.configure(state = NORMAL)
@@ -1804,14 +1804,21 @@ def corpkit_gui():
         anyall = StringVar()
         anyall.set('any')
 
+        objs = OrderedDict()
+        # fill it with null data
+        for i in range(20):
+            tmp = StringVar()
+            tmp.set('')
+            objs[i] = [None, None, None, tmp]
+
         def add_criteria(*args):
+            from Tkinter import Toplevel
+            global more_criteria
             try:
-                global more_criteria
-                more_criteria.destroy()
+                more_criteria.deiconify()
+                return
             except:
                 pass
-
-            from Tkinter import Toplevel
             more_criteria = Toplevel()
             more_criteria.geometry('+500+100')
             more_criteria.title("Dependency criteria")
@@ -1820,25 +1827,31 @@ def corpkit_gui():
 
             total = 0
             n_items = []
-            objs = []
-
-            def quit_q(*args):
-                for option, text in zip(ops, ents):
-                    o = option.get().lower()[0]
-                    q = text.get().strip()
+            
+            def quit_q(total, *args):
+                for index, (option, optvar, entbox, entstring) in enumerate(objs.values()[:total]):
+                    if index == 0:
+                        entrytext.set(entstring.get())
+                        datatype_picked.set(optvar.get())
+                    if optvar is None:
+                        more_criteria.withdraw()
+                        return
+                    o = optvar.get().lower()[0]
+                    q = entstring.get().strip()
                     q = remake_special_query(q, return_list = True)
                     additional_criteria[o] = q
-                more_criteria.destroy()
+                more_criteria.withdraw()
 
-            def remove_prev():
-                objs[-1][0].destroy()
-                objs[-1][1].destroy()
-                objs[-1][2] = None
-                objs.remove(objs[-1])
+            def remove_prev(total):
+                objs[total - 1][0].destroy()
+                objs[total - 1][3] = StringVar()
+                objs[total - 1][2].destroy()
+                objs[total - 1][3] = StringVar()
+                del objs[total - 1]
 
             def clear_q():
-                for optmenu, entbox, entstring in objs:
-                    optmenu.set('Words')
+                for optmenu, optvar, entbox, entstring in objs.values():
+                    chosen.set('Words')
                     entstring.set('')
 
             def new_item(total, init = False):
@@ -1858,12 +1871,12 @@ def corpkit_gui():
                 text = Entry(more_criteria, textvariable = text_str, width = 40, font = ("Courier New", 13))
                 all_text_widgets.append(text)
                 text.grid(row = total, column = 1)  
-                objs.append([opt, text, text_str])
+                objs[total] = [opt, chosen, text, text_str]
                 plusser = Button(more_criteria, text = '+', command = lambda : new_item(t))
                 plusser.grid(row = total + 2, column = 0, sticky = W)
-                minuser = Button(more_criteria, text = '-', command = remove_prev)
+                minuser = Button(more_criteria, text = '-', command = lambda : remove_prev(t))
                 minuser.grid(row = total + 2, column = 0, sticky = W, padx = (38,0))
-                stopbut = Button(more_criteria, text = 'Done', command=quit_q)
+                stopbut = Button(more_criteria, text = 'Done', command=lambda : quit_q(t))
                 stopbut.grid(row = total + 2, column = 1, sticky = E)
                 clearbut = Button(more_criteria, text = 'Clear', command=clear_q)
                 clearbut.grid(row = total + 2, column = 1, sticky = E, padx = (0, 60))
@@ -1878,14 +1891,20 @@ def corpkit_gui():
                 n_items.append(r1)
                 n_items.append(r2)
                 if init:
-                    text_str.set(entrytext.get())
+                    text_str.set(qa.get(1.0, END).strip())
                     chosen.set(datatype_picked.get())
                     minuser.config(state=DISABLED)
                 else:
                     minuser.config(state=NORMAL)
                 return t
 
+                if objs:
+                    for optmenu, optvar, entbox, entstring in objs.values():
+                        optmenu.grid()
+                        entbox.grid()
+
             total = new_item(total, init = True)
+
 
         plusbut = Button(interro_opt, text = '+', command = add_criteria, state = DISABLED)
         plusbut.grid(row = 3, column = 0, sticky = 'SW', padx = 20, pady = 10)
@@ -2014,17 +2033,17 @@ def corpkit_gui():
                 ck10.config(state=NORMAL)
                 ck10.deselect()
                 ck10.config(state=DISABLED)
-                q.config(state=DISABLED)
+                #q.config(state=DISABLED)
                 qr.config(state=DISABLED)
                 exclude.config(state = DISABLED)
-                sec_match.config(state = DISABLED)
+                #sec_match.config(state = DISABLED)
                 plusbut.config(state = DISABLED) 
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                           'Index', 'Distance', 'POS', 'Lemmata']:
                 if current_corpus.get().endswith('-parsed'):     
                     plusbut.config(state = NORMAL)           
-                    q.config(state=NORMAL)
+                    #q.config(state=NORMAL)
                     qr.config(state=NORMAL)
                     ck1.config(state=NORMAL)
                     ck2.config(state=NORMAL)
@@ -2037,7 +2056,7 @@ def corpkit_gui():
                     ck9.config(state=NORMAL)
                     ck10.config(state=NORMAL)
                     exclude.config(state = NORMAL)
-                    sec_match.config(state = NORMAL)
+                    #sec_match.config(state = NORMAL)
             if chosen == 'Governors':
                 ck9.config(state=DISABLED)
             #else:
@@ -2229,13 +2248,13 @@ def corpkit_gui():
 
         def q_callback(*args):
             if special_queries.get() == 'Off':
-                q.configure(state=NORMAL)
+                #q.configure(state=NORMAL)
                 qa.configure(state=NORMAL)
                 qr.configure(state=NORMAL)
             else:
                 entrytext.set('')
                 entry_callback()
-                q.configure(state=DISABLED)
+                #q.configure(state=DISABLED)
                 qa.configure(state=DISABLED)
                 qr.configure(state=DISABLED)
                 #almost everything should be disabled ..
