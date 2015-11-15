@@ -1356,6 +1356,8 @@ def corpkit_gui():
                 queryd[k] = v
             queryd[selected_option] = query
 
+
+
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
             interrogator_args = {'search': queryd,
@@ -1376,15 +1378,25 @@ def corpkit_gui():
             #    secondary_val = remake_special_query(secondary_str.get(), return_list = True)
             #    interrogator_args['search'][op] = secondary_val.strip()
 
+            excludes = {}
+            for k, v in ex_additional_criteria.items():
+                if k != 'None':
+                    excludes[k.lower()[0]] = v
             if exclude_op.get() != 'None':
-                op = exclude_op.get().lower()[0]
-                exclude_val = remake_special_query(exclude_str.get(), return_list = True)
-                interrogator_args['exclude'] = {op: exclude_val.strip()}
+                excludes[exclude_op.get().lower()[0]] = exclude_str.get()
+
+            if excludes:
+                interrogator_args['exclude'] = excludes
 
             try:
                 interrogator_args['searchmode'] = anyall.get()
             except:
                 pass
+            try:
+                interrogator_args['searchmode'] = excludemode.get()
+            except:
+                pass
+
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1696,16 +1708,37 @@ def corpkit_gui():
         #all_text_widgets.append(q)
 
         # Exclude: move this to popup
+
+        ex_additional_criteria = {}
+
+        ex_anyall = StringVar()
+        ex_anyall.set('all')
+
+        ex_objs = OrderedDict()
+        # fill it with null data
+        for i in range(20):
+            tmp = StringVar()
+            tmp.set('')
+            ex_objs[i] = [None, None, None, tmp]
+
+        ex_permref = []
+
         exclude_str = StringVar()
         exclude_str.set('')
         Label(interro_opt, text = 'Exclude:').grid(row = 11, column = 0, sticky = W)
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
-        exclude.grid(row = 11, column = 0, sticky = W, padx = (90, 0))
-        qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
-        qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
+        exclude.config(width = 7)
+        exclude.grid(row = 11, column = 0, sticky = W, padx = (70, 0))
+        qr = Entry(interro_opt, textvariable = exclude_str, width = 24, state = DISABLED)
+        qr.grid(row = 11, column = 0, columnspan = 2, sticky = E, padx = (0,40))
         all_text_widgets.append(qr)
+        ex_plusbut = Button(interro_opt, text = '+', \
+                        command = lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
+                                                       exclude_op, exclude_str, title = 'Exclude from interrogation'), \
+                        state = DISABLED)
+        ex_plusbut.grid(row = 11, column = 1, sticky = E)
 
         #blklst = StringVar()
         #Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
@@ -1798,6 +1831,8 @@ def corpkit_gui():
         qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
         all_text_widgets.append(qa)
 
+
+
         additional_criteria = {}
 
         anyall = StringVar()
@@ -1810,17 +1845,22 @@ def corpkit_gui():
             tmp.set('')
             objs[i] = [None, None, None, tmp]
 
-        def add_criteria(*args):
+        permref = []
+
+        def add_criteria(objs, permref, anyalltoggle, output_dict,
+                         optvar, enttext, title = "Dependency criteria"):
+            """this is a popup for adding additional search criteria. it's also used
+            for excludes"""
             from Tkinter import Toplevel
-            global more_criteria
             try:
+                more_criteria = permref[0]
                 more_criteria.deiconify()
                 return
             except:
                 pass
             more_criteria = Toplevel()
             more_criteria.geometry('+500+100')
-            more_criteria.title("Dependency criteria")
+            more_criteria.title(title)
 
             more_criteria.wm_attributes('-topmost', 1)
 
@@ -1828,30 +1868,42 @@ def corpkit_gui():
             n_items = []
             
             def quit_q(total, *args):
+                """exit popup, saving entries"""
                 for index, (option, optvar, entbox, entstring) in enumerate(objs.values()[:total]):
                     if index == 0:
-                        entrytext.set(entstring.get())
-                        datatype_picked.set(optvar.get())
+                        enttext.set(entstring.get())
+                        optvar.set(optvar.get())
                     if optvar is not None:
                         o = optvar.get().lower()[0]
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
-                        additional_criteria[o] = q
+                        output_dict[o] = q
                 more_criteria.withdraw()
 
-            def remove_prev(total):
-                objs[total - 1][0].destroy()
-                objs[total - 1][3] = StringVar()
-                objs[total - 1][2].destroy()
-                objs[total - 1][3] = StringVar()
-                del objs[total - 1]
+            def remove_prev():
+                """delete last added criteria line"""
+                ans = 0
+                for k, (a, b, c, d) in reversed(objs.items()):
+                    if a is not None:
+                        ans = k
+                        break
+                if objs[ans][0] is not None:
+                    objs[ans][0].destroy()
+                objs[ans][1] = StringVar()
+                if objs[ans][2] is not None:
+                    objs[ans][2].destroy()
+                objs[ans][3] = StringVar()
+                del objs[ans]
 
             def clear_q():
+                """clear the popup"""
                 for optmenu, optvar, entbox, entstring in objs.values():
-                    chosen.set('Words')
-                    entstring.set('')
+                    if optmenu is not None:
+                        optvar.set('Words')
+                        entstring.set('')
 
-            def new_item(total, init = False):
+            def new_item(total, optvar, enttext, init = False):
+                """add line to popup"""
                 for i in n_items:
                     i.destroy()
                 for i in n_items:
@@ -1869,17 +1921,17 @@ def corpkit_gui():
                 all_text_widgets.append(text)
                 text.grid(row = total, column = 1)  
                 objs[total] = [opt, chosen, text, text_str]
-                plusser = Button(more_criteria, text = '+', command = lambda : new_item(t))
+                plusser = Button(more_criteria, text = '+', command = lambda : new_item(t, optvar, enttext))
                 plusser.grid(row = total + 2, column = 0, sticky = W)
-                minuser = Button(more_criteria, text = '-', command = lambda : remove_prev(t))
+                minuser = Button(more_criteria, text = '-', command = remove_prev)
                 minuser.grid(row = total + 2, column = 0, sticky = W, padx = (38,0))
                 stopbut = Button(more_criteria, text = 'Done', command=lambda : quit_q(t))
                 stopbut.grid(row = total + 2, column = 1, sticky = E)
                 clearbut = Button(more_criteria, text = 'Clear', command=clear_q)
                 clearbut.grid(row = total + 2, column = 1, sticky = E, padx = (0, 60))
-                r1 = Radiobutton(more_criteria, text = 'Match any', variable = anyall, value= 'any')
+                r1 = Radiobutton(more_criteria, text = 'Match any', variable = anyalltoggle, value= 'any')
                 r1.grid(row = total + 2, column = 0, columnspan = 2, sticky = E, padx = (0,150))
-                r2 = Radiobutton(more_criteria, text = 'Match all', variable = anyall, value= 'all')
+                r2 = Radiobutton(more_criteria, text = 'Match all', variable = anyalltoggle, value= 'all')
                 r2.grid(row = total + 2, column = 0, columnspan = 2, sticky = E, padx = (0,250))
                 n_items.append(plusser)
                 n_items.append(stopbut)
@@ -1888,8 +1940,8 @@ def corpkit_gui():
                 n_items.append(r1)
                 n_items.append(r2)
                 if init:
-                    text_str.set(qa.get(1.0, END).strip())
-                    chosen.set(datatype_picked.get())
+                    text_str.set(enttext.get())
+                    chosen.set(optvar.get())
                     minuser.config(state=DISABLED)
                 else:
                     minuser.config(state=NORMAL)
@@ -1900,10 +1952,15 @@ def corpkit_gui():
                         optmenu.grid()
                         entbox.grid()
 
-            total = new_item(total, init = True)
+            # make the first button with defaults
+            total = new_item(total, optvar, enttext, init = True)
+            if more_criteria not in permref:
+                permref.append(more_criteria)
 
-
-        plusbut = Button(interro_opt, text = '+', command = add_criteria, state = DISABLED)
+        plusbut = Button(interro_opt, text = '+', \
+                        command = lambda: add_criteria(objs, permref, anyall, \
+                                            additional_criteria, datatype_picked, entrytext), \
+                        state = DISABLED)
         plusbut.grid(row = 3, column = 0, sticky = 'SW', padx = 20, pady = 10)
 
         def entry_callback(*args):
@@ -2035,11 +2092,13 @@ def corpkit_gui():
                 exclude.config(state = DISABLED)
                 #sec_match.config(state = DISABLED)
                 plusbut.config(state = DISABLED) 
+                ex_plusbut.config(state = DISABLED) 
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                           'Index', 'Distance', 'POS', 'Lemmata']:
                 if current_corpus.get().endswith('-parsed'):     
-                    plusbut.config(state = NORMAL)           
+                    plusbut.config(state = NORMAL)
+                    ex_plusbut.config(state = NORMAL)
                     #q.config(state=NORMAL)
                     qr.config(state=NORMAL)
                     ck1.config(state=NORMAL)
