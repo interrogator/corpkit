@@ -1351,9 +1351,10 @@ def corpkit_gui():
                 timestring('You need to select a search type.')
                 return
 
-            queryd = {selected_option: query}
+            queryd = {}
             for k, v in additional_criteria.items():
                 queryd[k] = v
+            queryd[selected_option] = query
 
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
