@@ -1332,15 +1332,15 @@ def corpkit_gui():
                             return
 
 
-            if blklst.get() is not False and blklst.get() != '':
-                if blklst.get().startswith('[') and blklst.get().endswith(']') and ',' in blklst.get():
-                    blackl = blklst.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                else:
-                    blackl = remake_special_query(blklst.get())
-                if blackl is False:
-                    return
-            else:
-                blackl = False
+            #if blklst.get() is not False and blklst.get() != '':
+            #    if blklst.get().startswith('[') and blklst.get().endswith(']') and ',' in blklst.get():
+            #        blackl = blklst.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+            #    else:
+            #        blackl = remake_special_query(blklst.get())
+            #    if blackl is False:
+            #        return
+            #else:
+            #    blackl = False
 
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
@@ -1366,7 +1366,7 @@ def corpkit_gui():
                                  'root': root,
                                  'note': note,
                                  'df1_always_df': True,
-                                 'blacklist': blackl,
+                                 #'blacklist': blackl,
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
 
@@ -1384,8 +1384,6 @@ def corpkit_gui():
                 interrogator_args['searchmode'] = anyall.get()
             except:
                 pass
-
-
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1708,13 +1706,13 @@ def corpkit_gui():
         qr.grid(row = 11, column = 0, columnspan = 2, sticky = E)
         all_text_widgets.append(qr)
 
-        blklst = StringVar()
-        Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
-        #blklst.set(r'^n')
-        blklst.set(r'')
-        bkbx = Entry(interro_opt, textvariable = blklst, width = 22)
-        bkbx.grid(row = 12, column = 0, columnspan = 2, sticky = E)
-        all_text_widgets.append(bkbx)
+        #blklst = StringVar()
+        #Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
+        ##blklst.set(r'^n')
+        #blklst.set(r'')
+        #bkbx = Entry(interro_opt, textvariable = blklst, width = 22)
+        #bkbx.grid(row = 12, column = 0, columnspan = 2, sticky = E)
+        #all_text_widgets.append(bkbx)
 
         # lemma tags
         lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
@@ -1833,13 +1831,11 @@ def corpkit_gui():
                     if index == 0:
                         entrytext.set(entstring.get())
                         datatype_picked.set(optvar.get())
-                    if optvar is None:
-                        more_criteria.withdraw()
-                        return
-                    o = optvar.get().lower()[0]
-                    q = entstring.get().strip()
-                    q = remake_special_query(q, return_list = True)
-                    additional_criteria[o] = q
+                    if optvar is not None:
+                        o = optvar.get().lower()[0]
+                        q = entstring.get().strip()
+                        q = remake_special_query(q, return_list = True)
+                        additional_criteria[o] = q
                 more_criteria.withdraw()
 
             def remove_prev(total):
