@@ -30,6 +30,8 @@ def interrogator(path,
         - w/word
         - l/lemma
         - f/function
+        - g/governor
+        - d/dependent
         - p/pos
         - i/index
         - n/ngrams
@@ -86,6 +88,9 @@ def interrogator(path,
 
     :param split_contractions: make "don't" et al into two tokens
     :type split_contractions: bool
+
+    :param num_proc: how many parallel processes to run -- default is the number of cores
+    :type num_proc: int
 
     :returns: A named tuple, with ``.query``, ``.results``, ``.totals`` attributes. 
               If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.

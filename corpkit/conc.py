@@ -17,7 +17,12 @@ def conc(corpus,
         just_speakers = False,
         root = False,
         **kwargs): 
-    """A concordancer for Tregex queries and dependencies"""
+    """
+    A concordancer for Tregex queries and dependencies.
+
+    * Revisions forthcoming to facilitate better dependency querying
+
+    :returns: a Pandas DataFrame containing concordance lines"""
     import corpkit
     import os
     import re

@@ -551,8 +551,7 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def make_corpus(
-                unparsed_corpus_path,
+def make_corpus(unparsed_corpus_path,
                 project_path = None,
                 parse = True,
                 tokenise = False,
@@ -562,16 +561,35 @@ def make_corpus(
                 speaker_segmentation = False,
                 root = False,
                 **kwargs):
-    """Create a parsed version of the unparsed_corpus
+    """
+    Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
 
-    This is designed for command line use
+    :param unparsed_corpus_path: path to corpus containing text files, 
+                                 or subdirs containing text files
+    :type unparsed_corpus_path: str
 
-    unparsed_corpus_path: path to corpus containing text files, 
-                          or subdirs containing text files
-    corenlppath: folder containing corenlp jar files
-    nltk_data_path: path to tokeniser if tokenising
-    operations: which kinds of annotations to do
-    speaker_segmentation: use if your corpus is script like: assign speaker name to each paragraph
+    :param project_path: path to corpkit project
+    :type project_path: str
+
+    :param parse: Do parsing?
+    :type parse: bool
+
+    :param tokenise: Do tokenising?
+    :type tokenise: bool
+    
+    :param corenlppath: folder containing corenlp jar files
+    :type corenlppath: str
+    
+    :param nltk_data_path: path to tokeniser if tokenising
+    :type nltk_data_path: str
+    
+    :param operations: which kinds of annotations to do
+    :type operations: str
+    
+    :param speaker_segmentation: add speaker name to parser output if your corpus is script-like:
+    :type speaker_segmentation: bool
+
+    :returns: list of paths to created corpora
     """
 
     import sys
@@ -765,6 +783,8 @@ def parse_corpus(proj_path = False,
             memory_mb = 2024
         if operations is False:
             operations = 'tokenize,ssplit,pos,lemma,ner,parse,dcoref'
+        if type(operations) == list:
+            operations = ','.join(operations)
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
         proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
