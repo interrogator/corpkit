@@ -1728,7 +1728,7 @@ def corpkit_gui():
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index')))
         exclude.config(width = 11)
         exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
-        qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
+        qr = Entry(interro_opt, textvariable = exclude_str, width = 21, state = DISABLED)
         qr.grid(row = 5, column = 0, columnspan = 2, sticky = E, padx = (0,40))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text = '+', \
@@ -2340,7 +2340,7 @@ def corpkit_gui():
         nametext = StringVar()
         nametext.set('untitled')
         Label(interro_opt, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
-        tmp = Entry(interro_opt, textvariable = nametext)
+        tmp = Entry(interro_opt, textvariable = nametext, width = 15)
         tmp.grid(row = 17, column = 1, sticky = E)
         all_text_widgets.append(tmp)
 
