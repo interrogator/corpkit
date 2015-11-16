@@ -192,7 +192,7 @@ So, to give some examples of output based on the sentence above:
 | <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |  <b>`aux/try` </b>  |
 | <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  <b>`try`, `follow`</b>   |
 
-Note that only one search crtierion and exclude criterion are given here. You can use the plus buttons to add more.
+Note that only one search criterion and exclude criterion are given here. You can use the plus buttons to add more, increasing the specificity with which you can interrogate the corpus.
 
 ### Plain text
 
