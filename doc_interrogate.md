@@ -151,6 +151,10 @@ Using regular expressions, you could do something more complex, like get both th
 
 > `(cats?|dogs?|fish)`
 
+### Multiple search criteria 
+
+When searching dependencies, a plus button beside the query entry box becomes clickable. If you click this, you are given space to add multiple query components. For example, if you wanted to count *help* as a verb, you might create search for `help` as lemma, and `^V` as POS (which will match any verbal POS tag). Use the plus and minus buttons to create or remove criteria. You can also choose between matching *any* of the criteria, or matching *all* of them.
+
 #### Dependency grammars
 
 Your data has actually been annotated with three slightly different dependency grammars. You can choose to work with:
@@ -163,13 +167,11 @@ For more information on the dependency grammars, you can look at section 4 of th
 
 #### Dependency return values
 
-You can choose which 
+When searching dependencies, you can ask *corpkit* to return words, lemmata, parts of speech, and so on. You can also return *functions*, *governors*, *dependents*, *indexes* or *distances from root*. If you select multiple return options, you'll get them joined together with a slash.
 
-#### Dependency options
+#### Examples
 
-Dependency queries can also be filtered, so that only results matching a given role or part-of-speech are returned. Both of these fields are regular expressions or lists.
-
-For the `role:governor` and `role:dependent` search options, if you use a function filter, the `role:` portion of the output is not printed.
+It's probably useful at this point to see some examples of what kinds of queries return what kinds of output.
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/dep-grammar.png"  height="60" width="400"/>
@@ -177,19 +179,21 @@ For the `role:governor` and `role:dependent` search options, if you use a functi
 
 So, to give some examples of output based on the sentence above:
 
-| Search  | Query  | Return | Function filter  | POS filter  | Output |
+| Search  | Query  | Return | Exclude | Output |
 |---|---:|---:|---:|---:|---:|
-| <code>Function</code>  | `lead\b`  | |   |   | <b>`dobj`</b>  |
-| <code>Function</code>  | `LIST:CLOSEDCLASS`  | | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
-| <code>Function</code> | `any`  | <code>Lemmata</code> | <code>(aux&#124;root&#124;.comp)</code>  |   | <b>`would`, `try`, `follow`</b>  |
-| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  |   | <b>`I`</b>, <b>`lead`</b>  |
-| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  | `^P`  | <b>`I`</b> |
-| <code>Words</code> | `^to$` | <code>Distance</code>  |  |  | <b>2</b>  |
-| <code>Lemmata</code>  | `\bfollow.*`  | <code>Function</code>, <code>Dependent</code> |  |  | <b>`to`, `lead`</b>  |
-| <code>Lemmata</code>  | `\bfollow.*`  | <code>Word</code>  |  | `^N.*`  | <b>`lead`</b>  |
-| <code>Lemmata</code>  | `^tr`  |  <code>Function</code>, <code>Lemma</code>|  | `MD`  | <b>`aux:would`</b>  |
-| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |   |  <b>`aux:try` </b>  |
-| <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  |  <b>`try`, `follow`</b>   |
+| <code>Function</code>  | `lead\b`  | |   |  <b>`dobj`</b>  |
+| <code>Function</code>  | `LIST:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <code>Function</code> | `any`  | <code>Lemmata</code> | <code>Function: (aux&#124;root&#124;.comp)</code>   | <b>`would`, `try`, `follow`</b>  |
+| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |   | <b>`I`</b>, <b>`lead`</b>  |
+| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  | `POS: ^[^P]`  | <b>`I`</b> |
+| <code>Words</code> | `^to$` | <code>Distance</code> |  | <b>2</b>  |
+| <code>Lemmata</code>  | `follow`  | <code>Function</code>, <code>Dependent</code> |  | <b>`to`, `lead`</b>  |
+| <code>Lemmata</code>  | `follow`  | <code>Dependent</code>  | `Words: LIST:CLOSEDCLASS`  | <b>`lead`</b>  |
+| <code>Lemmata</code>  | `^tr`  |  <code>Function</code>, <code>Lemma</code>| `MD`  | <b>`aux/would`</b>  |
+| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |   |  <b>`aux/try` </b>  |
+| <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  <b>`try`, `follow`</b>   |
+
+Note that only one search crtierion and exclude criterion are given here. You can use the plus buttons to add more.
 
 ### Plain text
 
