@@ -26,10 +26,12 @@ Your choice will constrain the kinds of data that you can search.
 | `POS`      |  Search by part-of-speech tag      |
 | `Function` | Find tokens by their dependency function |
 | `Index`      | Search by position in sentence (0 == leftmost, etc)       |
-| `N-gramming`      | Find n-grams/clusters       |
+| `Governors`  | Match governor token (locating dependent) | 
+| `Dependents`  | Match dependent token (locating governor) | 
+| `N-grams`      | Find n-grams/clusters       |
 | `Stats` | Get general stats (number of tokens, clauses, etc.) | 
 
-### Choosing what to return
+## Choosing what to return
 
 Once *corpkit* matches your search query, you can tell it what you'd like it to give you back. You may want the lexical items themselves, but you could also get their lemma form, index, POS, function, etc.
 
@@ -44,11 +46,11 @@ In addition to the above options, you can also choose to return:
 
 Notice that you can choose to return multiple values. These are strung together using a colon as a separator. If you search for `'think`' as lemma, and select `POS`, `Lemma` and `Word`, you might get:
 
-> `vbz:think:thinks`
+> `vbz/think/thinks`
 
-You can then use the `edit` tab to process these results in complex ways.
+You can then use the `Edit` tab to process these results in complex ways.
 
-### Trees
+## Tree querying
 
 If you have elected to search `Trees`, you'll need to write a *Tregex query*. Tregex is a language for searching syntax trees like this one:
 
@@ -96,9 +98,9 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 {{tip}}If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the <code>Build</code> tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.{{end}}
 
-#### Search types
+### Tree return values
 
-Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value.
+Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value. For the following sentence:
 
 > `These are prosperous times.`
 
@@ -115,13 +117,7 @@ Which would return:
 | Count       | `1` (added to total)       |
 | POS       |  `JJ`      |
 
-#### Ngramming via trees
-
-You can also use trees to get n-grams or clusters. If you choose the `N-grams` search type, the default query becomes 'any', which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
-
-When n-gramming, two extra options are enabled. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
-
-#### Tree searching options
+### Tree searching options
  
 When searching with trees, there are a few extra options available.
 
@@ -141,9 +137,9 @@ In dependency grammar, words in sentences are connected in a series of governor-
 
 The best source of information on CoreNLP's dependency relationships is the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf).
 
-#### Dependency queries
+### Choosing what to search
 
-When writing queries for dependencies, you can either use Regular Expressions or a list of words. To write a list, use square brackets and commas:
+When writing queries for dependencies, you can either use Regular Expressions or a list of words. To use a list, either use the `Schemes` &rarr; `Wordlists` feature, or simply write our a list manually, using square brackets and commas:
 
 > `[cat,dog,fish]`
 
@@ -155,7 +151,7 @@ Using regular expressions, you could do something more complex, like get both th
 
 When searching dependencies, a plus button beside the query entry box becomes clickable. If you click this, you are given space to add multiple query components. For example, if you wanted to count *help* as a verb, you might create search for `help` as lemma, and `^V` as POS (which will match any verbal POS tag). Use the plus and minus buttons to create or remove criteria. You can also choose between matching *any* of the criteria, or matching *all* of them.
 
-#### Dependency grammars
+### Dependency grammars
 
 Your data has actually been annotated with three slightly different dependency grammars. You can choose to work with:
 
@@ -165,11 +161,11 @@ Your data has actually been annotated with three slightly different dependency g
 
 For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
-#### Dependency return values
+### Dependency return values
 
 When searching dependencies, you can ask *corpkit* to return words, lemmata, parts of speech, and so on. You can also return *functions*, *governors*, *dependents*, *indexes* or *distances from root*. If you select multiple return options, you'll get them joined together with a slash.
 
-#### Examples
+### Dependency examples
 
 It's probably useful at this point to see some examples of what kinds of queries return what kinds of output.
 
@@ -196,19 +192,23 @@ Note that only one search criterion and exclude criterion are given here. You ca
 
 ### Plain text
 
-Plain text is the simplest kind of search. You can either use Regular Expressions or simple search. Lists can be used as queries in either mode.
+When the selected corpus is plain text files, you have the option of searching for words or lemmata, using either regular expressions or wordlists:
 
-> `[cat,dog,fish]`
+> `(cats?|dogs?|fish)`
+
+> `[cat,cats,dog,dogs,fish]`
 
 Plain text searching is language independent, but otherwise not very powerful. Lemmatisation, for example, will not work very well, because *corpkit* won't know the word classes of the words you're finding.
 
-### Tokens
+### Tokenised corpora
+
+If a tokenised corpus is selected, you can search for words, lemmata or n-grams.
 
 As with plain text, you can use either a list or a regular expression to match tokens.
 
 An additional option, however, is `N-grams`. When this option is selected, you can leave the query blank to get all n-grams, or add a word or regex that must be in the n-gram in order for it to be counted. The behaviour is the same as when getting n-grams via trees.
 
-{{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, though they in general allow less sophisticated interrogation, and are not a high priorty. {{end}}
+{{note}} The `Plaintext` and `Tokenise` options are currently functional, but there are currently limited options available for working with them. More will be in development, especially for tokenised corpora. {{end}}
 
 ## Preset queries
 
@@ -217,6 +217,12 @@ Below the query box, there is a dropdown list of preset queries. `'Any'` will ma
 {{tip}} One of the first things you might like to do with your data is calculate the total number of tokens in each subcorpus. The easiest way to do this is to use the <code>Count tokens</code> option in the <code>Trees</code> search type, and to select <code>Any</code> as the preset query. You can then use this data, in combination with a different interrogation, to calculate the relative frequencies of specific words in the corpus. See <a href="doc_edit.html"><i>Edit</i></a> for more details.{{end}}
 
 `Stats` will get the absolute frequencies for general features (number of sentences, clauses, tokens) different moods (imperatives, declaratives, interrogatives) and process types (verbal, relational, mental). It involves many sub-interrogations, and may take a long time.
+
+## N-gramming
+
+You can also choose to search n-grams. If you choose the `N-grams` search type, the default query becomes `'any'`, which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
+
+When n-gramming, two extra options are enabled. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
 
 ## Wordlists
 
