@@ -962,6 +962,7 @@ def interrogator(path,
     if exclude:
         for k, v in exclude.items():
             if type(v) == list:
+                from corpkit.other import as_regex
                 v = as_regex(v, boundaries = 'l', case_sensitive = case_sensitive)
             if k != k.lower()[0]:
                 fixed_exclude[k.lower()[0]] = v

@@ -1383,7 +1383,9 @@ def corpkit_gui():
                 if k != 'None':
                     excludes[k.lower()[0]] = v
             if exclude_op.get() != 'None':
-                excludes[exclude_op.get().lower()[0]] = exclude_str.get()
+                q = remake_special_query(exclude_str.get(), return_list = True)
+                if q:
+                    excludes[exclude_op.get().lower()[0]] = q
 
             if excludes:
                 interrogator_args['exclude'] = excludes
@@ -1729,9 +1731,9 @@ def corpkit_gui():
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
-        exclude.config(width = 7)
+        exclude.config(width = 9)
         exclude.grid(row = 11, column = 0, sticky = W, padx = (70, 0))
-        qr = Entry(interro_opt, textvariable = exclude_str, width = 24, state = DISABLED)
+        qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
         qr.grid(row = 11, column = 0, columnspan = 2, sticky = E, padx = (0,40))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text = '+', \
