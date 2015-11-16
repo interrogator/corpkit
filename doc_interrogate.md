@@ -227,7 +227,7 @@ This can be powerful when used in conjunction with Tregex or dependency queries.
 
 {{tip}} When using special queries inside Tregex queries, always remember to wrap the special query in slashes. <code>"/VB.?/ < /LIST:MENTAL/"</code> will work, but <code>"/VB.?/ < LIST:MENTAL"</code> will not. {{end}}
 
-These wordlists can be used in various places in *corpkit*. If you want to remove closed class words from your n-gram search, you can enter `LIST:CLOSEDCLASS` in the `Blacklist` field. 
+These wordlists can be used in various places in *corpkit*. If you want to remove closed class words from your n-gram search, you can enter `LIST:CLOSEDCLASS` in the `Exclude` field and select `Words`, or define a list of POS tags you don't want to count (i.e. `[DT,IN,CC,PRP]`) and select `POS`. 
 
 ### Creating and modifying wordlists
 
