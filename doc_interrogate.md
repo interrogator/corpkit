@@ -184,13 +184,12 @@ So, to give some examples of output based on the sentence above:
 | <code>Function</code>  | `lead\b`  | |   |  <b>`dobj`</b>  |
 | <code>Function</code>  | `LIST:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
 | <code>Function</code> | `any`  | <code>Lemmata</code> | <code>Function: (aux&#124;root&#124;.comp)</code>   | <b>`would`, `try`, `follow`</b>  |
-| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |   | <b>`I`</b>, <b>`lead`</b>  |
-| <code>Function</code>  | LIST:PARTICIPANT  | <code>Word</code> |  | `POS: ^[^P]`  | <b>`I`</b> |
+| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Word</code> |   | <b>`I`</b>, <b>`lead`</b>  |
+| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Word</code> | `POS: ^[^P]`  | <b>`I`</b> |
 | <code>Words</code> | `^to$` | <code>Distance</code> |  | <b>2</b>  |
 | <code>Lemmata</code>  | `follow`  | <code>Function</code>, <code>Dependent</code> |  | <b>`to`, `lead`</b>  |
 | <code>Lemmata</code>  | `follow`  | <code>Dependent</code>  | `Words: LIST:CLOSEDCLASS`  | <b>`lead`</b>  |
-| <code>Lemmata</code>  | `^tr`  |  <code>Function</code>, <code>Lemma</code>| `MD`  | <b>`aux/would`</b>  |
-| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |   |  <b>`aux/try` </b>  |
+| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |  <b>`aux/try` </b>  |
 | <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  <b>`try`, `follow`</b>   |
 
 Note that only one search crtierion and exclude criterion are given here. You can use the plus buttons to add more.
