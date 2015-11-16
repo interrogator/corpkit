@@ -149,16 +149,26 @@ def concprinter(df, kind = 'string', n = 100):
     print ''
 
 def save_result(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
-    """Save an interrogation as pickle to *savedir*.
+    """
+    Save an interrogation as pickle to *savedir*.
+
+       >>> interro_interrogator(corpus, 'words', 'any')
+       >>> save_result(interro, 'savename')
+
+    will create saved_interrogations/savename.p
 
     :param interrogation: Corpus interrogation to save
     :type interrogation: corpkit interogation/edited result
+    
     :param savename: A name for the saved file
     :type savename: str
+    
     :param savedir: Relative path to directory in which to save file
     :type savedir: str
+    
     :param print_info: Show/hide stdout
     :type print_info: bool
+    
     :returns: None
     """
     import corpkit
@@ -246,14 +256,23 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations', print
         f.close()
 
 def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
-    """Load saved data into memory
+    """
+    Load saved data into memory:
+
+        >>> loaded = load_result('interro')
+
+    will load saved_interrogations/interro.p as loaded
 
     :param savename: Filename with or without extension
     :type savename: str
+    
     :param loaddir: Relative path to the directory containg *savename*
     :type loaddir: str
+    
     :param only_concs: Set to True if loading concordance lines
     :type only_concs: bool
+
+    :returns: loaded data
     """
     import corpkit
     import collections
@@ -348,98 +367,6 @@ def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
             outs[f.replace('.p', '')] = make_into_namedtuple(unpickled)
         return outs
 
-def report_display():
-    import corpkit
-    """Displays/downloads the risk report in Jupyter Notebook, 
-       depending on your browser settings"""
-    class PDF(object):
-        def __init__(self, pdf, size=(200,200)):
-            import corpkit
-            self.pdf = pdf
-            self.size = size
-        def _repr_html_(self):
-            import corpkit
-            return '<iframe src={0} width={1[0]} height={1[1]}></iframe>'.format(self.pdf, self.size)
-        def _repr_latex_(self):
-            import corpkit
-            return r'\includegraphics[width=1.0\textwidth]{{{0}}}'.format(self.pdf)
-    return PDF('report/risk_report.pdf',size=(800,650))
-
-def ipyconverter(inputfile, outextension):
-    import corpkit
-    """ipyconverter converts ipynb files to various formats.
-
-    This function calls a shell script, rather than using an API. 
-    The first argument is the ipynb file. 
-    The second argument is the file extension of the output format, which may be 'py', 'html', 'tex' or 'md'.
-
-    Example usage: ipyconverter('infile.ipynb', 'tex')
-
-    This creates a .tex file called infile-converted.tex
-    """
-    import os
-    if outextension == 'py':
-        outargument = '--to python ' # the trailing space is important!
-    if outextension == 'tex':
-        outargument = '--to latex '
-    if outextension == 'html':
-        outargument = '--to html '
-    if outextension == 'md':
-        outargument = '--to md '
-    outbasename = os.path.splitext(inputfile)[0]
-    output = outbasename + '-converted.' + outextension
-    shellscript = 'ipython nbconvert ' + outargument + inputfile + ' --stdout > ' + output
-    print "Shell command: " + shellscript
-    os.system(shellscript)
-
-def conv(inputfile, loadme = True):
-    import corpkit
-    """A .py to .ipynb converter that relies on old code from IPython.
-
-    You shouldn't use this: I only am while I'm on a deadline.
-    """
-    import os, sys
-    import pycon.current as nbf
-    import IPython
-    outbasename = os.path.splitext(inputfile)[0]
-    output = outbasename + '.ipynb'
-    badname = outbasename + '.nbconvert.ipynb'
-    print '\nConverting ' + inputfile + ' ---> ' + output + ' ...'
-    nb = nbf.read(open(inputfile, 'r'), 'py')
-    nbf.write(nb, open(output, 'w'), 'ipynb')
-    os.system('ipython nbconvert --to=notebook --nbformat=4 %s' % output)
-    os.system('mv %s %s' % (badname, output))
-    if loadme:
-        os.system('ipython notebook %s' % output)
-    #nbnew = open(output, 'r')
-    #IPython.nbformat.v4.convert.upgrade(nbnew, from_version=3, from_minor=0)
-    print 'Done!\n'
-
-def pytoipy(inputfile):
-    import corpkit
-    """A .py to .ipynb converter.
-
-    This function converts .py files to ipynb.
-    Comments in the .py file can be used to delimit cells, headings, etc. For example:
-
-    # <headingcell level=1>
-    # A heading 
-    # <markdowncell>
-    # *This text is in markdown*
-    # <codecell>
-    # print 'hello'
-
-    Example usage: pytoipy('filename.py')
-    """
-    import os
-    import IPython.nbformat.current as nbf
-    outbasename = os.path.splitext(inputfile)[0]
-    output = outbasename + '.ipynb'
-    print '\nConverting ' + inputfile + ' ---> ' + output + ' ...'
-    nb = nbf.read(open(inputfile, 'r'), 'py')
-    nbf.write(nb, open(output, 'w'), 'ipynb')
-    print 'Done!\n'
-
 def new_project(name, loc = '.', root = False):
     """Make a new project in ./*loc*
 
@@ -505,124 +432,20 @@ def new_project(name, loc = '.', root = False):
         time = strftime("%H:%M:%S", localtime())
         print '%s: New project created: "%s"' % (time, name)
 
-def searchtree(tree, query, options = ['-t', '-o']):
-    import corpkit
-    "Searches a tree with Tregex and returns matching terminals"
-    import os
-    from other import tregex_engine
-    from tests import check_dit
-    try:
-        get_ipython().getoutput()
-    except TypeError:
-        have_ipython = True
-    except NameError:
-        import subprocess
-        have_ipython = False
-    fo = open('tree.tmp',"w")
-    fo.write(tree + '\n')
-    fo.close()
-    result = tregex_engine(query = query, check_query = True)
-    result = tregex_engine(query = query, options = options, corpus = "tree.tmp")
-    os.remove("tree.tmp")
-    return result
-
-def quicktree(sentence):
-    import corpkit
-    """Parse a sentence and return a visual representation in IPython"""
-    import os
-    from nltk import Tree
-    from nltk.draw.util import CanvasFrame
-    from nltk.draw import TreeWidget
-    try:
-        from stat_parser import Parser
-    except:
-        raise ValueError('PyStatParser not found.')
-    try:
-        from IPython.display import display
-        from IPython.display import Image
-    except:
-        pass
-    try:
-        get_ipython().getoutput()
-    except TypeError:
-        have_ipython = True
-    except NameError:
-        import subprocess
-        have_ipython = False
-    parser = Parser()
-    parsed = parser.parse(sentence)
-    cf = CanvasFrame()
-    tc = TreeWidget(cf.canvas(),parsed)
-    cf.add_widget(tc,10,10) # (10,10) offsets
-    cf.print_to_file('tree.ps')
-    cf.destroy()
-    if have_ipython:
-        tregex_command = 'convert tree.ps tree.png'
-        result = get_ipython().getoutput(tregex_command)
-    else:
-        tregex_command = ["convert", "tree.ps", "tree.png"]
-        result = subprocess.check_output(tregex_command)    
-    os.remove("tree.ps")
-    return Image(filename='tree.png')
-    os.remove("tree.png")
-
-def multiquery(corpus, query, sort_by = 'total', quicksave = False):
-    import corpkit
-    """Creates a named tuple for a list of named queries to count.
-
-    Pass in something like:
-
-    [[u'NPs in corpus', r'NP'], [u'VPs in corpus', r'VP']]"""
-
-    import collections
-    import os
-    import pandas
-    import pandas as pd
-    from time import strftime, localtime
-    from interrogator import interrogator
-    from editor import editor
-
-    if quicksave:
-        savedir = 'saved_interrogations'
-        if not quicksave.endswith('.p'):
-            quicksave = quicksave + '.p'
-        fullpath = os.path.join(savedir, quicksave)
-        while os.path.isfile(fullpath):
-            selection = raw_input("\nSave error: %s already exists in %s.\n\nPick a new name: " % (savename, savedir))
-            if not selection.endswith('.p'):
-                selection = selection + '.p'
-                fullpath = os.path.join(savedir, selection)
-
-    results = []
-    for name, pattern in query:
-        result = interrogator(corpus, 'count', pattern)
-        result.totals.name = name # rename count
-        results.append(result.totals)
-    results = pd.concat(results, axis = 1)
-
-    results = editor(results, sort_by = sort_by, print_info = False, keep_stats = False)
-    time = strftime("%H:%M:%S", localtime())
-    print '%s: Finished! %d unique results, %d total.' % (time, len(results.results.columns), results.totals.sum())
-    if quicksave:
-        from other import save_result
-        save_result(results, quicksave)
-    return results
-
 def interroplot(path, query):
     """Demo function for interrogator/plotter.
 
-    1. Interrogates path with Tregex query, 
-    2. Gets relative frequencies
-    3. Plots the top seven results
+        1. Interrogates path with Tregex query, 
+        2. Gets relative frequencies
+        3. Plots the top seven results
 
-    :param path: Path to corpus
+    :param path: path to corpus
     :type path: str
+    
     :param query: Tregex query
     :type query: str
 
     """
-    
-    
     import corpkit
     from corpkit import interrogator, editor, plotter
     quickstart = interrogator(path, 'words', query, show = ['w'])
@@ -752,12 +575,27 @@ def tregex_engine(corpus = False,
                   root = False,
                   preserve_case = False,
                   **kwargs):
-    """This does a tregex query.
-    query: tregex query
-    options: list of tregex options
-    corpus: place to search
-    check_query: just make sure query ok
-    check_for_trees: find out if corpus contains parse trees"""
+    """
+    Run a Java Tregex query
+    
+    :param query: tregex query
+    :type query: str
+    
+    :param options: list of tregex options
+    :type options: list of strs -- ['-t', '-o']
+    
+    :param corpus: place to search
+    :type corpus: str
+    
+    :param check_query: just make sure query ok
+    :type check_query: bool
+    
+    :param check_for_trees: find out if corpus contains parse trees
+    :type check_for_trees: bool
+
+    :returns: list of search results
+
+    """
     import corpkit
     from other import add_corpkit_to_path
     add_corpkit_to_path()
@@ -1000,8 +838,17 @@ def tregex_engine(corpus = False,
     return res
 
 def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kwargs):
+    """
+    Load every saved interrogation in data_dir into a dict:
+
+        >>> r = load_all_results()
+
+    :param data_dir: path to saved data
+    :type data_dir: str
+
+    :returns: dict with filenames as keys
+    """
     import corpkit
-    """load every saved interrogation in data_dir into a dict"""
     import os
     import time
     from other import load_result
@@ -1058,8 +905,8 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
     return r
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
-    import corpkit
     """turn a series into a latex table"""
+    import corpkit
     import pandas as pd
     if sort_by:
         df = pd.DataFrame(series.order(ascending = False))
@@ -1090,7 +937,8 @@ def make_nltk_text(directory,
                    tagged = False, 
                    lemmatise = False, 
                    just_content_words = False):
-    """turn a lot of trees into an nltk style text"""
+    """
+    Turn a lot of trees into an nltk style text"""
     import nltk
     import os
     from other import tregex_engine
@@ -1141,41 +989,18 @@ def make_nltk_text(directory,
             textx[os.path.basename(name)] = t
     return textx
 
-def get_synonyms(word, pos = False):
-    import corpkit
-    import nltk
-    from nltk.corpus import wordnet
-    if pos:
-        syns = wordnet.synsets(word, pos = pos)
-    else:
-        syns = wordnet.synsets(word)
-    return list(set([l.name().replace('_', ' ').lower() for s in syns for l in s.lemmas()]))
-
-def synonym_dictmaker(df):
-    import corpkit
-    syn_dict = {}
-    text = make_nltk_text(d)
-    for w in list(df.columns):
-        if w not in syn_dict.keys() and w not in syn_dict.values():
-            wds = get_synonyms(w, pos = pos) + text.similar(w)[:10]
-            sel = raw_input('Enter the indexes to remove from this list of proposed synonyms, or type "exit" to quit:\n\n%s\n') % '\n'.join(wds)
-            if sel.startswith('e'):
-                return
-            for i in sel:
-                del wds[i]
-            for word in wds:
-                syn_dict[word] = w
-    return syn_dict
-
 def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
     """Turns a wordlist into an uncompiled regular expression
 
     :param lst: A wordlist to convert
     :type lst: list
+
     :param boundaries:
     :type boundaries: str -- 'word'/'line'/'space'; tuple -- (leftboundary, rightboundary)
+    
     :param case_sensitive: Make regular expression case sensitive
     :type case_sensitive: bool
+    
     :param inverse: Make regular expression inverse matching
     :type inverse: bool
 
@@ -1212,17 +1037,7 @@ def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
     else:
         inverser1 = r''
         inverser2 = r''
-    #if no_punctuation:
-    #    if not inverse:
-    #        # not needed
-    #        punct = r''
-    #    else:
-    #        punct = r'|[^A-Za-z0-9]+'
-    #else:
-    #    if not inverse:
-    #        punct = r''
-    #    else:
-    #        punct = r''
+
     if inverse:
         joinbit = r'%s|%s' % (boundary2, boundary1)
         return case + inverser1 + r'(' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
@@ -1231,11 +1046,10 @@ def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
 
 
 def show(lines, index, show = 'thread'):
-    import corpkit
     """show lines.ix[index][link] as frame"""
+    import corpkit
     url = lines.ix[index]['link'].replace('<a href=', '').replace('>link</a>', '')
     return HTML('<iframe src=%s width=1000 height=500></iframe>' % url)
-
 
 def add_corpkit_to_path():
     import sys
@@ -1263,9 +1077,6 @@ def add_nltk_data_to_nltk_path(**kwargs):
                 nltk.data.path.append(path_within_gui)
             if path_within_gui.replace('/nltk/', '/', 1) not in nltk.data.path:
                 nltk.data.path.append(path_within_gui.replace('/nltk/', '/', 1))
-
-    # very temporary! -- for using .py
-    #nltk.data.path.append('/users/daniel/work/corpkit/nltk_data')
 
 def get_gui_resource_dir():
     import inspect
@@ -1368,7 +1179,6 @@ def determine_datatype(path):
         return 'plaintext'
     elif mc == '.p':
         return 'tokens'
-
 
 def make_multi(interrogation, indexnames = None):    
     """

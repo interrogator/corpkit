@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 class TextProgressBar:
-    """a text progress bar for CLI operations"""
+    """a text progress bar for CLI operations
+       no need for user to call"""
     from time import localtime, strftime
     try:
         from IPython.display import display, clear_output
