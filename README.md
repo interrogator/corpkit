@@ -359,11 +359,10 @@ Because I mostly use systemic functional grammar, there is also a simple tool fo
 >>> from corpkit import quickview
 >>> from dictionaries.process_types import processes
 
-# use verbal process regex as the query
-# deprole finds the dependent of verbal processes, and its functional role
-# keep only results matching function_filter regex
->>> sayers = interrogator(corpus, 'lemmata', processes.verbal, show = 'dependent',
-...    function_filter = r'^nsubj$', lemmatise = True)
+# match nsubj with verbal process as governor
+>>> crit = {'f': '^nsubj$', 'g': processes.verbal}
+# return lemma of the nsubj
+>>> sayers = interrogator(corpus, crit, show = ['l'])
 
 # have a look at the top results
 >>> quickview(sayers, n = 20)
