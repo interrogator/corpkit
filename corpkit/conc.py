@@ -53,7 +53,6 @@ def conc(corpus,
             query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
         else:
             query = as_regex(query, boundaries = 'w')
-            print query
 
     can_do_fast = False
     if option.startswith('t'):
@@ -181,7 +180,6 @@ def conc(corpus,
                                     #print len(ent)
                                     last_num = len(ent) - 1
                                     conc_lines.append([f, '', ent[0], ent[1], ent[last_num]])
-
 
                 if any(f.endswith('.xml') for f in fs_to_conc):
                     from corenlp_xml.document import Document
