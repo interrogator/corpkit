@@ -1730,7 +1730,7 @@ def corpkit_gui():
         Label(interro_opt, text = 'Exclude:').grid(row = 11, column = 0, sticky = W)
         exclude_op = StringVar()
         exclude_op.set('None')
-        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Dependent', 'Governor', 'Index')))
+        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index')))
         exclude.config(width = 9)
         exclude.grid(row = 11, column = 0, sticky = W, padx = (70, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
@@ -1925,7 +1925,7 @@ def corpkit_gui():
                     n_items.remove(i)
                 chosen = StringVar()
                 poss = tuple(('None', 'Words', 'POS', 'Lemmata', \
-                              'Functions', 'Dependent', 'Governor', 'Index'))
+                              'Functions', 'Dependents', 'Governors', 'Index'))
                 chosen.set('Words')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 t = total + 1

@@ -436,33 +436,15 @@ def interrogator(path,
         if spelling == 'UK':
             usa_convert = {v: k for k, v in usa_convert.items()}
         output = []
-        # if we have funct:word, spellfix the word only
-        if dependency:
-            for result in list_of_matches:
-                funct, word = result.split('/', 1)
+        for result in list_of_matches:
+            if not phrases:
+                result = result.split('/')
+            for index, i in enumerate(result):
                 try:
-                    word = usa_convert[word]
-                    result = u'%s:%s' % (funct, word)
+                    result[index] = usa_convert[i]
                 except KeyError:
                     pass
-                output.append(result)
-            return output            
-        # in any other case, do it normally
-        else:
-            for result in list_of_matches:
-                if phrases:
-                    for w in result:
-                        try:
-                            w = usa_convert[w]
-                        except KeyError:
-                            pass
-                    output.append(result)
-                else:
-                    try:
-                        result = usa_convert[result]
-                    except KeyError:
-                        pass
-                    output.append(result)
+            output.append('/'.join(result))
             return output
 
     def distancer(lks, lk):
