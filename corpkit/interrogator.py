@@ -531,11 +531,11 @@ def interrogator(path,
                 if opt == 'g':
                     for l in deps.links:
                         if re.match(pat, l.governor.text):
-                            lks.append(s.get_token_by_id(l.governor.idx))
+                            lks.append(s.get_token_by_id(l.dependent.idx))
                 elif opt == 'd':
                     for l in deps.links:
                         if re.match(pat, l.dependent.text):
-                            lks.append(s.get_token_by_id(l.dependent.idx))
+                            lks.append(s.get_token_by_id(l.governor.idx))
                 elif opt == 'f':
                     for l in deps.links:
                         if re.match(pat, l.type):
