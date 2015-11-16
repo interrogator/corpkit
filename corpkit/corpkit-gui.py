@@ -722,7 +722,7 @@ def corpkit_gui():
                                'LIST:']
 
             if any([special in query for special in lst_of_specials]):
-                timestring('Special query detected. Loading wordlists ... ')
+                #timestring('Special query detected. Loading wordlists ... ')
                 
                 # get all our lists, and a regex maker for them
                 from dictionaries.process_types import processes
@@ -1612,7 +1612,7 @@ def corpkit_gui():
                 conc_pick_a_query.configure(state = NORMAL)
                 concbut.config(state = DISABLED)
                 for i in ['Trees', 'Words', 'POS', 'Lemmata', \
-                          'Functions', 'N-grams', 'Stats', 'Index']:
+                          'Functions', 'Governors', 'Dependents', 'N-grams', 'Stats', 'Index']:
                     pick_a_datatype['menu'].add_command(label = i, command=Tkinter._setit(datatype_picked, i))
                 
                 pick_a_conc_datatype['menu'].add_command(label = 'Trees', command=Tkinter._setit(corpus_search_type, 'Trees'))
@@ -1730,7 +1730,7 @@ def corpkit_gui():
         Label(interro_opt, text = 'Exclude:').grid(row = 11, column = 0, sticky = W)
         exclude_op = StringVar()
         exclude_op.set('None')
-        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
+        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Dependent', 'Governor', 'Index')))
         exclude.config(width = 9)
         exclude.grid(row = 11, column = 0, sticky = W, padx = (70, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
@@ -1853,6 +1853,8 @@ def corpkit_gui():
                          optvar, enttext, title = "Dependency criteria"):
             """this is a popup for adding additional search criteria. it's also used
             for excludes"""
+            if title == 'Dependency criteria':
+                enttext.set(qa.get(1.0, END).strip('\n').strip())
             from Tkinter import Toplevel
             try:
                 more_criteria = permref[0]
@@ -1880,6 +1882,17 @@ def corpkit_gui():
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
                         output_dict[o] = q
+                # may not work on mac ...
+                if title == 'Dependency criteria':
+                    if len(objs.values()[:total]) > 0:
+                        plusbut.config(bg = '#F4F4F4')
+                    else:
+                        plusbut.config(bg = 'white')
+                else:
+                    if len(objs.values()[:total]) > 0:
+                        ex_plusbut.config(bg = '#F4F4F4')
+                    else:
+                        ex_plusbut.config(bg = 'white')
                 more_criteria.withdraw()
 
             def remove_prev():
@@ -1912,7 +1925,7 @@ def corpkit_gui():
                     n_items.remove(i)
                 chosen = StringVar()
                 poss = tuple(('None', 'Words', 'POS', 'Lemmata', \
-                              'Functions', 'Index'))
+                              'Functions', 'Dependent', 'Governor', 'Index'))
                 chosen.set('Words')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 t = total + 1
@@ -2158,7 +2171,7 @@ def corpkit_gui():
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
         Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Functions', 'N-grams', 'Index', 'Stats')))
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', 'Stats')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
