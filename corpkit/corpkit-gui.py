@@ -440,6 +440,13 @@ def corpkit_gui():
         #  DICTIONARIES   #     #  DICTIONARIES   #     #  DICTIONARIES   #     #  DICTIONARIES   #
         ###################     ###################     ###################     ###################
 
+        qd = {'Subjects': r'__ >># @NP',
+              'Processes': r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))',
+              'Modals': r'MD < __',
+              'Participants': r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)',
+              'Entities': r'NP <# NNP',
+              'Any': 'any'}
+
         # concordance colours
         colourdict = {1: '#fbb4ae',
                       2: '#b3cde3',
@@ -506,11 +513,11 @@ def corpkit_gui():
                       'Turbulent':      'turbulent'}
 
         # translate special queries for interrogator()
-        spec_quer_translate = {'Participants': 'participants',
+        spec_quer_translate = {'Participants': 'w',
                                'Any':          'any',
-                               'Processes':    'processes',
-                               'Subjects':     'subjects',
-                               'Entities':     'entities'}
+                               'Processes':    'w',
+                               'Subjects':     'w',
+                               'Entities':     'w'}
 
         # for the 'stats' option: define a series of queries
         from dictionaries.process_types import processes
@@ -1314,7 +1321,8 @@ def corpkit_gui():
 
             # special queries via dropdown
             if special_queries.get() != 'Off' and special_queries.get() != 'Stats':
-                query = spec_quer_translate[special_queries.get()]
+                query = qd[special_queries.get()]
+                datatype_picked.set('Trees')
 
             else:
                 if special_queries.get() != 'Stats':
@@ -1331,17 +1339,6 @@ def corpkit_gui():
                         if query is False:
                             return
 
-
-            #if blklst.get() is not False and blklst.get() != '':
-            #    if blklst.get().startswith('[') and blklst.get().endswith(']') and ',' in blklst.get():
-            #        blackl = blklst.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-            #    else:
-            #        blackl = remake_special_query(blklst.get())
-            #    if blackl is False:
-            #        return
-            #else:
-            #    blackl = False
-
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
@@ -1355,8 +1352,6 @@ def corpkit_gui():
             for k, v in additional_criteria.items():
                 queryd[k] = v
             queryd[selected_option] = query
-
-
 
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
@@ -1727,20 +1722,20 @@ def corpkit_gui():
 
         exclude_str = StringVar()
         exclude_str.set('')
-        Label(interro_opt, text = 'Exclude:').grid(row = 11, column = 0, sticky = W)
+        Label(interro_opt, text = 'Exclude:').grid(row = 5, column = 0, sticky = W)
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index')))
-        exclude.config(width = 9)
-        exclude.grid(row = 11, column = 0, sticky = W, padx = (70, 0))
+        exclude.config(width = 11)
+        exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 22, state = DISABLED)
-        qr.grid(row = 11, column = 0, columnspan = 2, sticky = E, padx = (0,40))
+        qr.grid(row = 5, column = 0, columnspan = 2, sticky = E, padx = (0,40))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text = '+', \
                         command = lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state = DISABLED)
-        ex_plusbut.grid(row = 11, column = 1, sticky = E)
+        ex_plusbut.grid(row = 5, column = 1, sticky = E)
 
         #blklst = StringVar()
         #Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
@@ -1832,8 +1827,6 @@ def corpkit_gui():
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD, highlightthickness=0)
         qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
         all_text_widgets.append(qa)
-
-
 
         additional_criteria = {}
 
@@ -1985,7 +1978,6 @@ def corpkit_gui():
             qa.insert(END, entrytext.get())
         entrytext.trace("w", entry_callback)
 
-
         # these are example queries for each data type
         def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
                        'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
@@ -2024,10 +2016,11 @@ def corpkit_gui():
             #datatype_listbox.select_set(index)
             #datatype_listbox.see(index)
             if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
-                try:
-                    entrytext.set(special_examples[value])
-                except KeyError:
-                    entrytext.set(def_queries[datatype_picked.get()])
+                if qa.get(1.0, END).strip('\n').strip() not in qd.values():
+                    try:
+                        entrytext.set(special_examples[value])
+                    except KeyError:
+                        entrytext.set(def_queries[datatype_picked.get()])
 
                 #try:
                 #    ngmsize.destroy()
@@ -2054,8 +2047,8 @@ def corpkit_gui():
         global ngmsize
         Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
-        ngmsize.configure(width = 9)
-        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (90, 0))
+        ngmsize.configure(width = 12)
+        ngmsize.grid(row = 7, column = 0, sticky = W, padx = (60, 0))
         ngmsize.config(state=DISABLED)
         global split_contract
         Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 75)) 
@@ -2064,7 +2057,7 @@ def corpkit_gui():
         split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
         split_contract.config(state=DISABLED)
 
-        Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 88))
+        Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 75))
         spl = MyOptionMenu(interro_opt, 'Off','UK','US')
         spl.configure(width = 7)
         spl.grid(row = 6, column = 1, sticky = E, padx = (2, 0))
@@ -2072,7 +2065,6 @@ def corpkit_gui():
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
             #datatype_listbox.delete(0, 'end')
-
             chosen = datatype_picked.get()
             #lst = option_dict[chosen]
             #for e in lst:
@@ -2163,10 +2155,11 @@ def corpkit_gui():
                     split_contract.config(state = DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
-            try:
-                entrytext.set(def_queries[chosen])
-            except:
-                entrytext.set('')
+            if qa.get(1.0, END).strip('\n').strip() not in qd.values():
+                try:
+                    entrytext.set(def_queries[chosen])
+                except:
+                    pass
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
@@ -2178,7 +2171,7 @@ def corpkit_gui():
         
         # trees, words, functions, governors, dependents, pos, lemma, count
         frm = Frame(interro_opt)
-        Label(frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW', pady = 3)
+        Label(frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
         frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
 
         return_token = StringVar()
@@ -2318,24 +2311,29 @@ def corpkit_gui():
         #datatype_listbox.select_set(0)
 
         def q_callback(*args):
+
             if special_queries.get() == 'Off':
                 #q.configure(state=NORMAL)
                 qa.configure(state=NORMAL)
                 qr.configure(state=NORMAL)
             else:
-                entrytext.set('')
-                entry_callback()
+                entrytext.set(qd[special_queries.get()])
                 #q.configure(state=DISABLED)
                 qa.configure(state=DISABLED)
                 qr.configure(state=DISABLED)
+                if special_queries.get() == 'Stats':
+                    datatype_picked.set('Stats')
+                else:
+                    datatype_picked.set('Trees')
                 #almost everything should be disabled ..
 
         queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
         special_queries = StringVar(root)
         special_queries.set('Off')
-        Label(interro_opt, text = 'Preset query:').grid(row = 6, column = 0, sticky = W)
+        Label(interro_opt, text = 'Preset:').grid(row = 6, column = 0, sticky = W)
         pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
-        pick_a_query.grid(row = 6, column = 0, padx = (90, 0), columnspan = 2, sticky = W)
+        pick_a_query.config(width = 11)
+        pick_a_query.grid(row = 6, column = 0, padx = (60, 0), columnspan = 2, sticky = W)
         special_queries.trace("w", q_callback)
 
         # Interrogation name
