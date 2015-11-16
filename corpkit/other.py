@@ -41,7 +41,7 @@ def quickview(results, n = 25):
     if 'interrogation' in str(type(results)):
         clas = results.query['function']
         if clas == 'interrogator':
-            datatype = results.query['datatype']
+            datatype = results.results.iloc[0,0].dtype
             if datatype == 'int64':
                 option = 'total'
             else:
@@ -60,7 +60,7 @@ def quickview(results, n = 25):
 
         elif clas == 'editor':
             # currently, it's wrong if you edit keywords! oh well
-            datatype = results.query['datatype']
+            datatype = results.results.iloc[0,0].dtype
             if results.query['just_totals']:
                 resbranch = False
                 if results.results.dtype == 'int64':
@@ -82,7 +82,7 @@ def quickview(results, n = 25):
     if type(results) == pandas.core.frame.DataFrame:
         results_branch = results
         resbranch = True
-        if type(results.iloc[0][0]) == numpy.int64:
+        if type(results.iloc[0,0]) == numpy.int64:
             option = 'total'
         else:
             option = '%'

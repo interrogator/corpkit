@@ -13,14 +13,14 @@ def pmultiquery(path,
     **kwargs):
     """Parallel process multiple queries or corpora.
 
-    This function is used by interrogator if:
+    This function is used by interrogator() if:
 
         a) path is a list of paths
         b) query is a dict of named queries
-        c) function_filter is iterable
-        d) just speakers == 'each'
+        c) just speakers == 'each', or a list of speakers with len(list) > 1
     
-    This function needs joblib 0.8.4 or above in order to run properly."""
+    This function needs joblib 0.8.4 or above in order to run properly.
+    There's no reason to call it yourself."""
     
     import collections
     import os
