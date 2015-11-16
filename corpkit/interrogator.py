@@ -332,6 +332,9 @@ def interrogator(path,
             except TypeError:
                 pass
 
+        if not dependency and exclude and 'w' in exclude.keys():
+            list_of_matches = [w for w in list_of_matches if not re.match(exclude['w'], w)]
+
         if lemmatise or 'l' in show:
             if not dependency:
                 tag = gettag(query, lemmatag = lemmatag)
@@ -341,6 +344,9 @@ def interrogator(path,
                 res = []
                 for w, l in tups:
                     single_result = []
+                    if exclude and 'l' in exclude.keys():
+                        if re.match(exclude['l'], l):
+                            continue
                     if 'w' in show:
                         single_result.append(w)
                     if 'l' in show:
@@ -940,7 +946,8 @@ def interrogator(path,
     allwords_list = []
     
     regex_nonword_filter = re.compile("[A-Za-z0-9:_]")
-
+    
+    # fix up search
     if type(search) == str:
         search = search[0].lower()
         if not search.lower().startswith('t') and not search.lower().startswith('n') \
@@ -949,6 +956,18 @@ def interrogator(path,
             if query == 'any':
                 query = r'.*'
         search = {search: query}
+
+    # fix up exclude naming conventions, convert lists to regex
+    fixed_exclude = {}
+    if exclude:
+        for k, v in exclude.items():
+            if type(v) == list:
+                v = as_regex(v, boundaries = 'l', case_sensitive = case_sensitive)
+            if k != k.lower()[0]:
+                fixed_exclude[k.lower()[0]] = v
+            else:
+                fixed_exclude[k] = v
+        exclude = fixed_exclude
 
     if not search_iterable:
         query = search.values()[0]
