@@ -39,8 +39,6 @@ In addition to the above options, you can also choose to return:
 
 | Search           | Description |
 |------------------------|---------------------------------------------------|
-| `Governor` | Get the token governing *match* |
-| `Dependent` | Get the token(s) dependent on *match* |
 | `Distance` | Number of links needed to get from *match* to *parse root* |
 | `Count` | Count occurrences only |
 
