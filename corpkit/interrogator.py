@@ -345,7 +345,6 @@ def interrogator(path,
                 tag = gettag(query, lemmatag = lemmatag)
                 lemmata = lemmatiser(list_of_matches, tag)
                 tups = zip(list_of_matches, lemmata)
-                lemmatag = gettag(query, lemmatag)
                 res = []
                 for w, l in tups:
                     single_result = []
@@ -356,6 +355,14 @@ def interrogator(path,
                         single_result.append(w)
                     if 'l' in show:
                         single_result.append(l)
+                    # bad fix:
+                    # this currently says, if pos in show, there must only be pos ...
+                    if 'p' in show:
+                        if lemmatise:
+                            single_result.append(l)
+                        else:
+                            single_result.append(w)
+
                     single_result = '/'.join(single_result)
                     res.append(single_result)
                 list_of_matches = res
@@ -408,8 +415,11 @@ def interrogator(path,
             if translated_option.startswith('u'):
                 if word in taglemma:
                     word = taglemma[word]
+                else:
+                    if word == 'x':
+                        word = 'Other'
             # only use wordnet lemmatiser when appropriate
-            if not dependency:
+            elif not dependency:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
@@ -925,6 +935,7 @@ def interrogator(path,
     split_con = True
     search_iterable = False
 
+    # this currently slows things down with huge corpora    
     from corpkit.other import determine_datatype
     datatype = determine_datatype(path)
 
@@ -944,6 +955,12 @@ def interrogator(path,
                 query = r'.*'
         search = {search: query}
 
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f']
+    if not any(i in possb for i in search.keys()):
+        raise ValueError('search argument "%s" unrecognised.' % search.keys())
+    if len(search.keys()) > 1 and 't' in search.keys():
+        raise ValueError('if "t" in search, it must be the only list item')
+
     # fix up exclude naming conventions, convert lists to regex
     fixed_exclude = {}
     if exclude:
@@ -961,10 +978,19 @@ def interrogator(path,
         query = search.values()[0]
 
     if type(show) == str or type(show) == unicode:
-        show = [show]
+        show = [show.lower()[0]]
 
     for index, t in enumerate(show):
         show[index] = t.lower()[0]
+
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f']
+    only_dep = ['d', 'g', 'i', 'a', 'f']
+    if not any(i in possb for i in show):
+        raise ValueError('show argument "%s" unrecognised.' % show)
+    if len(show) > 1 and 'c' in show:
+        raise ValueError('if "c" in show, it must be the only list item')
+    if 't' in search.keys() and any(i in only_dep for i in show):
+        raise ValueError('If searching trees, show can not include: %s' % ', '.join(only_dep))
 
     # Tregex option:
     translated_option = False
