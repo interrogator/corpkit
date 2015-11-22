@@ -800,8 +800,8 @@ def plotter(title,
                     handles, labels = plt.gca().get_legend_handles_labels()
                     # area doubles the handles and labels. this removes half:
                     if areamode:
-                        handles = handles[-num_to_plot:]
-                        labels = labels[-num_to_plot:]
+                        handles = handles[-len(handles) / 2:]
+                        labels = labels[-len(labels) / 2:]
                     if rev_leg:
                         handles = handles[::-1]
                         labels = labels[::-1]
