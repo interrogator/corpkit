@@ -57,7 +57,9 @@ def editor(dataframe1,
     :param dataframe2: List of results or totals.
                             If list of results, for each entry in dataframe 1, locate
                             entry with same name in dataframe 2, and do maths there
-    :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict
+                            if 'self', do all merging/keeping operations, then use
+                            edited dataframe1 as dataframe2
+    :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
     
     :param sort_by: Calculate slope, stderr, r, p values, then sort by:
                             increase: highest to lowest slope value
