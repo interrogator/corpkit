@@ -935,9 +935,16 @@ def interrogator(path,
     split_con = True
     search_iterable = False
 
-    # this currently slows things down with huge corpora    
-    from corpkit.other import determine_datatype
-    datatype = determine_datatype(path)
+    # determine what kind of data the corpus is
+    # this currently slows things down with huge corpora, 
+    # so judge from folder name first  
+    if type(path) == str and path.endswith('-parsed'):
+        datatype = 'parse'
+    elif type(path) == str and path.endswith('-tokenised'):
+        datatype = 'tokens'
+    else:
+        from corpkit.other import determine_datatype
+        datatype = determine_datatype(path)
 
     # some empty lists we'll need
     dicts = []
@@ -1762,6 +1769,7 @@ def interrogator(path,
         the_options = {'path': path,
                        'search': search,
                        'show': show,
+                       'function': 'interrogator',
                        'datatype': stotals.dtype,
                        'query': query,
                        'exclude': exclude,
@@ -1865,6 +1873,7 @@ def interrogator(path,
                        'lemmatise': lemmatise,
                        'titlefilter': titlefilter,
                        'lemmatag': lemmatag,
+                       'function': 'interrogator',
                        'spelling': spelling,
                        'exclude': exclude,
                        'phrases': phrases,
