@@ -870,15 +870,28 @@ def plotter(title,
             if not piemode:
                 plt.xlabel(x_label)
 
+    def is_number(s):
+        """check if str can be can be made into float/int"""
+        try:
+            float(s) # for int, long and float
+        except ValueError:
+            try:
+                complex(s) # for complex
+            except ValueError:
+                return False
+        return True
+
     # for now, always turn off sci notation
     from matplotlib.ticker import ScalarFormatter
     if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
         try:
-            plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
+            if all(is_number(s) for s in list(dataframe.index)):
+                plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
         except:
             pass
     try:
-        plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
+        if all(is_number(s) for s in list(dataframe.columns)):
+            plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
     except:
         pass
 
