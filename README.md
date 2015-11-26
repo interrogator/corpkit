@@ -173,7 +173,7 @@ python setup.py install
 # might need sudo:
 pip install corpkit
 # or, for a local install:
-# pip install -user corpkit
+# pip install --user corpkit
 ```
 
 *corpkit* should install all the necessary dependencies, including *pandas*, *NLTK*, *matplotlib*, etc, as well as some NLTK data files. 
