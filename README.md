@@ -4,9 +4,9 @@
 
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
-> Because I kept building new tools and functions for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Recently, I've been working on a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
+> **Over the last few months I've developed a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
 <!-- MarkdownTOC -->
 
@@ -58,7 +58,7 @@ Also included are some lists of words and dependency roles, which can be used to
 
 While most of the tools are designed to work with corpora that are parsed (by [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
 
-The idea is to run the tools from a [Jupyter Notebook](http://jupyter.org), but you could also operate the toolkit from the command line if you wanted to have less fun.
+I think it's a great idea to use *corpkit* from within a [Jupyter Notebook](http://jupyter.org), but you could also operate the toolkit from the command line if you wanted to have less fun.
 
 The most comprehensive use of *corpkit* to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of *corpkit* can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
@@ -79,9 +79,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
 * Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
-* Look for keywords in each subcorpus (using code from [*Spindle*](https://github.com/sgrau/spindle-code)), and chart their keyness
 * Look for ngrams in each subcorpus, and chart their frequency
-* Two-way UK-US spelling conversion (superior as the former may be), and the ability to add words manually
+* Two-way UK-US spelling conversion, and the ability to add words manually
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
@@ -111,30 +110,17 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Customisable figure titles, axes labels, legends, image size, colormaps, etc.
 * Use `TeX` if you have it
 * Use log scales if you really want
-* Use a number of chart styles, such as `ggplot` or `fivethirtyeight`
+* Use a number of chart styles, such as `ggplot`, `fivethirtyeight` or 'seaborn-talk' (if you've got `seaborn` installed)
 * Save images to file, as `.pdf` or `.png`
 
 <a name="other-stuff"></a>
 #### Other stuff
 
-* View top results as a table via `Pandas`
-* Standalone tools for quickly and easily generating lists of keywords, ngrams, collocates and concordances
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
 * Randomise concordance results, determine window size, output to CSV, etc.
 * Quickly save interrogations and figures to file, and reload results in new sessions with `save_result()` and `load_result()`
 * Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
 * Start a new blank project with `new_project()`
-
-One of the main reasons for these tools was to make it quicker and easier to explore corpora in complex ways, using output from one tool as input for the next.
-
-* n-gramming and keywording can be done via `interrogator()`
-* keywording can easily be done on your concordance lines
-* Use loops to concordance the top results from an interrogation, or check their keyness
-* use `editor()` to edit concordance line output as well as interrogations
-* build a dictionary from a corpus, subcorpus, or from concordance lines, and use it as a reference corpus for keywording
-* Restrict keyword analysis to particular parts of lexis/grammar (i.e. NP heads), removing the need for stopword lists, and making topic summarisation easier
-* Use `interrogator()` output or subset of output as target or reference corpus
-* and so on ...
 
 Included here is `orientation/orientation.ipynb`, which is a Jupyter Notebook version of this readme. In `orientation/data` is a sample corpus of paragraph from *The New York Times* containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package. With the notebook and the data, you can easily run all the code in this document yourself.
 
