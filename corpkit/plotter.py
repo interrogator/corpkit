@@ -332,7 +332,7 @@ def plotter(title,
         pass
 
     # remove totals and tkinter order
-    if not was_series:
+    if not was_series and not all(x.lower() == 'total' for x in list(dataframe.columns)):
         for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
             try:
                 dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
@@ -909,6 +909,20 @@ def plotter(title,
                     plt.ylabel(y_label)
                 else:
                     plt.ylabel(y_l)
+        else:
+            if type(y_label) == str:
+                the_y = y_label
+            else:
+                the_y = y_l
+            plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
+        
+        #    if not piemode:
+        #        if type(y_label) == str:
+        #            plt.ylabel(y_label)
+        #        else:
+        #            plt.ylabel(y_l)
+
+
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
