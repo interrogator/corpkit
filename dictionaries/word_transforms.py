@@ -24,7 +24,8 @@ wordlist = {u"felt": u"feel",
             u"us": u"we",
             u"me": u"i",
             u"her": u"she",
-            u"him": u"he"}
+            u"him": u"he",
+            u"pdocs": "pdoc"}
             #u"would": u"would/will",
             #u"will": u"would/will",
             #u"wo": u"would/will",
