@@ -255,7 +255,10 @@ def interrogator(path,
 
     def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
                  init = False, length = False):
-        """animates progress bar in unique position in terminal"""
+        """
+        Animates progress bar in unique position in terminal
+        Multiple progress bars not supported in jupyter yet.
+        """
         if init:
             from textprogressbar import TextProgressBar
             return TextProgressBar(length, dirname = tot_string)
@@ -272,7 +275,9 @@ def interrogator(path,
                 progbar.animate(count) 
 
     def signal_handler(signal, frame):
-        """pause on ctrl+c, rather than just stop loop"""       
+        """
+        Pause on ctrl+c, rather than just stop loop
+        """       
         import signal
         import sys
         from time import localtime, strftime
@@ -286,7 +291,9 @@ def interrogator(path,
     signal.signal(signal.SIGINT, signal_handler)
     
     def gettag(query, lemmatag = False):
-        """find tag for wordnet lemmatisation"""
+        """
+        Find tag for WordNet lemmatisation
+        """
         import re
         if lemmatag is False:
             tag = 'n' # same default as wordnet
@@ -317,7 +324,14 @@ def interrogator(path,
         return tag
     
     def processwords(list_of_matches, lemmatag = False):
-        """normalise matches from interrogations"""
+        """
+        Normalise matches from interrogations
+
+        -lowercase
+        -remove non alnum
+        -tokenise if phrases
+        -put together with slashes
+        """
         list_of_matches = [w.lower() for w in list_of_matches]
         # remove nonwords, strip . to normalise "dr."
         if translated_option != 'o' and translated_option != 'u':
@@ -372,24 +386,6 @@ def interrogator(path,
         if spelling:
             list_of_matches = convert_spelling(list_of_matches, spelling = spelling)
 
-        # use blacklist option in gui
-        if 'blacklist' in kwargs.keys():
-            stopwords = False
-            if kwargs['blacklist'] is not False:
-                if kwargs['blacklist'] is True:
-                    from dictionaries.stopwords import stopwords as my_stopwords
-                    stopwords = [i.lower() for i in my_stopwords]
-                    list_of_matches = [w for w in list_of_matches if w not in stopwords]
-                else:
-                    if type(kwargs['blacklist']) == list:
-                        stopwords = [i.lower() for i in kwargs['blacklist']]
-                        list_of_matches = [w for w in list_of_matches if w not in stopwords]
-                    else:
-                        regexblacklist = re.compile(kwargs['blacklist'])
-                        list_of_matches = [w for w in list_of_matches if not re.search(regexblacklist, w)]
-
-        #if not split_con:
-        #    list_of_matches = unsplitter(list_of_matches)
         
         # turn every result into a single string again if need be:
         if phrases:
@@ -460,7 +456,7 @@ def interrogator(path,
                 except KeyError:
                     pass
             output.append('/'.join(result))
-            return output
+        return output
 
     def distancer(lks, lk):
         "determine number of jumps to root"      
@@ -1015,9 +1011,9 @@ def interrogator(path,
 
 
     if using_tregex:
+        optiontext = 'Searching parse trees'
         if 'p' in show:
             dep_funct = slow_tregex
-            optiontext = 'Part-of-speech tags only.'
             translated_option = 'u'
             if type(query) == list:
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
@@ -1025,7 +1021,6 @@ def interrogator(path,
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 't' in show:
             dep_funct = slow_tregex
-            optiontext = 'Tags and words.'
             translated_option = 'o'
             if type(query) == list:
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
@@ -1033,7 +1028,6 @@ def interrogator(path,
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 'w' in show:
             dep_funct = slow_tregex
-            optiontext = 'Words only.'
             translated_option = 't'
             if type(query) == list:
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
@@ -1044,7 +1038,6 @@ def interrogator(path,
             count_results = {}
             only_count = True
             translated_option = 'C'
-            optiontext = 'Counts only.'
             if type(query) == list:
                 query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
@@ -1052,7 +1045,6 @@ def interrogator(path,
         elif 'l' in show:
             dep_funct = slow_tregex
             translated_option = 't'
-            optiontext = 'Words, lemmatised.'
             lemmatise = True
             if type(query) == list:
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
@@ -1185,22 +1177,23 @@ def interrogator(path,
             pass
     
     # if query is a special query, convert it:
-    if query == 'any':
-        if translated_option == 't' or translated_option == 'C':
-            query = r'/.?[A-Za-z0-9].?/ !< __'
-        if translated_option == 'u' or translated_option == 'o':
-            query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-    if query == 'subjects':
-        query = r'__ >># @NP'
-    if query == 'processes':
-        query = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
-    if query == 'modals':
-        query = r'MD < __'
-    if query == 'participants':
-        query = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
-    if query == 'entities':
-        query = r'NP <# NNP'
-        titlefilter = True
+    for k, v in search.items():
+        if k == 't' and v == 'any':
+            if 'l' in show or 'w' in show:
+                search[k] = r'/.?[A-Za-z0-9].?/ !< __'
+            else:
+                search[k] = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+        if k == 't' and v == 'subjects':
+            search[k] = r'__ >># @NP'
+        if k == 't' and v == 'processes':
+            search[k] = r'/VB.?/ >># ( VP >+(VP) (VP !> VP $ NP))'
+        if k == 't' and v == 'modals':
+            search[k] = r'MD < __'
+        if k == 't' and v == 'participants':
+            search[k] = r'/(NN|PRP|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
+        if k == 't' and v == 'entities':
+            search[k] = r'NP <# NNP'
+            titlefilter = True
 
     # check that there's nothing in the quicksave path
     if quicksave:
@@ -1507,6 +1500,13 @@ def interrogator(path,
     else:
         qtext = 'regex'
 
+    # horrible, format dict query
+    if type(search) == dict:
+        import pprint
+        pp = pprint.PrettyPrinter(indent=0)
+        qtext = pp.pformat(search).replace('{', '').replace('}', '').replace("'", '')
+        qtext = qtext.replace("u'", '').replace('"', '').replace(', ', '\n                  ')
+
     global skipped_sents
     skipped_sents = 0
 
@@ -1808,7 +1808,10 @@ def interrogator(path,
         return output
 
     # flatten and sort master list, in order to make a list of unique words
-    allwords = [item for sublist in allwords_list for item in sublist]
+    try:
+        allwords = [item for sublist in allwords_list for item in sublist]
+    except TypeError:
+        raise TypeError('No results found, sorry.')
     allwords.sort()
     unique_words = set(allwords)
 
