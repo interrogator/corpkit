@@ -958,12 +958,18 @@ def editor(dataframe1,
 
     # remove totals and tkinter order
     for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+        if name == 'Total' and df1_istotals:
+            continue
         try:
             df = df.drop(name, axis = ax, errors = 'ignore')
         except:
             pass
     for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+        if name == 'Total' and single_totals:
+            continue
+
         try:
+
             df2 = df2.drop(name, axis = ax, errors = 'ignore')
         except:
             pass
