@@ -1,0 +1,1152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.plotter &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.plotter</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="plotter"><a class="viewcode-back" href="../../corpkit.html#corpkit.plotter.plotter">[docs]</a><span class="k">def</span> <span class="nf">plotter</span><span class="p">(</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">x_label</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="n">style</span> <span class="o">=</span> <span class="s">&#39;ggplot&#39;</span><span class="p">,</span>
+            <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="n">save</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">legend_pos</span> <span class="o">=</span> <span class="s">&#39;best&#39;</span><span class="p">,</span>
+            <span class="n">reverse_legend</span> <span class="o">=</span> <span class="s">&#39;guess&#39;</span><span class="p">,</span>
+            <span class="n">num_to_plot</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="n">tex</span> <span class="o">=</span> <span class="s">&#39;try&#39;</span><span class="p">,</span>
+            <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span><span class="p">,</span>
+            <span class="n">cumulative</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">pie_legend</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+            <span class="n">partial_pie</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">show_totals</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">transparent</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">output_format</span> <span class="o">=</span> <span class="s">&#39;png&#39;</span><span class="p">,</span>
+            <span class="n">interactive</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">black_and_white</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">show_p_val</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Visualise corpus interrogations.</span>
+
+<span class="sd">    :param title: A title for the plot</span>
+<span class="sd">    :type title: str</span>
+<span class="sd">    :param df: Data to be plotted</span>
+<span class="sd">    :type df: pandas.core.frame.DataFrame</span>
+<span class="sd">    :param x_label: A label for the x axis</span>
+<span class="sd">    :type x_label: str</span>
+<span class="sd">    :param y_label: A label for the y axis</span>
+<span class="sd">    :type y_label: str</span>
+<span class="sd">    :param kind: The kind of chart to make</span>
+<span class="sd">    :type kind: str (&#39;line&#39;/&#39;bar&#39;/&#39;barh&#39;/&#39;pie&#39;/&#39;area&#39;)</span>
+<span class="sd">    :param style: Visual theme of plot</span>
+<span class="sd">    :type style: str (&#39;ggplot&#39;/&#39;bmh&#39;/&#39;fivethirtyeight&#39;/&#39;seaborn-talk&#39;/etc)</span>
+<span class="sd">    :param figsize: Size of plot</span>
+<span class="sd">    :type figsize: tuple (int, int)</span>
+<span class="sd">    :param save: If bool, save with *title* as name; if str, use str as name</span>
+<span class="sd">    :type save: bool/str</span>
+<span class="sd">    :param legend_pos: Where to place legend</span>
+<span class="sd">    :type legend_pos: str (&#39;upper right&#39;/&#39;outside right&#39;/etc)</span>
+<span class="sd">    :param reverse_legend: Reverse the order of the legend</span>
+<span class="sd">    :type reverse_legend: bool</span>
+<span class="sd">    :param num_to_plot: How many columns to plot</span>
+<span class="sd">    :type num_to_plot: int/&#39;all&#39;</span>
+<span class="sd">    :param tex: Use TeX to draw plot text</span>
+<span class="sd">    :type tex: bool</span>
+<span class="sd">    :param colours: Colourmap for lines/bars/slices</span>
+<span class="sd">    :type colours: str</span>
+<span class="sd">    :param cumulative: Plot values cumulatively</span>
+<span class="sd">    :type cumulative: bool</span>
+<span class="sd">    :param pie_legend: Show a legend for pie chart</span>
+<span class="sd">    :type pie_legend: bool</span>
+<span class="sd">    :param partial_pie: Allow plotting of pie slices only</span>
+<span class="sd">    :type partial_pie: bool</span>
+<span class="sd">    :param show_totals: Print sums in plot where possible</span>
+<span class="sd">    :type show_totals: str -- &#39;legend&#39;/&#39;plot&#39;/&#39;both&#39;</span>
+<span class="sd">    :param transparent: Transparent .png background</span>
+<span class="sd">    :type transparent: bool</span>
+<span class="sd">    :param output_format: File format for saved image</span>
+<span class="sd">    :type output_format: str -- &#39;png&#39;/&#39;pdf&#39;</span>
+<span class="sd">    :param black_and_white: Create black and white line styles</span>
+<span class="sd">    :type black_and_white: bool</span>
+<span class="sd">    :param show_p_val: Attempt to print p values in legend if contained in df</span>
+<span class="sd">    :type show_p_val: bool</span>
+<span class="sd">    :param indices: To use when plotting &quot;distance from root&quot;</span>
+<span class="sd">    :type indices: bool</span>
+<span class="sd">    :param stacked: When making bar chart, stack bars on top of one another</span>
+<span class="sd">    :type stacked: str</span>
+<span class="sd">    :param filled: For area and bar charts, make every column sum to 100</span>
+<span class="sd">    :type filled: str</span>
+<span class="sd">    :param legend: Show a legend</span>
+<span class="sd">    :type legend: bool</span>
+<span class="sd">    :param rot: Rotate x axis ticks by *rot* degrees</span>
+<span class="sd">    :type rot: int</span>
+<span class="sd">    :param subplots: Plot each column separately</span>
+<span class="sd">    :type subplots: bool</span>
+<span class="sd">    :param layout: Grid shape to use when *subplots* is True</span>
+<span class="sd">    :type layout: tuple -- (int, int)</span>
+<span class="sd">    :param interactive: Experimental interactive options</span>
+<span class="sd">    :type interactive: list -- [1, 2 3]</span>
+<span class="sd">    :returns: matplotlib figure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="kn">as</span> <span class="nn">mpl</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">rc</span>
+
+    <span class="c"># prefer seaborn plotting</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>   
+    
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span><span class="o">,</span> <span class="nn">mpld3</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+    
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">from</span> <span class="nn">corpkit.tests</span> <span class="kn">import</span> <span class="n">check_pytex</span><span class="p">,</span> <span class="n">check_spider</span><span class="p">,</span> <span class="n">check_t_kinter</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">mpld3</span>
+        <span class="kn">import</span> <span class="nn">collections</span>
+        <span class="kn">from</span> <span class="nn">mpld3</span> <span class="kn">import</span> <span class="n">plugins</span><span class="p">,</span> <span class="n">utils</span>
+        <span class="kn">from</span> <span class="nn">plugins</span> <span class="kn">import</span> <span class="n">InteractiveLegendPlugin</span><span class="p">,</span> <span class="n">HighlightLines</span>
+
+    <span class="c"># check what environment we&#39;re in</span>
+    <span class="n">tk</span> <span class="o">=</span> <span class="n">check_t_kinter</span><span class="p">()</span>
+    <span class="n">running_python_tex</span> <span class="o">=</span> <span class="n">check_pytex</span><span class="p">()</span>
+    <span class="n">running_spider</span> <span class="o">=</span> <span class="n">check_spider</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">truncate_colormap</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="n">minval</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">maxval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;remove extreme values from colourmap --- no pure white&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="kn">as</span> <span class="nn">colors</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span>
+        <span class="s">&#39;trunc({n},{a:.2f},{b:.2f})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">cmap</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">minval</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">maxval</span><span class="p">),</span>
+        <span class="n">cmap</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minval</span><span class="p">,</span> <span class="n">maxval</span><span class="p">,</span> <span class="n">n</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">new_cmap</span>
+
+    <span class="k">def</span> <span class="nf">get_savename</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">,</span> <span class="n">save</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;png&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Come up with the savename for the image.&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+
+        <span class="k">def</span> <span class="nf">urlify</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="s">&quot;Turn title into filename&quot;</span>
+            <span class="kn">import</span> <span class="nn">re</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;[^\w\s-]&quot;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;\s+&quot;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;-(textbf|emph|textsc|textit)&quot;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">s</span>
+        <span class="c"># name as </span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ext</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">save</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">savename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">,</span> <span class="p">(</span><span class="n">urlify</span><span class="p">(</span><span class="n">save</span><span class="p">)</span> <span class="o">+</span> <span class="n">ext</span><span class="p">))</span>
+        <span class="c">#this &#39;else&#39; is redundant now that title is obligatory</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">urlify</span><span class="p">(</span><span class="n">title</span><span class="p">)</span> <span class="o">+</span> <span class="n">ext</span>
+                <span class="n">savename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+        <span class="c"># remove duplicated ext</span>
+        <span class="k">if</span> <span class="n">savename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">ext</span><span class="p">)):</span>
+            <span class="n">savename</span> <span class="o">=</span> <span class="n">savename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">ext</span><span class="p">),</span> <span class="n">ext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">savename</span>
+
+    <span class="k">def</span> <span class="nf">rename_data_with_total</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">was_series</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">using_tex</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">absolutes</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;adds totals (abs, rel, keyness) to entry name strings&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="n">where_the_words_are</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">index</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">where_the_words_are</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">the_labs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">where_the_words_are</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">absolutes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+                    <span class="n">perc</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">w</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">the_labs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">using_tex</span><span class="p">:</span>
+                    <span class="n">the_labs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%.2f</span><span class="s">\</span><span class="si">%%</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">perc</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">the_labs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%.2f</span><span class="s"> </span><span class="si">%%</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">perc</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">w</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">w</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">using_tex</span><span class="p">:</span>
+                    <span class="n">the_labs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (n=</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">score</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">the_labs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (n=</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">score</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">the_labs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">the_labs</span><span class="p">)</span>
+            <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Total&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">dataframe</span>
+
+    <span class="k">def</span> <span class="nf">auto_explode</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">was_series</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">num_to_plot</span> <span class="o">=</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;give me a list of strings and i&#39;ll output explode option&quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_to_plot</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="nb">input</span> <span class="o">=</span> <span class="p">[</span><span class="nb">input</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="c"># check if we&#39;re doing subplots</span>
+    <span class="n">sbplt</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="s">&#39;subplots&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;subplots&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">sbplt</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;subplots&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sbplt</span>
+
+    <span class="k">if</span> <span class="n">colours</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span>
+
+    <span class="c"># todo: get this dynamically instead.</span>
+    <span class="n">styles</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;dark_background&#39;</span><span class="p">,</span> <span class="s">&#39;bmh&#39;</span><span class="p">,</span> <span class="s">&#39;grayscale&#39;</span><span class="p">,</span> <span class="s">&#39;ggplot&#39;</span><span class="p">,</span> <span class="s">&#39;fivethirtyeight&#39;</span><span class="p">,</span> <span class="s">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;mpl-white&#39;</span><span class="p">]</span>
+    <span class="c">#if style not in styles:</span>
+        <span class="c">#raise ValueError(&#39;Style %s not found. Use %s&#39; % (str(style), &#39;, &#39;.join(styles)))</span>
+
+    <span class="k">if</span> <span class="n">style</span> <span class="o">==</span> <span class="s">&#39;mpl-white&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sns</span><span class="o">.</span><span class="n">set_style</span><span class="p">(</span><span class="s">&quot;whitegrid&quot;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="s">&#39;matplotlib&#39;</span>
+
+    <span class="k">if</span> <span class="n">style</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span> <span class="ow">and</span> <span class="n">style</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;seaborn&#39;</span><span class="p">):</span>
+        <span class="n">colours</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># use &#39;draggable = True&#39; to make a draggable legend</span>
+    <span class="n">dragmode</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="s">&#39;draggable&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;draggable&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">dragmode</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;draggable&#39;</span><span class="p">]</span>
+
+
+    <span class="k">if</span> <span class="s">&#39;savepath&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s">&#39;savefig.directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;savepath&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;savepath&#39;</span><span class="p">]</span>
+
+    <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s">&#39;savefig.bbox&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;tight&#39;</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;figure.autolayout&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+
+    <span class="c"># try to use tex</span>
+    <span class="c"># TO DO:</span>
+    <span class="c"># make some font kwargs here</span>
+    <span class="n">using_tex</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s">&#39;font.family&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;sans-serif&#39;</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s">&#39;text.latex.unicode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+    
+    <span class="k">if</span> <span class="n">tex</span> <span class="o">==</span> <span class="s">&#39;try&#39;</span> <span class="ow">or</span> <span class="n">tex</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rc</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">rc</span><span class="p">(</span><span class="s">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s">&#39;family&#39;</span><span class="p">:</span> <span class="s">&#39;serif&#39;</span><span class="p">,</span> <span class="s">&#39;serif&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;Computer Modern&#39;</span><span class="p">]})</span>
+            <span class="n">using_tex</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s">&#39;font&#39;</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="s">&#39;sans-serif&#39;</span><span class="p">)</span> 
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s">&#39;font&#39;</span><span class="p">,</span> <span class="n">serif</span><span class="o">=</span><span class="s">&#39;Helvetica Neue&#39;</span><span class="p">)</span> 
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="s">&#39;false&#39;</span><span class="p">)</span> 
+            <span class="n">rc</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rc</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="n">using_tex</span> <span class="o">=</span> <span class="bp">False</span> 
+
+    <span class="k">if</span> <span class="n">show_totals</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">show_totals</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
+
+    <span class="c"># find out what kind of plot we&#39;re making, and enable</span>
+    <span class="c"># or disable interactive values if need be</span>
+    <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;line&#39;</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">):</span>
+            <span class="n">interactive_types</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;area&#39;</span><span class="p">:</span>
+            <span class="n">interactive_types</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;line&#39;</span><span class="p">:</span>
+            <span class="n">interactive_types</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pie&#39;</span><span class="p">:</span>
+            <span class="n">interactive_types</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Interactive plotting not yet available for pie plots.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">interactive_types</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">interactive</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">interactive_types</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
+
+    <span class="c"># find out if pie mode, add autopct format</span>
+    <span class="n">piemode</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pie&#39;</span><span class="p">:</span>
+            <span class="n">piemode</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="c"># always the best spot for pie</span>
+            <span class="c">#if legend_pos == &#39;best&#39;:</span>
+                <span class="c">#legend_pos = &#39;lower left&#39;</span>
+            <span class="k">if</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;plot&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;both&#39;</span><span class="p">):</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pctdistance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.6</span>
+                <span class="k">if</span> <span class="n">using_tex</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;autopct&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">r&#39;</span><span class="si">%1.1f</span><span class="s">\</span><span class="si">%%</span><span class="s">&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;autopct&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%1.1f%%</span><span class="s">&#39;</span>
+
+    <span class="c"># copy data, make series into df</span>
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">was_series</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">was_series</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cumulative</span><span class="p">:</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># don&#39;t know if this is much good.</span>
+        <span class="k">if</span> <span class="n">cumulative</span><span class="p">:</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">was_series</span> <span class="o">=</span> <span class="bp">True</span>
+    
+    <span class="c"># attempt to convert x axis to ints:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dataframe</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c"># remove totals and tkinter order</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">was_series</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;total&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s">&#39;Total&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">[</span><span class="s">&#39;tkintertable-order&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">ax</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;tkintertable-order&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;tkintertable-order&#39;</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+            
+    <span class="c"># look at columns to see if all can be ints, in which case, set up figure</span>
+    <span class="c"># for depnumming</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">was_series</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="o">==</span> <span class="s">&#39;guess&#39;</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">isint</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="ow">or</span> <span class="ne">OverflowError</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+
+            <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">isint</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">True</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)]):</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># if depnumming, plot all, transpose, and rename axes</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">num_to_plot</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">T</span>
+            <span class="k">if</span> <span class="n">y_label</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">y_label</span> <span class="o">=</span> <span class="s">&#39;Percentage of all matches&#39;</span>
+            <span class="k">if</span> <span class="n">x_label</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+    <span class="c"># set backend?</span>
+    <span class="n">output_formats</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;svgz&#39;</span><span class="p">,</span> <span class="s">&#39;ps&#39;</span><span class="p">,</span> <span class="s">&#39;emf&#39;</span><span class="p">,</span> <span class="s">&#39;rgba&#39;</span><span class="p">,</span> <span class="s">&#39;raw&#39;</span><span class="p">,</span> <span class="s">&#39;pdf&#39;</span><span class="p">,</span> <span class="s">&#39;svg&#39;</span><span class="p">,</span> <span class="s">&#39;eps&#39;</span><span class="p">,</span> <span class="s">&#39;png&#39;</span><span class="p">,</span> <span class="s">&#39;pgf&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">output_format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_formats</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> output format not recognised. Must be: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">output_format</span><span class="p">,</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_formats</span><span class="p">)))</span>
+    
+    <span class="c"># don&#39;t know if these are necessary</span>
+    <span class="k">if</span> <span class="s">&#39;pdf&#39;</span> <span class="ow">in</span> <span class="n">output_format</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">output_format</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="s">&#39;pgf&#39;</span> <span class="ow">in</span> <span class="n">output_format</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">output_format</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num_to_plot</span> <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="c"># explode pie, or remove if not piemode</span>
+    <span class="k">if</span> <span class="s">&#39;explode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;explode&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;explode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;explode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_explode</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> 
+                                             <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;explode&#39;</span><span class="p">],</span> 
+                                             <span class="n">was_series</span> <span class="o">=</span> <span class="n">was_series</span><span class="p">,</span> 
+                                             <span class="n">num_to_plot</span> <span class="o">=</span> <span class="n">num_to_plot</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;legend&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;legend&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="c">#cut data short</span>
+    <span class="n">plotting_a_totals_column</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;Total&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">can_be_ints</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+                <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[:</span><span class="n">num_to_plot</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Total&#39;</span><span class="p">:</span>
+            <span class="n">plotting_a_totals_column</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;legend&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">num_to_plot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">num_to_plot</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c"># remove stats fields, put p in entry text, etc.</span>
+    <span class="n">statfields</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;slope&#39;</span><span class="p">,</span> <span class="s">&#39;intercept&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;p&#39;</span><span class="p">,</span> <span class="s">&#39;stderr&#39;</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">statfields</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dataframe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="s">&#39;p&#39;</span><span class="p">]</span>
+        <span class="n">there_are_p_vals</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">there_are_p_vals</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">show_p_val</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">there_are_p_vals</span><span class="p">:</span>
+            <span class="n">newnames</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                <span class="n">pval</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s">&#39;p&#39;</span><span class="p">]</span>
+
+                <span class="k">def</span> <span class="nf">p_string_formatter</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">using_tex</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="s">&#39;p &lt; 0.001&#39;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="s">r&#39;p $&lt;$ 0.001&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="s">&#39;p = </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;.3f&#39;</span><span class="p">)</span>
+
+                <span class="n">pstr</span> <span class="o">=</span> <span class="n">p_string_formatter</span><span class="p">(</span><span class="n">pval</span><span class="p">)</span>
+                <span class="n">newname</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">pstr</span><span class="p">)</span>
+                <span class="n">newnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newname</span><span class="p">)</span>
+            <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">newnames</span>
+            <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">statfields</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;No p-values calculated to show.</span><span class="se">\n\n</span><span class="s">Use sort_by and keep_stats in editor() to generate these values.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">there_are_p_vals</span><span class="p">:</span>
+            <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">statfields</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c"># make and set y label</span>
+    <span class="n">absolutes</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="p">]):</span>
+                <span class="n">absolutes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">values</span><span class="p">]):</span>        
+            <span class="n">absolutes</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c">#  use colormap if need be:</span>
+    <span class="k">if</span> <span class="n">num_to_plot</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;pie&#39;</span><span class="p">,</span> <span class="s">&#39;line&#39;</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">colours</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">plotting_a_totals_column</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">colours</span> <span class="o">==</span> <span class="s">&#39;Default&#39;</span><span class="p">:</span>
+                                <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span>
+                            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">colours</span>
+        <span class="c">#else:</span>
+            <span class="k">if</span> <span class="n">colours</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">colours</span> <span class="o">==</span> <span class="s">&#39;Default&#39;</span><span class="p">:</span>
+                    <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">colours</span>
+
+    <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">num_to_plot</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">colours</span> <span class="o">==</span> <span class="s">&#39;Default&#39;</span><span class="p">:</span>
+                <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">colours</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_to_plot</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">colours</span> <span class="o">==</span> <span class="s">&#39;Default&#39;</span><span class="p">:</span>
+                    <span class="n">colours</span> <span class="o">=</span> <span class="s">&#39;Paired&#39;</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">colours</span>
+    
+    <span class="c"># multicoloured bar charts</span>
+    <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">colours</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">black_and_white</span><span class="p">:</span>
+                        <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+                        <span class="n">the_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_to_plot</span><span class="p">)</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">colours</span><span class="p">)</span>
+                        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmap</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">the_range</span><span class="p">]</span>
+                    <span class="c"># make a bar width ... ? ...</span>
+                    <span class="c">#kwargs[&#39;width&#39;] = (figsize[0] / float(num_to_plot)) / 1.5</span>
+
+
+    <span class="c"># reversing legend option</span>
+    <span class="k">if</span> <span class="n">reverse_legend</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">rev_leg</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">elif</span> <span class="n">reverse_legend</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">rev_leg</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># show legend or don&#39;t, guess whether to reverse based on kind</span>
+    <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;bar&#39;</span><span class="p">,</span> <span class="s">&#39;barh&#39;</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="s">&#39;line&#39;</span><span class="p">,</span> <span class="s">&#39;pie&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pie&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pie_legend</span><span class="p">:</span>
+                    <span class="n">legend</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">legend</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;barh&#39;</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">reverse_legend</span> <span class="o">==</span> <span class="s">&#39;guess&#39;</span><span class="p">:</span>
+                <span class="n">rev_leg</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;rev_leg&#39;</span> <span class="ow">in</span> <span class="nb">locals</span><span class="p">():</span>
+        <span class="n">rev_leg</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># the default legend placement</span>
+    <span class="k">if</span> <span class="n">legend_pos</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">legend_pos</span> <span class="o">=</span> <span class="s">&#39;best&#39;</span>
+
+    <span class="c"># cut dataframe if just_totals</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tst</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="s">&#39;Combined total&#39;</span><span class="p">]</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">num_to_plot</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    
+    <span class="c"># rotate automatically</span>
+    <span class="k">if</span> <span class="s">&#39;rot&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">was_series</span><span class="p">:</span>
+            <span class="n">xvals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)[:</span><span class="n">num_to_plot</span><span class="p">]]</span>
+            <span class="c">#if &#39;kind&#39; in kwargs:</span>
+                <span class="c">#if kwargs[&#39;kind&#39;] in [&#39;barh&#39;, &#39;area&#39;]:</span>
+                    <span class="c">#xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xvals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[:</span><span class="n">num_to_plot</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">xvals</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;rot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">45</span>
+
+    <span class="c"># no title for subplots because ugly,</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+        
+    <span class="c"># no interactive subplots yet:</span>
+    <span class="k">if</span> <span class="n">sbplt</span> <span class="ow">and</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">warnings</span>
+        <span class="n">interactive</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;No interactive subplots yet, sorry.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+        
+    <span class="c"># not using pandas for labels or legend anymore.</span>
+    <span class="c">#kwargs[&#39;labels&#39;] = None</span>
+    <span class="c">#kwargs[&#39;legend&#39;] = False</span>
+
+    <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+        <span class="c"># kwarg options go in leg_options</span>
+        <span class="n">leg_options</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;framealpha&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">8</span><span class="p">}</span>
+        <span class="k">if</span> <span class="s">&#39;shadow&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;shadow&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="s">&#39;ncol&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;ncol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ncol&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ncol&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_to_plot</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;ncol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_to_plot</span> <span class="o">/</span> <span class="mi">7</span>
+
+        <span class="c"># determine legend position based on this dict</span>
+        <span class="k">if</span> <span class="n">legend_pos</span><span class="p">:</span>
+            <span class="n">possible</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;best&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;upper right&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;upper left&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;lower left&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;lower right&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> 
+                        <span class="s">&#39;right&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s">&#39;center left&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s">&#39;center right&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s">&#39;lower center&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s">&#39;upper center&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span> 
+                        <span class="s">&#39;center&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s">&#39;o r&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;outside right&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;outside upper right&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> 
+                        <span class="s">&#39;outside center right&#39;</span><span class="p">:</span> <span class="s">&#39;center left&#39;</span><span class="p">,</span> <span class="s">&#39;outside lower right&#39;</span><span class="p">:</span> <span class="s">&#39;lower left&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">legend_pos</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+                <span class="n">the_loc</span> <span class="o">=</span> <span class="n">legend_pos</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">legend_pos</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">the_loc</span> <span class="o">=</span> <span class="n">possible</span><span class="p">[</span><span class="n">legend_pos</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&#39;legend_pos value must be one of:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s"> or an int between 0-10.&#39;</span> <span class="o">%</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">possible</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">the_loc</span>
+            <span class="c">#weirdness needed for outside plot</span>
+            <span class="k">if</span> <span class="n">legend_pos</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;o r&#39;</span><span class="p">,</span> <span class="s">&#39;outside right&#39;</span><span class="p">,</span> <span class="s">&#39;outside upper right&#39;</span><span class="p">]:</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;bbox_to_anchor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.02</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">legend_pos</span> <span class="o">==</span> <span class="s">&#39;outside center right&#39;</span><span class="p">:</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;bbox_to_anchor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.02</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">legend_pos</span> <span class="o">==</span> <span class="s">&#39;outside lower right&#39;</span><span class="p">:</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;loc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;upper right&#39;</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;bbox_to_anchor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        
+        <span class="c"># a bit of distance between legend and plot for outside legends</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">legend_pos</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">legend_pos</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;o&#39;</span><span class="p">):</span>
+                <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;borderaxespad&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;both&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;legend&#39;</span><span class="p">):</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">rename_data_with_total</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> 
+                                           <span class="n">was_series</span> <span class="o">=</span> <span class="n">was_series</span><span class="p">,</span> 
+                                           <span class="n">using_tex</span> <span class="o">=</span> <span class="n">using_tex</span><span class="p">,</span> 
+                                           <span class="n">absolutes</span> <span class="o">=</span> <span class="n">absolutes</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pie_legend</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;both&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;legend&#39;</span><span class="p">):</span>
+                <span class="n">dataframe</span> <span class="o">=</span> <span class="n">rename_data_with_total</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> 
+                                           <span class="n">was_series</span> <span class="o">=</span> <span class="n">was_series</span><span class="p">,</span> 
+                                           <span class="n">using_tex</span> <span class="o">=</span> <span class="n">using_tex</span><span class="p">,</span> 
+                                           <span class="n">absolutes</span> <span class="o">=</span> <span class="n">absolutes</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">partial_pie</span><span class="p">:</span>
+            <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span> <span class="o">/</span> <span class="mf">100.0</span>
+
+    <span class="c"># some pie things</span>
+    <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pie_legend</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;legend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+                    <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pie_legend</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;legend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+                    <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>   
+    
+    <span class="k">def</span> <span class="nf">filler</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+        <span class="n">pby</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">pby</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="n">pby</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">pby</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pby</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="n">tot</span>
+        <span class="k">return</span> <span class="n">pby</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">areamode</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;area&#39;</span><span class="p">:</span>
+            <span class="n">areamode</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="n">legend</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;legend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># line highlighting option for interactive!</span>
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="k">if</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">interactive_types</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;line&#39;</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;marker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+    
+    <span class="c"># convert dates --- works only in my current case!</span>
+    <span class="k">if</span> <span class="n">plotting_a_totals_column</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">was_series</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">can_it_be_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">can_be_int</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">can_be_int</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">can_be_int</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mi">1500</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="mi">2050</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">PeriodIndex</span><span class="p">([</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)],</span> <span class="n">freq</span><span class="o">=</span><span class="s">&#39;A&#39;</span><span class="p">)</span>
+                    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s">&#39;filled&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">areamode</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;filled&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">filler</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;filled&#39;</span><span class="p">]</span>
+
+    <span class="n">MARKERSIZE</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">COLORMAP</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">)},</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">]},</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;o&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">)},</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]},</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;s&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]},</span>
+            <span class="mi">5</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">]},</span>
+            <span class="mi">6</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">)},</span>
+            <span class="mi">7</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]},</span>
+            <span class="mi">8</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;1&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]},</span>
+            <span class="mi">9</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">]},</span>
+            <span class="mi">10</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;2&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]},</span>
+            <span class="mi">11</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;marker&#39;</span><span class="p">:</span> <span class="s">&quot;s&quot;</span><span class="p">,</span> <span class="s">&#39;dash&#39;</span><span class="p">:</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">)}</span>
+            <span class="p">}</span>
+
+    <span class="n">HATCHES</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;#dfdfdf&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;/&quot;</span><span class="p">},</span>
+            <span class="mi">1</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;#6f6f6f&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span><span class="p">},</span>
+            <span class="mi">2</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;|&quot;</span><span class="p">},</span>
+            <span class="mi">3</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;#dfdfdf&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;-&quot;</span><span class="p">},</span>
+            <span class="mi">4</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;#6f6f6f&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;+&quot;</span><span class="p">},</span>
+            <span class="mi">5</span><span class="p">:</span>  <span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;hatch&#39;</span><span class="p">:</span><span class="s">&quot;x&quot;</span><span class="p">}</span>
+            <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">black_and_white</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;line&#39;</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;linewidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="n">truncate_colormap</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;bar&#39;</span><span class="p">:</span>
+            <span class="c"># darker if just one entry</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_cmap</span> <span class="o">=</span> <span class="n">truncate_colormap</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_cmap</span>
+
+    <span class="k">class</span> <span class="nc">dummy_context_mgr</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;a fake context for plotting without style</span>
+<span class="sd">        perhaps made obsolete by &#39;classic&#39; style in new mpl&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">one</span><span class="p">,</span> <span class="n">two</span><span class="p">,</span> <span class="n">three</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">context</span><span class="p">((</span><span class="n">style</span><span class="p">))</span> <span class="k">if</span> <span class="n">style</span> <span class="o">!=</span> <span class="s">&#39;matplotlib&#39;</span> <span class="k">else</span> <span class="n">dummy_context_mgr</span><span class="p">():</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="c"># check if negative values, no stacked if so</span>
+            <span class="k">if</span> <span class="n">areamode</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;legend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">applymap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;stacked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="n">rev_leg</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span> <span class="n">figsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">areamode</span><span class="p">:</span>
+                <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+                <span class="k">del</span> <span class="n">handles</span>
+                <span class="k">del</span> <span class="n">labels</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">set_tight_layout</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+                <span class="n">ax</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span> <span class="n">figsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span> <span class="n">figsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span> <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span> <span class="o">=</span> <span class="n">leg_options</span><span class="p">[</span><span class="s">&#39;loc&#39;</span><span class="p">],</span> <span class="n">bbox_to_anchor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">bbox_transform</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">transFigure</span> <span class="p">)</span>
+
+                <span class="c"># this line allows layouts with missing plots</span>
+                <span class="c"># i.e. layout = (5, 2) with only nine plots</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">set_tight_layout</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+                
+        <span class="k">if</span> <span class="s">&#39;rot&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;rot&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;rot&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">90</span><span class="p">:</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">()]</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">rotation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;rot&#39;</span><span class="p">],</span> <span class="n">ha</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">transparent</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">black_and_white</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;line&#39;</span><span class="p">:</span>
+                <span class="c"># white background</span>
+                <span class="c"># change everything to black and white with interesting dashes and markers</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_lines</span><span class="p">():</span>
+                    <span class="n">line</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;black&#39;</span><span class="p">)</span>
+                    <span class="c">#line.set_width(1)</span>
+                    <span class="n">line</span><span class="o">.</span><span class="n">set_dashes</span><span class="p">(</span><span class="n">COLORMAP</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="s">&#39;dash&#39;</span><span class="p">])</span>
+                    <span class="n">line</span><span class="o">.</span><span class="n">set_marker</span><span class="p">(</span><span class="n">COLORMAP</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="s">&#39;marker&#39;</span><span class="p">])</span>
+                    <span class="n">line</span><span class="o">.</span><span class="n">set_markersize</span><span class="p">(</span><span class="n">MARKERSIZE</span><span class="p">)</span>
+                    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">COLORMAP</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># draw legend with proper placement etc</span>
+        <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+                <span class="k">if</span> <span class="mi">3</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">interactive_types</span><span class="p">:</span>
+                    <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+                    <span class="c"># area doubles the handles and labels. this removes half:</span>
+                    <span class="k">if</span> <span class="n">areamode</span><span class="p">:</span>
+                        <span class="n">handles</span> <span class="o">=</span> <span class="n">handles</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:]</span>
+                        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:]</span>
+                    <span class="k">if</span> <span class="n">rev_leg</span><span class="p">:</span>
+                        <span class="n">handles</span> <span class="o">=</span> <span class="n">handles</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">lgd</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="o">**</span><span class="n">leg_options</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="c"># 1 = highlight lines</span>
+        <span class="c"># 2 = line labels</span>
+        <span class="c"># 3 = legend switches</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="c"># fails for piemode</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">lines</span>
+        <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">interactive_types</span><span class="p">:</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">(),</span> <span class="n">HighlightLines</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="n">interactive_types</span><span class="p">:</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">(),</span> <span class="n">InteractiveLegendPlugin</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">alpha_unsel</span><span class="o">=</span><span class="mf">0.0</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="n">y_vals</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">get_ydata</span><span class="p">()</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">get_xdata</span><span class="p">()</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_vals</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">absolutes</span><span class="p">:</span>
+                <span class="n">ls</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">: </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_vals</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ls</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">: </span><span class="si">%.2f%%</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_vals</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">interactive_types</span><span class="p">:</span>
+                <span class="c">#if &#39;kind&#39; in kwargs and kwargs[&#39;kind&#39;] == &#39;area&#39;:</span>
+                <span class="n">tooltip_line</span> <span class="o">=</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">LineLabelTooltip</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">(),</span> <span class="n">tooltip_line</span><span class="p">)</span>
+                <span class="c">#else:</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;line&#39;</span><span class="p">:</span>
+                    <span class="n">tooltip_point</span> <span class="o">=</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">PointLabelTooltip</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ls</span><span class="p">)</span>
+                    <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">(),</span> <span class="n">tooltip_point</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">get_yaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c"># add x label</span>
+    <span class="c"># this could be revised now!</span>
+    <span class="c"># if time series period, it&#39;s year for now</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">period</span><span class="o">.</span><span class="n">PeriodIndex</span><span class="p">:</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;Year&#39;</span>
+
+    <span class="k">if</span> <span class="n">x_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x_label</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">x_label</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">check_x_axis</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># get first entry# get second entry of first entry (year, count)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">period</span><span class="o">.</span><span class="n">PeriodIndex</span><span class="p">:</span>
+                    <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;Year&#39;</span>
+                <span class="n">check_x_axis</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">check_x_axis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="mi">1500</span> <span class="o">&lt;</span> <span class="n">check_x_axis</span> <span class="o">&lt;</span> <span class="mi">2050</span><span class="p">:</span>
+                    <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;Year&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;Group&#39;</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">x_label</span> <span class="o">=</span> <span class="s">&#39;Group&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">x_label</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_number</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;check if str can be can be made into float/int&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="c"># for int, long and float</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">complex</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="c"># for complex</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="c"># for now, always turn off sci notation</span>
+    <span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">ScalarFormatter</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">period</span><span class="o">.</span><span class="n">PeriodIndex</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_number</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)):</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">ScalarFormatter</span><span class="p">())</span> 
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_number</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">ScalarFormatter</span><span class="p">())</span> 
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c"># y labelling</span>
+    <span class="n">y_l</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">absolutes</span><span class="p">:</span>
+        <span class="n">y_l</span> <span class="o">=</span> <span class="s">&#39;Percentage&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y_l</span> <span class="o">=</span> <span class="s">&#39;Absolute frequency&#39;</span>
+    
+    <span class="k">if</span> <span class="n">y_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">y_label</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">y_label</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">y_l</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">y_label</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="n">the_y</span> <span class="o">=</span> <span class="n">y_label</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">the_y</span> <span class="o">=</span> <span class="n">y_l</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">the_y</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="s">&#39;vertical&#39;</span><span class="p">)</span>
+        
+        <span class="c">#    if not piemode:</span>
+        <span class="c">#        if type(y_label) == str:</span>
+        <span class="c">#            plt.ylabel(y_label)</span>
+        <span class="c">#        else:</span>
+        <span class="c">#            plt.ylabel(y_l)</span>
+
+
+
+    <span class="c"># hacky: turn legend into subplot titles :)</span>
+    <span class="k">if</span> <span class="n">sbplt</span><span class="p">:</span>
+        <span class="c"># title the big plot</span>
+        <span class="c">#plt.gca().suptitle(title, fontsize = 16)</span>
+        <span class="c">#plt.subplots_adjust(top=0.9)</span>
+        <span class="c"># get all axes</span>
+        <span class="k">if</span> <span class="s">&#39;layout&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">col</span><span class="p">:</span>
+                    <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bit</span><span class="p">)</span>
+    
+        <span class="c"># set subplot titles</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axes</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">titletext</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">titletext</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">legend_</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="c"># remove axis labels for pie plots</span>
+            <span class="k">if</span> <span class="n">piemode</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">get_yaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
+
+            <span class="c"># show grid?</span>
+            <span class="k">if</span> <span class="s">&#39;grid&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;grid&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;grid&#39;</span><span class="p">]</span>
+    
+    <span class="c"># add sums to bar graphs and pie graphs</span>
+    <span class="c"># doubled right now, no matter</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;kind&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">):</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+
+        <span class="c"># show grid?</span>
+        <span class="k">if</span> <span class="s">&#39;grid&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;grid&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;grid&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">was_series</span><span class="p">:</span>
+        <span class="n">the_y_limit</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;plot&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;both&#39;</span><span class="p">):</span>
+            <span class="c"># make plot a bit higher if putting these totals on it</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">the_y_limit</span> <span class="o">*</span> <span class="mf">1.05</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">label</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">absolutes</span><span class="p">:</span>
+                        <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c">#import warnings</span>
+                        <span class="c">#warnings.warn(&quot;It&#39;s not possible to determine total percentage from individual percentages.&quot;)</span>
+                        <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">absolutes</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%.2f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">score</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> <span class="n">ha</span> <span class="o">=</span> <span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> <span class="n">ha</span> <span class="o">=</span> <span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">the_y_limit</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;plot&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">show_totals</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;both&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">absolutes</span><span class="p">:</span>
+                        <span class="n">score</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c">#import warnings</span>
+                        <span class="c">#warnings.warn(&quot;It&#39;s not possible to determine total percentage from individual percentages.&quot;)</span>
+                        <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">absolutes</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%.2f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">score</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> <span class="n">ha</span> <span class="o">=</span> <span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> <span class="n">ha</span> <span class="o">=</span> <span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>        
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="mf">0.18</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;layout&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sbplt</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="k">if</span> <span class="n">running_python_tex</span><span class="p">:</span>
+            <span class="n">imagefolder</span> <span class="o">=</span> <span class="s">&#39;../images&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">imagefolder</span> <span class="o">=</span> <span class="s">&#39;images&#39;</span>
+
+        <span class="n">savename</span> <span class="o">=</span> <span class="n">get_savename</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">,</span> <span class="n">save</span> <span class="o">=</span> <span class="n">save</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="n">title</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">output_format</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">imagefolder</span><span class="p">)</span>
+
+        <span class="c"># save image and get on with our lives</span>
+        <span class="k">if</span> <span class="n">legend_pos</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;o&#39;</span><span class="p">):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">savename</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_extra_artists</span><span class="o">=</span><span class="p">(</span><span class="n">lgd</span><span class="p">,),</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">,</span> <span class="n">format</span> <span class="o">=</span> <span class="n">output_format</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">savename</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">format</span> <span class="o">=</span> <span class="n">output_format</span><span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">savename</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">time</span> <span class="o">+</span> <span class="s">&quot;: &quot;</span> <span class="o">+</span> <span class="n">savename</span> <span class="o">+</span> <span class="s">&quot; created.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Error making </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">savename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dragmode</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span><span class="o">.</span><span class="n">draggable</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interactive</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">running_python_tex</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">running_spider</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tk</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">running_spider</span> <span class="ow">or</span> <span class="n">tk</span> <span class="ow">or</span> <span class="n">sbplt</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">plt</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">right</span><span class="o">=.</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend_</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

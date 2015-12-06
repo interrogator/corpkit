@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.tests &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.tests</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="check_pytex"><a class="viewcode-back" href="../../corpkit.html#corpkit.tests.check_pytex">[docs]</a><span class="k">def</span> <span class="nf">check_pytex</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;checks for pytex&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">inspect</span>
+    <span class="n">thestack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bit</span><span class="p">:</span>
+            <span class="n">thestack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">as_string</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">thestack</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;pythontex&#39;</span> <span class="ow">in</span> <span class="n">as_string</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="check_t_kinter"><a class="viewcode-back" href="../../corpkit.html#corpkit.tests.check_t_kinter">[docs]</a><span class="k">def</span> <span class="nf">check_t_kinter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;checks for tkinter&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">inspect</span>
+    <span class="n">thestack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bit</span><span class="p">:</span>
+            <span class="n">thestack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">as_string</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">thestack</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;Tkinter&#39;</span> <span class="ow">in</span> <span class="n">as_string</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="check_spider"><a class="viewcode-back" href="../../corpkit.html#corpkit.tests.check_spider">[docs]</a><span class="k">def</span> <span class="nf">check_spider</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;checks for spyder&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">inspect</span>
+    <span class="n">thestack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bit</span><span class="p">:</span>
+            <span class="n">thestack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">as_string</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">thestack</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;spyder&#39;</span> <span class="ow">in</span> <span class="n">as_string</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="check_dit"><a class="viewcode-back" href="../../corpkit.html#corpkit.tests.check_dit">[docs]</a><span class="k">def</span> <span class="nf">check_dit</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;checks if we&#39;re on the cloud ... bad way to do it...&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">inspect</span>
+    <span class="n">thestack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bit</span><span class="p">:</span>
+            <span class="n">thestack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">as_string</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">thestack</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;/opt/python/lib&#39;</span> <span class="ow">in</span> <span class="n">as_string</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+ </div>
+<div class="viewcode-block" id="check_tex"><a class="viewcode-back" href="../../corpkit.html#corpkit.tests.check_tex">[docs]</a><span class="k">def</span> <span class="nf">check_tex</span><span class="p">(</span><span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;see if tex is available&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="k">if</span> <span class="n">have_ipython</span><span class="p">:</span>
+        <span class="n">checktex_command</span> <span class="o">=</span> <span class="s">&#39;which latex&#39;</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">get_ipython</span><span class="p">()</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="n">checktex_command</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">o</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;which: no latex in&#39;</span><span class="p">):</span>
+            <span class="n">have_tex</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">have_tex</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="n">FNULL</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">checktex_command</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;which&quot;</span><span class="p">,</span> <span class="s">&quot;latex&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">checktex_command</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">FNULL</span><span class="p">)</span>
+            <span class="n">have_tex</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">:</span>
+            <span class="n">have_tex</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="n">have_tex</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

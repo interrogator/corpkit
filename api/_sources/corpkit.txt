@@ -1,0 +1,50 @@
+corpkit package
+===============
+
+corpkit.interrogator module
+---------------------------
+
+.. automodule:: corpkit.interrogator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+corpkit.editor module
+---------------------------
+
+.. automodule:: corpkit.editor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+corpkit.plotter module
+---------------------------
+
+.. automodule:: corpkit.plotter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+corpkit.conc module
+---------------------------
+
+.. automodule:: corpkit.conc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+corpkit.make module
+---------------------------
+
+.. automodule:: corpkit.make
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+corpkit.other module
+----------------------
+
+.. automodule:: corpkit.other
+    :members:
+    :undoc-members:
+    :show-inheritance:

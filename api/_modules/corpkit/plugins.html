@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.plugins &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.plugins</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">mpld3</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">from</span> <span class="nn">mpld3</span> <span class="kn">import</span> <span class="n">plugins</span><span class="p">,</span> <span class="n">utils</span>
+
+<div class="viewcode-block" id="HighlightLines"><a class="viewcode-back" href="../../corpkit.html#corpkit.plugins.HighlightLines">[docs]</a><span class="k">class</span> <span class="nc">HighlightLines</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginBase</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;A plugin to highlight lines on hover&quot;&quot;&quot;</span>
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">    mpld3.register_plugin(&quot;linehighlight&quot;, LineHighlightPlugin);</span>
+<span class="s">    LineHighlightPlugin.prototype = Object.create(mpld3.Plugin.prototype);</span>
+<span class="s">    LineHighlightPlugin.prototype.constructor = LineHighlightPlugin;</span>
+<span class="s">    LineHighlightPlugin.prototype.requiredProps = [&quot;line_ids&quot;];</span>
+<span class="s">    LineHighlightPlugin.prototype.defaultProps = {alpha_bg:0.0, alpha_fg:1.0}</span>
+<span class="s">    function LineHighlightPlugin(fig, props){</span>
+<span class="s">        mpld3.Plugin.call(this, fig, props);</span>
+<span class="s">    };</span>
+<span class="s">    LineHighlightPlugin.prototype.draw = function(){</span>
+<span class="s">      for(var i=0; i&lt;this.props.line_ids.length; i++){</span>
+<span class="s">         var obj = mpld3.get_element(this.props.line_ids[i], this.fig),</span>
+<span class="s">             alpha_fg = this.props.alpha_fg;</span>
+<span class="s">             alpha_bg = this.props.alpha_bg;</span>
+<span class="s">         obj.elements()</span>
+<span class="s">             .on(&quot;mouseover.highlight&quot;, function(d, i){</span>
+<span class="s">                            d3.select(this).transition().duration(50)</span>
+<span class="s">                              .style(&quot;stroke-opacity&quot;, alpha_fg); })</span>
+<span class="s">             .on(&quot;mouseout.highlight&quot;, function(d, i){</span>
+<span class="s">                            d3.select(this).transition().duration(200)</span>
+<span class="s">                              .style(&quot;stroke-opacity&quot;, alpha_bg); });</span>
+<span class="s">      }</span>
+<span class="s">    };</span>
+<span class="s">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="n">lines</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict_</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;linehighlight&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;line_ids&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">get_id</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">],</span>
+                      <span class="s">&quot;alpha_bg&quot;</span><span class="p">:</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_alpha</span><span class="p">(),</span>
+                      <span class="s">&quot;alpha_fg&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span></div>
+<span class="kn">import</span> <span class="nn">mpld3</span>
+<span class="kn">from</span> <span class="nn">mpld3</span> <span class="kn">import</span> <span class="n">plugins</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+
+<div class="viewcode-block" id="InteractiveLegendPlugin"><a class="viewcode-back" href="../../corpkit.html#corpkit.plugins.InteractiveLegendPlugin">[docs]</a><span class="k">class</span> <span class="nc">InteractiveLegendPlugin</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A plugin for an interactive legends. </span>
+<span class="sd">    </span>
+<span class="sd">    Inspired by http://bl.ocks.org/simzou/6439398</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    plot_elements : iterable of matplotliblib elements</span>
+<span class="sd">        the elements to associate with a given legend items</span>
+<span class="sd">    labels : iterable of strings</span>
+<span class="sd">        The labels for each legend element</span>
+<span class="sd">    css : str, optional</span>
+<span class="sd">        css to be included, for styling if desired</span>
+<span class="sd">    ax :  matplotlib axes instance, optional</span>
+<span class="sd">        the ax to which the legend belongs. Default is the first</span>
+<span class="sd">        axes</span>
+<span class="sd">    alpha_sel : float, optional</span>
+<span class="sd">        the alpha value to apply to the plot_element(s) associated </span>
+<span class="sd">        with the legend item when the legend item is selected. </span>
+<span class="sd">        Default is 1.0</span>
+<span class="sd">    alpha_unsel : float, optional</span>
+<span class="sd">        the alpha value to apply to the plot_element(s) associated </span>
+<span class="sd">        with the legend item when the legend item is unselected. </span>
+<span class="sd">        Default is 0.2</span>
+<span class="sd">        </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">    mpld3.register_plugin(&quot;interactive_legend&quot;, InteractiveLegend);</span>
+<span class="s">    InteractiveLegend.prototype = Object.create(mpld3.Plugin.prototype);</span>
+<span class="s">    InteractiveLegend.prototype.constructor = InteractiveLegend;</span>
+<span class="s">    InteractiveLegend.prototype.requiredProps = [&quot;element_ids&quot;, &quot;labels&quot;];</span>
+<span class="s">    InteractiveLegend.prototype.defaultProps = {&quot;ax&quot;:null, </span>
+<span class="s">                                                &quot;alpha_sel&quot;:1.0,</span>
+<span class="s">                                                &quot;alpha_unsel&quot;:0}</span>
+<span class="s">    function InteractiveLegend(fig, props){</span>
+<span class="s">        mpld3.Plugin.call(this, fig, props);</span>
+<span class="s">    };</span>
+
+<span class="s">    InteractiveLegend.prototype.draw = function(){</span>
+<span class="s">        console.log(this)</span>
+<span class="s">        var alpha_sel = this.props.alpha_sel</span>
+<span class="s">        var alpha_unsel = this.props.alpha_unsel</span>
+<span class="s">    </span>
+<span class="s">        var legendItems = new Array();</span>
+<span class="s">        for(var i=0; i&lt;this.props.labels.length; i++){</span>
+<span class="s">            var obj = {}</span>
+<span class="s">            obj.label = this.props.labels[i]</span>
+<span class="s">            </span>
+<span class="s">            var element_id = this.props.element_ids[i]</span>
+<span class="s">            mpld3_elements = []</span>
+<span class="s">            for(var j=0; j&lt;element_id.length; j++){</span>
+<span class="s">                var mpld3_element = mpld3.get_element(element_id[j], this.fig)</span>
+<span class="s">                mpld3_elements.push(mpld3_element)</span>
+<span class="s">            }</span>
+<span class="s">            </span>
+<span class="s">            obj.mpld3_elements = mpld3_elements</span>
+<span class="s">            obj.visible = false; // must be setable from python side</span>
+<span class="s">            legendItems.push(obj);</span>
+<span class="s">        }</span>
+<span class="s">        console.log(legendItems)</span>
+<span class="s">        </span>
+<span class="s">        // determine the axes with which this legend is associated</span>
+<span class="s">        var ax = this.props.ax</span>
+<span class="s">        if(!ax){</span>
+<span class="s">            ax = this.fig.axes[0]</span>
+<span class="s">        } else{</span>
+<span class="s">            ax = mpld3.get_element(ax, this.fig);</span>
+<span class="s">        }</span>
+<span class="s">        </span>
+<span class="s">        // add a legend group to the canvas of the figure</span>
+<span class="s">        var legend = this.fig.canvas.append(&quot;svg:g&quot;)</span>
+<span class="s">                               .attr(&quot;class&quot;, &quot;legend&quot;);</span>
+<span class="s">        </span>
+<span class="s">        // add the rectangles</span>
+<span class="s">        legend.selectAll(&quot;rect&quot;)</span>
+<span class="s">                .data(legendItems)</span>
+<span class="s">             .enter().append(&quot;rect&quot;)</span>
+<span class="s">                .attr(&quot;height&quot;,10)</span>
+<span class="s">                .attr(&quot;width&quot;, 25)</span>
+<span class="s">                .attr(&quot;x&quot;,ax.width+10+ax.position[0])</span>
+<span class="s">                .attr(&quot;y&quot;,function(d,i) {</span>
+<span class="s">                            return ax.position[1]+ i * 25 - 10;})</span>
+<span class="s">                .attr(&quot;stroke&quot;, get_color)</span>
+<span class="s">                .attr(&quot;class&quot;, &quot;legend-box&quot;)</span>
+<span class="s">                .style(&quot;fill&quot;, function(d, i) {</span>
+<span class="s">                            return d.visible ? get_color(d) : &quot;white&quot;;}) </span>
+<span class="s">                .on(&quot;click&quot;, click)</span>
+<span class="s">        </span>
+<span class="s">        // add the labels</span>
+<span class="s">        legend.selectAll(&quot;text&quot;)</span>
+<span class="s">                .data(legendItems)</span>
+<span class="s">            .enter().append(&quot;text&quot;)</span>
+<span class="s">              .attr(&quot;x&quot;, function (d) {</span>
+<span class="s">                            return ax.width+10+ax.position[0] + 40})</span>
+<span class="s">              .attr(&quot;y&quot;, function(d,i) { </span>
+<span class="s">                            return ax.position[1]+ i * 25})</span>
+<span class="s">              .text(function(d) { return d.label })</span>
+<span class="s">        </span>
+<span class="s">        // specify the action on click</span>
+<span class="s">        function click(d,i){</span>
+<span class="s">            d.visible = !d.visible;</span>
+<span class="s">            d3.select(this)</span>
+<span class="s">              .style(&quot;fill&quot;,function(d, i) {</span>
+<span class="s">                return d.visible ? get_color(d) : &quot;white&quot;;</span>
+<span class="s">              })</span>
+<span class="s">              </span>
+<span class="s">            for(var i=0; i&lt;d.mpld3_elements.length; i++){</span>
+<span class="s">            </span>
+<span class="s">                var type = d.mpld3_elements[i].constructor.name</span>
+<span class="s">                if(type ==&quot;mpld3_Line&quot;){</span>
+<span class="s">                    d3.select(d.mpld3_elements[i].path[0][0])</span>
+<span class="s">                        .style(&quot;stroke-opacity&quot;, </span>
+<span class="s">                                d.visible ? alpha_sel : alpha_unsel);</span>
+<span class="s">                } else if(type==&quot;mpld3_PathCollection&quot;){</span>
+<span class="s">                    d3.selectAll(d.mpld3_elements[i].pathsobj[0])</span>
+<span class="s">                        .style(&quot;stroke-opacity&quot;, </span>
+<span class="s">                                d.visible ? alpha_sel : alpha_unsel)</span>
+<span class="s">                        .style(&quot;fill-opacity&quot;, </span>
+<span class="s">                                d.visible ? alpha_sel : alpha_unsel);</span>
+<span class="s">                } else{</span>
+<span class="s">                    console.log(type + &quot; not yet supported&quot;)</span>
+<span class="s">                }</span>
+<span class="s">            }</span>
+<span class="s">        };</span>
+<span class="s">        </span>
+<span class="s">        // helper function for determining the color of the rectangles</span>
+<span class="s">        function get_color(d){</span>
+<span class="s">            var type = d.mpld3_elements[0].constructor.name</span>
+<span class="s">            var color = &quot;black&quot;;</span>
+<span class="s">            if(type ==&quot;mpld3_Line&quot;){</span>
+<span class="s">                color = d.mpld3_elements[0].props.edgecolor;</span>
+<span class="s">            } else if(type==&quot;mpld3_PathCollection&quot;){</span>
+<span class="s">                color = d.mpld3_elements[0].props.facecolors[0];</span>
+<span class="s">            } else{</span>
+<span class="s">                console.log(type + &quot; not yet supported&quot;)</span>
+<span class="s">            }</span>
+<span class="s">            return color</span>
+<span class="s">        };</span>
+<span class="s">    };</span>
+<span class="s">    &quot;&quot;&quot;</span>
+
+    <span class="n">css_</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">    .legend-box {</span>
+<span class="s">      cursor: pointer;  </span>
+<span class="s">    }</span>
+<span class="s">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot_elements</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">alpha_sel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">alpha_unsel</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span>
+        
+        <span class="k">if</span> <span class="n">ax</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_id</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+        
+        <span class="n">mpld3_element_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_mpld3ids</span><span class="p">(</span><span class="n">plot_elements</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpld3_element_ids</span> <span class="o">=</span> <span class="n">mpld3_element_ids</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict_</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;interactive_legend&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;element_ids&quot;</span><span class="p">:</span> <span class="n">mpld3_element_ids</span><span class="p">,</span>
+                      <span class="s">&quot;labels&quot;</span><span class="p">:</span><span class="n">labels</span><span class="p">,</span>
+                      <span class="s">&quot;ax&quot;</span><span class="p">:</span><span class="n">ax</span><span class="p">,</span>
+                      <span class="s">&quot;alpha_sel&quot;</span><span class="p">:</span><span class="n">alpha_sel</span><span class="p">,</span>
+                      <span class="s">&quot;alpha_unsel&quot;</span><span class="p">:</span><span class="n">alpha_unsel</span><span class="p">}</span>
+    
+    <span class="k">def</span> <span class="nf">_determine_mpld3ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot_elements</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function to get the mpld3_id for each</span>
+<span class="sd">        of the specified elements.</span>
+<span class="sd">        </span>
+<span class="sd">        This is a convenience function. You can</span>
+<span class="sd">        now do:</span>
+<span class="sd">        </span>
+<span class="sd">        lines = ax.plot(x,y)</span>
+<span class="sd">        plugins.connect(fig, HighlightLines(lines, labels))</span>
+<span class="sd">        </span>
+<span class="sd">        rather than first having to wrap each entry in</span>
+<span class="sd">        lines in a seperate list.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="n">mpld3_element_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">plot_elements</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                <span class="n">mpld3_element_ids</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">utils</span><span class="o">.</span><span class="n">get_id</span><span class="p">(</span><span class="n">element</span><span class="p">)</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>   
+                <span class="n">mpld3_element_ids</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">utils</span><span class="o">.</span><span class="n">get_id</span><span class="p">(</span><span class="n">entry</span><span class="p">)])</span>
+
+        <span class="k">return</span> <span class="n">mpld3_element_ids</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.make &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.make</h1><div class="highlight"><pre>
+<span class="k">def</span> <span class="nf">make_corpus</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span>
+<div class="viewcode-block" id="make_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.make.make_corpus">[docs]</a>                <span class="n">project_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="n">parse</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                <span class="n">tokenise</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">corenlppath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">operations</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">speaker_segmentation</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a parsed version of unparsed_corpus using CoreNLP or NLTK&#39;s tokeniser</span>
+
+<span class="sd">    :param unparsed_corpus_path: path to corpus containing text files, </span>
+<span class="sd">                                 or subdirs containing text files</span>
+<span class="sd">    :type unparsed_corpus_path: str</span>
+
+<span class="sd">    :param project_path: path to corpkit project</span>
+<span class="sd">    :type project_path: str</span>
+
+<span class="sd">    :param parse: Do parsing?</span>
+<span class="sd">    :type parse: bool</span>
+
+<span class="sd">    :param tokenise: Do tokenising?</span>
+<span class="sd">    :type tokenise: bool</span>
+<span class="sd">    </span>
+<span class="sd">    :param corenlppath: folder containing corenlp jar files</span>
+<span class="sd">    :type corenlppath: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param nltk_data_path: path to tokeniser if tokenising</span>
+<span class="sd">    :type nltk_data_path: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param operations: which kinds of annotations to do</span>
+<span class="sd">    :type operations: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param speaker_segmentation: add speaker name to parser output if your corpus is script-like:</span>
+<span class="sd">    :type speaker_segmentation: bool</span>
+
+<span class="sd">    :returns: list of paths to created corpora</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">import</span> <span class="nn">os</span>    
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="p">(</span><span class="n">get_corpus_filepaths</span><span class="p">,</span> 
+                               <span class="n">check_jdk</span><span class="p">,</span> 
+                               <span class="n">add_ids_to_xml</span><span class="p">,</span> 
+                               <span class="n">rename_all_files</span><span class="p">,</span>
+                               <span class="n">make_no_id_corpus</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">project_path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">project_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+    <span class="c"># raise error if no tokeniser</span>
+    <span class="k">if</span> <span class="n">tokenise</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">nltk</span>
+        <span class="k">if</span> <span class="n">nltk_data_path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nltk_data_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nltk_data_path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">word_tokenize</span> <span class="k">as</span> <span class="n">tokenise</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Tokeniser not found. Pass in its path as keyword arg &quot;nltk_data_path = &lt;path&gt;&quot;.</span><span class="se">\n</span><span class="s">&#39;</span>
+            <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&quot;darwin&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_jdk</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&quot;Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html&quot;</span>
+
+    <span class="c"># make absolute path to corpus</span>
+    <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">)</span>
+
+    <span class="c"># move it into project</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Copying files to project ...&#39;</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">)))</span>
+    <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">unparsed_corpus_path</span><span class="p">:</span>
+        <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">),</span> <span class="s">&#39;data&#39;</span><span class="p">)</span>
+
+    <span class="n">outpaths</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">parse</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">speaker_segmentation</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Processing speaker IDs ...&#39;</span>
+            <span class="n">make_no_id_corpus</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span> <span class="n">unparsed_corpus_path</span> <span class="o">+</span> <span class="s">&#39;-stripped&#39;</span><span class="p">)</span>
+            <span class="n">to_parse</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span> <span class="o">+</span> <span class="s">&#39;-stripped&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">to_parse</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Making list of files ... &#39;</span>
+    
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">get_corpus_filepaths</span><span class="p">(</span><span class="n">projpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">),</span> 
+                                <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">to_parse</span><span class="p">)</span>
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">to_parse</span><span class="p">)</span>
+
+        <span class="n">new_parsed_corpus_path</span> <span class="o">=</span> <span class="n">parse_corpus</span><span class="p">(</span><span class="n">proj_path</span> <span class="o">=</span> <span class="n">project_path</span><span class="p">,</span> 
+                                   <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">to_parse</span><span class="p">,</span>
+                                   <span class="n">filelist</span> <span class="o">=</span> <span class="n">filelist</span><span class="p">,</span>
+                                   <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">corenlppath</span><span class="p">,</span>
+                                   <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="n">nltk_data_path</span><span class="p">,</span>
+                                   <span class="n">operations</span> <span class="o">=</span> <span class="n">operations</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_parsed_corpus_path</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">return</span> 
+        
+        <span class="n">move_parsed_files</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="n">to_parse</span><span class="p">,</span> <span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">speaker_segmentation</span><span class="p">:</span>
+            <span class="n">add_ids_to_xml</span><span class="p">(</span><span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">get_corpus_filepaths</span><span class="p">(</span><span class="n">projpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">),</span> 
+                                <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tokenise</span><span class="p">:</span>
+        <span class="n">new_tokenised_corpus_path</span> <span class="o">=</span> <span class="n">parse_corpus</span><span class="p">(</span><span class="n">proj_path</span> <span class="o">=</span> <span class="n">project_path</span><span class="p">,</span> 
+                                   <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="p">,</span>
+                                   <span class="n">filelist</span> <span class="o">=</span> <span class="n">filelist</span><span class="p">,</span>
+                                   <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="n">nltk_data_path</span><span class="p">,</span>
+                                   <span class="n">operations</span> <span class="o">=</span> <span class="n">operations</span><span class="p">,</span>
+                                   <span class="n">only_tokenise</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_tokenised_corpus_path</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">return</span>   
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_tokenised_corpus_path</span><span class="p">)</span>
+
+    <span class="n">rename_all_files</span><span class="p">(</span><span class="n">outpaths</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Done! Created </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outpaths</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outpaths</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

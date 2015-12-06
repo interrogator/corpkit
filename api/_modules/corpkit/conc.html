@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.conc &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.conc</h1><div class="highlight"><pre>
+<span class="k">def</span> <span class="nf">conc</span><span class="p">(</span><span class="n">corpus</span><span class="p">,</span> 
+<div class="viewcode-block" id="conc"><a class="viewcode-back" href="../../corpkit.html#corpkit.conc.conc">[docs]</a>        <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;tregex&#39;</span><span class="p">,</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s">&#39;any&#39;</span><span class="p">,</span> 
+        <span class="n">dep_function</span> <span class="o">=</span> <span class="s">&#39;any&#39;</span><span class="p">,</span>
+        <span class="n">dep_type</span> <span class="o">=</span> <span class="s">&#39;collapsed-ccprocessed-dependencies&#39;</span><span class="p">,</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> 
+        <span class="n">random</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+        <span class="n">split_sents</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> 
+        <span class="n">trees</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">plaintext</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">add_links</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">show_links</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">print_status</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="n">print_output</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="n">just_speakers</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> 
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A concordancer for Tregex queries and dependencies.</span>
+
+<span class="sd">    * Revisions forthcoming to facilitate better dependency querying</span>
+
+<span class="sd">    :returns: a Pandas DataFrame containing concordance lines&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="kn">from</span> <span class="nn">corpkit.process</span> <span class="kn">import</span> <span class="n">tregex_engine</span>
+    <span class="kn">from</span> <span class="nn">corpkit.tests</span> <span class="kn">import</span> <span class="n">check_pytex</span><span class="p">,</span> <span class="n">check_dit</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">get_ipython</span><span class="p">()</span><span class="o">.</span><span class="n">getoutput</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">if</span> <span class="n">query</span> <span class="o">==</span> <span class="s">&#39;any&#39;</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;.*&#39;</span>
+    
+    <span class="c"># convert list to query</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">as_regex</span>
+        <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">):</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;/</span><span class="si">%s</span><span class="s">/ !&lt; __&#39;</span> <span class="o">%</span> <span class="n">as_regex</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">boundaries</span> <span class="o">=</span> <span class="s">&#39;line&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">as_regex</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">boundaries</span> <span class="o">=</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="n">can_do_fast</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">just_speakers</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">can_do_fast</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="n">just_speakers_is_list</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">just_speakers_is_list</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">just_speakers</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+            <span class="n">just_speakers</span> <span class="o">=</span> <span class="p">[</span><span class="n">just_speakers</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_deps</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span> <span class="n">dep_type</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dep_type</span> <span class="o">==</span> <span class="s">&#39;basic-dependencies&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sentence</span><span class="o">.</span><span class="n">basic_dependencies</span>
+        <span class="k">if</span> <span class="n">dep_type</span> <span class="o">==</span> <span class="s">&#39;collapsed-dependencies&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sentence</span><span class="o">.</span><span class="n">collapsed_dependencies</span>
+        <span class="k">if</span> <span class="n">dep_type</span> <span class="o">==</span> <span class="s">&#39;collapsed-ccprocessed-dependencies&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sentence</span><span class="o">.</span><span class="n">collapsed_ccprocessed_dependencies</span>
+
+    <span class="n">conc_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">trees</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="s">&#39;-s&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="s">&#39;-t&#39;</span>
+    <span class="k">if</span> <span class="n">can_do_fast</span><span class="p">:</span>
+        <span class="n">speakr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> <span class="n">check_query</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+        <span class="n">wholes</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> 
+                                <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="s">&#39;-w&#39;</span><span class="p">,</span> <span class="s">&#39;-f&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">],</span> 
+                                <span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span><span class="p">,</span>
+                                <span class="n">preserve_case</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                                <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+        <span class="n">middle_column_result</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> 
+                                <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">],</span> 
+                                <span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span><span class="p">,</span>
+                                <span class="n">preserve_case</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                                <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">whole</span><span class="p">),</span> <span class="n">mid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">wholes</span><span class="p">,</span> <span class="n">middle_column_result</span><span class="p">):</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">whole</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">conc_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">speakr</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">query</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">r&#39;\b&#39;</span><span class="p">):</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">query</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">r&#39;\b&#39;</span><span class="p">):</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">fs_to_conc</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">fs</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">corpus</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">f</span><span class="p">)):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.txt&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">fs_to_conc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">normalise</span><span class="p">(</span><span class="n">concline</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">re</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;\([^ ]+&#39;</span><span class="p">)</span>
+            <span class="n">spaces</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;\s+&#39;</span><span class="p">)</span>
+            <span class="n">concline</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">concline</span><span class="p">)</span>
+            <span class="n">concline</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">spaces</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="n">concline</span><span class="p">)</span>
+            <span class="n">concline</span> <span class="o">=</span> <span class="n">concline</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;)&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">concline</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="n">num_fs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs_to_conc</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs_to_conc</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num_fs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">index</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="n">num_fs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">print_status</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+                <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Extracting data from </span><span class="si">%s</span><span class="s"> ...&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">text</span><span class="p">:</span>
+                <span class="n">parsetreedict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;p&#39;</span><span class="p">):</span>
+                    <span class="kn">import</span> <span class="nn">chardet</span>
+                    <span class="n">enc</span> <span class="o">=</span> <span class="n">chardet</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">enc</span><span class="p">[</span><span class="s">&#39;encoding&#39;</span><span class="p">],</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;p&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">):</span>
+                        <span class="kn">import</span> <span class="nn">pickle</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">lstokens</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
+                        <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+                            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+                            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: File &quot;</span><span class="si">%s</span><span class="s">&quot; could not be opened.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lstokens</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">split_sents</span><span class="p">:</span>
+                            <span class="n">lines</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; . &#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">split_sents</span><span class="p">:</span>
+                            <span class="n">lines</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">split_sents</span><span class="p">:</span>
+                            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)^(.*?)(\b&#39;</span> <span class="o">+</span> <span class="n">query</span> <span class="o">+</span> <span class="s">r&#39;\b)(.*)$&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">UNICODE</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)(.{,</span><span class="si">%s</span><span class="s">})(\b&#39;</span> <span class="o">%</span> <span class="n">window</span> <span class="o">+</span> <span class="n">query</span> <span class="o">+</span> <span class="s">r&#39;\b)(.{,</span><span class="si">%s</span><span class="s">})&#39;</span> <span class="o">%</span> <span class="n">window</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">UNICODE</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">split_sents</span><span class="p">:</span>
+                            <span class="n">mat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">mat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">split_sents</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">mat</span><span class="p">:</span>
+                                <span class="n">last_num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>
+                                <span class="n">conc_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">mat</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">mat</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">mat</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">last_num</span><span class="p">)])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">mat</span><span class="p">:</span>
+                                <span class="c">#print len(mat)</span>
+                                <span class="k">for</span> <span class="n">ent</span> <span class="ow">in</span> <span class="n">mat</span><span class="p">:</span>
+                                    <span class="c">#print len(ent)</span>
+                                    <span class="n">last_num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ent</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                                    <span class="n">conc_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">ent</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ent</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ent</span><span class="p">[</span><span class="n">last_num</span><span class="p">]])</span>
+
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs_to_conc</span><span class="p">):</span>
+                    <span class="kn">from</span> <span class="nn">corenlp_xml.document</span> <span class="kn">import</span> <span class="n">Document</span>
+                    <span class="n">corenlp_xml</span> <span class="o">=</span> <span class="n">Document</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                    <span class="c">#corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  </span>
+                    <span class="k">if</span> <span class="n">just_speakers</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">just_speakers</span><span class="p">:</span>
+                            <span class="n">parsetreedict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">sents</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">corenlp_xml</span><span class="o">.</span><span class="n">sentences</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">speakername</span> <span class="ow">in</span> <span class="n">just_speakers</span><span class="p">]</span>
+                        <span class="c">#sents = [s for s in corenlp_xml.find_all(&#39;sentence&#39;) \</span>
+                        <span class="c">#if s.speakername.text.strip() in just_speakers]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sents</span> <span class="o">=</span> <span class="n">corenlp_xml</span><span class="o">.</span><span class="n">sentences</span>
+                    <span class="n">nsents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sents</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sents</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">num_fs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">index</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="n">nsents</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                                    <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">speakr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">speakername</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="k">except</span><span class="p">:</span>
+                            <span class="n">speakr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span> 
+                        <span class="n">parsetree</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">parse_string</span>
+                        <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">):</span>
+                            <span class="n">parsetreedict</span><span class="p">[</span><span class="n">speakr</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsetree</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                        <span class="k">elif</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;d&#39;</span><span class="p">):</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">compiled_query</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                            <span class="k">except</span><span class="p">:</span>
+                                <span class="kn">import</span> <span class="nn">traceback</span>
+                                <span class="kn">import</span> <span class="nn">sys</span>
+                                <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_traceback</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+                                <span class="n">lst</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span>
+                                              <span class="n">exc_traceback</span><span class="p">)</span>
+                                <span class="n">error_message</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+                                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Query </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                                <span class="k">return</span>
+        
+                            <span class="c">#right_dependency_grammar = s.find_all(&#39;dependencies&#39;, type=dep_type, limit = 1)</span>
+                            <span class="n">deps</span> <span class="o">=</span> <span class="n">get_deps</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dep_type</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">dep_function</span> <span class="o">==</span> <span class="s">&#39;any&#39;</span> <span class="ow">or</span> <span class="n">dep_function</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                                <span class="n">wdsmatching</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">dependent</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">deps</span><span class="o">.</span><span class="n">links</span> \
+                                               <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">l</span><span class="o">.</span><span class="n">dependent</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">comped</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">dep_function</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+                                <span class="c">#goodsent = any(re.match(query, l.dependent.text.strip()) for l in deps.links if re.match(comped, l.type.strip()))</span>
+                                <span class="n">wdsmatching</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">dependent</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">deps</span><span class="o">.</span><span class="n">links</span> \
+                                               <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">comped</span><span class="p">,</span> <span class="n">l</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="ow">and</span> \
+                                               <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">l</span><span class="o">.</span><span class="n">dependent</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())]</span>
+                            <span class="c"># this is shit, needs indexing or something</span>
+                            <span class="k">for</span> <span class="n">wd</span> <span class="ow">in</span> <span class="n">wdsmatching</span><span class="p">:</span>
+                                <span class="n">line</span> <span class="o">=</span> <span class="n">normalise</span><span class="p">(</span><span class="n">parsetree</span><span class="p">)</span>
+                                <span class="k">try</span><span class="p">:</span>
+                                    <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="n">wd</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                                    <span class="k">continue</span>
+                                <span class="n">conc_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="n">speakr</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+
+                    <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">speakr</span><span class="p">,</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">parsetreedict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                            <span class="n">trees_as_string</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">trees</span><span class="p">:</span>
+                                <span class="n">options</span> <span class="o">=</span> <span class="s">&#39;-s&#39;</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">options</span> <span class="o">=</span> <span class="s">&#39;-t&#39;</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;tmp.txt&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+                                <span class="n">fo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">trees_as_string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">))</span>
+                            <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> <span class="n">check_query</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+                            <span class="n">wholes</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> 
+                                        <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="s">&#39;-w&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">],</span> 
+                                        <span class="n">corpus</span> <span class="o">=</span> <span class="s">&#39;tmp.txt&#39;</span><span class="p">,</span>
+                                        <span class="n">preserve_case</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                                        <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+                            <span class="n">middle_column_result</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> 
+                                        <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">],</span> 
+                                        <span class="n">corpus</span> <span class="o">=</span> <span class="s">&#39;tmp.txt&#39;</span><span class="p">,</span>
+                                        <span class="n">preserve_case</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                                        <span class="n">root</span> <span class="o">=</span> <span class="n">root</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">whole</span><span class="p">,</span> <span class="n">mid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">wholes</span><span class="p">,</span> <span class="n">middle_column_result</span><span class="p">):</span>
+                                <span class="n">reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+                                <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">whole</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="n">conc_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="n">speakr</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+
+    <span class="c"># does not keep results ordered!</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;tmp.txt&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">unique_results</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">conc_lines</span><span class="p">)]</span>
+
+    <span class="c">#make into series</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pindex</span> <span class="o">=</span> <span class="s">&#39;f s l m r&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">spkr</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">unique_results</span><span class="p">:</span>
+        <span class="n">spkr</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">spkr</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$ &#39;</span><span class="p">,</span> <span class="s">&#39;$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;`` &#39;</span><span class="p">,</span> <span class="s">&#39;``&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; ,&#39;</span><span class="p">,</span> <span class="s">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; .&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&#39;&#39; &quot;</span><span class="p">,</span> <span class="s">&quot;&#39;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; n&#39;t&quot;</span><span class="p">,</span> <span class="s">&quot;n&#39;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;re&quot;</span><span class="p">,</span><span class="s">&quot;&#39;re&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;m&quot;</span><span class="p">,</span><span class="s">&quot;&#39;m&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;s&quot;</span><span class="p">,</span><span class="s">&quot;&#39;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;d&quot;</span><span class="p">,</span><span class="s">&quot;&#39;d&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;ll&quot;</span><span class="p">,</span><span class="s">&quot;&#39;ll&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">word</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$ &#39;</span><span class="p">,</span> <span class="s">&#39;$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;`` &#39;</span><span class="p">,</span> <span class="s">&#39;``&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; ,&#39;</span><span class="p">,</span> <span class="s">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; .&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&#39;&#39; &quot;</span><span class="p">,</span> <span class="s">&quot;&#39;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; n&#39;t&quot;</span><span class="p">,</span> <span class="s">&quot;n&#39;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;re&quot;</span><span class="p">,</span><span class="s">&quot;&#39;re&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;m&quot;</span><span class="p">,</span><span class="s">&quot;&#39;m&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;s&quot;</span><span class="p">,</span><span class="s">&quot;&#39;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;d&quot;</span><span class="p">,</span><span class="s">&quot;&#39;d&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;ll&quot;</span><span class="p">,</span><span class="s">&quot;&#39;ll&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$ &#39;</span><span class="p">,</span> <span class="s">&#39;$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;`` &#39;</span><span class="p">,</span> <span class="s">&#39;``&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; ,&#39;</span><span class="p">,</span> <span class="s">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; .&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&#39;&#39; &quot;</span><span class="p">,</span> <span class="s">&quot;&#39;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; n&#39;t&quot;</span><span class="p">,</span> <span class="s">&quot;n&#39;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;re&quot;</span><span class="p">,</span><span class="s">&quot;&#39;re&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;m&quot;</span><span class="p">,</span><span class="s">&quot;&#39;m&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;s&quot;</span><span class="p">,</span><span class="s">&quot;&#39;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;d&quot;</span><span class="p">,</span><span class="s">&quot;&#39;d&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;ll&quot;</span><span class="p">,</span><span class="s">&quot;&#39;ll&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="c">#spaces = &#39; &#39; * (maximum / 2 - (len(word) / 2))</span>
+        <span class="c">#new_word = spaces + word + spaces</span>
+
+        <span class="c"># the use of ascii here makes sure the string formats ok, but will also screw over</span>
+        <span class="c"># anyone doing non-english work. so, change to utf-8, then fix errors as they come</span>
+        <span class="c"># in the corpkit-gui &quot;add_conc_lines_to_window&quot; function</span>
+        <span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="n">fname</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">),</span> \
+                                 <span class="n">spkr</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">),</span> \
+                                 <span class="n">start</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">),</span> \
+                                 <span class="n">word</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">),</span> \
+                                 <span class="n">end</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)],</span> <span class="n">index</span> <span class="o">=</span> <span class="n">pindex</span><span class="p">))</span>
+
+    <span class="c"># randomise results...</span>
+    <span class="k">if</span> <span class="n">random</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
+        <span class="n">shuffle</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">series</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;No results found, sorry.&#39;</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No results found, I&#39;m afraid. Check your query and path.&quot;</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">add_links</span><span class="p">:</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;link&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="s">&#39;&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s">&#39;s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">print_output</span><span class="p">:</span>
+
+        <span class="n">formatl</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="n">window</span><span class="p">:])</span>
+        <span class="n">formatf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:])</span>
+        <span class="c">#formatr = lambda x: </span>
+        <span class="n">formatr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s">&quot;{{:&lt;{}s}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">[:</span><span class="n">window</span><span class="p">])</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">header</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">formatters</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;l&#39;</span><span class="p">:</span> <span class="n">formatl</span><span class="p">,</span>
+                                                              <span class="s">&#39;r&#39;</span><span class="p">:</span> <span class="n">formatr</span><span class="p">,</span>
+                                                              <span class="s">&#39;f&#39;</span><span class="p">:</span> <span class="n">formatf</span><span class="p">})</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        
+        <span class="c"># hack because i can&#39;t figure out formatter:</span>
+        <span class="n">rem</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&#39;\s*\.\.\.\s*$&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">st</span><span class="p">])</span>
+        <span class="k">print</span> <span class="n">rem</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit package &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="index.html" />
+    <link rel="prev" title="Welcome to corpkit’s API documentation!" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="corpkit-package">
+<h1>corpkit package<a class="headerlink" href="#corpkit-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-corpkit.interrogator">
+<span id="corpkit-interrogator-module"></span><h2>corpkit.interrogator module<a class="headerlink" href="#module-corpkit.interrogator" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.interrogator.interrogator">
+<code class="descclassname">corpkit.interrogator.</code><code class="descname">interrogator</code><span class="sig-paren">(</span><em>path</em>, <em>search</em>, <em>query='any'</em>, <em>show='words'</em>, <em>exclude=False</em>, <em>case_sensitive=False</em>, <em>lemmatise=False</em>, <em>titlefilter=False</em>, <em>lemmatag=False</em>, <em>spelling=False</em>, <em>phrases=False</em>, <em>dep_type='collapsed-ccprocessed-dependencies'</em>, <em>quicksave=False</em>, <em>printstatus=True</em>, <em>root=False</em>, <em>df1_always_df=False</em>, <em>just_speakers=False</em>, <em>excludemode='any'</em>, <em>searchmode='all'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/interrogator.html#interrogator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.interrogator.interrogator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interrogate a corpus of texts for a lexicogrammatical phenomenon</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<em>str &#8211; corpus path; list of strings &#8211; list of paths</em>) &#8211; Path to a corpus</li>
+<li><strong>search</strong> (<em>str, or, for dependencies, a dict like {&#8216;w&#8217;: &#8216;help&#8217;, &#8216;p&#8217;: r&#8217;^V&#8217;}</em>) &#8211; What query should be matching
+- t/tregex
+- w/word
+- l/lemma
+- f/function
+- g/governor
+- d/dependent
+- p/pos
+- i/index
+- n/ngrams</li>
+<li><strong>searchmode</strong> (<em>str (&#8216;any&#8217;/&#8217;all&#8217;)</em>) &#8211; Return results matching any/all criteria</li>
+<li><strong>exclude</strong> (<em>dict &#8211; {&#8216;l&#8217;: &#8216;be&#8217;}</em>) &#8211; The inverse of <cite>search</cite>, removing results from search</li>
+<li><strong>excludemode</strong> (<em>str (&#8216;any&#8217;/&#8217;all&#8217;)</em>) &#8211; Exclude results matching any/all criteria</li>
+<li><strong>query</strong> (str &#8211; regex/Tregex pattern; dict &#8211; <code class="docutils literal"><span class="pre">{name:</span> <span class="pre">pattern}</span></code>; list &#8211; word list to match) &#8211; A search query for the interrogation</li>
+<li><strong>show</strong> (<em>list of strings</em>) &#8211; What to output. If multiple strings are passed, results will be colon-separated, in order
+- t/tree
+- w/word
+- l/lemma
+- g/governor
+- d/dependent
+- f/function
+- p/pos
+- i/index
+- a/distance from root</li>
+<li><strong>lemmatise</strong> (<em>bool</em>) &#8211; Do lemmatisation on results</li>
+<li><strong>lemmatag</strong> (<em>False/&#8217;n&#8217;/&#8217;v&#8217;/&#8217;a&#8217;/&#8217;r&#8217;</em>) &#8211; Explicitly pass a pos to lemmatiser (generally when data is unparsed)</li>
+<li><strong>titlefilter</strong> (<em>bool</em>) &#8211; Strip &#8216;mr, &#8216;the&#8217;, &#8216;dr.&#8217; etc. from multiword results (turns &#8216;phrases&#8217; on)</li>
+<li><strong>spelling</strong> (<em>False/&#8217;US&#8217;/&#8217;UK&#8217;</em>) &#8211; Convert all to U.S. or U.K. English</li>
+<li><strong>phrases</strong> (<em>bool</em>) &#8211; Use if your expected results are multiword (e.g. searching for NP, with
+show as &#8216;w&#8217;), and thus need tokenising</li>
+<li><strong>dep_type</strong> (<em>str &#8211; &#8216;basic-dependencies&#8217;/&#8217;a&#8217;, &#8216;collapsed-dependencies&#8217;/&#8217;b&#8217;, &#8216;collapsed-ccprocessed-dependencies&#8217;/&#8217;c&#8217;</em>) &#8211; The kind of Stanford CoreNLP dependency parses you want to use:</li>
+<li><strong>quicksave</strong> (<em>str</em>) &#8211; Save result as pickle to saved_interrogations/<em>quicksave</em> on completion</li>
+<li><strong>gramsize</strong> (<em>int</em>) &#8211; size of ngrams (default 2)</li>
+<li><strong>split_contractions</strong> (<em>bool</em>) &#8211; make &#8220;don&#8217;t&#8221; et al into two tokens</li>
+<li><strong>num_proc</strong> (<em>int</em>) &#8211; how many parallel processes to run &#8211; default is the number of cores</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A named tuple, with <code class="docutils literal"><span class="pre">.query</span></code>, <code class="docutils literal"><span class="pre">.results</span></code>, <code class="docutils literal"><span class="pre">.totals</span></code> attributes. 
+If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-corpkit.editor">
+<span id="corpkit-editor-module"></span><h2>corpkit.editor module<a class="headerlink" href="#module-corpkit.editor" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.editor.editor">
+<code class="descclassname">corpkit.editor.</code><code class="descname">editor</code><span class="sig-paren">(</span><em>dataframe1</em>, <em>operation=None</em>, <em>dataframe2=False</em>, <em>sort_by=False</em>, <em>keep_stats=False</em>, <em>keep_top=False</em>, <em>just_totals=False</em>, <em>threshold='medium'</em>, <em>just_entries=False</em>, <em>skip_entries=False</em>, <em>merge_entries=False</em>, <em>newname='combine'</em>, <em>multiple_merge=False</em>, <em>just_subcorpora=False</em>, <em>skip_subcorpora=False</em>, <em>span_subcorpora=False</em>, <em>merge_subcorpora=False</em>, <em>new_subcorpus_name=False</em>, <em>replace_names=False</em>, <em>projection=False</em>, <em>remove_above_p=False</em>, <em>p=0.05</em>, <em>revert_year=True</em>, <em>print_info=True</em>, <em>spelling=False</em>, <em>selfdrop=True</em>, <em>calc_all=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/editor.html#editor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.editor.editor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit results of interrogations, do keywording, sort, etc.</p>
+<p><code class="docutils literal"><span class="pre">just/skip_entries</span></code> and <code class="docutils literal"><span class="pre">just/skip_subcorpora</span></code> can take a few different kinds of input:</p>
+<ul class="simple">
+<li>str: treated as regular expression to match</li>
+<li>list:<ul>
+<li>of integers: indices to match</li>
+<li>of strings: entries/subcorpora to match</li>
+</ul>
+</li>
+</ul>
+<p><code class="docutils literal"><span class="pre">merge_entries</span></code> and <code class="docutils literal"><span class="pre">merge_subcorpora</span></code>, however, are best entered as dicts:</p>
+<p><code class="docutils literal"><span class="pre">{newname:</span> <span class="pre">criteria,</span> <span class="pre">newname2:</span> <span class="pre">criteria2}`</span></code></p>
+<p>where criteria is a string, list, etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dataframe1</strong> (<em>pandas.core.frame.DataFrame</em>) &#8211; Results to edit</li>
+<li><strong>operation</strong> (<em>str</em>) &#8211; <p>Kind of maths to do on inputted lists:</p>
+<p>&#8216;+&#8217;, &#8216;-&#8216;, &#8216;/&#8217;, &#8216;*&#8217;, &#8216;%&#8217;: self explanatory
+&#8216;k&#8217;: log likelihood (keywords)
+&#8216;a&#8217;: get distance metric (for use with interrogator &#8216;a&#8217; option)
+&#8216;d&#8217;: get percent difference (alternative approach to keywording)</p>
+</li>
+<li><strong>dataframe2</strong> (<em>pandas.core.series.Series/pandas.core.frame.DataFrame/dict/&#8217;self&#8217;</em>) &#8211; <p>List of results or totals.</p>
+<p>If list of results, for each entry in dataframe 1, locate
+entry with same name in dataframe 2, and do maths there
+if &#8216;self&#8217;, do all merging/keeping operations, then use
+edited dataframe1 as dataframe2</p>
+</li>
+<li><strong>sort_by</strong> (<em>str</em>) &#8211; <p>Calculate slope, stderr, r, p values, then sort by:</p>
+<p>increase: highest to lowest slope value
+decrease: lowest to highest slope value
+turbulent: most change in y axis values
+static: least change in y axis values
+total/most: largest number first
+infreq/least: smallest number first
+name: alphabetically</p>
+</li>
+<li><strong>keep_stats</strong> (<em>bool</em>) &#8211; Keep/drop stats values from dataframe after sorting</li>
+<li><strong>keep_top</strong> (<em>int</em>) &#8211; After sorting, remove all but the top <em>keep_top</em> results</li>
+<li><strong>just_totals</strong> (<em>bool</em>) &#8211; Sum each column and work with sums</li>
+<li><strong>threshold</strong> (<em>int/bool</em>) &#8211; <p>When using results list as dataframe 2, drop values occurring
+fewer than n times. If not keywording, you can use:</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">'high'</span></code>: dataframe2 total / 2500
+<code class="docutils literal"><span class="pre">'medium'</span></code>: dataframe2 total / 5000
+<code class="docutils literal"><span class="pre">'low'</span></code>: dataframe2 total / 10000</div></blockquote>
+<p>Note: if keywording, there are smaller default thresholds</p>
+</li>
+<li><strong>just_entries</strong> (<em>see above</em>) &#8211; Keep matching entries</li>
+<li><strong>skip_entries</strong> (<em>see above</em>) &#8211; Skip matching entries</li>
+<li><strong>merge_entries</strong> (<em>see above</em>) &#8211; Merge matching entries</li>
+<li><strong>newname</strong> (<em>str/&#8217;combine&#8217;</em>) &#8211; New name for merged entries</li>
+<li><strong>just_subcorpora</strong> (<em>see above</em>) &#8211; Keep matching subcorpora</li>
+<li><strong>skip_subcorpora</strong> (<em>see above</em>) &#8211; Skip matching subcorpora</li>
+<li><strong>span_subcorpora</strong> (tuple &#8211; <code class="docutils literal"><span class="pre">(int,</span> <span class="pre">int2)</span></code>) &#8211; If subcorpora are numerically named, span all from <em>int</em> to <em>int2</em>, inclusive</li>
+<li><strong>merge_subcorpora</strong> (<em>see above</em>) &#8211; Merge matching subcorpora</li>
+<li><strong>new_subcorpus_name</strong> (str/<code class="docutils literal"><span class="pre">'combine'</span></code>) &#8211; Name for merged subcorpora</li>
+<li><strong>replace_names</strong> (dict &#8211; <code class="docutils literal"><span class="pre">{criteria:</span> <span class="pre">replacement_text}</span></code>; str &#8211; a regex to delete from names) &#8211; Edit result names and then merge duplicate names.</li>
+<li><strong>projection</strong> (tuple &#8211; <code class="docutils literal"><span class="pre">(subcorpus_name,</span> <span class="pre">n)</span></code>) &#8211; a  to multiply results in subcorpus by n</li>
+<li><strong>remove_above_p</strong> (<em>bool</em>) &#8211; Delete any result over p</li>
+<li><strong>p</strong> (<em>float</em>) &#8211; set the p value</li>
+<li><strong>revert_year</strong> (<em>bool</em>) &#8211; when doing linear regression on years, turn annual subcorpora into 1, 2 ...</li>
+<li><strong>print_info</strong> (<em>bool</em>) &#8211; Print stuff to console showing what&#8217;s being edited</li>
+<li><strong>spelling</strong> (str &#8211; <code class="docutils literal"><span class="pre">'US'</span></code>/<code class="docutils literal"><span class="pre">'UK'</span></code>) &#8211; Convert/normalise spelling:</li>
+<li><strong>selfdrop</strong> (<em>bool</em>) &#8211; When keywording, try to remove target corpus from reference corpus</li>
+<li><strong>calc_all</strong> (<em>bool</em>) &#8211; When keywording, calculate words that appear in either corpus</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Edited interrogation</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-corpkit.plotter">
+<span id="corpkit-plotter-module"></span><h2>corpkit.plotter module<a class="headerlink" href="#module-corpkit.plotter" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.plotter.plotter">
+<code class="descclassname">corpkit.plotter.</code><code class="descname">plotter</code><span class="sig-paren">(</span><em>title</em>, <em>df</em>, <em>x_label=None</em>, <em>y_label=None</em>, <em>style='ggplot'</em>, <em>figsize=(8</em>, <em>4)</em>, <em>save=False</em>, <em>legend_pos='best'</em>, <em>reverse_legend='guess'</em>, <em>num_to_plot=7</em>, <em>tex='try'</em>, <em>colours='Paired'</em>, <em>cumulative=False</em>, <em>pie_legend=True</em>, <em>partial_pie=False</em>, <em>show_totals=False</em>, <em>transparent=False</em>, <em>output_format='png'</em>, <em>interactive=False</em>, <em>black_and_white=False</em>, <em>show_p_val=False</em>, <em>indices=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/plotter.html#plotter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.plotter.plotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualise corpus interrogations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>title</strong> (<em>str</em>) &#8211; A title for the plot</li>
+<li><strong>df</strong> (<em>pandas.core.frame.DataFrame</em>) &#8211; Data to be plotted</li>
+<li><strong>x_label</strong> (<em>str</em>) &#8211; A label for the x axis</li>
+<li><strong>y_label</strong> (<em>str</em>) &#8211; A label for the y axis</li>
+<li><strong>kind</strong> (<em>str (&#8216;line&#8217;/&#8217;bar&#8217;/&#8217;barh&#8217;/&#8217;pie&#8217;/&#8217;area&#8217;)</em>) &#8211; The kind of chart to make</li>
+<li><strong>style</strong> (<em>str (&#8216;ggplot&#8217;/&#8217;bmh&#8217;/&#8217;fivethirtyeight&#8217;/&#8217;seaborn-talk&#8217;/etc)</em>) &#8211; Visual theme of plot</li>
+<li><strong>figsize</strong> (<em>tuple (int, int)</em>) &#8211; Size of plot</li>
+<li><strong>save</strong> (<em>bool/str</em>) &#8211; If bool, save with <em>title</em> as name; if str, use str as name</li>
+<li><strong>legend_pos</strong> (<em>str (&#8216;upper right&#8217;/&#8217;outside right&#8217;/etc)</em>) &#8211; Where to place legend</li>
+<li><strong>reverse_legend</strong> (<em>bool</em>) &#8211; Reverse the order of the legend</li>
+<li><strong>num_to_plot</strong> (<em>int/&#8217;all&#8217;</em>) &#8211; How many columns to plot</li>
+<li><strong>tex</strong> (<em>bool</em>) &#8211; Use TeX to draw plot text</li>
+<li><strong>colours</strong> (<em>str</em>) &#8211; Colourmap for lines/bars/slices</li>
+<li><strong>cumulative</strong> (<em>bool</em>) &#8211; Plot values cumulatively</li>
+<li><strong>pie_legend</strong> (<em>bool</em>) &#8211; Show a legend for pie chart</li>
+<li><strong>partial_pie</strong> (<em>bool</em>) &#8211; Allow plotting of pie slices only</li>
+<li><strong>show_totals</strong> (<em>str &#8211; &#8216;legend&#8217;/&#8217;plot&#8217;/&#8217;both&#8217;</em>) &#8211; Print sums in plot where possible</li>
+<li><strong>transparent</strong> (<em>bool</em>) &#8211; Transparent .png background</li>
+<li><strong>output_format</strong> (<em>str &#8211; &#8216;png&#8217;/&#8217;pdf&#8217;</em>) &#8211; File format for saved image</li>
+<li><strong>black_and_white</strong> (<em>bool</em>) &#8211; Create black and white line styles</li>
+<li><strong>show_p_val</strong> (<em>bool</em>) &#8211; Attempt to print p values in legend if contained in df</li>
+<li><strong>indices</strong> (<em>bool</em>) &#8211; To use when plotting &#8220;distance from root&#8221;</li>
+<li><strong>stacked</strong> (<em>str</em>) &#8211; When making bar chart, stack bars on top of one another</li>
+<li><strong>filled</strong> (<em>str</em>) &#8211; For area and bar charts, make every column sum to 100</li>
+<li><strong>legend</strong> (<em>bool</em>) &#8211; Show a legend</li>
+<li><strong>rot</strong> (<em>int</em>) &#8211; Rotate x axis ticks by <em>rot</em> degrees</li>
+<li><strong>subplots</strong> (<em>bool</em>) &#8211; Plot each column separately</li>
+<li><strong>layout</strong> (<em>tuple &#8211; (int, int)</em>) &#8211; Grid shape to use when <em>subplots</em> is True</li>
+<li><strong>interactive</strong> (<em>list &#8211; [1, 2 3]</em>) &#8211; Experimental interactive options</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">matplotlib figure</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-corpkit.conc">
+<span id="corpkit-conc-module"></span><h2>corpkit.conc module<a class="headerlink" href="#module-corpkit.conc" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.conc.conc">
+<code class="descclassname">corpkit.conc.</code><code class="descname">conc</code><span class="sig-paren">(</span><em>corpus</em>, <em>option='tregex'</em>, <em>query='any'</em>, <em>dep_function='any'</em>, <em>dep_type='collapsed-ccprocessed-dependencies'</em>, <em>n=100</em>, <em>random=False</em>, <em>split_sents=True</em>, <em>window=100</em>, <em>trees=False</em>, <em>plaintext=False</em>, <em>add_links=False</em>, <em>show_links=False</em>, <em>print_status=True</em>, <em>print_output=True</em>, <em>just_speakers=False</em>, <em>root=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/conc.html#conc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.conc.conc" title="Permalink to this definition">¶</a></dt>
+<dd><p>A concordancer for Tregex queries and dependencies.</p>
+<ul class="simple">
+<li>Revisions forthcoming to facilitate better dependency querying</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a Pandas DataFrame containing concordance lines</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-corpkit.make">
+<span id="corpkit-make-module"></span><h2>corpkit.make module<a class="headerlink" href="#module-corpkit.make" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.make.make_corpus">
+<code class="descclassname">corpkit.make.</code><code class="descname">make_corpus</code><span class="sig-paren">(</span><em>unparsed_corpus_path</em>, <em>project_path=None</em>, <em>parse=True</em>, <em>tokenise=False</em>, <em>corenlppath=False</em>, <em>nltk_data_path=False</em>, <em>operations=False</em>, <em>speaker_segmentation=False</em>, <em>root=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/make.html#make_corpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.make.make_corpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a parsed version of unparsed_corpus using CoreNLP or NLTK&#8217;s tokeniser</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>unparsed_corpus_path</strong> (<em>str</em>) &#8211; path to corpus containing text files, 
+or subdirs containing text files</li>
+<li><strong>project_path</strong> (<em>str</em>) &#8211; path to corpkit project</li>
+<li><strong>parse</strong> (<em>bool</em>) &#8211; Do parsing?</li>
+<li><strong>tokenise</strong> (<em>bool</em>) &#8211; Do tokenising?</li>
+<li><strong>corenlppath</strong> (<em>str</em>) &#8211; folder containing corenlp jar files</li>
+<li><strong>nltk_data_path</strong> (<em>str</em>) &#8211; path to tokeniser if tokenising</li>
+<li><strong>operations</strong> (<em>str</em>) &#8211; which kinds of annotations to do</li>
+<li><strong>speaker_segmentation</strong> (<em>bool</em>) &#8211; add speaker name to parser output if your corpus is script-like:</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of paths to created corpora</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-corpkit.other">
+<span id="corpkit-other-module"></span><h2>corpkit.other module<a class="headerlink" href="#module-corpkit.other" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="corpkit.other.as_regex">
+<code class="descclassname">corpkit.other.</code><code class="descname">as_regex</code><span class="sig-paren">(</span><em>lst</em>, <em>boundaries='w'</em>, <em>case_sensitive=False</em>, <em>inverse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#as_regex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.as_regex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a wordlist into an uncompiled regular expression</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lst</strong> (<em>list</em>) &#8211; A wordlist to convert</li>
+<li><strong>boundaries</strong> (<em>str &#8211; &#8216;word&#8217;/&#8217;line&#8217;/&#8217;space&#8217;; tuple &#8211; (leftboundary, rightboundary)</em>) &#8211; </li>
+<li><strong>case_sensitive</strong> (<em>bool</em>) &#8211; Make regular expression case sensitive</li>
+<li><strong>inverse</strong> (<em>bool</em>) &#8211; Make regular expression inverse matching</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">regular expression as string</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.concprinter">
+<code class="descclassname">corpkit.other.</code><code class="descname">concprinter</code><span class="sig-paren">(</span><em>df</em>, <em>kind='string'</em>, <em>n=100</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#concprinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.concprinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print conc lines nicely, to string, latex or csv</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> (<em>pd.DataFame</em>) &#8211; concordance lines from conc()</li>
+<li><strong>kind</strong> (<em>str (&#8216;string&#8217;/&#8217;latex&#8217;/&#8217;csv&#8217;)</em>) &#8211; output format</li>
+<li><strong>n</strong> (<em>int/&#8217;all&#8217;</em>) &#8211; Print first n lines only</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.interroplot">
+<code class="descclassname">corpkit.other.</code><code class="descname">interroplot</code><span class="sig-paren">(</span><em>path</em>, <em>query</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#interroplot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.interroplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demo function for interrogator/plotter.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Interrogates path with Tregex query,</li>
+<li>Gets relative frequencies</li>
+<li>Plots the top seven results</li>
+</ol>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<em>str</em>) &#8211; path to corpus</li>
+<li><strong>query</strong> (<em>str</em>) &#8211; Tregex query</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.load_all_results">
+<code class="descclassname">corpkit.other.</code><code class="descname">load_all_results</code><span class="sig-paren">(</span><em>data_dir='saved_interrogations'</em>, <em>only_concs=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#load_all_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.load_all_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load every saved interrogation in data_dir into a dict:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">load_all_results</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data_dir</strong> (<em>str</em>) &#8211; path to saved data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict with filenames as keys</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.load_result">
+<code class="descclassname">corpkit.other.</code><code class="descname">load_result</code><span class="sig-paren">(</span><em>savename</em>, <em>loaddir='saved_interrogations'</em>, <em>only_concs=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#load_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.load_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load saved data into memory:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">loaded</span> <span class="o">=</span> <span class="n">load_result</span><span class="p">(</span><span class="s">&#39;interro&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will load saved_interrogations/interro.p as loaded</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>savename</strong> (<em>str</em>) &#8211; Filename with or without extension</li>
+<li><strong>loaddir</strong> (<em>str</em>) &#8211; Relative path to the directory containg <em>savename</em></li>
+<li><strong>only_concs</strong> (<em>bool</em>) &#8211; Set to True if loading concordance lines</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">loaded data</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.make_multi">
+<code class="descclassname">corpkit.other.</code><code class="descname">make_multi</code><span class="sig-paren">(</span><em>interrogation</em>, <em>indexnames=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#make_multi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.make_multi" title="Permalink to this definition">¶</a></dt>
+<dd><p>make pd.multiindex version of an interrogation (for pandas geeks)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>interrogation</strong> (<em>a corpkit interrogation, pd.DataFrame or pd.Series</em>) &#8211; a corpkit interrogation</li>
+<li><strong>indexnames</strong> (<em>list of strings/None/False</em>) &#8211; pass in a list of names for the multiindex;
+leave as None to get them if possible from interrogation
+use False to explicitly not get them</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">pd.DataFrame with multiindex</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.new_project">
+<code class="descclassname">corpkit.other.</code><code class="descname">new_project</code><span class="sig-paren">(</span><em>name</em>, <em>loc='.'</em>, <em>root=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#new_project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.new_project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a new project in ./<em>loc</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; A name for the project</li>
+<li><strong>loc</strong> (<em>str</em>) &#8211; Relative path to directory in which project will be made</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.quickview">
+<code class="descclassname">corpkit.other.</code><code class="descname">quickview</code><span class="sig-paren">(</span><em>results</em>, <em>n=25</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#quickview"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.quickview" title="Permalink to this definition">¶</a></dt>
+<dd><p>view top n results of results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>results</strong> (<em>corpkit.interrogation/pandas.core.frame.DataFrame</em>) &#8211; Interrogation/edited result to view</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; Show top <em>n</em> results</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.save_result">
+<code class="descclassname">corpkit.other.</code><code class="descname">save_result</code><span class="sig-paren">(</span><em>interrogation</em>, <em>savename</em>, <em>savedir='saved_interrogations'</em>, <em>print_info=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#save_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.save_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save an interrogation as pickle to <em>savedir</em>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">interro_interrogator</span><span class="p">(</span><span class="n">corpus</span><span class="p">,</span> <span class="s">&#39;words&#39;</span><span class="p">,</span> <span class="s">&#39;any&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_result</span><span class="p">(</span><span class="n">interro</span><span class="p">,</span> <span class="s">&#39;savename&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will create saved_interrogations/savename.p</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>interrogation</strong> (<em>corpkit interogation/edited result</em>) &#8211; Corpus interrogation to save</li>
+<li><strong>savename</strong> (<em>str</em>) &#8211; A name for the saved file</li>
+<li><strong>savedir</strong> (<em>str</em>) &#8211; Relative path to directory in which to save file</li>
+<li><strong>print_info</strong> (<em>bool</em>) &#8211; Show/hide stdout</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="corpkit.other.texify">
+<code class="descclassname">corpkit.other.</code><code class="descname">texify</code><span class="sig-paren">(</span><em>series</em>, <em>n=20</em>, <em>colname='Keyness'</em>, <em>toptail=False</em>, <em>sort_by=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/corpkit/other.html#texify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#corpkit.other.texify" title="Permalink to this definition">¶</a></dt>
+<dd><p>turn a series into a latex table</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">corpkit package</a><ul>
+<li><a class="reference internal" href="#module-corpkit.interrogator">corpkit.interrogator module</a></li>
+<li><a class="reference internal" href="#module-corpkit.editor">corpkit.editor module</a></li>
+<li><a class="reference internal" href="#module-corpkit.plotter">corpkit.plotter module</a></li>
+<li><a class="reference internal" href="#module-corpkit.conc">corpkit.conc module</a></li>
+<li><a class="reference internal" href="#module-corpkit.make">corpkit.make module</a></li>
+<li><a class="reference internal" href="#module-corpkit.other">corpkit.other module</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to corpkit&#8217;s API documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/corpkit.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/corpkit.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

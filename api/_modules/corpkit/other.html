@@ -1,0 +1,757 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.other &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.other</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="quickview"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.quickview">[docs]</a><span class="k">def</span> <span class="nf">quickview</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">25</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;view top n results of results.</span>
+
+<span class="sd">    :param results: Interrogation/edited result to view</span>
+<span class="sd">    :type results: corpkit.interrogation/pandas.core.frame.DataFrame</span>
+<span class="sd">    :param n: Show top *n* results</span>
+<span class="sd">    :type n: int</span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="kn">import</span> <span class="nn">numpy</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+
+    <span class="c"># handle dictionaries too:</span>
+    <span class="n">dictpath</span> <span class="o">=</span> <span class="s">&#39;dictionaries&#39;</span>
+    <span class="n">savedpath</span> <span class="o">=</span> <span class="s">&#39;saved_interrogations&#39;</span>
+
+    <span class="c"># too lazy to code this properly for every possible data type:</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">9999</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">results</span><span class="p">)):</span>
+            <span class="kn">import</span> <span class="nn">pickle</span>
+            <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+            <span class="n">unpickled</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">results</span><span class="p">),</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Top </span><span class="si">%d</span><span class="s"> entries in </span><span class="si">%s</span><span class="s">:</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">results</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unpickled</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="n">n</span><span class="p">)):</span>
+                <span class="n">fildex</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">% 3d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">index</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> (n=</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedpath</span><span class="p">,</span> <span class="n">results</span><span class="p">)):</span>
+            <span class="kn">from</span> <span class="nn">corpkit</span> <span class="kn">import</span> <span class="n">load_result</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="si">%s</span><span class="s"> loaded temporarily from file:</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">results</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">load_result</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;File </span><span class="si">%s</span><span class="s"> not found in saved_interrogations or dictionaries&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;interrogation&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="p">)):</span>
+        <span class="n">clas</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;function&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">clas</span> <span class="o">==</span> <span class="s">&#39;interrogator&#39;</span><span class="p">:</span>
+            <span class="n">datatype</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s">&#39;int64&#39;</span><span class="p">:</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;%&#39;</span>
+            <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;keywords&#39;</span><span class="p">:</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;keywords&#39;</span>
+            <span class="k">elif</span> <span class="n">results</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;ngrams&#39;</span><span class="p">:</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;ngrams&#39;</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span>
+                <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span>
+
+        <span class="k">elif</span> <span class="n">clas</span> <span class="o">==</span> <span class="s">&#39;editor&#39;</span><span class="p">:</span>
+            <span class="c"># currently, it&#39;s wrong if you edit keywords! oh well</span>
+            <span class="n">datatype</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;just_totals&#39;</span><span class="p">]:</span>
+                <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s">&#39;int64&#39;</span><span class="p">:</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;%&#39;</span> 
+                <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s">&#39;int64&#39;</span><span class="p">:</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;%&#39;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">results</span>
+                    <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span>
+        <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;%&#39;</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">resbranch</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">results_branch</span> <span class="o">=</span> <span class="n">results</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;%&#39;</span>
+        <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;keywords&#39;</span><span class="p">:</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="s">&#39;series_keywords&#39;</span>
+
+    <span class="k">if</span> <span class="n">resbranch</span><span class="p">:</span>
+        <span class="n">the_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">results_branch</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">the_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">results_branch</span><span class="o">.</span><span class="n">index</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">the_list</span><span class="p">):</span>
+        <span class="n">fildex</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">% 3d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">index</span>
+        <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&#39;keywords&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&#39;%&#39;</span> <span class="ow">or</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&#39;ratio&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;interrogation&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">results</span><span class="p">)):</span>
+                <span class="n">tot</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">totals</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+                <span class="n">totstr</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%.3f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tot</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s%%</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">totstr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&#39;series_keywords&#39;</span><span class="p">:</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="n">results_branch</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> (k=</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">tot</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">resbranch</span><span class="p">:</span>
+                <span class="n">tot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">results_branch</span><span class="p">[</span><span class="n">w</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tot</span> <span class="o">=</span> <span class="n">results_branch</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> (n=</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">fildex</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">tot</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="concprinter"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.concprinter">[docs]</a><span class="k">def</span> <span class="nf">concprinter</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="s">&#39;string&#39;</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print conc lines nicely, to string, latex or csv</span>
+
+<span class="sd">    :param df: concordance lines from conc()</span>
+<span class="sd">    :type df: pd.DataFame </span>
+<span class="sd">    :param kind: output format</span>
+<span class="sd">    :type kind: str (&#39;string&#39;/&#39;latex&#39;/&#39;csv&#39;)</span>
+<span class="sd">    :param n: Print first n lines only</span>
+<span class="sd">    :type n: int/&#39;all&#39;</span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;kind argument must start with &quot;l&quot; (latex), &quot;c&quot; (csv) or &quot;s&quot; (string).&#39;</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">to_show</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">to_show</span> <span class="o">=</span> <span class="n">df</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">to_show</span> <span class="o">=</span> <span class="n">df</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;n argument &quot;</span><span class="si">%s</span><span class="s">&quot; not recognised.&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="k">print</span> <span class="s">&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">to_show</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">header</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">formatters</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;r&#39;</span><span class="p">:</span><span class="s">&#39;{{:&lt;{}s}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">to_show</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">format</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">to_show</span><span class="o">.</span><span class="n">to_latex</span><span class="p">(</span><span class="n">header</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">formatters</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;r&#39;</span><span class="p">:</span><span class="s">&#39;{{:&lt;{}s}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">to_show</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">format</span><span class="p">})</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;llll&#39;</span><span class="p">,</span> <span class="s">&#39;lrrl&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">to_show</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">sep</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">formatters</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;r&#39;</span><span class="p">:</span><span class="s">&#39;{{:&lt;{}s}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">to_show</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">format</span><span class="p">})</span>
+    <span class="k">print</span> <span class="s">&#39;&#39;</span>
+</div>
+<div class="viewcode-block" id="save_result"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.save_result">[docs]</a><span class="k">def</span> <span class="nf">save_result</span><span class="p">(</span><span class="n">interrogation</span><span class="p">,</span> <span class="n">savename</span><span class="p">,</span> <span class="n">savedir</span> <span class="o">=</span> <span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> <span class="n">print_info</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save an interrogation as pickle to *savedir*.</span>
+
+<span class="sd">       &gt;&gt;&gt; interro_interrogator(corpus, &#39;words&#39;, &#39;any&#39;)</span>
+<span class="sd">       &gt;&gt;&gt; save_result(interro, &#39;savename&#39;)</span>
+
+<span class="sd">    will create saved_interrogations/savename.p</span>
+
+<span class="sd">    :param interrogation: Corpus interrogation to save</span>
+<span class="sd">    :type interrogation: corpkit interogation/edited result</span>
+<span class="sd">    </span>
+<span class="sd">    :param savename: A name for the saved file</span>
+<span class="sd">    :type savename: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param savedir: Relative path to directory in which to save file</span>
+<span class="sd">    :type savedir: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param print_info: Show/hide stdout</span>
+<span class="sd">    :type print_info: bool</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">Counter</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="c"># import nltk</span>
+
+    
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">interrogation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">savedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="n">savename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">savedir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">savedir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">interrogation</span> <span class="o">=</span> <span class="p">{</span><span class="n">savename</span><span class="p">:</span> <span class="n">interrogation</span><span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">savename</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">interrogation</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">unicode</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;First argument (i.e. the thing to save) cannot be a string.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">savename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+            <span class="n">savename</span> <span class="o">=</span> <span class="n">savename</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">urlify</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">corpkit</span>
+            <span class="s">&quot;Turn savename into filename&quot;</span>
+            <span class="kn">import</span> <span class="nn">re</span>
+            <span class="c">#s = s.lower()</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;[^\w\s-]&quot;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;\s+&quot;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&quot;-(textbf|emph|textsc|textit)&quot;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">s</span>
+
+        <span class="n">savename</span> <span class="o">=</span> <span class="n">urlify</span><span class="p">(</span><span class="n">savename</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">savedir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">savedir</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">savename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+            <span class="n">savename</span> <span class="o">=</span> <span class="n">savename</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+
+        <span class="c"># this feature creeps me out, i don&#39;t think it&#39;s needed any more</span>
+        <span class="n">savename</span> <span class="o">=</span> <span class="n">savename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;lemmatised&#39;</span><span class="p">,</span> <span class="s">&#39;-lemmatised&#39;</span><span class="p">)</span>
+
+        <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="n">savename</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullpath</span><span class="p">):</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Save error: </span><span class="si">%s</span><span class="s"> already exists in </span><span class="si">%s</span><span class="s">.</span><span class="se">\n\n</span><span class="s">Type &#39;o&#39; to overwrite, or enter a new name: &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">savename</span><span class="p">,</span> <span class="n">savedir</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="s">&#39;o&#39;</span> <span class="ow">or</span> <span class="n">selection</span> <span class="o">==</span> <span class="s">&#39;O&#39;</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">os</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fullpath</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">selection</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+                    <span class="n">selection</span> <span class="o">=</span> <span class="n">selection</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+                    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+        
+        <span class="c"># if it&#39;s just a table or series</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">or</span> \
+            <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span> <span class="ow">or</span> \
+            <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">:</span>
+            <span class="c"># removing this nltk support for now</span>
+            <span class="c"># or \ type(data) == nltk.text.Text:</span>
+            <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">totals</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;function&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;interrogator&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;k&#39;</span><span class="p">):</span>
+                    <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">table</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">totals</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">totals</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">totals</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">table</span><span class="p">]</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">temp_list</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">print_info</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Data saved: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">fullpath</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="load_result"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.load_result">[docs]</a><span class="k">def</span> <span class="nf">load_result</span><span class="p">(</span><span class="n">savename</span><span class="p">,</span> <span class="n">loaddir</span> <span class="o">=</span> <span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> <span class="n">only_concs</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load saved data into memory:</span>
+
+<span class="sd">        &gt;&gt;&gt; loaded = load_result(&#39;interro&#39;)</span>
+
+<span class="sd">    will load saved_interrogations/interro.p as loaded</span>
+
+<span class="sd">    :param savename: Filename with or without extension</span>
+<span class="sd">    :type savename: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param loaddir: Relative path to the directory containg *savename*</span>
+<span class="sd">    :type loaddir: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param only_concs: Set to True if loading concordance lines</span>
+<span class="sd">    :type only_concs: bool</span>
+
+<span class="sd">    :returns: loaded data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loaddir</span><span class="p">,</span> <span class="n">savename</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">savename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+            <span class="n">savename</span> <span class="o">=</span> <span class="n">savename</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">namesuggester</span><span class="p">(</span><span class="n">entered_name</span><span class="p">,</span> <span class="n">searched_dir</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;if you got the wrong name, this finds the most similar name and suggests it.&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">corpkit</span>
+        <span class="kn">from</span> <span class="nn">nltk.metrics.distance</span> <span class="kn">import</span> <span class="n">edit_distance</span>
+        <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
+        <span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">itemgetter</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">searched_dir</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">sim</span> <span class="o">=</span> <span class="n">edit_distance</span><span class="p">(</span><span class="n">entered_name</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">transpositions</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">res</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span>
+        <span class="n">possibles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">v</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()),</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">next</span><span class="p">()[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot; not found. Enter one of the below, or &quot;e&quot; to exit:</span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entered_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;    </span><span class="si">%d</span><span class="s">) &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sug</span><span class="p">)</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">sug</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">possibles</span><span class="p">[:</span><span class="mi">10</span><span class="p">])])))</span>
+        <span class="k">if</span> <span class="n">sel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;e&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">sel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;E&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">possibles</span><span class="p">[</span><span class="n">s</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sel</span>
+
+    <span class="k">def</span> <span class="nf">make_into_namedtuple</span><span class="p">(</span><span class="n">unpickled</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;take a filename, make it into named tuple&quot;&quot;&quot;</span>
+
+        <span class="c"># figure out what&#39;s in the unpickled data, use to turn into named tup</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">or</span> \
+        <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span> <span class="ow">or</span> \
+        <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">:</span>
+        <span class="c"># or \</span>
+        <span class="c">#type(unpickled) == nltk.text.Text:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">unpickled</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">or</span> \
+            <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span> <span class="ow">or</span> \
+            <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">dict</span> <span class="ow">or</span> \
+            <span class="nb">type</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">:</span>
+            <span class="c"># or \</span>
+            <span class="c">#type(unpickled[0]) == nltk.text.Text:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;loaded_interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;totals&#39;</span><span class="p">,</span> <span class="s">&#39;table&#39;</span><span class="p">])</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">outputnames</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;function&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;interrogator&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;query&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;k&#39;</span><span class="p">):</span>
+                    <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;loaded_interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;table&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># not presently possible, i think:</span>
+                    <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;loaded_interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;totals&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;loaded_interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;totals&#39;</span><span class="p">])</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">outputnames</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;loaded_interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;totals&#39;</span><span class="p">])</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">outputnames</span><span class="p">(</span><span class="n">unpickled</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">unpickled</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loaddir</span><span class="p">,</span> <span class="n">savename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="n">notfound</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">while</span> <span class="n">notfound</span><span class="p">:</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loaddir</span><span class="p">,</span> <span class="n">savename</span><span class="p">)</span>    
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">unpickled</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
+                <span class="n">notfound</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="n">sel</span> <span class="o">=</span> <span class="n">namesuggester</span><span class="p">(</span><span class="n">savename</span><span class="p">,</span> <span class="n">loaddir</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">sel</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">savename</span> <span class="o">=</span> <span class="n">sel</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+        <span class="k">return</span> <span class="n">make_into_namedtuple</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> \
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">)]</span>    
+        <span class="n">outs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+            <span class="n">unpickled</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>    
+            <span class="n">outs</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">make_into_namedtuple</span><span class="p">(</span><span class="n">unpickled</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">outs</span>
+</div>
+<div class="viewcode-block" id="new_project"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.new_project">[docs]</a><span class="k">def</span> <span class="nf">new_project</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">loc</span> <span class="o">=</span> <span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a new project in ./*loc*</span>
+
+<span class="sd">    :param name: A name for the project</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param loc: Relative path to directory in which project will be made</span>
+<span class="sd">    :type loc: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">import</span> <span class="nn">stat</span>
+    <span class="kn">import</span> <span class="nn">platform</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span><span class="p">,</span> <span class="n">localtime</span>
+
+    <span class="n">path_to_corpkit</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">corpkit</span><span class="o">.</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">thepath</span><span class="p">,</span> <span class="n">corpkitname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path_to_corpkit</span><span class="p">)</span>
+    
+    <span class="c"># make project directory</span>
+    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">fullpath</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Directory already exists: &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span><span class="p">(</span> <span class="n">thetime</span><span class="p">,</span> <span class="n">fullpath</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span>
+    <span class="c"># make other directories</span>
+    <span class="n">dirs_to_make</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;images&#39;</span><span class="p">,</span> <span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> \
+      <span class="s">&#39;saved_concordances&#39;</span><span class="p">,</span> <span class="s">&#39;dictionaries&#39;</span><span class="p">,</span> <span class="s">&#39;exported&#39;</span><span class="p">,</span> <span class="s">&#39;logs&#39;</span><span class="p">]</span>
+    <span class="c">#subdirs_to_make = [&#39;dictionaries&#39;, &#39;saved_interrogations&#39;]</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">dirs_to_make</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="n">directory</span><span class="p">))</span>
+    <span class="c">#for subdir in subdirs_to_make:</span>
+        <span class="c">#os.makedirs(os.path.join(fullpath, &#39;data&#39;, subdir))</span>
+    <span class="c"># copy the bnc dictionary to dictionaries</span>
+    <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+
+        <span class="c"># clean this up</span>
+        <span class="kn">import</span> <span class="nn">corpkit</span>
+        <span class="k">def</span> <span class="nf">resource_path</span><span class="p">(</span><span class="n">relative</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">os</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s">&quot;_MEIPASS2&quot;</span><span class="p">,</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">relative</span>
+            <span class="p">)</span>
+        <span class="n">corpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">corpkit</span><span class="o">.</span><span class="n">__file__</span><span class="p">)</span>
+        <span class="n">corpath</span> <span class="o">=</span> <span class="n">corpath</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/lib/python2.7/site-packages.zip/corpkit&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">baspat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">corpath</span><span class="p">)</span>
+        <span class="n">dicpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">baspat</span><span class="p">,</span> <span class="s">&#39;dictionaries&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dicpath</span><span class="p">,</span> <span class="s">&#39;bnc.p&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="s">&#39;dictionaries&#39;</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">resource_path</span><span class="p">(</span><span class="s">&#39;bnc.p&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="s">&#39;dictionaries&#39;</span><span class="p">))</span>
+
+    <span class="c"># if not GUI</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: New project created: &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="interroplot"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.interroplot">[docs]</a><span class="k">def</span> <span class="nf">interroplot</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Demo function for interrogator/plotter.</span>
+
+<span class="sd">        1. Interrogates path with Tregex query, </span>
+<span class="sd">        2. Gets relative frequencies</span>
+<span class="sd">        3. Plots the top seven results</span>
+
+<span class="sd">    :param path: path to corpus</span>
+<span class="sd">    :type path: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param query: Tregex query</span>
+<span class="sd">    :type query: str</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">from</span> <span class="nn">corpkit</span> <span class="kn">import</span> <span class="n">interrogator</span><span class="p">,</span> <span class="n">editor</span><span class="p">,</span> <span class="n">plotter</span>
+    <span class="n">quickstart</span> <span class="o">=</span> <span class="n">interrogator</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;words&#39;</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">show</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;w&#39;</span><span class="p">])</span>
+    <span class="n">edited</span> <span class="o">=</span> <span class="n">editor</span><span class="p">(</span><span class="n">quickstart</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="s">&#39;%&#39;</span><span class="p">,</span> <span class="n">quickstart</span><span class="o">.</span><span class="n">totals</span><span class="p">,</span> <span class="n">print_info</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">plotter</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">edited</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="load_all_results"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.load_all_results">[docs]</a><span class="k">def</span> <span class="nf">load_all_results</span><span class="p">(</span><span class="n">data_dir</span> <span class="o">=</span> <span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> <span class="n">only_concs</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load every saved interrogation in data_dir into a dict:</span>
+
+<span class="sd">        &gt;&gt;&gt; r = load_all_results()</span>
+
+<span class="sd">    :param data_dir: path to saved data</span>
+<span class="sd">    :type data_dir: str</span>
+
+<span class="sd">    :returns: dict with filenames as keys</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">from</span> <span class="nn">corpkit.other</span> <span class="kn">import</span> <span class="n">load_result</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    
+    <span class="k">def</span> <span class="nf">get_root_note</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;root&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;root&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="bp">False</span>       
+        <span class="k">return</span> <span class="n">root</span><span class="p">,</span> <span class="n">note</span>
+
+    <span class="n">root</span><span class="p">,</span> <span class="n">note</span> <span class="o">=</span> <span class="n">get_root_note</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">r</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="n">note</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">note</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;No saved data found in </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">data_dir</span><span class="p">)</span>
+        <span class="c">#else:</span>
+            <span class="c">#thetime = strftime(&quot;%H:%M:%S&quot;, localtime())</span>
+            <span class="c">#if not only_concs:</span>
+            <span class="c">#    print &#39;%s: No saved interrogations found in %s&#39; % (thetime, data_dir)</span>
+            <span class="c">#else:</span>
+            <span class="c">#    print &#39;%s: No saved concordances found in %s&#39; % (thetime, data_dir)</span>
+            <span class="k">return</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">finding</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">load_result</span><span class="p">(</span><span class="n">finding</span><span class="p">,</span> <span class="n">loaddir</span> <span class="o">=</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">only_concs</span> <span class="o">=</span> <span class="n">only_concs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">!=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">!=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tmp</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="n">r</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">finding</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tmp</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> loaded as </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">finding</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">finding</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">l</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> failed to load. Try using load_result to find out the matter.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">finding</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">note</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%d</span><span class="s"> interrogations loaded from </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data_dir</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="texify"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.texify">[docs]</a><span class="k">def</span> <span class="nf">texify</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="n">colname</span> <span class="o">=</span> <span class="s">&#39;Keyness&#39;</span><span class="p">,</span> <span class="n">toptail</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">sort_by</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;turn a series into a latex table&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="k">if</span> <span class="n">sort_by</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">order</span><span class="p">(</span><span class="n">ascending</span> <span class="o">=</span> <span class="bp">False</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">colname</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">toptail</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">to_latex</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">comb</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">df</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+        <span class="n">longest_word</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">comb</span><span class="o">.</span><span class="n">index</span><span class="p">)])</span>
+        <span class="n">tex</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comb</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">linelin</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tex</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">newline</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39; &#39;</span> <span class="o">*</span> <span class="p">(</span><span class="n">linelin</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39; &amp;&#39;</span>
+            <span class="n">newline_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newline</span><span class="p">)</span>
+            <span class="n">newline</span> <span class="o">=</span> <span class="n">newline</span> <span class="o">+</span> <span class="p">(</span><span class="s">&#39; &#39;</span> <span class="o">*</span> <span class="p">(</span><span class="n">newline_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="s">r&#39;</span><span class="se">\\</span><span class="s">&#39;</span>
+            <span class="n">newline</span> <span class="o">=</span> <span class="n">newline</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">r&#39;    </span><span class="se">\\</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">r&#39;... </span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">newline</span> <span class="o">=</span> <span class="n">newline</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">r&#39;   &#39;</span><span class="p">,</span> <span class="s">r&#39;... &#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">newline</span> <span class="o">=</span> <span class="s">r&#39;...    &amp;     ... </span><span class="se">\\</span><span class="s">&#39;</span>
+        <span class="n">tex</span> <span class="o">=</span> <span class="n">tex</span><span class="p">[:</span><span class="n">n</span><span class="o">+</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">newline</span><span class="p">]</span> <span class="o">+</span> <span class="n">tex</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="n">tex</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tex</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tex</span>
+
+</div>
+<div class="viewcode-block" id="as_regex"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.as_regex">[docs]</a><span class="k">def</span> <span class="nf">as_regex</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">boundaries</span> <span class="o">=</span> <span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">case_sensitive</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Turns a wordlist into an uncompiled regular expression</span>
+
+<span class="sd">    :param lst: A wordlist to convert</span>
+<span class="sd">    :type lst: list</span>
+
+<span class="sd">    :param boundaries:</span>
+<span class="sd">    :type boundaries: str -- &#39;word&#39;/&#39;line&#39;/&#39;space&#39;; tuple -- (leftboundary, rightboundary)</span>
+<span class="sd">    </span>
+<span class="sd">    :param case_sensitive: Make regular expression case sensitive</span>
+<span class="sd">    :type case_sensitive: bool</span>
+<span class="sd">    </span>
+<span class="sd">    :param inverse: Make regular expression inverse matching</span>
+<span class="sd">    :type inverse: bool</span>
+
+<span class="sd">    :returns: regular expression as string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="k">if</span> <span class="n">case_sensitive</span><span class="p">:</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="s">r&#39;(?i)&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">boundaries</span><span class="p">:</span>
+        <span class="n">boundary1</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
+        <span class="n">boundary2</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">boundary1</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">boundary2</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;W&#39;</span><span class="p">):</span>
+            <span class="n">boundary1</span> <span class="o">=</span> <span class="s">r&#39;\b&#39;</span>
+            <span class="n">boundary2</span> <span class="o">=</span> <span class="s">r&#39;\b&#39;</span>
+        <span class="k">elif</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">):</span>
+            <span class="n">boundary1</span> <span class="o">=</span> <span class="s">r&#39;^&#39;</span>
+            <span class="n">boundary2</span> <span class="o">=</span> <span class="s">r&#39;$&#39;</span>
+        <span class="k">elif</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;S&#39;</span><span class="p">):</span>
+            <span class="n">boundary1</span> <span class="o">=</span> <span class="s">r&#39;\s&#39;</span>
+            <span class="n">boundary2</span> <span class="o">=</span> <span class="s">r&#39;\s&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Boundaries not recognised. Use a tuple for custom start and end boundaries.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+        <span class="n">inverser1</span> <span class="o">=</span> <span class="s">r&#39;(?!&#39;</span>
+        <span class="n">inverser2</span> <span class="o">=</span> <span class="s">r&#39;)&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inverser1</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
+        <span class="n">inverser2</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+        <span class="n">joinbit</span> <span class="o">=</span> <span class="s">r&#39;</span><span class="si">%s</span><span class="s">|</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">boundary2</span><span class="p">,</span> <span class="n">boundary1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span> <span class="o">+</span> <span class="n">inverser1</span> <span class="o">+</span> <span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="n">boundary1</span> <span class="o">+</span> <span class="n">joinbit</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">]))))</span> <span class="o">+</span> <span class="n">boundary2</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span> <span class="o">+</span> <span class="n">inverser2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">case</span> <span class="o">+</span> <span class="n">boundary1</span> <span class="o">+</span> <span class="n">inverser1</span> <span class="o">+</span> <span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="s">r&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">]))))</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span> <span class="o">+</span> <span class="n">inverser2</span> <span class="o">+</span> <span class="n">boundary2</span>
+</div>
+<div class="viewcode-block" id="make_multi"><a class="viewcode-back" href="../../corpkit.html#corpkit.other.make_multi">[docs]</a><span class="k">def</span> <span class="nf">make_multi</span><span class="p">(</span><span class="n">interrogation</span><span class="p">,</span> <span class="n">indexnames</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    make pd.multiindex version of an interrogation (for pandas geeks)</span>
+
+<span class="sd">    :param interrogation: a corpkit interrogation</span>
+<span class="sd">    :type interrogation: a corpkit interrogation, pd.DataFrame or pd.Series</span>
+
+<span class="sd">    :param indexnames: pass in a list of names for the multiindex;</span>
+<span class="sd">                       leave as None to get them if possible from interrogation</span>
+<span class="sd">                       use False to explicitly not get them</span>
+<span class="sd">    :type indexnames: list of strings/None/False</span>
+<span class="sd">    :returns: pd.DataFrame with multiindex&quot;&quot;&quot;</span>
+
+    <span class="c"># get proper names for index if possible</span>
+    <span class="n">translator</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;f&#39;</span><span class="p">:</span> <span class="s">&#39;Function&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;l&#39;</span><span class="p">:</span> <span class="s">&#39;Lemma&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;a&#39;</span><span class="p">:</span> <span class="s">&#39;Distance&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;w&#39;</span><span class="p">:</span> <span class="s">&#39;Word&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;t&#39;</span><span class="p">:</span> <span class="s">&#39;Trees&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;i&#39;</span><span class="p">:</span> <span class="s">&#39;Index&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;n&#39;</span><span class="p">:</span> <span class="s">&#39;N-grams&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;p&#39;</span><span class="p">:</span> <span class="s">&#39;POS&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="s">&#39;Governor&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;d&#39;</span><span class="p">:</span> <span class="s">&#39;Dependent&#39;</span><span class="p">}</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="c"># determine datatype, get df and cols</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">interrogation</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">interrogation</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interrogation</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">interrogation</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interrogation</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">interrogation</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interrogation</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">interrogation</span><span class="o">.</span><span class="n">results</span>
+        <span class="c"># set indexnames if we have them</span>
+        <span class="k">if</span> <span class="n">indexnames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">indexnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">translator</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">interrogation</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&#39;show&#39;</span><span class="p">]]</span>
+
+    <span class="c"># split column names on slash</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+        <span class="n">cols</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+
+    <span class="c"># make numpy arrays</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="n">arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">]))</span>
+    
+    <span class="c"># make output df, add names if we have them</span>
+    <span class="n">newdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">as_matrix</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="n">arrays</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">if</span> <span class="n">indexnames</span><span class="p">:</span>
+        <span class="n">newdf</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="n">indexnames</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;display.multi_sparse&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newdf</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

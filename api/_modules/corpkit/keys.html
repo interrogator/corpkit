@@ -1,0 +1,584 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.keys &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.keys</h1><div class="highlight"><pre>
+<span class="c"># this file contains methods for keywording and ngramming.</span>
+
+<span class="c"># it works, but would like a bit of refactoring. the joint use of</span>
+<span class="c"># the keywords_and_ngrams() function is not needed anymore.</span>
+
+<div class="viewcode-block" id="keywords"><a class="viewcode-back" href="../../corpkit.html#corpkit.keys.keywords">[docs]</a><span class="k">def</span> <span class="nf">keywords</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> 
+             <span class="n">reference_corpus</span> <span class="o">=</span> <span class="s">&#39;bnc.p&#39;</span><span class="p">,</span> 
+             <span class="n">clear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> 
+             <span class="n">printstatus</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> 
+             <span class="n">n</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span><span class="p">,</span>
+             <span class="n">threshold</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+             <span class="n">selfdrop</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+             <span class="n">editing</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+             <span class="n">calc_all</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Feed this function some data and get its keywords.</span>
+
+<span class="sd">    You can use dictmaker() to build a new reference_corpus </span>
+<span class="sd">    to serve as reference corpus, or use bnc.p</span>
+
+<span class="sd">    A list of what counts as data is available in the </span>
+<span class="sd">    docstring of datareader().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="kn">from</span> <span class="nn">keys</span> <span class="kn">import</span> <span class="n">keywords_and_ngrams</span><span class="p">,</span> <span class="n">turn_input_into_counter</span>
+
+    <span class="n">the_threshold</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">reference_corpus</span> <span class="o">==</span> <span class="s">&#39;self&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">warnings</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Using &quot;self&quot; option with Series as data will result in 0.0 keyness.&#39;</span><span class="p">)</span>
+            <span class="n">reference_corpus</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">selfdrop</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># turn of selfdrop if df indices aren&#39;t shared:</span>
+    <span class="c"># this is skipped if loading from file or something</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">ref_subc</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">reference_corpus</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">tg_subc</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">ref_subc</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">tg_subc</span><span class="p">]):</span>
+            <span class="n">selfdrop</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">if</span> <span class="n">printstatus</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">editing</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Generating keywords ...</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">time</span>
+    
+    <span class="k">def</span> <span class="nf">set_threshold_and_remove_under</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">for_keywords</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+        <span class="kn">import</span> <span class="nn">pandas</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">threshold</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;l&#39;</span><span class="p">):</span>
+                <span class="n">denominator</span> <span class="o">=</span> <span class="mi">10000</span>
+            <span class="k">if</span> <span class="n">threshold</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;m&#39;</span><span class="p">):</span>
+                <span class="n">denominator</span> <span class="o">=</span> <span class="mi">5000</span>
+            <span class="k">if</span> <span class="n">threshold</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;h&#39;</span><span class="p">):</span>
+                <span class="n">denominator</span> <span class="o">=</span> <span class="mi">2500</span>
+            <span class="k">if</span> <span class="n">for_keywords</span><span class="p">:</span>
+                <span class="n">denominator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">*</span> <span class="mi">5</span> 
+
+            <span class="n">tot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reference_corpus</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+            <span class="n">the_threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tot</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">denominator</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">the_threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="k">if</span> <span class="n">printstatus</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Threshold: </span><span class="si">%d</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">the_threshold</span>
+
+        <span class="c"># drop infrequent words from keywording</span>
+        <span class="n">to_drop</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reference_corpus</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="n">the_threshold</span><span class="p">:</span>
+                <span class="n">to_drop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+                <span class="c">#if type(data) == collections.Counter or type(data) == dict:</span>
+                    <span class="c">#del data[w]</span>
+                <span class="k">if</span> <span class="n">calc_all</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">reference_corpus</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">printstatus</span><span class="p">:</span>
+            <span class="n">to_show</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">to_drop</span><span class="p">[:</span><span class="mi">5</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_drop</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">to_show</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;...&#39;</span><span class="p">)</span>
+                <span class="p">[</span><span class="n">to_show</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">to_drop</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_drop</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Removing </span><span class="si">%d</span><span class="s"> entries below threshold:</span><span class="se">\n</span><span class="s">    </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_drop</span><span class="p">),</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">to_show</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_drop</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;... and </span><span class="si">%d</span><span class="s"> more ... </span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_drop</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_show</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">reference_corpus</span><span class="p">,</span> <span class="n">the_threshold</span><span class="p">,</span> <span class="n">to_drop</span>
+
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># set threshold</span>
+        <span class="k">if</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">the_threshold</span><span class="p">,</span> <span class="n">to_drop</span> <span class="o">=</span> <span class="n">set_threshold_and_remove_under</span><span class="p">(</span><span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">for_keywords</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+            <span class="c"># remove under threshold from target corpora</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">to_drop</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">the_threshold</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">kwds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="c"># this could potentially slow down calculation using saved dicts</span>
+            <span class="k">if</span> <span class="n">selfdrop</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="c"># if dropping doesn&#39;t work, make loaded_ref_corpus without dropping, but only once</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">loaded_ref_corpus</span>
+                    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                        <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            
+
+            <span class="n">loaded_target_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+            <span class="n">ser</span> <span class="o">=</span> <span class="n">keywords_and_ngrams</span><span class="p">(</span><span class="n">loaded_target_corpus</span><span class="p">,</span> <span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">calc_all</span> <span class="o">=</span> <span class="n">calc_all</span><span class="p">,</span>
+                                   <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;keywords&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c"># turn into series</span>
+            <span class="n">ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="n">s</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ser</span><span class="p">],</span> <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ser</span><span class="p">])</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;display.float_format&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s">&#39;</span><span class="si">%.2f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">ser</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">kwds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ser</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">kwds</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">selfdrop</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">loaded_ref_corpus</span>
+                <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                    <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loaded_ref_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">reference_corpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+        <span class="k">if</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">the_threshold</span><span class="p">,</span> <span class="n">to_drop</span> <span class="o">=</span> <span class="n">set_threshold_and_remove_under</span><span class="p">(</span><span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">for_keywords</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+            <span class="c"># remove under threshold from target corpora</span>
+            
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">to_drop</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">the_threshold</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">loaded_target_corpus</span> <span class="o">=</span> <span class="n">turn_input_into_counter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">kwds</span> <span class="o">=</span> <span class="n">keywords_and_ngrams</span><span class="p">(</span><span class="n">loaded_target_corpus</span><span class="p">,</span> <span class="n">loaded_ref_corpus</span><span class="p">,</span> <span class="n">calc_all</span> <span class="o">=</span> <span class="n">calc_all</span><span class="p">,</span>
+                               <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;keywords&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># turn into series</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="n">s</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">],</span> <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">])</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;display.float_format&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s">&#39;</span><span class="si">%.2f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;keywords&#39;</span>
+
+    <span class="c"># drop infinites and nans</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    
+    <span class="c"># print and return</span>
+    <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">clear_output</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">printstatus</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">editing</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Done! </span><span class="si">%d</span><span class="s"> results.</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">index</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">n</span>  <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ngrams"><a class="viewcode-back" href="../../corpkit.html#corpkit.keys.ngrams">[docs]</a><span class="k">def</span> <span class="nf">ngrams</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>
+           <span class="n">clear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> 
+           <span class="n">printstatus</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> 
+           <span class="n">n</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span><span class="p">,</span>
+           <span class="n">calc_all</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+           <span class="n">blacklist</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+           <span class="n">split_contractions</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+           <span class="n">gramsize</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+           <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Feed this function some data and get ngrams.</span>
+
+<span class="sd">    You can use dictmaker() to build a new reference_corpus </span>
+<span class="sd">    to serve as reference corpus, or use bnc.p</span>
+
+<span class="sd">    A list of what counts as data is available in the </span>
+<span class="sd">    docstring of datareader().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">stopwords</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">blacklist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">blacklist</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">dictionaries.stopwords</span> <span class="kn">import</span> <span class="n">stopwords</span> <span class="k">as</span> <span class="n">my_stopwords</span>
+            <span class="n">stopwords</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">my_stopwords</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stopwords</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">blacklist</span><span class="p">]</span>
+
+    <span class="kn">from</span> <span class="nn">corpkit.keys</span> <span class="kn">import</span> <span class="n">keywords_and_ngrams</span><span class="p">,</span> <span class="n">turn_input_into_counter</span>
+    <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">datareader</span>
+
+    <span class="c">#loaded_ref_corpus = turn_input_into_counter(reference_corpus)</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">99999</span>
+
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">printstatus</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Generating ngrams... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">time</span>
+    
+    <span class="n">good</span> <span class="o">=</span> <span class="n">datareader</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">regex_nonword_filter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;[0-9A-Za-z-</span><span class="se">\&#39;</span><span class="s">]&quot;</span><span class="p">)</span>
+
+    <span class="n">good</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">good</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_nonword_filter</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span>
+
+    <span class="c">#print &#39; &#39;.join(good[:500])</span>
+
+    <span class="k">def</span> <span class="nf">unsplitter</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
+        <span class="n">unsplit</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">unsplit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="s">&quot;&#39;&quot;</span> <span class="ow">in</span> <span class="n">t</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">t</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;&#39;&quot;</span><span class="p">):</span>
+                <span class="n">rejoined</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">lst</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">])</span>
+                <span class="n">unsplit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rejoined</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="s">&quot;&#39;&quot;</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">unsplit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">unsplit</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">split_contractions</span><span class="p">:</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="n">unsplitter</span><span class="p">(</span><span class="n">good</span><span class="p">)</span>
+
+    <span class="c">#print &#39; &#39;.join(good[:500])</span>
+
+    <span class="c">#if stopwords:</span>
+    <span class="c">#    good = [i for i in good if i not in stopwords]</span>
+    <span class="n">ngrams</span> <span class="o">=</span> <span class="n">keywords_and_ngrams</span><span class="p">(</span><span class="n">good</span><span class="p">,</span> <span class="n">stopwords</span> <span class="o">=</span> <span class="n">stopwords</span><span class="p">,</span>
+                                 <span class="n">calc_all</span> <span class="o">=</span> <span class="n">calc_all</span><span class="p">,</span> <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;ngrams&#39;</span><span class="p">,</span> <span class="n">gramsize</span> <span class="o">=</span> <span class="n">gramsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="n">s</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ngrams</span><span class="p">],</span> <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ngrams</span><span class="p">])</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;ngrams&#39;</span>
+
+    <span class="c"># print and return</span>
+    <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">clear_output</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">printstatus</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Done! </span><span class="si">%d</span><span class="s"> results.</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">index</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">n</span>  <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
+
+<span class="c"># from Spindle</span></div>
+<div class="viewcode-block" id="keywords_and_ngrams"><a class="viewcode-back" href="../../corpkit.html#corpkit.keys.keywords_and_ngrams">[docs]</a><span class="k">def</span> <span class="nf">keywords_and_ngrams</span><span class="p">(</span><span class="n">target_corpus</span><span class="p">,</span> 
+                        <span class="n">reference_corpus</span><span class="p">,</span> 
+                        <span class="n">calc_all</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> 
+                        <span class="n">thresholdBigrams</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+                        <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;keywords&#39;</span><span class="p">,</span> 
+                        <span class="n">stopwords</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                        <span class="n">gramsize</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+    <span class="kn">import</span> <span class="nn">math</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">cPickle</span> <span class="kn">as</span> <span class="nn">pickle</span>
+
+    <span class="c"># from Spindle: just altered reference_corpus stuff and number to show</span>
+    <span class="k">def</span> <span class="nf">spindle_ngrams</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">nngram</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="c"># total number of words in target corpus</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">target_corpus</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">n_gramming</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_corpus</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_gramming</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">target_corpus</span><span class="o">.</span><span class="n">itervalues</span><span class="p">())</span>
+    
+    <span class="k">if</span> <span class="n">show</span> <span class="o">==</span> <span class="s">&#39;keywords&#39;</span><span class="p">:</span>
+        <span class="c"># Total number of words in reference qcorpus</span>
+        <span class="n">ref_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reference_corpus</span><span class="o">.</span><span class="n">itervalues</span><span class="p">())</span>
+        <span class="n">dicLL</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">calc_all</span><span class="p">:</span>
+            <span class="n">wordlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">target_corpus</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">+</span> <span class="n">reference_corpus</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wordlist</span> <span class="o">=</span> <span class="n">target_corpus</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+            <span class="c"># this try for non-Counter dicts, which return keyerror if no result</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">reference_corpus</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="n">target_corpus</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="s">&#39;only_words_in_both_corpora&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;only_words_in_both_corpora&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">ref_sum</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">target_sum</span>
+            <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c"># my test for if pos or neg</span>
+            <span class="c"># try catches the unlikely 0.0 error</span>
+            <span class="n">neg</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">b</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">)):</span>
+                    <span class="n">neg</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="n">E1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">+</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span>
+            <span class="n">E2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">+</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logaE1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logaE1</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">a</span><span class="o">/</span><span class="n">E1</span><span class="p">)</span>  
+            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logaE2</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logaE2</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">b</span><span class="o">/</span><span class="n">E2</span><span class="p">)</span>  
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span> <span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">logaE1</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">b</span><span class="o">*</span><span class="n">logaE2</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">neg</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="o">-</span><span class="n">score</span>
+            <span class="n">dicLL</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
+
+        <span class="n">sortedLL</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dicLL</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">dicLL</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">listKeywords</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">dicLL</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sortedLL</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">listKeywords</span>
+    
+    <span class="k">elif</span> <span class="n">show</span> <span class="o">==</span> <span class="s">&#39;ngrams&#39;</span><span class="p">:</span>
+        <span class="n">ngms</span> <span class="o">=</span> <span class="n">spindle_ngrams</span><span class="p">(</span><span class="n">target_corpus</span><span class="p">,</span> <span class="n">gramsize</span><span class="p">)</span>
+        <span class="n">counter_ngrams</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">ngms</span><span class="p">)</span>
+        <span class="n">regex_nonword_filter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;[0-9A-Za-z</span><span class="se">\&#39;</span><span class="s">]&quot;</span><span class="p">)</span>
+
+        <span class="n">listBigrams</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">ng</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(((</span><span class="n">c</span><span class="p">,</span> <span class="n">ng</span><span class="p">)</span> <span class="k">for</span> <span class="n">ng</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">counter_ngrams</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+            <span class="n">w0</span> <span class="o">=</span> <span class="n">ng</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">w1</span> <span class="o">=</span> <span class="n">ng</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s">&#39;whitelist&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;whitelist&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;any&#39;</span><span class="p">:</span>
+                    <span class="n">quereg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;whitelist&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">quereg</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">ng</span><span class="p">):</span>
+                        <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">stopwords</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">all</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ng</span><span class="p">])</span> 
+                    <span class="ow">and</span> <span class="n">c</span><span class="o">&gt;</span><span class="n">thresholdBigrams</span><span class="p">):</span>
+                    <span class="n">listBigrams</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ng</span><span class="p">),</span> <span class="n">c</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">&gt;</span><span class="n">thresholdBigrams</span><span class="p">:</span>
+                    <span class="n">listBigrams</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ng</span><span class="p">),</span> <span class="n">c</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">listBigrams</span>
+</div>
+<div class="viewcode-block" id="turn_input_into_counter"><a class="viewcode-back" href="../../corpkit.html#corpkit.keys.turn_input_into_counter">[docs]</a><span class="k">def</span> <span class="nf">turn_input_into_counter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;from string (filepath) or variable, return a counter.&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+    <span class="kn">from</span> <span class="nn">corpkit.other</span> <span class="kn">import</span> <span class="n">datareader</span>
+    
+    <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="c"># get list of words</span>
+            <span class="n">good</span> <span class="o">=</span> <span class="n">datareader</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c"># remove bad stuff from result</span>
+            <span class="n">regex_nonword_filter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;[A-Za-z]&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">good</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_nonword_filter</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">dict_found</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;interrogation&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t find .results branch of input.&quot;</span><span class="p">)</span>
+
+        <span class="c"># if passing in results, sum them</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="c"># count sum</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+            <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="c"># turn notmal dicts into counter</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="c"># the best case scenario:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">:</span>
+            <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="c"># filepath stuff</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ref_corp_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="nb">open</span><span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span> <span class="p">)</span> <span class="p">)</span>
+                <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">return</span> <span class="n">ref_corp_dict</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ref_corp_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="nb">open</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;dictionaries&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="s">&quot;rb&quot;</span> <span class="p">)</span> <span class="p">)</span>
+                    <span class="n">dict_found</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">return</span> <span class="n">ref_corp_dict</span>
+                <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                    <span class="c">#try:</span>
+                    <span class="c">#    import corpkit</span>
+                    <span class="c">#    path_to_corpkit = os.path.dirname(corpkit.__file__)</span>
+                    <span class="c">#    thepath, corpkitname = os.path.split(path_to_corpkit)</span>
+                    <span class="c">#    dictionaries_path = os.path.join(thepath, &#39;dictionaries&#39;)</span>
+                    <span class="c">#    ref_corp_dict = pickle.load( open( os.path.join(dictionaries_path, data), &quot;rb&quot; ) )</span>
+                    <span class="c">#    dict_found = True</span>
+                    <span class="c">#    return ref_corp_dict</span>
+                    <span class="c">#except:</span>
+                    <span class="k">pass</span>
+
+            <span class="n">dict_of_dicts</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">d_for_print</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="n">dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;dictionaries&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dicts</span><span class="p">):</span>
+                <span class="n">dict_of_dicts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+                <span class="n">d_for_print</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;    </span><span class="si">% 2d</span><span class="s">) </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+            
+            <span class="n">d_for_print</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d_for_print</span><span class="p">)</span> 
+
+            <span class="n">selection</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Reference corpus not found. Select an existing reference corpus or exit or type &#39;exit&#39; to quit.</span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s">Your selection: &quot;</span> <span class="o">%</span> <span class="n">d_for_print</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">selection</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;e&#39;</span><span class="p">):</span>
+                <span class="kn">import</span> <span class="nn">sys</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">dict_of_dicts</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">selection</span><span class="p">)]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Input &quot;</span><span class="si">%s</span><span class="s">&quot; not recognised.&#39;</span> <span class="o">%</span> <span class="n">data</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

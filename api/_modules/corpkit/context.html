@@ -1,0 +1,436 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.context &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.context</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="eugener"><a class="viewcode-back" href="../../corpkit.html#corpkit.context.eugener">[docs]</a><span class="k">def</span> <span class="nf">eugener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> 
+            <span class="n">query</span><span class="p">,</span> 
+            <span class="n">depth</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> 
+            <span class="n">top</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> 
+            <span class="n">lemmatise</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">just_content_words</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">remove_query_from_output</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">remove_zero_depth</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="n">return_tags</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    ***This is probably broken now, can fix if there&#39;s a use for it.***</span>
+<span class="sd">    </span>
+<span class="sd">    get most frequent words in corpus path to left and right of query regex</span>
+
+<span class="sd">    path: path to corpus containing subcorpora</span>
+<span class="sd">    query: regex to match word to be zero depth</span>
+<span class="sd">    depth: number of places left and right to look</span>
+<span class="sd">    top: number of most frequent entries to return</span>
+<span class="sd">    lemmatise: wordnet lemmatisation</span>
+<span class="sd">    just_content_words: keep only n, v, a, r tagged words</span>
+<span class="sd">    remove_query_from_output: remove o</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">nltk</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="kn">from</span> <span class="nn">textprogressbar</span> <span class="kn">import</span> <span class="n">TextProgressBar</span>
+    <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">tregex_engine</span>
+
+    <span class="c"># manual lemmatisation here:</span>
+    <span class="kn">from</span> <span class="nn">dictionaries.word_transforms</span> <span class="kn">import</span> <span class="n">wordlist</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">get_ipython</span><span class="p">()</span><span class="o">.</span><span class="n">getoutput</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="kn">from</span> <span class="nn">tests</span> <span class="kn">import</span> <span class="n">check_dit</span> <span class="c"># probably never needed</span>
+    
+    <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">nltk.stem.wordnet</span> <span class="kn">import</span> <span class="n">WordNetLemmatizer</span>
+        <span class="n">lmtzr</span><span class="o">=</span><span class="n">WordNetLemmatizer</span><span class="p">()</span>
+
+    <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+    <span class="n">wordregex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;[A-Za-z0-9]&#39;</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&#39;&#39;</span>
+
+    <span class="c"># get list of subcorpora</span>
+    <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="p">))]</span>
+    <span class="n">sorted_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span>
+    <span class="c"># define risk word</span>
+    <span class="c"># place for our output</span>
+    <span class="n">dfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">TextProgressBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">corpus</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">):</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="c"># search the corpus for whole sents containing risk word</span>
+        <span class="n">subcorpus</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">corpus</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;__ &lt;# (__ !&lt; __)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;__ !&gt; __&#39;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">],</span> <span class="n">subcorpus</span><span class="p">,</span> 
+                                <span class="n">lemmatise</span> <span class="o">=</span> <span class="n">lemmatise</span><span class="p">,</span> 
+                                <span class="n">just_content_words</span> <span class="o">=</span> <span class="n">just_content_words</span><span class="p">)</span>
+
+        <span class="c"># lowercase</span>
+        <span class="n">processed</span> <span class="o">=</span> <span class="p">[(</span><span class="n">r</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">tag</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">processed</span><span class="p">]</span>
+
+        <span class="c"># remove punct</span>
+        <span class="n">processed</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">processed</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">wordregex</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+
+        <span class="c"># a place for info about each corpus</span>
+        <span class="c"># word list to use later</span>
+        <span class="n">all_words</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dicts</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># go left and right depth times (for 2, makes [-2, -1, 0, 1, 2])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">depth</span><span class="p">,</span> <span class="p">(</span><span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">newdict</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+            <span class="n">matching</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c"># go through each token</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">processed</span><span class="p">):</span>
+                <span class="c"># if token matches risk expression</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+                    <span class="c"># get the word at depth index</span>
+                    <span class="c"># try statement for cases where the target word index isn&#39;t there</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">num</span> <span class="o">=</span> <span class="n">index</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">return_tags</span><span class="p">:</span>
+                                <span class="n">matching</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">matching</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">return_tags</span><span class="p">:</span>
+                                <span class="n">matching</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">matching</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">pass</span>
+            <span class="c"># tally results</span>
+            <span class="n">counted</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">matching</span><span class="p">)</span>
+            <span class="c"># remove punctuation etc</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counted</span><span class="p">:</span>
+                <span class="c"># commented because this stuff was moved earlier.</span>
+                <span class="c">#if key.isalnum():</span>
+                    <span class="c">#if key not in stopwords:</span>
+                    <span class="c">#if remove_stopwords:</span>
+                        <span class="c">#if key not in stopwords:</span>
+                            <span class="c">#newdict[key] = counted[key]</span>
+                    <span class="c">#else:</span>
+                        <span class="c">#newdict[key] = counted[key]</span>
+                <span class="n">newdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">counted</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">all_words</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="c">#top_tokens = newdict.most_common(top)</span>
+            <span class="n">dicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newdict</span><span class="p">)</span>
+        
+        <span class="c"># make pandas series</span>
+        <span class="n">sers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># for each unique word</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_words</span><span class="p">)):</span>
+            <span class="c">#get counts for each depth</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="p">[</span><span class="n">dct</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="k">for</span> <span class="n">dct</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">]</span>
+            <span class="c"># add a total</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">dct</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="k">for</span> <span class="n">dct</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">]))</span>
+            <span class="c">#make index names for depths plus total</span>
+            <span class="n">index_names</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">depth</span><span class="p">,</span> <span class="p">(</span><span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">index_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Total&#39;</span><span class="p">)</span>
+            <span class="c"># turn into pandas data, and name the series the word</span>
+            <span class="n">ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">index_names</span><span class="p">)</span>
+            <span class="n">ser</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">word</span>
+            <span class="n">sers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ser</span><span class="p">)</span>
+        
+        <span class="c"># concatenate series into dataframe</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">sers</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># sort by total</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="s">&#39;Total&#39;</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">tot</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+
+        <span class="c"># remove words matching the regex if need be</span>
+        <span class="k">if</span> <span class="n">remove_query_from_output</span><span class="p">:</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">c</span><span class="p">)]</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">cols</span><span class="p">])</span>
+        <span class="c"># remove zero depth if need be</span>
+        <span class="k">if</span> <span class="n">remove_zero_depth</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># just top entries</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)[:</span><span class="n">top</span><span class="p">]])</span>
+        
+        <span class="c">#transpose</span>
+        <span class="n">dfs</span><span class="p">[</span><span class="n">corpus</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c"># complete animation, then clear</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">have_ipython</span><span class="p">:</span>
+        <span class="n">clear_output</span><span class="p">()</span>
+
+    <span class="c"># some settings for good display</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;display.max_columns&#39;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;display.width&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;expand_frame_repr&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s">&#39;colheader_justify&#39;</span><span class="p">,</span> <span class="s">&#39;right&#39;</span><span class="p">)</span>
+
+    <span class="c"># print the start of each frame, then return them all</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">item</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">dfs</span><span class="p">[</span><span class="n">item</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(),</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="k">return</span> <span class="n">dfs</span>
+</div>
+<div class="viewcode-block" id="get_result"><a class="viewcode-back" href="../../corpkit.html#corpkit.context.get_result">[docs]</a><span class="k">def</span> <span class="nf">get_result</span><span class="p">(</span><span class="n">corp_word_permission_tup</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">operator</span>
+    
+    <span class="c"># expand tup</span>
+    <span class="n">word_corpus</span> <span class="o">=</span> <span class="n">corp_word_permission_tup</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">word</span> <span class="o">=</span> <span class="n">corp_word_permission_tup</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">permissive</span> <span class="o">=</span> <span class="n">corp_word_permission_tup</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">tagged</span> <span class="o">=</span> <span class="n">corp_word_permission_tup</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">regex</span> <span class="o">=</span> <span class="n">corp_word_permission_tup</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Doing &quot;</span><span class="si">%s</span><span class="s">&quot; ...&#39;</span> <span class="o">%</span> <span class="n">word</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
+            <span class="n">regex_word</span><span class="p">,</span> <span class="n">regex_tag</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)&#39;</span> <span class="o">+</span> <span class="n">word</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)&#39;</span> <span class="o">+</span> <span class="n">word</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">regex_word</span><span class="p">,</span> <span class="n">regex_tag</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)^&#39;</span> <span class="o">+</span> <span class="n">word</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">r&#39;$&#39;</span><span class="p">),</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)^&#39;</span> <span class="o">+</span> <span class="n">word</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">r&#39;$&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Doing &quot;</span><span class="si">%s</span><span class="s">&quot; ...&#39;</span> <span class="o">%</span> <span class="n">word</span>
+        <span class="n">regex_word</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(?i)^&#39;</span> <span class="o">+</span> <span class="n">word</span> <span class="o">+</span> <span class="s">r&#39;$&#39;</span><span class="p">)</span>
+        
+    <span class="n">contexts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="p">(</span><span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">c_tag</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span> <span class="ow">and</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_tag</span><span class="p">,</span> <span class="n">c_tag</span><span class="p">):</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="p">(</span><span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+    <span class="n">counted</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span>
+
+    <span class="c"># get rid of single occurrences</span>
+    <span class="n">singles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">singles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">singles</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">counted</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+    
+    <span class="n">seems_similar</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">permissive</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">left</span> <span class="ow">and</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">in_common_word</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">left</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">in_common_word</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">except</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">in_common_word</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">permissive</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">c_tag</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">left</span> <span class="ow">and</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">in_common_word</span><span class="p">,</span> <span class="n">itstag</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_tag</span><span class="p">,</span> <span class="n">itstag</span><span class="p">):</span>
+                                <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">counted</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">c_tag</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_corpus</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">left</span><span class="p">:</span>
+                        <span class="n">in_common_word</span><span class="p">,</span> <span class="n">itstag</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_tag</span><span class="p">,</span> <span class="n">itstag</span><span class="p">):</span>
+                                <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">in_common_word</span><span class="p">,</span> <span class="n">itstag</span> <span class="o">=</span> <span class="n">word_corpus</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_word</span><span class="p">,</span> <span class="n">in_common_word</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_tag</span><span class="p">,</span> <span class="n">itstag</span><span class="p">):</span>
+                                <span class="n">seems_similar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_common_word</span><span class="p">)</span>
+    <span class="n">out_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">seems_similar</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">count</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">count</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">count</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">out_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">out_list</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="sim"><a class="viewcode-back" href="../../corpkit.html#corpkit.context.sim">[docs]</a><span class="k">def</span> <span class="nf">sim</span><span class="p">(</span><span class="n">corpus</span><span class="p">,</span> <span class="n">words</span><span class="p">,</span> <span class="n">permissive</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">regex</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;corpus: list of words</span>
+<span class="sd">       words: word or list of words to search for</span>
+
+<span class="sd">       if your corpus is pos_tagged, pass words alongside tag as string</span>
+
+<span class="sd">       &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">multiprocessing</span>
+    <span class="kn">import</span> <span class="nn">nltk</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">operator</span>
+
+    <span class="c">#from context import get_result</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;joblib, the module used for multiprocessing, cannot be found. &#39;</span> \
+                         <span class="s">&#39;Install with:</span><span class="se">\n\n</span><span class="s">        pip install joblib&#39;</span><span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">num_cores</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+
+    <span class="n">tagged</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">corpus</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="n">tagged</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">print</span> <span class="s">&#39;Removing punctuation from corpus ... &#39;</span>
+    <span class="n">wordfilter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;^[^-][A-Za-z]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="n">word_corpus</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">corpus</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">wordfilter</span><span class="p">,</span> <span class="n">w</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">word_corpus</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">corpus</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">wordfilter</span><span class="p">,</span> <span class="n">w</span><span class="p">)]</span>
+
+    <span class="c"># nest word list if need be</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">==</span> <span class="nb">unicode</span><span class="p">:</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">words</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">unicode</span><span class="p">:</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">words</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tagged</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;When using tagged corpora, your wordlist must be tuples of (word, tag)&#39;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="p">(</span><span class="n">word_corpus</span><span class="p">,</span> <span class="n">words</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">permissive</span><span class="p">,</span> <span class="n">tagged</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">get_result</span><span class="p">(</span><span class="nb">input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># make tups that can be multiprocessed</span>
+        <span class="n">tups</span> <span class="o">=</span> <span class="p">[(</span><span class="n">word_corpus</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">permissive</span><span class="p">,</span> <span class="n">tagged</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">]</span>
+        <span class="c"># get_result returns (word, [(simword1, score), (simword2, score)])</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">num_cores</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">get_result</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tups</span><span class="p">)</span>
+
+        <span class="c"># convert result to dict</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="n">lst</span>
+
+        <span class="k">return</span> <span class="n">output</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

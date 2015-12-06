@@ -1,0 +1,793 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.inflect &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.inflect</h1><div class="highlight"><pre>
+<span class="c">#### PATTERN | EN | INFLECT ########################################################################</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright (c) 2010 University of Antwerp, Belgium</span>
+<span class="c"># Author: Tom De Smedt &lt;tom@organisms.be&gt;</span>
+<span class="c"># License: BSD (see LICENSE.txt for details).</span>
+
+<span class="c">####################################################################################################</span>
+<span class="c"># Regular expressions-based rules for English word inflection:</span>
+<span class="c"># - pluralization and singularization of nouns and adjectives,</span>
+<span class="c"># - conjugation of verbs,</span>
+<span class="c"># - comparative and superlative of adjectives.</span>
+
+<span class="c"># Accuracy (measured on CELEX English morphology word forms):</span>
+<span class="c"># 95% for pluralize()</span>
+<span class="c"># 96% for singularize()</span>
+<span class="c"># 95% for Verbs.find_lemma() (for regular verbs)</span>
+<span class="c"># 96% for Verbs.find_lexeme() (for regular verbs)</span>
+
+<span class="c">#################################################################################</span>
+<span class="c"># Modified from original to work as standalone for adjective and noun inflection.</span>
+<span class="c">#################################################################################</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">MODULE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">MODULE</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">MODULE</span><span class="p">,</span> <span class="s">&quot;..&quot;</span><span class="p">,</span> <span class="s">&quot;..&quot;</span><span class="p">,</span> <span class="s">&quot;..&quot;</span><span class="p">,</span> <span class="s">&quot;..&quot;</span><span class="p">))</span>
+
+<span class="c">#from pattern.text import Verbs as _Verbs</span>
+<span class="c">#from pattern.text import (</span>
+<span class="c">#    INFINITIVE, PRESENT, PAST, FUTURE,</span>
+<span class="c">#    FIRST, SECOND, THIRD,</span>
+<span class="c">#    SINGULAR, PLURAL, SG, PL,</span>
+<span class="c">#    PROGRESSIVE,</span>
+<span class="c">#    PARTICIPLE</span>
+<span class="c">#)</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">VERB</span><span class="p">,</span> <span class="n">NOUN</span><span class="p">,</span> <span class="n">ADJECTIVE</span><span class="p">,</span> <span class="n">ADVERB</span> <span class="o">=</span> <span class="s">&quot;VB&quot;</span><span class="p">,</span> <span class="s">&quot;NN&quot;</span><span class="p">,</span> <span class="s">&quot;JJ&quot;</span><span class="p">,</span> <span class="s">&quot;RB&quot;</span>
+
+<span class="n">VOWELS</span> <span class="o">=</span> <span class="s">&quot;aeiouy&quot;</span>
+<span class="n">re_vowel</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&quot;a|e|i|o|u|y&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+<span class="n">is_vowel</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">ch</span><span class="p">:</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">VOWELS</span>
+
+<span class="c">#### ARTICLE #######################################################################################</span>
+<span class="c"># Based on the Ruby Linguistics module by Michael Granger:</span>
+<span class="c"># http://www.deveiate.org/projects/Linguistics/wiki/English</span>
+
+<span class="n">RE_ARTICLE</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s">&quot;euler|hour(?!i)|heir|honest|hono&quot;</span><span class="p">,</span> <span class="s">&quot;an&quot;</span><span class="p">),</span>       <span class="c"># exceptions: an hour, an honor</span>
+    <span class="c"># Abbreviations:</span>
+    <span class="c"># strings of capitals starting with a vowel-sound consonant followed by another consonant,</span>
+    <span class="c"># which are not likely to be real words.</span>
+    <span class="p">(</span><span class="s">r&quot;(?!FJO|[HLMNS]Y.|RY[EO]|SQU|(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])[FHLMNRSX][A-Z]&quot;</span><span class="p">,</span> <span class="s">&quot;an&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;^[aefhilmnorsx][.-]&quot;</span>  <span class="p">,</span> <span class="s">&quot;an&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;^[a-z][.-]&quot;</span>           <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;^[^aeiouy]&quot;</span>           <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span> <span class="c"># consonants: a bear</span>
+    <span class="p">(</span><span class="s">r&quot;^e[uw]&quot;</span>               <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span> <span class="c"># -eu like &quot;you&quot;: a european</span>
+    <span class="p">(</span><span class="s">r&quot;^onc?e&quot;</span>               <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span> <span class="c">#  -o like &quot;wa&quot; : a one-liner</span>
+    <span class="p">(</span><span class="s">r&quot;uni([^nmd]|mo)&quot;</span>       <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span> <span class="c">#  -u like &quot;you&quot;: a university</span>
+    <span class="p">(</span><span class="s">r&quot;^u[bcfhjkqrst][aeiou]&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">),</span> <span class="c">#  -u like &quot;you&quot;: a uterus</span>
+    <span class="p">(</span><span class="s">r&quot;^[aeiou]&quot;</span>             <span class="p">,</span> <span class="s">&quot;an&quot;</span><span class="p">),</span> <span class="c"># vowels: an owl</span>
+    <span class="p">(</span><span class="s">r&quot;y(b[lor]|cl[ea]|fere|gg|p[ios]|rou|tt)&quot;</span><span class="p">,</span> <span class="s">&quot;an&quot;</span><span class="p">),</span> <span class="c"># y like &quot;i&quot;: an yclept, a year</span>
+    <span class="p">(</span><span class="s">r&quot;&quot;</span>                     <span class="p">,</span> <span class="s">&quot;a&quot;</span> <span class="p">)</span>  <span class="c"># guess &quot;a&quot;</span>
+<span class="p">))</span>
+
+<div class="viewcode-block" id="definite_article"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.definite_article">[docs]</a><span class="k">def</span> <span class="nf">definite_article</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&quot;the&quot;</span>
+</div>
+<div class="viewcode-block" id="indefinite_article"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.indefinite_article">[docs]</a><span class="k">def</span> <span class="nf">indefinite_article</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the indefinite article for a given word.</span>
+<span class="sd">        For example: indefinite_article(&quot;university&quot;) =&gt; &quot;a&quot; university.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">word</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">rule</span><span class="p">,</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">RE_ARTICLE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">article</span>
+</div>
+<span class="n">DEFINITE</span><span class="p">,</span> <span class="n">INDEFINITE</span> <span class="o">=</span> \
+    <span class="s">&quot;definite&quot;</span><span class="p">,</span> <span class="s">&quot;indefinite&quot;</span>
+
+<div class="viewcode-block" id="article"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.article">[docs]</a><span class="k">def</span> <span class="nf">article</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="n">INDEFINITE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the indefinite (a or an) or definite (the) article for the given word.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span> <span class="o">==</span> <span class="n">DEFINITE</span> <span class="ow">and</span> <span class="n">definite_article</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="ow">or</span> <span class="n">indefinite_article</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+</div>
+<span class="n">_article</span> <span class="o">=</span> <span class="n">article</span>
+
+<div class="viewcode-block" id="referenced"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.referenced">[docs]</a><span class="k">def</span> <span class="nf">referenced</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">article</span><span class="o">=</span><span class="n">INDEFINITE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a string with the article + the word.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">_article</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">article</span><span class="p">),</span> <span class="n">word</span><span class="p">)</span>
+
+<span class="c">#print referenced(&quot;hour&quot;)        </span>
+<span class="c">#print referenced(&quot;FBI&quot;)</span>
+<span class="c">#print referenced(&quot;bear&quot;)</span>
+<span class="c">#print referenced(&quot;one-liner&quot;)</span>
+<span class="c">#print referenced(&quot;european&quot;)</span>
+<span class="c">#print referenced(&quot;university&quot;)</span>
+<span class="c">#print referenced(&quot;uterus&quot;)</span>
+<span class="c">#print referenced(&quot;owl&quot;)</span>
+<span class="c">#print referenced(&quot;yclept&quot;)</span>
+<span class="c">#print referenced(&quot;year&quot;)</span>
+
+<span class="c">#### PLURALIZE #####################################################################################</span>
+<span class="c"># Based on &quot;An Algorithmic Approach to English Pluralization&quot; by Damian Conway:</span>
+<span class="c"># http://www.csse.monash.edu.au/~damian/papers/HTML/Plurals.html</span>
+
+<span class="c"># Prepositions are used in forms like &quot;mother-in-law&quot; and &quot;man at arms&quot;.</span></div>
+<span class="n">plural_prepositions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span>
+    <span class="s">&quot;about&quot;</span>  <span class="p">,</span> <span class="s">&quot;before&quot;</span> <span class="p">,</span> <span class="s">&quot;during&quot;</span><span class="p">,</span> <span class="s">&quot;of&quot;</span>   <span class="p">,</span> <span class="s">&quot;till&quot;</span> <span class="p">,</span>
+    <span class="s">&quot;above&quot;</span>  <span class="p">,</span> <span class="s">&quot;behind&quot;</span> <span class="p">,</span> <span class="s">&quot;except&quot;</span><span class="p">,</span> <span class="s">&quot;off&quot;</span>  <span class="p">,</span> <span class="s">&quot;to&quot;</span>   <span class="p">,</span>
+    <span class="s">&quot;across&quot;</span> <span class="p">,</span> <span class="s">&quot;below&quot;</span>  <span class="p">,</span> <span class="s">&quot;for&quot;</span>   <span class="p">,</span> <span class="s">&quot;on&quot;</span>   <span class="p">,</span> <span class="s">&quot;under&quot;</span><span class="p">,</span>
+    <span class="s">&quot;after&quot;</span>  <span class="p">,</span> <span class="s">&quot;beneath&quot;</span><span class="p">,</span> <span class="s">&quot;from&quot;</span>  <span class="p">,</span> <span class="s">&quot;onto&quot;</span> <span class="p">,</span> <span class="s">&quot;until&quot;</span><span class="p">,</span>
+    <span class="s">&quot;among&quot;</span>  <span class="p">,</span> <span class="s">&quot;beside&quot;</span> <span class="p">,</span> <span class="s">&quot;in&quot;</span>    <span class="p">,</span> <span class="s">&quot;out&quot;</span>  <span class="p">,</span> <span class="s">&quot;unto&quot;</span> <span class="p">,</span>
+    <span class="s">&quot;around&quot;</span> <span class="p">,</span> <span class="s">&quot;besides&quot;</span><span class="p">,</span> <span class="s">&quot;into&quot;</span>  <span class="p">,</span> <span class="s">&quot;over&quot;</span> <span class="p">,</span> <span class="s">&quot;upon&quot;</span> <span class="p">,</span>
+    <span class="s">&quot;at&quot;</span>     <span class="p">,</span> <span class="s">&quot;between&quot;</span><span class="p">,</span> <span class="s">&quot;near&quot;</span>  <span class="p">,</span> <span class="s">&quot;since&quot;</span><span class="p">,</span> <span class="s">&quot;with&quot;</span> <span class="p">,</span>
+    <span class="s">&quot;athwart&quot;</span><span class="p">,</span> <span class="s">&quot;betwixt&quot;</span><span class="p">,</span> 
+               <span class="s">&quot;beyond&quot;</span><span class="p">,</span> 
+               <span class="s">&quot;but&quot;</span><span class="p">,</span> 
+               <span class="s">&quot;by&quot;</span><span class="p">))</span>
+
+<span class="c"># Inflection rules that are either:</span>
+<span class="c"># - general,</span>
+<span class="c"># - apply to a certain category of words,</span>
+<span class="c"># - apply to a certain category of words only in classical mode,</span>
+<span class="c"># - apply only in classical mode.</span>
+<span class="c"># Each rule is a (suffix, inflection, category, classic)-tuple.</span>
+<span class="n">plural_rules</span> <span class="o">=</span> <span class="p">[</span>
+       <span class="c"># 0) Indefinite articles and demonstratives.</span>
+    <span class="p">((</span>   <span class="s">r&quot;^a$|^an$&quot;</span><span class="p">,</span> <span class="s">&quot;some&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;^this$&quot;</span><span class="p">,</span> <span class="s">&quot;these&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;^that$&quot;</span><span class="p">,</span> <span class="s">&quot;those&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^any$&quot;</span><span class="p">,</span> <span class="s">&quot;all&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 1) Possessive adjectives.</span>
+    <span class="p">((</span>       <span class="s">r&quot;^my$&quot;</span><span class="p">,</span> <span class="s">&quot;our&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;^your$&quot;</span><span class="p">,</span> <span class="s">&quot;your&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^thy$&quot;</span><span class="p">,</span> <span class="s">&quot;your&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^her$|^his$&quot;</span><span class="p">,</span> <span class="s">&quot;their&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^its$&quot;</span><span class="p">,</span> <span class="s">&quot;their&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;^their$&quot;</span><span class="p">,</span> <span class="s">&quot;their&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 2) Possessive pronouns.</span>
+    <span class="p">((</span>     <span class="s">r&quot;^mine$&quot;</span><span class="p">,</span> <span class="s">&quot;ours&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;^yours$&quot;</span><span class="p">,</span> <span class="s">&quot;yours&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;^thine$&quot;</span><span class="p">,</span> <span class="s">&quot;yours&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^her$|^his$&quot;</span><span class="p">,</span> <span class="s">&quot;theirs&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^its$&quot;</span><span class="p">,</span> <span class="s">&quot;theirs&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;^their$&quot;</span><span class="p">,</span> <span class="s">&quot;theirs&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 3) Personal pronouns.</span>
+    <span class="p">((</span>        <span class="s">r&quot;^I$&quot;</span><span class="p">,</span> <span class="s">&quot;we&quot;</span>         <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;^me$&quot;</span><span class="p">,</span> <span class="s">&quot;us&quot;</span>         <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>   <span class="s">r&quot;^myself$&quot;</span><span class="p">,</span> <span class="s">&quot;ourselves&quot;</span>  <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^you$&quot;</span><span class="p">,</span> <span class="s">&quot;you&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^thou$|^thee$&quot;</span><span class="p">,</span> <span class="s">&quot;ye&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;^yourself$&quot;</span><span class="p">,</span> <span class="s">&quot;yourself&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;^thyself$&quot;</span><span class="p">,</span> <span class="s">&quot;yourself&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>     
+     <span class="p">(</span> <span class="s">r&quot;^she$|^he$&quot;</span><span class="p">,</span> <span class="s">&quot;they&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^it$|^they$&quot;</span><span class="p">,</span> <span class="s">&quot;they&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^her$|^him$&quot;</span><span class="p">,</span> <span class="s">&quot;them&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;^it$|^them$&quot;</span><span class="p">,</span> <span class="s">&quot;them&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;^herself$&quot;</span><span class="p">,</span> <span class="s">&quot;themselves&quot;</span> <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;^himself$&quot;</span><span class="p">,</span> <span class="s">&quot;themselves&quot;</span> <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>   <span class="s">r&quot;^itself$&quot;</span><span class="p">,</span> <span class="s">&quot;themselves&quot;</span> <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;^themself$&quot;</span><span class="p">,</span> <span class="s">&quot;themselves&quot;</span> <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;^oneself$&quot;</span><span class="p">,</span> <span class="s">&quot;oneselves&quot;</span>  <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 4) Words that do not inflect.</span>
+    <span class="p">((</span>          <span class="s">r&quot;$&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span>  <span class="p">,</span> <span class="s">&quot;uninflected&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>          <span class="s">r&quot;$&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span>  <span class="p">,</span> <span class="s">&quot;uncountable&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;s$&quot;</span><span class="p">,</span> <span class="s">&quot;s&quot;</span> <span class="p">,</span> <span class="s">&quot;s-singular&quot;</span> <span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;fish$&quot;</span><span class="p">,</span> <span class="s">&quot;fish&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([- ])bass$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1bass&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;ois$&quot;</span><span class="p">,</span> <span class="s">&quot;ois&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;sheep$&quot;</span><span class="p">,</span> <span class="s">&quot;sheep&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;deer$&quot;</span><span class="p">,</span> <span class="s">&quot;deer&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;pox$&quot;</span><span class="p">,</span> <span class="s">&quot;pox&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([A-Z].*)ese$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ese&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;itis$&quot;</span><span class="p">,</span> <span class="s">&quot;itis&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;(fruct|gluc|galact|lact|ket|malt|rib|sacchar|cellul)ose$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ose&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 5) Irregular plural forms (e.g., mongoose, oxen).</span>
+    <span class="p">((</span>     <span class="s">r&quot;atlas$&quot;</span><span class="p">,</span> <span class="s">&quot;atlantes&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;atlas$&quot;</span><span class="p">,</span> <span class="s">&quot;atlases&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;beef$&quot;</span><span class="p">,</span> <span class="s">&quot;beeves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>   <span class="s">r&quot;brother$&quot;</span><span class="p">,</span> <span class="s">&quot;brethren&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;child$&quot;</span><span class="p">,</span> <span class="s">&quot;children&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;corpus$&quot;</span><span class="p">,</span> <span class="s">&quot;corpora&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;corpus$&quot;</span><span class="p">,</span> <span class="s">&quot;corpuses&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;^cow$&quot;</span><span class="p">,</span> <span class="s">&quot;kine&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;ephemeris$&quot;</span><span class="p">,</span> <span class="s">&quot;ephemerides&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;ganglion$&quot;</span><span class="p">,</span> <span class="s">&quot;ganglia&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;genie$&quot;</span><span class="p">,</span> <span class="s">&quot;genii&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;genus$&quot;</span><span class="p">,</span> <span class="s">&quot;genera&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;graffito$&quot;</span><span class="p">,</span> <span class="s">&quot;graffiti&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;loaf$&quot;</span><span class="p">,</span> <span class="s">&quot;loaves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;money$&quot;</span><span class="p">,</span> <span class="s">&quot;monies&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>  <span class="s">r&quot;mongoose$&quot;</span><span class="p">,</span> <span class="s">&quot;mongooses&quot;</span>  <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;mythos$&quot;</span><span class="p">,</span> <span class="s">&quot;mythoi&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>   <span class="s">r&quot;octopus$&quot;</span><span class="p">,</span> <span class="s">&quot;octopodes&quot;</span>  <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;opus$&quot;</span><span class="p">,</span> <span class="s">&quot;opera&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;opus$&quot;</span><span class="p">,</span> <span class="s">&quot;opuses&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;^ox$&quot;</span><span class="p">,</span> <span class="s">&quot;oxen&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;penis$&quot;</span><span class="p">,</span> <span class="s">&quot;penes&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;penis$&quot;</span><span class="p">,</span> <span class="s">&quot;penises&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;soliloquy$&quot;</span><span class="p">,</span> <span class="s">&quot;soliloquies&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;testis$&quot;</span><span class="p">,</span> <span class="s">&quot;testes&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;trilby$&quot;</span><span class="p">,</span> <span class="s">&quot;trilbys&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;turf$&quot;</span><span class="p">,</span> <span class="s">&quot;turves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;numen$&quot;</span><span class="p">,</span> <span class="s">&quot;numena&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>   <span class="s">r&quot;occiput$&quot;</span><span class="p">,</span> <span class="s">&quot;occipita&quot;</span>   <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span> <span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 6) Irregular inflections for common suffixes (e.g., synopses, mice, men).</span>
+    <span class="p">((</span>       <span class="s">r&quot;man$&quot;</span><span class="p">,</span> <span class="s">&quot;men&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>    <span class="s">r&quot;person$&quot;</span><span class="p">,</span> <span class="s">&quot;people&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([lm])ouse$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ice&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;tooth$&quot;</span><span class="p">,</span> <span class="s">&quot;teeth&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>     <span class="s">r&quot;goose$&quot;</span><span class="p">,</span> <span class="s">&quot;geese&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;foot$&quot;</span><span class="p">,</span> <span class="s">&quot;feet&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>      <span class="s">r&quot;zoon$&quot;</span><span class="p">,</span> <span class="s">&quot;zoa&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;([csx])is$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1es&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 7) Fully assimilated classical inflections </span>
+       <span class="c">#    (e.g., vertebrae, codices).</span>
+    <span class="p">((</span>        <span class="s">r&quot;ex$&quot;</span><span class="p">,</span> <span class="s">&quot;ices&quot;</span> <span class="p">,</span> <span class="s">&quot;ex-ices&quot;</span> <span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;ex$&quot;</span><span class="p">,</span> <span class="s">&quot;ices&quot;</span> <span class="p">,</span> <span class="s">&quot;ex-ices*&quot;</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span> <span class="c"># * = classical mode</span>
+     <span class="p">(</span>        <span class="s">r&quot;um$&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span>    <span class="p">,</span>    <span class="s">&quot;um-a&quot;</span> <span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;um$&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span>    <span class="p">,</span>    <span class="s">&quot;um-a*&quot;</span><span class="p">,</span> <span class="bp">True</span> <span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;on$&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span>    <span class="p">,</span>    <span class="s">&quot;on-a&quot;</span> <span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;a$&quot;</span><span class="p">,</span> <span class="s">&quot;ae&quot;</span>   <span class="p">,</span>    <span class="s">&quot;a-ae&quot;</span> <span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;a$&quot;</span><span class="p">,</span> <span class="s">&quot;ae&quot;</span>   <span class="p">,</span>    <span class="s">&quot;a-ae*&quot;</span><span class="p">,</span> <span class="bp">True</span> <span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 8) Classical variants of modern inflections </span>
+       <span class="c">#    (e.g., stigmata, soprani).</span>
+    <span class="p">((</span>      <span class="s">r&quot;trix$&quot;</span><span class="p">,</span> <span class="s">&quot;trices&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;eau$&quot;</span><span class="p">,</span> <span class="s">&quot;eaux&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;ieu$&quot;</span><span class="p">,</span> <span class="s">&quot;ieu&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;([iay])nx$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1nges&quot;</span>    <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;en$&quot;</span><span class="p">,</span> <span class="s">&quot;ina&quot;</span>  <span class="p">,</span>  <span class="s">&quot;en-ina*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;a$&quot;</span><span class="p">,</span> <span class="s">&quot;ata&quot;</span>  <span class="p">,</span>   <span class="s">&quot;a-ata*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;is$&quot;</span><span class="p">,</span> <span class="s">&quot;ides&quot;</span> <span class="p">,</span> <span class="s">&quot;is-ides*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;us$&quot;</span><span class="p">,</span> <span class="s">&quot;i&quot;</span>    <span class="p">,</span>    <span class="s">&quot;us-i*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;us$&quot;</span><span class="p">,</span> <span class="s">&quot;us &quot;</span>  <span class="p">,</span>   <span class="s">&quot;us-us*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;o$&quot;</span><span class="p">,</span> <span class="s">&quot;i&quot;</span>    <span class="p">,</span>     <span class="s">&quot;o-i*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>          <span class="s">r&quot;$&quot;</span><span class="p">,</span> <span class="s">&quot;i&quot;</span>    <span class="p">,</span>      <span class="s">&quot;-i*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+     <span class="p">(</span>          <span class="s">r&quot;$&quot;</span><span class="p">,</span> <span class="s">&quot;im&quot;</span>   <span class="p">,</span>     <span class="s">&quot;-im*&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 9) -ch, -sh and -ss take -es in the plural </span>
+       <span class="c">#    (e.g., churches, classes).</span>
+    <span class="p">((</span>   <span class="s">r&quot;([cs])h$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1hes&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>        <span class="s">r&quot;ss$&quot;</span><span class="p">,</span> <span class="s">&quot;sses&quot;</span>       <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;x$&quot;</span><span class="p">,</span> <span class="s">&quot;xes&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 10) -f or -fe sometimes take -ves in the plural </span>
+       <span class="c">#     (e.g, lives, wolves).</span>
+    <span class="p">((</span> <span class="s">r&quot;([aeo]l)f$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span> <span class="s">r&quot;([^d]ea)f$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>       <span class="s">r&quot;arf$&quot;</span><span class="p">,</span> <span class="s">&quot;arves&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([nlw]i)fe$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ves&quot;</span>     <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+    <span class="p">),</span> <span class="c"># 11) -y takes -ys if preceded by a vowel, -ies otherwise </span>
+       <span class="c">#     (e.g., storeys, Marys, stories).</span>
+    <span class="p">((</span><span class="s">r&quot;([aeiou])y$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ys&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([A-Z].*)y$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ys&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;y$&quot;</span><span class="p">,</span> <span class="s">&quot;ies&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 12) -o sometimes takes -os, -oes otherwise.</span>
+       <span class="c">#     -o is preceded by a vowel takes -os </span>
+       <span class="c">#     (e.g., lassos, potatoes, bamboos).</span>
+    <span class="p">((</span>         <span class="s">r&quot;o$&quot;</span><span class="p">,</span> <span class="s">&quot;os&quot;</span><span class="p">,</span>        <span class="s">&quot;o-os&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span><span class="s">r&quot;([aeiou])o$&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1os&quot;</span>      <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+     <span class="p">(</span>         <span class="s">r&quot;o$&quot;</span><span class="p">,</span> <span class="s">&quot;oes&quot;</span>        <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="p">),</span> <span class="c"># 13) Miltary stuff </span>
+       <span class="c">#     (e.g., Major Generals).</span>
+    <span class="p">((</span>         <span class="s">r&quot;l$&quot;</span><span class="p">,</span> <span class="s">&quot;ls&quot;</span><span class="p">,</span> <span class="s">&quot;general-generals&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+    <span class="p">),</span> <span class="c"># 14) Assume that the plural takes -s </span>
+       <span class="c">#     (cats, programmes, ...).</span>
+    <span class="p">((</span>          <span class="s">r&quot;$&quot;</span><span class="p">,</span> <span class="s">&quot;s&quot;</span>          <span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">),)</span>
+<span class="p">]</span>
+
+<span class="c"># For performance, compile the regular expressions once:</span>
+<span class="n">plural_rules</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">grp</span><span class="p">]</span> <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">plural_rules</span><span class="p">]</span>
+
+<span class="c"># Suffix categories.</span>
+<span class="n">plural_categories</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;uninflected&quot;</span><span class="p">:</span> <span class="p">[</span> 
+        <span class="s">&quot;bison&quot;</span>      <span class="p">,</span> <span class="s">&quot;debris&quot;</span>     <span class="p">,</span> <span class="s">&quot;headquarters&quot;</span> <span class="p">,</span> <span class="s">&quot;news&quot;</span>       <span class="p">,</span> <span class="s">&quot;swine&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;bream&quot;</span>      <span class="p">,</span> <span class="s">&quot;diabetes&quot;</span>   <span class="p">,</span> <span class="s">&quot;herpes&quot;</span>       <span class="p">,</span> <span class="s">&quot;pincers&quot;</span>    <span class="p">,</span> <span class="s">&quot;trout&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;breeches&quot;</span>   <span class="p">,</span> <span class="s">&quot;djinn&quot;</span>      <span class="p">,</span> <span class="s">&quot;high-jinks&quot;</span>   <span class="p">,</span> <span class="s">&quot;pliers&quot;</span>     <span class="p">,</span> <span class="s">&quot;tuna&quot;</span>         <span class="p">,</span>
+        <span class="s">&quot;britches&quot;</span>   <span class="p">,</span> <span class="s">&quot;eland&quot;</span>      <span class="p">,</span> <span class="s">&quot;homework&quot;</span>     <span class="p">,</span> <span class="s">&quot;proceedings&quot;</span><span class="p">,</span> <span class="s">&quot;whiting&quot;</span>      <span class="p">,</span>
+        <span class="s">&quot;carp&quot;</span>       <span class="p">,</span> <span class="s">&quot;elk&quot;</span>        <span class="p">,</span> <span class="s">&quot;innings&quot;</span>      <span class="p">,</span> <span class="s">&quot;rabies&quot;</span>     <span class="p">,</span> <span class="s">&quot;wildebeest&quot;</span>
+        <span class="s">&quot;chassis&quot;</span>    <span class="p">,</span> <span class="s">&quot;flounder&quot;</span>   <span class="p">,</span> <span class="s">&quot;jackanapes&quot;</span>   <span class="p">,</span> <span class="s">&quot;salmon&quot;</span>     <span class="p">,</span>
+        <span class="s">&quot;clippers&quot;</span>   <span class="p">,</span> <span class="s">&quot;gallows&quot;</span>    <span class="p">,</span> <span class="s">&quot;mackerel&quot;</span>     <span class="p">,</span> <span class="s">&quot;scissors&quot;</span>   <span class="p">,</span> 
+        <span class="s">&quot;cod&quot;</span>        <span class="p">,</span> <span class="s">&quot;graffiti&quot;</span>   <span class="p">,</span> <span class="s">&quot;measles&quot;</span>      <span class="p">,</span> <span class="s">&quot;series&quot;</span>     <span class="p">,</span> 
+        <span class="s">&quot;contretemps&quot;</span><span class="p">,</span>                <span class="s">&quot;mews&quot;</span>         <span class="p">,</span> <span class="s">&quot;shears&quot;</span>     <span class="p">,</span> 
+        <span class="s">&quot;corps&quot;</span>      <span class="p">,</span>                <span class="s">&quot;mumps&quot;</span>        <span class="p">,</span> <span class="s">&quot;species&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;uncountable&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;advice&quot;</span>     <span class="p">,</span> <span class="s">&quot;fruit&quot;</span>      <span class="p">,</span> <span class="s">&quot;ketchup&quot;</span>      <span class="p">,</span> <span class="s">&quot;meat&quot;</span>       <span class="p">,</span> <span class="s">&quot;sand&quot;</span>         <span class="p">,</span>
+        <span class="s">&quot;bread&quot;</span>      <span class="p">,</span> <span class="s">&quot;furniture&quot;</span>  <span class="p">,</span> <span class="s">&quot;knowledge&quot;</span>    <span class="p">,</span> <span class="s">&quot;mustard&quot;</span>    <span class="p">,</span> <span class="s">&quot;software&quot;</span>     <span class="p">,</span>
+        <span class="s">&quot;butter&quot;</span>     <span class="p">,</span> <span class="s">&quot;garbage&quot;</span>    <span class="p">,</span> <span class="s">&quot;love&quot;</span>         <span class="p">,</span> <span class="s">&quot;news&quot;</span>       <span class="p">,</span> <span class="s">&quot;understanding&quot;</span><span class="p">,</span>
+        <span class="s">&quot;cheese&quot;</span>     <span class="p">,</span> <span class="s">&quot;gravel&quot;</span>     <span class="p">,</span> <span class="s">&quot;luggage&quot;</span>      <span class="p">,</span> <span class="s">&quot;progress&quot;</span>   <span class="p">,</span> <span class="s">&quot;water&quot;</span>
+        <span class="s">&quot;electricity&quot;</span><span class="p">,</span> <span class="s">&quot;happiness&quot;</span>  <span class="p">,</span> <span class="s">&quot;mathematics&quot;</span>  <span class="p">,</span> <span class="s">&quot;research&quot;</span>   <span class="p">,</span> 
+        <span class="s">&quot;equipment&quot;</span>  <span class="p">,</span> <span class="s">&quot;information&quot;</span><span class="p">,</span> <span class="s">&quot;mayonnaise&quot;</span>   <span class="p">,</span> <span class="s">&quot;rice&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;s-singular&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;acropolis&quot;</span>  <span class="p">,</span> <span class="s">&quot;caddis&quot;</span>     <span class="p">,</span> <span class="s">&quot;dais&quot;</span>         <span class="p">,</span> <span class="s">&quot;glottis&quot;</span>    <span class="p">,</span> <span class="s">&quot;pathos&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;aegis&quot;</span>      <span class="p">,</span> <span class="s">&quot;cannabis&quot;</span>   <span class="p">,</span> <span class="s">&quot;digitalis&quot;</span>    <span class="p">,</span> <span class="s">&quot;ibis&quot;</span>       <span class="p">,</span> <span class="s">&quot;pelvis&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;alias&quot;</span>      <span class="p">,</span> <span class="s">&quot;canvas&quot;</span>     <span class="p">,</span> <span class="s">&quot;epidermis&quot;</span>    <span class="p">,</span> <span class="s">&quot;lens&quot;</span>       <span class="p">,</span> <span class="s">&quot;polis&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;asbestos&quot;</span>   <span class="p">,</span> <span class="s">&quot;chaos&quot;</span>      <span class="p">,</span> <span class="s">&quot;ethos&quot;</span>        <span class="p">,</span> <span class="s">&quot;mantis&quot;</span>     <span class="p">,</span> <span class="s">&quot;rhinoceros&quot;</span>   <span class="p">,</span>
+        <span class="s">&quot;bathos&quot;</span>     <span class="p">,</span> <span class="s">&quot;cosmos&quot;</span>     <span class="p">,</span> <span class="s">&quot;gas&quot;</span>          <span class="p">,</span> <span class="s">&quot;marquis&quot;</span>    <span class="p">,</span> <span class="s">&quot;sassafras&quot;</span>    <span class="p">,</span>
+        <span class="s">&quot;bias&quot;</span>       <span class="p">,</span>                <span class="s">&quot;glottis&quot;</span>      <span class="p">,</span> <span class="s">&quot;metropolis&quot;</span> <span class="p">,</span> <span class="s">&quot;trellis&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;ex-ices&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;codex&quot;</span>      <span class="p">,</span> <span class="s">&quot;murex&quot;</span>      <span class="p">,</span> <span class="s">&quot;silex&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;ex-ices*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;apex&quot;</span>       <span class="p">,</span> <span class="s">&quot;index&quot;</span>      <span class="p">,</span> <span class="s">&quot;pontifex&quot;</span>     <span class="p">,</span> <span class="s">&quot;vertex&quot;</span>     <span class="p">,</span> 
+        <span class="s">&quot;cortex&quot;</span>     <span class="p">,</span> <span class="s">&quot;latex&quot;</span>      <span class="p">,</span> <span class="s">&quot;simplex&quot;</span>      <span class="p">,</span> <span class="s">&quot;vortex&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;um-a&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;agendum&quot;</span>    <span class="p">,</span> <span class="s">&quot;candelabrum&quot;</span><span class="p">,</span> <span class="s">&quot;desideratum&quot;</span>  <span class="p">,</span> <span class="s">&quot;extremum&quot;</span>   <span class="p">,</span> <span class="s">&quot;stratum&quot;</span>      <span class="p">,</span>
+        <span class="s">&quot;bacterium&quot;</span>  <span class="p">,</span> <span class="s">&quot;datum&quot;</span>      <span class="p">,</span> <span class="s">&quot;erratum&quot;</span>      <span class="p">,</span> <span class="s">&quot;ovum&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;um-a*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;aquarium&quot;</span>   <span class="p">,</span> <span class="s">&quot;emporium&quot;</span>   <span class="p">,</span> <span class="s">&quot;maximum&quot;</span>      <span class="p">,</span> <span class="s">&quot;optimum&quot;</span>    <span class="p">,</span> <span class="s">&quot;stadium&quot;</span>      <span class="p">,</span>
+        <span class="s">&quot;compendium&quot;</span> <span class="p">,</span> <span class="s">&quot;enconium&quot;</span>   <span class="p">,</span> <span class="s">&quot;medium&quot;</span>       <span class="p">,</span> <span class="s">&quot;phylum&quot;</span>     <span class="p">,</span> <span class="s">&quot;trapezium&quot;</span>    <span class="p">,</span>
+        <span class="s">&quot;consortium&quot;</span> <span class="p">,</span> <span class="s">&quot;gymnasium&quot;</span>  <span class="p">,</span> <span class="s">&quot;memorandum&quot;</span>   <span class="p">,</span> <span class="s">&quot;quantum&quot;</span>    <span class="p">,</span> <span class="s">&quot;ultimatum&quot;</span>    <span class="p">,</span>
+        <span class="s">&quot;cranium&quot;</span>    <span class="p">,</span> <span class="s">&quot;honorarium&quot;</span> <span class="p">,</span> <span class="s">&quot;millenium&quot;</span>    <span class="p">,</span> <span class="s">&quot;rostrum&quot;</span>    <span class="p">,</span> <span class="s">&quot;vacuum&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;curriculum&quot;</span> <span class="p">,</span> <span class="s">&quot;interregnum&quot;</span><span class="p">,</span> <span class="s">&quot;minimum&quot;</span>      <span class="p">,</span> <span class="s">&quot;spectrum&quot;</span>   <span class="p">,</span> <span class="s">&quot;velum&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;dictum&quot;</span>     <span class="p">,</span> <span class="s">&quot;lustrum&quot;</span>    <span class="p">,</span> <span class="s">&quot;momentum&quot;</span>     <span class="p">,</span> <span class="s">&quot;speculum&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;on-a&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;aphelion&quot;</span>   <span class="p">,</span> <span class="s">&quot;hyperbaton&quot;</span> <span class="p">,</span> <span class="s">&quot;perihelion&quot;</span>   <span class="p">,</span>
+        <span class="s">&quot;asyndeton&quot;</span>  <span class="p">,</span> <span class="s">&quot;noumenon&quot;</span>   <span class="p">,</span> <span class="s">&quot;phenomenon&quot;</span>   <span class="p">,</span> 
+        <span class="s">&quot;criterion&quot;</span>  <span class="p">,</span> <span class="s">&quot;organon&quot;</span>    <span class="p">,</span> <span class="s">&quot;prolegomenon&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;a-ae&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;alga&quot;</span>       <span class="p">,</span> <span class="s">&quot;alumna&quot;</span>     <span class="p">,</span> <span class="s">&quot;vertebra&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;a-ae*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;abscissa&quot;</span>   <span class="p">,</span> <span class="s">&quot;aurora&quot;</span>     <span class="p">,</span> <span class="s">&quot;hyperbola&quot;</span>    <span class="p">,</span> <span class="s">&quot;nebula&quot;</span>     <span class="p">,</span> 
+        <span class="s">&quot;amoeba&quot;</span>     <span class="p">,</span> <span class="s">&quot;formula&quot;</span>    <span class="p">,</span> <span class="s">&quot;lacuna&quot;</span>       <span class="p">,</span> <span class="s">&quot;nova&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;antenna&quot;</span>    <span class="p">,</span> <span class="s">&quot;hydra&quot;</span>      <span class="p">,</span> <span class="s">&quot;medusa&quot;</span>       <span class="p">,</span> <span class="s">&quot;parabola&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;en-ina*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;foramen&quot;</span>    <span class="p">,</span> <span class="s">&quot;lumen&quot;</span>      <span class="p">,</span> <span class="s">&quot;stamen&quot;</span>
+    <span class="p">],</span>
+    <span class="s">&quot;a-ata*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;anathema&quot;</span>   <span class="p">,</span> <span class="s">&quot;dogma&quot;</span>      <span class="p">,</span> <span class="s">&quot;gumma&quot;</span>        <span class="p">,</span> <span class="s">&quot;miasma&quot;</span>     <span class="p">,</span> <span class="s">&quot;stigma&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;bema&quot;</span>       <span class="p">,</span> <span class="s">&quot;drama&quot;</span>      <span class="p">,</span> <span class="s">&quot;lemma&quot;</span>        <span class="p">,</span> <span class="s">&quot;schema&quot;</span>     <span class="p">,</span> <span class="s">&quot;stoma&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;carcinoma&quot;</span>  <span class="p">,</span> <span class="s">&quot;edema&quot;</span>      <span class="p">,</span> <span class="s">&quot;lymphoma&quot;</span>     <span class="p">,</span> <span class="s">&quot;oedema&quot;</span>     <span class="p">,</span> <span class="s">&quot;trauma&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;charisma&quot;</span>   <span class="p">,</span> <span class="s">&quot;enema&quot;</span>      <span class="p">,</span> <span class="s">&quot;magma&quot;</span>        <span class="p">,</span> <span class="s">&quot;sarcoma&quot;</span>    <span class="p">,</span>
+        <span class="s">&quot;diploma&quot;</span>    <span class="p">,</span> <span class="s">&quot;enigma&quot;</span>     <span class="p">,</span> <span class="s">&quot;melisma&quot;</span>      <span class="p">,</span> <span class="s">&quot;soma&quot;</span>       <span class="p">,</span>
+        <span class="p">],</span>
+    <span class="s">&quot;is-ides*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;clitoris&quot;</span>   <span class="p">,</span> <span class="s">&quot;iris&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;us-i*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;focus&quot;</span>      <span class="p">,</span> <span class="s">&quot;nimbus&quot;</span>     <span class="p">,</span> <span class="s">&quot;succubus&quot;</span>     <span class="p">,</span>
+        <span class="s">&quot;fungus&quot;</span>     <span class="p">,</span> <span class="s">&quot;nucleolus&quot;</span>  <span class="p">,</span> <span class="s">&quot;torus&quot;</span>        <span class="p">,</span> 
+        <span class="s">&quot;genius&quot;</span>     <span class="p">,</span> <span class="s">&quot;radius&quot;</span>     <span class="p">,</span> <span class="s">&quot;umbilicus&quot;</span>    <span class="p">,</span> 
+        <span class="s">&quot;incubus&quot;</span>    <span class="p">,</span> <span class="s">&quot;stylus&quot;</span>     <span class="p">,</span> <span class="s">&quot;uterus&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;us-us*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;apparatus&quot;</span>  <span class="p">,</span> <span class="s">&quot;hiatus&quot;</span>     <span class="p">,</span> <span class="s">&quot;plexus&quot;</span>       <span class="p">,</span> <span class="s">&quot;status&quot;</span>
+        <span class="s">&quot;cantus&quot;</span>     <span class="p">,</span> <span class="s">&quot;impetus&quot;</span>    <span class="p">,</span> <span class="s">&quot;prospectus&quot;</span>   <span class="p">,</span>
+        <span class="s">&quot;coitus&quot;</span>     <span class="p">,</span> <span class="s">&quot;nexus&quot;</span>      <span class="p">,</span> <span class="s">&quot;sinus&quot;</span>        <span class="p">,</span> 
+        <span class="p">],</span>
+    <span class="s">&quot;o-i*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;alto&quot;</span>       <span class="p">,</span> <span class="s">&quot;canto&quot;</span>      <span class="p">,</span> <span class="s">&quot;crescendo&quot;</span>    <span class="p">,</span> <span class="s">&quot;soprano&quot;</span>    <span class="p">,</span>
+        <span class="s">&quot;basso&quot;</span>      <span class="p">,</span> <span class="s">&quot;contralto&quot;</span>  <span class="p">,</span> <span class="s">&quot;solo&quot;</span>         <span class="p">,</span> <span class="s">&quot;tempo&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;-i*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;afreet&quot;</span>     <span class="p">,</span> <span class="s">&quot;afrit&quot;</span>      <span class="p">,</span> <span class="s">&quot;efreet&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;-im*&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;cherub&quot;</span>     <span class="p">,</span> <span class="s">&quot;goy&quot;</span>        <span class="p">,</span> <span class="s">&quot;seraph&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;o-os&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;albino&quot;</span>     <span class="p">,</span> <span class="s">&quot;dynamo&quot;</span>     <span class="p">,</span> <span class="s">&quot;guano&quot;</span>        <span class="p">,</span> <span class="s">&quot;lumbago&quot;</span>    <span class="p">,</span> <span class="s">&quot;photo&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;archipelago&quot;</span><span class="p">,</span> <span class="s">&quot;embryo&quot;</span>     <span class="p">,</span> <span class="s">&quot;inferno&quot;</span>      <span class="p">,</span> <span class="s">&quot;magneto&quot;</span>    <span class="p">,</span> <span class="s">&quot;pro&quot;</span>          <span class="p">,</span>
+        <span class="s">&quot;armadillo&quot;</span>  <span class="p">,</span> <span class="s">&quot;fiasco&quot;</span>     <span class="p">,</span> <span class="s">&quot;jumbo&quot;</span>        <span class="p">,</span> <span class="s">&quot;manifesto&quot;</span>  <span class="p">,</span> <span class="s">&quot;quarto&quot;</span>       <span class="p">,</span>
+        <span class="s">&quot;commando&quot;</span>   <span class="p">,</span> <span class="s">&quot;generalissimo&quot;</span><span class="p">,</span>                <span class="s">&quot;medico&quot;</span>     <span class="p">,</span> <span class="s">&quot;rhino&quot;</span>        <span class="p">,</span>
+        <span class="s">&quot;ditto&quot;</span>      <span class="p">,</span> <span class="s">&quot;ghetto&quot;</span>     <span class="p">,</span> <span class="s">&quot;lingo&quot;</span>        <span class="p">,</span> <span class="s">&quot;octavo&quot;</span>     <span class="p">,</span> <span class="s">&quot;stylo&quot;</span>
+        <span class="p">],</span>
+    <span class="s">&quot;general-generals&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">&quot;Adjutant&quot;</span>   <span class="p">,</span> <span class="s">&quot;Brigadier&quot;</span>  <span class="p">,</span> <span class="s">&quot;Lieutenant&quot;</span>   <span class="p">,</span> <span class="s">&quot;Major&quot;</span>      <span class="p">,</span> <span class="s">&quot;Quartermaster&quot;</span><span class="p">,</span> 
+        <span class="s">&quot;adjutant&quot;</span>   <span class="p">,</span> <span class="s">&quot;brigadier&quot;</span>  <span class="p">,</span> <span class="s">&quot;lieutenant&quot;</span>   <span class="p">,</span> <span class="s">&quot;major&quot;</span>      <span class="p">,</span> <span class="s">&quot;quartermaster&quot;</span>
+        <span class="p">]</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="pluralize"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.pluralize">[docs]</a><span class="k">def</span> <span class="nf">pluralize</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">NOUN</span><span class="p">,</span> <span class="n">custom</span><span class="o">=</span><span class="p">{},</span> <span class="n">classical</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the plural of a given word, e.g., child =&gt; children.</span>
+<span class="sd">        Handles nouns and adjectives, using classical inflection by default</span>
+<span class="sd">        (i.e., where &quot;matrix&quot; pluralizes to &quot;matrices&quot; and not &quot;matrixes&quot;).</span>
+<span class="sd">        The custom dictionary is for user-defined replacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">custom</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">custom</span><span class="p">[</span><span class="n">word</span><span class="p">]</span>
+    <span class="c"># Recurse genitives.</span>
+    <span class="c"># Remove the apostrophe and any trailing -s, </span>
+    <span class="c"># form the plural of the resultant noun, and then append an apostrophe (dog&#39;s =&gt; dogs&#39;).</span>
+    <span class="k">if</span> <span class="n">word</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s">&quot;&#39;s&quot;</span><span class="p">)):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&quot;&#39;s&quot;</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">pluralize</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">custom</span><span class="p">,</span> <span class="n">classical</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;s&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">w</span> <span class="o">+</span> <span class="s">&quot;&#39;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">w</span> <span class="o">+</span> <span class="s">&quot;&#39;s&quot;</span>
+    <span class="c"># Recurse compound words</span>
+    <span class="c"># (e.g., Postmasters General, mothers-in-law, Roman deities).    </span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;general&quot;</span> <span class="ow">or</span> \
+           <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;General&quot;</span> <span class="ow">and</span> \
+           <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plural_categories</span><span class="p">[</span><span class="s">&quot;general-generals&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pluralize</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">,</span> <span class="n">custom</span><span class="p">,</span> <span class="n">classical</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">plural_prepositions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pluralize</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">,</span> <span class="n">custom</span><span class="p">,</span> <span class="n">classical</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">pluralize</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">,</span> <span class="n">custom</span><span class="p">,</span> <span class="n">classical</span><span class="p">))</span>
+    <span class="c"># Only a very few number of adjectives inflect.</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plural_rules</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">ADJECTIVE</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="c"># Apply pluralization rules.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">suffix</span><span class="p">,</span> <span class="n">inflection</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="n">classic</span> <span class="ow">in</span> <span class="n">plural_rules</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="c"># A general rule, or a classic rule in classical mode.</span>
+            <span class="k">if</span> <span class="n">category</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">classic</span> <span class="ow">or</span> <span class="p">(</span><span class="n">classic</span> <span class="ow">and</span> <span class="n">classical</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">suffix</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">suffix</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">inflection</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+            <span class="c"># A rule pertaining to a specific category of words.</span>
+            <span class="k">if</span> <span class="n">category</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">plural_categories</span><span class="p">[</span><span class="n">category</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">classic</span> <span class="ow">or</span> <span class="p">(</span><span class="n">classic</span> <span class="ow">and</span> <span class="n">classical</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">suffix</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">suffix</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">inflection</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">word</span>
+
+<span class="c">#print pluralize(&quot;part-of-speech&quot;)</span>
+<span class="c">#print pluralize(&quot;child&quot;)</span>
+<span class="c">#print pluralize(&quot;dog&#39;s&quot;)</span>
+<span class="c">#print pluralize(&quot;wolf&quot;)</span>
+<span class="c">#print pluralize(&quot;bear&quot;)</span>
+<span class="c">#print pluralize(&quot;kitchen knife&quot;)</span>
+<span class="c">#print pluralize(&quot;octopus&quot;, classical=True)</span>
+<span class="c">#print pluralize(&quot;matrix&quot;, classical=True)</span>
+<span class="c">#print pluralize(&quot;matrix&quot;, classical=False)</span>
+<span class="c">#print pluralize(&quot;my&quot;, pos=ADJECTIVE)</span>
+
+<span class="c">#### SINGULARIZE ###################################################################################</span>
+<span class="c"># Adapted from Bermi Ferrer&#39;s Inflector for Python:</span>
+<span class="c"># http://www.bermi.org/inflector/</span>
+
+<span class="c"># Copyright (c) 2006 Bermi Ferrer Martinez</span>
+<span class="c"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c"># of this software to deal in this software without restriction, including</span>
+<span class="c"># without limitation the rights to use, copy, modify, merge, publish,</span>
+<span class="c"># distribute, sublicense, and/or sell copies of this software, and to permit</span>
+<span class="c"># persons to whom this software is furnished to do so, subject to the following</span>
+<span class="c"># condition:</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c"># OUT OF OR IN CONNECTION WITH THIS SOFTWARE OR THE USE OR OTHER DEALINGS IN</span>
+<span class="c"># THIS SOFTWARE.</span>
+</div>
+<span class="n">singular_rules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)ae$&#39;</span>            <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1a&#39;</span>    <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)itis$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1itis&#39;</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)eaux$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1eau&#39;</span>  <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(quiz)zes$&#39;</span>        <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(matr)ices$&#39;</span>       <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ix&#39;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(ap|vert|ind)ices$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ex&#39;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)^(ox)en&#39;</span>           <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(alias|status)es$&#39;</span> <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([octop|vir])i$&#39;</span>   <span class="p">,</span>  <span class="s">&#39;</span><span class="se">\\</span><span class="s">1us&#39;</span>  <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(cris|ax|test)es$&#39;</span> <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1is&#39;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(shoe)s$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(o)es$&#39;</span>            <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(bus)es$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([m|l])ice$&#39;</span>       <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ouse&#39;</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(x|ch|ss|sh)es$&#39;</span>   <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(m)ovies$&#39;</span>         <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ovie&#39;</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)ombies$&#39;</span>        <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ombie&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(s)eries$&#39;</span>         <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1eries&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([^aeiouy]|qu)ies$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1y&#39;</span>    <span class="p">),</span>
+    <span class="c"># -f, -fe sometimes take -ves in the plural </span>
+    <span class="c"># (e.g., lives, wolves).</span>
+    <span class="p">(</span><span class="s">r&quot;([aeo]l)ves$&quot;</span>          <span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1f&quot;</span>    <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;([^d]ea)ves$&quot;</span>          <span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1f&quot;</span>    <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;arves$&quot;</span>                <span class="p">,</span> <span class="s">&quot;arf&quot;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;erves$&quot;</span>                <span class="p">,</span> <span class="s">&quot;erve&quot;</span>    <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;([nlw]i)ves$&quot;</span>          <span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1fe&quot;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([lr])ves$&#39;</span>        <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1f&#39;</span>    <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&quot;([aeo])ves$&quot;</span>           <span class="p">,</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">1ve&quot;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(sive)s$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(tive)s$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(hive)s$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1&#39;</span>     <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([^f])ves$&#39;</span>        <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1fe&#39;</span>   <span class="p">),</span>
+    <span class="c"># -ses suffixes.</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(^analy)ses$&#39;</span>      <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1sis&#39;</span>  <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1</span><span class="se">\\</span><span class="s">2sis&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)opses$&#39;</span>         <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1opsis&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)yses$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ysis&#39;</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(h|d|r|o|n|b|cl|p)oses$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ose&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(fruct|gluc|galact|lact|ket|malt|rib|sacchar|cellul)ose$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ose&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(.)oses$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1osis&#39;</span> <span class="p">),</span>
+    <span class="c"># -a</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)([ti])a$&#39;</span>          <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1um&#39;</span>   <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)(n)ews$&#39;</span>           <span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1ews&#39;</span>  <span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;(?i)s$&#39;</span>                <span class="p">,</span> <span class="s">&#39;&#39;</span>        <span class="p">),</span>
+<span class="p">]</span>
+
+<span class="c"># For performance, compile the regular expressions only once:</span>
+<span class="n">singular_rules</span> <span class="o">=</span> <span class="p">[(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">singular_rules</span><span class="p">]</span>
+
+<span class="n">singular_uninflected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span>
+    <span class="s">&quot;bison&quot;</span>      <span class="p">,</span> <span class="s">&quot;debris&quot;</span>   <span class="p">,</span> <span class="s">&quot;headquarters&quot;</span><span class="p">,</span> <span class="s">&quot;pincers&quot;</span>    <span class="p">,</span> <span class="s">&quot;trout&quot;</span>     <span class="p">,</span>
+    <span class="s">&quot;bream&quot;</span>      <span class="p">,</span> <span class="s">&quot;diabetes&quot;</span> <span class="p">,</span> <span class="s">&quot;herpes&quot;</span>      <span class="p">,</span> <span class="s">&quot;pliers&quot;</span>     <span class="p">,</span> <span class="s">&quot;tuna&quot;</span>      <span class="p">,</span>
+    <span class="s">&quot;breeches&quot;</span>   <span class="p">,</span> <span class="s">&quot;djinn&quot;</span>    <span class="p">,</span> <span class="s">&quot;high-jinks&quot;</span>  <span class="p">,</span> <span class="s">&quot;proceedings&quot;</span><span class="p">,</span> <span class="s">&quot;whiting&quot;</span>   <span class="p">,</span>
+    <span class="s">&quot;britches&quot;</span>   <span class="p">,</span> <span class="s">&quot;eland&quot;</span>    <span class="p">,</span> <span class="s">&quot;homework&quot;</span>    <span class="p">,</span> <span class="s">&quot;rabies&quot;</span>     <span class="p">,</span> <span class="s">&quot;wildebeest&quot;</span>
+    <span class="s">&quot;carp&quot;</span>       <span class="p">,</span> <span class="s">&quot;elk&quot;</span>      <span class="p">,</span> <span class="s">&quot;innings&quot;</span>     <span class="p">,</span> <span class="s">&quot;salmon&quot;</span>     <span class="p">,</span> 
+    <span class="s">&quot;chassis&quot;</span>    <span class="p">,</span> <span class="s">&quot;flounder&quot;</span> <span class="p">,</span> <span class="s">&quot;jackanapes&quot;</span>  <span class="p">,</span> <span class="s">&quot;scissors&quot;</span>   <span class="p">,</span> 
+    <span class="s">&quot;christmas&quot;</span>  <span class="p">,</span> <span class="s">&quot;gallows&quot;</span>  <span class="p">,</span> <span class="s">&quot;mackerel&quot;</span>    <span class="p">,</span> <span class="s">&quot;series&quot;</span>     <span class="p">,</span> 
+    <span class="s">&quot;clippers&quot;</span>   <span class="p">,</span> <span class="s">&quot;georgia&quot;</span>  <span class="p">,</span> <span class="s">&quot;measles&quot;</span>     <span class="p">,</span> <span class="s">&quot;shears&quot;</span>     <span class="p">,</span> 
+    <span class="s">&quot;cod&quot;</span>        <span class="p">,</span> <span class="s">&quot;graffiti&quot;</span> <span class="p">,</span> <span class="s">&quot;mews&quot;</span>        <span class="p">,</span> <span class="s">&quot;species&quot;</span>    <span class="p">,</span> 
+    <span class="s">&quot;contretemps&quot;</span><span class="p">,</span>              <span class="s">&quot;mumps&quot;</span>       <span class="p">,</span> <span class="s">&quot;swine&quot;</span>      <span class="p">,</span> 
+    <span class="s">&quot;corps&quot;</span>      <span class="p">,</span>              <span class="s">&quot;news&quot;</span>        <span class="p">,</span> <span class="s">&quot;swiss&quot;</span>      <span class="p">,</span> 
+<span class="p">))</span>
+<span class="n">singular_uncountable</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span>
+    <span class="s">&quot;advice&quot;</span>     <span class="p">,</span> <span class="s">&quot;equipment&quot;</span><span class="p">,</span> <span class="s">&quot;happiness&quot;</span>   <span class="p">,</span> <span class="s">&quot;luggage&quot;</span>    <span class="p">,</span> <span class="s">&quot;news&quot;</span>      <span class="p">,</span> <span class="s">&quot;software&quot;</span>     <span class="p">,</span>
+    <span class="s">&quot;bread&quot;</span>      <span class="p">,</span> <span class="s">&quot;fruit&quot;</span>    <span class="p">,</span> <span class="s">&quot;information&quot;</span> <span class="p">,</span> <span class="s">&quot;mathematics&quot;</span><span class="p">,</span> <span class="s">&quot;progress&quot;</span>  <span class="p">,</span> <span class="s">&quot;understanding&quot;</span><span class="p">,</span>
+    <span class="s">&quot;butter&quot;</span>     <span class="p">,</span> <span class="s">&quot;furniture&quot;</span><span class="p">,</span> <span class="s">&quot;ketchup&quot;</span>     <span class="p">,</span> <span class="s">&quot;mayonnaise&quot;</span> <span class="p">,</span> <span class="s">&quot;research&quot;</span>  <span class="p">,</span> <span class="s">&quot;water&quot;</span>
+    <span class="s">&quot;cheese&quot;</span>     <span class="p">,</span> <span class="s">&quot;garbage&quot;</span>  <span class="p">,</span> <span class="s">&quot;knowledge&quot;</span>   <span class="p">,</span> <span class="s">&quot;meat&quot;</span>       <span class="p">,</span> <span class="s">&quot;rice&quot;</span>      <span class="p">,</span> 
+    <span class="s">&quot;electricity&quot;</span><span class="p">,</span> <span class="s">&quot;gravel&quot;</span>   <span class="p">,</span> <span class="s">&quot;love&quot;</span>        <span class="p">,</span> <span class="s">&quot;mustard&quot;</span>    <span class="p">,</span> <span class="s">&quot;sand&quot;</span>      <span class="p">,</span> 
+<span class="p">))</span>
+<span class="n">singular_ie</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span>
+    <span class="s">&quot;alergie&quot;</span>    <span class="p">,</span> <span class="s">&quot;cutie&quot;</span>    <span class="p">,</span> <span class="s">&quot;hoagie&quot;</span>      <span class="p">,</span> <span class="s">&quot;newbie&quot;</span>     <span class="p">,</span> <span class="s">&quot;softie&quot;</span>    <span class="p">,</span> <span class="s">&quot;veggie&quot;</span>       <span class="p">,</span> 
+    <span class="s">&quot;auntie&quot;</span>     <span class="p">,</span> <span class="s">&quot;doggie&quot;</span>   <span class="p">,</span> <span class="s">&quot;hottie&quot;</span>      <span class="p">,</span> <span class="s">&quot;nightie&quot;</span>    <span class="p">,</span> <span class="s">&quot;sortie&quot;</span>    <span class="p">,</span> <span class="s">&quot;weenie&quot;</span>       <span class="p">,</span> 
+    <span class="s">&quot;beanie&quot;</span>     <span class="p">,</span> <span class="s">&quot;eyrie&quot;</span>    <span class="p">,</span> <span class="s">&quot;indie&quot;</span>       <span class="p">,</span> <span class="s">&quot;oldie&quot;</span>      <span class="p">,</span> <span class="s">&quot;stoolie&quot;</span>   <span class="p">,</span> <span class="s">&quot;yuppie&quot;</span>       <span class="p">,</span> 
+    <span class="s">&quot;birdie&quot;</span>     <span class="p">,</span> <span class="s">&quot;freebie&quot;</span>  <span class="p">,</span> <span class="s">&quot;junkie&quot;</span>      <span class="p">,</span> <span class="s">&quot;^pie&quot;</span>       <span class="p">,</span> <span class="s">&quot;sweetie&quot;</span>   <span class="p">,</span> <span class="s">&quot;zombie&quot;</span>
+    <span class="s">&quot;bogie&quot;</span>      <span class="p">,</span> <span class="s">&quot;goonie&quot;</span>   <span class="p">,</span> <span class="s">&quot;laddie&quot;</span>      <span class="p">,</span> <span class="s">&quot;pixie&quot;</span>      <span class="p">,</span> <span class="s">&quot;techie&quot;</span>    <span class="p">,</span> 
+    <span class="s">&quot;bombie&quot;</span>     <span class="p">,</span> <span class="s">&quot;groupie&quot;</span>  <span class="p">,</span> <span class="s">&quot;laramie&quot;</span>     <span class="p">,</span> <span class="s">&quot;quickie&quot;</span>    <span class="p">,</span> <span class="s">&quot;^tie&quot;</span>      <span class="p">,</span> 
+    <span class="s">&quot;collie&quot;</span>     <span class="p">,</span> <span class="s">&quot;hankie&quot;</span>   <span class="p">,</span> <span class="s">&quot;lingerie&quot;</span>    <span class="p">,</span> <span class="s">&quot;reverie&quot;</span>    <span class="p">,</span> <span class="s">&quot;toughie&quot;</span>   <span class="p">,</span> 
+    <span class="s">&quot;cookie&quot;</span>     <span class="p">,</span> <span class="s">&quot;hippie&quot;</span>   <span class="p">,</span> <span class="s">&quot;meanie&quot;</span>      <span class="p">,</span> <span class="s">&quot;rookie&quot;</span>     <span class="p">,</span> <span class="s">&quot;valkyrie&quot;</span>  <span class="p">,</span> 
+<span class="p">))</span>
+<span class="n">singular_irregular</span> <span class="o">=</span> <span class="p">{</span>
+       <span class="s">&quot;atlantes&quot;</span><span class="p">:</span> <span class="s">&quot;atlas&quot;</span><span class="p">,</span> 
+        <span class="s">&quot;atlases&quot;</span><span class="p">:</span> <span class="s">&quot;atlas&quot;</span><span class="p">,</span> 
+           <span class="s">&quot;axes&quot;</span><span class="p">:</span> <span class="s">&quot;axe&quot;</span><span class="p">,</span>
+         <span class="s">&quot;beeves&quot;</span><span class="p">:</span> <span class="s">&quot;beef&quot;</span><span class="p">,</span> 
+       <span class="s">&quot;brethren&quot;</span><span class="p">:</span> <span class="s">&quot;brother&quot;</span><span class="p">,</span> 
+       <span class="s">&quot;children&quot;</span><span class="p">:</span> <span class="s">&quot;child&quot;</span><span class="p">,</span>
+       <span class="s">&quot;children&quot;</span><span class="p">:</span> <span class="s">&quot;child&quot;</span><span class="p">,</span> 
+        <span class="s">&quot;corpora&quot;</span><span class="p">:</span> <span class="s">&quot;corpus&quot;</span><span class="p">,</span> 
+       <span class="s">&quot;corpuses&quot;</span><span class="p">:</span> <span class="s">&quot;corpus&quot;</span><span class="p">,</span> 
+    <span class="s">&quot;ephemerides&quot;</span><span class="p">:</span> <span class="s">&quot;ephemeris&quot;</span><span class="p">,</span> 
+           <span class="s">&quot;feet&quot;</span><span class="p">:</span> <span class="s">&quot;foot&quot;</span><span class="p">,</span>
+        <span class="s">&quot;ganglia&quot;</span><span class="p">:</span> <span class="s">&quot;ganglion&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;geese&quot;</span><span class="p">:</span> <span class="s">&quot;goose&quot;</span><span class="p">,</span>
+         <span class="s">&quot;genera&quot;</span><span class="p">:</span> <span class="s">&quot;genus&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;genii&quot;</span><span class="p">:</span> <span class="s">&quot;genie&quot;</span><span class="p">,</span> 
+       <span class="s">&quot;graffiti&quot;</span><span class="p">:</span> <span class="s">&quot;graffito&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;helves&quot;</span><span class="p">:</span> <span class="s">&quot;helve&quot;</span><span class="p">,</span>
+           <span class="s">&quot;kine&quot;</span><span class="p">:</span> <span class="s">&quot;cow&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;leaves&quot;</span><span class="p">:</span> <span class="s">&quot;leaf&quot;</span><span class="p">,</span>
+         <span class="s">&quot;loaves&quot;</span><span class="p">:</span> <span class="s">&quot;loaf&quot;</span><span class="p">,</span> 
+            <span class="s">&quot;men&quot;</span><span class="p">:</span> <span class="s">&quot;man&quot;</span><span class="p">,</span>
+      <span class="s">&quot;mongooses&quot;</span><span class="p">:</span> <span class="s">&quot;mongoose&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;monies&quot;</span><span class="p">:</span> <span class="s">&quot;money&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;moves&quot;</span><span class="p">:</span> <span class="s">&quot;move&quot;</span><span class="p">,</span>
+         <span class="s">&quot;mythoi&quot;</span><span class="p">:</span> <span class="s">&quot;mythos&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;numena&quot;</span><span class="p">:</span> <span class="s">&quot;numen&quot;</span><span class="p">,</span> 
+       <span class="s">&quot;occipita&quot;</span><span class="p">:</span> <span class="s">&quot;occiput&quot;</span><span class="p">,</span> 
+      <span class="s">&quot;octopodes&quot;</span><span class="p">:</span> <span class="s">&quot;octopus&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;opera&quot;</span><span class="p">:</span> <span class="s">&quot;opus&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;opuses&quot;</span><span class="p">:</span> <span class="s">&quot;opus&quot;</span><span class="p">,</span> 
+            <span class="s">&quot;our&quot;</span><span class="p">:</span> <span class="s">&quot;my&quot;</span><span class="p">,</span>
+           <span class="s">&quot;oxen&quot;</span><span class="p">:</span> <span class="s">&quot;ox&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;penes&quot;</span><span class="p">:</span> <span class="s">&quot;penis&quot;</span><span class="p">,</span> 
+        <span class="s">&quot;penises&quot;</span><span class="p">:</span> <span class="s">&quot;penis&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;people&quot;</span><span class="p">:</span> <span class="s">&quot;person&quot;</span><span class="p">,</span>
+          <span class="s">&quot;sexes&quot;</span><span class="p">:</span> <span class="s">&quot;sex&quot;</span><span class="p">,</span>
+    <span class="s">&quot;soliloquies&quot;</span><span class="p">:</span> <span class="s">&quot;soliloquy&quot;</span><span class="p">,</span> 
+          <span class="s">&quot;teeth&quot;</span><span class="p">:</span> <span class="s">&quot;tooth&quot;</span><span class="p">,</span>
+         <span class="s">&quot;testes&quot;</span><span class="p">:</span> <span class="s">&quot;testis&quot;</span><span class="p">,</span> 
+        <span class="s">&quot;trilbys&quot;</span><span class="p">:</span> <span class="s">&quot;trilby&quot;</span><span class="p">,</span> 
+         <span class="s">&quot;turves&quot;</span><span class="p">:</span> <span class="s">&quot;turf&quot;</span><span class="p">,</span> 
+            <span class="s">&quot;zoa&quot;</span><span class="p">:</span> <span class="s">&quot;zoon&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="singularize"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.singularize">[docs]</a><span class="k">def</span> <span class="nf">singularize</span><span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">NOUN</span><span class="p">,</span> <span class="n">custom</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the singular of a given word.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">custom</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">custom</span><span class="p">[</span><span class="n">word</span><span class="p">]</span>
+    <span class="c"># Recurse compound words (e.g. mothers-in-law). </span>
+    <span class="k">if</span> <span class="s">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">word</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">plural_prepositions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">singularize</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">,</span> <span class="n">custom</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="c"># dogs&#39; =&gt; dog&#39;s</span>
+    <span class="k">if</span> <span class="n">word</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;&#39;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">singularize</span><span class="p">(</span><span class="n">word</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s">&quot;&#39;s&quot;</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">singular_uninflected</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">word</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">singular_uncountable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">word</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">singular_ie</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="s">&quot;s&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">w</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">singular_irregular</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&#39;(?i)&#39;</span><span class="o">+</span><span class="n">x</span><span class="o">+</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="n">singular_irregular</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">word</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">suffix</span><span class="p">,</span> <span class="n">inflection</span> <span class="ow">in</span> <span class="n">singular_rules</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">suffix</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">m</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span> <span class="ow">or</span> <span class="p">[]</span> 
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">g</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">inflection</span> <span class="o">=</span> <span class="n">inflection</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">suffix</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">inflection</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">word</span>
+
+<span class="c">#### COMPARATIVE &amp; SUPERLATIVE #####################################################################</span>
+</div>
+<span class="n">VOWELS</span> <span class="o">=</span> <span class="s">&quot;aeiouy&quot;</span>
+
+<span class="n">grade_irregular</span> <span class="o">=</span> <span class="p">{</span>
+       <span class="s">&quot;bad&quot;</span><span class="p">:</span> <span class="p">(</span>  <span class="s">&quot;worse&quot;</span><span class="p">,</span> <span class="s">&quot;worst&quot;</span><span class="p">),</span>
+       <span class="s">&quot;far&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s">&quot;further&quot;</span><span class="p">,</span> <span class="s">&quot;farthest&quot;</span><span class="p">),</span>
+      <span class="s">&quot;good&quot;</span><span class="p">:</span> <span class="p">(</span> <span class="s">&quot;better&quot;</span><span class="p">,</span> <span class="s">&quot;best&quot;</span><span class="p">),</span> 
+      <span class="s">&quot;hind&quot;</span><span class="p">:</span> <span class="p">(</span> <span class="s">&quot;hinder&quot;</span><span class="p">,</span> <span class="s">&quot;hindmost&quot;</span><span class="p">),</span>
+       <span class="s">&quot;ill&quot;</span><span class="p">:</span> <span class="p">(</span>  <span class="s">&quot;worse&quot;</span><span class="p">,</span> <span class="s">&quot;worst&quot;</span><span class="p">),</span>
+      <span class="s">&quot;less&quot;</span><span class="p">:</span> <span class="p">(</span> <span class="s">&quot;lesser&quot;</span><span class="p">,</span> <span class="s">&quot;least&quot;</span><span class="p">),</span>
+    <span class="s">&quot;little&quot;</span><span class="p">:</span> <span class="p">(</span>   <span class="s">&quot;less&quot;</span><span class="p">,</span> <span class="s">&quot;least&quot;</span><span class="p">),</span>
+      <span class="s">&quot;many&quot;</span><span class="p">:</span> <span class="p">(</span>   <span class="s">&quot;more&quot;</span><span class="p">,</span> <span class="s">&quot;most&quot;</span><span class="p">),</span>
+      <span class="s">&quot;much&quot;</span><span class="p">:</span> <span class="p">(</span>   <span class="s">&quot;more&quot;</span><span class="p">,</span> <span class="s">&quot;most&quot;</span><span class="p">),</span>
+      <span class="s">&quot;well&quot;</span><span class="p">:</span> <span class="p">(</span> <span class="s">&quot;better&quot;</span><span class="p">,</span> <span class="s">&quot;best&quot;</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">grade_uninflected</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;giant&quot;</span><span class="p">,</span> <span class="s">&quot;glib&quot;</span><span class="p">,</span> <span class="s">&quot;hurt&quot;</span><span class="p">,</span> <span class="s">&quot;known&quot;</span><span class="p">,</span> <span class="s">&quot;madly&quot;</span><span class="p">]</span>
+
+<span class="n">COMPARATIVE</span> <span class="o">=</span> <span class="s">&quot;er&quot;</span>
+<span class="n">SUPERLATIVE</span> <span class="o">=</span> <span class="s">&quot;est&quot;</span>
+
+<span class="k">def</span> <span class="nf">_count_syllables</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the estimated number of syllables in the word by counting vowel-groups.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># True if the previous character was a vowel.</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">word</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;e&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">word</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">word</span><span class="p">:</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">VOWELS</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">p</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">n</span>
+
+<div class="viewcode-block" id="grade"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.grade">[docs]</a><span class="k">def</span> <span class="nf">grade</span><span class="p">(</span><span class="n">adjective</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="n">COMPARATIVE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the comparative or superlative form of the given adjective.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_count_syllables</span><span class="p">(</span><span class="n">adjective</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="n">adjective</span> <span class="ow">in</span> <span class="n">grade_irregular</span><span class="p">:</span>
+        <span class="c"># A number of adjectives inflect irregularly.</span>
+        <span class="k">return</span> <span class="n">grade_irregular</span><span class="p">[</span><span class="n">adjective</span><span class="p">][</span><span class="n">suffix</span> <span class="o">!=</span> <span class="n">COMPARATIVE</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">adjective</span> <span class="ow">in</span> <span class="n">grade_uninflected</span><span class="p">:</span>
+        <span class="c"># A number of adjectives don&#39;t inflect at all.</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">suffix</span> <span class="o">==</span> <span class="n">COMPARATIVE</span> <span class="ow">and</span> <span class="s">&quot;more&quot;</span> <span class="ow">or</span> <span class="s">&quot;most&quot;</span><span class="p">,</span> <span class="n">adjective</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">adjective</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;e&quot;</span><span class="p">):</span>
+        <span class="c"># With one syllable and ending with an e: larger, wiser.</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="n">suffix</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s">&quot;e&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">adjective</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> \
+     <span class="ow">and</span> <span class="n">adjective</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VOWELS</span> <span class="ow">and</span> <span class="n">adjective</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">VOWELS</span> <span class="ow">and</span> <span class="n">adjective</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VOWELS</span><span class="p">:</span>
+        <span class="c"># With one syllable ending with consonant-vowel-consonant: bigger, thinner.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">adjective</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s">&quot;w&quot;</span><span class="p">)):</span> <span class="c"># Exceptions: lower, newer.</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="n">adjective</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">suffix</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c"># With one syllable ending with more consonants or vowels: briefer.</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">adjective</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">):</span>
+        <span class="c"># With two syllables ending with a y: funnier, hairier.</span>
+        <span class="n">adjective</span> <span class="o">=</span> <span class="n">adjective</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;i&quot;</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">adjective</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;er&quot;</span><span class="p">,</span> <span class="s">&quot;le&quot;</span><span class="p">,</span> <span class="s">&quot;ow&quot;</span><span class="p">):</span>
+        <span class="c"># With two syllables and specific suffixes: gentler, narrower.</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># With three or more syllables: more generous, more important.</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">suffix</span><span class="o">==</span><span class="n">COMPARATIVE</span> <span class="ow">and</span> <span class="s">&quot;more&quot;</span> <span class="ow">or</span> <span class="s">&quot;most&quot;</span><span class="p">,</span> <span class="n">adjective</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">adjective</span> <span class="o">+</span> <span class="n">suffix</span>
+</div>
+<div class="viewcode-block" id="comparative"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.comparative">[docs]</a><span class="k">def</span> <span class="nf">comparative</span><span class="p">(</span><span class="n">adjective</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">grade</span><span class="p">(</span><span class="n">adjective</span><span class="p">,</span> <span class="n">COMPARATIVE</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="superlative"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.superlative">[docs]</a><span class="k">def</span> <span class="nf">superlative</span><span class="p">(</span><span class="n">adjective</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">grade</span><span class="p">(</span><span class="n">adjective</span><span class="p">,</span> <span class="n">SUPERLATIVE</span><span class="p">)</span>
+
+<span class="c">#### ATTRIBUTIVE &amp; PREDICATIVE #####################################################################</span>
+</div>
+<div class="viewcode-block" id="attributive"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.attributive">[docs]</a><span class="k">def</span> <span class="nf">attributive</span><span class="p">(</span><span class="n">adjective</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">adjective</span>
+</div>
+<div class="viewcode-block" id="predicative"><a class="viewcode-back" href="../../corpkit.html#corpkit.inflect.predicative">[docs]</a><span class="k">def</span> <span class="nf">predicative</span><span class="p">(</span><span class="n">adjective</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">adjective</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

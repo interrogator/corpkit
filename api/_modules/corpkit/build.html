@@ -1,0 +1,1221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.build &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.build</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/python</span>
+
+<div class="viewcode-block" id="dictmaker"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.dictmaker">[docs]</a><span class="k">def</span> <span class="nf">dictmaker</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> 
+              <span class="n">dictname</span><span class="p">,</span>
+              <span class="n">query</span> <span class="o">=</span> <span class="s">&#39;any&#39;</span><span class="p">,</span>
+              <span class="n">dictpath</span> <span class="o">=</span> <span class="s">&#39;data/dictionaries&#39;</span><span class="p">,</span>
+              <span class="n">lemmatise</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+              <span class="n">just_content_words</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+              <span class="n">use_dependencies</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;makes a pickle wordlist named dictname in dictpath&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">nltk</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">from</span> <span class="nn">StringIO</span> <span class="kn">import</span> <span class="n">StringIO</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+    <span class="kn">from</span> <span class="nn">textprogressbar</span> <span class="kn">import</span> <span class="n">TextProgressBar</span>
+    <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">tregex_engine</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">get_ipython</span><span class="p">()</span><span class="o">.</span><span class="n">getoutput</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+        <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span> <span class="o">+</span> <span class="s">&#39;-lemmatised&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dictname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+        <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+
+    <span class="c"># allow direct passing of dirs</span>
+    <span class="n">path_is_list</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">one_big_corpus</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">sorted_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">d</span><span class="p">))]</span>
+    <span class="c"># if no subcorpora, just do the dir passed in</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">one_big_corpus</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">sorted_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">path_is_list</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">sorted_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">sorted_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sorted_dirs</span><span class="p">]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sorted_dirs</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dictpath</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dictpath</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Error making &quot;</span> <span class="o">+</span> <span class="n">dictpath</span> <span class="o">+</span> <span class="s">&quot;/ directory.&quot;</span>
+    <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">dictname</span><span class="p">)):</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> already exists in </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&#39;</span> \
+               <span class="s">&#39;          You have the following options:</span><span class="se">\n\n</span><span class="s">&#39;</span> \
+               <span class="s">&#39;              a) save with a new name</span><span class="se">\n</span><span class="s">&#39;</span> \
+               <span class="s">&#39;              b) delete </span><span class="si">%s</span><span class="se">\n</span><span class="s">&#39;</span> \
+               <span class="s">&#39;              c) exit</span><span class="se">\n\n</span><span class="s">Your selection: &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dictname</span><span class="p">,</span> <span class="n">dictpath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">dictname</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="s">&#39;a&#39;</span> <span class="ow">in</span> <span class="n">selection</span><span class="p">:</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">New save name: &#39;</span><span class="p">)</span>
+            <span class="n">dictname</span> <span class="o">=</span> <span class="n">sel</span>
+            <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+                <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-lemmatised.p&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span> <span class="o">+</span> <span class="s">&#39;-lemmatised&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dictname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.p&#39;</span><span class="p">):</span>
+                <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span> <span class="o">+</span> <span class="s">&#39;.p&#39;</span>
+        <span class="k">elif</span> <span class="s">&#39;b&#39;</span> <span class="ow">in</span> <span class="n">selection</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">dictname</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="s">&#39;c&#39;</span> <span class="ow">in</span> <span class="n">selection</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;&#39;</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">as_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&#39;          Choice &quot;</span><span class="si">%s</span><span class="s">&quot; not recognised.&#39;</span> <span class="o">%</span> <span class="n">selection</span>
+
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Extracting words from files ... </span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">time</span>
+
+    <span class="c"># all this just to get a list of files and make a better progress bar</span>
+    <span class="k">if</span> <span class="n">use_dependencies</span><span class="p">:</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sorted_dirs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">one_big_corpus</span><span class="p">:</span>
+                <span class="n">subcorpus</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subcorpus</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="k">if</span> <span class="n">use_dependencies</span><span class="p">:</span>
+                <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">subcorpus</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">subcorpus</span><span class="p">)]</span>
+            <span class="n">counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+        <span class="n">num_files</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">TextProgressBar</span><span class="p">(</span><span class="n">num_files</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">TextProgressBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">tokener</span><span class="p">(</span><span class="n">xmldata</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">corpkit</span>
+        <span class="sd">&quot;&quot;&quot;print word, using good lemmatisation&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+        <span class="kn">import</span> <span class="nn">gc</span>
+        <span class="n">open_classes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;N&#39;</span><span class="p">,</span> <span class="s">&#39;V&#39;</span><span class="p">,</span> <span class="s">&#39;R&#39;</span><span class="p">,</span> <span class="s">&#39;J&#39;</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">just_good_deps</span> <span class="o">=</span> <span class="n">SoupStrainer</span><span class="p">(</span><span class="s">&#39;tokens&#39;</span><span class="p">)</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">xmldata</span><span class="p">,</span> <span class="n">parse_only</span><span class="o">=</span><span class="n">just_good_deps</span><span class="p">)</span>   
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;token&#39;</span><span class="p">):</span>
+            <span class="n">word</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">word</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;.*&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+                    <span class="n">word</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">lemma</span><span class="o">.</span><span class="n">text</span>
+                    <span class="k">if</span> <span class="n">just_content_words</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">open_classes</span><span class="p">:</span>
+                            <span class="k">continue</span>        
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="c"># attempt to stop memory problems. </span>
+        <span class="c"># not sure if this helps, though:</span>
+        <span class="n">soup</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span>
+    
+    <span class="c"># translate &#39;any&#39; query</span>
+    <span class="k">if</span> <span class="n">query</span> <span class="o">==</span> <span class="s">&#39;any&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;__ &lt;# (__ !&lt; __)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;__ !&lt; __&#39;</span>
+    
+    <span class="k">if</span> <span class="n">lemmatise</span><span class="p">:</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-o&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-t&#39;</span><span class="p">,</span> <span class="s">&#39;-o&#39;</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">use_dependencies</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span><span class="p">,</span> <span class="n">SoupStrainer</span>
+        <span class="k">if</span> <span class="n">query</span> <span class="o">==</span> <span class="s">&#39;any&#39;</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s">r&#39;.*&#39;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+
+    <span class="n">allwords</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_dependencies</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path_is_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">subcorp</span> <span class="o">=</span> <span class="n">d</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subcorp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subcorp</span> <span class="o">=</span> <span class="n">d</span>
+
+        <span class="c"># check query first time through    </span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_dependencies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">trees_found</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">corpus</span> <span class="o">=</span> <span class="n">subcorp</span><span class="p">,</span> <span class="n">check_for_trees</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">trees_found</span><span class="p">:</span>
+                    <span class="n">lemmatise</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="n">dictname</span> <span class="o">=</span> <span class="n">dictname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-lemmatised&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">trees_found</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">tregex_engine</span><span class="p">(</span><span class="n">corpus</span> <span class="o">=</span> <span class="n">subcorp</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">options</span><span class="p">,</span> <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="p">,</span> 
+                                        <span class="n">lemmatise</span> <span class="o">=</span> <span class="n">lemmatise</span><span class="p">,</span>
+                                        <span class="n">just_content_words</span> <span class="o">=</span> <span class="n">just_content_words</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                    <span class="n">allwords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  
+
+        <span class="k">elif</span> <span class="n">use_dependencies</span><span class="p">:</span>
+            <span class="n">regex_nonword_filter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;[A-Za-z]&quot;</span><span class="p">)</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subcorp</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">subcorp</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_files</span><span class="p">))</span>
+                <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">result_from_a_file</span> <span class="o">=</span> <span class="n">tokener</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">result_from_a_file</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex_nonword_filter</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+                        <span class="n">allwords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_dependencies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">trees_found</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">subcorp</span><span class="p">):</span>
+                    <span class="n">raw</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subcorp</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="s">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+                    <span class="n">sent_tokenizer</span><span class="o">=</span><span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">&#39;tokenizers/punkt/english.pickle&#39;</span><span class="p">)</span>
+                    <span class="n">sents</span> <span class="o">=</span> <span class="n">sent_tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+                    <span class="n">tokenized_sents</span> <span class="o">=</span> <span class="p">[</span><span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sents</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">tokenized_sents</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">sent</span><span class="p">:</span>
+                            <span class="n">allwords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> 
+
+    <span class="c">#100%</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_dirs</span><span class="p">))</span>
+    
+    <span class="c"># make a dict</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">allwords</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dictpath</span><span class="p">,</span> <span class="n">dictname</span><span class="p">),</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dictionary</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">time</span> <span class="o">+</span> <span class="s">&#39;: Done! &#39;</span> <span class="o">+</span> <span class="n">dictname</span> <span class="o">+</span> <span class="s">&#39; created in &#39;</span> <span class="o">+</span> <span class="n">dictpath</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span>
+</div>
+<div class="viewcode-block" id="get_urls"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_urls">[docs]</a><span class="k">def</span> <span class="nf">get_urls</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">criteria</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">remove</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;Get a list of all urls within an html document&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+    <span class="n">configure_ipython_beautifulsoup</span><span class="p">(</span><span class="n">show_html</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">show_css</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">show_js</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">p</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">criteria</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">re</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">criteria</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">):</span>
+        <span class="n">a_url</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;href&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">a_url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">a_url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">a_url</span> <span class="o">=</span> <span class="n">url</span> <span class="o">+</span> <span class="n">a_url</span>
+        <span class="k">if</span> <span class="n">criteria</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">a_url</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">remove</span><span class="p">:</span>
+                    <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_url</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">remove</span><span class="p">:</span>
+                    <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_url</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_url</span><span class="p">)</span>
+    <span class="n">urls</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">filtered_urls</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">urls</span><span class="p">)</span>
+    <span class="n">unique_urls</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">filtered_urls</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unique_urls</span>
+
+</div>
+<div class="viewcode-block" id="downloader"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.downloader">[docs]</a><span class="k">def</span> <span class="nf">downloader</span><span class="p">(</span><span class="n">url_list</span><span class="p">,</span> <span class="n">new_path</span> <span class="o">=</span> <span class="s">&#39;html&#39;</span><span class="p">,</span> <span class="n">wait</span> <span class="o">=</span> <span class="mi">5</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;download a bunch of urls and store in a local folder&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">urllib</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">from</span> <span class="nn">textprogressbar</span> <span class="kn">import</span> <span class="n">TextProgressBar</span>
+    <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Attempting to download </span><span class="si">%d</span><span class="s"> URLs with </span><span class="si">%d</span><span class="s"> seconds wait-time ... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">url_list</span><span class="p">),</span> <span class="n">wait</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">TextProgressBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">urls</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">new_path</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">url</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">url_list</span><span class="p">):</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">new_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_path</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+        <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+        <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">url_list</span><span class="p">))</span>
+    <span class="n">num_downloaded</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+    <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n\n</span><span class="si">%s</span><span class="s">: Done! </span><span class="si">%d</span><span class="s"> files downloaded.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">num_downloaded</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">paths</span>
+</div>
+<div class="viewcode-block" id="simple_text_extractor"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.simple_text_extractor">[docs]</a><span class="k">def</span> <span class="nf">simple_text_extractor</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">stopwords</span> <span class="o">=</span> <span class="s">&#39;English&#39;</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;extract text from html/xml files using justext&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">requests</span>
+    <span class="kn">import</span> <span class="nn">justext</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">copy</span>
+    <span class="c"># if on hard disk:</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">html</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">html_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">html</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">html_files</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">html</span> <span class="ow">in</span> <span class="n">html_files</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">html</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+            <span class="n">raw_html_text</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="c"># if it&#39;s a web address</span>
+        <span class="k">elif</span> <span class="n">html</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;http&#39;</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+            <span class="n">raw_html_text</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+        <span class="c"># if it&#39;s already html text:</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw_html_text</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="n">justext</span><span class="o">.</span><span class="n">justext</span><span class="p">(</span><span class="n">raw_html_text</span><span class="p">,</span> <span class="n">justext</span><span class="o">.</span><span class="n">get_stoplist</span><span class="p">(</span><span class="n">stopwords</span><span class="p">))</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">paragraph</span> <span class="ow">in</span> <span class="n">paragraphs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">paragraph</span><span class="o">.</span><span class="n">is_boilerplate</span><span class="p">:</span>
+                <span class="n">text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">paragraph</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+        <span class="n">tup</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span>
+
+
+
+</div>
+<div class="viewcode-block" id="practice_run"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.practice_run">[docs]</a><span class="k">def</span> <span class="nf">practice_run</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">warnings</span>
+    <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">path_to_html_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">)</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">get_text</span><span class="p">(</span><span class="n">soup</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">function_defined</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="kn">from</span> <span class="nn">build</span> <span class="kn">import</span> <span class="n">simple_text_extractor</span>
+        <span class="n">simple_text_extractor</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">get_metadata</span><span class="p">(</span><span class="n">soup</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;get_metadata function not defined. Using filename as metadata.&#39;</span><span class="p">)</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path_to_html_file</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;text: </span><span class="si">%s</span><span class="se">\n\n</span><span class="s">metadata: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="souper"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.souper">[docs]</a><span class="k">def</span> <span class="nf">souper</span><span class="p">(</span><span class="n">corpus_path</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;The aim is to make a tuple of (text, metadata)&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">corpus_path</span><span class="p">,</span> <span class="n">topdown</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="correctspelling"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.correctspelling">[docs]</a><span class="k">def</span> <span class="nf">correctspelling</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">newpath</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;Feed this function an unstructured corpus and get a version with corrected spelling&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">enchant</span>
+    <span class="kn">import</span> <span class="nn">codecs</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">subdirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="n">subdirs</span><span class="p">:</span>
+        <span class="n">txtFiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">subdir</span><span class="p">))</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;.txt&quot;</span><span class="p">)]</span>
+        <span class="k">print</span> <span class="s">&#39;Doing &#39;</span> <span class="o">+</span> <span class="n">subdir</span> <span class="o">+</span> <span class="s">&#39; ...&#39;</span>
+        <span class="k">for</span> <span class="n">txtFile</span> <span class="ow">in</span> <span class="n">txtFiles</span><span class="p">:</span> 
+            <span class="n">d</span> <span class="o">=</span> <span class="n">enchant</span><span class="o">.</span><span class="n">Dict</span><span class="p">(</span><span class="s">&quot;en_UK&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">subdir</span><span class="p">,</span><span class="n">txtFile</span><span class="p">),</span> <span class="s">&quot;r&quot;</span><span class="p">,</span> <span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Error reading the file, right filepath?&quot;</span>
+                <span class="k">return</span>
+            <span class="n">textdata</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">textdata</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">textdata</span><span class="p">,</span> <span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">mispelled</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># empty list. Gonna put mispelled words in here</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="n">textdata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+                <span class="c"># if spell check failed and the word is also not in</span>
+                <span class="c"># our mis-spelled list already, then add the word</span>
+                <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span> <span class="ow">and</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mispelled</span><span class="p">:</span>
+                    <span class="n">mispelled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+            <span class="c"># print mispelled</span>
+            <span class="k">for</span> <span class="n">mspellword</span> <span class="ow">in</span> <span class="n">mispelled</span><span class="p">:</span>
+                <span class="n">mspellword_withboundaries</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\b</span><span class="s">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mspellword</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\b</span><span class="s">&#39;</span>
+                <span class="c">#get suggestions</span>
+                <span class="n">suggestions</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">suggest</span><span class="p">(</span><span class="n">mspellword</span><span class="p">)</span>
+                <span class="c">#make sure we actually got some</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">suggestions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c"># pick the first one</span>
+                    <span class="n">picksuggestion</span><span class="o">=</span><span class="n">suggestions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">picksuggestion_withboundaries</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\b</span><span class="s">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">picksuggestion</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\b</span><span class="s">&#39;</span>
+
+                <span class="n">textdata</span> <span class="o">=</span> <span class="n">textdata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">mspellword_withboundaries</span><span class="p">,</span><span class="n">picksuggestion_withboundaries</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">newpath</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>
+                <span class="n">fo</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">newpath</span><span class="p">,</span> <span class="n">txtFile</span><span class="p">),</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Error&quot;</span>
+                <span class="k">return</span> 
+            <span class="n">fo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">textdata</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;UTF-8&quot;</span><span class="p">))</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="structure_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.structure_corpus">[docs]</a><span class="k">def</span> <span class="nf">structure_corpus</span><span class="p">(</span><span class="n">path_to_files</span><span class="p">,</span> <span class="n">new_corpus_name</span> <span class="o">=</span> <span class="s">&#39;structured_corpus&#39;</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;structure a corpus in some kind of sequence&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path_to_files</span><span class="p">)</span>
+    <span class="n">new_corpus_name</span> <span class="o">=</span> <span class="s">&#39;structured_&#39;</span> <span class="o">+</span> <span class="n">base</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path_to_files</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Directory not found: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">path_to_files</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_corpus_name</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">new_corpus_name</span><span class="p">)</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path_to_files</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_files</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        
+        <span class="n">subcorpus_name</span> <span class="o">=</span> <span class="s">&#39;what goes here?&#39;</span>
+        <span class="n">subcorpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_name</span><span class="p">,</span> <span class="n">subcorpus_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">subcorpus_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">subcorpus_path</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">subcorpus_path</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Done!&#39;</span>
+</div>
+<div class="viewcode-block" id="download_large_file"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.download_large_file">[docs]</a><span class="k">def</span> <span class="nf">download_large_file</span><span class="p">(</span><span class="n">proj_path</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">actually_download</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;download something to proj_path&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">urllib2</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">from</span> <span class="nn">textprogressbar</span> <span class="kn">import</span> <span class="n">TextProgressBar</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="n">file_name</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;stanford&#39;</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+        <span class="n">downloaded_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="s">&#39;corenlp&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s">&#39;stanford-corenlp-full-2015-04-20.zip&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">):</span>
+                    <span class="kn">import</span> <span class="nn">zipfile</span>
+                    <span class="n">the_zip_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">fullfile</span><span class="p">)</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">the_zip_file</span><span class="o">.</span><span class="n">testzip</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">downloaded_dir</span><span class="p">,</span> <span class="n">fullfile</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fullfile</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">downloaded_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_path</span><span class="p">,</span> <span class="s">&#39;temp&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="n">fullfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">downloaded_dir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">actually_download</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">requests</span>
+            <span class="c"># NOTE the stream=True parameter</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">file_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;content-length&#39;</span><span class="p">])</span>
+            <span class="n">file_size_dl</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">block_sz</span> <span class="o">=</span> <span class="mi">8192</span>
+            <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Downloading ... &#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fullfile</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="n">block_sz</span><span class="p">):</span> 
+                    <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span> <span class="c"># filter out keep-alive new chunks</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                        <span class="n">file_size_dl</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                        <span class="c">#print file_size_dl * 100.0 / file_size</span>
+                        <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">file_size_dl</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_size</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">file_size_dl</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                            <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">traceback</span>
+            <span class="k">print</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Downloaded failed&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>  
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>    
+            <span class="n">p</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">file_size</span><span class="p">))</span>
+        <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Downloaded successully.&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">downloaded_dir</span><span class="p">,</span> <span class="n">fullfile</span>
+</div>
+<div class="viewcode-block" id="extract_cnlp"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.extract_cnlp">[docs]</a><span class="k">def</span> <span class="nf">extract_cnlp</span><span class="p">(</span><span class="n">fullfilepath</span><span class="p">,</span> <span class="n">corenlppath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="sd">&quot;&quot;&quot;extract corenlp&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">zipfile</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Extracting CoreNLP files ...&#39;</span> <span class="o">%</span> <span class="n">time</span>
+    <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">corenlppath</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="p">)</span>
+        <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="s">&#39;corenlp&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">fullfilepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+        <span class="n">zf</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">)</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: CoreNLP extracted. &#39;</span> <span class="o">%</span> <span class="n">time</span>
+</div>
+<div class="viewcode-block" id="get_corpus_filepaths"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_corpus_filepaths">[docs]</a><span class="k">def</span> <span class="nf">get_corpus_filepaths</span><span class="p">(</span><span class="n">projpath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">corpuspath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">fnmatch</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="s">&#39;*.txt&#39;</span><span class="p">):</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="n">matchstring</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+
+    <span class="c"># maybe not good:</span>
+    <span class="k">if</span> <span class="n">projpath</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">projpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">corpuspath</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)))</span>
+
+    <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">projpath</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;corpus-filelist.txt&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">),</span> <span class="s">&#39;data&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">matchstring</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fp</span>
+</div>
+<div class="viewcode-block" id="check_jdk"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.check_jdk">[docs]</a><span class="k">def</span> <span class="nf">check_jdk</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">PIPE</span><span class="p">,</span> <span class="n">STDOUT</span><span class="p">,</span> <span class="n">Popen</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="s">&quot;java&quot;</span><span class="p">,</span> <span class="s">&quot;-version&quot;</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s">&#39;java version &quot;1.8&#39;</span> <span class="ow">in</span> <span class="n">stderr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c">#print &quot;Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html&quot;</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="make_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.make_corpus">[docs]</a><span class="k">def</span> <span class="nf">make_corpus</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span>
+                <span class="n">project_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="n">parse</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                <span class="n">tokenise</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">corenlppath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">operations</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">speaker_segmentation</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a parsed version of unparsed_corpus using CoreNLP or NLTK&#39;s tokeniser</span>
+
+<span class="sd">    :param unparsed_corpus_path: path to corpus containing text files, </span>
+<span class="sd">                                 or subdirs containing text files</span>
+<span class="sd">    :type unparsed_corpus_path: str</span>
+
+<span class="sd">    :param project_path: path to corpkit project</span>
+<span class="sd">    :type project_path: str</span>
+
+<span class="sd">    :param parse: Do parsing?</span>
+<span class="sd">    :type parse: bool</span>
+
+<span class="sd">    :param tokenise: Do tokenising?</span>
+<span class="sd">    :type tokenise: bool</span>
+<span class="sd">    </span>
+<span class="sd">    :param corenlppath: folder containing corenlp jar files</span>
+<span class="sd">    :type corenlppath: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param nltk_data_path: path to tokeniser if tokenising</span>
+<span class="sd">    :type nltk_data_path: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param operations: which kinds of annotations to do</span>
+<span class="sd">    :type operations: str</span>
+<span class="sd">    </span>
+<span class="sd">    :param speaker_segmentation: add speaker name to parser output if your corpus is script-like:</span>
+<span class="sd">    :type speaker_segmentation: bool</span>
+
+<span class="sd">    :returns: list of paths to created corpora</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">import</span> <span class="nn">os</span>    
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="p">(</span><span class="n">get_corpus_filepaths</span><span class="p">,</span> 
+                               <span class="n">check_jdk</span><span class="p">,</span> 
+                               <span class="n">add_ids_to_xml</span><span class="p">,</span> 
+                               <span class="n">rename_all_files</span><span class="p">,</span>
+                               <span class="n">make_no_id_corpus</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">project_path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">project_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+    <span class="c"># raise error if no tokeniser</span>
+    <span class="k">if</span> <span class="n">tokenise</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">nltk</span>
+        <span class="k">if</span> <span class="n">nltk_data_path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nltk_data_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nltk_data_path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">word_tokenize</span> <span class="k">as</span> <span class="n">tokenise</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Tokeniser not found. Pass in its path as keyword arg &quot;nltk_data_path = &lt;path&gt;&quot;.</span><span class="se">\n</span><span class="s">&#39;</span>
+            <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&quot;darwin&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_jdk</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&quot;Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html&quot;</span>
+
+    <span class="c"># make absolute path to corpus</span>
+    <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">)</span>
+
+    <span class="c"># move it into project</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Copying files to project ...&#39;</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">)))</span>
+    <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">unparsed_corpus_path</span><span class="p">:</span>
+        <span class="n">unparsed_corpus_path</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">),</span> <span class="s">&#39;data&#39;</span><span class="p">)</span>
+
+    <span class="n">outpaths</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">parse</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">speaker_segmentation</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Processing speaker IDs ...&#39;</span>
+            <span class="n">make_no_id_corpus</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">,</span> <span class="n">unparsed_corpus_path</span> <span class="o">+</span> <span class="s">&#39;-stripped&#39;</span><span class="p">)</span>
+            <span class="n">to_parse</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span> <span class="o">+</span> <span class="s">&#39;-stripped&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">to_parse</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Making list of files ... &#39;</span>
+    
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">get_corpus_filepaths</span><span class="p">(</span><span class="n">projpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">),</span> 
+                                <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">to_parse</span><span class="p">)</span>
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">to_parse</span><span class="p">)</span>
+
+        <span class="n">new_parsed_corpus_path</span> <span class="o">=</span> <span class="n">parse_corpus</span><span class="p">(</span><span class="n">proj_path</span> <span class="o">=</span> <span class="n">project_path</span><span class="p">,</span> 
+                                   <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">to_parse</span><span class="p">,</span>
+                                   <span class="n">filelist</span> <span class="o">=</span> <span class="n">filelist</span><span class="p">,</span>
+                                   <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">corenlppath</span><span class="p">,</span>
+                                   <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="n">nltk_data_path</span><span class="p">,</span>
+                                   <span class="n">operations</span> <span class="o">=</span> <span class="n">operations</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_parsed_corpus_path</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">return</span> 
+        
+        <span class="n">move_parsed_files</span><span class="p">(</span><span class="n">project_path</span><span class="p">,</span> <span class="n">to_parse</span><span class="p">,</span> <span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">speaker_segmentation</span><span class="p">:</span>
+            <span class="n">add_ids_to_xml</span><span class="p">(</span><span class="n">new_parsed_corpus_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">get_corpus_filepaths</span><span class="p">(</span><span class="n">projpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">unparsed_corpus_path</span><span class="p">),</span> 
+                                <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tokenise</span><span class="p">:</span>
+        <span class="n">new_tokenised_corpus_path</span> <span class="o">=</span> <span class="n">parse_corpus</span><span class="p">(</span><span class="n">proj_path</span> <span class="o">=</span> <span class="n">project_path</span><span class="p">,</span> 
+                                   <span class="n">corpuspath</span> <span class="o">=</span> <span class="n">unparsed_corpus_path</span><span class="p">,</span>
+                                   <span class="n">filelist</span> <span class="o">=</span> <span class="n">filelist</span><span class="p">,</span>
+                                   <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="n">nltk_data_path</span><span class="p">,</span>
+                                   <span class="n">operations</span> <span class="o">=</span> <span class="n">operations</span><span class="p">,</span>
+                                   <span class="n">only_tokenise</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_tokenised_corpus_path</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">return</span>   
+        <span class="n">outpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_tokenised_corpus_path</span><span class="p">)</span>
+
+    <span class="n">rename_all_files</span><span class="p">(</span><span class="n">outpaths</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Done! Created </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outpaths</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outpaths</span>
+
+</div>
+<div class="viewcode-block" id="parse_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.parse_corpus">[docs]</a><span class="k">def</span> <span class="nf">parse_corpus</span><span class="p">(</span><span class="n">proj_path</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">corpuspath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">filelist</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">corenlppath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">operations</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                <span class="n">only_tokenise</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">stdout</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">nltk_data_path</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+                <span class="n">memory_mb</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a CoreNLP-parsed and/or NLTK tokenised corpus</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">PIPE</span><span class="p">,</span> <span class="n">STDOUT</span><span class="p">,</span> <span class="n">Popen</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">import</span> <span class="nn">chardet</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">only_tokenise</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_jdk</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&#39;Need latest Java.&#39;</span>
+            <span class="k">return</span>
+
+    <span class="n">curdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">nltk_data_path</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">only_tokenise</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">nltk</span>
+            <span class="k">if</span> <span class="n">nltk_data_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="n">nltk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nltk_data_path</span><span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">word_tokenize</span> <span class="k">as</span> <span class="n">tokenise</span>
+
+    <span class="c"># add nltk to path</span>
+    <span class="c">#td = {}</span>
+    <span class="c">#from corpkit.other import add_nltk_data_to_nltk_path</span>
+    <span class="c">#if &#39;note&#39; in kwargs.keys():</span>
+    <span class="c">#    td[&#39;note&#39;] = kwargs[&#39;note&#39;]</span>
+    <span class="c">#add_nltk_data_to_nltk_path(**td)</span>
+
+    <span class="k">if</span> <span class="n">proj_path</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">proj_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">corpuspath</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)))</span>
+
+    <span class="n">basecp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">only_tokenise</span><span class="p">:</span>
+        <span class="n">new_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-tokenised&#39;</span> <span class="o">%</span> <span class="n">basecp</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-parsed&#39;</span> <span class="o">%</span> <span class="n">basecp</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">new_corpus_path</span><span class="p">:</span>
+        <span class="n">new_corpus_path</span> <span class="o">=</span> <span class="n">new_corpus_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">),</span> <span class="s">&#39;data&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_tokenise</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">]):</span>
+                <span class="k">print</span> <span class="s">&#39;Folder containing xml already exists: &quot;</span><span class="si">%s</span><span class="s">-parsed&quot;&#39;</span> <span class="o">%</span> <span class="n">basecp</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.txt&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">]):</span>
+                <span class="k">print</span> <span class="s">&#39;Folder containing tokens already exists: &quot;</span><span class="si">%s</span><span class="s">-tokenised&quot;&#39;</span> <span class="o">%</span> <span class="n">basecp</span>  
+                <span class="k">return</span> <span class="bp">False</span>          
+    <span class="c">#javaloc = os.path.join(proj_path, &#39;corenlp&#39;, &#39;stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar&#39;)</span>
+    <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">corenlppath</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="p">)</span>
+        <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="s">&#39;corenlp&#39;</span><span class="p">)</span>
+        <span class="n">find_install</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">)</span> \
+                   <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span> \
+                   <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="s">&#39;jollyday.jar&#39;</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">find_install</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">find_install</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;No parser found. Try using the keyword arg &quot;corenlp = &lt;path&gt;&quot;.&#39;</span>
+            <span class="k">return</span>
+
+    <span class="c"># if not gui, don&#39;t mess with stdout</span>
+    <span class="k">if</span> <span class="n">stdout</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">only_tokenise</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">root</span><span class="o">.</span><span class="n">update_idletasks</span><span class="p">()</span>
+            <span class="nb">reload</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="k">if</span> <span class="n">memory_mb</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">memory_mb</span> <span class="o">=</span> <span class="mi">2024</span>
+        <span class="k">if</span> <span class="n">operations</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">operations</span> <span class="o">=</span> <span class="s">&#39;tokenize,ssplit,pos,lemma,ner,parse,dcoref&#39;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">operations</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span>
+        <span class="n">num_files_to_parse</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">l</span><span class="p">])</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s">&#39;java&#39;</span><span class="p">,</span> <span class="s">&#39;-cp&#39;</span><span class="p">,</span> 
+                     <span class="s">&#39;stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar&#39;</span><span class="p">,</span> 
+                     <span class="s">&#39;-Xmx</span><span class="si">%s</span><span class="s">m&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory_mb</span><span class="p">),</span> 
+                     <span class="s">&#39;edu.stanford.nlp.pipeline.StanfordCoreNLP&#39;</span><span class="p">,</span> 
+                     <span class="s">&#39;-annotators&#39;</span><span class="p">,</span> 
+                     <span class="n">operations</span><span class="p">,</span> 
+                     <span class="s">&#39;-filelist&#39;</span><span class="p">,</span> <span class="n">filelist</span><span class="p">,</span>
+                     <span class="s">&#39;-noClobber&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;-outputDirectory&#39;</span><span class="p">,</span> <span class="n">new_corpus_path</span><span class="p">,</span> 
+                     <span class="s">&#39;--parse.flags&#39;</span><span class="p">,</span> <span class="s">&#39; -makeCopulaHead&#39;</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="c">#p = TextProgressBar(num_files_to_parse)</span>
+        <span class="k">while</span> <span class="n">proc</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">stdout</span>
+            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="n">num_parsed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)])</span>  
+            <span class="k">if</span> <span class="n">num_parsed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Initialising parser ... &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num_parsed</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">num_parsed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">num_files_to_parse</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Parsing file </span><span class="si">%d</span><span class="s">/</span><span class="si">%d</span><span class="s"> ... &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">num_parsed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_files_to_parse</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">num_parsed</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="n">num_files_to_parse</span><span class="p">)</span>
+                <span class="c">#p.animate(num_parsed - 1, str(num_parsed) + &#39;/&#39; + str(num_files_to_parse))</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+
+
+        <span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">word_tokenize</span> <span class="k">as</span> <span class="n">tokenise</span>
+        <span class="c"># tokenise each file</span>
+        <span class="kn">import</span> <span class="nn">pickle</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="n">dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">])))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">one_big_corpus</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">one_big_corpus</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">):</span>
+            <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Directory already exists. Delete it if need be.&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">nfiles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Tokenising ... &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">enc</span> <span class="o">=</span> <span class="n">chardet</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">enc_text</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">enc</span><span class="p">[</span><span class="s">&#39;encoding&#39;</span><span class="p">],</span> <span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenise</span><span class="p">(</span><span class="n">enc_text</span><span class="p">)</span>
+            <span class="n">thedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+            <span class="n">newname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.txt&#39;</span><span class="p">,</span> <span class="s">&#39;-tokenised.p&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">one_big_corpus</span><span class="p">:</span>
+                <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">thedir</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">fo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="n">nfiles</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+                <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c">#p.animate(num_files_to_parse)</span>
+    <span class="k">if</span> <span class="s">&#39;note&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">stdout</span>
+    <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Parsing finished. Moving parsed files into place ...&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">curdir</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_corpus_path</span>
+</div>
+<div class="viewcode-block" id="move_parsed_files"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.move_parsed_files">[docs]</a><span class="k">def</span> <span class="nf">move_parsed_files</span><span class="p">(</span><span class="n">proj_path</span><span class="p">,</span> <span class="n">corpuspath</span><span class="p">,</span> <span class="n">new_corpus_path</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">fnmatch</span>
+    <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="n">basecp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">)</span>
+    <span class="n">dir_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c"># go through old path, make file list</span>
+    <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="c"># is the last bit of the line below windows safe?</span>
+            <span class="n">dir_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">bit</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dir_list</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+    <span class="c"># make list of xml filenames</span>
+    <span class="n">parsed_fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">)]</span>
+    <span class="c"># make a dictionary of the right paths</span>
+    <span class="n">pathdict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">rootd</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="s">&#39;*.txt&#39;</span><span class="p">):</span>
+            <span class="n">pathdict</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">rootd</span>
+
+    <span class="c"># move each file</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">parsed_fs</span><span class="p">:</span>
+        <span class="n">noxml</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">right_dir</span> <span class="o">=</span> <span class="n">pathdict</span><span class="p">[</span><span class="n">noxml</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">,</span> <span class="n">new_corpus_path</span><span class="p">)</span>
+        <span class="c"># get rid of the temp adding of dirname to fname</span>
+        <span class="c">#short_name = f.replace(&#39;-%s.txt.xml&#39; % os.path.basename(right_dir), &#39;.txt.xml&#39;)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> 
+                  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_corpus_path</span><span class="p">,</span> <span class="n">right_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">new_corpus_path</span>
+</div>
+<div class="viewcode-block" id="corenlp_exists"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.corenlp_exists">[docs]</a><span class="k">def</span> <span class="nf">corenlp_exists</span><span class="p">(</span><span class="n">corenlppath</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">corpkit</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">important_files</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;stanford-corenlp-3.5.2-javadoc.jar&#39;</span><span class="p">,</span> <span class="s">&#39;stanford-corenlp-3.5.2-models.jar&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;stanford-corenlp-3.5.2-sources.jar&#39;</span><span class="p">,</span> <span class="s">&#39;stanford-corenlp-3.5.2.jar&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">corenlppath</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="p">)</span>
+        <span class="n">corenlppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="s">&#39;corenlp&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">):</span>
+        <span class="n">find_install</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">)</span> \
+                   <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span> \
+                   <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="s">&#39;jollyday.jar&#39;</span><span class="p">))]</span>
+
+        <span class="c">#find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">find_install</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">find_install</span> <span class="o">=</span> <span class="n">find_install</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="n">javalib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">corenlppath</span><span class="p">,</span> <span class="n">find_install</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">javalib</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">javalib</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">important_files</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="get_filepaths"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_filepaths">[docs]</a><span class="k">def</span> <span class="nf">get_filepaths</span><span class="p">(</span><span class="n">a_path</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;txt&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make list of txt files in a_path and remove non txt files&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">a_path</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ext</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="s">&#39;Unidentified&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span> \
+            <span class="ow">and</span> <span class="s">&#39;unknown&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ext</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">files</span>
+</div>
+<div class="viewcode-block" id="get_list_of_speaker_names"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_list_of_speaker_names">[docs]</a><span class="k">def</span> <span class="nf">get_list_of_speaker_names</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return a list of speaker names in a pre-processed corpus&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_filepaths</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">get_filepaths</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">idregex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(^.*?):\s+(.*$)&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">idregex</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                    <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="make_no_id_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.make_no_id_corpus">[docs]</a><span class="k">def</span> <span class="nf">make_no_id_corpus</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">newpth</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make version of pth without ids&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_filepaths</span>
+    <span class="c"># define regex broadly enough to accept timestamps, locations if need be</span>
+    <span class="n">idregex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(^.*?):\s+(.*$)&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">newpth</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">newpth</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">newpth</span><span class="p">)</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">get_filepaths</span><span class="p">(</span><span class="n">newpth</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">good_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">fo</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">matched</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">idregex</span><span class="p">,</span> <span class="n">datum</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">matched</span><span class="p">:</span>
+                    <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">matched</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="n">good_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">matched</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">good_data</span><span class="p">))</span>
+
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: No speaker names found. Turn off speaker segmentation.&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">newpth</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)))</span> <span class="o">&lt;</span> <span class="mi">19</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Speaker names found: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">))))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Speaker names found: </span><span class="si">%s</span><span class="s"> ... &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">[:</span><span class="mi">20</span><span class="p">]))))</span>
+</div>
+<div class="viewcode-block" id="add_ids_to_xml"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.add_ids_to_xml">[docs]</a><span class="k">def</span> <span class="nf">add_ids_to_xml</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">note</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;add ids to the xml in corpuspath</span>
+
+<span class="sd">    needs the raw files to be in the same dir as corpuspath, without</span>
+<span class="sd">    &#39;-parsed&#39; in the dir name</span>
+<span class="sd">    also needs the id files to be in the dir, with &#39;-parsed&#39; changed </span>
+<span class="sd">    to -cleaned&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span><span class="p">,</span> <span class="n">SoupStrainer</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_filepaths</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span><span class="p">,</span> <span class="n">localtime</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">get_filepaths</span><span class="p">(</span><span class="n">corpuspath</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;xml&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">note</span><span class="p">:</span>
+        <span class="n">note</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Processing speaker IDs ...&#39;</span> <span class="o">%</span> <span class="n">thetime</span>
+    <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">note</span><span class="p">:</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+        <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: Processing speaker IDs (</span><span class="si">%d</span><span class="s">/</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="n">xmlf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">xmlf</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">xmlf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># open the unparsed version of the file, read into memory</span>
+        <span class="n">stripped_txtfile</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-parsed&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">old_txt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">stripped_txtfile</span><span class="p">)</span>
+        <span class="n">stripped_txtdata</span> <span class="o">=</span> <span class="n">old_txt</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">old_txt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># open the unparsed version with speaker ids</span>
+        <span class="n">id_txtfile</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.xml&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-stripped-parsed&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">idttxt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">id_txtfile</span><span class="p">)</span>
+        <span class="n">id_txtdata</span> <span class="o">=</span> <span class="n">idttxt</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">idttxt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># todo: do this with lxml</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s">&quot;lxml&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;sentence&#39;</span><span class="p">):</span>
+            <span class="c"># don&#39;t get corefs</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;sentences&#39;</span><span class="p">:</span>
+                <span class="n">tokens</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;token&#39;</span><span class="p">)</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;characteroffsetbegin&#39;</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">&#39;characteroffsetend&#39;</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="c"># extract this sentence from the unparsed version</span>
+                <span class="n">sent</span> <span class="o">=</span> <span class="n">stripped_txtdata</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+                <span class="c"># find out line number</span>
+                <span class="c"># sever at start of match</span>
+                <span class="n">cut_old_text</span> <span class="o">=</span> <span class="n">stripped_txtdata</span><span class="p">[:</span><span class="n">start</span><span class="p">]</span>
+                <span class="n">line_index</span> <span class="o">=</span> <span class="n">cut_old_text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="c"># lookup this text</span>
+                <span class="n">with_id</span> <span class="o">=</span> <span class="n">id_txtdata</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="n">line_index</span><span class="p">]</span>
+                <span class="n">split_line</span> <span class="o">=</span> <span class="n">with_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;: &#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">speakerid</span> <span class="o">=</span> <span class="n">split_line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">speakerid</span> <span class="o">=</span> <span class="s">&#39;UNIDENTIFIED&#39;</span>
+                <span class="n">new_tag</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">new_tag</span><span class="p">(</span><span class="s">&quot;speakername&quot;</span><span class="p">)</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_tag</span><span class="p">)</span>
+                <span class="n">new_tag</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="n">speakerid</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">soup</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+        <span class="c"># make changes</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fopen</span><span class="p">:</span>
+            <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">note</span><span class="p">:</span>
+        <span class="n">note</span><span class="o">.</span><span class="n">progvar</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_speaker_names_from_xml_corpus"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_speaker_names_from_xml_corpus">[docs]</a><span class="k">def</span> <span class="nf">get_speaker_names_from_xml_corpus</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+    
+    <span class="n">list_of_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c"># parsing html with regular expression! :)</span>
+    <span class="n">speakid</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;&lt;speakername&gt;[\s\n]*?([^\s\n]+)[\s\n]*?&lt;.speakername&gt;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_names</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get a list of speaker names from a file&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+            <span class="n">txt</span> <span class="o">=</span> <span class="n">fo</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">speakid</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">res</span><span class="p">])))</span>
+
+    <span class="c"># if passed a dir, do it for every file</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+                <span class="n">list_of_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="n">list_of_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">list_of_files</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">get_names</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="get_speakers"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.get_speakers">[docs]</a><span class="k">def</span> <span class="nf">get_speakers</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_speaker_names_from_xml_corpus</span>
+    <span class="k">return</span> <span class="n">get_speaker_names_from_xml_corpus</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="rename_all_files"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.rename_all_files">[docs]</a><span class="k">def</span> <span class="nf">rename_all_files</span><span class="p">(</span><span class="n">dirs_to_do</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;get rid of the inserted dirname in filenames after parsing&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_filepaths</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs_to_do</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;-parsed&#39;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;txt.xml&#39;</span>
+        <span class="k">elif</span> <span class="n">d</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;-tokenised&#39;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;.p&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s">&#39;.txt&#39;</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">get_filepaths</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">justdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">subcorpus</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">justdir</span><span class="p">)</span>
+            <span class="n">newname</span> <span class="o">=</span> <span class="n">fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">subcorpus</span><span class="p">,</span> <span class="n">ext</span><span class="p">),</span> <span class="s">&#39;.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">justdir</span><span class="p">,</span> <span class="n">newname</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="flatten_treestring"><a class="viewcode-back" href="../../corpkit.html#corpkit.build.flatten_treestring">[docs]</a><span class="k">def</span> <span class="nf">flatten_treestring</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;\(.*? &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;)&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$ &#39;</span><span class="p">,</span> <span class="s">&#39;$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;`` &#39;</span><span class="p">,</span> <span class="s">&#39;``&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; ,&#39;</span><span class="p">,</span> <span class="s">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; .&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&#39;&#39; &quot;</span><span class="p">,</span> <span class="s">&quot;&#39;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; n&#39;t&quot;</span><span class="p">,</span> <span class="s">&quot;n&#39;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;re&quot;</span><span class="p">,</span><span class="s">&quot;&#39;re&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;m&quot;</span><span class="p">,</span><span class="s">&quot;&#39;m&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;s&quot;</span><span class="p">,</span><span class="s">&quot;&#39;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;d&quot;</span><span class="p">,</span><span class="s">&quot;&#39;d&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &#39;ll&quot;</span><span class="p">,</span><span class="s">&quot;&#39;ll&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tree</span>
+    </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

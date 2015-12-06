@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.textprogressbar &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.textprogressbar</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/python</span>
+
+<div class="viewcode-block" id="TextProgressBar"><a class="viewcode-back" href="../../corpkit.html#corpkit.textprogressbar.TextProgressBar">[docs]</a><span class="k">class</span> <span class="nc">TextProgressBar</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;a text progress bar for CLI operations</span>
+<span class="sd">       no need for user to call&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+        
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+            <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">iterations</span> <span class="o">=</span> <span class="n">iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span> <span class="o">=</span> <span class="s">&#39;[]&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fill_char</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__update_amount</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animate_ipython</span>
+
+<div class="viewcode-block" id="TextProgressBar.animate_ipython"><a class="viewcode-back" href="../../corpkit.html#corpkit.textprogressbar.TextProgressBar.animate_ipython">[docs]</a>    <span class="k">def</span> <span class="nf">animate_ipython</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">iter</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+            <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">have_ipython</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">have_ipython</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_iteration</span><span class="p">(</span><span class="nb">iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dirname</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TextProgressBar.update_iteration"><a class="viewcode-back" href="../../corpkit.html#corpkit.textprogressbar.TextProgressBar.update_iteration">[docs]</a>    <span class="k">def</span> <span class="nf">update_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elapsed_iter</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__update_amount</span><span class="p">((</span><span class="n">elapsed_iter</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iterations</span><span class="p">))</span> <span class="o">*</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">dirname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span> <span class="o">+=</span> <span class="s">&#39; &#39;</span> <span class="c"># + &#39; %d of %s complete&#39; % (elapsed_iter, self.iterations)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__update_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_amount</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">strftime</span>
+        <span class="n">percent_done</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">new_amount</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">all_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">num_hashes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">percent_done</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">all_full</span><span class="p">))</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span> <span class="o">=</span> <span class="n">time</span> <span class="o">+</span> <span class="s">&#39;: [&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill_char</span> <span class="o">*</span> <span class="n">num_hashes</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">*</span> <span class="p">(</span><span class="n">all_full</span> <span class="o">-</span> <span class="n">num_hashes</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;]&#39;</span>
+        
+        <span class="k">if</span> <span class="n">dirname</span><span class="p">:</span>
+            <span class="n">pct_string</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%d%%</span><span class="s"> &#39;</span> <span class="o">%</span> <span class="n">percent_done</span> <span class="o">+</span> <span class="s">&#39;(&#39;</span> <span class="o">+</span> <span class="n">dirname</span> <span class="o">+</span> <span class="s">&#39;)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pct_string</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%d%%</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">percent_done</span> <span class="c"># could pass dirname here!</span>
+        <span class="c"># find out where the index of the first space in the middle string</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">index_of_space</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pct_string</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">isspace</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="n">index_of_space</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># put middle string in centre, adjust so that spaces are always aligned</span>
+        <span class="n">pct_place</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">index_of_space</span>
+        <span class="c">#if len(pct_string) &lt; 20:</span>
+            <span class="c">#pct_string = &#39; &#39; * (20 - len(pct_string)) + pct_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">pct_place</span><span class="p">]</span> <span class="o">+</span> \
+           <span class="p">(</span><span class="n">pct_string</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span><span class="p">[</span><span class="n">pct_place</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">pct_string</span><span class="p">):])</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog_bar</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

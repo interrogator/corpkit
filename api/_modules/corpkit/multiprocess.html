@@ -1,0 +1,402 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>corpkit.multiprocess &mdash; corpkit-docs 1.74 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.74',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="corpkit-docs 1.74 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for corpkit.multiprocess</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="pmultiquery"><a class="viewcode-back" href="../../corpkit.html#corpkit.multiprocess.pmultiquery">[docs]</a><span class="k">def</span> <span class="nf">pmultiquery</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> 
+    <span class="n">search</span><span class="p">,</span>
+    <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;words&#39;</span><span class="p">,</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s">&#39;any&#39;</span><span class="p">,</span> 
+    <span class="n">sort_by</span> <span class="o">=</span> <span class="s">&#39;total&#39;</span><span class="p">,</span> 
+    <span class="n">quicksave</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">num_proc</span> <span class="o">=</span> <span class="s">&#39;default&#39;</span><span class="p">,</span> 
+    <span class="n">function_filter</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">just_speakers</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">print_info</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parallel process multiple queries or corpora.</span>
+
+<span class="sd">    This function is used by interrogator() if:</span>
+
+<span class="sd">        a) path is a list of paths</span>
+<span class="sd">        b) query is a dict of named queries</span>
+<span class="sd">        c) just speakers == &#39;each&#39;, or a list of speakers with len(list) &gt; 1</span>
+<span class="sd">    </span>
+<span class="sd">    This function needs joblib 0.8.4 or above in order to run properly.</span>
+<span class="sd">    There&#39;s no reason to call it yourself.&quot;&quot;&quot;</span>
+    
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+    <span class="kn">import</span> <span class="nn">collections</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span><span class="p">,</span> <span class="n">localtime</span>
+    <span class="kn">from</span> <span class="nn">interrogator</span> <span class="kn">import</span> <span class="n">interrogator</span>
+    <span class="kn">from</span> <span class="nn">editor</span> <span class="kn">import</span> <span class="n">editor</span>
+    <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">save_result</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+        <span class="c">#raise ValueError(&#39;joblib, the module used for multiprocessing, cannot be found. &#39; \</span>
+        <span class="c">#                 &#39;Install with:\n\n        pip install joblib&#39;)</span>
+    <span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+    <span class="k">def</span> <span class="nf">best_num_parallel</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="n">num_queries</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">corpkit</span>
+        <span class="sd">&quot;&quot;&quot;decide how many parallel processes to run</span>
+
+<span class="sd">        the idea, more or less, is to balance the load when possible&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_queries</span> <span class="o">&lt;=</span> <span class="n">num_cores</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">num_queries</span>
+        <span class="k">if</span> <span class="n">num_queries</span> <span class="o">&gt;</span> <span class="n">num_cores</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">num_queries</span> <span class="o">/</span> <span class="n">num_cores</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_cores</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_cores</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num_queries</span> <span class="o">%</span> <span class="n">num_cores</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">num_queries</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">)</span> <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_queries</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">num_cores</span><span class="p">])</span>        
+            <span class="k">else</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">math</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">num_queries</span><span class="p">)))</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
+                    <span class="n">square_root</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">num_queries</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">square_root</span> <span class="o">&lt;=</span> <span class="n">num_queries</span> <span class="o">/</span> <span class="n">num_cores</span><span class="p">:</span> 
+                        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">square_root</span><span class="p">)</span>    
+        <span class="k">return</span> <span class="n">num_cores</span>
+
+    <span class="n">num_cores</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+
+    <span class="c"># are we processing multiple queries or corpora?</span>
+    <span class="c"># find out optimal number of cores to use.</span>
+    <span class="n">multiple_option</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">multiple_queries</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">multiple_speakers</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">multiple_corpora</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="n">denom</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+        <span class="n">multiple_corpora</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">best_num_parallel</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+        <span class="n">multiple_queries</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">best_num_parallel</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">function_filter</span><span class="p">,</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+        <span class="n">multiple_option</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">best_num_parallel</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">function_filter</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">function_filter</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="n">just_speakers</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">corpkit.build</span> <span class="kn">import</span> <span class="n">get_speaker_names_from_xml_corpus</span>
+        <span class="n">multiple_speakers</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">just_speakers</span> <span class="o">==</span> <span class="s">&#39;each&#39;</span><span class="p">:</span>
+            <span class="n">just_speakers</span> <span class="o">=</span> <span class="n">get_speaker_names_from_xml_corpus</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;No speaker name data found.&#39;</span>
+            <span class="k">return</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">best_num_parallel</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">))</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">num_proc</span> <span class="o">!=</span> <span class="s">&#39;default&#39;</span><span class="p">:</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">num_proc</span>
+
+    <span class="c"># make sure quicksaves are right type</span>
+    <span class="k">if</span> <span class="n">quicksave</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;quicksave must be string when using pmultiquery.&#39;</span><span class="p">)</span>
+    
+    <span class="c"># the options that don&#39;t change</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+         <span class="c">#&#39;paralleling&#39;: True,</span>
+         <span class="s">&#39;function&#39;</span><span class="p">:</span> <span class="s">&#39;interrogator&#39;</span><span class="p">,</span>
+         <span class="s">&#39;root&#39;</span><span class="p">:</span> <span class="n">root</span><span class="p">,</span>
+         <span class="s">&#39;note&#39;</span><span class="p">:</span> <span class="n">note</span><span class="p">,</span>
+         <span class="s">&#39;denominator&#39;</span><span class="p">:</span> <span class="n">denom</span><span class="p">}</span>
+    <span class="c"># add kwargs to query</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="c"># make a list of dicts to pass to interrogator,</span>
+    <span class="c"># with the iterable unique in every one</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">multiple_corpora</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;show&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;-parsed&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;just_speakers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">just_speakers</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;paralleling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;printstatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_dict</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">multiple_queries</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;show&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;just_speakers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">just_speakers</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;paralleling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;printstatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_dict</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">multiple_option</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">function_filter</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;show&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;just_speakers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">just_speakers</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;paralleling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;function_filter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;printstatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_dict</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">multiple_speakers</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">just_speakers</span><span class="p">):</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;show&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;just_speakers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;function_filter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">function_filter</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;paralleling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s">&#39;printstatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_dict</span><span class="p">)</span>
+
+    <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">multiple_corpora</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">multiple_option</span><span class="p">:</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Beginning </span><span class="si">%d</span><span class="s"> parallel corpus interrogations:</span><span class="se">\n</span><span class="s">              </span><span class="si">%s</span><span class="s">&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">          Query: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n</span><span class="s">          Interrogating corpus ... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">              &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">query</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">multiple_queries</span><span class="p">:</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Beginning </span><span class="si">%d</span><span class="s"> parallel corpus interrogations: </span><span class="si">%s</span><span class="s">&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n</span><span class="s">          Queries: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n</span><span class="s">          Interrogating corpus ... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s">&quot;&#39;, &#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span> <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">multiple_option</span><span class="p">:</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Beginning </span><span class="si">%d</span><span class="s"> parallel corpus interrogations (multiple options): </span><span class="si">%s</span><span class="s">&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">          Query: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n</span><span class="s">          Interrogating corpus ... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">query</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">multiple_speakers</span><span class="p">:</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: Beginning </span><span class="si">%d</span><span class="s"> parallel corpus interrogations: </span><span class="si">%s</span><span class="s">&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">          Query: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> \
+           <span class="s">&quot;</span><span class="se">\n</span><span class="s">          Interrogating corpus ... </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">query</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="c"># run in parallel, get either a list of tuples (non-c option)</span>
+    <span class="c"># or a dataframe (c option)</span>
+    <span class="c">#import sys</span>
+    <span class="c">#reload(sys)</span>
+    <span class="c">#stdout=sys.stdout</span>
+    <span class="n">failed</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="c">#ds = ds[::-1]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">blessings</span> <span class="kn">import</span> <span class="n">Terminal</span>
+        <span class="n">terminal</span> <span class="o">=</span> <span class="n">Terminal</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">dobj</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">:</span>
+            <span class="n">linenum</span> <span class="o">=</span> <span class="n">dobj</span><span class="p">[</span><span class="s">&#39;paralleling&#39;</span><span class="p">]</span>
+            <span class="k">with</span> <span class="n">terminal</span><span class="o">.</span><span class="n">location</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">terminal</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="p">(</span><span class="n">linenum</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+                <span class="c"># this is a really bad idea.</span>
+                <span class="n">thetime</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+                <span class="n">num_spaces</span> <span class="o">=</span> <span class="mi">26</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">dobj</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">])</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: QUEUED: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thetime</span><span class="p">,</span> <span class="n">dobj</span><span class="p">[</span><span class="s">&#39;outname&#39;</span><span class="p">])</span>
+        
+        <span class="c">#res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c">#ds = sorted(ds, key=lambda k: k[&#39;paralleling&#39;], reverse = True) </span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">num_cores</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">interrogator</span><span class="p">)(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n\n\n</span><span class="s">&#39;</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">failed</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">print</span> <span class="s">&#39;Multiprocessing failed.&#39;</span>
+            <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">failed</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">root</span> <span class="ow">or</span> <span class="n">failed</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">[</span><span class="s">&#39;startnum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">/</span> <span class="n">denom</span><span class="p">)</span> <span class="o">*</span> <span class="n">index</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interrogator</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c"># multiprocessing way</span>
+    <span class="c">#from multiprocessing import Process</span>
+    <span class="c">#from corpkit.interrogator import interrogator</span>
+    <span class="c">#jobs = []</span>
+    <span class="c">##for d in ds:</span>
+    <span class="c">##    p = multiprocessing.Process(target=interrogator, kwargs=(**d,))</span>
+    <span class="c">##    jobs.append(p)</span>
+    <span class="c">##    p.start()</span>
+    <span class="c">##    while p.is_alive():</span>
+    <span class="c">##        import time</span>
+    <span class="c">##        time.sleep(2)</span>
+    <span class="c">##        if root:</span>
+    <span class="c">##            root.update()</span>
+    <span class="c">#result_queue = multiprocessing.Queue()</span>
+    <span class="c">#</span>
+    <span class="c">#for d in ds:</span>
+    <span class="c">#funs = [interrogator(result_queue, **kwargs) for kwargs in ds]</span>
+    <span class="c">#jobs = [multiprocessing.Process(mc) for mc in funs]</span>
+    <span class="c">#for job in jobs: job.start()</span>
+    <span class="c">#for job in jobs: job.join()</span>
+    <span class="c">#results = [result_queue.get() for mc in funs]</span>
+
+    <span class="c"># turn list into dict of results, make query and total branches,</span>
+    <span class="c"># save and return</span>
+    <span class="k">if</span> <span class="s">&#39;c&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c">#print &#39;&#39;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">stotal</span><span class="p">),</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">ds</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">unpicklable</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;note&#39;</span><span class="p">,</span> <span class="s">&#39;root&#39;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">d</span><span class="p">[</span><span class="n">unpicklable</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">outputnames</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;interrogation&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;query&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;totals&#39;</span><span class="p">])</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">outputnames</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">stotal</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
+    
+        <span class="c"># could be wrong for unstructured corpora?</span>
+        <span class="k">if</span> <span class="n">quicksave</span><span class="p">:</span>
+            <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> <span class="n">quicksave</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fullpath</span><span class="p">):</span>
+                <span class="n">selection</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Save error: </span><span class="si">%s</span><span class="s"> already exists in </span><span class="si">%s</span><span class="s">.</span><span class="se">\n\n</span><span class="s">Type &#39;o&#39; to overwrite, or enter a new name: &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">quicksave</span><span class="p">,</span> <span class="s">&#39;saved_interrogations&#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="s">&#39;o&#39;</span> <span class="ow">or</span> <span class="n">selection</span> <span class="o">==</span> <span class="s">&#39;O&#39;</span><span class="p">:</span>
+                    <span class="kn">import</span> <span class="nn">shutil</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">fullpath</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="kn">import</span> <span class="nn">os</span>
+                    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;saved_interrogations&#39;</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">save_result</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">savedir</span> <span class="o">=</span> <span class="n">fullpath</span><span class="p">,</span> <span class="n">print_info</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+        
+            <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+            <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">: </span><span class="si">%d</span><span class="s"> files saved to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">time</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">fullpath</span><span class="p">)</span>
+
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="si">%s</span><span class="s">: Finished! Output is a dictionary with keys:</span><span class="se">\n\n</span><span class="s">         &#39;</span><span class="si">%s</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="s">&quot;&#39;</span><span class="se">\n</span><span class="s">         &#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        
+        <span class="k">return</span> <span class="n">out</span>
+    <span class="c"># make query and total branch, save, return</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">editor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">sort_by</span> <span class="o">=</span> <span class="n">sort_by</span><span class="p">,</span> <span class="n">print_info</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">keep_stats</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">localtime</span><span class="p">())</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n\n</span><span class="si">%s</span><span class="s">: Finished! </span><span class="si">%d</span><span class="s"> unique results, </span><span class="si">%d</span><span class="s"> total.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">out</span><span class="o">.</span><span class="n">totals</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">quicksave</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">other</span> <span class="kn">import</span> <span class="n">save_result</span>
+            <span class="n">save_result</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">quicksave</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">pmultiquery</span><span class="p">(</span><span class="n">path</span><span class="p">,</span>
+    <span class="n">search</span><span class="p">,</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">show</span> <span class="o">=</span> <span class="s">&#39;words&#39;</span><span class="p">,</span> 
+    <span class="n">sort_by</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+    <span class="n">quicksave</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">num_proc</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+    <span class="n">function_filter</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">just_speakers</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">print_info</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Daniel McDonald.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
