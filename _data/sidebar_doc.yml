@@ -157,7 +157,7 @@ entries:
       items:
 
         - title: API documentation
-          url: index.html
+          url: apiindex.html
           audience: writers, designers
           platform: all
           product: all
