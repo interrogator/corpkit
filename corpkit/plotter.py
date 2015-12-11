@@ -9,7 +9,7 @@ def plotter(title,
             reverse_legend = 'guess',
             num_to_plot = 7,
             tex = 'try',
-            colours = 'Paired',
+            colours = 'Accent',
             cumulative = False,
             pie_legend = True,
             partial_pie = False,
@@ -429,7 +429,7 @@ def plotter(title,
     # remove stats fields, put p in entry text, etc.
     statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
     try:
-        dataframe = dataframe.drop(statfields, axis = 1)
+        dataframe = dataframe.drop(statfields, axis = 1, errors = 'ignore')
     except:
         pass    
     try:
@@ -456,12 +456,12 @@ def plotter(title,
                 newname = '%s (%s)' % (col, pstr)
                 newnames.append(newname)
             dataframe.columns = newnames
-            dataframe.drop(statfields, axis = 0, inplace = True)
+            dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
         else:
             warnings.warn('No p-values calculated to show.\n\nUse sort_by and keep_stats in editor() to generate these values.')
     else:
         if there_are_p_vals:
-            dataframe.drop(statfields, axis = 0, inplace = True)
+            dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
 
     # make and set y label
     absolutes = True
