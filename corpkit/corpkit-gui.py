@@ -25,7 +25,7 @@ from ttk import Progressbar, Style
 from PIL import Image
 from PIL import ImageTk
 # obsolete:
-from corpkit.other import get_gui_resource_dir
+from corpkit.process import get_gui_resource_dir
 
 # determine path to gui resources:
 py_script = False
@@ -305,7 +305,7 @@ def corpkit_gui():
         import sys
         import os
         import corpkit
-        from corpkit.other import get_gui_resource_dir, get_fullpath_to_jars
+        from corpkit.process import get_gui_resource_dir, get_fullpath_to_jars
         import Tkinter, Tkconstants, tkFileDialog, tkMessageBox, tkSimpleDialog
         from Tkinter import StringVar, Listbox, Text
         from tkintertable import TableCanvas, TableModel
@@ -319,7 +319,6 @@ def corpkit_gui():
         # unused in the gui, dummy imports for pyinstaller
         #import seaborn
         import locale
-        #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
         locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
         from hashlib import md5
         import chardet
@@ -3394,7 +3393,6 @@ def corpkit_gui():
         every_interrogation.config(width = 20)
         every_interrogation.grid(column = 0, row = 2, sticky = W, columnspan = 2)
         data_to_plot.trace("w", plot_callback)
-
         Label(plot_option_frame, text = 'Entry:').grid(row = 3, column = 0, sticky = W)
         single_entry = StringVar(root)
         single_entry.set('All')
@@ -3625,7 +3623,8 @@ def corpkit_gui():
                     'gnuplot2', 'BuPu', 'Oranges', 'PiYG', 'YlGn', 'Accent', 'gist_gray', 'flag', 
                     'BrBG', 'Reds', 'RdGy', 'PuRd', 'Blues', 'autumn', 'ocean', 'pink', 'binary', 
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
-                    'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot')))
+                    'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot', 
+                    'viridis', 'magma', 'plasma', 'inferno')))
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
         ch_col.config(width = 17)
         ch_col.grid(row = 16, column = 1, sticky = E)
