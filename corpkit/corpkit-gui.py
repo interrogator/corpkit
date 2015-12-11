@@ -509,7 +509,8 @@ def corpkit_gui():
                       'Increase':       'increase',
                       'Decrease':       'decrease',
                       'Static':         'static',
-                      'Turbulent':      'turbulent'}
+                      'Turbulent':      'turbulent',
+                      'P value':        'p'}
 
         # translate special queries for interrogator()
         spec_quer_translate = {'Participants': 'w',
@@ -2742,7 +2743,7 @@ def corpkit_gui():
         Label(editor_buttons, text = 'Sort results by', font = ("Helvetica", 13, "bold")).grid(row = 4, column = 0, sticky = W, pady = (15,0))
         sort_val = StringVar(root)
         sort_val.set('None')
-        sorts = OptionMenu(editor_buttons, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent')
+        sorts = OptionMenu(editor_buttons, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent', 'P value')
         sorts.config(width = 11)
         sorts.grid(row = 4, column = 1, sticky = E, pady = (15,0))
 
