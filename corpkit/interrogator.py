@@ -97,9 +97,9 @@ def interrogator(path,
 
     """
     import corpkit
-    from corpkit.other import add_corpkit_to_path
-    from corpkit.other import tregex_engine
-    from corpkit.other import add_nltk_data_to_nltk_path
+    from corpkit.process import add_corpkit_to_path
+    from corpkit.process import tregex_engine
+    from corpkit.process import add_nltk_data_to_nltk_path
     
     # some non-Python resources need to explicitly be added to path
     add_corpkit_to_path()
@@ -939,7 +939,7 @@ def interrogator(path,
     elif type(path) == str and path.endswith('-tokenised'):
         datatype = 'tokens'
     else:
-        from corpkit.other import determine_datatype
+        from corpkit.process import determine_datatype
         datatype = determine_datatype(path)
 
     # some empty lists we'll need
@@ -1261,7 +1261,7 @@ def interrogator(path,
 
     def filtermaker(the_filter):
         if type(the_filter) == list:
-            from other import as_regex
+            from corpkit.other import as_regex
             the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
         try:
             output = re.compile(the_filter)
@@ -1796,7 +1796,7 @@ def interrogator(path,
             clear_output()
         if quicksave:
             if stotals.sum() > 0:
-                from other import save_result
+                from corpkit.other import save_result
                 save_result(output, quicksave)
         
         if printstatus:
@@ -1935,7 +1935,7 @@ def interrogator(path,
 
     if quicksave:
         if stotals.sum() > 0 and num_diff_results > 0:
-            from other import save_result
+            from corpkit.other import save_result
             save_result(output, quicksave)
 
     return output

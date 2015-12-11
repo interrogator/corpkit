@@ -33,7 +33,7 @@ def conc(corpus,
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    from corpkit.other import tregex_engine
+    from corpkit.process import tregex_engine
     from corpkit.tests import check_pytex, check_dit
     try:
         get_ipython().getoutput()

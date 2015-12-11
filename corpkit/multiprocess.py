@@ -30,7 +30,7 @@ def pmultiquery(path,
     from time import strftime, localtime
     from interrogator import interrogator
     from editor import editor
-    from other import save_result
+    from corpkit.other import save_result
     try:
         from joblib import Parallel, delayed
     except:
@@ -296,7 +296,7 @@ def pmultiquery(path,
         time = strftime("%H:%M:%S", localtime())
         print '\n\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
         if quicksave:
-            from other import save_result
+            from corpkit.other import save_result
             save_result(out, quicksave)
         return out
 

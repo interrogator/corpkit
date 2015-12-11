@@ -232,7 +232,7 @@ def ngrams(data,
             stopwords = [i.lower() for i in blacklist]
 
     from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
-    from other import datareader
+    from corpkit.process import datareader
 
     #loaded_ref_corpus = turn_input_into_counter(reference_corpus)
 
@@ -411,7 +411,7 @@ def turn_input_into_counter(data, **kwargs):
     import collections
     import pickle
     import pandas
-    from corpkit.other import datareader
+    from corpkit.process import datareader
     
     dict_found = False
 

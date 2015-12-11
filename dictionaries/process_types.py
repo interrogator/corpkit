@@ -16,7 +16,7 @@ def load_verb_data():
     import os
     import corpkit
     import pickle
-    from corpkit.other import get_gui_resource_dir
+    from corpkit.process import get_gui_resource_dir
     corpath = os.path.dirname(corpkit.__file__)
     baspat = os.path.dirname(corpath)
     dicpath = os.path.join(baspat, 'dictionaries')

@@ -48,27 +48,33 @@ def editor(dataframe1,
     :type dataframe1: pandas.core.frame.DataFrame
     
     :param operation: Kind of maths to do on inputted lists:
-                            '+', '-', '/', '*', '%': self explanatory
-                            'k': log likelihood (keywords)
-                            'a': get distance metric (for use with interrogator 'a' option)
-                            'd': get percent difference (alternative approach to keywording)
+
+        '+', '-', '/', '*', '%': self explanatory
+        'k': log likelihood (keywords)
+        'a': get distance metric (for use with interrogator 'a' option)
+        'd': get percent difference (alternative approach to keywording)
+
     :type operation: str
     
     :param dataframe2: List of results or totals.
-                            If list of results, for each entry in dataframe 1, locate
-                            entry with same name in dataframe 2, and do maths there
-                            if 'self', do all merging/keeping operations, then use
-                            edited dataframe1 as dataframe2
+
+        If list of results, for each entry in dataframe 1, locate
+        entry with same name in dataframe 2, and do maths there
+        if 'self', do all merging/keeping operations, then use
+        edited dataframe1 as dataframe2
+
     :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
     
     :param sort_by: Calculate slope, stderr, r, p values, then sort by:
-                            increase: highest to lowest slope value
-                            decrease: lowest to highest slope value
-                            turbulent: most change in y axis values
-                            static: least change in y axis values
-                            total/most: largest number first
-                            infreq/least: smallest number first
-                            name: alphabetically
+
+        increase: highest to lowest slope value
+        decrease: lowest to highest slope value
+        turbulent: most change in y axis values
+        static: least change in y axis values
+        total/most: largest number first
+        infreq/least: smallest number first
+        name: alphabetically
+        
     :type sort_by: str
 
     :param keep_stats: Keep/drop stats values from dataframe after sorting
