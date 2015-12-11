@@ -12,7 +12,7 @@ __all__ = ["interrogator",
            "flatten_treestring",
            "interroplot"]
 
-__version__ = "1.76"
+__version__ = "1.77"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -42,5 +42,5 @@ from other import quickview
 from other import as_regex
 from other import new_project
 from other import interroplot
-from build import make_corpus
+from make import make_corpus
 from build import flatten_treestring
