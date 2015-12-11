@@ -679,7 +679,7 @@ def editor(dataframe1,
         
         # translate options and make sure they are parseable
         options = ['total', 'name', 'infreq', 'increase', 'turbulent',
-                   'decrease', 'static', 'most', 'least', 'none']
+                   'decrease', 'static', 'most', 'least', 'none', 'p']
 
         if sort_by is True:
             sort_by = 'total'
@@ -687,7 +687,7 @@ def editor(dataframe1,
             sort_by = 'total'
         if sort_by == 'least':
             sort_by = 'infreq'
-        if sort_by not in options:
+        if sort_by not in options and sort_by:
             raise ValueError("sort_by parameter error: '%s' not recognised. Must be True, False, %s" % (sort_by, ', '.join(options)))
 
         if operation.startswith('k'):
@@ -740,6 +740,8 @@ def editor(dataframe1,
         elif sort_by == 'name':
             # currently case sensitive...
             df = df.reindex_axis(sorted(df.columns), axis=1)
+        elif sort_by == 'p':
+            df = df.T.sort('p').T
         else:
             statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
             
@@ -1114,7 +1116,7 @@ def editor(dataframe1,
         df = df.fillna(0.0)
 
     # resort data
-    if sort_by:
+    if sort_by or keep_stats:
         df = resort(df, keep_stats = keep_stats, sort_by = sort_by)
         if type(df) == bool:
             if df is False:
