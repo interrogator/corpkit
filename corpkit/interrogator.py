@@ -1504,8 +1504,8 @@ def interrogator(path,
     if type(search) == dict:
         import pprint
         pp = pprint.PrettyPrinter(indent=0)
-        qtext = pp.pformat(search).replace('{', '').replace('}', '').replace("'", '')
-        qtext = qtext.replace("u'", '').replace('"', '').replace(', ', '\n                  ')
+        qtext = pp.pformat(search).replace('{', '').replace('}', '')
+        qtext = qtext.replace("u'", '').replace('"', '').replace("'", '').replace(', ', '\n                  ')
 
     global skipped_sents
     skipped_sents = 0
