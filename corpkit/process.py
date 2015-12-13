@@ -563,20 +563,81 @@ def determine_datatype(path):
     from collections import Counter
     allowed = ['.txt', '.xml', '.p']
     exts = []
-    if not os.path.isdir(path):
+    if not os.path.isdir(path) and not os.path.isfile(path):
         raise ValueError("Corpus path '%s' doesn't exist." % path)
-    for (root, dirs, fs) in os.walk(path):
-        for f in fs:
-            try:
-                ext = os.path.splitext(f)[1]
-                exts.append(ext)
-            except:
-                pass
+    singlefile = False
+    if os.path.isfile(path):
+        singlefile = True
+        exts = [os.path.splitext(path)[1]]
+    else:
+        for (root, dirs, fs) in os.walk(path):
+            for f in fs:
+                try:
+                    ext = os.path.splitext(f)[1]
+                    exts.append(ext)
+                except:
+                    pass
     counted = Counter(exts)
     mc = counted.most_common(1)[0][0]
     if mc == '.xml':
-        return 'parse'
+        return 'parse', singlefile
     elif mc == '.txt':
-        return 'plaintext'
+        return 'plaintext', singlefile
     elif mc == '.p':
-        return 'tokens'
+        return 'tokens', singlefile
+
+
+def filtermaker(the_filter):
+    import re
+    if type(the_filter) == list:
+        from corpkit.other import as_regex
+        the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
+    try:
+        output = re.compile(the_filter)
+        is_valid = True
+    except:
+        is_valid = False
+        if root:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Filter %s' % (thetime, error_message)
+            return 'Bad query'
+    
+    while not is_valid:
+        if root:
+            time = strftime("%H:%M:%S", localtime())
+            print the_filter
+            print '%s: Invalid the_filter regular expression.' % time
+            return False
+        time = strftime("%H:%M:%S", localtime())
+        selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+            '              a) rewrite it now\n' \
+            '              b) exit\n\nYour selection: ' % (time, the_filter))
+        if 'a' in selection:
+            the_filter = raw_input('\nNew regular expression: ')
+            try:
+                output = re.compile(r'\b' + the_filter + r'\b')
+                is_valid = True
+            except re.error:
+                is_valid = False
+        elif 'b' in selection:
+            print ''
+            return False
+    return output
+
+def searchfixer(search, query, datatype):
+    search_iterable = False
+    if type(search) == str:
+        search = search[0].lower()
+        if not search.lower().startswith('t') and not search.lower().startswith('n') \
+                                              and datatype == 'parse':
+            search_iterable = True
+            if query == 'any':
+                query = r'.*'
+        search = {search: query}
+    return search, search_iterable

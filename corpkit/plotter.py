@@ -757,7 +757,7 @@ def plotter(title,
                 del labels
         else:
             plt.gcf().set_tight_layout(False)
-            if not piemode and not sbplt:
+            if not piemode:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
             else:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
@@ -902,6 +902,43 @@ def plotter(title,
     else:
         y_l = 'Absolute frequency'
     
+    def suplabel(axis,label,label_prop=None,
+                 labelpad=5,
+                 ha='center',va='center'):
+        ''' Add super ylabel or xlabel to the figure
+        Similar to matplotlib.suptitle
+        axis       - string: "x" or "y"
+        label      - string
+        label_prop - keyword dictionary for Text
+        labelpad   - padding from the axis (default: 5)
+        ha         - horizontal alignment (default: "center")
+        va         - vertical alignment (default: "center")
+        '''
+        fig = plt.gcf()
+        xmin = []
+        ymin = []
+        for ax in fig.axes:
+            xmin.append(ax.get_position().xmin)
+            ymin.append(ax.get_position().ymin)
+        xmin,ymin = min(xmin),min(ymin)
+        dpi = fig.dpi
+        if axis.lower() == "y":
+            rotation=90.
+            x = xmin-float(labelpad)/dpi
+            y = 0.5
+        elif axis.lower() == 'x':
+            rotation = 0.
+            x = 0.5
+            y = ymin - float(labelpad)/dpi
+        else:
+            raise Exception("Unexpected axis: x or y")
+        if label_prop is None: 
+            label_prop = dict()
+        plt.gcf().text(x,y,label,rotation=rotation,
+                   transform=fig.transFigure,
+                   ha=ha,va=va,
+                   **label_prop)
+
     if y_label is not False:
         if not sbplt:
             if not piemode:
@@ -914,14 +951,15 @@ def plotter(title,
                 the_y = y_label
             else:
                 the_y = y_l
-            plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
+            #suplabel('y', the_y, labelpad = 1.5)
+            plt.gcf().text(0.00, 0.5, the_y, va='center', rotation='vertical')
+            #plt.subplots_adjust(left=0.5)
         
         #    if not piemode:
         #        if type(y_label) == str:
         #            plt.ylabel(y_label)
         #        else:
         #            plt.ylabel(y_l)
-
 
 
     # hacky: turn legend into subplot titles :)
@@ -1050,10 +1088,13 @@ def plotter(title,
     if dragmode:
         plt.legend().draggable()
 
-    if not interactive and not running_python_tex and not running_spider and not tk:
-        plt.show()
+
+
+    if not interactive and not running_python_tex and not running_spider \
+        and not tk:
+        plt.gcf().show()
         return
-    if running_spider or tk or sbplt:
+    elif running_spider or tk:
         return plt
 
     if interactive:

@@ -1,28 +1,58 @@
 
-def conc(corpus, 
-        option = 'tregex',
-        query = 'any', 
-        dep_function = 'any',
-        dep_type = 'collapsed-ccprocessed-dependencies',
-        n = 100, 
-        random = False, 
-        split_sents = True,
-        window = 100, 
-        trees = False,
-        plaintext = False,
-        add_links = False,
-        show_links = False,
-        print_status = True,
-        print_output = True,
-        just_speakers = False,
-        root = False,
-        **kwargs): 
+def conc(corpus,
+         search,
+         query = 'any',
+         show = 'w', 
+         dep_type = 'collapsed-ccprocessed-dependencies',
+         n = 100, 
+         random = False, 
+         split_sents = True,
+         window = 100,
+         regex_nonword_filter = r'[A-Za-z0-9:_]',
+         exclude = False,
+         excludemode = 'any',
+         searchmode = 'all',
+         add_links = False,
+         show_links = False,
+         print_status = True,
+         print_output = True,
+         just_speakers = False,
+         root = False,
+         **kwargs): 
     """
-    A concordancer for Tregex queries and dependencies.
+    A concordancer for Tregex queries, CoreNLP dependencies, tokenised data or plaintext.
 
-    * Revisions forthcoming to facilitate better dependency querying
+    :param corpus: path to corpus, subcorpus or file
+    :type corpus: str
+    :param search: criteria to match
+    :type search: dict
+    :param query: query string, if not using dict search
+    :type query: str/list
+    :param show: ordered list of what to return ['w', 'p'] will return 'cats/NNS'
+    :type show: list
+    :param window: how many characters of context on either side
+    :type window: int
+    :param random: randomise results
+    :type random: bool
+    :param split_sents: do sentence tokenisation before searching
+    :type split_sents: bool
+    :param dep_type: which dependency grammar to search
+    :type dep_type: str
+    :param n: number of results to return
+    :type n: int
+    :param regex_nonword_filter: a regular expression to exclude non-words
+    :type regex_nonword_filter: raw string
+    :param exclude: criteria to exclude when matching
+    :type exclude: dict
+    :param excludemode: exclude any exclude criterion, or all
+    :type excludemode: str ('any'/'all')
+    :param searchmode: only keep matches matching all search criteria
+    :type searchmode: str ('any'/'all')
+    :param just_speakers: limit search to particular speaker(s)
+    :type just_speakers: list of speaker names
+    :returns: Pandas DataFrame containing concordance lines
+    """
 
-    :returns: a Pandas DataFrame containing concordance lines"""
     import corpkit
     import os
     import re
@@ -35,6 +65,7 @@ def conc(corpus,
         pass
     from corpkit.process import tregex_engine
     from corpkit.tests import check_pytex, check_dit
+    from corpkit.depsearch import dep_searcher
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -43,19 +74,16 @@ def conc(corpus,
         import subprocess
         have_ipython = False
 
-    if query == 'any':
-        query = r'.*'
-    
-    # convert list to query
-    if type(query) == list:
-        from other import as_regex
-        if option.startswith('t'):
-            query = r'/%s/ !< __' % as_regex(query, boundaries = 'line')
-        else:
-            query = as_regex(query, boundaries = 'w')
+    from corpkit.process import determine_datatype
+    datatype, singlefile = determine_datatype(corpus)
+
+    from corpkit.process import searchfixer
+    search, search_iterable = searchfixer(search, query, datatype)
 
     can_do_fast = False
-    if option.startswith('t'):
+    using_tregex = False
+    if 't' in search.keys():
+        using_tregex = True
         if just_speakers is False:
             can_do_fast = True
 
@@ -67,20 +95,21 @@ def conc(corpus,
         if just_speakers.lower() != 'all':
             just_speakers = [just_speakers]
 
-    def get_deps(sentence, dep_type):
-        if dep_type == 'basic-dependencies':
-            return sentence.basic_dependencies
-        if dep_type == 'collapsed-dependencies':
-            return sentence.collapsed_dependencies
-        if dep_type == 'collapsed-ccprocessed-dependencies':
-            return sentence.collapsed_ccprocessed_dependencies
 
+    # allow a b and c shorthand
+    allowed_dep_types = {'a': 'basic-dependencies', 
+                         'b': 'collapsed-dependencies',
+                         'c': 'collapsed-ccprocessed-dependencies'}
+    if dep_type in allowed_dep_types.keys():
+        dep_type = allowed_dep_types[dep_type]
+
+    # this is a list of lists
     conc_lines = []
-    if option.startswith('t'):
-        if trees:
-            options = '-s'
-        else:
-            options = '-t'
+
+    if using_tregex and 't' in show:
+        options = '-s'
+    else:
+        options = '-t'
     if can_do_fast:
         speakr = ''
         tregex_engine(query = query, check_query = True, root = root)
@@ -105,14 +134,18 @@ def conc(corpus,
         if query.endswith(r'\b'):
             query = query[:-2]
 
+        # make list of filepaths
         fs_to_conc = []
-        for r, dirs, fs in os.walk(corpus):
-            for f in fs:
-                if not os.path.isfile(os.path.join(r, f)):
-                    continue
-                if not f.endswith('.txt') and not f.endswith('.xml') and not f.endswith('.p'):
-                    continue
-                fs_to_conc.append(os.path.join(r, f))
+        if singlefile:
+            fs_to_conc.append(corpus)
+        else:
+            for r, dirs, fs in os.walk(corpus):
+                for f in fs:
+                    if not os.path.isfile(os.path.join(r, f)):
+                        continue
+                    if not f.endswith('.txt') and not f.endswith('.xml') and not f.endswith('.p'):
+                        continue
+                    fs_to_conc.append(os.path.join(r, f))
 
         def normalise(concline):
             import re
@@ -138,12 +171,12 @@ def conc(corpus,
             with open(filepath, "r") as text:
                 parsetreedict = {}
                 data = text.read()
-                if option.startswith('p'):
+                if datatype == 'plaintext':
                     import chardet
                     enc = chardet.detect(data)
                     data = unicode(data, enc['encoding'], errors = 'ignore')
-                if option.startswith('p') or option.startswith('l'):
-                    if option.startswith('l'):
+                if datatype == 'plaintext' or datatype == 'tokens':
+                    if datatype == 'tokens':
                         import pickle
                         try:
                             lstokens = pickle.load(open(filepath, 'rb'))
@@ -194,58 +227,37 @@ def conc(corpus,
                     else:
                         sents = corenlp_xml.sentences
                     nsents = len(sents)
-                    for i, s in enumerate(sents):
-                        if num_fs == 1:
-                            if 'note' in kwargs.keys():
-                                kwargs['note'].progvar.set((index) * 100.0 / nsents)
-                                if root:
-                                    root.update()
-                        try:
-                            speakr = s.speakername.strip()
-                        except:
-                            speakr = '' 
-                        parsetree = s.parse_string
-                        if option.startswith('t'):
-                            parsetreedict[speakr].append(parsetree)
-                            continue
-                        elif option.startswith('d'):
+                    if 't' not in search and datatype == 'parse':
+                        conclines = dep_searcher(sents, search, 
+                                                 concordancing = True, 
+                                                 show = show,
+                                                 dep_type = dep_type,
+                                                 exclude = exclude,
+                                                 searchmode = searchmode,
+                                                 excludemode = excludemode)
+                        for line in conclines:
+                            line.insert(0, f)
+                            conc_lines.append(line)
+                    else:   
+                        for i, s in enumerate(sents):
+                            if num_fs == 1:
+                                if 'note' in kwargs.keys():
+                                    kwargs['note'].progvar.set((index) * 100.0 / nsents)
+                                    if root:
+                                        root.update()
                             try:
-                                compiled_query = re.compile(query)
+                                speakr = s.speakername.strip()
                             except:
-                                import traceback
-                                import sys
-                                exc_type, exc_value, exc_traceback = sys.exc_info()
-                                lst = traceback.format_exception(exc_type, exc_value,
-                                              exc_traceback)
-                                error_message = lst[-1]
-                                thetime = strftime("%H:%M:%S", localtime())
-                                print '%s: Query %s' % (thetime, error_message)
-                                return
-        
-                            #right_dependency_grammar = s.find_all('dependencies', type=dep_type, limit = 1)
-                            deps = get_deps(s, dep_type)
-                            if dep_function == 'any' or dep_function is False:
-                                wdsmatching = [l.dependent.text.strip() for l in deps.links \
-                                               if re.match(query, l.dependent.text.strip())]
-                            else:
-                                comped = re.compile(dep_function, re.IGNORECASE)
-                                #goodsent = any(re.match(query, l.dependent.text.strip()) for l in deps.links if re.match(comped, l.type.strip()))
-                                wdsmatching = [l.dependent.text.strip() for l in deps.links \
-                                               if re.match(comped, l.type.strip()) and \
-                                               re.match(query, l.dependent.text.strip())]
-                            # this is shit, needs indexing or something
-                            for wd in wdsmatching:
-                                line = normalise(parsetree)
-                                try:
-                                    start, middle, end = re.split(r'(' + wd + r')', line, 1)
-                                except ValueError:
-                                    continue
-                                conc_lines.append([f, speakr, start, middle, end])
+                                speakr = '' 
+                            parsetree = s.parse_string
+                            if 't' in search:
+                                parsetreedict[speakr].append(parsetree)
+                                continue
 
-                    if option.startswith('t'):
+                    if 't' in search:
                         for speakr, dt in parsetreedict.items():
                             trees_as_string = '\n'.join(dt)
-                            if trees:
+                            if 't' in show:
                                 options = '-s'
                             else:
                                 options = '-t'
@@ -282,9 +294,9 @@ def conc(corpus,
     for fname, spkr, start, word, end in unique_results:
         spkr = unicode(spkr, errors = 'ignore')
         fname = os.path.basename(fname)
-        start = start.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
-        word = word.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
-        end = end.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+        #start = start.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+        #word = word.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+        #end = end.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
         #spaces = ' ' * (maximum / 2 - (len(word) / 2))
         #new_word = spaces + word + spaces
 
