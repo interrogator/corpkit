@@ -1070,18 +1070,16 @@ def interrogator(path,
         if dep_type in allowed_dep_types.keys():
             dep_type = allowed_dep_types[dep_type]
 
-        while dep_type not in allowed_dep_types:
+        while dep_type not in allowed_dep_types.values():
             time = strftime("%H:%M:%S", localtime())
             selection = raw_input('\n%s: Dependency type "%s" not recognised. Must be one of:\n\n' \
                 '              a) basic-dependencies' \
                 '              b) collapsed-dependencies' \
                 '              c) collapsed-ccprocessed-dependencies\n\nYour selection: ' % (time, dep_type))
-            if 'a' in selection:
-                dep_type = allowed_dep_types[0]
-            elif 'b' in selection:
-                dep_type = allowed_dep_types[1]
-            elif 'c' in selection:
-                dep_type = allowed_dep_types[2]
+            if selection in allowed_dep_types.keys():
+                dep_type = allowed_dep_types[selection]
+            elif selection in allowed_dep_types.values():
+                dep_type = selection
             else:
                 pass
 
@@ -1132,10 +1130,13 @@ def interrogator(path,
                 subcorpus = os.path.join(path, d)
             else:
                 subcorpus = path
-            if dependency:
-                files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+            if singlefile:
+                files = list(sorted_dirs)
             else:
-                files = [f for f in os.listdir(subcorpus) if not f.startswith('.')]
+                if dependency:
+                    files = [f for f in os.listdir(subcorpus) if f.endswith('.xml')]
+                else:
+                    files = [f for f in os.listdir(subcorpus) if not f.startswith('.')]
             
             # skip files not containing speakers...
             if just_speakers:
@@ -1388,10 +1389,13 @@ def interrogator(path,
                         else:
                             print '%s: Interrogating corpus ...' % (time)
                 c += 1
-                if one_big_corpus:
-                    filepath = os.path.join(path, f)
+                if singlefile:
+                    filepath = f
                 else:
-                    filepath = os.path.join(path, subcorpus_name, f)
+                    if one_big_corpus:
+                        filepath = os.path.join(path, f)
+                    else:
+                        filepath = os.path.join(path, subcorpus_name, f)
                 if dependency or can_do_fast is False:
                     if not plaintext and not tokens:
                         with open(filepath, "rb") as text:
@@ -1582,6 +1586,9 @@ def interrogator(path,
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
     
     # turn master dict into dataframe, sorted
+    if singlefile:
+        subcorpus_names[0] = os.path.basename(subcorpus_names[0])
+        
     df = DataFrame(the_big_dict, index = subcorpus_names)
 
     if one_big_corpus:
