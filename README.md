@@ -14,8 +14,8 @@
   - [Key features](#key-features)
     - [`make_corpus()`](#make_corpus)
     - [`interrogator()`](#interrogator)
-    - [`editor()`](#editor)
-    - [`plotter()`](#plotter)
+    - [`interrogation.edit()`](#interrogationedit)
+    - [`interrogation.plot()`](#interrogationplot)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -42,15 +42,28 @@
 <a name="whats-in-here"></a>
 ## What's in here?
 
-Essentially, the module contains functions for building and interrogating corpora, then manipulating or visualising the results. The most important of them are:
+Essentially, the module contains classes and functions for building and interrogating corpora, then manipulating or visualising the results. The three main functions are:
 
 | **Function name** | Purpose                            | 
 | ----------------- | ---------------------------------- | 
 | `make_corpus()`   | Use CoreNLP/NLTK to make to make parsed, speaker-segmented corpora from plain text files      |
-| `interrogator()`  | interrogate parse trees, dependencies, or find keywords or ngrams in parsed corpora | 
-| `editor()`        | edit `interrogator()` or `conc()` results, calculate keywords, sort using linear regression, etc. |
-| `plotter()`       | visualise results via *matplotlib* | 
+| `interrogator()`  | Interrogate parse trees, dependencies, or find keywords or ngrams in parsed corpora |
 | `conc()`          | Lexicogrammatical concordancing via constituency/dependency annotations | 
+
+Interrogations create `Interrogation` objects. These have attributes:
+
+| ** Attribute** | Contains |
+| ---------------|----------|
+| `interrogation.results` |  Pandas DataFrame of counts in each subcorpus |
+| `interrogation.totals` | Pandas Series of totals for each subcorpus/result |
+| interrogation.query` | a `dict` of values used to generate the interrogation |
+
+and methods:
+
+| **Method** | Purpose |
+|------------|---------|
+| `interrogation.edit()`        | Get relative frequencies, merge/remove results/subcorpora, calculate keywords, sort using linear regression, etc. |
+| `interrogation.plot()`       | visualise results via *matplotlib* | 
 
 There are also quite a few helper functions for making regular expressions, saving and loading data, making new projects, and so on.
 
@@ -84,8 +97,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
-<a name="editor"></a>
-#### `editor()`
+<a name="interrogationedit"></a>
+#### `interrogation.edit()`
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -99,10 +112,10 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
-<a name="plotter"></a>
-#### `plotter()` 
+<a name="interrogationplot"></a>
+#### `interrogation.plot()` 
 
-* Plot using *Pandas*/*Matplotlib*
+* Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
 * Create line charts, bar charts, pie charts, etc. with the `kind` argument
