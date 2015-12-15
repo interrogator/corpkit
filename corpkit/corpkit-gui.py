@@ -2574,7 +2574,7 @@ def corpkit_gui():
                 editor_args['keep_top'] = numtokeep
             
             # do editing
-            r = editor(data1, **editor_args)
+            r = the_data.edit(branch = df1branch.get(), **editor_args)
             
             if type(r) == str:
                 if r == 'linregress':
