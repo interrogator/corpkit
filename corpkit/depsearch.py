@@ -6,7 +6,8 @@ def dep_searcher(sents,
                  concordancing = False,
                  exclude = False,
                  excludemode = 'any',
-                 searchmode = 'all'):
+                 searchmode = 'all',
+                 lemmatise = False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -164,7 +165,7 @@ def dep_searcher(sents,
                                 break
                     if 'i' in show:
                         single_wd['i'] = str(tok.id)
-                    
+
                     for i in show:
                         intermediate_result.append(single_wd[i])
                     one_result.append('/'.join(intermediate_result))
