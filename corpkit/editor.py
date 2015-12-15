@@ -1228,8 +1228,10 @@ def editor(dataframe1,
     the_options['revert_year'] = revert_year
     the_options['print_info'] = print_info
 
-    outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
-    output = outputnames(the_options, df, total)
+    #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
+    #output = outputnames(the_options, df, total)
+    from corpkit.interrogation import Interrogation
+    output = Interrogation(results = df, totals = total, query = the_options)
 
     #print '\nResult (sample)\n'
     if print_info:
