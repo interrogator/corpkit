@@ -458,10 +458,10 @@ def interroplot(path, query):
 
     """
     import corpkit
-    from corpkit import interrogator, editor, plotter
-    quickstart = interrogator(path, 'words', query, show = ['w'])
-    edited = editor(quickstart.results, '%', quickstart.totals, print_info = False)
-    plotter(str(path), edited.results)
+    from corpkit import interrogator
+    quickstart = interrogator(path, 'w', query, show = ['w'])
+    edited = quickstart.edit('%', 'self', print_info = False)
+    edited.plot(str(path))
 
 def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kwargs):
     """
