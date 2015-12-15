@@ -100,6 +100,7 @@ def interrogator(path,
     from corpkit.process import add_corpkit_to_path
     from corpkit.process import tregex_engine
     from corpkit.process import add_nltk_data_to_nltk_path
+    from corpkit.interrogation import Interrogation
     
     # some non-Python resources need to explicitly be added to path
     add_corpkit_to_path()
@@ -726,6 +727,8 @@ def interrogator(path,
     tokens = False
     statsmode = False
     split_con = True
+    one_big_corpus = False
+    singlefile = False
 
     # determine what kind of data the corpus is
     # this currently slows things down with huge corpora, 
@@ -737,6 +740,9 @@ def interrogator(path,
     else:
         from corpkit.process import determine_datatype
         datatype, singlefile = determine_datatype(path)
+    
+    if singlefile:
+        one_big_corpus = True
 
     # some empty lists we'll need
     dicts = []
@@ -747,7 +753,6 @@ def interrogator(path,
     # fix up search
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query, datatype)
-
 
     possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f']
     if not any(i in possb for i in search.keys()):
@@ -1106,7 +1111,6 @@ def interrogator(path,
                     return
     
     # treat as one large corpus if no subdirs found
-    one_big_corpus = False
     if len(sorted_dirs) == 0:
         #warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         one_big_corpus = True
@@ -1422,7 +1426,8 @@ def interrogator(path,
                                     regex_nonword_filter = regex_nonword_filter,
                                     exclude = exclude,
                                     excludemode = excludemode,
-                                    searchmode = searchmode)
+                                    searchmode = searchmode,
+                                    lemmatise = lemmatise)
                             else:
                                 result_from_file = dep_funct(sents)
                             if only_count:
@@ -1525,7 +1530,7 @@ def interrogator(path,
     if only_count:
         stotals = pd.Series(count_results)
         stotals.name = 'Total' 
-        outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
+        #outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
         # add option to named tuple
         the_options = {'path': path,
@@ -1551,6 +1556,7 @@ def interrogator(path,
             the_options['translated_options'] = translated_options
 
         output = outputnames(the_options, stotals)
+        output = Interrogation(totals = stotals, query = the_options)
         if 'outname' in kwargs:
             stotals.name = kwargs['outname']
             return stotals
@@ -1584,14 +1590,15 @@ def interrogator(path,
     # for every unique entry, find out how many times it appears per subcorpus
     for word in unique_words:
         the_big_dict[word] = [each_dict[word] for each_dict in dicts]
-    
-    # turn master dict into dataframe, sorted
+
     if singlefile:
         subcorpus_names[0] = os.path.basename(subcorpus_names[0])
-        
+
+    # turn master dict into dataframe, sorted
     df = DataFrame(the_big_dict, index = subcorpus_names)
 
-    if one_big_corpus:
+
+    if one_big_corpus or singlefile:
         df = df.T.sort(list(df.T.columns)[0], ascending = False).T
 
     try:
@@ -1655,8 +1662,9 @@ def interrogator(path,
     except:
         the_options['translated_options'] = translated_options
 
-    outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-    output = outputnames(the_options, df, stotals)
+    output = Interrogation(results = df, totals = stotals, query = the_options)
+    #outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
+    #output = outputnames(the_options, df, stotals)
 
     if type(paralleling) == int:
         return (kwargs['outname'], df, stotals)
