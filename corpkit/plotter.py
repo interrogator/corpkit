@@ -80,11 +80,19 @@ def plotter(title,
     :param layout: Grid shape to use when *subplots* is True
     :type layout: tuple -- (int, int)
     :param interactive: Experimental interactive options
-    :type interactive: list -- [1, 2 3]
+    :type interactive: list -- [1, 2, 3]
     :returns: matplotlib figure
     """
     import corpkit
     import os
+
+    try:
+        from IPython.utils.shimmodule import ShimWarning
+        import warnings
+        warnings.simplefilter('ignore', ShimWarning)
+    except:
+        pass
+
     import matplotlib as mpl
     from matplotlib import rc
 
@@ -952,7 +960,7 @@ def plotter(title,
             else:
                 the_y = y_l
             #suplabel('y', the_y, labelpad = 1.5)
-            plt.gcf().text(0.00, 0.5, the_y, va='center', rotation='vertical')
+            plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
             #plt.subplots_adjust(left=0.5)
         
         #    if not piemode:
@@ -1089,6 +1097,9 @@ def plotter(title,
         plt.legend().draggable()
 
 
+    if sbplt:
+        plt.subplots_adjust(right=.8)
+        plt.subplots_adjust(left=.1)
 
     if not interactive and not running_python_tex and not running_spider \
         and not tk:
