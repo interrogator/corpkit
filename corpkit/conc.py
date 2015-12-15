@@ -95,7 +95,6 @@ def conc(corpus,
         if just_speakers.lower() != 'all':
             just_speakers = [just_speakers]
 
-
     # allow a b and c shorthand
     allowed_dep_types = {'a': 'basic-dependencies', 
                          'b': 'collapsed-dependencies',
@@ -112,27 +111,27 @@ def conc(corpus,
         options = '-t'
     if can_do_fast:
         speakr = ''
-        tregex_engine(query = query, check_query = True, root = root)
-        wholes = tregex_engine(query = query, 
+        tregex_engine(query = search['t'], check_query = True, root = root)
+        wholes = tregex_engine(query = search['t'], 
                                 options = ['-o', '-w', '-f', options], 
                                 corpus = corpus,
                                 preserve_case = True,
                                 root = root)
-        middle_column_result = tregex_engine(query = query, 
+        middle_column_result = tregex_engine(query = search['t'], 
                                 options = ['-o', options], 
                                 corpus = corpus,
                                 preserve_case = True,
                                 root = root)
         for (f, whole), mid in zip(wholes, middle_column_result):
-            reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
+            reg = re.compile(r'(\b' + re.escape(mid) + r'\b)', re.IGNORECASE)
             start, middle, end = re.split(reg, whole, 1)
             conc_lines.append([os.path.basename(f), speakr, start, middle, end])
     else:
 
-        if query.startswith(r'\b'):
-            query = query[2:]
-        if query.endswith(r'\b'):
-            query = query[:-2]
+        if search['t'].startswith(r'\b'):
+            search['t'] = search['t'][2:]
+        if search['t'].endswith(r'\b'):
+            search['t'] = search['t'][:-2]
 
         # make list of filepaths
         fs_to_conc = []
@@ -263,13 +262,13 @@ def conc(corpus,
                                 options = '-t'
                             with open('tmp.txt', 'w') as fo:
                                 fo.write(trees_as_string.encode('utf-8', errors = 'ignore'))
-                            tregex_engine(query = query, check_query = True, root = root)
-                            wholes = tregex_engine(query = query, 
+                            tregex_engine(query = search['t'], check_query = True, root = root)
+                            wholes = tregex_engine(query = search['t'], 
                                         options = ['-o', '-w', options], 
                                         corpus = 'tmp.txt',
                                         preserve_case = True,
                                         root = root)
-                            middle_column_result = tregex_engine(query = query, 
+                            middle_column_result = tregex_engine(query = search['t'], 
                                         options = ['-o', options], 
                                         corpus = 'tmp.txt',
                                         preserve_case = True,
