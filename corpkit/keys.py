@@ -14,12 +14,6 @@ def keywords(data,
              calc_all = True,
              **kwargs):
     """Feed this function some data and get its keywords.
-
-    You can use dictmaker() to build a new reference_corpus 
-    to serve as reference corpus, or use bnc.p
-
-    A list of what counts as data is available in the 
-    docstring of datareader().
     """
     
     import re

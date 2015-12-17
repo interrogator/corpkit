@@ -28,8 +28,8 @@ def pmultiquery(path,
     import collections
     from collections import namedtuple
     from time import strftime, localtime
-    from interrogator import interrogator
-    from editor import editor
+    from corpkit.interrogator import interrogator
+    from corpkit.editor import editor
     from corpkit.other import save_result
     try:
         from joblib import Parallel, delayed
