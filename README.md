@@ -14,8 +14,8 @@
   - [Key features](#key-features)
     - [`make_corpus()`](#make_corpus)
     - [`interrogator()`](#interrogator)
-    - [`interrogation.edit()`](#interrogationedit)
-    - [`interrogation.plot()`](#interrogationplot)
+    - [`interrogation.edit()` / `editor()](#interrogationedit--editor)
+    - [`interrogation.plot()` / plotter()](#interrogationplot--plotter)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -65,6 +65,9 @@ and methods:
 | `interrogation.edit()`        | Get relative frequencies, merge/remove results/subcorpora, calculate keywords, sort using linear regression, etc. |
 | `interrogation.plot()`       | visualise results via *matplotlib* | 
 
+These methods can also be used as functions (explained below), in order to do more advanced work with Pandas objects.
+
+
 There are also quite a few helper functions for making regular expressions, saving and loading data, making new projects, and so on.
 
 Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
@@ -97,8 +100,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
-<a name="interrogationedit"></a>
-#### `interrogation.edit()`
+<a name="interrogationedit--editor"></a>
+#### `interrogation.edit()` / `editor()
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -112,8 +115,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
-<a name="interrogationplot"></a>
-#### `interrogation.plot()` 
+<a name="interrogationplot--plotter"></a>
+#### `interrogation.plot()` / plotter() 
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
@@ -230,8 +233,8 @@ Output:
 `interroplot()` is just a demo function that does three things in order:
 
 1. uses `interrogator()` to search corpus for a (Regex or Tregex) query
-2. uses `editor()` to calculate the relative frequencies of each result
-3. uses `plotter()` to show the top seven results
+2. uses `edit()` to calculate the relative frequencies of each result
+3. uses `plot()` to show the top seven results
  
 Here's an example of the three functions at work on the NYT corpus:
 
@@ -244,11 +247,11 @@ Here's an example of the three functions at work on the NYT corpus:
 # search trees, output lemma
 >>> risk_of = interrogator(corpus, 'trees', q, show = ['l'])
 
-# use editor to turn absolute into relative frequencies
->>> to_plot = editor(risk_of.results, '%', risk_of.totals)
+# use edit() to turn absolute into relative frequencies
+>>> to_plot = risk_of.edit('%', risk_of.totals)
 
 # plot the results
->>> plotter('Risk of (noun)', to_plot.results, y_label = 'Percentage of all results',
+>>> to_plot.plot('Risk of (noun)', y_label = 'Percentage of all results',
 ...    style = 'fivethirtyeight')
 ```
 
@@ -315,7 +318,8 @@ Unlike most concordancers, which are based on plaintext corpora, *corpkit* can c
 
 >>> subcorpus = 'data/nyt/years/2005'
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
->>> lines = conc(subcorpus, 'tregex', query, window = 50, n = 10, random = True)
+# 't' option for tree searching
+>>> lines = conc(subcorpus, 't', query, window = 50, n = 10, random = True)
 ```
 
 Output (a `Pandas DataFrame`):
@@ -333,14 +337,15 @@ Output (a `Pandas DataFrame`):
 9     said that the agency 's continuing review of how         Guidant   treated patient risks posed by devices like the 
 ```
 
-When searching dependencies, you have the added ability to restrict to a particular role:
+When searching dependencies, you have more flexibility:
 
 ```python
->>> query = r'\bm(a|e)n\b'
->>> lines = conc(subcorpus, 'deps', query, dep_function = 'nsubj')
+# match words starting with 'st' filling function of nsubj
+>>> criteria = {'w': '^st', 'f': 'nsubj$'}
+>>> lines = conc(subcorpus, criteria)
 ```
 
-Or, you can search tokenised corpora or plaintext corpora:
+You can search tokenised corpora or plaintext corpora for regular expressions as well:
 
 ```python
 >>> lines = conc(subcorpus, 'plaintext', query)
@@ -408,8 +413,8 @@ First, let's try removing the pronouns using `editor()`. The quickest way is to 
 # >>> prps = ['he', 'she', 'you']
 # >>> prps = as_regex(wl.pronouns, boundaries = 'line')
 
-# give editor() indices, words, wordlists or regexes to keep remove or merge
->>> sayers_no_prp = editor(sayers.results, skip_entries = prps,
+# give edit() indices, words, wordlists or regexes to keep remove or merge
+>>> sayers_no_prp = sayers.edit(skip_entries = prps,
 ...    skip_subcorpora = [1963])
 >>> quickview(sayers_no_prp, n = 10)
 ```
@@ -433,10 +438,10 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
 # sort with editor()
->>> sayers_no_prp = editor(sayers_no_prp.results, '%', sayers.totals, sort_by = 'increase')
+>>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
 # make an area chart with custom y label
->>> plotter('Sayers, increasing', sayers_no_prp.results, kind = 'area', 
+>>> sayers_no_prp.plot('Sayers, increasing', kind = 'area', 
 ...    y_label = 'Percentage of all sayers')
 ```
 
@@ -454,13 +459,13 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 ...           '2000s': r'^200',
 ...           '2010s': r'^201'}
 
->>> sayers = editor(sayers.results, merge_subcorpora = merges)
+>>> sayers = sayers.edit(merge_subcorpora = merges)
 
 # now, get relative frequencies for he and she
->>> genders = editor(sayers.results, '%', sayers.totals, just_entries = ['he', 'she'])
+>>> genders = sayers.edit('%', 'self', just_entries = ['he', 'she'])
 
 # and plot it as a series of pie charts, showing totals on the slices:
->>> plotter('Pronominal sayers in the NYT', genders.results.T, kind = 'pie',
+>>> genders.plot('Pronominal sayers in the NYT', kind = 'pie',
 ...    subplots = True, figsize = (15, 2.75), show_totals = 'plot')
 ```
 
@@ -501,7 +506,7 @@ Let's have a look at how these options change the output:
 ...            'threshold': False}
 
 >>> for k, v in options.items():
-...    key = editor(p.results, 'keywords', 'self', k = v)
+...    key = p.edit('keywords', 'self', k = v)
 ...    print key.results.ix['2011'].order(ascending = False)
 
 ```
@@ -523,7 +528,7 @@ Output:
 
 As you can see, slight variations on keywording give different impressions of the same corpus!
 
-A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years:
+A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years.
 
 ```python
 >>> yrs = ['2011', '2012', '2013', '2014']
@@ -556,7 +561,7 @@ adoboli        161.30
 
 ```python
 >>> terror = ['terror', 'terrorism', 'terrorist']
->>> terr = editor(p.results, 'k', 'self', merge_entries = terror, newname = 'terror')
+>>> terr = p.edit('k', 'self', merge_entries = terror, newname = 'terror')
 >>> print terr.results.terror
 ```
 
