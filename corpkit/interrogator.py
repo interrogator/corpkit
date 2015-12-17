@@ -909,7 +909,7 @@ def interrogator(path,
         if 'n' not in search.keys() and 't' not in search.keys():
             translated_option = 'y'
             dependency = True
-            optiontext = 'Dependency querying...'
+            optiontext = 'Dependency querying'
             from corpkit.depsearch import dep_searcher
             dep_funct = dep_searcher
             if 'c' in show:
@@ -920,7 +920,7 @@ def interrogator(path,
             translated_option = 'v'
             #using_tregex = True
             statsmode = True
-            optiontext = 'Getting general stats.'
+            optiontext = 'Getting general stats'
             dep_funct = get_stats
             if datatype != 'parse':
                 print 'Need parsed corpus for this.'
@@ -935,7 +935,7 @@ def interrogator(path,
         if datatype == 'parse':
             translated_option = 'n'
             using_tregex = True
-            optiontext = 'n-grams only.'
+            optiontext = 'Getting n-grams'
             n_gramming = True
         if datatype == 'tokens':
             translated_option = 'j'
