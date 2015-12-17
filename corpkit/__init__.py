@@ -2,9 +2,9 @@ __all__ = ["interrogator",
            "editor",
            "plotter",
            "conc",
-           "save_result",
+           "save",
            "quickview",
-           "load_result",
+           "load",
            "load_all_results",
            "as_regex",
            "new_project",
@@ -35,8 +35,8 @@ from interrogator import interrogator
 from editor import editor
 from plotter import plotter
 from conc import conc
-from other import save_result
-from other import load_result
+from other import save
+from other import load
 from other import load_all_results
 from other import quickview
 from other import as_regex
