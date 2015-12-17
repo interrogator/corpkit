@@ -39,7 +39,7 @@ def quickview(results, n = 25):
         else:
             raise ValueError('File %s not found in saved_interrogations or dictionaries')
 
-    if 'interrogation' in str(type(results)):
+    if 'interrogation' in str(type(results)).lower():
         clas = results.query['function']
         if clas == 'interrogator':
             datatype = results.results.iloc[0,0].dtype
@@ -107,7 +107,7 @@ def quickview(results, n = 25):
         if option == 'keywords':
             print '%s: %s' %(fildex, w)
         elif option == '%' or option == 'ratio':
-            if 'interrogation' in str(type(results)):
+            if 'interrogation' in str(type(results)).lower():
                 tot = results.totals[w]
                 totstr = "%.3f" % tot
                 print '%s: %s (%s%%)' % (fildex, w, totstr)
@@ -159,7 +159,8 @@ def concprinter(df, kind = 'string', n = 100):
         print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
     print ''
 
-def save_result(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
+
+def save(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
     """
     Save an interrogation as pickle to *savedir*.
 
@@ -182,91 +183,50 @@ def save_result(interrogation, savename, savedir = 'saved_interrogations', print
     
     :returns: None
     """
-    import corpkit
-    import collections
-    from collections import namedtuple, Counter
+
     import pickle
     import os
-    import pandas
     from time import localtime, strftime
-    # import nltk
 
+    def urlify(s):
+        "Turn savename into filename"
+        import re
+        #s = s.lower()
+        s = re.sub(r"[^\w\s-]", '', s)
+        s = re.sub(r"\s+", '-', s)
+        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+        return s
+
+    savename = urlify(savename)
     
-    if type(interrogation) == dict:
-        savedir = os.path.join(savedir, savename)
-        if not os.path.isdir(savedir):
-            os.makedirs(savedir)
-    else:
-        interrogation = {savename: interrogation}
+    if not savename.endswith('.p'):
+        savename = savename + '.p'
 
-    for savename, data in interrogation.items():
-        
-        if type(data) == str or type(data) == unicode:
-            raise TypeError('First argument (i.e. the thing to save) cannot be a string.')
-
-        if savename.endswith('.p'):
-            savename = savename[:-2]
-
-        def urlify(s):
-            import corpkit
-            "Turn savename into filename"
-            import re
-            #s = s.lower()
-            s = re.sub(r"[^\w\s-]", '', s)
-            s = re.sub(r"\s+", '-', s)
-            s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-            return s
-
-        savename = urlify(savename)
-
+    if savedir:
         if not os.path.exists(savedir):
             os.makedirs(savedir)
-        
-        if not savename.endswith('.p'):
-            savename = savename + '.p'
-
-        # this feature creeps me out, i don't think it's needed any more
-        savename = savename.replace('lemmatised', '-lemmatised')
-
         fullpath = os.path.join(savedir, savename)
-        while os.path.isfile(fullpath):
-            selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
-            if selection == 'o' or selection == 'O':
-                import os
-                os.remove(fullpath)
-            else:
-                if not selection.endswith('.p'):
-                    selection = selection + '.p'
-                    fullpath = os.path.join(savedir, selection)
-        
-        # if it's just a table or series
+    else:
+        fullpath = savename
 
-        if type(data) == pandas.core.frame.DataFrame or \
-            type(data) == pandas.core.series.Series or \
-            type(data) == collections.Counter:
-            # removing this nltk support for now
-            # or \ type(data) == nltk.text.Text:
-            temp_list = [data]
-        elif len(data) == 2:
-            temp_list = [data.query, data.totals]
-        elif len(data) == 3:
-            if data.query['function'] == 'interrogator':
-                if data.query['query'].startswith('k'):
-                    temp_list = [data.query, data.results, data.table]
-                else:
-                    temp_list = [data.query, data.results, data.totals]
-            else:
-                temp_list = [data.query, data.results, data.totals]
-        elif len(data) == 4:
-            temp_list = [data.query, data.results, data.totals, data.table]
-        f = open(fullpath, 'w')
-        pickle.dump(temp_list, f)
-        time = strftime("%H:%M:%S", localtime())
-        if print_info:
-            print '\n%s: Data saved: %s\n' % (time, fullpath)
-        f.close()
+    while os.path.isfile(fullpath):
+        selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+        if selection == 'o' or selection == 'O':
+            import os
+            os.remove(fullpath)
+        else:
+            if not selection.endswith('.p'):
+                selection = selection + '.p'
+                fullpath = os.path.join(savedir, selection)
 
-def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
+    with open(fullpath, 'wb') as fo:
+        pickle.dump(interrogation, fo)
+    
+    time = strftime("%H:%M:%S", localtime())
+    if print_info:
+        print '\n%s: Data saved: %s\n' % (time, fullpath)
+
+def load(savename, loaddir = 'saved_interrogations'):
     """
     Load saved data into memory:
 
@@ -284,99 +244,20 @@ def load_result(savename, loaddir = 'saved_interrogations', only_concs = False):
     :type only_concs: bool
 
     :returns: loaded data
-    """
-    import corpkit
-    import collections
+    """    
     import pickle
     import os
-    import pandas
-    if not os.path.isdir(os.path.join(loaddir, savename)):
-        if not savename.endswith('.p'):
-            savename = savename + '.p'
-    
-    def namesuggester(entered_name, searched_dir):
-        """if you got the wrong name, this finds the most similar name and suggests it."""
-        import corpkit
-        from nltk.metrics.distance import edit_distance
-        from itertools import groupby
-        from operator import itemgetter
-        names = os.listdir(searched_dir)
-        res = {}
-        for n in names:
-            sim = edit_distance(entered_name, n, transpositions=False)
-            res[n] = sim
-        possibles = sorted([v.replace('.p', '') for k,v in groupby(sorted((v,k) for k,v in res.iteritems()), key=itemgetter(0)).next()[1]])
-        sel = raw_input('\n"%s" not found. Enter one of the below, or "e" to exit:\n\n%s\n\n' % (entered_name.replace('.p', ''), '\n'.join(['    %d) "%s"' % (index + 1, sug) for index, sug in enumerate(possibles[:10])])))
-        if sel.startswith('e') or sel.startswith('E'):
-            return
-        else:
-            try:
-                s = int(sel)
-                return possibles[s - 1]
-            except ValueError:
-                return sel
+    if not savename.endswith('.p'):
+        savename = savename + '.p'
 
-    def make_into_namedtuple(unpickled):
-        """take a filename, make it into named tuple"""
+    if loaddir:
+        fullpath = os.path.join(loaddir, savename)
+    else:
+        fullpath = savename
 
-        # figure out what's in the unpickled data, use to turn into named tup
-        if type(unpickled) == pandas.core.frame.DataFrame or \
-        type(unpickled) == pandas.core.series.Series or \
-        type(unpickled) == collections.Counter:
-        # or \
-        #type(unpickled) == nltk.text.Text:
-            output = unpickled
-
-        if len(unpickled) == 1:
-            if type(unpickled[0]) == pandas.core.frame.DataFrame or \
-            type(unpickled[0]) == pandas.core.series.Series or \
-            type(unpickled[0]) == dict or \
-            type(unpickled[0]) == collections.Counter:
-            # or \
-            #type(unpickled[0]) == nltk.text.Text:
-                output = unpickled[0]
-        elif len(unpickled) == 4:
-            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals', 'table'])
-            output = outputnames(unpickled[0], unpickled[1], unpickled[2], unpickled[3])
-        elif len(unpickled) == 3:
-            if unpickled[0]['function'] == 'interrogator':
-                if unpickled[0]['query'].startswith('k'):
-                    outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'table'])
-                else:
-                    # not presently possible, i think:
-                    outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
-            else:
-                outputnames = collections.namedtuple('loaded_interrogation', ['query', 'results', 'totals'])
-            output = outputnames(unpickled[0], unpickled[1], unpickled[2])
-        elif len(unpickled) == 2:
-            outputnames = collections.namedtuple('loaded_interrogation', ['query', 'totals'])
-            output = outputnames(unpickled[0], unpickled[1])
-        return output
-
-    filepath = os.path.join(loaddir, savename)
-    if os.path.isfile(filepath):
-        notfound = True
-        while notfound:
-            filepath = os.path.join(loaddir, savename)    
-            try:
-                unpickled = pickle.load(open(filepath, 'rb'))
-                notfound = False
-            except IOError:
-                sel = namesuggester(savename, loaddir)
-                if not sel:
-                    return
-                else:
-                    savename = sel + '.p'
-        return make_into_namedtuple(unpickled)
-
-    elif os.path.isdir(filepath):
-        fs = [f for f in os.listdir(filepath) \
-                if os.path.isfile(os.path.join(filepath, f)) and f.endswith('.p')]    
-        outs = {}
-        for f in fs:
-            unpickled = pickle.load(open(os.path.join(filepath, f), 'rb'))    
-            outs[f.replace('.p', '')] = make_into_namedtuple(unpickled)
-        return outs
+    with open(fullpath, 'rb') as fo:
+        data = pickle.load(fo)
+    return data
 
 def new_project(name, loc = '.', root = False):
     """Make a new project in ./*loc*
@@ -463,7 +344,7 @@ def interroplot(path, query):
     edited = quickstart.edit('%', 'self', print_info = False)
     edited.plot(str(path))
 
-def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kwargs):
+def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     """
     Load every saved interrogation in data_dir into a dict:
 
@@ -474,12 +355,10 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
 
     :returns: dict with filenames as keys
     """
-    import corpkit
     import os
-    import time
-    from corpkit.other import load_result
     from time import localtime, strftime
-    
+    from corpkit.other import load
+
     def get_root_note(kwargs):
         if 'root' in kwargs.keys():
             root = kwargs['root']
@@ -492,43 +371,29 @@ def load_all_results(data_dir = 'saved_interrogations', only_concs = False, **kw
         return root, note
 
     root, note = get_root_note(kwargs)
+    
+    datafiles = [f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f)) \
+                 and f.endswith('.p')]
+    output = {}
 
-    r = {}
-    fs = [f for f in os.listdir(data_dir) if f.endswith('.p') or os.path.isdir(os.path.join(data_dir, f))]
-    if note and len(fs) > 3:
-        note.progvar.set(0)
-    if len(fs) == 0:
-        if not root:
-            raise ValueError('No saved data found in %s' % data_dir)
-        #else:
-            #thetime = strftime("%H:%M:%S", localtime())
-            #if not only_concs:
-            #    print '%s: No saved interrogations found in %s' % (thetime, data_dir)
-            #else:
-            #    print '%s: No saved concordances found in %s' % (thetime, data_dir)
-            return
     l = 0
-    import pandas
-    for index, finding in enumerate(fs):
+    for f in datafiles:    
         try:
-            tmp = load_result(finding, loaddir = data_dir, only_concs = only_concs)
-            if type(tmp) != pandas.core.frame.DataFrame and type(tmp) != pandas.core.series.Series:
-                if not tmp:
-                    continue
-            r[os.path.splitext(finding)[0]] = tmp
+            loadname = f.replace('.p', '')
+            output[loadname] = load_result(f, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
-            print '%s: %s loaded as %s.' % (time, finding, os.path.splitext(finding)[0])
+            print '%s: %s loaded as %s.' % (time, f, loadname)
             l += 1
         except:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, finding)
-        if note and len(fs) > 3:
+            print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, f)
+        if note and len(datafiles) > 3:
             note.progvar.set((index + 1) * 100.0 / len(fs))
         if root:
             root.update()
     time = strftime("%H:%M:%S", localtime())
     print '%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir))
-    return r
+    return output
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
     """turn a series into a latex table"""
