@@ -61,7 +61,7 @@ def interrogator(path,
         - a/distance from root
     :type show: list of strings
 
-    :param lemmatise: Do lemmatisation on results
+    :param lemmatise: Force lemmatisation on results
     :type lemmatise: bool
         
     :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
@@ -162,6 +162,8 @@ def interrogator(path,
         is_multiquery = True
         if 'postounts' in path[0]:
             spelling = 'UK'
+    if type(query) == list:
+        query = {c.title(): c for c in query}
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
     if just_speakers:
@@ -366,18 +368,21 @@ def interrogator(path,
                     if exclude and 'l' in exclude.keys():
                         if re.match(exclude['l'], l):
                             continue
-                    if 'w' in show:
-                        single_result.append(w)
-                    if 'l' in show:
-                        single_result.append(l)
+                    if not 'p' in show:
+                        if 'w' in show and not lemmatise:
+                            single_result.append(w)
+                        if 'l' in show or lemmatise:
+                            single_result.append(l)
                     # bad fix:
                     # this currently says, if pos in show, there must only be pos ...
-                    if 'p' in show:
+                    else:
                         if lemmatise:
                             single_result.append(l)
                         else:
                             single_result.append(w)
-
+                    if phrases:
+                        for index, r in enumerate(single_result):
+                            single_result[index] = ' '.join(r)
                     single_result = '/'.join(single_result)
                     res.append(single_result)
                 list_of_matches = res
@@ -387,16 +392,7 @@ def interrogator(path,
         if spelling:
             list_of_matches = convert_spelling(list_of_matches, spelling = spelling)
 
-        
-        # turn every result into a single string again if need be:
-        if phrases:
-            output = []
-            for res in list_of_matches:
-                joined = ' '.join(res)
-                output.append(joined)
-            return output
-        else:
-            return list_of_matches
+        return list_of_matches
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
@@ -669,7 +665,9 @@ def interrogator(path,
                 numpass = len([x for x in deps.links if x.type.endswith('pass')])
                 statsmode_results['Passives'] += numpass
                 statsmode_results['Tokens'] += len(sent.tokens)
-                statsmode_results['Words'] += len([w for w in sent.tokens if w.word.isalnum()])
+                words = [w.word for w in sent.tokens if w.word.isalnum()]
+                statsmode_results['Words'] += len(words)
+                statsmode_results['Characters'] += len(''.join(words))
                 #statsmode_results['Unique words'] += len(set([w.word.lower() for w in sent.tokens if w.word.isalnum()]))
                 #statsmode_results['Unique lemmata'] += len(set([w.lemma.lower() for w in sent.tokens if w.word.isalnum()]))
 
@@ -677,8 +675,8 @@ def interrogator(path,
         from dictionaries.process_types import processes
         from corpkit.other import as_regex
         tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                     #'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                     #'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
                      'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                      'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
                      'Open class words': r'/^(NN|JJ|VB|RB)/ < __',
@@ -687,7 +685,8 @@ def interrogator(path,
                      'Interrogative': r'ROOT << (/\?/ !< __)',
                      'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.mental, boundaries = 'w'),
                      'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.verbal, boundaries = 'w'),
-                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w')}
+                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w')
+                     }
 
         for name, q in sorted(tregex_qs.items()):
             res = tregex_engine(query = q, 
@@ -754,11 +753,15 @@ def interrogator(path,
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query, datatype)
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f']
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 's']
     if not any(i in possb for i in search.keys()):
         raise ValueError('search argument "%s" unrecognised.' % search.keys())
     if len(search.keys()) > 1 and 't' in search.keys():
         raise ValueError('if "t" in search, it must be the only list item')
+
+    if query == 'characters' and search == 't':
+        only_count = True
+        show = ['o']
 
     # fix up exclude naming conventions, convert lists to regex
     fixed_exclude = {}
@@ -782,7 +785,7 @@ def interrogator(path,
     for index, t in enumerate(show):
         show[index] = t.lower()[0]
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f']
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 'o']
     only_dep = ['d', 'g', 'i', 'a', 'f']
     if not any(i in possb for i in show):
         raise ValueError('show argument "%s" unrecognised.' % show)
@@ -838,12 +841,20 @@ def interrogator(path,
                 query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
-        elif 'l' in show:
+        elif 'l' in show or lemmatise is True:
             dep_funct = slow_tregex
             translated_option = 't'
             lemmatise = True
             if type(query) == list:
                 query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+            if query == 'any':
+                query = r'/.?[A-Za-z0-9].?/ !< __'
+        elif 'o' in show:
+            only_count = True
+            count_results = {}
+            translated_option = 't'
+            if type(query) == list:
+                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
@@ -922,9 +933,6 @@ def interrogator(path,
             statsmode = True
             optiontext = 'Getting general stats'
             dep_funct = get_stats
-            if datatype != 'parse':
-                print 'Need parsed corpus for this.'
-                return
 
     # initialise nltk lemmatiser only once
     if lemmatise or ('l' in show and not dependency):
@@ -991,6 +999,15 @@ def interrogator(path,
         if k == 't' and v == 'entities':
             search[k] = r'NP <# NNP'
             titlefilter = True
+        if k == 't' and v == 'characters':
+            search[k] = r'/.?[A-Za-z0-9].?/ !< __'
+        if k == 't' and v == 'sentences':
+            search[k] = r'ROOT < __'
+        if k == 't' and v == 'clauses':
+            search[k] = r'/^S/ < __'
+        if k == 't' and v == 'words':
+            search[k] = r'/.?[A-Za-z0-9].?/ !< __'
+
 
     # check that there's nothing in the quicksave path
     if quicksave:
@@ -1000,8 +1017,8 @@ def interrogator(path,
         fullpath = os.path.join(savedir, quicksave)
         if os.path.isfile(fullpath):
             # if the file exists, check if the query is pretty much the same
-            from corpkit import load_result
-            loaded = load_result(quicksave)
+            from corpkit import load
+            loaded = load(quicksave)
             if loaded.query['query'] == query and \
             loaded.query['path'] == path and \
             loaded.query['translated_option'] == translated_option and \
@@ -1354,7 +1371,13 @@ def interrogator(path,
                                            corpus = subcorpus, root = root)
                         if result is False:
                             return
-                    
+
+                        if 'o' in show:
+                            chars = 0
+                            for word in result:
+                                chars += len(word) 
+                            result = chars
+            
                         # if just counting matches, just 
                         # add subcorpus name and count...
                         if only_count:
@@ -1555,7 +1578,6 @@ def interrogator(path,
         except:
             the_options['translated_options'] = translated_options
 
-        output = outputnames(the_options, stotals)
         output = Interrogation(totals = stotals, query = the_options)
         if 'outname' in kwargs:
             stotals.name = kwargs['outname']
@@ -1564,8 +1586,8 @@ def interrogator(path,
             clear_output()
         if quicksave:
             if stotals.sum() > 0:
-                from corpkit.other import save_result
-                save_result(output, quicksave)
+                from corpkit.other import save
+                save(output, quicksave)
         
         if printstatus:
             time = strftime("%H:%M:%S", localtime())
@@ -1708,8 +1730,8 @@ def interrogator(path,
 
     if quicksave:
         if stotals.sum() > 0 and num_diff_results > 0:
-            from corpkit.other import save_result
-            save_result(output, quicksave)
+            from corpkit.other import save
+            save(output, quicksave)
 
     return output
 
