@@ -134,7 +134,7 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 
 * Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
 * Randomise concordance results, determine window size, output to CSV, etc.
-* Quickly save interrogations and figures to file, and reload results in new sessions with `save_result()` and `load_result()`
+* Quickly save interrogations and figures to file, and reload results in new sessions with `save()` and `load()`
 * Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
 * Start a new blank project with `new_project()`
 
