@@ -30,7 +30,8 @@ def pmultiquery(path,
     from time import strftime, localtime
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
-    from corpkit.other import save_result
+    from corpkit.other import save
+    from corpkit.interrogation import Interrogation
     try:
         from joblib import Parallel, delayed
     except:
@@ -168,14 +169,14 @@ def pmultiquery(path,
 
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
-        print ("\n%s: Beginning %d parallel corpus interrogations:\n              %s" \
+        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
            "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, "\n              ".join(path), query) )
+           "\n          Interrogating corpus ... \n" % (time, len(path), num_cores, "\n              ".join(path), query) )
 
     elif multiple_queries:
-        print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
+        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
            "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), "', '".join(query.values())) )
+           "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, os.path.basename(path), "', '".join(query.values())) )
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
@@ -263,8 +264,7 @@ def pmultiquery(path,
                     del d[unpicklable]
                 except KeyError:
                     pass
-            outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
-            output = outputnames(d, data, stotal)
+            output = Interrogation(results = data, totals = stotal, query = d)
             out[name] = output
     
         # could be wrong for unstructured corpora?
@@ -280,7 +280,7 @@ def pmultiquery(path,
                     fullpath = os.path.join('saved_interrogations', selection)
 
             for k, v in out.items():
-                save_result(v, k, savedir = fullpath, print_info = False)
+                save(v, k, savedir = fullpath, print_info = False)
         
             time = strftime("%H:%M:%S", localtime())
             print "\n%s: %d files saved to %s" % ( time, len(out.keys()), fullpath)
@@ -296,8 +296,8 @@ def pmultiquery(path,
         time = strftime("%H:%M:%S", localtime())
         print '\n\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
         if quicksave:
-            from corpkit.other import save_result
-            save_result(out, quicksave)
+            from corpkit.other import save
+            save(out, quicksave)
         return out
 
 if __name__ == '__main__':
