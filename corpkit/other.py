@@ -33,9 +33,9 @@ def quickview(results, n = 25):
             return
 
         elif os.path.isfile(os.path.join(savedpath, results)):
-            from corpkit import load_result
+            from corpkit import load
             print '\n%s loaded temporarily from file:\n' % results
-            results = load_result(results)
+            results = load(results)
         else:
             raise ValueError('File %s not found in saved_interrogations or dictionaries')
 
@@ -165,7 +165,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', print_info =
     Save an interrogation as pickle to *savedir*.
 
        >>> interro_interrogator(corpus, 'words', 'any')
-       >>> save_result(interro, 'savename')
+       >>> save(interro, 'savename')
 
     will create saved_interrogations/savename.p
 
@@ -198,6 +198,8 @@ def save(interrogation, savename, savedir = 'saved_interrogations', print_info =
         return s
 
     savename = urlify(savename)
+
+    savename = savename.replace('.p', '')
     
     if not savename.endswith('.p'):
         savename = savename + '.p'
@@ -215,6 +217,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', print_info =
             import os
             os.remove(fullpath)
         else:
+            selection = selection.replace('.p', '')
             if not selection.endswith('.p'):
                 selection = selection + '.p'
                 fullpath = os.path.join(savedir, selection)
@@ -230,7 +233,7 @@ def load(savename, loaddir = 'saved_interrogations'):
     """
     Load saved data into memory:
 
-        >>> loaded = load_result('interro')
+        >>> loaded = load('interro')
 
     will load saved_interrogations/interro.p as loaded
 
@@ -380,13 +383,13 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     for f in datafiles:    
         try:
             loadname = f.replace('.p', '')
-            output[loadname] = load_result(f, loaddir = data_dir)
+            output[loadname] = load(f, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
             print '%s: %s loaded as %s.' % (time, f, loadname)
             l += 1
         except:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: %s failed to load. Try using load_result to find out the matter.' % (time, f)
+            print '%s: %s failed to load. Try using load to find out the matter.' % (time, f)
         if note and len(datafiles) > 3:
             note.progvar.set((index + 1) * 100.0 / len(fs))
         if root:
