@@ -796,6 +796,8 @@ def get_filepaths(a_path, ext = 'txt'):
     """make list of txt files in a_path and remove non txt files"""
     import os
     files = []
+    if os.path.isfile(a_path):
+        return [a_path]
     for (root, dirs, fs) in os.walk(a_path):
         for f in fs:
             if ext:
