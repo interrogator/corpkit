@@ -1169,17 +1169,7 @@ def corpkit_gui():
             
             timestring('Updated spreadsheet display in edit window.')
 
-        def is_number(s):
-            """check if str can be can be made into float/int"""
-            try:
-                float(s) # for int, long and float
-            except ValueError:
-                try:
-                    complex(s) # for complex
-                except ValueError:
-                    return False
-            return True
-
+        from corpkit.process import is_number
 
         ###################     ###################     ###################     ###################
         #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#
