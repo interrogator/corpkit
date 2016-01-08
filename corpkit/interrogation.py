@@ -8,8 +8,7 @@ class Interrogation:
     .. py:method:: edit(*args, **kwargs)
     .. py:method:: plot(title, **kwargs)
     """
-    from corpkit.interrogation import _edit, _plot
-
+    
     def __init__(self, results = None, totals = None, query = None):
         """initialise the class"""
         self.results = results
