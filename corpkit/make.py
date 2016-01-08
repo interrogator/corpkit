@@ -47,7 +47,7 @@ def make_corpus(unparsed_corpus_path,
                                check_jdk, 
                                add_ids_to_xml, 
                                rename_all_files,
-                               make_no_id_corpus)
+                               make_no_id_corpus, parse_corpus, move_parsed_files)
 
     if project_path is None:
         project_path = os.getcwd()
