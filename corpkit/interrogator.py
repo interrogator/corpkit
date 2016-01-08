@@ -102,6 +102,9 @@ def interrogator(path,
     from corpkit.process import add_nltk_data_to_nltk_path
     from corpkit.interrogation import Interrogation, Results, Totals
     from corpkit.corpus import Corpus
+
+    if type(path) == corpkit.corpus.Corpus:
+        path = path.path
     
     # some non-Python resources need to explicitly be added to path
     add_corpkit_to_path()

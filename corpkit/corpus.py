@@ -7,7 +7,6 @@ class Corpus:
         from corpkit.process import determine_datatype
         
         def get_structure():
-
             """print structure of corpus and build .subcorpora, .files and .structure"""
             import os
             from corpkit.corpus import Subcorpus
