@@ -798,12 +798,16 @@ def get_filepaths(a_path, ext = 'txt'):
     files = []
     for (root, dirs, fs) in os.walk(a_path):
         for f in fs:
-            if f.endswith('.' + ext) \
-            and 'Unidentified' not in f \
-            and 'unknown' not in f:
+            if ext:
+                if not f.endswith('.' + ext):
+                    continue
+            if 'Unidentified' not in f \
+            and 'unknown' not in f \
+            and not f.startswith('.'):
                 files.append(os.path.join(root, f))
-            if not f.endswith('.' + ext):
-                os.remove(os.path.join(root, f))
+            if ext:
+                if not f.endswith('.' + ext):
+                    os.remove(os.path.join(root, f))
     return files
 
 def get_list_of_speaker_names(corpuspath):
