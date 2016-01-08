@@ -10,7 +10,9 @@ __all__ = ["interrogator",
            "new_project",
            "make_corpus",
            "flatten_treestring",
-           "interroplot"]
+           "interroplot",
+           "Corpus",
+           "Interrogation"]
 
 __version__ = "1.77"
 __author__ = "Daniel McDonald"
@@ -44,3 +46,5 @@ from other import new_project
 from other import interroplot
 from make import make_corpus
 from build import flatten_treestring
+from corpus import Corpus
+from interrogation import Interrogation
