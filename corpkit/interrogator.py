@@ -100,7 +100,8 @@ def interrogator(path,
     from corpkit.process import add_corpkit_to_path
     from corpkit.process import tregex_engine
     from corpkit.process import add_nltk_data_to_nltk_path
-    from corpkit.interrogation import Interrogation
+    from corpkit.interrogation import Interrogation, Results, Totals
+    from corpkit.corpus import Corpus
     
     # some non-Python resources need to explicitly be added to path
     add_corpkit_to_path()
@@ -1108,19 +1109,42 @@ def interrogator(path,
                 pass
 
     # get list of subcorpora and sort them ... user input if no corpus found
-    from corpkit.corpus import Corpus
-    if type(path) == str:
-        the_corpus = Corpus(path)
-
-    if len(the_corpus.subcorpora) == 0 or the_corpus.singlefile:
-        one_big_corpus = True
-
+    got_corpus = False
+    if os.path.isfile(path):
+        sorted_dirs = [path]
+        got_corpus = True
+    else:   
+        while got_corpus is False:
+            try:
+                sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
+                got_corpus = True
+            except OSError:
+                got_corpus = False
+                time = strftime("%H:%M:%S", localtime())
+                selection = raw_input('\n%s: Corpus directory not found: " %s ". You can either:\n\n' \
+                    '              a) enter a new corpus path\n' \
+                    '              b) exit\n\nYour selection: ' % (time, path))
+                if 'a' in selection:
+                    path = raw_input('\nNew corpus path: ')
+                elif 'b' in selection:
+                    print ''
+                    return
+    
     # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
         #warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         one_big_corpus = True
         # fails if in wrong dir!
         sorted_dirs = [os.path.basename(path)]
+
+    # numerically sort subcorpora if the first can be an int
+    # could improve now with is_number, all
+    else:
+        try:
+            check = int(sorted_dirs[0])
+            sorted_dirs.sort(key=int)
+        except:
+            pass
 
     # if doing dependencies, make list of all files, and a progress bar
     if dependency or plaintext or tokens or can_do_fast is False:
@@ -1556,6 +1580,7 @@ def interrogator(path,
         except:
             the_options['translated_options'] = translated_options
 
+        stotals = Totals(stotals)
         output = Interrogation(totals = stotals, query = the_options)
         if 'outname' in kwargs:
             stotals.name = kwargs['outname']
@@ -1662,6 +1687,8 @@ def interrogator(path,
     except:
         the_options['translated_options'] = translated_options
 
+    df = Results(df)
+    stotals = Totals(stotals)
     output = Interrogation(results = df, totals = stotals, query = the_options)
     #outputnames = collections.namedtuple('interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, stotals)
