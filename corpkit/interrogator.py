@@ -181,8 +181,14 @@ def interrogator(path,
 
     # just for me: convert spelling automatically for bipolar
     if not is_multiquery:
-        if 'postcounts' in path:
-            spelling = 'UK'
+        if type(path) == str:
+            if 'postcounts' in path:
+                spelling = 'UK'
+        try:
+            if 'postcounts' in path.path:
+                spelling = UK
+        except:
+            pass
 
     # don't print so much stdout in the GUI
     if root:
@@ -808,7 +814,6 @@ def interrogator(path,
     elif datatype == 'tokens':
         tokens = True
 
-
     if using_tregex:
         optiontext = 'Searching parse trees'
         if 'p' in show:
@@ -1008,7 +1013,6 @@ def interrogator(path,
         if k == 't' and v == 'words':
             search[k] = r'/.?[A-Za-z0-9].?/ !< __'
 
-
     # check that there's nothing in the quicksave path
     if quicksave:
         savedir = 'data/saved_interrogations'
@@ -1073,8 +1077,6 @@ def interrogator(path,
     if titlefilter:
         phrases = True
 
-    from corpkit.process import filtermaker
-
     # dependencies:
     # can't be phrases
     # check if regex valid
@@ -1106,42 +1108,19 @@ def interrogator(path,
                 pass
 
     # get list of subcorpora and sort them ... user input if no corpus found
-    got_corpus = False
-    if os.path.isfile(path):
-        sorted_dirs = [path]
-        got_corpus = True
-    else:   
-        while got_corpus is False:
-            try:
-                sorted_dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d))]
-                got_corpus = True
-            except OSError:
-                got_corpus = False
-                time = strftime("%H:%M:%S", localtime())
-                selection = raw_input('\n%s: Corpus directory not found: " %s ". You can either:\n\n' \
-                    '              a) enter a new corpus path\n' \
-                    '              b) exit\n\nYour selection: ' % (time, path))
-                if 'a' in selection:
-                    path = raw_input('\nNew corpus path: ')
-                elif 'b' in selection:
-                    print ''
-                    return
-    
+    from corpkit.corpus import Corpus
+    if type(path) == str:
+        the_corpus = Corpus(path)
+
+    if len(the_corpus.subcorpora) == 0 or the_corpus.singlefile:
+        one_big_corpus = True
+
     # treat as one large corpus if no subdirs found
     if len(sorted_dirs) == 0:
         #warnings.warn('\nNo subcorpora found in %s.\nUsing %s as corpus dir.' % (path, path))
         one_big_corpus = True
         # fails if in wrong dir!
         sorted_dirs = [os.path.basename(path)]
-
-    # numerically sort subcorpora if the first can be an int
-    # could improve now with is_number, all
-    else:
-        try:
-            check = int(sorted_dirs[0])
-            sorted_dirs.sort(key=int)
-        except:
-            pass
 
     # if doing dependencies, make list of all files, and a progress bar
     if dependency or plaintext or tokens or can_do_fast is False:
