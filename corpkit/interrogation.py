@@ -1,28 +1,4 @@
-def _edit(*args, **kwargs):
-    """calls corpkit.editor.editor()"""
-    from corpkit import editor
-    branch = 'results'
-    if 'branch' in kwargs.keys():
-        branch = kwargs['branch']
-        del kwargs['branch']
-    if branch.lower().startswith('r'):
-        return editor(self.results, *args, **kwargs)
-    elif branch.lower().startswith('t'):
-        return editor(self.totals, *args, **kwargs)
-
-def _plot(title, *args, **kwargs):
-    """calls corpkit.plotter.plotter()"""
-    from corpkit import plotter
-    branch = 'results'
-    if 'branch' in kwargs.keys():
-        branch = kwargs['branch']
-        del kwargs['branch']
-    if branch.lower().startswith('r'):
-        plotter(title, self.results, *args, **kwargs)
-    elif branch.lower().startswith('t'):
-        plotter(title, self.totals, *args, **kwargs)
-
-class Interrogation(object):
+class Interrogation:
     """
     Stores results of a corpus interrogation, before or after editing.
 
@@ -35,9 +11,37 @@ class Interrogation(object):
     from corpkit.interrogation import _edit, _plot
 
     def __init__(self, results = None, totals = None, query = None):
-
+        """initialise the class"""
         self.results = results
         self.totals = totals
         self.query = query
-        self.edit = _edit
-        self.plot = _plot
+
+
+    def __str__(self):
+        st = 'Corpus interrogation %s:\n\nData type: %s\n' % (self.path, self.datatype)
+        return st
+
+
+    def edit(self, *args, **kwargs):
+        """calls corpkit.editor.editor()"""
+        from corpkit import editor
+        branch = 'results'
+        if 'branch' in kwargs.keys():
+            branch = kwargs['branch']
+            del kwargs['branch']
+        if branch.lower().startswith('r'):
+            return editor(self.results, *args, **kwargs)
+        elif branch.lower().startswith('t'):
+            return editor(self.totals, *args, **kwargs)
+
+    def plot(self, title, *args, **kwargs):
+        """calls corpkit.plotter.plotter()"""
+        from corpkit import plotter
+        branch = 'results'
+        if 'branch' in kwargs.keys():
+            branch = kwargs['branch']
+            del kwargs['branch']
+        if branch.lower().startswith('r'):
+            plotter(title, self.results, *args, **kwargs)
+        elif branch.lower().startswith('t'):
+            plotter(title, self.totals, *args, **kwargs)
