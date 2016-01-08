@@ -7,6 +7,7 @@ def conc(corpus,
          n = 100, 
          random = False, 
          split_sents = True,
+         only_unique = True,
          window = 100,
          regex_nonword_filter = r'[A-Za-z0-9:_]',
          exclude = False,
@@ -102,6 +103,29 @@ def conc(corpus,
     if dep_type in allowed_dep_types.keys():
         dep_type = allowed_dep_types[dep_type]
 
+    def make_conc_lines_from_whole_mid(wholes, middle_column_result, speakr = False):
+        if speakr is False:
+            speakr = ''
+        conc_lines = []
+        # remove duplicates from results
+        unique_wholes = []
+        unique_middle_column_result = []
+        duplicates = []
+        for index, ((f, whole), mid) in enumerate(zip(wholes, middle_column_result)):
+            if '-join-'.join([f, whole, mid]) not in duplicates:
+                duplicates.append('-join-'.join([f, whole, mid]))
+                unique_wholes.append([f, whole])
+                unique_middle_column_result.append(mid)
+
+        # split into start, middle and end, dealing with multiple occurrences
+        for index, ((f, whole), mid) in enumerate(zip(unique_wholes, unique_middle_column_result)):
+            reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', re.IGNORECASE | re.UNICODE)
+            offsets = [(m.start(), m.end()) for m in re.finditer(reg,whole)]
+            for offstart, offend in offsets:              
+                start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), whole[offend:].strip()
+                conc_lines.append([os.path.basename(f), speakr, start, middle, end])
+        return conc_lines
+
     # this is a list of lists
     conc_lines = []
 
@@ -122,10 +146,11 @@ def conc(corpus,
                                 corpus = corpus,
                                 preserve_case = True,
                                 root = root)
-        for (f, whole), mid in zip(wholes, middle_column_result):
-            reg = re.compile(r'(\b' + re.escape(mid) + r'\b)', re.IGNORECASE)
-            start, middle, end = re.split(reg, whole, 1)
-            conc_lines.append([os.path.basename(f), speakr, start, middle, end])
+
+        concs = make_conc_lines_from_whole_mid(wholes, middle_column_result)
+        for l in concs:
+            conc_lines.append(l)
+
     else:
 
         if search['t'].startswith(r'\b'):
@@ -273,10 +298,14 @@ def conc(corpus,
                                         corpus = 'tmp.txt',
                                         preserve_case = True,
                                         root = root)
-                            for whole, mid in zip(wholes, middle_column_result):
-                                reg = re.compile(r'(' + re.escape(mid) + r')', re.IGNORECASE)
-                                start, middle, end = re.split(reg, whole, 1)
-                                conc_lines.append([f, speakr, start, middle, end])
+
+                            # add filenames back
+                            wholes = [[f, w] for w in wholes]
+
+                            concs = make_conc_lines_from_whole_mid(wholes, middle_column_result, speakr = speakr)
+                            
+                            for l in concs:
+                                conc_lines.append(l)
 
     # does not keep results ordered!
     try:
@@ -284,7 +313,22 @@ def conc(corpus,
     except:
         pass
 
-    unique_results = [list(x) for x in set(tuple(x) for x in conc_lines)]
+    def uniquify(conc_lines):
+        from collections import OrderedDict
+        od = OrderedDict()
+        unique_lines = []
+        checking = []
+        for index, (f, speakr, start, middle, end) in enumerate(conc_lines):
+            joined = ' '.join([speakr, start, 'MIDDLEHERE:', middle, ':MIDDLEHERE', end])
+            if joined not in checking:
+                unique_lines.append(conc_lines[index])
+            checking.append(joined)
+        return unique_lines
+
+    if only_unique:
+        unique_results = uniquify(conc_lines)
+    else:
+        unique_results = conc_lines
 
     #make into series
     series = []
