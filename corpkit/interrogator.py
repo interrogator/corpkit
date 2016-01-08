@@ -344,8 +344,9 @@ def interrogator(path,
         
         # tokenise if multiword:
         if phrases and not n_gramming:
-            from nltk import word_tokenize as word_tokenize
-            list_of_matches = [word_tokenize(i) for i in list_of_matches]
+            if 'l' in show or lemmatise:
+                from nltk import word_tokenize as word_tokenize
+                list_of_matches = [word_tokenize(i) for i in list_of_matches]
 
         # this is just for plaintext ... should convert to unicode on file open
         if datatype == 'plaintext':
@@ -401,8 +402,7 @@ def interrogator(path,
         for entry in list_of_words:
             if phrases:
                 # just get the rightmost word
-                word = entry[-1]
-                entry.pop()
+                word = entry.pop()
             else:
                 word = entry
             if translated_option.startswith('u'):
@@ -1184,8 +1184,7 @@ def interrogator(path,
                 p = animator(None, None, init = True, tot_string = tstr, length = total_files, **par_args)
                 #p = TextProgressBar(total_files)
             else:
-                p = animator(None, None, init = True, tot_string = tstr, length = total_files * 10, **par_args)
-                #p = TextProgressBar(total_files * 10)
+                p = animator(None, None, init = True, tot_string = tstr, length = total_files * 12, **par_args)
     
     # if tregex, make progress bar for each dir
     else:
