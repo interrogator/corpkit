@@ -152,11 +152,11 @@ def conc(corpus,
             conc_lines.append(l)
 
     else:
-
-        if search['t'].startswith(r'\b'):
-            search['t'] = search['t'][2:]
-        if search['t'].endswith(r'\b'):
-            search['t'] = search['t'][:-2]
+        if 't' in search.keys():
+            if search['t'].startswith(r'\b'):
+                search['t'] = search['t'][2:]
+            if search['t'].endswith(r'\b'):
+                search['t'] = search['t'][:-2]
 
         # make list of filepaths
         fs_to_conc = []
