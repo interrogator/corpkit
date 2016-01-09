@@ -1,36 +1,45 @@
 class Corpus:
     """A class representing a linguistic text corpus"""
 
-    def __init__(self, path):
+    def __init__(self, path, **kwargs):
 
         import os
         from corpkit.process import determine_datatype
         
-        def get_structure():
+        def get_structure(print_info = True):
             """print structure of corpus and build .subcorpora, .files and .structure"""
             import os
-            from corpkit.corpus import Subcorpus
-            strep = '\nCorpus: %s\n' % self.abspath
+            from corpkit.corpus import Subcorpus, File
+            strep = '\nCorpus: %s\n' % os.path.abspath(self.path)
             structdict = {}
             for dirname, subdirlist, filelist in os.walk(self.path):
-                if os.path.abspath(dirname) == os.path.abspath(self.path):
-                    continue
+                filelist = [File(f, dirname) for f in filelist if not f.startswith('.')]
+                if print_info:
+                    if os.path.abspath(dirname) == os.path.abspath(self.path):
+                        continue
                 structdict[dirname] = filelist
                 strep = strep + '\nSubcorpus: %s' % os.path.basename(dirname)
-                for fname in filelist:
-                    strep = strep + '\n\t%s' % fname
-            print strep
+                for index, fname in enumerate(filelist):
+                    strep = strep + '\n\t%s' % os.path.basename(fname.path)
+                    if index > 9:
+                        strep = strep + '\n\t... and %d others ...' % (len(filelist) - 10)
+                        break
+            if print_info:
+                print strep
             filelist = []
             for fl in structdict.values():
                 for f in fl:
                     filelist.append(f)
-            subcs = [Subcorpus(i) for i in structdict.keys()]
+            if print_info:
+                subcs = [Subcorpus(i) for i in sorted(structdict.keys())]
+            else:
+                subcs = None
             return structdict, subcs, filelist
 
         self.path = path
         self.abspath = os.path.abspath(path)
         self.datatype, self.singlefile = determine_datatype(path)
-        self.structure, self.subcorpora, self.files = get_structure()
+        self.structure, self.subcorpora, self.files = get_structure(**kwargs)
         self.features = False
 
     def __str__(self):
@@ -70,10 +79,38 @@ class Corpus:
             corpora.append(Corpus(p))
         return corpora
 
-class Subcorpus(str):
+
+from corpkit.corpus import Corpus
+class Subcorpus(Corpus):
     
     def __init__(self, path):
         self.path = path
+        kwargs = {'print_info': False}
+        Corpus.__init__(self, path, **kwargs)
+
+    def __str__(self):
+        return self.path
+
+    def interrogate(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.interrogator.interrogator()"""
+        from corpkit import interrogator
+        return interrogator(self.path, *args, **kwargs)
+
+    def concordance(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.conc.conc()"""
+        from corpkit import conc
+        return conc(self.path, *args, **kwargs)
+
+class File(Corpus):
+    
+    def __init__(self, path, dirname):
+        import os
+        self.path = os.path.join(dirname, path)
+        kwargs = {'print_info': False}
+        Corpus.__init__(self, self.path, **kwargs)
+
+    def __str__(self):
+        return self.path
 
     def interrogate(self, *args, **kwargs):
         """interrogate the corpus using corpkit.interrogator.interrogator()"""
