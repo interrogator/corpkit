@@ -15,7 +15,6 @@ class Interrogation:
         self.totals = totals
         self.query = query
 
-
     def __str__(self):
         st = 'Corpus interrogation: %s\n\n' % (self.query['path'])
         return st
@@ -45,6 +44,12 @@ class Interrogation:
         elif branch.lower().startswith('t'):
             plotter(title, self.totals, *args, **kwargs)
 
+    def save(self, savename, *args, **kwargs):
+        """Save data to pickle file"""
+        from corpkit import save
+        save(self, savename, *args, **kwargs)
+
+
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
 
@@ -61,7 +66,11 @@ class Results(pd.core.frame.DataFrame):
         from corpkit import plotter
         plotter(title, self, *args, **kwargs)
 
-
+    def save(self, savename, *args, **kwargs):
+        """Save data to pickle file"""
+        from corpkit import save
+        save(self, savename, *args, **kwargs)
+    
 class Totals(pd.core.series.Series):
 
     def __init__(self, data):
@@ -77,4 +86,23 @@ class Totals(pd.core.series.Series):
         from corpkit import plotter
         plotter(title, self, *args, **kwargs)
 
+    def save(self, savename, *args, **kwargs):
+        """Save data to pickle file"""
+        from corpkit import save
+        save(self, savename, *args, **kwargs)
+    
 
+class Concordance(pd.core.frame.DataFrame):
+    
+    def __init__(self, data):
+        pd.core.frame.DataFrame.__init__(self, data)
+
+    def save(self, savename, *args, **kwargs):
+        """Save data to pickle file"""
+        from corpkit import save
+        save(self, savename, *args, **kwargs)
+
+    def format(self, kind = 'string', n = 100):
+        """format concordance lines"""
+        from corpkit.other import concprinter
+        concprinter(self, kind = kind, n = n)
