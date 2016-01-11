@@ -61,8 +61,16 @@ def editfunc(self, *args, **kwargs):
     from corpkit import editor
     return editor(self, *args, **kwargs)
 
+def savefunc(self, savename, *args, **kwargs):
+  from corpkit import save
+  save(self, savename, *args, **kwargs)
+
 pd.DataFrame.edit = editfunc
 pd.Series.edit = editfunc
 
 pd.DataFrame.plot = plotfunc
 pd.Series.plot = plotfunc
+
+pd.DataFrame.save = savefunc
+pd.Series.save = savefunc
+
