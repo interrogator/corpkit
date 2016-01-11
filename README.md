@@ -11,13 +11,12 @@
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
-  - [Corpus()](#corpus)
-  - [Interrogation()](#interrogation)
+  - [`Corpus()`](#corpus)
+    - [`interrogate()` method](#interrogate-method)
+  - [`Interrogation()`](#interrogation)
+  - [`edit() method`](#edit-method)
+    - [`plot() method`](#plot-method)
   - [Functions, lists, etc.](#functions-lists-etc)
-    - [`interrogate()`](#interrogate)
-    - [`edit()`](#edit)
-    - [`plot()`](#plot)
-    - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
   - [By cloning the repository](#by-cloning-the-repository)
@@ -46,7 +45,7 @@
 Essentially, the module contains classes, methods and functions for building and interrogating corpora, then manipulating or visualising the results. 
 
 <a name="corpus"></a>
-### Corpus()
+### `Corpus()`
 
 First, there's a `Corpus()` class, which models a corpus of CoreNLP XML, lists of tokens, or plaintext files, creating subclasses for subcorpora and corpus files. With the `Corpus()` class, the following methods are available:
 
@@ -58,8 +57,20 @@ First, there's a `Corpus()` class, which models a corpus of CoreNLP XML, lists o
 
 The `.interrogate()` and `.concordance()` methods can also be called on `Subcorpus` and `File` objects.
 
+<a name="interrogate-method"></a>
+#### `interrogate()` method
+
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
+* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
+* Return words or phrases, POS/group/phrase tags, raw counts, or all three.
+* Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
+* Look for ngrams in each subcorpus, and chart their frequency
+* Two-way UK-US spelling conversion, and the ability to add words manually
+* Output Pandas DataFrames that can be easily edited and visualised
+* Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
+
 <a name="interrogation"></a>
-### Interrogation()
+### `Interrogation()`
 
 The `corpus.interrogate()` method returns an `Interrogation` object. These have attributes:
 
@@ -78,33 +89,8 @@ and methods:
 | interrogation.save()` | Save data as pickle |
 | interrogation.quickview()` | Show top results and their abs/relative frequency |
 
-<a name="functions-lists-etc"></a>
-### Functions, lists, etc.
-
-There are also quite a few helper functions for making regular expressions, making new projects, and so on.
-
-Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
-
-While most of the tools are designed to work with corpora that are parsed (by [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml)) and structured (in a series of directories representing different points in time, speaker IDs, chapters of a book, etc.), the tools can also be used on text that is unparsed and/or unstructured. That said, you won't be able to do nearly as much cool stuff.
-
-I think it's a great idea to use *corpkit* from within a [Jupyter Notebook](http://jupyter.org), but you could also operate the toolkit from the command line if you wanted to have less fun.
-
-The most comprehensive use of *corpkit* to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of *corpkit* can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
-
-<a name="interrogate"></a>
-#### `interrogate()`
-
-* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
-* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
-* Return words or phrases, POS/group/phrase tags, raw counts, or all three.
-* Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
-* Look for ngrams in each subcorpus, and chart their frequency
-* Two-way UK-US spelling conversion, and the ability to add words manually
-* Output Pandas DataFrames that can be easily edited and visualised
-* Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
-
-<a name="edit"></a>
-#### `edit()`
+<a name="edit-method"></a>
+### `edit() method`
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -118,8 +104,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
-<a name="plot"></a>
-#### `plot()`
+<a name="plot-method"></a>
+#### `plot() method`
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
@@ -132,14 +118,10 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Use a number of chart styles, such as `ggplot`, `fivethirtyeight` or 'seaborn-talk' (if you've got `seaborn` installed)
 * Save images to file, as `.pdf` or `.png`
 
-<a name="other-stuff"></a>
-#### Other stuff
+<a name="functions-lists-etc"></a>
+### Functions, lists, etc.
 
-* Concordance using Tregex (i.e. concordance all nominal groups containing *gross* as an adjective with `NP < (JJ < /gross/)`)
-* Randomise concordance results, determine window size, output to CSV, etc.
-* Quickly save interrogations and figures to file, and reload results in new sessions with `save()` and `load()`
-* Build dictionaries from corpora, subcorpora or concordance lines, which can then be used as reference corpora for keyword generation
-* Start a new blank project with `new_project()`
+There are quite a few helper functions for making regular expressions, making new projects, and so on, with more documentation forthcoming. Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
 
 Included here is `orientation/orientation.ipynb`, which is a Jupyter Notebook version of this readme. In `orientation/data` is a sample corpus of paragraph from *The New York Times* containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package. With the notebook and the data, you can easily run all the code in this document yourself.
 
