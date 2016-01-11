@@ -14,8 +14,8 @@
   - [Key features](#key-features)
     - [`make_corpus()`](#make_corpus)
     - [`interrogator()`](#interrogator)
-    - [`interrogation.edit()` / `editor()](#interrogationedit--editor)
-    - [`interrogation.plot()` / plotter()](#interrogationplot--plotter)
+    - [`interrogation.edit()` / `editor()`](#interrogationedit--editor)
+    - [`interrogation.plot()` / `plotter()`](#interrogationplot--plotter)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -101,7 +101,7 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
 <a name="interrogationedit--editor"></a>
-#### `interrogation.edit()` / `editor()
+#### `interrogation.edit()` / `editor()`
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -116,7 +116,7 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
 <a name="interrogationplot--plotter"></a>
-#### `interrogation.plot()` / plotter() 
+#### `interrogation.plot()` / `plotter()`
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
