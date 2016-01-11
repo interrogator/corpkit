@@ -14,7 +14,7 @@
   - [`Corpus()`](#corpus)
     - [`interrogate()` method](#interrogate-method)
   - [`Interrogation()`](#interrogation)
-  - [`edit() method`](#edit-method)
+    - [`edit() method`](#edit-method)
     - [`plot() method`](#plot-method)
   - [Functions, lists, etc.](#functions-lists-etc)
 - [Installation](#installation)
@@ -47,7 +47,16 @@ Essentially, the module contains classes, methods and functions for building and
 <a name="corpus"></a>
 ### `Corpus()`
 
-First, there's a `Corpus()` class, which models a corpus of CoreNLP XML, lists of tokens, or plaintext files, creating subclasses for subcorpora and corpus files. With the `Corpus()` class, the following methods are available:
+First, there's a `Corpus()` class, which models a corpus of CoreNLP XML, lists of tokens, or plaintext files, creating subclasses for subcorpora and corpus files.
+
+To use it, simple feed it a path to a directory containing `.txt` files, or subfolders containing `.txt` files.
+
+```python
+>>> from corpkit import Corpus
+>>> unparsed = Corpus('path/to/data')
+```
+
+With the `Corpus()` class, the following methods are available:
 
 | Method | Purpose |
 |--------|---------|
@@ -86,11 +95,13 @@ and methods:
 |------------|---------|
 | `interrogation.edit()`        | Get relative frequencies, merge/remove results/subcorpora, calculate keywords, sort using linear regression, etc. |
 | `interrogation.plot()`       | visualise results via *matplotlib* | 
-| interrogation.save()` | Save data as pickle |
-| interrogation.quickview()` | Show top results and their abs/relative frequency |
+| `interrogation.save()` | Save data as pickle |
+| `interrogation.quickview()` | Show top results and their absolute/relative frequency |
+
+These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well.
 
 <a name="edit-method"></a>
-### `edit() method`
+#### `edit() method`
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -115,7 +126,7 @@ and methods:
 * Customisable figure titles, axes labels, legends, image size, colormaps, etc.
 * Use `TeX` if you have it
 * Use log scales if you really want
-* Use a number of chart styles, such as `ggplot`, `fivethirtyeight` or 'seaborn-talk' (if you've got `seaborn` installed)
+* Use a number of chart styles, such as `ggplot`, `fivethirtyeight` or `seaborn-talk` (if you've got `seaborn` installed)
 * Save images to file, as `.pdf` or `.png`
 
 <a name="functions-lists-etc"></a>
@@ -200,8 +211,9 @@ Or, just use *(I)Python*:
 >>> from corpkit import Corpus
 
 # Make corpus from path
-
 >>> unparsed = Corpus('data/nyt/years')
+
+# parse it, return the new parsed corpus object
 >>> corpus = unparsed.parse()
 
 # search nyt for modal auxiliaries:
