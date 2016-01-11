@@ -171,7 +171,7 @@ def interrogator(path,
     if type(query) == dict or type(query) == collections.OrderedDict:
         is_multiquery = True
     if just_speakers:
-        if just_speakers == 'each':
+        if just_speakers == 'each' or just_speakers == ['each']:
             is_multiquery = True
         if type(just_speakers) == str:
             if just_speakers != 'each':
@@ -464,35 +464,6 @@ def interrogator(path,
                     pass
             output.append('/'.join(result))
         return output
-
-    def distancer(lks, lk):
-        "determine number of jumps to root"      
-        c = 0
-        # get the gov index, stop when it's zero
-        root_found = False
-        while not root_found:
-            if c == 0:
-                try:
-                    link_to_check = next(i for i in lks if i.dependent.idx == lk.id)
-                except StopIteration:
-                    root_found = True
-                    break
-                #link_to_check = lk
-            gov_index = link_to_check.governor.idx
-            if gov_index == 0:
-                root_found = True
-            else:
-                if c > 29:
-                    root_found = True
-                    break
-                link_to_check = [l for l in lks if l.dependent.idx == gov_index]
-                if len(link_to_check) > 0:
-                    link_to_check = link_to_check[0]
-                else:
-                    break
-                c += 1
-        if c < 30:
-            return c
 
     def tok_by_list(pattern, list_of_toks):
         """search for regex in plaintext corpora"""
@@ -795,7 +766,7 @@ def interrogator(path,
     for index, t in enumerate(show):
         show[index] = t.lower()[0]
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 'o']
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 'o', 'r', 'gl', 'dl', 'pl']
     only_dep = ['d', 'g', 'i', 'a', 'f']
     if not any(i in possb for i in show):
         raise ValueError('show argument "%s" unrecognised.' % show)
