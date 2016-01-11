@@ -1,19 +1,19 @@
 __all__ = ["interrogator",
-           "editor",
-           "plotter",
-           "conc",
-           "save",
-           "quickview",
-           "load",
-           "load_all_results",
-           "as_regex",
-           "new_project",
-           "make_corpus",
-           "flatten_treestring",
-           "interroplot",
-           "Interrogation",
-           "Corpus",
-           "Subcorpus"]
+    "editor",
+    "plotter",
+    "conc",
+    "save",
+    "quickview",
+    "load",
+    "load_all_results",
+    "as_regex",
+    "new_project",
+    "make_corpus",
+    "flatten_treestring",
+    "interroplot",
+    "Interrogation",
+    "Corpus",
+    "Subcorpus"]
 
 __version__ = "1.77"
 __author__ = "Daniel McDonald"
@@ -50,3 +50,19 @@ from build import flatten_treestring
 from interrogation import Interrogation
 from corpus import Subcorpus
 from corpus import Corpus
+
+import pandas as pd
+
+def plotfunc(self, title, *args, **kwargs):
+    from corpkit import plotter
+    plotter(title, self, *args, **kwargs)
+
+def editfunc(self, *args, **kwargs):
+    from corpkit import editor
+    return editor(self, *args, **kwargs)
+
+pd.DataFrame.edit = editfunc
+pd.Series.edit = editfunc
+
+pd.DataFrame.plot = plotfunc
+pd.Series.plot = plotfunc
