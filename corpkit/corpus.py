@@ -34,7 +34,7 @@ class Corpus:
                 subcs = [Subcorpus(i) for i in sorted(structdict.keys())]
             else:
                 subcs = None
-            return structdict, subcs, filelist
+            return structdict, subcs, sorted(filelist)
 
         self.path = path
         self.abspath = os.path.abspath(path)
@@ -79,6 +79,10 @@ class Corpus:
             corpora.append(Corpus(p))
         return corpora
 
+    def concordance(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.conc.conc()"""
+        from corpkit import conc
+        return conc(self.path, *args, **kwargs)
 
 from corpkit.corpus import Corpus
 class Subcorpus(Corpus):
