@@ -72,7 +72,7 @@ The `.interrogate()` and `.concordance()` methods can also be called on `Subcorp
 <a name="interrogation"></a>
 ### `Interrogation()`
 
-The `corpus.interrogate()` method returns an `Interrogation` object. These have attributes:
+The `corpus.interrogate()` method returns an `Interrogation()` object. These have attributes:
 
 | Attribute | Contains |
 | ---------------|----------|
@@ -256,7 +256,7 @@ Output:
 ...    corenlppath = 'Downloads/corenlp', nltk_data_path = 'Downloads/nltk_data')
 ```
 
-which creates the parsed corpora, and returns Corpus() objects representing them. You can also optionally pass in a string of annotators:
+which creates the parsed corpora, and returns `Corpus()` objects representing them. You can also optionally pass in a string of annotators:
 
 ```python
 ans = 'tokenize,ssplit,pos'
@@ -283,7 +283,7 @@ This will:
 2. Create a duplicate version of the corpus with IDs removed
 3. Parse this 'cleaned' corpus
 4. Add an XML tag to each sentence with the name of the speaker
-5. Return the parsed corpus as a Corpus() object
+5. Return the parsed corpus as a `Corpus()` object
 
 When interrogating or concordancing, you can then pass in a keyword argument to restrict searches to one or more speakers:
 
