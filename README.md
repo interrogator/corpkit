@@ -237,7 +237,6 @@ Output:
 Here's an example of the three functions at work on the NYT corpus:
 
 ```python
->>> from corpkit import Corpus, Interrogation
 # make tregex query: head of NP in PP containing 'of'
 # in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
@@ -409,8 +408,7 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # >>> prps = as_regex(wl.pronouns, boundaries = 'line')
 
 # give edit() indices, words, wordlists or regexes to keep remove or merge
->>> sayers_no_prp = sayers.edit(skip_entries = prps,
-...    skip_subcorpora = [1963])
+>>> sayers_no_prp = sayers.edit(skip_entries = prps, skip_subcorpora = [1963])
 >>> sayers_no_prp.quickview(n = 10)
 ```
 
@@ -524,8 +522,8 @@ Output:
 As you can see, slight variations on keywording give different impressions of the same corpus!
 
 A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. We can use some Pandas syntax to do this more quickly.
+
 ```python
-from corpkit import editor as edit
 >>> yrs = ['2011', '2012', '2013', '2014']
 >>> keys = p.results.ix[yrs].sum().edit('keywords', p.results.drop(yrs),
 ...    threshold = False)
