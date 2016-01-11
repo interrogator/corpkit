@@ -47,6 +47,35 @@ def dep_searcher(sents,
         if dep_type == 'collapsed-ccprocessed-dependencies':
             return sentence.collapsed_ccprocessed_dependencies
 
+    def distancer(lks, lk):
+        "determine number of jumps to root"      
+        c = 0
+        # get the gov index, stop when it's zero
+        root_found = False
+        while not root_found:
+            if c == 0:
+                try:
+                    link_to_check = next(i for i in lks if i.dependent.idx == lk.id)
+                except StopIteration:
+                    root_found = True
+                    break
+                #link_to_check = lk
+            gov_index = link_to_check.governor.idx
+            if gov_index == 0:
+                root_found = True
+            else:
+                if c > 29:
+                    root_found = True
+                    break
+                link_to_check = [l for l in lks if l.dependent.idx == gov_index]
+                if len(link_to_check) > 0:
+                    link_to_check = link_to_check[0]
+                else:
+                    break
+                c += 1
+        if c < 30:
+            return c
+
     result = []
     for s in sents:
         lks = []
@@ -89,7 +118,7 @@ def dep_searcher(sents,
             lks = [k for k, v in counted.items() if v >= len(search.keys())]
 
         if not concordancing:
-            lks = list(set([x for x in lks if re.search(regex_nonword_filter, x.word)]))
+            lks = list(set([x for x in lks if x and re.search(regex_nonword_filter, x.word)]))
 
         if exclude is not False:
             to_remove = []
@@ -141,6 +170,8 @@ def dep_searcher(sents,
         if concordancing:
             for lk in lks: # for each concordance match
                 one_result = []
+                if not lk:
+                    continue
                 windex = int(lk.id) - 1
                 speakr = s.speakername
                 if not speakr:
@@ -157,6 +188,13 @@ def dep_searcher(sents,
                         single_wd['l'] = tok.lemma
                     if 'p' in show:
                         single_wd['p'] = tok.pos
+                    if 'r' in show:
+                        all_lks = [l for l in deps.links]
+                        distance = distancer(all_lks, tok)
+                        if distance:
+                            single_wd['r'] = str(distance)
+                        else:
+                            single_wd['r'] = '0'
                     if 'f' in show:
                         for lin in deps.links:
                             single_wd['f'] = '.'
@@ -181,8 +219,8 @@ def dep_searcher(sents,
             # figure out what to show
             for lk in lks:
                 single_result = {}
-                
-
+                if not lk:
+                    continue
                 if 'w' in show:
                     single_result['w'] = 'none'
                     if lemmatise:
@@ -205,6 +243,16 @@ def dep_searcher(sents,
                         single_result['p'] = postag
                     if not single_result['p']:
                         single_result['p'] == 'none'
+
+                if 'pl' in show:
+                    single_result['pl'] = 'none'
+                    postag = lk.pos
+                    if postag.lower() in taglemma.keys():
+                        single_result['pl'] = taglemma[postag.lower()]
+                    else:
+                        single_result['pl'] = postag.lower()
+                    if not single_result['pl']:
+                        single_result['pl'] == 'none'
 
                 if 'f' in show:
                     single_result['f'] = 'none'
@@ -239,13 +287,31 @@ def dep_searcher(sents,
                                     single_result['d'] = i.dependent.text
                             break
 
+                if 'gl' in show:
+                    single_result['gl'] = 'none'
+                    for i in deps.links:
+                        if i.dependent.idx == lk.id:
+                            if s.get_token_by_id(i.governor.idx):
+                                single_result['gl'] = s.get_token_by_id(i.governor.idx).lemma
+                            else:
+                                single_result['gl'] = 'root'
+                            break
+
+                if 'dl' in show:
+                    single_result['dl'] = 'none'
+                    for i in deps.links:
+                        if i.governor.idx == lk.id:
+                            if s.get_token_by_id(i.dependent.idx):       
+                                single_result['dl'] = s.get_token_by_id(i.dependent.idx).lemma
+                            break
+
                 if 'r' in show:
                     all_lks = [l for l in deps.links]
                     distance = distancer(all_lks, lk)
                     if distance:
                         single_result['r'] = str(distance)
                     else:
-                        single_result['r'] = '-1'
+                        single_result['r'] = '0'
 
                 if 'i' in show:
                     single_result['i'] = str(lk.id)
