@@ -11,11 +11,12 @@
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
-  - [Key features](#key-features)
-    - [`make_corpus()`](#make_corpus)
-    - [`interrogator()`](#interrogator)
-    - [`interrogation.edit()` / `editor()`](#interrogationedit--editor)
-    - [`interrogation.plot()` / `plotter()`](#interrogationplot--plotter)
+  - [Corpus()](#corpus)
+  - [Interrogation()](#interrogation)
+  - [Functions, lists, etc.](#functions-lists-etc)
+    - [`interrogate()`](#interrogate)
+    - [`edit()`](#edit)
+    - [`plot()`](#plot)
     - [Other stuff](#other-stuff)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -42,33 +43,45 @@
 <a name="whats-in-here"></a>
 ## What's in here?
 
-Essentially, the module contains classes and functions for building and interrogating corpora, then manipulating or visualising the results. The three main functions are:
+Essentially, the module contains classes, methods and functions for building and interrogating corpora, then manipulating or visualising the results. 
 
-| **Function name** | Purpose                            | 
-| ----------------- | ---------------------------------- | 
-| `make_corpus()`   | Use CoreNLP/NLTK to make to make parsed, speaker-segmented corpora from plain text files      |
-| `interrogator()`  | Interrogate parse trees, dependencies, or find keywords or ngrams in parsed corpora |
-| `conc()`          | Lexicogrammatical concordancing via constituency/dependency annotations | 
+<a name="corpus"></a>
+### Corpus()
 
-Interrogations create `Interrogation` objects. These have attributes:
+First, there's a `Corpus()` class, which models a corpus of CoreNLP XML, lists of tokens, or plaintext files, creating subclasses for subcorpora and corpus files. With the `Corpus()` class, the following methods are available:
 
-| ** Attribute** | Contains |
+| Method | Purpose |
+|--------|---------|
+| `corpus.parse()` | Create a tokenised/parsed version of a plaintext corpus |
+| `corpus.interrogate()` | Interrogate the corpus for lexicogrammatical features |
+| `corpus.concordance()` | Concordance via lexis and/or grammar |
+
+The `.interrogate()` and `.concordance()` methods can also be called on `Subcorpus` and `File` objects.
+
+<a name="interrogation"></a>
+### Interrogation()
+
+The `corpus.interrogate()` method returns an `Interrogation` object. These have attributes:
+
+| Attribute | Contains |
 | ---------------|----------|
 | `interrogation.results` |  Pandas DataFrame of counts in each subcorpus |
 | `interrogation.totals` | Pandas Series of totals for each subcorpus/result |
-| interrogation.query` | a `dict` of values used to generate the interrogation |
+| `interrogation.query` | a `dict` of values used to generate the interrogation |
 
 and methods:
 
-| **Method** | Purpose |
+| Method | Purpose |
 |------------|---------|
 | `interrogation.edit()`        | Get relative frequencies, merge/remove results/subcorpora, calculate keywords, sort using linear regression, etc. |
 | `interrogation.plot()`       | visualise results via *matplotlib* | 
+| interrogation.save()` | Save data as pickle |
+| interrogation.quickview()` | Show top results and their abs/relative frequency |
 
-These methods can also be used as functions (explained below), in order to do more advanced work with Pandas objects.
+<a name="functions-lists-etc"></a>
+### Functions, lists, etc.
 
-
-There are also quite a few helper functions for making regular expressions, saving and loading data, making new projects, and so on.
+There are also quite a few helper functions for making regular expressions, making new projects, and so on.
 
 Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
 
@@ -78,18 +91,8 @@ I think it's a great idea to use *corpkit* from within a [Jupyter Notebook](http
 
 The most comprehensive use of *corpkit* to date has been for an investigation of the word *risk* in *The New York Times*, 1963&ndash;2014. The repository for that project is [here](https://www.github.com/interrogator/risk); the Notebook demonstrating the use of *corpkit* can be viewed via either [GitHub](https://github.com/interrogator/risk/blob/master/risk.ipynb) or [NBviewer](http://nbviewer.ipython.org/github/interrogator/risk/blob/master/risk.ipynb).
 
-<a name="key-features"></a>
-### Key features
-
-<a name="make_corpus"></a>
-#### `make_corpus()` 
-
-* A simple Python wrapper around CoreNLP
-* Creates a parsed version of a structured or unstructured plaintext corpus
-* Optionally detects speaker IDs and adds them to CoreNLP XML
-
-<a name="interrogator"></a>
-#### `interrogator()`
+<a name="interrogate"></a>
+#### `interrogate()`
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
 * Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
@@ -100,8 +103,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 
-<a name="interrogationedit--editor"></a>
-#### `interrogation.edit()` / `editor()`
+<a name="edit"></a>
+#### `edit()`
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -115,8 +118,8 @@ The most comprehensive use of *corpkit* to date has been for an investigation of
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
-<a name="interrogationplot--plotter"></a>
-#### `interrogation.plot()` / `plotter()`
+<a name="plot"></a>
+#### `plot()`
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
@@ -212,11 +215,12 @@ ipython notebook orientation.ipynb
 Or, just use *(I)Python*:
 
 ```python
->>> import corpkit
->>> from corpkit import interroplot
+>>> from corpkit import Corpus
 
-# set corpus path
->>> corpus = 'data/nyt/years'
+# Make corpus from path
+
+>>> unparsed = Corpus('data/nyt/years')
+>>> corpus = unparsed.parse()
 
 # search nyt for modal auxiliaries:
 >>> interroplot(corpus, r'MD')
@@ -232,20 +236,20 @@ Output:
 
 `interroplot()` is just a demo function that does three things in order:
 
-1. uses `interrogator()` to search corpus for a (Regex or Tregex) query
+1. uses `interrogate()` to search corpus for a (Regex or Tregex) query
 2. uses `edit()` to calculate the relative frequencies of each result
 3. uses `plot()` to show the top seven results
  
 Here's an example of the three functions at work on the NYT corpus:
 
 ```python
->>> from corpkit import interrogator, editor, plotter
+>>> from corpkit import Corpus, Interrogation
 # make tregex query: head of NP in PP containing 'of'
 # in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # search trees, output lemma
->>> risk_of = interrogator(corpus, 'trees', q, show = ['l'])
+>>> risk_of = corpus.interrogate('trees', q, show = ['l'])
 
 # use edit() to turn absolute into relative frequencies
 >>> to_plot = risk_of.edit('%', risk_of.totals)
@@ -266,15 +270,15 @@ Output:
 *corpkit* contains a modest function for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
 
 ```python
->>> parsed = make_corpus(unparsed, parse = True, tokenise = True,
+>>> corpus = unparsed.parse(parse = True, tokenise = True,
 ...    corenlppath = 'Downloads/corenlp', nltk_data_path = 'Downloads/nltk_data')
 ```
 
-which creates the parsed corpora, and returns their paths. You can also optionally pass in a string of annotators:
+which creates the parsed corpora, and returns Corpus() objects representing them. You can also optionally pass in a string of annotators:
 
 ```python
 ans = 'tokenize,ssplit,pos'
-parsed = make_corpus(unparsed, operations = ans)
+corpus = unparsed.parse(operations = ans)
 ```
 
 <a name="speaker-ids"></a>
@@ -288,22 +292,22 @@ Something novel about *corpkit* is that it can work with corpora containing spea
 If you use:
 
 ```python
->>> parsed = make_corpus(path, speaker_segmentation = True)
+>>> corpus = unparsed.parse(speaker_segmentation = True)
 ```
 
-The function will:
+This will:
 
 1. Detect any IDs in any file
 2. Create a duplicate version of the corpus with IDs removed
 3. Parse this 'cleaned' corpus
 4. Add an XML tag to each sentence with the name of the speaker
-5. Return paths to the cleaned and parsed corpora
+5. Return the parsed corpus as a Corpus() object
 
 When interrogating or concordancing, you can then pass in a keyword argument to restrict searches to one or more speakers:
 
 ```python
 >>> s = ['BRISCOE', 'LOGAN']
->>> npheads = interrogator(parsed, 'trees', r'/NN.?/ >># NP', just_speakers = s)
+>>> npheads = interrogate('trees', r'/NN.?/ >># NP', just_speakers = s)
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
@@ -314,12 +318,10 @@ This makes it possible to not only investigate individual speakers, but to form 
 Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
 
 ```python
->>> from corpkit import conc
-
->>> subcorpus = 'data/nyt/years/2005'
+>>> subcorpus = corpus.subcorpora[0]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
 # 't' option for tree searching
->>> lines = conc(subcorpus, 't', query, window = 50, n = 10, random = True)
+>>> lines = subcorpus.concordance('t', query, window = 50, n = 10, random = True)
 ```
 
 Output (a `Pandas DataFrame`):
@@ -342,19 +344,20 @@ When searching dependencies, you have more flexibility:
 ```python
 # match words starting with 'st' filling function of nsubj
 >>> criteria = {'w': '^st', 'f': 'nsubj$'}
->>> lines = conc(subcorpus, criteria)
+# show function, pos and lemma (in that order)
+>>> lines = subcorpus.concordance(criteria, show = ['f', 'p', 'l'])
 ```
 
-You can search tokenised corpora or plaintext corpora for regular expressions as well:
+You can search tokenised corpora or plaintext corpora for regular expressions or lists of words to match. The two queries below will return identical results:
 
 ```python
->>> lines = conc(subcorpus, 'plaintext', query)
->>> lines = conc(subcorpus, 'tokens', query)
+r_query = r'fr?iends?'
+l_query = ['friend', 'friends', 'fiend', 'fiends']
+>>> lines = subcorpus.concordance(r_query)
+>>> lines = subcorpus.concordance(l_query)
 ```
 
-where `query` can be a regular expression or list of words to match.
-
-If you really wanted, you can then go on to use `conc()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `editor()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
+If you really wanted, you can then go on to use `concordance()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `edit()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
 
 <a name="systemic-functional-stuff"></a>
 ### Systemic functional stuff
@@ -362,16 +365,15 @@ If you really wanted, you can then go on to use `conc()` output as a dictionary,
 Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, corpkit will get their inflections automatically.
 
 ```python
->>> from corpkit import quickview
 >>> from dictionaries.process_types import processes
 
 # match nsubj with verbal process as governor
 >>> crit = {'f': '^nsubj$', 'g': processes.verbal}
 # return lemma of the nsubj
->>> sayers = interrogator(corpus, crit, show = ['l'])
+>>> sayers = corpus.interrogate(crit, show = ['l'])
 
 # have a look at the top results
->>> quickview(sayers, n = 20)
+>>> sayers.quickview(n = 20)
 ```
 
 Output:
@@ -401,10 +403,9 @@ Output:
 
 ```
 
-First, let's try removing the pronouns using `editor()`. The quickest way is to use the editable wordlists stored in `dictionaries/wordlists`:
+First, let's try removing the pronouns using `edit()`. The quickest way is to use the editable wordlists stored in `dictionaries/wordlists`:
 
 ```python
->>> from corpkit import editor
 >>> from dictionaries.wordlists import wordlists
 >>> prps = wordlists.pronouns
 
@@ -416,7 +417,7 @@ First, let's try removing the pronouns using `editor()`. The quickest way is to 
 # give edit() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = sayers.edit(skip_entries = prps,
 ...    skip_subcorpora = [1963])
->>> quickview(sayers_no_prp, n = 10)
+>>> sayers_no_prp.quickview(n = 10)
 ```
 
 Output:
@@ -437,7 +438,7 @@ Output:
 Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
-# sort with editor()
+# sort with edit()
 >>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
 # make an area chart with custom y label
@@ -486,10 +487,10 @@ So, what to do? Well, first, don't use 'general reference corpora' unless you re
 ```python
 # just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
->>> p = interrogator(corpus, 'trees', part, show = 'l')
+>>> p = corpus.interrogate('trees', part, show = 'l')
 ```
 
-When using `editor()` to calculate keywords, there are a few default parameters that can be easily changed:
+When using `edit()` to calculate keywords, there are a few default parameters that can be easily changed:
 
 | Keyword argument | Function | Default setting | Type
 |---|---|---|---|
@@ -528,11 +529,11 @@ Output:
 
 As you can see, slight variations on keywording give different impressions of the same corpus!
 
-A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. Let's use Pandas syntax to look for keywords in the past few years.
-
+A key strength of *corpkit*'s approach to keywording is that you can generate new keyword lists without re-interrogating the corpus. We can use some Pandas syntax to do this more quickly.
 ```python
+from corpkit import editor as edit
 >>> yrs = ['2011', '2012', '2013', '2014']
->>> keys = editor(p.results.ix[yrs].sum(), 'keywords', p.results.drop(yrs),
+>>> keys = p.results.ix[yrs].sum().edit('keywords', p.results.drop(yrs),
 ...    threshold = False)
 >>> print keys.results
 ```
@@ -580,14 +581,14 @@ Name: terror, dtype: float64
 <a name="plotting-keywords"></a>
 #### Plotting keywords
 
-Naturally, we can use `plotter()` for our keywords too:
+Naturally, we can use `plot()` for our keywords too:
 
 ```python
->>> plotter('Terror* as Participant in the \emph{NYT}', pols.results.terror, 
+>>> pols.results.terror.plot('Terror* as Participant in the \emph{NYT}', 
 ...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
 >>> politicians = ['bush', 'obama', 'gore', 'clinton', 'mccain', 
 ...                'romney', 'dole', 'reagan', 'gorbachev']
->>> plotter('Keyness of politicians in the \emph{NYT}', k.results[politicans], 
+>>> k.results[politicans].plot('Keyness of politicians in the \emph{NYT}', 
 ...    num_to_plot = 'all', y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
 ```
 Output:
@@ -598,14 +599,14 @@ Output:
 <a name="traditional-reference-corpora"></a>
 #### Traditional reference corpora
 
-If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `editor()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
+If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `edit()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
 
 ```python
 # arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
->>> print editor(p.results.ix['2013'], 'k', 'bnc.p', 
+>>> print p.results.ix['2013'].edit(, 'k', 'bnc.p', 
 ...    skip_entries = stopwords).results
->>> print editor(p.results.ix['2013'], 'k', 'bnc.p', calc_all = False).results
+>>> print p.results.ix['2013'].edit('k', 'bnc.p', calc_all = False).results
 ```
 
 Output (not so useful):
@@ -628,7 +629,7 @@ yeah          -3179.90            will      -679.06
 <a name="parallel-processing"></a>
 ### Parallel processing
 
-`interrogator()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
+`interrogate()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
 
 1. a `list` of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
 2. a `dict` as `query` (i.e. `{'Noun phrases': r'NP', 'Verb phrases': r'VP'}`)
@@ -642,9 +643,9 @@ Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *p
 ...      'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
->>> processes = interrogator(corpus, 'trees', q, show = 'count')
->>> proc_rel = editor(processes.results, '%', processes.totals)
->>> plotter('Risk processes', proc_rel.results)
+>>> processes = corpus.interrogate('trees', q, show = 'count')
+>>> proc_rel = processes.edit('%', processes.totals)
+>>> proc_rel.plot('Risk processes')
 ```
 
 Output:
@@ -662,7 +663,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
->>> noun_riskers = interrogator(c, 'trees', query, show = 'l')
+>>> noun_riskers = c.interrogate('trees', query, show = 'l')
  
 >>> quickview(noun_riskers, 10)
 ```
@@ -682,24 +683,24 @@ Output:
   9: player (n=39)
 ```
 
-We can use `editor()` to make some thematic categories:
+We can use `edit()` to make some thematic categories:
 
 ```python
 # get everyday people
 >>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
 
->>> them_cat = editor(noun_riskers.results, merge_entries = p, newname = 'Everyday people')
+>>> them_cat = noun_riskers.edit(merge_entries = p, newname = 'Everyday people')
 
 # get business, gov, institutions
 >>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
 ...      'politician', 'institution', 'agency', 'candidate', 'firm']
 
->>> them_cat = editor(them_cat.results, '%', noun_riskers.totals, merge_entries = i, 
+>>> them_cat = them_cat.edit('%', noun_riskers.totals, merge_entries = i, 
 ...    newname = 'Institutions', sort_by = 'total', skip_subcorpora = 1963,
 ...    just_entries = ['Everyday people', 'Institutions'])
 
 # plot result
->>> plotter('Types of riskers', them_cat.results, y_label = 'Percentage of all riskers')
+>>> them_cat.plot('Types of riskers', y_label = 'Percentage of all riskers')
 ```
 
 Output:
@@ -712,16 +713,16 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```python
 # find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
->>> noun_lemmata = interrogator(corpus, 'trees', query, show = 'l')
+>>> noun_lemmata = corpus.interrogate('trees', query, show = 'l')
 
 # get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
 ...           'senator', 'obama', 'clinton', 'bush']
->>> selected = editor(noun_riskers.results, '%', noun_lemmata.results, 
+>>> selected = noun_riskers.edit('%', noun_lemmata.results, 
 ...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
 # make a bar chart:
->>> plotter('Risk and power', selected.results, num_to_plot = 'all', kind = 'bar', 
+>>> selected.plot('Risk and power', num_to_plot = 'all', kind = 'bar', 
 ...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
 ```
 
@@ -736,18 +737,18 @@ Output:
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
->>> modals = interrogator(annual_trees, 'trees', 'MD < __', show = 'l')
+>>> modals = corpus.interrogate('trees', 'MD < __', show = 'l')
 # simple stuff: make relative frequencies for individual or total results
->>> rel_modals = editor(modals.results, '%', modals.totals)
+>>> rel_modals = modals.edit('%', modals.totals)
 
 # trickier: make an 'others' result from low-total entries
 >>> low_indices = range(7, modals.results.shape[1])
->>> each_md = editor(modals.results, '%', modals.totals, merge_entries = low_indices, 
+>>> each_md = modals.edit('%', modals.totals, merge_entries = low_indices, 
 ...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
 # complex stuff: merge results
 >>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m', r'^sh']
->>> modals = editor(modals.results, merge_entries = entries_to_merge)
+>>> modals = modals.edit(merge_entries = entries_to_merge)
     
 # complex stuff: merge subcorpora
 >>> merges = {'1960s': r'^196', 
@@ -756,10 +757,10 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 ...           '2000s': r'^200',
 ...           '2010s': r'^201'}
 
->>> modals = editor(sayers.results, merge_subcorpora = merges)
+>>> modals = sayers.edit(merge_subcorpora = merges)
     
 # make relative, sort, remove what we don't want
->>> modals = editor(modals.results, '%', modals.totals, keep_stats = False,
+>>> modals = modals.edit('%', modals.totals, keep_stats = False,
 ...    just_subcorpora = merges.keys(), sort_by = 'total', keep_top = 4)
 
 # show results
@@ -799,18 +800,19 @@ Now, some intense plotting:
 
 ```python
 # exploded pie chart
->>> plotter('Pie chart of common modals in the NYT', each_md.results, explode = ['other'],
+>>> each_md.plot('Pie chart of common modals in the NYT', explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
 # bar chart, transposing and reversing the data
->>> plotter('Modals use by decade', modals.results.iloc[::-1].T.iloc[::-1], kind = 'barh',
+>>> modals.results.iloc[::-1].T.iloc[::-1].plot('Modals use by decade', kind = 'barh',
 ...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 
 # stacked area chart
->>> plotter('An ocean of modals', rel_modals.results.drop('1963'), kind = 'area', 
+>>> rel_modals.results.drop('1963').plot('An ocean of modals', kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
 ...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
 ```
+
 Output:
 <p align="center">
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/pie-chart-of-common-modals-in-the-nyt2.png"  height="400" width="400"/>
