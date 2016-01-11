@@ -91,10 +91,16 @@ def conc(corpus,
     just_speakers_is_list = False
     if type(just_speakers) == list:
         just_speakers_is_list = True
+        if just_speakers == ['each']:
+            from corpkit.build import get_speaker_names_from_xml_corpus
+            just_speakers = get_speaker_names_from_xml_corpus(corpus)
 
     if type(just_speakers) == str:
-        if just_speakers.lower() != 'all':
+        if just_speakers.lower() != 'each':
             just_speakers = [just_speakers]
+        else:
+            from corpkit.build import get_speaker_names_from_xml_corpus
+            just_speakers = get_speaker_names_from_xml_corpus(corpus)
 
     # allow a b and c shorthand
     allowed_dep_types = {'a': 'basic-dependencies', 
