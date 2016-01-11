@@ -19,7 +19,6 @@ class Interrogation:
         st = 'Corpus interrogation: %s\n\n' % (self.query['path'])
         return st
 
-
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
         from corpkit import editor
@@ -49,6 +48,10 @@ class Interrogation:
         from corpkit import save
         save(self, savename, *args, **kwargs)
 
+    def quickview(self, n = 25):
+        from corpkit import quickview
+        quickview(self, n = n)
+
 
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
@@ -70,6 +73,10 @@ class Results(pd.core.frame.DataFrame):
         """Save data to pickle file"""
         from corpkit import save
         save(self, savename, *args, **kwargs)
+
+    def quickview(self, n = 25):
+        from corpkit import quickview
+        quickview(self, n = n)
     
 class Totals(pd.core.series.Series):
 
@@ -90,8 +97,11 @@ class Totals(pd.core.series.Series):
         """Save data to pickle file"""
         from corpkit import save
         save(self, savename, *args, **kwargs)
-    
 
+    def quickview(self, n = 25):
+        from corpkit import quickview
+        quickview(self, n = n)
+    
 class Concordance(pd.core.frame.DataFrame):
     
     def __init__(self, data):
@@ -106,3 +116,8 @@ class Concordance(pd.core.frame.DataFrame):
         """format concordance lines"""
         from corpkit.other import concprinter
         concprinter(self, kind = kind, n = n)
+
+    def edit(self, *args, **kwargs):
+        """calls corpkit.editor.editor()"""
+        from corpkit import editor
+        return editor(self, *args, **kwargs)
