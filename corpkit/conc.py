@@ -397,4 +397,5 @@ def conc(corpus,
         rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
         print rem
 
-    return df
+    from corpkit.interrogation import Concordance
+    return Concordance(df)
