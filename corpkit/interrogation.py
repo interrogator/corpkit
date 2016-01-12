@@ -112,10 +112,10 @@ class Concordance(pd.core.frame.DataFrame):
         from corpkit import save
         save(self, savename, *args, **kwargs)
 
-    def format(self, kind = 'string', n = 100):
+    def format(self, *args, **kwargs):
         """format concordance lines"""
         from corpkit.other import concprinter
-        concprinter(self, kind = kind, n = n)
+        concprinter(self, *args, **kwargs)
 
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
