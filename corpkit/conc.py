@@ -73,6 +73,10 @@ def conc(corpus,
     from corpkit.process import tregex_engine
     from corpkit.tests import check_pytex, check_dit
     from corpkit.depsearch import dep_searcher
+
+    from corpkit.textprogressbar import TextProgressBar
+    from corpkit.process import animator
+
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -193,15 +197,22 @@ def conc(corpus,
             return concline.strip()
 
         num_fs = len(fs_to_conc)
+
+        tstr = '%d/%d' % (0, len(fs_to_conc))
+        if print_status and not root and not singlefile:
+            print '\n'
+            p = animator(None, None, init = True, tot_string = tstr, length = len(fs_to_conc))
+        numdone = 0
         for index, filepath in enumerate(fs_to_conc):
             f = os.path.basename(filepath)
             if num_fs > 1:
                 if 'note' in kwargs.keys():
                     kwargs['note'].progvar.set((index) * 100.0 / num_fs)
-            if print_status:
-                from time import localtime, strftime
-                thetime = strftime("%H:%M:%S", localtime())
-                print '%s: Extracting data from %s ...' % (thetime, f)
+                else:
+                    if print_status:
+                        tstr = '%d/%d' % (numdone, len(fs_to_conc))
+                        animator(p, numdone, tstr)
+            numdone += 1
             if root:
                 root.update()
             with open(filepath, "r") as text:
@@ -263,6 +274,15 @@ def conc(corpus,
                     else:
                         sents = corenlp_xml.sentences
                     nsents = len(sents)
+                    kkw = {}
+                    if singlefile:
+                        if print_status:
+                            if not root:
+                                print '\n'
+                                tstr = '%d/%d' % (0, nsents)
+                                p = animator(None, None, init = True, tot_string = tstr, length = nsents)
+                                kkw = {'progbar' : p}
+
                     if 't' not in search and datatype == 'parse':
                         conclines = dep_searcher(sents, search, 
                                                  concordancing = True, 
@@ -270,7 +290,8 @@ def conc(corpus,
                                                  dep_type = dep_type,
                                                  exclude = exclude,
                                                  searchmode = searchmode,
-                                                 excludemode = excludemode)
+                                                 excludemode = excludemode,
+                                                 **kkw)
                         for line in conclines:
                             line.insert(0, f)
                             conc_lines.append(line)
@@ -324,6 +345,9 @@ def conc(corpus,
         os.remove('tmp.txt')
     except:
         pass
+
+    if have_ipython:
+        clear_output()
 
     def uniquify(conc_lines):
         from collections import OrderedDict
