@@ -88,7 +88,7 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 * Restrict searches to particular speakers in a corpus
 
-The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` (and `concordance()` methods):
+The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` (and `concordance()`) methods:
 
 ```python
 # import process type lists and closed class wordlists
@@ -680,7 +680,7 @@ yeah          -3179.90            will      -679.06
 
 1. a `list` of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
 2. a `dict` as `query` (i.e. `{'Noun phrases': r'NP', 'Verb phrases': r'VP'}`)
-3. A list of speakers, with speaker-segmented data (i.e. ['LEAR', 'KENT', 'FOOL'])
+3. A `list` of speakers, with speaker-segmented data (i.e. `['LEAR', 'KENT', 'FOOL']`)
 
 Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
@@ -714,7 +714,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
 >>> noun_riskers = c.interrogate('trees', query, show = 'l')
  
->>> quickview(noun_riskers, 10)
+>>> noun_riskers.quickview(10)
 ```
 
 Output:
