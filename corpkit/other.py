@@ -1,16 +1,16 @@
 def quickview(results, n = 25):
-    """view top n results of results.
+    """view top n results as painlessly as possible.
 
-    :param results: Interrogation/edited result to view
-    :type results: corpkit.interrogation/pandas.core.frame.DataFrame
+    :param results: Interrogation data
+    :type results: corpkit.interrogation.Interrogation
     :param n: Show top *n* results
     :type n: int
     :returns: None
     """
 
     import corpkit
-    import pandas
-    import numpy
+    import pandas as pd
+    import numpy as np
     import os
 
     # handle dictionaries too:
@@ -39,90 +39,38 @@ def quickview(results, n = 25):
         else:
             raise ValueError('File %s not found in saved_interrogations or dictionaries')
 
-    if 'interrogation' in str(type(results)).lower():
-        clas = results.query['function']
-        if clas == 'interrogator':
-            datatype = results.results.iloc[0,0].dtype
-            if datatype == 'int64':
-                option = 'total'
-            else:
-                option = '%'
-            if results.query['query'] == 'keywords':
-                option = 'keywords'
-            elif results.query['query'] == 'ngrams':
-                option = 'ngrams'
+    if not 'results' in results.__dict__.keys():
+        print results.totals
+        return
 
-            try:
-                results_branch = results.results
-                resbranch = True
-            except AttributeError:
-                resbranch = False
-                results_branch = results
-
-        elif clas == 'editor':
-            # currently, it's wrong if you edit keywords! oh well
-            datatype = results.results.iloc[0,0].dtype
-            if results.query['just_totals']:
-                resbranch = False
-                if results.results.dtype == 'int64':
-                    option = 'total'
-                else:
-                    option = '%' 
-                results_branch = results.results
-            else:
-                if datatype == 'int64':
-                    option = 'total'
-                else:
-                    option = '%'
-                try:
-                    results_branch = results.results
-                    resbranch = True
-                except AttributeError:
-                    resbranch = False
-
-    if type(results) == pandas.core.frame.DataFrame:
-        results_branch = results
-        resbranch = True
-        if type(results.iloc[0,0]) == numpy.int64:
-            option = 'total'
-        else:
-            option = '%'
-    elif type(results) == pandas.core.series.Series:
-        resbranch = False
-        results_branch = results
-        if type(results.iloc[0]) == numpy.int64:
-            option = 'total'
-        else:
-            option = '%'
-        if results.name == 'keywords':
-            option = 'series_keywords'
-
-    if resbranch:
-        the_list = list(results_branch)[:n]
+    datatype = results.results.iloc[0,0].dtype
+    if datatype == 'int64':
+        option = 't'
     else:
-        the_list = list(results_branch.index)[:n]
+        option = '%'
+    if 'operation' in results.query:
+        if results.query['operation'].lower().startswith('k'):
+            option = 'k'
+        if results.query['operation'].lower().startswith('%'):
+            option = '%'
+        if results.query['operation'].lower().startswith('/'):
+            option = '/'
 
-    for index, w in enumerate(the_list):
-        fildex = '% 3d' % index
-        if option == 'keywords':
-            print '%s: %s' %(fildex, w)
-        elif option == '%' or option == 'ratio':
-            if 'interrogation' in str(type(results)).lower():
-                tot = results.totals[w]
-                totstr = "%.3f" % tot
-                print '%s: %s (%s%%)' % (fildex, w, totstr)
-            else:
-                print '%s: %s' % (fildex, w)
-        elif option == 'series_keywords':
-            tot = results_branch[w]
-            print '%s: %s (k=%d)' %(fildex, w, tot)
+    try:
+        the_list = list(results.results.columns)[:n]
+    except:
+        the_list = list(results.results.index)[:n]
 
-        else:
-            if resbranch:
-                tot = sum(i for i in list(results_branch[w]))
-            else:
-                tot = results_branch[w]
-            print '%s: %s (n=%d)' %(fildex, w, tot)
+    for index, entry in enumerate(the_list):
+        if option == 't':
+            tot = results.results[entry].sum()
+            print '%s: %s (n=%d)' %(index, entry, tot)
+        elif option == '%' or option == '/':
+            tot = results.totals[entry]
+            totstr = "%.3f" % tot
+            print '%s: %s (%s%%)' % (index, entry, totstr)  
+        elif option == 'k':
+            print '%s: %s' %(index, entry)
 
 def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
     """
