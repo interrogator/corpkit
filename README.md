@@ -416,6 +416,8 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
 # >>> prps = ['he', 'she', 'you']
 # >>> prps = as_regex(wl.pronouns, boundaries = 'line')
+# or, by re-interrogating:
+# >>> sayers = corpus.interrogate(crit, show = ['l'], exclude = {'w': wordlists.pronouns})
 
 # give edit() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = sayers.edit(skip_entries = prps, skip_subcorpora = [1963])
@@ -606,7 +608,7 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 ```python
 # arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
->>> print p.results.ix['2013'].edit(, 'k', 'bnc.p', 
+>>> print p.results.ix['2013'].edit('k', 'bnc.p', 
 ...    skip_entries = stopwords).results
 >>> print p.results.ix['2013'].edit('k', 'bnc.p', calc_all = False).results
 ```
