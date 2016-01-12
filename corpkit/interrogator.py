@@ -96,6 +96,9 @@ def interrogator(path,
               If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.
 
     """
+
+    locs = locals()
+
     import corpkit
     from corpkit.process import add_corpkit_to_path
     from corpkit.process import tregex_engine
@@ -724,6 +727,11 @@ def interrogator(path,
     if singlefile:
         one_big_corpus = True
 
+    if os.path.isdir(path):
+        subdirectories = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+        if len(subdirectories) == 0:
+            one_big_corpus = True
+
     # some empty lists we'll need
     dicts = []
     allwords_list = []
@@ -1140,7 +1148,12 @@ def interrogator(path,
             if just_speakers:
                 rem = []
                 for f in files:
-                    fp = os.path.join(subcorpus, f)
+                    if not singlefile:
+                        fp = os.path.join(subcorpus, f)
+                    else:
+                        fp = f
+                    #if singlefile:
+                    #    fp = f
                     data = open(fp, 'r').read()
                     if any('<speakername>' + name in data for name in just_speakers):
                         rem.append(f)
@@ -1361,11 +1374,9 @@ def interrogator(path,
                             continue
 
         # for dependencies, d[0] is the subcorpus name 
-        # and d[1] is its file list ... 
+        # and d[1] is its file list ...
 
-        elif dependency or plaintext or tokens or statsmode or can_do_fast is False:
-            #if not root:
-                #p.animate(-1, str(0) + '/' + str(total_files))
+        if dependency or plaintext or tokens or statsmode or can_do_fast is False:
             from collections import Counter
             statsmode_results = Counter({'Sentences': 0, 'Passives': 0, 'Tokens': 0})
             subcorpus_name = d[0]
@@ -1532,22 +1543,11 @@ def interrogator(path,
         #outputnames = collections.namedtuple('interrogation', ['query', 'totals'])
         the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
         # add option to named tuple
-        the_options = {'path': path,
-                       'search': search,
-                       'show': show,
-                       'function': 'interrogator',
-                       'datatype': stotals.dtype,
-                       'query': query,
-                       'exclude': exclude,
-                       'lemmatise': lemmatise,
-                       'titlefilter': titlefilter,
-                       'lemmatag': lemmatag,
-                       'spelling': spelling,
-                       'phrases': phrases,
-                       'dep_type': dep_type,
-                       'quicksave': quicksave,
-                       'time_started': the_time_started,
-                       'time_ended': the_time_ended}
+        the_options = locs
+        the_options['datatype'] = stotals.dtype
+        the_options['function'] = 'interrogator'
+        the_options['time_started'] = the_time_started
+        the_options['time_ended'] = the_time_ended
 
         try:
             the_options['translated_option'] = translated_option
@@ -1639,22 +1639,11 @@ def interrogator(path,
     #make results into named tuple
     # add option to named tuple
     the_time_ended = strftime("%Y-%m-%d %H:%M:%S")
-    the_options = {'path': path,
-                       'search': search,
-                       'show': show,
-                       'datatype': df.iloc[0].dtype,
-                       'query': query,
-                       'lemmatise': lemmatise,
-                       'titlefilter': titlefilter,
-                       'lemmatag': lemmatag,
-                       'function': 'interrogator',
-                       'spelling': spelling,
-                       'exclude': exclude,
-                       'phrases': phrases,
-                       'dep_type': dep_type,
-                       'quicksave': quicksave,
-                       'time_started': the_time_started,
-                       'time_ended': the_time_ended}
+    the_options = locs
+    the_options['datatype'] = df.iloc[0].dtype
+    the_options['function'] = 'interrogator'
+    the_options['time_started'] = the_time_started
+    the_options['time_ended'] = the_time_ended
 
     try:
         the_options['translated_option'] = translated_option
