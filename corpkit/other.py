@@ -142,6 +142,10 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     if not kind.startswith('l') and kind.startswith('c') and kind.startswith('s'):
         raise ValueError('kind argument must start with "l" (latex), "c" (csv) or "s" (string).')
     import pandas as pd
+    
+    # shitty thing to hardcode
+    pd.set_option('display.max_colwidth', 100)
+
     if type(n) == int:
         to_show = df.ix[range(n)]
     elif n is False:

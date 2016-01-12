@@ -60,6 +60,10 @@ def conc(corpus,
     import os
     import re
     import pandas as pd
+
+    # shitty thing to hardcode
+    pd.set_option('display.max_colwidth', 100)
+    
     from pandas import DataFrame
     from time import localtime, strftime    
     try:
