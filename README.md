@@ -60,8 +60,8 @@ With the `Corpus()` class, the following attributes are available:
 
 | Attribute | Purpose |
 |-----------|---------|
-| `corpus.subcorpora` | list of subcorpus objects |
-| `corpus.files` | list of corpus file objects |
+| `corpus.subcorpora` | list of subcorpus objects with indexing/slicing methods |
+| `corpus.files` | list of corpus file objects with indexing/slicing methods |
 | `corpus.structure` | `dict` containing subcorpora and their files |
 | `corpus.features` | Where feature counting will be stored, `None` initially |
 
@@ -94,13 +94,16 @@ The code below demonstrates the complex kinds of queries that can be handled by 
 # import process type lists and closed class wordlists
 >>> from dictionaries.process_types import processes
 >>> from dictionaries.wordlists import wordlists
+
 # match tokens with governor that is in relational process wordlist, 
 # and whose function is `nsubj(pass)` or `csubj(pass)`:
 >>> criteria = {'g': processes.relational, 'f': r'^.subj'}
+
 # exclude tokens whose part-of-speech is verbal, 
 # or whose word is in a list of pronouns
 >>> exc = {'p': r'^V', 'w': wordlists.pronouns}
-# return slash delimited function/lemma
+
+# interrogate, returning slash-delimited function/lemma
 >>> data = corpus.interrogate(criteria, exclude = exc, show = ['f', 'l'])
 ```
 
@@ -348,7 +351,9 @@ This makes it possible to not only investigate individual speakers, but to form 
 Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
 
 ```python
->>> subcorpus = corpus.subcorpora['2005']
+>>> subcorpus = corpus.subcorpora.c2005
+# can also be accessed as corpus.subcorpora['c2005']
+# or corpus.subcorpora[n]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
 # 't' option for tree searching
 >>> lines = subcorpus.concordance('t', query, window = 50, n = 10, random = True)
