@@ -80,13 +80,40 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 #### `interrogate()` method
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
-* Search Stanford dependencies (whichever variety you like) for information about the role, governor, dependent, index (etc) of a token matching a regular expression
+* Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token matching a regular expression or wordlist
 * Return words or phrases, POS/group/phrase tags, raw counts, or all three.
-* Return lemmatised or unlemmatised results (using WordNet for constituency trees, and CoreNLP's lemmatisation for dependencies). Add words to `dictionaries/word_transforms.py` manually if need be
-* Look for ngrams in each subcorpus, and chart their frequency
+* N-gramming options
 * Two-way UK-US spelling conversion, and the ability to add words manually
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
+* Restrict searches to particular speakers in a corpus
+
+The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` (and `concordance()` methods):
+
+```python
+# import process type lists and closed class wordlists
+>>> from dictionaries.process_types import processes
+>>> from dictionaries.wordlists import wordlists
+# match tokens with governor that is in relational process wordlist, 
+# and whose function is `nsubj(pass)` or `csubj(pass)`:
+>>> criteria = {'g': processes.relational, 'f': r'^.subj'}
+# exclude tokens whose part-of-speech is verbal, 
+# or whose word is in a list of pronouns
+>>> exc = {'p': r'^V', 'w': wordlists.pronouns}
+# return slash delimited function/lemma
+>>> data = corpus.interrogate(criteria, exclude = exc, show = ['f', 'l'])
+```
+
+Output sample:
+
+```
+    nsubj/thing  nsubj/person  nsubj/problem  nsubj/way  nsubj/son
+01          296           168            134         69         73   
+02          233           147             88         70         70   
+03          250           160             95         80         67   
+04          247           205             88         93         71   
+05          275           193             68         75         61   
+```
 
 <a name="interrogation"></a>
 ### `Interrogation()`
@@ -321,7 +348,7 @@ This makes it possible to not only investigate individual speakers, but to form 
 Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
 
 ```python
->>> subcorpus = corpus.subcorpora[0]
+>>> subcorpus = corpus.subcorpora['2005']
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
 # 't' option for tree searching
 >>> lines = subcorpus.concordance('t', query, window = 50, n = 10, random = True)
@@ -346,9 +373,25 @@ When searching dependencies, you have more flexibility:
 
 ```python
 # match words starting with 'st' filling function of nsubj
->>> criteria = {'w': '^st', 'f': 'nsubj$'}
+>>> criteria = {'w': r'^st', 'f': r'nsubj$'}
 # show function, pos and lemma (in that order)
 >>> lines = subcorpus.concordance(criteria, show = ['f', 'p', 'l'])
+>>> lines.format(window = 30, n = 10, columns = ['l', 'm', 'r'])
+```
+
+Output:
+
+```
+0  ime ./:/; cc/CC/and det/DT/the        nsubj/NN/stock  conj:and/VBZ/be advmod/RB/hist
+1  vmod/RB/even compound/NN/sleep       nsubj/NNS/study  ./,/, appos/NNS/evaluation cas
+2  od:poss/NNS/veteran case/POS/'        nsubj/NN/study  ccomp/VBZ/suggest mark/IN/that
+3                        det/DT/a        nsubj/NN/study  case/IN/in nmod:poss/NN/today 
+4            cc/CC/but det/DT/the        nsubj/NN/study  root/VBD/find mark/IN/that cas
+5  pound/NN/a amod/JJ/preliminary        nsubj/NN/study  case/IN/of nmod:of/NNS/woman c
+6  case/IN/for nmod:for/WDT/which  nsubj/NNS/statistics  acl:relcl/VBD/be xcomp/JJ/avai
+7                amod/JJR/earlier       nsubj/NNS/study  aux/VBD/have root/VBN/show mar
+8  ay det/DT/the amod/JJR/earlier       nsubj/NNS/study  aux/VBD/do neg/RB/not ccomp/VB
+9  /there root/VBP/be det/DT/some    nsubj/NNS/strategy  ./:/- dep/JJS/most case/IN/of 
 ```
 
 You can search tokenised corpora or plaintext corpora for regular expressions or lists of words to match. The two queries below will return identical results:
@@ -633,10 +676,11 @@ yeah          -3179.90            will      -679.06
 <a name="parallel-processing"></a>
 ### Parallel processing
 
-`interrogate()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in either:
+`interrogate()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in:
 
 1. a `list` of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
 2. a `dict` as `query` (i.e. `{'Noun phrases': r'NP', 'Verb phrases': r'VP'}`)
+3. A list of speakers, with speaker-segmented data (i.e. ['LEAR', 'KENT', 'FOOL'])
 
 Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
@@ -647,6 +691,7 @@ Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *p
 ...      'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
+# show = 'count' will collapse results from each search into single dataframe
 >>> processes = corpus.interrogate('trees', q, show = 'count')
 >>> proc_rel = processes.edit('%', processes.totals)
 >>> proc_rel.plot('Risk processes')
