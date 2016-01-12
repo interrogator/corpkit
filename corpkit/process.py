@@ -587,7 +587,7 @@ def determine_datatype(path):
         return 'tokens', singlefile
 
 
-def filtermaker(the_filter):
+def filtermaker(the_filter, case_sensitive = False):
     import re
     if type(the_filter) == list:
         from corpkit.other import as_regex
