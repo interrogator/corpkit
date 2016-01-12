@@ -56,15 +56,25 @@ To use it, simple feed it a path to a directory containing `.txt` files, or subf
 >>> unparsed = Corpus('path/to/data')
 ```
 
-With the `Corpus()` class, the following methods are available:
+With the `Corpus()` class, the following attributes are available:
+
+| Attribute | Purpose |
+|-----------|---------|
+| `corpus.subcorpora` | list of subcorpus objects |
+| `corpus.files` | list of corpus file objects |
+| `corpus.structure` | `dict` containing subcorpora and their files |
+| `corpus.features` | Where feature counting will be stored, `None` initially |
+
+as well as the following methods:
 
 | Method | Purpose |
 |--------|---------|
 | `corpus.parse()` | Create a tokenised/parsed version of a plaintext corpus |
 | `corpus.interrogate()` | Interrogate the corpus for lexicogrammatical features |
 | `corpus.concordance()` | Concordance via lexis and/or grammar |
+| `corpus.get_stats()` | Count features (characters, clauses, words, tokens, process types, passives, etc.) and store as `corpus.features` attribute |
 
-The `.interrogate()` and `.concordance()` methods can also be called on `Subcorpus` and `File` objects.
+Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` object also have a `.read()` method.
 
 <a name="interrogate-method"></a>
 #### `interrogate()` method
