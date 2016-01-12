@@ -652,3 +652,25 @@ def is_number(s):
         except ValueError:
             return False
     return True
+
+def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
+             init = False, length = False):
+    """
+    Animates progress bar in unique position in terminal
+    Multiple progress bars not supported in jupyter yet.
+    """
+    if init:
+        from textprogressbar import TextProgressBar
+        return TextProgressBar(length, dirname = tot_string)
+    if type(linenum) == int:
+        with terminal.location(0, terminal.height - (linenum + 1)):
+            if tot_string:
+                progbar.animate(count, tot_string)
+            else:
+                progbar.animate(count)
+    else:
+        if tot_string:
+            progbar.animate(count, tot_string)
+        else:
+            progbar.animate(count) 
+            
