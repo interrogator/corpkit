@@ -742,7 +742,7 @@ def interrogator(path,
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query, datatype)
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 's']
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 's', 'n']
     if not any(i in possb for i in search.keys()):
         raise ValueError('search argument "%s" unrecognised.' % search.keys())
     if len(search.keys()) > 1 and 't' in search.keys():
@@ -921,6 +921,13 @@ def interrogator(path,
             statsmode = True
             optiontext = 'Getting general stats'
             dep_funct = get_stats
+    
+    if datatype != 'parse' and 's' in search.keys():
+        raise ValueError('corpkit cn currently only get stats for parsed corpora, sorry.')
+    
+    ponly = ['g', 'gl', 'd', 'dl', 'r', 'f', 'p']
+    if datatype != 'parse' and any(x in ponly for x in search.keys()):
+        raise ValueError('Need to parse corpus to use one or more chosen search options.')
 
     # initialise nltk lemmatiser only once
     if lemmatise or ('l' in show and not dependency):
