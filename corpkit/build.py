@@ -984,6 +984,8 @@ def rename_all_files(dirs_to_do):
     """get rid of the inserted dirname in filenames after parsing"""
     import os
     from corpkit.build import get_filepaths
+    if type(dirs_to_do) == str:
+        dirs_to_do = [dirs_to_do]
     for d in dirs_to_do:
         if d.endswith('-parsed'):
             ext = 'txt.xml'

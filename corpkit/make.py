@@ -49,6 +49,8 @@ def make_corpus(unparsed_corpus_path,
                                rename_all_files,
                                make_no_id_corpus, parse_corpus, move_parsed_files)
 
+    if parse is True and tokenise is True:
+        raise ValueError('Select either parse or tokenise, not both.')
     if project_path is None:
         project_path = os.getcwd()
 
@@ -72,15 +74,16 @@ def make_corpus(unparsed_corpus_path,
     unparsed_corpus_path = os.path.abspath(unparsed_corpus_path)
 
     # move it into project
-    if not root:
-        print 'Copying files to project ...'
-    shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
-    unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
+    if os.path.isdir(os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))):
+        pass
+    else:
+        if not root:
+            print 'Copying files to project ...'
+        shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
+        unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
 
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
-
-    outpaths = []
 
     if parse:
         if speaker_segmentation:
@@ -95,7 +98,6 @@ def make_corpus(unparsed_corpus_path,
     
         filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                 corpuspath = to_parse)
-        outpaths.append(to_parse)
 
         new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = to_parse,
@@ -109,7 +111,7 @@ def make_corpus(unparsed_corpus_path,
         
         move_parsed_files(project_path, to_parse, new_parsed_corpus_path)
 
-        outpaths.append(new_parsed_corpus_path)
+        outpath = new_parsed_corpus_path
 
         if speaker_segmentation:
             add_ids_to_xml(new_parsed_corpus_path)
@@ -126,8 +128,8 @@ def make_corpus(unparsed_corpus_path,
                                    only_tokenise = True)
         if new_tokenised_corpus_path is False:
             return   
-        outpaths.append(new_tokenised_corpus_path)
+        outpath = new_tokenised_corpus_path
 
-    rename_all_files(outpaths)
-    print 'Done! Created %s' % ', '.join(outpaths)
-    return outpaths
+    rename_all_files(outpath)
+    print 'Done!\n'
+    return outpath
