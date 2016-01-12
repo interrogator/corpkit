@@ -107,6 +107,12 @@ class Concordance(pd.core.frame.DataFrame):
     def __init__(self, data):
         pd.core.frame.DataFrame.__init__(self, data)
 
+    #def __len__(self, data):
+        #return len(data)
+
+    def __repr__(self):
+        return 'corpkit.interrogation.Concordance instance: %d results' % (len(self))
+
     def save(self, savename, *args, **kwargs):
         """Save data to pickle file"""
         from corpkit import save
@@ -121,3 +127,4 @@ class Concordance(pd.core.frame.DataFrame):
         """calls corpkit.editor.editor()"""
         from corpkit import editor
         return editor(self, *args, **kwargs)
+
