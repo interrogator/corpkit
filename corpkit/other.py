@@ -124,7 +124,7 @@ def quickview(results, n = 25):
                 tot = results_branch[w]
             print '%s: %s (n=%d)' %(fildex, w, tot)
 
-def concprinter(df, kind = 'string', n = 100):
+def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
     """
     Print conc lines nicely, to string, latex or csv
 
@@ -150,13 +150,40 @@ def concprinter(df, kind = 'string', n = 100):
         to_show = df
     else:
         raise ValueError('n argument "%s" not recognised.' % str(n))
+
+    def resize_by_window_size(df, window):
+        cpd = df.copy()
+        lengths = list(cpd['l'].str.len())
+        for index, (i, lgth) in enumerate(zip(list(cpd['l']), lengths)):
+            if lgth > window:
+                cpd.ix[index]['l'] = i[lgth - window:]
+        lengths = list(cpd['r'].str.len())
+        for index, (i, lgth) in enumerate(zip(list(cpd['r']), lengths)):
+            cpd.ix[index]['r'] = i[:window]
+        return cpd
+
+    if window:
+        to_show = resize_by_window_size(to_show, window)
+
+    if columns != 'all':
+        to_show = to_show[columns]
+
     print ''
     if kind.startswith('s'):
-        print to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
+        if 'r' in list(to_show.columns):
+            print to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs)
+        else:
+            print to_show.to_string(header = False, **kwargs)
     if kind.startswith('l'):
-        print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1)
+        if 'r' in list(to_show.columns):
+            print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1, **kwargs)
+        else:
+            print to_show.to_latex(header = False, **kwargs)
     if kind.startswith('c'):
-        print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format})
+        if 'r' in list(to_show.columns):
+            print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs)
+        else:
+            print to_show.to_csv(header = False, **kwargs)
     print ''
 
 
