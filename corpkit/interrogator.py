@@ -1437,7 +1437,8 @@ def interrogator(path,
                                     exclude = exclude,
                                     excludemode = excludemode,
                                     searchmode = searchmode,
-                                    lemmatise = lemmatise)
+                                    lemmatise = lemmatise,
+                                    case_sensitive = case_sensitive)
                             else:
                                 result_from_file = dep_funct(sents)
                             if only_count:
