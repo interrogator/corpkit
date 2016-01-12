@@ -15,7 +15,7 @@ __all__ = ["interrogator",
     "Corpus",
     "Subcorpus"]
 
-__version__ = "1.77"
+__version__ = "1.78"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
