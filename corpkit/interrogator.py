@@ -103,6 +103,7 @@ def interrogator(path,
     from corpkit.process import add_corpkit_to_path
     from corpkit.process import tregex_engine
     from corpkit.process import add_nltk_data_to_nltk_path
+    from corpkit.process import animator
     from corpkit.interrogation import Interrogation, Results, Totals
     from corpkit.corpus import Corpus
 
@@ -268,27 +269,6 @@ def interrogator(path,
                 if not "'" in lst[index + 1]:
                     unsplit.append(t)
         return unsplit
-
-    def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
-                 init = False, length = False):
-        """
-        Animates progress bar in unique position in terminal
-        Multiple progress bars not supported in jupyter yet.
-        """
-        if init:
-            from textprogressbar import TextProgressBar
-            return TextProgressBar(length, dirname = tot_string)
-        if type(linenum) == int:
-            with terminal.location(0, terminal.height - (linenum + 1)):
-                if tot_string:
-                    progbar.animate(count, tot_string)
-                else:
-                    progbar.animate(count)
-        else:
-            if tot_string:
-                progbar.animate(count, tot_string)
-            else:
-                progbar.animate(count) 
 
     def signal_handler(signal, frame):
         """
@@ -1454,7 +1434,7 @@ def interrogator(path,
                             # memory problems
                             corenlp_xml = None
                             data = None
-                            gc.collect()
+                            #gc.collect()
 
                 if plaintext:
                     with open(filepath, "rb") as text:
