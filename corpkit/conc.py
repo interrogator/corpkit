@@ -54,6 +54,8 @@ def conc(corpus,
     :returns: Pandas DataFrame containing concordance lines
     """
 
+    locs = locals()
+
     import corpkit
     import os
     import re
@@ -398,4 +400,10 @@ def conc(corpus,
         print rem
 
     from corpkit.interrogation import Concordance
-    return Concordance(df)
+    output = Concordance(df)
+    try:
+        del locs['corpus']
+    except:
+        pass
+    output.query = locs
+    return output
