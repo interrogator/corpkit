@@ -14,8 +14,8 @@
   - [`Corpus()`](#corpus)
     - [`interrogate()` method](#interrogate-method)
   - [`Interrogation()`](#interrogation)
-    - [`edit() method`](#edit-method)
-    - [`plot() method`](#plot-method)
+    - [`edit()` method](#edit-method)
+    - [`plot()` method](#plot-method)
   - [Functions, lists, etc.](#functions-lists-etc)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -138,7 +138,7 @@ and methods:
 These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well.
 
 <a name="edit-method"></a>
-#### `edit() method`
+#### `edit()` method
 
 * Remove, keep or merge interrogation results or subcorpora using indices, words or regular expressions (see below)
 * Sort results by name or total frequency
@@ -153,7 +153,7 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
 <a name="plot-method"></a>
-#### `plot() method`
+#### `plot()` method
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))

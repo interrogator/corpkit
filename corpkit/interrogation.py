@@ -49,12 +49,16 @@ class Interrogation:
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
+        """Print top results from an interrogation or edit"""
         from corpkit import quickview
         quickview(self, n = n)
 
-
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
+    """
+    A class for interrogation results, with methods for editing, plotting,
+    saving and quickviewing
+    """
 
     def __init__(self, data):
         pd.core.frame.DataFrame.__init__(self, data)
@@ -75,11 +79,15 @@ class Results(pd.core.frame.DataFrame):
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
+        """Print top results from an interrogation or edit"""
         from corpkit import quickview
         quickview(self, n = n)
     
 class Totals(pd.core.series.Series):
-
+    """
+    A class for interrogation totals, with methods for editing, plotting,
+    saving and quickviewing
+    """
     def __init__(self, data):
         pd.core.series.Series.__init__(self, data)
 
@@ -99,10 +107,15 @@ class Totals(pd.core.series.Series):
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
+        """Print top results from an interrogation or edit"""
         from corpkit import quickview
         quickview(self, n = n)
     
 class Concordance(pd.core.frame.DataFrame):
+    """
+    A class for concordance lines, with methods for saving,
+    formatting and editing
+    """
     
     def __init__(self, data):
         pd.core.frame.DataFrame.__init__(self, data)
