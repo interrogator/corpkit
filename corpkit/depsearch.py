@@ -8,12 +8,13 @@ def dep_searcher(sents,
                  excludemode = 'any',
                  searchmode = 'all',
                  lemmatise = False,
-                 case_sensitive = False):
+                 case_sensitive = False,
+                 progbar = False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
     from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker
+    from corpkit.process import filtermaker, animator
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -78,7 +79,12 @@ def dep_searcher(sents,
             return c
 
     result = []
-    for s in sents:
+    numdone = 0
+    for indexx, s in enumerate(sents):
+        numdone += 1
+        if progbar:
+            tstr = '%d/%d' % (numdone, len(sents))
+            animator(progbar, numdone, tstr)
         lks = []
         deps = get_deps(s, dep_type)
         tokens = s.tokens
@@ -88,35 +94,48 @@ def dep_searcher(sents,
                 #pat = as_regex(pat, boundaries = '')
                 pat = filtermaker(pat, case_sensitive = case_sensitive)
             if opt == 'g':
+                got = []
                 for l in deps.links:
-                    if re.match(pat, l.governor.text):
-                        lks.append(s.get_token_by_id(l.dependent.idx))
+                    if re.search(pat, l.governor.text):
+                        got.append(s.get_token_by_id(l.dependent.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
             elif opt == 'd':
+                got = []
                 for l in deps.links:
-                    if re.match(pat, l.dependent.text):
-                        lks.append(s.get_token_by_id(l.governor.idx))
+                    if re.search(pat, l.dependent.text):
+                        got.append(s.get_token_by_id(l.governor.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
             elif opt == 'f':
+                got = []
                 for l in deps.links:
-                    if re.match(pat, l.type):
-                        lks.append(s.get_token_by_id(l.dependent.idx))
+                    if re.search(pat, l.type):
+                        got.append(s.get_token_by_id(l.dependent.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
             elif opt == 'p':
                 for tok in tokens:
-                    if re.match(pat, tok.pos):
+                    if re.search(pat, tok.pos):
                         lks.append(tok)
             elif opt == 'l':
                 for tok in tokens:
-                    if re.match(pat, tok.lemma):
+                    if re.search(pat, tok.lemma):
                         lks.append(tok)
             elif opt == 'w':
                 for tok in tokens:
-                    if re.match(pat, tok.word):
+                    if re.search(pat, tok.word):
                         lks.append(tok)
             elif opt == 'i':
                 for tok in tokens:
-                    if re.match(pat, str(tok.id)):
+                    if re.search(pat, str(tok.id)):
                         lks.append(tok)
 
         # only return results if all conditions are met
+
         if searchmode == 'all':
             counted = Counter(lks)
             lks = [k for k, v in counted.items() if v >= len(search.keys())]
@@ -131,31 +150,31 @@ def dep_searcher(sents,
                 for tok in lks:
                     if op == 'g':
                         for l in deps.links:
-                            if re.match(pat, l.governor.text):
+                            if re.search(pat, l.governor.text):
                                 to_remove.append(s.get_token_by_id(l.governor.idx))
                     elif op == 'd':
                         for l in deps.links:
-                            if re.match(pat, l.dependent.text):
+                            if re.search(pat, l.dependent.text):
                                 to_remove.append(s.get_token_by_id(l.dependent.idx))
                     elif op == 'f':
                         for l in deps.links:
-                            if re.match(pat, l.type):
+                            if re.search(pat, l.type):
                                 to_remove.append(s.get_token_by_id(l.dependent.idx))
                     elif op == 'p':
                         for tok in tokens:
-                            if re.match(pat, tok.pos):
+                            if re.search(pat, tok.pos):
                                 to_remove.append(tok)
                     elif op == 'l':
                         for tok in tokens:
-                            if re.match(pat, tok.lemma):
+                            if re.search(pat, tok.lemma):
                                 to_remove.append(tok)
                     elif op == 'w':
                         for tok in tokens:
-                            if re.match(pat, tok.word):
+                            if re.search(pat, tok.word):
                                 to_remove.append(tok)
                     elif op == 'i':
                         for tok in tokens:
-                            if re.match(pat, str(tok.id)):
+                            if re.search(pat, str(tok.id)):
                                 to_remove.append(tok)
 
             if excludemode == 'all':
