@@ -1,5 +1,9 @@
+
 class Corpus:
-    """A class representing a linguistic text corpus"""
+    """A class representing a linguistic text corpus, which contains files,
+       optionally within subcorpus folders.
+
+       Methods for concordancing, interrogating, getting general stats"""
 
     def __init__(self, path, **kwargs):
 
@@ -9,7 +13,7 @@ class Corpus:
         def get_structure(print_info = True):
             """print structure of corpus and build .subcorpora, .files and .structure"""
             import os
-            from corpkit.corpus import Subcorpus, File
+            from corpkit.corpus import Subcorpus, File, Datalist
             strep = '\nCorpus: %s\n' % os.path.abspath(self.path)
             structdict = {}
             for dirname, subdirlist, filelist in os.walk(self.path):
@@ -34,13 +38,35 @@ class Corpus:
                 subcs = [Subcorpus(i) for i in sorted(structdict.keys())]
             else:
                 subcs = None
-            return structdict, subcs, sorted(filelist)
+            if print_info:
+                for k, v in structdict.items():
+                    del structdict[k]
+                    structdict[Subcorpus(k)] = v
+                return structdict, Datalist(subcs), Datalist(sorted(filelist))
+            else:
+                return structdict, subcs, sorted(filelist)
 
         self.path = path
+        self.name = os.path.basename(path)
         self.abspath = os.path.abspath(path)
         self.datatype, self.singlefile = determine_datatype(path)
         self.structure, self.subcorpora, self.files = get_structure(**kwargs)
         self.features = False
+
+        import re
+        variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
+        if self.subcorpora is not None:
+            if self.subcorpora and len(self.subcorpora) > 0:
+                for subcorpus in self.subcorpora:
+                    variable_safe = re.sub(variable_safe_r, '', os.path.splitext(subcorpus.name.lower())[0])
+                    setattr(self, variable_safe, subcorpus)
+        if self.files is not None:
+            if self.files and len(self.files) > 0:
+                for f in self.files:
+                    variable_safe = re.sub(variable_safe_r, '', f.name)
+                    setattr(self, variable_safe, f)
+
+
 
     def __str__(self):
         """string representation of corpus"""
@@ -62,7 +88,7 @@ class Corpus:
     def get_stats(self, *args):
         """get some basic stats"""
         from corpkit import interrogator
-        self.features = interrogator(c.path, 's', 'any').results
+        self.features = interrogator(self.path, 's', 'any').results
         print 'Features defined. See .features attribute ...' 
 
     def interrogate(self, *args, **kwargs):
@@ -86,24 +112,18 @@ class Corpus:
 
 from corpkit.corpus import Corpus
 class Subcorpus(Corpus):
+    """Model a subcorpus, so that it can be interrogated and concordanced"""
     
     def __init__(self, path):
         self.path = path
         kwargs = {'print_info': False}
-        Corpus.__init__(self, path, **kwargs)
+        Corpus.__init__(self, self.path, **kwargs)
 
     def __str__(self):
         return self.path
 
-    def interrogate(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator()"""
-        from corpkit import interrogator
-        return interrogator(self.path, *args, **kwargs)
-
-    def concordance(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.conc.conc()"""
-        from corpkit import conc
-        return conc(self.path, *args, **kwargs)
+    def __repr__(self):
+        return "<corpkit.corpus.Subcorpus instance: %s>" % self.name
 
 class File(Corpus):
     
@@ -113,15 +133,91 @@ class File(Corpus):
         kwargs = {'print_info': False}
         Corpus.__init__(self, self.path, **kwargs)
 
+    #def __repr__(self):
+        #return self.path
+    def __repr__(self):
+        return "<corpkit.corpus.File instance: %s>" % self.name
+
     def __str__(self):
         return self.path
 
-    def interrogate(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator()"""
-        from corpkit import interrogator
-        return interrogator(self.path, *args, **kwargs)
+    def read(self, *args, **kwargs):
+        with open(self.abspath, 'r') as fo:
+            data = fo.read()
+            return data
 
-    def concordance(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.conc.conc()"""
-        from corpkit import conc
-        return conc(self.path, *args, **kwargs)
+class Datalist(object):
+    """a list of subcorpora or corpus files that can be accessed
+       with indexing, slicing, etc."""
+
+    def __init__(self, data):
+
+        def makesafe(variabletext):
+            import re
+            from corpkit.process import is_number
+            variable_safe_r = re.compile('[\W_]+', re.UNICODE)
+            variable_safe = re.sub(variable_safe_r, '', variabletext.name.lower().split('.')[0])
+            if is_number(variable_safe):
+                variable_safe = 'c' + variable_safe
+            return variable_safe
+
+        import re
+        import os
+        self.current = 0
+        if data:
+            self.high = len(data)
+        else:
+            self.high = 0
+        self.data = data
+        if data and len(data) > 0:
+            for subcorpus in data:
+                safe_var = makesafe(subcorpus)
+                setattr(self, safe_var, subcorpus)
+
+    def __str__(self):
+        st = []
+        for i in self.data:
+            st.append(i.name)
+        return '\n'.join(st)
+
+    def __repr__(self):
+        return "<corpkit.corpus.Datalist instance: %d items>" % len(self)
+
+    def __delitem__(self, key):
+        self.__delattr__(key)
+
+    def __getitem__(self, key):
+
+        def makesafe(variabletext):
+            import re
+            from corpkit.process import is_number
+            variable_safe_r = re.compile('[\W_]+', re.UNICODE)
+            variable_safe = re.sub(variable_safe_r, '', variabletext.name.lower().split('.')[0])
+            if is_number(variable_safe):
+                variable_safe = 'c' + variable_safe
+            return variable_safe
+
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return [self[ii] for ii in xrange(*key.indices(len(self)))]
+        elif type(key) == int:
+            return self.__getitem__(makesafe(self.data[key]))
+        else:
+            return self.__getattribute__(key)
+
+    def __setitem__(self, key, value):
+        self.__setattr__(key, value)
+
+    def __iter__(self):
+        for datum in self.data:
+            yield datum
+
+    def __len__(self):
+        return len(self.data)
+
+    def next(self): # Python 3: def __next__(self)
+        if self.current > self.high:
+            raise StopIteration
+        else:
+            self.current += 1
+            return self.current - 1
