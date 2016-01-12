@@ -7,7 +7,8 @@ def dep_searcher(sents,
                  exclude = False,
                  excludemode = 'any',
                  searchmode = 'all',
-                 lemmatise = False):
+                 lemmatise = False,
+                 case_sensitive = False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -82,7 +83,10 @@ def dep_searcher(sents,
         deps = get_deps(s, dep_type)
         tokens = s.tokens
         for opt, pat in search.items():
-            #pat = filtermaker(pat)
+            if type(pat) == list:
+                #from corpkit.other import as_regex
+                #pat = as_regex(pat, boundaries = '')
+                pat = filtermaker(pat, case_sensitive = case_sensitive)
             if opt == 'g':
                 for l in deps.links:
                     if re.match(pat, l.governor.text):
@@ -123,7 +127,7 @@ def dep_searcher(sents,
         if exclude is not False:
             to_remove = []
             for op, pat in exclude.items():
-                pat = filtermaker(pat)
+                pat = filtermaker(pat, case_sensitive = case_sensitive)
                 for tok in lks:
                     if op == 'g':
                         for l in deps.links:
