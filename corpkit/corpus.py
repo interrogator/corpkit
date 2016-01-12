@@ -99,11 +99,7 @@ class Corpus:
     def parse(self, *args, **kwargs):
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
-        outpaths = make_corpus(self.path)
-        corpora = []
-        for p in outpaths:
-            corpora.append(Corpus(p))
-        return corpora
+        return Corpus(make_corpus(self.path, *args, **kwargs))
 
     def concordance(self, *args, **kwargs):
         """interrogate the corpus using corpkit.conc.conc()"""
