@@ -208,7 +208,12 @@ def dep_searcher(sents,
                     if 'w' in show:
                         single_wd['w'] = tok.word
                     if 'l' in show:
-                        single_wd['l'] = tok.lemma
+                        from dictionaries.word_transforms import wordlist
+                        if tok.lemma in wordlist.keys():
+                            lem = wordlist[tok.lemma]
+                        else:
+                            lem = tok.lemma
+                        single_wd['l'] = lem
                     if 'p' in show:
                         single_wd['p'] = tok.pos
                     if 'r' in show:
@@ -250,10 +255,13 @@ def dep_searcher(sents,
                         single_result['w'] = lk.lemma
                     else:
                         single_result['w'] = lk.word
-
                 if 'l' in show:
-                    single_result['l'] = lk.lemma
-
+                    from dictionaries.word_transforms import wordlist
+                    if lk.lemma in wordlist.keys():
+                        lem = wordlist[lk.lemma]
+                    else:
+                        lem = lk.lemma
+                    single_result['l'] = lem
                 if 'p' in show:
                     single_result['p'] = 'none'
                     postag = lk.pos
