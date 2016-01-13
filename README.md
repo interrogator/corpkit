@@ -303,11 +303,14 @@ Output:
 *corpkit* contains a modest function for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
 
 ```python
->>> corpus = unparsed.parse(parse = True, tokenise = True,
-...    corenlppath = 'Downloads/corenlp', nltk_data_path = 'Downloads/nltk_data')
+# to parse, you can set a path to corenlp
+>>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
+
+# to tokenise, turn parsing off, and point to nltk:
+# >>> corpus = unparsed.parse(parse = False, tokenise = True, nltk_data_path = 'Downloads/nltk_data')
 ```
 
-which creates the parsed corpora, and returns `Corpus()` objects representing them. You can also optionally pass in a string of annotators:
+which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. You can also optionally pass in a string of annotators:
 
 ```python
 ans = 'tokenize,ssplit,pos'

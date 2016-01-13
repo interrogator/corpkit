@@ -40,11 +40,11 @@ class Corpus:
                 self.singlefile = False
             else:
                 self.singlefile = True
-            if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
-                      and not f.startswith('.')]) > 0:
-                self.singlefile = False
-            else:
-                self.singlefile = True
+                if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
+                          and not f.startswith('.')]) > 0:
+                    self.singlefile = False
+                else:
+                    self.singlefile = True
         else:
             if os.path.split(path.rstrip('/'))[0].endswith('-parsed'):
                 self.datatype = 'parse'
@@ -52,6 +52,7 @@ class Corpus:
                       and not f.startswith('.')]) > 0:
                     self.singlefile = False
                 else:
+                    print 'c'
                     self.singlefile = True
             else:
                 self.datatype, self.singlefile = determine_datatype(path)
@@ -149,6 +150,13 @@ class Corpus:
         quickstart = self.interrogate(search = search, **kwargs)
         edited = quickstart.edit('%', 'self', print_info = False)
         edited.plot(str(self.path), **kwargs)
+
+    def save(self, savename = False, **kwargs):
+        """Save data to pickle file"""
+        from corpkit import save
+        if not savename:
+            savename = self.name
+        save(self, savename, savedir = 'data', **kwargs)
 
 from corpkit.corpus import Corpus
 class Subcorpus(Corpus):
