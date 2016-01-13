@@ -674,3 +674,15 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
         else:
             progbar.animate(count) 
             
+def parse_just_speakers(just_speakers, path):
+    if just_speakers is True:
+        just_speakers = ['each']
+    if just_speakers is False or just_speakers is None:
+        return False
+    if type(just_speakers) == str:
+        just_speakers = [just_speakers]
+    if type(just_speakers) == list:
+        if just_speakers == ['each']:
+            from corpkit.build import get_speaker_names_from_xml_corpus
+            just_speakers = get_speaker_names_from_xml_corpus(path)
+    return just_speakers
