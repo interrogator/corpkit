@@ -243,10 +243,18 @@ class Datalist(object):
         elif type(key) == int:
             return self.__getitem__(makesafe(self.data[key]))
         else:
-            return self.__getattribute__(key)
+            try:
+                return self.__getattribute__(key)
+            except:
+                from corpkit.process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
+        print key
+        if key.startswith('c'):
+            self.__setattr__(key.lstrip('c'), value)
 
     def __iter__(self):
         for datum in self.data:
