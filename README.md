@@ -256,8 +256,8 @@ Or, just use *(I)Python*:
 # parse it, return the new parsed corpus object
 >>> corpus = unparsed.parse()
 
-# search nyt for modal auxiliaries:
->>> interroplot(corpus, r'MD')
+# search corpus for modal auxiliaries:
+>>> corpus.interroplot('MD')
 ```
 
 Output: 
@@ -402,7 +402,7 @@ Output:
 You can search tokenised corpora or plaintext corpora for regular expressions or lists of words to match. The two queries below will return identical results:
 
 ```python
-r_query = r'fr?iends?'
+r_query = r'^fr?iends?$'
 l_query = ['friend', 'friends', 'fiend', 'fiends']
 >>> lines = subcorpus.concordance(r_query)
 >>> lines = subcorpus.concordance(l_query)

@@ -66,8 +66,6 @@ class Corpus:
                     variable_safe = re.sub(variable_safe_r, '', f.name)
                     setattr(self, variable_safe, f)
 
-
-
     def __str__(self):
         """string representation of corpus"""
         st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' \
@@ -106,6 +104,12 @@ class Corpus:
         from corpkit import conc
         return conc(self.path, *args, **kwargs)
 
+    def interroplot(self, search, *args, **kwargs):
+        """interrogate, then plot, with very little customisability"""
+        quickstart = self.interrogate(search = search, **kwargs)
+        edited = quickstart.edit('%', 'self', print_info = False)
+        edited.plot(str(self.path), **kwargs)
+
 from corpkit.corpus import Corpus
 class Subcorpus(Corpus):
     """Model a subcorpus, so that it can be interrogated and concordanced"""
@@ -122,6 +126,7 @@ class Subcorpus(Corpus):
         return "<corpkit.corpus.Subcorpus instance: %s>" % self.name
 
 class File(Corpus):
+    """Models a corpus file, for reading, interrogating, concordancing"""
     
     def __init__(self, path, dirname):
         import os
@@ -129,8 +134,6 @@ class File(Corpus):
         kwargs = {'print_info': False}
         Corpus.__init__(self, self.path, **kwargs)
 
-    #def __repr__(self):
-        #return self.path
     def __repr__(self):
         return "<corpkit.corpus.File instance: %s>" % self.name
 
@@ -143,8 +146,9 @@ class File(Corpus):
             return data
 
 class Datalist(object):
-    """a list of subcorpora or corpus files that can be accessed
-       with indexing, slicing, etc."""
+    """
+    A list-like object containing subcorpora or corpus files that can be accessed
+    with indexing, slicing, etc."""
 
     def __init__(self, data):
 
