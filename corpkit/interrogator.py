@@ -149,7 +149,7 @@ def interrogator(path,
         from IPython.display import display, clear_output
     except ImportError:
         pass
-    
+
     # check for gui, pythontex
     tk = check_t_kinter()
     have_python_tex = check_pytex()

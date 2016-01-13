@@ -7,53 +7,91 @@ class Corpus:
 
     def __init__(self, path, **kwargs):
 
+
         import os
+        import re
+        import operator
         from corpkit.process import determine_datatype
-        
-        def get_structure(print_info = True):
-            """print structure of corpus and build .subcorpora, .files and .structure"""
-            import os
-            from corpkit.corpus import Subcorpus, File, Datalist
-            strep = '\nCorpus: %s\n' % os.path.abspath(self.path)
-            structdict = {}
-            for dirname, subdirlist, filelist in os.walk(self.path):
-                filelist = [File(f, dirname) for f in filelist if not f.startswith('.')]
-                if print_info:
-                    if os.path.abspath(dirname) == os.path.abspath(self.path):
-                        continue
-                structdict[dirname] = filelist
-                strep = strep + '\nSubcorpus: %s' % os.path.basename(dirname)
-                for index, fname in enumerate(filelist):
-                    strep = strep + '\n\t%s' % os.path.basename(fname.path)
-                    if index > 9:
-                        strep = strep + '\n\t... and %d others ...' % (len(filelist) - 10)
-                        break
-            if print_info:
-                print strep
-            filelist = []
-            for fl in structdict.values():
-                for f in fl:
-                    filelist.append(f)
-            if print_info:
-                subcs = [Subcorpus(i) for i in sorted(structdict.keys())]
-            else:
-                subcs = None
-            if print_info:
-                for k, v in structdict.items():
-                    del structdict[k]
-                    structdict[Subcorpus(k)] = v
-                return structdict, Datalist(subcs), Datalist(sorted(filelist))
-            else:
-                return structdict, subcs, sorted(filelist)
+
+        if 'level' in kwargs.keys():
+            level = kwargs['level']
+        else:
+            level = 'c'
+
+        print_info = True
+        if 'print_info' in kwargs.keys() and kwargs['print_info'] is False:
+            print_info = False
 
         self.path = path
         self.name = os.path.basename(path)
         self.abspath = os.path.abspath(path)
-        self.datatype, self.singlefile = determine_datatype(path)
-        self.structure, self.subcorpora, self.files = get_structure(**kwargs)
+
+        # this messy code figures out as quickly as possible what the datatype and singlefile
+        # status of the path is. it's messy because it shortcuts full checking where possible
+        # some of the shortcutting could maybe be moved into the determine_datatype() funct.
+
+        if os.path.isfile(self.abspath):
+            if self.abspath.endswith('.xml'):
+                self.datatype = 'parse'
+            self.singlefile = True
+        elif path.endswith('-parsed'):
+            self.datatype = 'parse'
+            if len([d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]) > 0:
+                self.singlefile = False
+            else:
+                self.singlefile = True
+            if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
+                      and not f.startswith('.')]) > 0:
+                self.singlefile = False
+            else:
+                self.singlefile = True
+        else:
+            if os.path.split(path.rstrip('/'))[0].endswith('-parsed'):
+                self.datatype = 'parse'
+                if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
+                      and not f.startswith('.')]) > 0:
+                    self.singlefile = False
+                else:
+                    self.singlefile = True
+            else:
+                self.datatype, self.singlefile = determine_datatype(path)
+        self.structure = None
+        self.subcorpora = None
+        self.files = None
+        struct = {}
+        all_files = []
+        if level == 'c':
+            print '\nCorpus at: %s\n' % self.abspath
+            subcorpora = Datalist(sorted([Subcorpus(os.path.join(self.path, d)) \
+                                               for d in os.listdir(self.path) \
+                                               if os.path.isdir(os.path.join(self.path, d))], \
+                                               key=operator.attrgetter('name')))
+            print subcorpora
+            self.subcorpora = subcorpora
+            for subcorpus in subcorpora:
+                file_list = Datalist(sorted([File(f, subcorpus.path) for f in os.listdir(subcorpus.path) \
+                                             if not f.startswith('.')], key=operator.attrgetter('name')))
+                struct[subcorpus] = file_list
+                if print_info:
+                    print 'Subcorpus: %s\n\t%s\n' % (subcorpus.name, \
+                                                     '\n\t'.join([f.name for f in file_list[:10]]))
+                    if len(file_list) > 10:
+                        print '... and %s more' % str(len(file_list) - 10)
+                for f in file_list:
+                    all_files.append(f)
+        
+            self.structure = struct
+
+        elif level == 's':
+            all_files = sorted([File(f, self.path) for f in os.listdir(self.path) \
+                                if not f.startswith('.')], key=operator.attrgetter('name'))
+
+        if level != 'f':
+            self.files = Datalist(all_files)
+
         self.features = False
 
-        import re
+        # set accessible attribute names for subcorpora and files
         variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
         if self.subcorpora is not None:
             if self.subcorpora and len(self.subcorpora) > 0:
@@ -106,6 +144,8 @@ class Corpus:
 
     def interroplot(self, search, *args, **kwargs):
         """interrogate, then plot, with very little customisability"""
+        if type(search) == str:
+            search = {'t': search}
         quickstart = self.interrogate(search = search, **kwargs)
         edited = quickstart.edit('%', 'self', print_info = False)
         edited.plot(str(self.path), **kwargs)
@@ -116,7 +156,7 @@ class Subcorpus(Corpus):
     
     def __init__(self, path):
         self.path = path
-        kwargs = {'print_info': False}
+        kwargs = {'print_info': False, 'level': 's'}
         Corpus.__init__(self, self.path, **kwargs)
 
     def __str__(self):
@@ -131,7 +171,7 @@ class File(Corpus):
     def __init__(self, path, dirname):
         import os
         self.path = os.path.join(dirname, path)
-        kwargs = {'print_info': False}
+        kwargs = {'print_info': False, 'level': 'f'}
         Corpus.__init__(self, self.path, **kwargs)
 
     def __repr__(self):
