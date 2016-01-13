@@ -100,6 +100,7 @@ def interrogator(path,
     locs = locals()
 
     import corpkit
+    from corpkit.build import get_speaker_names_from_xml_corpus
     from corpkit.process import add_corpkit_to_path
     from corpkit.process import tregex_engine
     from corpkit.process import add_nltk_data_to_nltk_path
@@ -149,6 +150,9 @@ def interrogator(path,
         from IPython.display import display, clear_output
     except ImportError:
         pass
+
+    from corpkit.process import parse_just_speakers
+    just_speakers = parse_just_speakers(just_speakers, path)
 
     # check for gui, pythontex
     tk = check_t_kinter()
@@ -562,25 +566,6 @@ def interrogator(path,
                 for m in plaintext_data.split():
                     result.append(m)
         return result
-
-    def get_speaker_names_from_xml_corpus(path):
-        import os
-        import re
-        from bs4 import BeautifulSoup
-        names = []
-        # parsing html with regular expression! :)
-        speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
-        for (root, dirs, fs) in os.walk(path):
-            for f in fs:
-                with open(os.path.join(root, f), 'r') as fo:
-                    txt = fo.read()
-                    res = re.findall(speakid, txt)
-                    if res:
-                        res = [i.strip() for i in res]
-                        for i in res:
-                            if i not in names:
-                                names.append(i)
-        return list(sorted(set(names)))
 
     def slow_tregex(sents):
         """do the speaker-specific version of tregex queries"""

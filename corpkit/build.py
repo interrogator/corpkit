@@ -971,6 +971,8 @@ def get_speaker_names_from_xml_corpus(path):
 
     for filepath in list_of_files:
         res = get_names(filepath)
+        if not res:
+            return False
         for i in res:
             if i not in names:
                 names.append(i)
