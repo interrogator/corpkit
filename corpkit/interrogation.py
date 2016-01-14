@@ -19,6 +19,9 @@ class Interrogation:
         st = 'Corpus interrogation: %s\n\n' % (self.query['path'])
         return st
 
+    def __repr__(self):
+        return "<corpkit.interrogation.Interrogation instance: %d total results>" % (self.totals.sum())
+
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
         from corpkit import editor
@@ -63,6 +66,9 @@ class Results(pd.core.frame.DataFrame):
     def __init__(self, data):
         pd.core.frame.DataFrame.__init__(self, data)
 
+    def __repr__(self):
+        return "<corpkit.interrogation.Results instance: %d unique results>" % len(self.columns)
+
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
         from corpkit import editor
@@ -90,6 +96,9 @@ class Totals(pd.core.series.Series):
     """
     def __init__(self, data):
         pd.core.series.Series.__init__(self, data)
+
+    def __repr__(self):
+        return "<corpkit.interrogation.Totals instance: %d unique results>" % self.sum()
 
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
@@ -120,11 +129,8 @@ class Concordance(pd.core.frame.DataFrame):
     def __init__(self, data):
         pd.core.frame.DataFrame.__init__(self, data)
 
-    #def __len__(self, data):
-        #return len(data)
-
     def __repr__(self):
-        return 'corpkit.interrogation.Concordance instance: %d results' % (len(self))
+        return 'corpkit.interrogation.Concordance instance: %d lines' % (len(self))
 
     def save(self, savename, *args, **kwargs):
         """Save data to pickle file"""

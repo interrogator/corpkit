@@ -52,7 +52,6 @@ class Corpus:
                       and not f.startswith('.')]) > 0:
                     self.singlefile = False
                 else:
-                    print 'c'
                     self.singlefile = True
             else:
                 self.datatype, self.singlefile = determine_datatype(path)
@@ -67,7 +66,6 @@ class Corpus:
                                                for d in os.listdir(self.path) \
                                                if os.path.isdir(os.path.join(self.path, d))], \
                                                key=operator.attrgetter('name')))
-            print subcorpora
             self.subcorpora = subcorpora
             for subcorpus in subcorpora:
                 file_list = Datalist(sorted([File(f, subcorpus.path) for f in os.listdir(subcorpus.path) \
@@ -121,6 +119,9 @@ class Corpus:
             st = st + '\nFeatures not analysed yet. Use .get_stats() method.\n'
         return st
 
+    def __repr__(self):
+        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora; %d files>" % (self.name, len(self.subcorpora), len(self.files))
+
     # METHODS
     def get_stats(self, *args):
         """get some basic stats"""
@@ -166,6 +167,9 @@ class Subcorpus(Corpus):
         self.path = path
         kwargs = {'print_info': False, 'level': 's'}
         Corpus.__init__(self, self.path, **kwargs)
+
+    def __repr__(self):
+        return "<corpkit.corpus.Subcorpus instance: %s; %d files>" % (self.name, len(self.files))
 
     def __str__(self):
         return self.path
@@ -260,7 +264,6 @@ class Datalist(object):
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
-        print key
         if key.startswith('c'):
             self.__setattr__(key.lstrip('c'), value)
 
