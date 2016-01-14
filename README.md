@@ -13,6 +13,7 @@
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)
     - [`interrogate()` method](#interrogate-method)
+    - [`concordance()` method](#concordance-method)
   - [`Interrogation()`](#interrogation)
     - [`edit()` method](#edit-method)
     - [`plot()` method](#plot-method)
@@ -85,16 +86,27 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 
 * Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
 * Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token matching a regular expression or wordlist
-* Return words or phrases, POS/group/phrase tags, raw counts, or all three.
-* N-gramming options
+* N-gramming
 * Two-way UK-US spelling conversion, and the ability to add words manually
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 * Restrict searches to particular speakers in a corpus
+* Quickly save to and load from disk with `save()` and `load()`
 
-The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` (and `concordance()`) methods:
+<a name="concordance-method"></a>
+#### `concordance()` method
+
+* Equivalent API to `interrogate()`, but return DataFrame of concordance lines
+* Return any combination and order of words, lemmas, indices, functions, or POS tags
+* Editable and saveable
+* Output to LaTeX, CSV or string with `format()`
+
+The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` and `concordance()` methods:
 
 ```python
+# select parsed corpus
+>>> corpus = Corpus('data/postcounts-parsed')
+
 # import process type lists and closed class wordlists
 >>> from dictionaries.process_types import processes
 >>> from dictionaries.wordlists import wordlists
