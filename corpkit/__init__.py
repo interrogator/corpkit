@@ -1,3 +1,4 @@
+# asterisk import
 __all__ = ["interrogator",
     "editor",
     "plotter",
@@ -11,21 +12,18 @@ __all__ = ["interrogator",
     "make_corpus",
     "flatten_treestring",
     "interroplot",
-    "Interrogation",
     "Corpus",
-    "Subcorpus",
     "Corpora"]
 
-__version__ = "1.80"
+#metadata
+__version__ = "1.81"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
+# probably not needed, anymore but adds corpkit to path for tregex.sh
 import sys
 import os
 import inspect
-
-# probably not needed, but adds corpkit to path for tregex.sh
-
 corpath = inspect.getfile(inspect.currentframe())
 baspat = os.path.dirname(corpath)
 dicpath = os.path.join(baspat, 'dictionaries')
@@ -35,6 +33,11 @@ for p in [corpath, baspat, dicpath]:
     if p not in os.environ["PATH"].split(':'): 
         os.environ["PATH"] += os.pathsep + p
 
+# import classes
+from corpus import Corpus
+from corpus import Corpora
+
+# import functions, though most are now class methods
 from interrogator import interrogator
 from editor import editor
 from plotter import plotter
@@ -48,11 +51,8 @@ from other import new_project
 from other import interroplot
 from make import make_corpus
 from build import flatten_treestring
-from interrogation import Interrogation
-from corpus import Subcorpus
-from corpus import Corpus
-from corpus import Corpora
 
+# monkeypatch editing and plotting to pandas objects
 import pandas as pd
 
 def plotfunc(self, title, *args, **kwargs):
