@@ -277,3 +277,18 @@ class Datalist(object):
         else:
             self.current += 1
             return self.current - 1
+
+
+from corpkit.corpus import Datalist
+class Corpora(Datalist):
+
+    def __init__(self, data):
+        Datalist.__init__(self, data)
+
+    def __repr__(self):
+        return "<corpkit.corpus.Corpora instance: %d items>" % len(self)
+
+    def interrogate(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.interrogator.interrogator"""
+        from corpkit import interrogator
+        return interrogator([s.path for s in self], *args, **kwargs)

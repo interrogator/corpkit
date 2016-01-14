@@ -13,9 +13,10 @@ __all__ = ["interrogator",
     "interroplot",
     "Interrogation",
     "Corpus",
-    "Subcorpus"]
+    "Subcorpus",
+    "Corpora"]
 
-__version__ = "1.78"
+__version__ = "1.79"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -50,6 +51,7 @@ from build import flatten_treestring
 from interrogation import Interrogation
 from corpus import Subcorpus
 from corpus import Corpus
+from corpus import Corpora
 
 import pandas as pd
 
