@@ -108,7 +108,7 @@ def interrogator(path,
     from corpkit.interrogation import Interrogation, Results, Totals
     from corpkit.corpus import Corpus
 
-    if type(path) == corpkit.corpus.Corpus:
+    if path.__class__ == corpkit.corpus.Corpus:
         path = path.path
     
     # some non-Python resources need to explicitly be added to path
