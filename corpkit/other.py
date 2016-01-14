@@ -12,6 +12,8 @@ def quickview(results, n = 25):
     import pandas as pd
     import numpy as np
     import os
+    import corpkit
+    from corpkit.interrogation import Interrogation, Results, Totals
 
     # handle dictionaries too:
     dictpath = 'dictionaries'
@@ -20,6 +22,8 @@ def quickview(results, n = 25):
     # too lazy to code this properly for every possible data type:
     if n == 'all':
         n = 9999
+
+    dtype = corpkit.interrogation.Interrogation
 
     if type(results) == str:
         if os.path.isfile(os.path.join(dictpath, results)):
@@ -39,37 +43,72 @@ def quickview(results, n = 25):
         else:
             raise ValueError('File %s not found in saved_interrogations or dictionaries')
 
-    if not 'results' in results.__dict__.keys():
-        print results.totals
-        return
-
-    datatype = results.results.iloc[0,0].dtype
-    if datatype == 'int64':
-        option = 't'
-    else:
-        option = '%'
-    if 'operation' in results.query:
-        if results.query['operation'].lower().startswith('k'):
-            option = 'k'
-        if results.query['operation'].lower().startswith('%'):
+    if results.__class__ == corpkit.interrogation.Results:
+        if results.iloc[0,0].dtype == 'int64':
+            option = 't'
+        else:
             option = '%'
-        if results.query['operation'].lower().startswith('/'):
-            option = '/'
+        the_list = list(results.columns)[:n]
+        dtype = corpkit.interrogation.Results
 
-    try:
-        the_list = list(results.results.columns)[:n]
-    except:
-        the_list = list(results.results.index)[:n]
+    elif results.__class__ == corpkit.interrogation.Totals:
+        if results.iloc[0].dtype == 'int64':
+            option = 't'
+        else:
+            option = '%'
+        the_list = list(results.index)[:n]
+        dtype = corpkit.interrogation.Totals
+
+    elif results.__class__ == corpkit.interrogation.Interrogation:
+        if 'results' in results.__dict__.keys():
+            datatype = results.results.iloc[0,0].dtype
+            if datatype == 'int64':
+                option = 't'
+            else:
+                option = '%'
+            if 'operation' in results.query:
+                if results.query['operation'].lower().startswith('k'):
+                    option = 'k'
+                if results.query['operation'].lower().startswith('%'):
+                    option = '%'
+                if results.query['operation'].lower().startswith('/'):
+                    option = '/'
+            try:
+                the_list = list(results.results.columns)[:n]
+            except:
+                the_list = list(results.results.index)[:n]
+        else:
+            print results.totals
+            return
+    else:
+        raise ValueError('Results not recognised.')
 
     for index, entry in enumerate(the_list):
         if option == 't':
-            tot = results.results[entry].sum()
+            if dtype == corpkit.interrogation.Interrogation:
+                to_get_from = results.results
+            elif dtype == corpkit.interrogation.Results:
+                to_get_from = results
+            elif dtype == corpkit.interrogation.Totals:
+                to_get_from = results
+
+            tot = to_get_from[entry].sum()
             print '%s: %s (n=%d)' %(index, entry, tot)
         elif option == '%' or option == '/':
-            tot = results.totals[entry]
-            totstr = "%.3f" % tot
-            print '%s: %s (%s%%)' % (index, entry, totstr)  
+            if dtype == corpkit.interrogation.Interrogation:
+                to_get_from = results.totals
+                tot = to_get_from[entry]
+                totstr = "%.3f" % tot
+                print '%s: %s (%s%%)' % (index, entry, totstr) 
+            elif dtype == corpkit.interrogation.Results:
+                print '%s: %s (%s)' %(index, entry, option)
+            elif dtype == corpkit.interrogation.Totals:
+                tot = results[entry]
+                totstr = "%.3f" % tot
+                print '%s: %s (%s%%)' % (index, entry, totstr) 
         elif option == 'k':
+            print '%s: %s (l/l)' %(index, entry)
+        else:
             print '%s: %s' %(index, entry)
 
 def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
