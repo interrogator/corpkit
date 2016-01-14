@@ -109,6 +109,10 @@ The code below demonstrates the complex kinds of queries that can be handled by 
 
 # interrogate, returning slash-delimited function/lemma
 >>> data = corpus.interrogate(criteria, exclude = exc, show = ['f', 'l'])
+>>> lines = corpus.concordance(criteria, exclude = exc, show = ['f', 'l'])
+
+# show results
+>>> print data, lines.format(n = 10, window = 40, columns = ['l', 'm', 'r'])
 ```
 
 Output sample:
@@ -120,6 +124,18 @@ Output sample:
 03          250           160             95         80         67   
 04          247           205             88         93         71   
 05          275           193             68         75         61   
+
+0  nk nsubj/it cop/be ccomp/sad advmod/when    nsubj/person  aux/do neg/not advcl/look ./at prep_at/w
+1  /my dobj/Fluoxetine advmod/now mark/that    nsubj/spring  ccomp/be advmod/here ./, ./but nsubj/I a
+2  y mark/because expl/there advcl/be det/a     nsubj/woman  ./across det/the prep_across/hall ./from
+3   num/114 ccomp/pound ./, mark/so det/any       nsubj/med  nsubj/I rcmod/take aux/can advcl/have de
+4                                                 nsubj/Kat  ./, root/be nsubj/you dep/taper ./off ./
+5  /to xcomp/explain prep_from/what det/the      nsubj/mark  ./on poss/my prep_on/arm ./, conj_and/ne
+6   det/the amod/first ./and conj_and/third  nsubj/hospital  nsubj/I rcmod/be advmod/at root/have num
+7  e dobj/tv mark/while det/the amod/second  nsubj/hospital  nsubj/I cop/be rcmod/IP prep/at pcomp/in
+8                                                 nsubj/Ben  ./, mark/if nsubj/you cop/be advcl/unhap
+9  h ./of prep_of/sleep advmod/when det/the   nsubj/reality  advcl/be ./, nsubj/everyone ccomp/need n
+
 ```
 
 <a name="interrogation"></a>
