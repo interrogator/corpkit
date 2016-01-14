@@ -136,7 +136,7 @@ def editor(dataframe1,
     :param calc_all: When keywording, calculate words that appear in either corpus
     :type calc_all: bool
 
-    :returns: Edited interrogation
+    :returns: corpkit.interrogation.Interrogation
     """
 
     # grab arguments, in case we get dict input and have to iterate
@@ -1205,7 +1205,7 @@ def editor(dataframe1,
     the_options['time_started'] = the_time_started
     the_options['function'] = 'editor'
     the_options['dataframe1'] = dataframe1
-    the_options['operation'] = the_operation
+    the_options['operation'] = operation
     the_options['dataframe2'] = dataframe2
     the_options['datatype'] = datatype
     the_options['sort_by'] = sort_by
@@ -1230,8 +1230,8 @@ def editor(dataframe1,
 
     #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, total)
-    from corpkit.interrogation import Interrogation
-    output = Interrogation(results = df, totals = total, query = the_options)
+    from corpkit.interrogation import Interrogation, Results, Totals
+    output = Interrogation(results = Results(df), totals = Totals(total), query = the_options)
 
     #print '\nResult (sample)\n'
     if print_info:
