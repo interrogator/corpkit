@@ -79,6 +79,31 @@ as well as the following methods:
 
 Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` object also have a `.read()` method.
 
+```python
+>>> corpus = Corpus('data/sessions')
+>>> corpus.get_stats()
+>>> corpus.features
+```
+
+Output:
+
+```
+    Characters  Tokens  Words  Closed class words  Open class words  Clauses  Sentences  Unmodalised declarative  Mental processes   Relational processes  Interrogative  Passives  Verbal processes   Modalised declarative  Open interrogative  Imperative  Closed interrogative  
+01       26873    8513   7308                4809              3704     2212        577                      280               156                     98             76        35                39                      26                   8           2                      3    
+02       25844    7933   6920                4313              3620     2270        266                      130               195                    109             29        19                35                      11                   5           1                      3    
+03       18376    5683   4877                3067              2616     1640        330                      174               132                     68             30        40                29                       8                  12           6                      1    
+04       20066    6354   5366                3587              2767     1775        319                      174               176                     83             33        30                20                       9                   9           4                      1    
+05       23461    7627   6217                4400              3227     1978        479                      245               154                     93             45        51                28                      20                   5           3                      1    
+06       19164    6777   5200                4151              2626     1684        298                      111               165                     83             43        56                14                      10                   6           6                      2    
+07       22349    7039   5951                4012              3027     1947        343                      183               195                     82             29        30                38                      12                   5           5                      0    
+08       26494    8760   7124                4960              3800     2379        545                      263               170                     87             66        36                32                      10                   6           5                      4    
+09       23073    7747   6193                4524              3223     2056        310                      149               164                     88             21        26                22                      10                   5           3                      0    
+10       20648    6789   5608                3817              2972     1795        437                      265               139                    101             34        34                39                      18                   5           3                      2    
+11       25366    8533   6899                4925              3608     2207        457                      230               203                    116             39        48                47                      15                  10           4                      0    
+12       16976    5742   4624                3274              2468     1567        258                      135               183                     72             23        43                22                       4                   3           1                      6    
+13       25807    8546   6966                4768              3778     2345        477                      257               200                    124             45        50                36                      15                  12           3                      2    
+```
+
 <a name="interrogate-method"></a>
 #### `interrogate()` method
 
@@ -691,7 +716,7 @@ yeah          -3179.90            will      -679.06
 <a name="parallel-processing"></a>
 ### Parallel processing
 
-`interrogate()` can also parallel-process multiple queries, corpora or speaker IDs.
+`interrogate()` can also parallel-process multiple corpora, speaker IDs, or queries.
 
 <a name="multiple-corpora"></a>
 #### Multiple corpora
@@ -702,7 +727,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 >>> import os
 >>> from corpkit.corpus import Corpora
 
-# make a list of Corpus objects, then pass them to Corpora()
+# make a list of Corpus objects, then pass it to Corpora()
 >>> corpus_list = [Corpus(os.path.join(datadir, d)) for d in os.listdir(datadir)]
 >>> corpora = Corpora(corpus_list)
 
@@ -713,12 +738,20 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 
 `num_proc` dictates the number of parallel processes to start. If omitted, you'll get as many processes as your machine has cores.
 
-The output of a multiprocessed interrogation will generally be a `dict` with corpus names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus names as column names.
+The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
 
 <a name="multiple-speakers"></a>
 #### Multiple speakers
 
-If `just_speakers` is a list containing multiple recognised names, the output will be a `dict` with speaker names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each speaker into a single `Interrogation()` object, using speaker names as column names.
+Passing in a list of speaker names will also trigger multiprocessing:
+
+```python
+>>> from dictionary.wordlists import wordlists
+>>> spkrs = ['MEYER', 'JAY']
+>>> each_speaker = corpus.interrogate('w', wordlists.closedclass, just_speakers = spkrs)
+```
+
+There is also `just_speakers = 'each'`, which will be automatically expanded to include every speaker name found in the corpus.
 
 <a name="multiple-queries"></a>
 #### Multiple queries
@@ -730,9 +763,7 @@ query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}`}
 phrases = corpus.interrogate('trees', query, show = 'c')
 ```
 
-The output will be a `dict` with `query.keys()` as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using `query.keys()` as column names.
-
-Let's try multiprocessing with multiple queries. We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
+Let's try multiprocessing with multiple queries, showing count (i.e. returning a single results DataFrame). We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
 ```python
 >>> q = {'risk':        r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)', 
