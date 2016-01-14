@@ -32,6 +32,9 @@
     - [Plotting keywords](#plotting-keywords)
     - [Traditional reference corpora](#traditional-reference-corpora)
   - [Parallel processing](#parallel-processing)
+    - [Multiple corpora](#multiple-corpora)
+    - [Multiple speakers](#multiple-speakers)
+    - [Multiple queries](#multiple-queries)
   - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
@@ -355,8 +358,8 @@ Unlike most concordancers, which are based on plaintext corpora, *corpkit* can c
 
 ```python
 >>> subcorpus = corpus.subcorpora.c2005
-# can also be accessed as corpus.subcorpora['c2005']
-# or corpus.subcorpora[n]
+# can also be accessed as corpus.subcorpora['2005']
+# or corpus.subcorpora[index]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
 # 't' option for tree searching
 >>> lines = subcorpus.concordance('t', query, window = 50, n = 10, random = True)
@@ -407,8 +410,8 @@ You can search tokenised corpora or plaintext corpora for regular expressions or
 ```python
 r_query = r'^fr?iends?$'
 l_query = ['friend', 'friends', 'fiend', 'fiends']
->>> lines = subcorpus.concordance(r_query)
->>> lines = subcorpus.concordance(l_query)
+>>> lines = subcorpus.concordance({'w': r_query})
+>>> lines = subcorpus.concordance({'w': l_query})
 ```
 
 If you really wanted, you can then go on to use `concordance()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `edit()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
@@ -494,6 +497,8 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
 # sort with edit()
+# use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or 'p'
+# other sort_by options: 'name', 'total', 'infreq'
 >>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
 # make an area chart with custom y label
@@ -518,6 +523,9 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 >>> sayers = sayers.edit(merge_subcorpora = merges)
 
 # now, get relative frequencies for he and she
+# 'self' calculates percentage after merging/removing etc has been performed,
+# so that he and she will sum to 100%.
+# pass in `sayers.totals` to calculate he/she as percentage of all sayers
 >>> genders = sayers.edit('%', 'self', just_entries = ['he', 'she'])
 
 # and plot it as a series of pie charts, showing totals on the slices:
@@ -659,8 +667,7 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 ```python
 # arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
->>> print p.results.ix['2013'].edit('k', 'bnc.p', 
-...    skip_entries = stopwords).results
+>>> print p.results.ix['2013'].edit('k', 'bnc.p', skip_entries = stopwords).results
 >>> print p.results.ix['2013'].edit('k', 'bnc.p', calc_all = False).results
 ```
 
@@ -684,13 +691,48 @@ yeah          -3179.90            will      -679.06
 <a name="parallel-processing"></a>
 ### Parallel processing
 
-`interrogate()` can also parallel-process multiple queries or corpora. Parallel processing will be automatically enabled if you pass in:
+`interrogate()` can also parallel-process multiple queries, corpora or speaker IDs.
 
-1. a `list` of paths as `path` (i.e. `['path/to/corpus1', 'path/to/corpus2']`)
-2. a `dict` as `query` (i.e. `{'Noun phrases': r'NP', 'Verb phrases': r'VP'}`)
-3. A `list` of speakers, with speaker-segmented data (i.e. `['LEAR', 'KENT', 'FOOL']`)
+<a name="multiple-corpora"></a>
+#### Multiple corpora
 
-Let's look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
+To parallel-process multiple corpora, first, wrap them up as a `Corpora()` object:
+
+```python
+>>> import os
+>>> from corpkit.corpus import Corpora
+
+# make a list of Corpus objects, then pass them to Corpora()
+>>> corpus_list = [Corpus(os.path.join(datadir, d)) for d in os.listdir(datadir)]
+>>> corpora = Corpora(corpus_list)
+
+# interrogate by parallel processing, 4 at a time
+>>> output = corpora.interrogate('t', r'/NN.?/ < /(?i)^h/', show = 'l', num_proc = 4)
+
+```
+
+`num_proc` dictates the number of parallel processes to start. If omitted, you'll get as many processes as your machine has cores.
+
+The output of a multiprocessed interrogation will generally be a `dict` with corpus names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus names as column names.
+
+<a name="multiple-speakers"></a>
+#### Multiple speakers
+
+If `just_speakers` is a list containing multiple recognised names, the output will be a `dict` with speaker names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each speaker into a single `Interrogation()` object, using speaker names as column names.
+
+<a name="multiple-queries"></a>
+#### Multiple queries
+
+You can also run a number of queries over the same corpus in parallel. 
+
+```python
+query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}`}
+phrases = corpus.interrogate('trees', query, show = 'c')
+```
+
+The output will be a `dict` with `query.keys()` as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using `query.keys()` as column names.
+
+Let's try multiprocessing with multiple queries. We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
 
 ```python
 >>> q = {'risk':        r'VP <<# (/VB.?/ < /(?i).?\brisk.?\b/)', 
