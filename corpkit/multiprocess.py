@@ -68,6 +68,7 @@ def pmultiquery(path,
     multiple_queries = False
     multiple_speakers = False
     multiple_corpora = False
+    multiple_search = False
 
     denom = 1
     if hasattr(path, '__iter__'):
@@ -78,6 +79,10 @@ def pmultiquery(path,
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
         denom = len(query)
+    elif hasattr(search, '__iter__'):
+        multiple_search = True
+        num_cores = best_num_parallel(num_cores, len(search.keys()))
+        denom = len(search.keys())
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
         num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
@@ -162,6 +167,19 @@ def pmultiquery(path,
             a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = [name]
+            a_dict['function_filter'] = function_filter
+            a_dict['paralleling'] = index
+            a_dict['printstatus'] = False
+            ds.append(a_dict)
+    elif multiple_search:
+        for index, (name, v) in enumerate(search.items()):
+            a_dict = dict(d)
+            a_dict['path'] = path
+            a_dict['search'] = v
+            a_dict['query'] = query
+            a_dict['show'] = show
+            a_dict['outname'] = name
+            a_dict['just_speakers'] = just_speakers
             a_dict['function_filter'] = function_filter
             a_dict['paralleling'] = index
             a_dict['printstatus'] = False

@@ -187,6 +187,9 @@ def interrogator(path,
         if type(just_speakers) == list:
             if len(just_speakers) > 1:
                 is_multiquery = True
+    if type(search) == dict:
+        if any(type(i) == dict for i in search.values()):
+            is_multiquery = True
 
     # regex type
     retype = type(re.compile('hello, world'))
