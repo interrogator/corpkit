@@ -25,6 +25,7 @@
 - [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [More detailed examples](#more-detailed-examples)
+  - [`search`, `exclude` and `show`](#search-exclude-and-show)
   - [Building corpora](#building-corpora)
     - [Speaker IDs](#speaker-ids)
   - [Getting general stats](#getting-general-stats)
@@ -306,15 +307,18 @@ Output:
 2. uses `edit()` to calculate the relative frequencies of each result
 3. uses `plot()` to show the top seven results
  
-Here's an example of the three functions at work on the NYT corpus:
+Here's an example of the three methods at work:
 
 ```python
-# make tregex query: head of NP in PP containing 'of'
-# in NP headed by risk word:
+# make tregex query: head of NP in PP containing 'of' in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
-# search trees, output lemma
->>> risk_of = corpus.interrogate('trees', q, show = ['l'])
+# search trees, exclude 'risk of rain', output lemma
+>>> risk_of = corpus.interrogate({'t': q}, exclude = {'w': '^rain$'}, show = ['l'])
+
+# no different from the below, which may be easier when there's
+# only a single search criterion:
+# >>> risk_of = corpus.interrogate('t', q, exclude = {'w': '^rain$'}, show = ['l'])
 
 # use edit() to turn absolute into relative frequencies
 >>> to_plot = risk_of.edit('%', risk_of.totals)
@@ -328,6 +332,68 @@ Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
 <br><br>
+
+<a name="search-exclude-and-show"></a>
+### `search`, `exclude` and `show`
+
+In the example above, parse trees are searched, a particular match is excluded, and lemmata are shown. These three arguments (`search`, `exclude` and `show`) are the core of the `interrogate()` and `concordance()` functions.
+
+the `search` and `exclude` arguments need a `dict`, with the **thing to be searched as keys** and the **search pattern as values**. Here is a list of available keys:
+
+| Key | Gloss | Datatypes allowed |
+|-----|-------|------|
+| 'w'   | Word | Any |
+| 'l'   | Lemma   | Parsed corpus (though can be used in `show` for plaintext/tokenised data) |
+| 'p'   | Part of speech tag | Parsed corpus |
+| 'i'   | Index of token in sentence | Any |
+| 'n'   | N-gram    | Any |
+| 'g'   | Governor   | Parsed corpus |
+| 'gl'   | Governor lemma form   | Parsed corpus |
+| 'dl'   | Dependent lemma form   | Parsed corpus |
+| 'd'   | Dependent   | Parsed corpus |
+| 'f'   | Dependency function | Parsed corpus |
+| 'r' | Distance from 'root' | Parsed corpus |
+| 't'   | Tree    | Parsed corpus |
+| 'v'   | Get general stats | Parsed corpus |
+
+Allowable combinations are subject to common-sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
+
+| search/exclude | Gloss |
+|--------|-------|
+| `{'w': r'^p'}`       | Tokens starting with 'p'      |
+| `{'g': r'ing$'}`       | Tokens with governor word ending in 'ing'      |
+| `{'f': funclist}`       | Tokens whose dependency function matches a `str` in funclist       |
+| `{'d': r'^br', 'gl': '$have$'}`       | Tokens with dependent starting with 'br' and 'have' as governor lemma  |
+| `{'i': r'0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
+| `{'t': r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
+
+By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
+
+```python
+# get words that end in 'ing' OR are nominal:
+>>> out = interrogator({'w': 'ing$', 'p': 'N'}, searchmode = 'any')
+# get any word, but exclude words that end in 'ing' AND are nominal:
+>>> out = interrogator({'w': 'any'}, exclude = {'w': 'ing$', 'p': 'N'}, excludemode = 'all')
+```
+
+The `show` argument wants a list of keys you'd like to return for each result. The order will be respected. If you only want one thing, a `str` is OK. One additional possibility is `'c'`, which returns the number of occurrences only.
+
+| `show` | return |
+|--------|--------|
+| `'w'` | 'champions' |
+| `['w']` | 'champions' |
+| `'l'` | 'champion'  |
+| `'p'` | 'NNS' |
+| `'t'` | '(np (jj prevailing) (nns champions))' (depending on Tregex query) |
+| `['p', 'w']`    | 'NNS/champions'      |
+| `['w', 'p']`    | 'champions/NNS'     |
+| `['i', 'l', 'r']`    | '2/champion/1'      |
+| `['l', 'd', 'f']`    | 'champion/prevailing/nsubj'      |
+| `['g', 'gl', 'i']`    | 'are/be/2'      |
+| `['l', 'l']`    | 'champion/champion'      |
+| `['c']` | 24 |
+
+Again, common-sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
 
 <a name="building-corpora"></a>
 ### Building corpora
