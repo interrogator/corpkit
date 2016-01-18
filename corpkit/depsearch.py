@@ -25,10 +25,11 @@ def dep_searcher(sents,
        lemma
        word
        index
+       etc
 
-    2. exclude entries if need be
+    2. exclude entries if need be, using same method as search
 
-    3. return '/'-sep list of 'show' keyword arg:
+    3. return '/'-sep list of 'show' keyword arg, or conc lines:
        governor
        dependent
        function
@@ -37,6 +38,7 @@ def dep_searcher(sents,
        word
        index
        distance
+       etc
        
        ... or just return int count.
        """
@@ -70,7 +72,8 @@ def dep_searcher(sents,
         if c < 30:
             return c
 
-    def get_matches_from_sent(s, search, deps = False, tokens = False, dep_type = 'basic-dependencies'):
+    def get_matches_from_sent(s, search, deps = False, tokens = False, 
+        dep_type = 'basic-dependencies', mode = 'all'):
         """process a sentence object, returning matching tok ids"""
         from corpkit.process import get_deps
         lks = []
@@ -195,6 +198,11 @@ def dep_searcher(sents,
                     if re.search(pat, str(tok.id)):
                         lks.append(tok)
 
+        if mode == 'all':
+            from collections import Counter
+            counted = Counter(lks)
+            lks = [k for k, v in counted.items() if v >= len(search.keys())]
+        
         return lks
 
 
@@ -205,21 +213,14 @@ def dep_searcher(sents,
         numdone += 1
         deps = get_deps(s, dep_type)
         tokens = s.tokens
-        lks = get_matches_from_sent(s, search, deps, tokens, dep_type)
-
-        if searchmode == 'all':
-            counted = Counter(lks)
-            lks = [k for k, v in counted.items() if v >= len(search.keys())]
+        lks = get_matches_from_sent(s, search, deps, tokens, dep_type, mode = searchmode)
 
         if not concordancing:
             lks = list(set([x for x in lks if x and re.search(regex_nonword_filter, x.word)]))
 
         if exclude is not False:
-            to_remove = get_matches_from_sent(s, exclude, deps, tokens, dep_type)
+            to_remove = get_matches_from_sent(s, exclude, deps, tokens, dep_type, mode = excludemode)
 
-            if excludemode == 'all':
-                counted = Counter(to_remove)
-                to_remove = [k for k, v in counted.items() if v >= len(exclude.keys())]
             for i in to_remove:
                 try:
                     lks.remove(i)

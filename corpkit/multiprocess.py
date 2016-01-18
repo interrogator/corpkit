@@ -196,6 +196,11 @@ def pmultiquery(path,
            "\n          Queries: '%s'" \
            "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, os.path.basename(path), "', '".join(query.values())) )
 
+    elif multiple_search:
+        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
+           "\n          Queries: '%s'" \
+           "\n          Interrogating corpus ... \n" % (time, len(search.keys()), num_cores, os.path.basename(path), str(search.values())))
+
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
            "\n\n          Query: '%s'" \
@@ -229,7 +234,7 @@ def pmultiquery(path,
         try:
             #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
             res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
-            print '\n\n\n'
+            print '\n'
         except:
             failed = True
             print 'Multiprocessing failed.'
