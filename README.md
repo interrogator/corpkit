@@ -349,25 +349,30 @@ For parsed corpora, there are many other possible keys:
 
 | Key | Gloss |
 |-----|-------|
-| `'p'`   | Part of speech tag |
-| `'g'`   | Governor   |
+| `'p'`    | Part of speech tag |
+| `'g'`    | Governor word  |
 | `'gl'`   | Governor lemma form   |
+| `'gp'`   | Governor POS   |
+| `'gf'`   | Governor function   |
+| `'d'`    | Dependent word   |
 | `'dl'`   | Dependent lemma form   |
-| `'d'`   | Dependent   |
-| `'f'`   | Dependency function |
-| `'r'` | Distance from 'root' |
-| `'t'`   | Tree    |
-| `'v'`   | Predefined general stats |
+| `'dp'`   | Dependent POS   |
+| `'df'`   | Dependent function  |
+| `'f'`    | Dependency function |
+| `'r'`    | Distance from 'root' |
+| `'t'`    | Tree  |
+| `'v'`    | Predefined general stats |
 
 Allowable combinations are subject to common sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
 
 | search/exclude | Gloss |
 |--------|-------|
 | `{'w': r'^p'}`       | Tokens starting with 'p'      |
+| `{'l': r'any'}`       | Any lemma (often equivalent to `r'.*'`)      |
 | `{'g': r'ing$'}`       | Tokens with governor word ending in 'ing'      |
-| `{'f': funclist}`       | Tokens whose dependency function matches a `str` in funclist       |
-| `{'d': r'^br', 'gl': '$have$'}`       | Tokens with dependent starting with 'br' and 'have' as governor lemma  |
-| `{'i': r'0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
+| `{'f': funclist}`       | Tokens whose dependency function matches a `str` in `funclist`       |
+| `{'d': r'^br', 'gl': r'$have$'}`       | Tokens with dependent starting with 'br' and 'have' as governor lemma  |
+| `{'i': '0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
 | `{'t': r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
 
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
@@ -383,18 +388,19 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 
 | `show` | return |
 |--------|--------|
-| `'w'` | 'champions' |
-| `['w']` | 'champions' |
-| `'l'` | 'champion'  |
-| `'p'` | 'NNS' |
-| `'t'` | '(np (jj prevailing) (nns champions))' (depending on Tregex query) |
-| `['p', 'w']`    | 'NNS/champions'      |
-| `['w', 'p']`    | 'champions/NNS'     |
-| `['i', 'l', 'r']`    | '2/champion/1'      |
-| `['l', 'd', 'f']`    | 'champion/prevailing/nsubj'      |
-| `['g', 'gl', 'i']`    | 'are/be/2'      |
-| `['l', 'l']`    | 'champion/champion'      |
-| `['c']` | 24 |
+| `'w'` | `'champions'` |
+| `['w']` | `'champions'` |
+| `'l'` | `'champion'`  |
+| `'p'` | `'NNS'` |
+| `'pl'` (word class) | `'Noun'` |
+| `'t'` | `'(np (jj prevailing) (nns champions))'` (depending on Tregex query) |
+| `['p', 'w']`    | `'NNS/champions'`      |
+| `['w', 'p']`    | `'champions/NNS'`     |
+| `['i', 'l', 'r']`    | `'2/champion/1'`      |
+| `['l', 'd', 'f']`    | `'champion/prevailing/nsubj'`      |
+| `['g', 'gl', 'i']`    | `'are/be/2'`      |
+| `['l', 'l']`    | `'champion/champion'`      |
+| `['c']` | `24` |
 
 Again, common-sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
 
@@ -484,10 +490,11 @@ This data can be very helpful when using `edit()` to generate relative frequenci
 <a name="concordancing"></a>
 ### Concordancing
 
-Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance via Tregex queries or dependency tokens:
+Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance gramatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
 
 ```python
 >>> subcorpus = corpus.subcorpora.c2005
+# 'c' is added above to make a valid variable name from an int
 # can also be accessed as corpus.subcorpora['2005']
 # or corpus.subcorpora[index]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
@@ -510,7 +517,7 @@ Output (a `Pandas DataFrame`):
 9     said that the agency 's continuing review of how         Guidant   treated patient risks posed by devices like the 
 ```
 
-When searching dependencies, you have more flexibility:
+You can also concordance via dependencies:
 
 ```python
 # match words starting with 'st' filling function of nsubj
