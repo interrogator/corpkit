@@ -405,10 +405,11 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 | `['i', 'l', 'r']`    | `'2/champion/1'`      |
 | `['l', 'd', 'f']`    | `'champion/prevailing/nsubj'`      |
 | `['g', 'gl', 'i']`    | `'are/be/2'`      |
+| `['gl', 'gf', 'gp']`    | `'be/root/vb'`      |
 | `['l', 'l']`    | `'champion/champion'`      |
 | `['c']` | `24` |
 
-Again, common-sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
+Again, common sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
 
 <a name="building-corpora"></a>
 ### Building corpora
