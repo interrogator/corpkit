@@ -303,7 +303,7 @@ Output:
 
 `interroplot()` is just a demo function that does three things in order:
 
-1. uses `interrogate()` to search corpus for a (Regex or Tregex) query
+1. uses `interrogate()` to search corpus for a (Regex- or Tregex-based) query
 2. uses `edit()` to calculate the relative frequencies of each result
 3. uses `plot()` to show the top seven results
  
@@ -315,9 +315,7 @@ Here's an example of the three methods at work:
 
 # search trees, exclude 'risk of rain', output lemma
 >>> risk_of = corpus.interrogate({'t': q}, exclude = {'w': '^rain$'}, show = ['l'])
-
-# no different from the below, which may be easier when there's
-# only a single search criterion:
+# alternative syntax which may be easier when there's only a single search criterion:
 # >>> risk_of = corpus.interrogate('t', q, exclude = {'w': '^rain$'}, show = ['l'])
 
 # use edit() to turn absolute into relative frequencies
@@ -338,25 +336,30 @@ Output:
 
 In the example above, parse trees are searched, a particular match is excluded, and lemmata are shown. These three arguments (`search`, `exclude` and `show`) are the core of the `interrogate()` and `concordance()` functions.
 
-the `search` and `exclude` arguments need a `dict`, with the **thing to be searched as keys** and the **search pattern as values**. Here is a list of available keys:
+the `search` and `exclude` arguments need a `dict`, with the **thing to be searched as keys** and the **search pattern as values**. Here is a list of available keys for plaintext, tokenised and parsed corpora:
 
-| Key | Gloss | Datatypes allowed |
-|-----|-------|------|
-| 'w'   | Word | Any |
-| 'l'   | Lemma   | Parsed corpus (though can be used in `show` for plaintext/tokenised data) |
-| 'p'   | Part of speech tag | Parsed corpus |
-| 'i'   | Index of token in sentence | Any |
-| 'n'   | N-gram    | Any |
-| 'g'   | Governor   | Parsed corpus |
-| 'gl'   | Governor lemma form   | Parsed corpus |
-| 'dl'   | Dependent lemma form   | Parsed corpus |
-| 'd'   | Dependent   | Parsed corpus |
-| 'f'   | Dependency function | Parsed corpus |
-| 'r' | Distance from 'root' | Parsed corpus |
-| 't'   | Tree    | Parsed corpus |
-| 'v'   | Get general stats | Parsed corpus |
+| Key | Gloss |
+|-----|-------|
+| `'w'`   | Word |
+| `'l'`   | Lemma   |
+| `'i'`   | Index of token in sentence |
+| `'n'`   | N-gram    |
 
-Allowable combinations are subject to common-sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
+For parsed corpora, there are many other possible keys:
+
+| Key | Gloss |
+|-----|-------|
+| `'p'`   | Part of speech tag |
+| `'g'`   | Governor   |
+| `'gl'`   | Governor lemma form   |
+| `'dl'`   | Dependent lemma form   |
+| `'d'`   | Dependent   |
+| `'f'`   | Dependency function |
+| `'r'` | Distance from 'root' |
+| `'t'`   | Tree    |
+| `'v'`   | Predefined general stats |
+
+Allowable combinations are subject to common sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
 
 | search/exclude | Gloss |
 |--------|-------|
