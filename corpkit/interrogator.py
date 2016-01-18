@@ -188,7 +188,7 @@ def interrogator(path,
             if len(just_speakers) > 1:
                 is_multiquery = True
     if type(search) == dict:
-        if any(type(i) == dict for i in search.values()):
+        if all(type(i) == dict for i in search.values()):
             is_multiquery = True
 
     # regex type
@@ -728,24 +728,24 @@ def interrogator(path,
             if type(v) == list:
                 from corpkit.other import as_regex
                 v = as_regex(v, boundaries = 'l', case_sensitive = case_sensitive)
-            if k != k.lower()[0]:
-                fixed_exclude[k.lower()[0]] = v
-            else:
-                fixed_exclude[k] = v
+            fixed_exclude[k.lower()] = v
         exclude = fixed_exclude
 
     if not search_iterable:
         query = search.values()[0]
 
-    if type(show) == str or type(show) == unicode:
-        show = [show.lower()[0]]
+    #if type(show) == str or type(show) == unicode:
+    #    show = [show.lower()[0]]
 
     # parse show arguments
-    for index, t in enumerate(show):
-        if len(t) > 1 and not t.lower().endswith('l'):
-            show[index] = t.lower()[0]
-        elif len(t) == 2 and t.lower().endswith('l'):
-            show[index] = t.lower()[:2]
+    #for index, t in enumerate(show):
+    #    if len(t) > 1 and not t.lower().endswith('l'):
+    #        show[index] = t.lower()[0]
+    #    elif len(t) == 2 and t.lower().endswith('l'):
+    #        show[index] = t.lower()[:2]
+
+    if type(show) == list:
+        show = [i.lower() for i in show]
 
     possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 'o', 'r', 'gl', 'dl', 'pl']
     only_dep = ['d', 'g', 'i', 'a', 'f']
