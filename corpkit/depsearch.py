@@ -84,10 +84,18 @@ def dep_searcher(sents,
 
         for opt, pat in search.items():
             if type(pat) == list:
-                #from corpkit.other import as_regex
-                #pat = as_regex(pat, boundaries = '')
                 pat = filtermaker(pat, case_sensitive = case_sensitive)
-            elif opt == 'g':
+            if type(pat) == dict:
+                del search[opt]
+                for k, v in pat.items():
+                    
+                    if k != 'w':
+                        search[opt + k] = v
+                    else:
+                        search[opt] = v
+
+        for opt, pat in search.items():
+            if opt == 'g':
                 got = []
                 for l in deps.links:
                     if re.search(pat, l.governor.text):
@@ -160,9 +168,11 @@ def dep_searcher(sents,
                 for l in deps.links:
                     if re.search(pat, l.dependent.text):
                         got.append(s.get_token_by_id(l.governor.idx))
+
                 got = set(got)
                 for i in got:
                     lks.append(i)
+
             elif opt == 'f':
                 got = []
                 for l in deps.links:
@@ -393,6 +403,39 @@ def dep_searcher(sents,
                             if s.get_token_by_id(i.dependent.idx):       
                                 single_result['dl'] = s.get_token_by_id(i.dependent.idx).lemma
                             break
+
+                if 'gp' in show:
+                    single_result['gp'] = 'none'
+                    for i in deps.links:
+                        if i.dependent.idx == lk.id:
+                            if s.get_token_by_id(i.governor.idx):       
+                                single_result['gp'] = s.get_token_by_id(i.governor.idx).pos
+                            break
+
+                if 'dp' in show:
+                    single_result['dp'] = 'none'
+                    for i in deps.links:
+                        if i.governor.idx == lk.id:
+                            if s.get_token_by_id(i.dependent.idx):       
+                                single_result['dp'] = s.get_token_by_id(i.dependent.idx).pos
+                            break
+
+                if 'df' in show:
+                    single_result['df'] = 'none'
+                    for i in deps.links:
+                        if i.governor.idx == lk.id:
+                            single_result['df'] = i.type
+                            break  
+
+                if 'gf' in show:
+                    single_result['gf'] = 'none'
+                    for i in deps.links:
+                        # if the result is the dependent, get the governor, find where
+                        # it is a dependent, then gt the type
+                        if i.dependent.idx == lk.id:
+                            gv = next(x for x in deps.links if x.dependent.idx == i.governor.idx)
+                            single_result['gf'] = gv.type
+                            break                
 
                 if 'r' in show:
                     all_lks = [l for l in deps.links]

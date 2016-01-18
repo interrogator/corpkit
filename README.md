@@ -375,6 +375,12 @@ Allowable combinations are subject to common sense. If you're searching trees, y
 | `{'i': '0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
 | `{'t': r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
 
+If you'd prefer, you can make a nested query to handle dependent and governor information, instead of using things like `'df'`. The following searches produce the same output:
+
+```python
+crit = {'w': r'^friend$', 'd': {'f': 'amod', 'w': 'great'}}
+crit = {'w': r'^friend$', 'df': 'amod', 'd': 'great'}
+```
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
 
 ```python
