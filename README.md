@@ -379,7 +379,7 @@ By default, all `search` criteria must match, but any `exclude` criterion is eno
 
 ```python
 # get words that end in 'ing' OR are nominal:
->>> out = interrogator({'w': 'ing$', 'p': 'N'}, searchmode = 'any')
+>>> out = interrogator({'w': 'ing$', 'p': r'^N'}, searchmode = 'any')
 # get any word, but exclude words that end in 'ing' AND are nominal:
 >>> out = interrogator({'w': 'any'}, exclude = {'w': 'ing$', 'p': 'N'}, excludemode = 'all')
 ```
@@ -392,7 +392,7 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 | `['w']` | `'champions'` |
 | `'l'` | `'champion'`  |
 | `'p'` | `'NNS'` |
-| `'pl'` (word class) | `'Noun'` |
+| `'pl'` | `'Noun'` |
 | `'t'` | `'(np (jj prevailing) (nns champions))'` (depending on Tregex query) |
 | `['p', 'w']`    | `'NNS/champions'`      |
 | `['w', 'p']`    | `'champions/NNS'`     |
@@ -868,11 +868,16 @@ There is also `just_speakers = 'each'`, which will be automatically expanded to 
 <a name="multiple-queries"></a>
 #### Multiple queries
 
-You can also run a number of queries over the same corpus in parallel. 
+You can also run a number of queries over the same corpus in parallel. There are two ways to do this.
 
 ```python
+# method one
 query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}`}
 phrases = corpus.interrogate('trees', query, show = 'c')
+
+# method two
+query = {'-ing words': {'w': r'ing$'}, '-ed verbs': {'p': r'^V', 'w': r'ed$'}}
+patterns = corpus.interrogate(query, show = 'l')
 ```
 
 Let's try multiprocessing with multiple queries, showing count (i.e. returning a single results DataFrame). We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
