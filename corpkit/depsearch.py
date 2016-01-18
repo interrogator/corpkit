@@ -84,7 +84,7 @@ def dep_searcher(sents,
                 #from corpkit.other import as_regex
                 #pat = as_regex(pat, boundaries = '')
                 pat = filtermaker(pat, case_sensitive = case_sensitive)
-            if opt == 'g':
+            elif opt == 'g':
                 got = []
                 for l in deps.links:
                     if re.search(pat, l.governor.text):
@@ -92,7 +92,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'gf':
+            elif opt == 'gf':
                 got = []
                 for l in deps.links:
                     if re.search(pat, l.type):
@@ -103,7 +103,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'df':
+            elif opt == 'df':
                 got = []
                 for l in deps.links:
                     if re.search(pat, l.type):
@@ -111,7 +111,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'gl':
+            elif opt == 'gl':
                 got = []
                 for tok in tokens:
                     if re.search(pat, tok.lemma):
@@ -121,7 +121,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'gp':
+            elif opt == 'gp':
                 got = []
                 for tok in tokens:
                     if re.search(pat, tok.pos):
@@ -131,7 +131,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'dl':
+            elif opt == 'dl':
                 got = []
                 for tok in tokens:
                     if re.search(pat, tok.lemma):
@@ -141,7 +141,7 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
-            if opt == 'dp':
+            elif opt == 'dp':
                 got = []
                 for tok in tokens:
                     if re.search(pat, tok.pos):
@@ -195,7 +195,7 @@ def dep_searcher(sents,
                     if re.search(pat, str(tok.id)):
                         lks.append(tok)
 
-            return lks
+        return lks
 
 
     result = []
