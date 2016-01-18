@@ -14,7 +14,7 @@ def dep_searcher(sents,
     from corenlp_xml.document import Document
     from collections import Counter
     from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator
+    from corpkit.process import filtermaker, animator, get_deps
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -40,14 +40,6 @@ def dep_searcher(sents,
        
        ... or just return int count.
        """
-
-    def get_deps(sentence, dep_type):
-        if dep_type == 'basic-dependencies':
-            return sentence.basic_dependencies
-        if dep_type == 'collapsed-dependencies':
-            return sentence.collapsed_dependencies
-        if dep_type == 'collapsed-ccprocessed-dependencies':
-            return sentence.collapsed_ccprocessed_dependencies
 
     def distancer(lks, lk):
         "determine number of jumps to root"      
@@ -78,16 +70,15 @@ def dep_searcher(sents,
         if c < 30:
             return c
 
-    result = []
-    numdone = 0
-    for indexx, s in enumerate(sents):
-        numdone += 1
-        if progbar:
-            tstr = '%d/%d' % (numdone, len(sents))
-            animator(progbar, numdone, tstr)
+    def get_matches_from_sent(s, search, deps = False, tokens = False, dep_type = 'basic-dependencies'):
+        """process a sentence object, returning matching tok ids"""
+        from corpkit.process import get_deps
         lks = []
-        deps = get_deps(s, dep_type)
-        tokens = s.tokens
+        if not deps:
+            deps = get_deps(s, dep_type)
+        if not tokens:
+            tokens = s.tokens
+
         for opt, pat in search.items():
             if type(pat) == list:
                 #from corpkit.other import as_regex
@@ -101,6 +92,66 @@ def dep_searcher(sents,
                 got = set(got)
                 for i in got:
                     lks.append(i)
+            if opt == 'gf':
+                got = []
+                for l in deps.links:
+                    if re.search(pat, l.type):
+                        gov_index = l.dependent.idx
+                        for l2 in deps.links:
+                            if l2.governor.idx == gov_index:
+                                got.append(s.get_token_by_id(l2.dependent.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+            if opt == 'df':
+                got = []
+                for l in deps.links:
+                    if re.search(pat, l.type):
+                        got.append(s.get_token_by_id(l.governor.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+            if opt == 'gl':
+                got = []
+                for tok in tokens:
+                    if re.search(pat, tok.lemma):
+                        for i in deps.links:
+                            if i.governor.idx == tok.id:
+                                got.append(s.get_token_by_id(i.dependent.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+            if opt == 'gp':
+                got = []
+                for tok in tokens:
+                    if re.search(pat, tok.pos):
+                        for i in deps.links:
+                            if i.governor.idx == tok.id:
+                                got.append(s.get_token_by_id(i.dependent.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+            if opt == 'dl':
+                got = []
+                for tok in tokens:
+                    if re.search(pat, tok.lemma):
+                        for i in deps.links:
+                            if i.dependent.idx == tok.id:
+                                got.append(s.get_token_by_id(i.governor.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+            if opt == 'dp':
+                got = []
+                for tok in tokens:
+                    if re.search(pat, tok.pos):
+                        for i in deps.links:
+                            if i.dependent.idx == tok.id:
+                                got.append(s.get_token_by_id(i.governor.idx))
+                got = set(got)
+                for i in got:
+                    lks.append(i)
+
             elif opt == 'd':
                 got = []
                 for l in deps.links:
@@ -121,6 +172,16 @@ def dep_searcher(sents,
                 for tok in tokens:
                     if re.search(pat, tok.pos):
                         lks.append(tok)
+            elif opt == 'pl':
+                for tok in tokens:
+                    from dictionaries.word_transforms import taglemma
+                    postag = tok.pos
+                    if postag.lower() in taglemma.keys():
+                        stemmedtag = taglemma[postag.lower()]
+                    else:
+                        stemmedtag = postag.lower()
+                    if re.search(pat, stemmedtag):
+                        lks.append(tok)
             elif opt == 'l':
                 for tok in tokens:
                     if re.search(pat, tok.lemma):
@@ -134,7 +195,17 @@ def dep_searcher(sents,
                     if re.search(pat, str(tok.id)):
                         lks.append(tok)
 
-        # only return results if all conditions are met
+            return lks
+
+
+    result = []
+    numdone = 0
+
+    for s in sents:
+        numdone += 1
+        deps = get_deps(s, dep_type)
+        tokens = s.tokens
+        lks = get_matches_from_sent(s, search, deps, tokens, dep_type)
 
         if searchmode == 'all':
             counted = Counter(lks)
@@ -144,38 +215,7 @@ def dep_searcher(sents,
             lks = list(set([x for x in lks if x and re.search(regex_nonword_filter, x.word)]))
 
         if exclude is not False:
-            to_remove = []
-            for op, pat in exclude.items():
-                pat = filtermaker(pat, case_sensitive = case_sensitive)
-                for tok in lks:
-                    if op == 'g':
-                        for l in deps.links:
-                            if re.search(pat, l.governor.text):
-                                to_remove.append(s.get_token_by_id(l.governor.idx))
-                    elif op == 'd':
-                        for l in deps.links:
-                            if re.search(pat, l.dependent.text):
-                                to_remove.append(s.get_token_by_id(l.dependent.idx))
-                    elif op == 'f':
-                        for l in deps.links:
-                            if re.search(pat, l.type):
-                                to_remove.append(s.get_token_by_id(l.dependent.idx))
-                    elif op == 'p':
-                        for tok in tokens:
-                            if re.search(pat, tok.pos):
-                                to_remove.append(tok)
-                    elif op == 'l':
-                        for tok in tokens:
-                            if re.search(pat, tok.lemma):
-                                to_remove.append(tok)
-                    elif op == 'w':
-                        for tok in tokens:
-                            if re.search(pat, tok.word):
-                                to_remove.append(tok)
-                    elif op == 'i':
-                        for tok in tokens:
-                            if re.search(pat, str(tok.id)):
-                                to_remove.append(tok)
+            to_remove = get_matches_from_sent(s, exclude, deps, tokens, dep_type)
 
             if excludemode == 'all':
                 counted = Counter(to_remove)
@@ -185,6 +225,10 @@ def dep_searcher(sents,
                     lks.remove(i)
                 except ValueError:
                     pass
+
+        if progbar:
+            tstr = '%d/%d' % (numdone, len(sents))
+            animator(progbar, numdone, tstr)
 
         if 'c' in show:
             result.append(len(lks))
@@ -216,6 +260,17 @@ def dep_searcher(sents,
                         single_wd['l'] = lem
                     if 'p' in show:
                         single_wd['p'] = tok.pos
+
+                    if 'pl' in show:
+                        single_wd['pl'] = lk.pos
+                        from dictionaries.word_transforms import taglemma
+                        if postag.lower() in taglemma.keys():
+                            single_wd['pl'] = taglemma[postag.lower()]
+                        else:
+                            single_wd['pl'] = postag.lower()
+                        if not single_wd['pl']:
+                            single_wd['pl'] == 'none'
+
                     if 'r' in show:
                         all_lks = [l for l in deps.links]
                         distance = distancer(all_lks, tok)
@@ -266,6 +321,7 @@ def dep_searcher(sents,
                     single_result['p'] = 'none'
                     postag = lk.pos
                     if lemmatise:
+                        from dictionaries.word_transforms import taglemma
                         if postag.lower() in taglemma.keys():
                             single_result['p'] = taglemma[postag.lower()]
                         else:
@@ -278,6 +334,7 @@ def dep_searcher(sents,
                 if 'pl' in show:
                     single_result['pl'] = 'none'
                     postag = lk.pos
+                    from dictionaries.word_transforms import taglemma
                     if postag.lower() in taglemma.keys():
                         single_result['pl'] = taglemma[postag.lower()]
                     else:
