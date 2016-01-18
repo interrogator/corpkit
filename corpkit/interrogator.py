@@ -707,7 +707,8 @@ def interrogator(path,
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query, datatype)
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 's', 'n']
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 
+             'f', 's', 'n', 'gl', 'pl', 'dl', 'df', 'gf']
     if not any(i in possb for i in search.keys()):
         raise ValueError('search argument "%s" unrecognised.' % search.keys())
     if len(search.keys()) > 1 and 't' in search.keys():
@@ -736,8 +737,12 @@ def interrogator(path,
     if type(show) == str or type(show) == unicode:
         show = [show.lower()[0]]
 
+    # parse show arguments
     for index, t in enumerate(show):
-        show[index] = t.lower()[0]
+        if len(t) > 1 and not t.lower().endswith('l'):
+            show[index] = t.lower()[0]
+        elif len(t) == 2 and t.lower().endswith('l'):
+            show[index] = t.lower()[:2]
 
     possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'f', 'o', 'r', 'gl', 'dl', 'pl']
     only_dep = ['d', 'g', 'i', 'a', 'f']

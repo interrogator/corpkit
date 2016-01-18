@@ -686,3 +686,12 @@ def parse_just_speakers(just_speakers, path):
             from corpkit.build import get_speaker_names_from_xml_corpus
             just_speakers = get_speaker_names_from_xml_corpus(path)
     return just_speakers
+
+
+def get_deps(sentence, dep_type):
+    if dep_type == 'basic-dependencies':
+        return sentence.basic_dependencies
+    if dep_type == 'collapsed-dependencies':
+        return sentence.collapsed_dependencies
+    if dep_type == 'collapsed-ccprocessed-dependencies':
+        return sentence.collapsed_ccprocessed_dependencies
