@@ -26,19 +26,19 @@
 - [Quickstart](#quickstart)
 - [More detailed examples](#more-detailed-examples)
   - [`search`, `exclude` and `show`](#search-exclude-and-show)
-  - [Building corpora](#building-corpora)
-    - [Speaker IDs](#speaker-ids)
+- [Building corpora](#building-corpora)
+  - [Speaker IDs](#speaker-ids)
   - [Getting general stats](#getting-general-stats)
-  - [Concordancing](#concordancing)
-  - [Systemic functional stuff](#systemic-functional-stuff)
-  - [Keywording](#keywording)
-    - [Plotting keywords](#plotting-keywords)
-    - [Traditional reference corpora](#traditional-reference-corpora)
+- [Concordancing](#concordancing)
+- [Systemic functional stuff](#systemic-functional-stuff)
+- [Keywording](#keywording)
+  - [Plotting keywords](#plotting-keywords)
+  - [Traditional reference corpora](#traditional-reference-corpora)
   - [Parallel processing](#parallel-processing)
     - [Multiple corpora](#multiple-corpora)
     - [Multiple speakers](#multiple-speakers)
     - [Multiple queries](#multiple-queries)
-  - [More complex queries and plots](#more-complex-queries-and-plots)
+- [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
 - [Cite](#cite)
@@ -301,7 +301,7 @@ Output:
 <a name="more-detailed-examples"></a>
 ## More detailed examples
 
-`interroplot()` is just a demo function that does three things in order:
+`interroplot()` is just a demo method that does three things in order:
 
 1. uses `interrogate()` to search corpus for a (Regex- or Tregex-based) query
 2. uses `edit()` to calculate the relative frequencies of each result
@@ -334,7 +334,7 @@ Output:
 <a name="search-exclude-and-show"></a>
 ### `search`, `exclude` and `show`
 
-In the example above, parse trees are searched, a particular match is excluded, and lemmata are shown. These three arguments (`search`, `exclude` and `show`) are the core of the `interrogate()` and `concordance()` functions.
+In the example above, parse trees are searched, a particular match is excluded, and lemmata are shown. These three arguments (`search`, `exclude` and `show`) are the core of the `interrogate()` and `concordance()` methods.
 
 the `search` and `exclude` arguments need a `dict`, with the **thing to be searched as keys** and the **search pattern as values**. Here is a list of available keys for plaintext, tokenised and parsed corpora:
 
@@ -375,12 +375,15 @@ Allowable combinations are subject to common sense. If you're searching trees, y
 | `{'i': '0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
 | `{'t': r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
 
-If you'd prefer, you can make a nested query to handle dependent and governor information, instead of using things like `'df'`. The following searches produce the same output:
+If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `'df'`. The following searches produce the same output:
 
 ```python
-crit = {'w': r'^friend$', 'd': {'f': 'amod', 'w': 'great'}}
+crit = {'w': r'^friend$', 
+        'd': {'f': 'amod', 
+              'w': 'great'}}
 crit = {'w': r'^friend$', 'df': 'amod', 'd': 'great'}
 ```
+
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
 
 ```python
@@ -412,11 +415,13 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 Again, common sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
 
 <a name="building-corpora"></a>
-### Building corpora
+## Building corpora
 
-*corpkit* contains a modest function for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
+*corpkit*'s `Corpus()` class contains `parse()`, a modest method for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
 
 ```python
+>>> unparsed = Corpus('path/to/unparsed/files')
+
 # to parse, you can set a path to corenlp
 >>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
 
@@ -495,7 +500,7 @@ Output:
 This data can be very helpful when using `edit()` to generate relative frequencies, for example.
 
 <a name="concordancing"></a>
-### Concordancing
+## Concordancing
 
 Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance gramatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
 
@@ -561,7 +566,7 @@ l_query = ['friend', 'friends', 'fiend', 'fiends']
 If you really wanted, you can then go on to use `concordance()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `edit()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
 
 <a name="systemic-functional-stuff"></a>
-### Systemic functional stuff
+## Systemic functional stuff
 
 Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, corpkit will get their inflections automatically.
 
@@ -685,7 +690,7 @@ Output:
 Woohoo, a decreasing gender divide! 
 
 <a name="keywording"></a>
-### Keywording
+## Keywording
 
 As I see it, there are two main problems with keywording, as typically performed in corpus linguistics. First is the reliance on 'balanced'/'general' reference corpora, which are obviously a fiction. Second is the idea of stopwords. Essentially, when most people calculate keywords, they use stopword lists to automatically filter out words that they think will not be of interest to them. These words are generally closed class words, like determiners, prepositions, or pronouns. This is not a good way to go about things: the relative frequencies of *I*, *you* and *one* can tell us a lot about the kinds of language in a corpus. More seriously, stopwords mean adding subjective judgements about what is interesting language into a process that is useful precisely because it is not subjective or biased.
 
@@ -786,7 +791,7 @@ Name: terror, dtype: float64
 ```
 
 <a name="plotting-keywords"></a>
-#### Plotting keywords
+### Plotting keywords
 
 Naturally, we can use `plot()` for our keywords too:
 
@@ -804,7 +809,7 @@ Output:
 <br><br>
 
 <a name="traditional-reference-corpora"></a>
-#### Traditional reference corpora
+### Traditional reference corpora
 
 If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `edit()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
 
@@ -908,7 +913,7 @@ Output:
 <br><br>
 
 <a name="more-complex-queries-and-plots"></a>
-### More complex queries and plots
+## More complex queries and plots
 
 Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:
 
