@@ -710,7 +710,7 @@ def interrogator(path,
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query, datatype)
 
-    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 
+    possb = ['d', 'g', 'i', 'c', 'a', 'p', 'l', 'w', 't', 'r',
              'f', 's', 'n', 'gl', 'pl', 'dl', 'df', 'gf']
     if not any(i in possb for i in search.keys()):
         raise ValueError('search argument "%s" unrecognised.' % search.keys())
@@ -922,6 +922,8 @@ def interrogator(path,
 
     if dependency:
         if type(query) == list:
+            if all(type(x) == int for x in query):
+                query = [str(x) for x in query]
             query = as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
             #query = r'(?i)^(' + '|'.join(query) + r')$' 
         if query == 'any':
@@ -1196,10 +1198,13 @@ def interrogator(path,
                     else:
                         regex = query
                 else:
-                    if case_sensitive:
-                        regex = re.compile(query)
+                    if type(query) == int:
+                        regex = query
                     else:
-                        regex = re.compile(query, re.IGNORECASE)
+                        if case_sensitive:
+                            regex = re.compile(query)
+                        else:
+                            regex = re.compile(query, re.IGNORECASE)
                 is_valid = True
             except re.error:
                 is_valid = False

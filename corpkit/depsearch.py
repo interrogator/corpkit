@@ -84,7 +84,10 @@ def dep_searcher(sents,
 
         for opt, pat in search.items():
             if type(pat) == list:
+                if all(type(x) == int for x in pat):
+                    pat = [str(x) for x in pat]
                 pat = filtermaker(pat, case_sensitive = case_sensitive)
+                search[opt] = pat
             if type(pat) == dict:
                 del search[opt]
                 for k, v in pat.items():
@@ -207,14 +210,24 @@ def dep_searcher(sents,
                 for tok in tokens:
                     if re.search(pat, str(tok.id)):
                         lks.append(tok)
+            elif opt == 'r':
+                got = []
+                for tok in tokens:
+                    dist = distancer(deps.links, tok)
+                    if dist is not None and dist is not False:
+                        try:
+                            if int(dist) == int(pat):
+                                lks.append(tok)
+
+                        except TypeError:
+                            if re.search(pat, str(dist)):
+                                lks.append(tok)
 
         if mode == 'all':
             from collections import Counter
             counted = Counter(lks)
             lks = [k for k, v in counted.items() if v >= len(search.keys())]
-        
         return lks
-
 
     result = []
     numdone = 0
@@ -438,12 +451,11 @@ def dep_searcher(sents,
                             break                
 
                 if 'r' in show:
+
                     all_lks = [l for l in deps.links]
                     distance = distancer(all_lks, lk)
-                    if distance:
+                    if distance is not False and distance is not None:
                         single_result['r'] = str(distance)
-                    else:
-                        single_result['r'] = '0'
 
                 if 'i' in show:
                     single_result['i'] = str(lk.id)
