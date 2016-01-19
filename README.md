@@ -34,10 +34,10 @@
 - [Keywording](#keywording)
   - [Plotting keywords](#plotting-keywords)
   - [Traditional reference corpora](#traditional-reference-corpora)
-  - [Parallel processing](#parallel-processing)
-    - [Multiple corpora](#multiple-corpora)
-    - [Multiple speakers](#multiple-speakers)
-    - [Multiple queries](#multiple-queries)
+- [Parallel processing](#parallel-processing)
+  - [Multiple corpora](#multiple-corpora)
+  - [Multiple speakers](#multiple-speakers)
+  - [Multiple queries](#multiple-queries)
 - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [More information](#more-information)
@@ -838,7 +838,7 @@ yeah          -3179.90            will      -679.06
 ```
 
 <a name="parallel-processing"></a>
-### Parallel processing
+## Parallel processing
 
 `interrogate()` can also parallel-process multiple corpora, speaker IDs, or queries.
 
