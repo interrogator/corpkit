@@ -296,7 +296,7 @@ Or, just use *(I)Python*:
 Output: 
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/md2.png" />
-<br><br>
+<br>
 
 <a name="more-detailed-examples"></a>
 ## More detailed examples
@@ -329,7 +329,7 @@ Here's an example of the three methods at work:
 Output: 
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-of-noun.png" />
-<br><br>
+<br>
 
 <a name="search-exclude-and-show"></a>
 ### `search`, `exclude` and `show`
@@ -658,7 +658,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png" />
-<br><br>
+<br>
 
 We can also merge subcorpora. Let's look for changes in gendered pronouns:
 
@@ -685,7 +685,7 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/ann_he_she.png" />
-<br><br>
+<br>
 
 Woohoo, a decreasing gender divide! 
 
@@ -806,7 +806,7 @@ Naturally, we can use `plot()` for our keywords too:
 Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/keyness-of-politicians-in-the-emphnyt.png" />
-<br><br>
+<br>
 
 <a name="traditional-reference-corpora"></a>
 ### Traditional reference corpora
@@ -910,7 +910,7 @@ Let's try multiprocessing with multiple queries, showing count (i.e. returning a
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk_processes-2.png" />
-<br><br>
+<br>
 
 <a name="more-complex-queries-and-plots"></a>
 ## More complex queries and plots
@@ -965,7 +965,7 @@ We can use `edit()` to make some thematic categories:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/types-of-riskers.png" />
-<br><br>
+<br>
 
 Let's also find out what percentage of the time some nouns appear as riskers:
 
@@ -988,7 +988,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 Output:
 
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/risk-and-power-2.png" />
-<br><br>
+<br>
 
 <a name="visualisation-options"></a>
 ### Visualisation options
