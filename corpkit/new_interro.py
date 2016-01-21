@@ -11,15 +11,18 @@ def interro(corpus,
             case_sensitive = False,
             quicksave = False,
             just_speakers = False,
+            preserve_case = False,
             **kwargs):
     
     # store kwargs
     locs = locals()
 
     from corpkit.interrogation import Interrogation
+    from corpkit.process import tregex_engine
     from pandas import DataFrame, Series
     from collections import Counter
     from corpkit.other import as_regex
+    from corpkit.process import get_deps
 
     # find out if using gui
     root = kwargs.get('root')
@@ -66,8 +69,7 @@ def interro(corpus,
                 im = True
         return im, corpus, search, query, just_speakers
 
-
-    def slow_tregex(sents):
+    def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
         import os
         import bs4
@@ -84,13 +86,14 @@ def interro(corpus,
         res = tregex_engine(query = q, 
                             options = ['-o', '-%s' % translated_option], 
                             corpus = to_open,
-                            root = root)
+                            root = root,
+                            preserve_case = True)
         if root:
             root.update()
         os.remove(to_open)
         return res
 
-    def get_stats(sents):
+    def get_stats(sents, **dummy_args):
         """get a bunch of frequencies on interpersonal phenomena"""
         import os
         import re  
@@ -140,15 +143,14 @@ def interro(corpus,
             numdone += 1
             if root:
                 root.update()
-            if not root:
-                tot_string = str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys()))
-                if kwargs.get('outname'):
-                    tot_string = '%s: %s' % (kwargs['outname'], tot_string)
-                animator(p, numdone, tot_string, **par_args)
+            #if not root:
+            #    tot_string = str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys()))
+            #    if kwargs.get('outname'):
+            #        tot_string = '%s: %s' % (kwargs['outname'], tot_string)
+            #    animator(p, numdone, tot_string, **par_args)
             if kwargs.get('note', False):
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
-
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
@@ -177,29 +179,39 @@ def interro(corpus,
         if corpus.datatype == 'plaintext':
             if search.get('n'):
                 searcher = plaintext_ngram
+                optiontext = 'n-grams via plaintext'
             if search.get('w'):
                 if kwargs.get('regex', True):
                     searcher = plaintext_regex
                 else:
                     searcher = plaintext_simple
+                optiontext = 'Searching plaintext'
 
         elif corpus.datatype == 'tokens':
             if search.get('n'):
                 searcher = tokens_ngram
+                optiontext = 'n-grams via tokens'
             elif search.get('w'):
                 if kwargs.get('regex', True):
                     searcher = tokens_regex
                 else:
                     searcher = tokens_simple
+                optiontext = 'Searching tokens'
 
         elif corpus.datatype == 'parse':
             if search.get('t'):
                 searcher = slow_tregex
             elif search.get('v'):
                 searcher = get_stats
+                optiontext = 'General statistics'
+                from collections import Counter
+                statsmode_results = Counter()
+                global numdone
+                numdone = 0
             else:
                 from corpkit.depsearch import dep_searcher
                 searcher = dep_searcher
+                optiontext = 'Dependency querying'
 
     ############################################
     #      Set some Tregex-related values      #
@@ -259,10 +271,13 @@ def interro(corpus,
 
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
         results[subcorpus_name] = []
+        
+        # tregex over subcorpus
         if simple_tregex_mode:
-            result = tregex_engine(subcorpus_path, opts, search['t'])
-            for r in result:
-                results[subcorpus_name].append(r)
+            op = ['-o', '-' + translated_option]
+            result = tregex_engine(query = search['t'], options = op, 
+                                   corpus = subcorpus_path, root = root, preserve_case = True)
+        # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
                 if corpus.datatype == 'parse':
@@ -287,8 +302,8 @@ def interro(corpus,
                             #if s.speakername.text.strip() in just_speakers]
                         else:
                             sents = corenlp_xml.sentences
-                        # run whichever function has been called
-                        result = searcher(sents, search, show,
+
+                        result = searcher(sents, search = search, show = show,
                             dep_type = dep_type,
                             exclude = exclude,
                             excludemode = excludemode,
@@ -300,13 +315,21 @@ def interro(corpus,
 
                 elif corpus.datatype == 'plaintext':
                     pass
-                if result:
-                    for r in result:
-                        results[subcorpus_name].append(r)
+        if result:
+            for r in result:
+                if not preserve_case:
+                    r = r.lower()
+                results[subcorpus_name].append(r)
+        elif 'v' in search.keys():
+            results[subcorpus_name] = statsmode_results
 
         # turn data into counter object
         if not countmode:
             results[subcorpus_name] = Counter(results[subcorpus_name])
+
+    ############################################
+    #   Tally everything into big DataFrame    #
+    ############################################
 
     if countmode:
         df = pd.Series([d[0] for d in results.values()], results.keys())
@@ -318,6 +341,10 @@ def interro(corpus,
             the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
         # turn master dict into dataframe, sorted
         df = DataFrame(the_big_dict, index = sorted(results.keys()))
+
+    ############################################
+    # Format, output as Interrogation object   #
+    ############################################
 
     if not countmode:
         tot = df.sum(axis = 1)
