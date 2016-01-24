@@ -1,5 +1,6 @@
 def plotter(title,
             df,
+            kind = 'line',
             x_label = None,
             y_label = None,
             style = 'ggplot',
@@ -242,16 +243,12 @@ def plotter(title,
         colours = False
 
     # use 'draggable = True' to make a draggable legend
-    dragmode = False
-    if 'draggable' in kwargs.keys():
-        if kwargs['draggable'] is True:
-            dragmode = True
-        del kwargs['draggable']
+    dragmode = kwargs.get('draggable', False)
+    kwargs.pop('draggable', None)
 
-
-    if 'savepath' in kwargs.keys():
-        mpl.rcParams['savefig.directory'] = kwargs['savepath']
-        del kwargs['savepath']
+    if kwargs.get('savepath'):
+        mpl.rcParams['savefig.directory'] = kwargs.get('savepath')
+        kwargs.pop('savepath', None)
 
     mpl.rcParams['savefig.bbox'] = 'tight'
     mpl.rcParams.update({'figure.autolayout': True})
@@ -284,8 +281,7 @@ def plotter(title,
 
     # find out what kind of plot we're making, and enable
     # or disable interactive values if need be
-    if 'kind' not in kwargs:
-        kwargs['kind'] = 'line'
+    kwargs['kind'] = kind.lower()
 
     if interactive:
         if kwargs['kind'].startswith('bar'):
@@ -304,18 +300,17 @@ def plotter(title,
 
     # find out if pie mode, add autopct format
     piemode = False
-    if 'kind' in kwargs:
-        if kwargs['kind'] == 'pie':
-            piemode = True
-            # always the best spot for pie
-            #if legend_pos == 'best':
-                #legend_pos = 'lower left'
-            if show_totals.endswith('plot') or show_totals.endswith('both'):
-                kwargs['pctdistance'] = 0.6
-                if using_tex:
-                    kwargs['autopct'] = r'%1.1f\%%'
-                else:
-                    kwargs['autopct'] = '%1.1f%%'
+    if kind == 'pie':
+        piemode = True
+        # always the best spot for pie
+        #if legend_pos == 'best':
+            #legend_pos = 'lower left'
+        if show_totals.endswith('plot') or show_totals.endswith('both'):
+            kwargs['pctdistance'] = 0.6
+            if using_tex:
+                kwargs['autopct'] = r'%1.1f\%%'
+            else:
+                kwargs['autopct'] = '%1.1f%%'
 
     # copy data, make series into df
     dataframe = df.copy()
@@ -401,21 +396,15 @@ def plotter(title,
                 num_to_plot = len(dataframe.index)
 
     # explode pie, or remove if not piemode
-    if 'explode' in kwargs:
-        if not piemode:
-            del kwargs['explode']
-    if piemode:
-        if 'explode' in kwargs:
-            if not sbplt:
-                kwargs['explode'] = auto_explode(dataframe, 
-                                             kwargs['explode'], 
-                                             was_series = was_series, 
-                                             num_to_plot = num_to_plot)
-
-    if 'legend' in kwargs:
-        legend = kwargs['legend']
+    if piemode and not sbplt and kwargs.get('explode'):
+        kwargs['explode'] = auto_explode(dataframe, 
+                                        kwargs['explode'], 
+                                        was_series = was_series, 
+                                        num_to_plot = num_to_plot)
     else:
-        legend = True
+        kwargs.pop('explode', None)
+
+    legend = kwargs.get('legend', False)
 
     #cut data short
     plotting_a_totals_column = False
@@ -486,14 +475,14 @@ def plotter(title,
     #  use colormap if need be:
     if num_to_plot > 0:
         if not was_series:
-            if 'kind' in kwargs:
-                if kwargs['kind'] in ['pie', 'line', 'area']:
-                    if colours:
-                        if not plotting_a_totals_column:
-                            if colours == 'Default':
-                                colours = 'Paired'
-                            kwargs['colormap'] = colours
+            if kind in ['pie', 'line', 'area']:
+                if colours:
+                    if not plotting_a_totals_column:
+                        if colours == 'Default':
+                            colours = 'Paired'
+                        kwargs['colormap'] = colours
         #else:
+
             if colours:
                 if colours == 'Default':
                     colours = 'Paired'
@@ -511,17 +500,16 @@ def plotter(title,
                 kwargs['colormap'] = colours
     
     # multicoloured bar charts
-    if 'kind' in kwargs:
-        if colours:
-            if kwargs['kind'].startswith('bar'):
-                if len(list(dataframe.columns)) == 1:
-                    if not black_and_white:
-                        import numpy as np
-                        the_range = np.linspace(0, 1, num_to_plot)
-                        cmap = plt.get_cmap(colours)
-                        kwargs['colors'] = [cmap(n) for n in the_range]
-                    # make a bar width ... ? ...
-                    #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
+    if colours:
+        if kind.startswith('bar'):
+            if len(list(dataframe.columns)) == 1:
+                if not black_and_white:
+                    import numpy as np
+                    the_range = np.linspace(0, 1, num_to_plot)
+                    cmap = plt.get_cmap(colours)
+                    kwargs['colors'] = [cmap(n) for n in the_range]
+                # make a bar width ... ? ...
+                #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
 
     # reversing legend option
@@ -531,18 +519,17 @@ def plotter(title,
         rev_leg = False
 
     # show legend or don't, guess whether to reverse based on kind
-    if 'kind' in kwargs:
-        if kwargs['kind'] in ['bar', 'barh', 'area', 'line', 'pie']:
-            if was_series:
+    if kind in ['bar', 'barh', 'area', 'line', 'pie']:
+        if was_series:
+            legend = False
+        if kind == 'pie':
+            if pie_legend:
+                legend = True
+            else:
                 legend = False
-            if kwargs['kind'] == 'pie':
-                if pie_legend:
-                    legend = True
-                else:
-                    legend = False
-        if kwargs['kind'] in ['barh', 'area']:
-            if reverse_legend == 'guess':
-                rev_leg = True
+    if kind in ['barh', 'area']:
+        if reverse_legend == 'guess':
+            rev_leg = True
     if not 'rev_leg' in locals():
         rev_leg = False
 
@@ -586,16 +573,13 @@ def plotter(title,
     #kwargs['legend'] = False
 
     if legend:
+        if num_to_plot > 6:
+            if not kwargs.get('ncol'):
+                kwargs['ncol'] = num_to_plot / 7
         # kwarg options go in leg_options
-        leg_options = {'framealpha': .8}
-        if 'shadow' in kwargs:
-            leg_options['shadow'] = True
-        if 'ncol' in kwargs:
-            leg_options['ncol'] = kwargs['ncol']
-            del kwargs['ncol']
-        else:
-            if num_to_plot > 6:
-                leg_options['ncol'] = num_to_plot / 7
+        leg_options = {'framealpha': .8,
+                       'shadow': kwargs.get('shadow', False),
+                       'ncol': kwargs.pop('ncol', 1)}    
 
         # determine legend position based on this dict
         if legend_pos:
@@ -670,9 +654,8 @@ def plotter(title,
         return pby.T
 
     areamode = False
-    if 'kind' in kwargs:
-        if kwargs['kind'] == 'area':
-            areamode = True
+    if kind == 'area':
+        areamode = True
 
     if legend is False:
         kwargs['legend'] = False
@@ -680,7 +663,7 @@ def plotter(title,
     # line highlighting option for interactive!
     if interactive:
         if 2 in interactive_types:
-            if kwargs['kind'] == 'line':
+            if kind == 'line':
                 kwargs['marker'] = ','
         if not piemode:
             kwargs['alpha'] = 0.1
@@ -698,11 +681,10 @@ def plotter(title,
                     n = pandas.PeriodIndex([d for d in list(dataframe.index)], freq='A')
                     dataframe = dataframe.set_index(n)
 
-        if 'filled' in kwargs.keys():
-            if areamode or kwargs['kind'].startswith('bar'):
-                if kwargs['filled'] is True:
-                    dataframe = filler(dataframe)
-            del kwargs['filled']
+        if kwargs.get('filled'):
+            if areamode or kind.startswith('bar'):
+                dataframe = filler(dataframe)
+            kwargs.pop('filled', None)
 
     MARKERSIZE = 4
     COLORMAP = {
@@ -730,12 +712,12 @@ def plotter(title,
             }
 
     if black_and_white:
-        if kwargs['kind'] == 'line':
+        if kind == 'line':
             kwargs['linewidth'] = 1
 
         cmap = plt.get_cmap('Greys')
         new_cmap = truncate_colormap(cmap, 0.25, 0.95)
-        if kwargs['kind'] == 'bar':
+        if kind == 'bar':
             # darker if just one entry
             if len(dataframe.columns) == 1:
                 new_cmap = truncate_colormap(cmap, 0.70, 0.90)
@@ -787,7 +769,7 @@ def plotter(title,
             plt.gcf().patch.set_alpha(0)
 
         if black_and_white:
-            if kwargs['kind'] == 'line':
+            if kind == 'line':
                 # white background
                 # change everything to black and white with interesting dashes and markers
                 c = 0
@@ -842,7 +824,7 @@ def plotter(title,
                 tooltip_line = mpld3.plugins.LineLabelTooltip(lines[i], labels[i])
                 mpld3.plugins.connect(plt.gcf(), tooltip_line)
                 #else:
-                if kwargs['kind'] == 'line':
+                if kind == 'line':
                     tooltip_point = mpld3.plugins.PointLabelTooltip(l, labels = ls)
                     mpld3.plugins.connect(plt.gcf(), tooltip_point)
         
@@ -1002,29 +984,20 @@ def plotter(title,
                 a.axes.get_yaxis().set_visible(False)
                 a.axis('equal')
 
-            # show grid?
-            if 'grid' in kwargs.keys():
-                if kwargs['grid'] is False:
-                    a.grid(b=False)
-                else:
-                    a.grid(b=True)
-                del kwargs['grid']
+            # show grid
+            a.grid(b=kwargs.get('grid', False))
+            kwargs.pop('grid', None)
     
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
 
     if not sbplt:
-        if 'kind' in kwargs:
-            if kwargs['kind'].startswith('bar'):
-                width = ax.containers[0][0].get_width()
+        if kind.startswith('bar'):
+            width = ax.containers[0][0].get_width()
 
-        # show grid?
-        if 'grid' in kwargs.keys():
-            if kwargs['grid'] is False:
-                ax.grid(b=False)
-            else:
-                ax.grid(b=True)
-            del kwargs['grid']
+        # show grid
+        a.grid(b=kwargs.get('grid', False))
+        kwargs.pop('grid', None)
 
     if was_series:
         the_y_limit = plt.ylim()[1]

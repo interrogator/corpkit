@@ -12,6 +12,10 @@ def interro(corpus,
             quicksave = False,
             just_speakers = False,
             preserve_case = False,
+            files_as_subcorpora = False,
+            conc = False,
+            only_unique = False,
+            random = False,
             **kwargs):
     
     # store kwargs
@@ -19,6 +23,7 @@ def interro(corpus,
 
     from corpkit.interrogation import Interrogation
     from corpkit.process import tregex_engine
+    import pandas as pd
     from pandas import DataFrame, Series
     from collections import Counter
     from corpkit.other import as_regex
@@ -72,7 +77,6 @@ def interro(corpus,
     def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
         import os
-        import bs4
         from corpkit.process import tregex_engine
         # first, put the relevant trees into temp file
         if kwargs.get('outname'):
@@ -152,6 +156,45 @@ def interro(corpus,
                 kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
 
+    def make_conc_lines_from_whole_mid(wholes, middle_column_result, speakr = False):
+        if speakr is False:
+            speakr = ''
+        conc_lines = []
+        # remove duplicates from results
+        unique_wholes = []
+        unique_middle_column_result = []
+        duplicates = []
+        for index, ((f, whole), mid) in enumerate(zip(wholes, middle_column_result)):
+            if '-join-'.join([f, whole, mid]) not in duplicates:
+                duplicates.append('-join-'.join([f, whole, mid]))
+                unique_wholes.append([f, whole])
+                unique_middle_column_result.append(mid)
+
+        # split into start, middle and end, dealing with multiple occurrences
+        for index, ((f, whole), mid) in enumerate(zip(unique_wholes, unique_middle_column_result)):
+            reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', re.IGNORECASE | re.UNICODE)
+            offsets = [(m.start(), m.end()) for m in re.finditer(reg,whole)]
+            for offstart, offend in offsets:              
+                start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), whole[offend:].strip()
+                conc_lines.append([os.path.basename(f), speakr, start, middle, end])
+        return conc_lines
+
+    def uniquify(conc_lines):
+        from collections import OrderedDict
+        od = OrderedDict()
+        unique_lines = []
+        checking = []
+        for index, (f, speakr, start, middle, end) in enumerate(conc_lines):
+            joined = ' '.join([speakr, start, 'MIDDLEHERE:', middle, ':MIDDLEHERE', end])
+            if joined not in checking:
+                unique_lines.append(conc_lines[index])
+            checking.append(joined)
+        return unique_lines
+
+
+
+
+
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
     if im:
@@ -222,19 +265,22 @@ def interro(corpus,
         if 'p' in show:
             translated_option = 'u'
             if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+                                            case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 't' in show:
             translated_option = 'o'
             if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+                                            case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 'w' in show:
             translated_option = 't'
             if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+                                            case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'c' in show:
@@ -242,13 +288,15 @@ def interro(corpus,
             only_count = True
             translated_option = 'C'
             if type(query) == list:
-                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', 
+                                            case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'l' in show:
             translated_option = 't'
             if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', case_sensitive = case_sensitive)
+                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+                                            case_sensitive = case_sensitive)
             if query == 'any':
                 query = r'/.?[A-Za-z0-9].?/ !< __'
 
@@ -257,13 +305,17 @@ def interro(corpus,
     ############################################
 
     if corpus.singlefile:
-        to_iterate_over = {(corpus.name, corpus.path): [corpus.path]}
+        to_iterate_over = {(corpus.name, corpus.path): [corpus]}
     elif not corpus.subcorpora:
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
         for k, v in corpus.structure.items():
             to_iterate_over[(k.name, k.path)] = v
+    if files_as_subcorpora:
+        to_iterate_over = {}
+        for f in corpus.files:
+            to_iterate_over[(f.name, f.path)] = [f]
 
     ############################################
     # Iterate over data, doing interrogations  #
@@ -274,18 +326,21 @@ def interro(corpus,
         
         # tregex over subcorpus
         if simple_tregex_mode:
-            op = ['-o', '-' + translated_option]
+            op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = True)
+            if conc:
+                op.append('-w')
+                whole_result = tregex_engine(query = search['t'], options = op, 
+                                   corpus = subcorpus_path, root = root, preserve_case = True)
+
+                result = make_conc_lines_from_whole_mid(whole_result, result, speakr = False)
+
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
                 if corpus.datatype == 'parse':
-                    if singlefile:
-                        pat = f
-                    else:
-                        pat = f.path
-                    with open(pat, 'r') as data:
+                    with open(f.path, 'r') as data:
                         data = data.read()
                         from corenlp_xml.document import Document
                         try:
@@ -293,13 +348,10 @@ def interro(corpus,
                         except:
                             print 'Could not read file: %s' % f.path
                             continue
-                        #corenlp_xml = Beautifulcorenlp_xml(data, parse_only=justsents)  
                         if just_speakers:  
                             sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
                             if not sents:
                                 continue
-                            #sents = [s for s in corenlp_xml.find_all('sentence') \
-                            #if s.speakername.text.strip() in just_speakers]
                         else:
                             sents = corenlp_xml.sentences
 
@@ -309,51 +361,146 @@ def interro(corpus,
                             excludemode = excludemode,
                             searchmode = searchmode,
                             lemmatise = False,
-                            case_sensitive = case_sensitive)
+                            case_sensitive = case_sensitive,
+                            concordancing = conc)
+
+                        # add filename for conc
+                        if conc:
+                            for line in result:
+                                line.insert(0, f.name)
+
                 elif corpus.datatype == 'tokens':
                     pass
 
                 elif corpus.datatype == 'plaintext':
                     pass
-        if result:
-            for r in result:
-                if not preserve_case:
-                    r = r.lower()
-                results[subcorpus_name].append(r)
-        elif 'v' in search.keys():
-            results[subcorpus_name] = statsmode_results
+   
+            if result:
+                for r in result:
+                    if not preserve_case:
+                        if conc:
+                            r = [b.lower() for b in r]
+                        else:
+                            r = r.lower()
+                    results[subcorpus_name].append(r)
 
-        # turn data into counter object
-        if not countmode:
-            results[subcorpus_name] = Counter(results[subcorpus_name])
+            elif 'v' in search.keys():
+                results[subcorpus_name] = statsmode_results
+
+            # turn data into counter object
+            if not countmode and not conc:
+                results[subcorpus_name] = Counter(results[subcorpus_name])
+
+    # delete temp file if there
+    import os
+    if os.path.isfile('tmp.txt'):
+        os.remove('tmp.txt')
 
     ############################################
     #   Tally everything into big DataFrame    #
     ############################################
 
-    if countmode:
-        df = pd.Series([d[0] for d in results.values()], results.keys())
-        tot = df.sum()
-    else:
-        the_big_dict = {}
-        unique_results = set([item for sublist in results.values() for item in sublist])
-        for word in unique_results:
-            the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
-        # turn master dict into dataframe, sorted
-        df = DataFrame(the_big_dict, index = sorted(results.keys()))
+    if conc:
+        all_conc_lines = []
+        for sc_name, results in results.items():
 
-    ############################################
-    # Format, output as Interrogation object   #
-    ############################################
-
-    if not countmode:
-        tot = df.sum(axis = 1)
-        if not corpus.subcorpora or singlefile:
-            if not kwargs.get('df1_always_df'):
-                df = Series(df.ix[0])
-                df.sort(ascending = False)
-                tot = df.sum()
+            if only_unique:
+                unique_results = uniquify(results)
             else:
-                tot = df.sum().sum()
+                unique_results = results
 
-    return Interrogation(results = df, totals = tot, query = locs)
+            print unique_results
+
+            #make into series
+            pindex = 'c f s l m r'.encode('utf-8').split()
+
+            for fname, spkr, start, word, end in unique_results:
+                spkr = unicode(spkr, errors = 'ignore')
+                fname = os.path.basename(fname)
+                #start = start.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+                #word = word.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+                #end = end.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+                #spaces = ' ' * (maximum / 2 - (len(word) / 2))
+                #new_word = spaces + word + spaces
+
+                # the use of ascii here makes sure the string formats ok, but will also screw over
+                # anyone doing non-english work. so, change to utf-8, then fix errors as they come
+                # in the corpkit-gui "add_conc_lines_to_window" function
+                all_conc_lines.append(Series([sc_name.encode('ascii', errors = 'ignore'),
+                                         fname.encode('ascii', errors = 'ignore'), \
+                                         spkr.encode('ascii', errors = 'ignore'), \
+                                         start.encode('ascii', errors = 'ignore'), \
+                                         word.encode('ascii', errors = 'ignore'), \
+                                         end.encode('ascii', errors = 'ignore')], index = pindex))
+
+        # randomise results...
+        if random:
+            from random import shuffle
+            shuffle(all_conc_lines)
+
+        df = pd.concat(all_conc_lines, axis = 1).T
+
+        add_links = False
+
+        if not add_links:
+            df.columns = ['c', 'f', 's', 'l', 'm', 'r']
+        else:
+            df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
+
+        if all(x == '' for x in list(df['s'].values)):
+            df.drop('s', axis = 1, inplace = True)
+
+        if 'note' in kwargs.keys():
+            kwargs['note'].progvar.set(100)
+
+        #if print_output:
+        #    formatl = lambda x: "{0}".format(x[-window:])
+        #    formatf = lambda x: "{0}".format(x[-20:])
+        #    #formatr = lambda x: 
+        #    formatr = lambda x: "{{:<{}s}}".format(df['r'].str.len().max()).format(x[:window])
+        #    st = df.head(n).to_string(header = False, formatters={'l': formatl,
+        #                                                          'r': formatr,
+        #                                                          'f': formatf}).splitlines()
+        #    
+        #    # hack because i can't figure out formatter:
+        #    rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
+        #    print rem
+
+        from corpkit.interrogation import Concordance
+        output = Concordance(df)
+        #output = df
+        try:
+            del locs['corpus']
+        except:
+            pass
+        output.query = locs
+        return output 
+
+    # if interrogate, make into Interrogation
+    else:
+        if countmode:
+            df = Series([d[0] for d in results.values()], results.keys())
+            tot = df.sum()
+        else:
+            the_big_dict = {}
+            unique_results = set([item for sublist in results.values() for item in sublist])
+            for word in unique_results:
+                the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
+            # turn master dict into dataframe, sorted
+            df = DataFrame(the_big_dict, index = sorted(results.keys()))
+
+        ############################################
+        # Format, output as Interrogation object   #
+        ############################################
+
+        if not countmode:
+            tot = df.sum(axis = 1)
+            if not corpus.subcorpora or singlefile:
+                if not kwargs.get('df1_always_df'):
+                    df = Series(df.ix[0])
+                    df.sort(ascending = False)
+                    tot = df.sum()
+                else:
+                    tot = df.sum().sum()
+
+        return Interrogation(results = df, totals = tot, query = locs)

@@ -1,3 +1,10 @@
+"""A toolkit for corpus linguistics
+
+.. moduleauthor:: Daniel McDonald <mcdonaldd@unimelb.edu.au>
+
+"""
+
+
 # asterisk import
 __all__ = ["interrogator",
     "editor",
@@ -26,8 +33,8 @@ import os
 import inspect
 corpath = inspect.getfile(inspect.currentframe())
 baspat = os.path.dirname(corpath)
-dicpath = os.path.join(baspat, 'dictionaries')
-for p in [corpath, baspat, dicpath]:
+#dicpath = os.path.join(baspat, 'dictionaries')
+for p in [corpath, baspat]:
     if p not in sys.path:
         sys.path.append(p)
     if p not in os.environ["PATH"].split(':'): 
@@ -36,6 +43,8 @@ for p in [corpath, baspat, dicpath]:
 # import classes
 from corpus import Corpus
 from corpus import Corpora
+
+import corpkit.dictionaries as dictionaries
 
 # import functions, though most are now class methods
 from interrogator import interrogator
@@ -67,6 +76,14 @@ def savefunc(self, savename, *args, **kwargs):
   from corpkit import save
   save(self, savename, *args, **kwargs)
 
+def quickviewfunc(self, n = 25):
+    from corpkit.other import quickview
+    quickview(self, n = n)
+
+def formatfunc(self, *args, **kwargs):
+    from corpkit.other import concprinter
+    concprinter(self, *args, **kwargs)
+
 pd.DataFrame.edit = editfunc
 pd.Series.edit = editfunc
 
@@ -76,3 +93,8 @@ pd.Series.plot = plotfunc
 pd.DataFrame.save = savefunc
 pd.Series.save = savefunc
 
+pd.DataFrame.quickview = quickviewfunc
+pd.Series.quickview = quickviewfunc
+
+pd.DataFrame.format = formatfunc
+pd.Series.format = formatfunc

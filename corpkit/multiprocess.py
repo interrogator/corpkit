@@ -1,4 +1,4 @@
-def pmultiquery(path, 
+def pmultiquery(corpus, 
     search,
     show = 'words',
     query = 'any', 
@@ -32,6 +32,7 @@ def pmultiquery(path,
     from corpkit.editor import editor
     from corpkit.other import save
     from corpkit.interrogation import Interrogation
+    from corpkit.new_interro import interro
     try:
         from joblib import Parallel, delayed
     except:
@@ -71,17 +72,18 @@ def pmultiquery(path,
     multiple_search = False
 
     denom = 1
-    if hasattr(path, '__iter__'):
+
+    if hasattr(corpus, '__iter__'):
         multiple_corpora = True
-        num_cores = best_num_parallel(num_cores, len(path))
-        denom = len(path)
+        num_cores = best_num_parallel(num_cores, len(corpus))
+        denom = len(corpus)
     elif hasattr(query, '__iter__'):
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
         denom = len(query)
-    elif hasattr(search, '__iter__'):
+    elif hasattr(search, '__iter__') and type(search) != dict:
         multiple_search = True
-        num_cores = best_num_parallel(num_cores, len(search.keys()))
+        num_cores = best_num_parallel(num_cores, len(search))
         denom = len(search.keys())
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
@@ -90,8 +92,8 @@ def pmultiquery(path,
     elif just_speakers:
         from corpkit.build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
-        if just_speakers == 'each':
-            just_speakers = get_speaker_names_from_xml_corpus(path)
+        if just_speakers == 'each' or just_speakers == ['each']:
+            just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
         if len(just_speakers) == 0:
             print 'No speaker name data found.'
             return
@@ -120,11 +122,10 @@ def pmultiquery(path,
     # with the iterable unique in every one
     ds = []
     if multiple_corpora:
-        path = sorted(path)
-        for index, p in enumerate(path):
+        for index, p in enumerate(corpua):
             name = os.path.basename(p)
             a_dict = dict(d)
-            a_dict['path'] = p
+            a_dict['corpus'] = p
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -136,7 +137,7 @@ def pmultiquery(path,
     elif multiple_queries:
         for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = q
             a_dict['show'] = show
@@ -148,7 +149,7 @@ def pmultiquery(path,
     elif multiple_option:
         for index, (name, q) in enumerate(function_filter.items()):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -161,7 +162,7 @@ def pmultiquery(path,
     elif multiple_speakers:
         for index, name in enumerate(just_speakers):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -172,10 +173,10 @@ def pmultiquery(path,
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_search:
-        for index, (name, v) in enumerate(search.items()):
+        for index, val in enumerate(search):
             a_dict = dict(d)
-            a_dict['path'] = path
-            a_dict['search'] = v
+            a_dict['corpus'] = corpus
+            a_dict['search'] = val
             a_dict['query'] = query
             a_dict['show'] = show
             a_dict['outname'] = name
@@ -189,27 +190,27 @@ def pmultiquery(path,
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
            "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(path), num_cores, "\n              ".join(path), query) )
+           "\n          Interrogating corpus ... \n" % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), query) )
 
     elif multiple_queries:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
            "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, os.path.basename(path), "', '".join(query.values())) )
+           "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, corpus.name, "', '".join(query.values())) )
 
     elif multiple_search:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
            "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(search.keys()), num_cores, os.path.basename(path), str(search.values())))
+           "\n          Interrogating corpus ... \n" % (time, len(search.keys()), num_cores, corpus.name, str(search.values())))
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
            "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, corpus.name, query) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
            "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
+           "\n          Interrogating corpus ... \n" % (time, num_cores, corpus.name, query) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -233,7 +234,7 @@ def pmultiquery(path,
         #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
             #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
-            res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+            res = Parallel(n_jobs=num_cores)(delayed(interro)(**x) for x in ds)
             print '\n'
         except:
             failed = True
@@ -248,7 +249,7 @@ def pmultiquery(path,
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
-            res.append(interrogator(**d))
+            res.append(interro(**d))
         try:
             res = sorted(res)
         except:
@@ -280,15 +281,11 @@ def pmultiquery(path,
     # save and return
     if 'c' not in show:
         out = {}
-        #print ''
-        for (name, data, stotal), d in zip(res, ds):
+        for interrog, d in zip(res, ds):
+            interrog.query = d
             for unpicklable in ['note', 'root']:
-                try:
-                    del d[unpicklable]
-                except KeyError:
-                    pass
-            output = Interrogation(results = data, totals = stotal, query = d)
-            out[name] = output
+                interrog.query.pop(unpicklable, None)
+            out[interrog.query['outname']] = interrog
     
         # could be wrong for unstructured corpora?
         if quicksave:
@@ -324,7 +321,7 @@ def pmultiquery(path,
         return out
 
 if __name__ == '__main__':
-    pmultiquery(path,
+    pmultiquery(corpus,
     search,
     query = False,
     show = 'words', 

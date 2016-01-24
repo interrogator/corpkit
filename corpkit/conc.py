@@ -419,6 +419,7 @@ def conc(corpus,
 
     from corpkit.interrogation import Concordance
     output = Concordance(df)
+    #output = df
     try:
         del locs['corpus']
     except:

@@ -345,23 +345,23 @@ def new_project(name, loc = '.', root = False):
         time = strftime("%H:%M:%S", localtime())
         print '%s: New project created: "%s"' % (time, name)
 
-def interroplot(path, query):
+def interroplot(path, search, **kwargs):
     """Demo function for interrogator/plotter.
 
-        1. Interrogates path with Tregex query, 
+        1. Interrogates path with a query
         2. Gets relative frequencies
         3. Plots the top seven results
 
     :param path: path to corpus
     :type path: str
-    
-    :param query: Tregex query
-    :type query: str
-
+    :param search: search
     """
     import corpkit
     from corpkit import interrogator
-    quickstart = interrogator(path, 'w', query, show = ['w'])
+    if type(search) == str:
+        search = {'t': search}
+    kwargs['show'] = kwargs.pop('show', 'w')
+    quickstart = interrogator(path, search = search, **kwargs)
     edited = quickstart.edit('%', 'self', print_info = False)
     edited.plot(str(path))
 
@@ -380,18 +380,8 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     from time import localtime, strftime
     from corpkit.other import load
 
-    def get_root_note(kwargs):
-        if 'root' in kwargs.keys():
-            root = kwargs['root']
-        else:
-            root = False
-        if 'note' in kwargs.keys():
-            note = kwargs['note']
-        else:
-            note = False       
-        return root, note
-
-    root, note = get_root_note(kwargs)
+    root = kwargs.get('root', False)
+    note = kwargs.get('note', False)    
     
     datafiles = [f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f)) \
                  and f.endswith('.p')]

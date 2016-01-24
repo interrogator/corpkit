@@ -1,6 +1,7 @@
 import setuptools
 from setuptools import setup, find_packages
 from setuptools.command.install import install
+import os
 
 class CustomInstallCommand(install):
     """Customized setuptools install command."""
@@ -52,13 +53,14 @@ setup(name='corpkit',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
     package_data={'corpkit': ['*.jar', 'corpkit/*.jar', '*.sh', 'corpkit/*.sh', 
-                                '*.ipynb', 'corpkit/*.ipynb'],
-                    'dictionaries': ['*.p', 'dictionaries/*.p']},
+                                '*.ipynb', 'corpkit/*.ipynb', '*.p', 
+                                'dictionaries/*.py']},
+    #data_files=[('./corpkit/dictionaries', [os.path.join('./corpkit/dictionaries', f) for f in os.listdir('./corpkit/dictionaries') if f.endswith('.py')])],
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
     cmdclass={'install': CustomInstallCommand,},
     keywords = ['corpus', 'linguistics', 'nlp'],
-    packages=['corpkit', 'dictionaries'],
+    packages=['corpkit'],
     install_requires=["matplotlib >= 1.4.3"])
     #                    "nltk >= 3.0.0",
     #                    "joblib",

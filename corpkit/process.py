@@ -44,10 +44,9 @@ def datareader(data, plaintext = False, **kwargs):
             options = ['-o', '-t']
 
             # if lemmatise, we get each word on a newline
-            if 'lemmatise' in kwargs:
-                if kwargs['lemmatise'] is True:
-                    query = r'__ <# (__ !< __)'
-                    options = ['-o']
+            if kwargs.get('lemmatise'):
+                query = r'__ <# (__ !< __)'
+                options = ['-o']
  
             # check for trees ...
             #while plaintext is False:
@@ -654,11 +653,15 @@ def is_number(s):
     return True
 
 def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
-             init = False, length = False):
+             init = False, length = False, **kwargs):
     """
     Animates progress bar in unique position in terminal
     Multiple progress bars not supported in jupyter yet.
     """
+
+    if kwargs.get('root') or not kwargs.get('printstatus'):
+        return
+
     if init:
         from textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)
@@ -695,3 +698,9 @@ def get_deps(sentence, dep_type):
         return sentence.collapsed_dependencies
     if dep_type == 'collapsed-ccprocessed-dependencies':
         return sentence.collapsed_ccprocessed_dependencies
+
+def timestring(input):
+    """print with time prepended"""
+    from time import localtime, strftime
+    thetime = strftime("%H:%M:%S", localtime())
+    print '%s: %s' % (thetime, input.lstrip())
