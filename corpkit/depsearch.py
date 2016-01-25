@@ -9,7 +9,8 @@ def dep_searcher(sents,
                  searchmode = 'all',
                  lemmatise = False,
                  case_sensitive = False,
-                 progbar = False):
+                 progbar = False,
+                 only_format_match = False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -76,6 +77,7 @@ def dep_searcher(sents,
         dep_type = 'basic-dependencies', mode = 'all'):
         """process a sentence object, returning matching tok ids"""
         from corpkit.process import get_deps
+        import re
         lks = []
         if not deps:
             deps = get_deps(s, dep_type)
@@ -259,18 +261,23 @@ def dep_searcher(sents,
             continue
 
         if concordancing:
-            for lk in lks: # for each concordance match
+            for lk in lks: # for each concordance middle part
                 one_result = []
                 if not lk:
                     continue
+                # get the index of the match
                 windex = int(lk.id) - 1
                 speakr = s.speakername
                 if not speakr:
                     speakr = ''
+                # begin building line with speaker first
                 conc_line = [speakr]
                 # format a single word correctly
+                if only_format_match:
+                    start = ' '.join([t.word for index, t in enumerate(s.tokens) if index < windex])
+                    end = ' '.join([t.word for index, t in enumerate(s.tokens) if index > windex])
+                    s.tokens = [s.get_token_by_id(lk.id)]
                 for tok in s.tokens:
-
                     single_wd = {}
                     intermediate_result = []
                     if 'w' in show:
@@ -316,9 +323,13 @@ def dep_searcher(sents,
                     one_result.append('/'.join(intermediate_result))
                 # now we have formatted tokens as a list. we need to split
                 # it into start, middle and end
-                start = ' '.join([w for index, w in enumerate(one_result) if index < windex])
-                middle = one_result[windex]
-                end = ' '.join([w for index, w in enumerate(one_result) if index > windex])
+                if not only_format_match:
+                    start = ' '.join([w for index, w in enumerate(one_result) if index < windex])
+                    end = ' '.join([w for index, w in enumerate(one_result) if index > windex])
+                    middle = one_result[windex]
+                else:
+                    middle = one_result[0]
+
                 for bit in start, middle, end:
                     conc_line.append(bit)
                 result.append(conc_line)
