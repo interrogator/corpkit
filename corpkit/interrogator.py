@@ -16,6 +16,7 @@ def interrogator(corpus,
             conc = False,
             only_unique = False,
             random = False,
+            only_format_match = False,
             **kwargs):
     
     # store kwargs
@@ -45,13 +46,9 @@ def interrogator(corpus,
         from corpkit.Corpus import Corpus
         corpus = Corpus(corpus)
 
-    # determine if data is parsed/single file
-    from corpkit.process import determine_datatype
-    datatype, singlefile = determine_datatype(corpus.path)
-
     # figure out how the user has entered the query and normalise
     from corpkit.process import searchfixer
-    search, search_iterable = searchfixer(search, query, datatype)
+    search, search_iterable = searchfixer(search, query)
 
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -243,6 +240,10 @@ def interrogator(corpus,
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
 
+    # determine if data is parsed/single file
+    from corpkit.process import determine_datatype
+    datatype, singlefile = determine_datatype(corpus.path)
+
     # check if just counting
     countmode = 'c' in search.keys()
 
@@ -381,7 +382,7 @@ def interrogator(corpus,
         from blessings import Terminal
         term = Terminal()
         par_args['terminal'] = term
-        par_args['linenum'] = paralleling
+        par_args['linenum'] = kwargs.get('paralleling')
 
     ############################################
     # Make progress bar  #
@@ -428,6 +429,7 @@ def interrogator(corpus,
 
         # dependencies, plaintext, tokens or slow_tregex
         else:
+            result = []
             for f in files:
                 current_file += 1
                 tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
@@ -448,20 +450,21 @@ def interrogator(corpus,
                         else:
                             sents = corenlp_xml.sentences
 
-                        result = searcher(sents, search = search, show = show,
+                        res = searcher(sents, search = search, show = show,
                             dep_type = dep_type,
                             exclude = exclude,
                             excludemode = excludemode,
                             searchmode = searchmode,
                             lemmatise = False,
                             case_sensitive = case_sensitive,
-                            concordancing = conc)
+                            concordancing = conc,
+                            only_format_match = only_format_match)
                         if searcher == slow_tregex:
-                            result = format_tregex(result)
+                            res = format_tregex(res)
 
                         # add filename for conc
                         if conc:
-                            for line in result:
+                            for line in res:
                                 line.insert(0, f.name)
 
                 elif corpus.datatype == 'tokens':
@@ -469,6 +472,10 @@ def interrogator(corpus,
 
                 elif corpus.datatype == 'plaintext':
                     pass
+
+                if res:
+                    for i in res:
+                        result.append(i)
 
         if result:
             for r in result:
