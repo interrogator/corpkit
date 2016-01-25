@@ -32,7 +32,6 @@ def pmultiquery(corpus,
     from corpkit.editor import editor
     from corpkit.other import save
     from corpkit.interrogation import Interrogation
-    from corpkit.new_interro import interro
     try:
         from joblib import Parallel, delayed
     except:
@@ -122,8 +121,8 @@ def pmultiquery(corpus,
     # with the iterable unique in every one
     ds = []
     if multiple_corpora:
-        for index, p in enumerate(corpua):
-            name = os.path.basename(p)
+        for index, p in enumerate(corpus):
+            name = p.name
             a_dict = dict(d)
             a_dict['corpus'] = p
             a_dict['search'] = search
@@ -234,22 +233,19 @@ def pmultiquery(corpus,
         #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
             #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
-            res = Parallel(n_jobs=num_cores)(delayed(interro)(**x) for x in ds)
+            res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
             print '\n'
         except:
             failed = True
             print 'Multiprocessing failed.'
             raise
-        try:
-            res = sorted(res)
-        except:
+        if not res:
             failed = True
-            pass
     elif root or failed:
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
-            res.append(interro(**d))
+            res.append(interrogator(**d))
         try:
             res = sorted(res)
         except:
@@ -306,9 +302,9 @@ def pmultiquery(corpus,
             print "\n%s: %d files saved to %s" % ( time, len(out.keys()), fullpath)
 
         time = strftime("%H:%M:%S", localtime())
-        print "\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
-        
-        return out
+        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
+        from corpkit.interrogation import Interrodict
+        return Interrodict(out)
     # make query and total branch, save, return
     else:
         out = pd.concat(res, axis = 1)
