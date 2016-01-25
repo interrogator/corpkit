@@ -629,12 +629,11 @@ def filtermaker(the_filter, case_sensitive = False):
             return False
     return output
 
-def searchfixer(search, query, datatype):
+def searchfixer(search, query, datatype = False):
     search_iterable = False
     if type(search) == str:
         search = search[0].lower()
-        if not search.lower().startswith('t') and not search.lower().startswith('n') \
-                                              and datatype == 'parse':
+        if not search.lower().startswith('t') and not search.lower().startswith('n'):
             search_iterable = True
             if query == 'any':
                 query = r'.*'
@@ -659,7 +658,7 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     Multiple progress bars not supported in jupyter yet.
     """
 
-    if kwargs.get('root') or not kwargs.get('printstatus'):
+    if kwargs.get('root'):
         return
 
     if init:
