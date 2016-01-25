@@ -377,3 +377,13 @@ class Concordance(pd.core.frame.DataFrame):
         """
         from corpkit.other import concprinter
         concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
+
+class Interrodict(dict):
+    """
+    A class for concordance lines, with methods for saving,
+    formatting and editing
+    """
+    
+    def edit(self, *args, **kwargs):
+        from corpkit import editor
+        return editor(self, *args, **kwargs)
