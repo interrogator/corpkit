@@ -1229,7 +1229,7 @@ def editor(dataframe1,
 
     #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, total)
-    #from corpkit.interrogation import Interrogation, Results, Totals
+    from corpkit.interrogation import Interrogation
     output = Interrogation(results = df, totals = total, query = the_options)
 
     #print '\nResult (sample)\n'
