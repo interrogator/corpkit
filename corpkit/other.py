@@ -579,4 +579,5 @@ def make_multi(interrogation, indexnames = None):
     if indexnames:
         newdf.columns.names = indexnames
     pd.set_option('display.multi_sparse', False)
-    return newdf
+    from corpkit import editor
+    return editor(newdf)
