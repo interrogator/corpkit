@@ -310,14 +310,7 @@ class Datalist(object):
 
     def __init__(self, data):
 
-        def makesafe(variabletext):
-            import re
-            from corpkit.process import is_number
-            variable_safe_r = re.compile('[\W_]+', re.UNICODE)
-            variable_safe = re.sub(variable_safe_r, '', variabletext.name.lower().split('.')[0])
-            if is_number(variable_safe):
-                variable_safe = 'c' + variable_safe
-            return variable_safe
+        from corpkit.process import makesafe
 
         import re
         import os
@@ -346,18 +339,11 @@ class Datalist(object):
 
     def __getitem__(self, key):
 
-        def makesafe(variabletext):
-            import re
-            from corpkit.process import is_number
-            variable_safe_r = re.compile('[\W_]+', re.UNICODE)
-            variable_safe = re.sub(variable_safe_r, '', variabletext.name.lower().split('.')[0])
-            if is_number(variable_safe):
-                variable_safe = 'c' + variable_safe
-            return variable_safe
+        from corpkit.process import makesafe
 
         if isinstance( key, slice ) :
             #Get the start, stop, and step from the slice
-            return [self[ii] for ii in xrange(*key.indices(len(self)))]
+            return Datalist([self[ii] for ii in xrange(*key.indices(len(self)))])
         elif type(key) == int:
             return self.__getitem__(makesafe(self.data[key]))
         else:
@@ -402,6 +388,24 @@ class Corpora(Datalist):
 
     def __repr__(self):
         return "<corpkit.corpus.Corpora instance: %d items>" % len(self)
+
+
+    def __getitem__(self, key):
+
+        from corpkit.process import makesafe
+
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return Corpora([self[ii] for ii in xrange(*key.indices(len(self)))])
+        elif type(key) == int:
+            return self.__getitem__(makesafe(self.data[key]))
+        else:
+            try:
+                return self.__getattribute__(key)
+            except:
+                from corpkit.process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
 
     def interrogate(self, *args, **kwargs):
         """interrogate the corpus using corpkit.interrogator.interrogator"""
