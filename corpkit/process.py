@@ -316,7 +316,7 @@ def tregex_engine(corpus = False,
         std_last_index = res.index(next(s for s in res \
                         if s.startswith('Parsed representation:')))
     res = res[std_last_index + n:]
-    res = [r.lstrip().rstrip() for r in res]
+    res = [r.lstrip().rstrip().replace('/', '-slash-') for r in res]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
