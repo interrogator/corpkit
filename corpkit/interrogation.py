@@ -387,3 +387,8 @@ class Interrodict(dict):
     def edit(self, *args, **kwargs):
         from corpkit import editor
         return editor(self, *args, **kwargs)
+
+    def multiindex(self, indexnames = False):
+        from corpkit.other import make_multi
+        return make_multi(self, indexnames = indexnames)
+        
