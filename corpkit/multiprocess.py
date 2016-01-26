@@ -307,10 +307,20 @@ def pmultiquery(corpus,
         return Interrodict(out)
     # make query and total branch, save, return
     else:
-        out = pd.concat(res, axis = 1)
-        out = editor(out, sort_by = sort_by, print_info = False, keep_stats = False)
-        time = strftime("%H:%M:%S", localtime())
-        print '\n\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
+        #print sers
+        #print ds
+        if multiple_corpora:
+            sers = [i.results for i in res]
+            out = pd.DataFrame(sers, index = [d['outname'] for d in ds])
+            out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
+            out = out.fillna(0) # nan to zero
+            out = out.astype(int) # float to int
+            out = out.T
+        else:
+            out = pd.concat([r.results for r in res], axis = 1)
+        out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
         if quicksave:
             from corpkit.other import save
             save(out, quicksave)
