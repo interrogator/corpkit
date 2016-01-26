@@ -1,4 +1,4 @@
-#interrogator with classes:
+#!/usr/bin/python
 
 def interrogator(corpus, 
             search, 
@@ -19,8 +19,12 @@ def interrogator(corpus,
             random = False,
             only_format_match = False,
             num_proc = 'default',
+            spelling = False,
+            regex_nonword_filter = r'[A-Za-z0-9:_]',
             **kwargs):
-    
+    """interrogate corpus, corpora, subcorpus and file objects
+
+    see corpkit.interrogation.interrogate() for docstring"""
     # store kwargs
     locs = locals()
 
@@ -35,9 +39,7 @@ def interrogator(corpus,
     thetime = strftime("%H:%M:%S", localtime())
     from corpkit.textprogressbar import TextProgressBar
     from corpkit.process import animator
-    from corpkit.dictionaries.word_transforms import (wordlist, 
-                                              usa_convert, 
-                                              taglemma)
+    from corpkit.dictionaries.word_transforms import wordlist, taglemma
 
     # find out if using gui
     root = kwargs.get('root')
@@ -51,6 +53,11 @@ def interrogator(corpus,
     # figure out how the user has entered the query and normalise
     from corpkit.process import searchfixer
     search, search_iterable = searchfixer(search, query)
+    
+    # for better printing of query, esp during multiprocess
+    # can remove if multiprocess printing improved
+    if len(search.keys()) == 1:
+        query = search.values()[0]
 
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -99,7 +106,9 @@ def interrogator(corpus,
             to_open = 'tmp-%s.txt' % kwargs['outname']
         else:
             to_open = 'tmp.txt'
-        to_write = '\n'.join([sent._parse_string.strip() for sent in sents if sent.parse_string is not None]).encode('utf-8', errors = 'ignore')
+        to_write = '\n'.join([sent._parse_string.strip() for sent in sents \
+                              if sent.parse_string is not None])
+        to_write.encode('utf-8', errors = 'ignore')
         with open(to_open, "w") as fo:
             fo.write(to_write)
         q = search.values()[0]
@@ -125,7 +134,9 @@ def interrogator(corpus,
         with open(to_open, "w") as fo:
             for sent in sents:
                 statsmode_results['Sentences'] += 1
-                fo.write(sent.parse_string.rstrip().encode('utf-8', errors = 'ignore') + '\n')
+                sts = sent.parse_string.rstrip()
+                encd = sts.encode('utf-8', errors = 'ignore') + '\n'
+                fo.write(encd)
                 deps = get_deps(sent, dep_type)
                 numpass = len([x for x in deps.links if x.type.endswith('pass')])
                 statsmode_results['Passives'] += numpass
@@ -133,8 +144,6 @@ def interrogator(corpus,
                 words = [w.word for w in sent.tokens if w.word.isalnum()]
                 statsmode_results['Words'] += len(words)
                 statsmode_results['Characters'] += len(''.join(words))
-                #statsmode_results['Unique words'] += len(set([w.word.lower() for w in sent.tokens if w.word.isalnum()]))
-                #statsmode_results['Unique lemmata'] += len(set([w.lemma.lower() for w in sent.tokens if w.word.isalnum()]))
 
         # count moods via trees          (/\?/ !< __)
         from dictionaries.process_types import processes
@@ -169,10 +178,12 @@ def interrogator(corpus,
             #        tot_string = '%s: %s' % (kwargs['outname'], tot_string)
             #    animator(p, numdone, tot_string, **par_args)
             if kwargs.get('note', False):
-                kwargs['note'].progvar.set((numdone * 100.0 / (total_files * len(tregex_qs.keys())) / denom) + startnum)
+                kwargs['note'].progvar.set((numdone * 100.0 / (total_files * \
+                                    len(tregex_qs.keys())) / denom) + startnum)
         os.remove(to_open)
 
-    def make_conc_lines_from_whole_mid(wholes, middle_column_result, speakr = False):
+    def make_conc_lines_from_whole_mid(wholes, middle_column_result, 
+                                       speakr = False):
         if speakr is False:
             speakr = ''
         conc_lines = []
@@ -245,7 +256,8 @@ def interrogator(corpus,
             # attempt to find tag from tregex query
             tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)')
             tagchecker = re.compile(r'^[A-Z]{1,4}$')
-            treebank_tag = re.findall(tagfinder, query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', ''))
+            qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
+            treebank_tag = re.findall(tagfinder, qr)
             if re.match(tagchecker, treebank_tag[0]):
                 tag = tagdict.get(treebank_tag[0], 'n')
         elif lemmatag:
@@ -353,7 +365,7 @@ def interrogator(corpus,
                     result.append(k)
         return result
 
-    def tok_by_reg(pattern, list_of_toks):
+    def tok_by_reg(pattern, list_of_toks, **kwargs):
         """search for regex in plaintext corpora"""
         try:
             comped = re.compile(pattern)
@@ -372,7 +384,7 @@ def interrogator(corpus,
 
         return matches
 
-    def plaintext_regex_search(pattern, plaintext_data):
+    def plaintext_regex_search(pattern, plaintext_data, **kwargs):
         """search for regex in plaintext corpora"""
         result = []
         #if not pattern.startswith(r'\b') and not pattern.endswith(r'\b'):
@@ -395,7 +407,7 @@ def interrogator(corpus,
                 matches[index] = i[0]
         return matches
 
-    def plaintext_simple_search(pattern, plaintext_data):
+    def plaintext_simple_search(pattern, plaintext_data, **kwargs):
         """search for tokens in plaintext corpora"""
         if type(pattern) == str:
             pattern = [pattern]
@@ -492,6 +504,7 @@ def interrogator(corpus,
     ############################################
 
     if search.get('t'):
+        query = search.get('t')
 
         # check the query
         q = tregex_engine(corpus = False, query = search.get('t'), 
@@ -696,6 +709,15 @@ def interrogator(corpus,
                         r = [b.lower() for b in r]
                     else:
                         r = r.lower()
+                if spelling:
+                    from dictionaries.word_transforms import usa_convert
+                    if spelling.lower() == 'uk':
+                        usa_convert = {v: k for k, v in usa_convert.items()}
+                    spell_out = []
+                    bits = r.split('/')
+                    for index, i in enumerate(bits):
+                        bits[index] = usa_convert.get(i.lower(), i)                
+                    r = '/'.join(bits)
                 results[subcorpus_name].append(r)
         
         # turn data into counter object
@@ -741,11 +763,12 @@ def interrogator(corpus,
                 # anyone doing non-english work. so, change to utf-8, then fix errors as they come
                 # in the corpkit-gui "add_conc_lines_to_window" function
                 all_conc_lines.append(Series([sc_name.encode('ascii', errors = 'ignore'),
-                                         fname.encode('ascii', errors = 'ignore'), \
-                                         spkr.encode('ascii', errors = 'ignore'), \
-                                         start.encode('ascii', errors = 'ignore'), \
-                                         word.encode('ascii', errors = 'ignore'), \
-                                         end.encode('ascii', errors = 'ignore')], index = pindex))
+                                     fname.encode('ascii', errors = 'ignore'), \
+                                     spkr.encode('ascii', errors = 'ignore'), \
+                                     start.encode('ascii', errors = 'ignore'), \
+                                     word.encode('ascii', errors = 'ignore'), \
+                                     end.encode('ascii', errors = 'ignore')], \
+                                     index = pindex))
 
         # randomise results...
         if random:
