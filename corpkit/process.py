@@ -703,3 +703,16 @@ def timestring(input):
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
     print '%s: %s' % (thetime, input.lstrip())
+
+def makesafe(variabletext):
+    import re
+    from corpkit.process import is_number
+    variable_safe_r = re.compile('[\W_]+', re.UNICODE)
+    try:
+        txt = variabletext.name.split('.')[0].replace('-parsed', '')
+    except AttributeError:
+        txt = variabletext.split('.')[0].replace('-parsed', '')
+    variable_safe = re.sub(variable_safe_r, '', txt)
+    if is_number(variable_safe):
+        variable_safe = 'c' + variable_safe
+    return variable_safe
