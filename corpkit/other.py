@@ -506,16 +506,51 @@ def make_multi(interrogation, indexnames = None):
     # get proper names for index if possible
     translator = {'f': 'Function',
                   'l': 'Lemma',
-                  'a': 'Distance',
+                  'r': 'Distance from root',
                   'w': 'Word',
                   't': 'Trees',
                   'i': 'Index',
                   'n': 'N-grams',
                   'p': 'POS',
                   'g': 'Governor',
-                  'd': 'Dependent'}
+                  'd': 'Dependent',
+                  'gp': 'Governor POS',
+                  'dp': 'Dependent POS',
+                  'gl': 'Governor lemma',
+                  'dl': 'Dependent lemma',
+                  'gf': 'Governor function',
+                  'df': 'Dependent function'}
     import numpy as np
     import pandas as pd
+
+    # if it's an interrodict, we want to make it into a single df
+    import corpkit
+    from corpkit.interrogation import Interrodict
+    if type(interrogation) == corpkit.interrogation.Interrodict:
+        import pandas as pd
+        import numpy as np
+
+        flat = [[], [], []]
+        for name, data in interrogation.items():
+            for subcorpus in list(data.results.index):
+                flat[0].append(name)
+                flat[1].append(subcorpus)
+                flat[2].append(data.results.ix[subcorpus])
+
+        flat[0] = np.array(flat[0])
+        flat[1] = np.array(flat[1])
+
+        df = pd.DataFrame(flat[2], index = flat[:2])
+        df.index.names = ['corpus', 'subcorpus']
+        df = df.fillna(0)
+        df = df.T
+        df[('Total', 'Total')] = df.sum(axis = 1)
+        df = df.sort(('Total', 'Total'), ascending = False).drop(('Total', 'Total'), axis = 1).T
+        try:
+            df = df.astype(int)
+        except:
+            pass
+        return df
     # determine datatype, get df and cols
     if type(interrogation) == pd.core.frame.DataFrame:
         df = interrogation
