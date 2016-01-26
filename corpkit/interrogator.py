@@ -17,6 +17,7 @@ def interrogator(corpus,
             only_unique = False,
             random = False,
             only_format_match = False,
+            num_proc = 'default',
             **kwargs):
     
     # store kwargs
@@ -245,7 +246,7 @@ def interrogator(corpus,
     datatype, singlefile = determine_datatype(corpus.path)
 
     # check if just counting
-    countmode = 'c' in search.keys()
+    countmode = 'c' in show
 
     # store all results in here
     results = {}
@@ -257,7 +258,6 @@ def interrogator(corpus,
     # simple tregex is tregex over whole dirs
     simple_tregex_mode = False
     if not just_speakers and 't' in search.keys():
-        searcher = tregex_engine
         simple_tregex_mode = True
         if datatype != 'parse':
             raise ValueError('Need parsed corpus to search trees.')
@@ -304,6 +304,14 @@ def interrogator(corpus,
     ############################################
 
     if search.get('t'):
+        # check the query
+        q = tregex_engine(corpus = False, query = search.get('t'), options = ['-t'], check_query = True, root = root)
+        if query is False:
+            if root:
+                return 'Bad query'
+            else:
+                return
+
         optiontext = 'Searching parse trees'
         if 'p' in show:
             translated_option = 'u'
@@ -399,7 +407,7 @@ def interrogator(corpus,
     outn = kwargs.get('outname', '')
     if outn:
         outn = outn + ': '
-    tstr = '%s%d/%d' % (outn, current_file, total_files)
+    tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
     p = animator(None, None, init = True, tot_string = tstr, length = total_files, **par_args)
 
     ############################################
@@ -461,6 +469,10 @@ def interrogator(corpus,
                             only_format_match = only_format_match)
                         if searcher == slow_tregex:
                             res = format_tregex(res)
+                        
+                        if countmode:
+                            results[subcorpus_name].append(res)
+                            continue
 
                         # add filename for conc
                         if conc:
@@ -477,21 +489,20 @@ def interrogator(corpus,
                     for i in res:
                         result.append(i)
 
-        if result:
-            for r in result:
-                if not preserve_case:
-                    if conc:
-                        r = [b.lower() for b in r]
-                    else:
-                        r = r.lower()
-                results[subcorpus_name].append(r)
-
-        elif 'v' in search.keys():
-            results[subcorpus_name] = statsmode_results
-
+        for r in result:
+            if not preserve_case:
+                if conc:
+                    r = [b.lower() for b in r]
+                else:
+                    r = r.lower()
+            results[subcorpus_name].append(r)
+        
         # turn data into counter object
         if not countmode and not conc:
             results[subcorpus_name] = Counter(results[subcorpus_name])
+
+        elif 'v' in search.keys():
+            results[subcorpus_name] = statsmode_results
 
     # delete temp file if there
     import os
@@ -581,7 +592,7 @@ def interrogator(corpus,
     # if interrogate, make into Interrogation
     else:
         if countmode:
-            df = Series([d[0] for d in results.values()], results.keys())
+            df = Series({k: sum(v) for k, v in sorted(results.items())})
             tot = df.sum()
         else:
             the_big_dict = {}
@@ -590,19 +601,32 @@ def interrogator(corpus,
                 the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
             # turn master dict into dataframe, sorted
             df = DataFrame(the_big_dict, index = sorted(results.keys()))
+            numentries = len(df.columns)
+            tot = df.sum(axis = 1)
+            total_total = df.sum().sum()
 
         ############################################
         # Format, output as Interrogation object   #
         ############################################
 
         if not countmode:
-            tot = df.sum(axis = 1)
             if not corpus.subcorpora or singlefile:
-                if not kwargs.get('df1_always_df'):
-                    df = Series(df.ix[0])
-                    df.sort(ascending = False)
-                    tot = df.sum()
-                else:
-                    tot = df.sum().sum()
+                if not files_as_subcorpora:
+                    if not kwargs.get('df1_always_df'):
+                        df = Series(df.ix[0])
+                        df.sort(ascending = False)
+                        tot = df.sum()
+                        numentries = len(df.index)
+                        total_total = tot
+
+        # format final string
+        if kwargs.get('printstatus', True):
+            thetime = strftime("%H:%M:%S", localtime())
+            finalstring = '\n\n%s: Interrogation finished!' % thetime
+            if countmode:
+                finalstring += ' %d matches.' % tot
+            else:
+                finalstring += ' %d unique results, %d total occurrences' % (numentries, total_total)
+            print finalstring
 
         return Interrogation(results = df, totals = tot, query = locs)
