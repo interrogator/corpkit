@@ -283,6 +283,10 @@ class Interrogation:
         from corpkit import quickview
         quickview(self, n = n)
 
+    def multiindex(self, indexnames = False):
+        from corpkit.other import make_multi
+        return make_multi(self, indexnames = indexnames)
+
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
     """
