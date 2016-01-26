@@ -388,6 +388,12 @@ class Interrodict(dict):
     formatting and editing
     """
     
+    def __init__(self, data):
+        from corpkit.process import makesafe
+        for k, v in data.items():
+            setattr(self, makesafe(k), v)
+        dict.__init__(self, data)
+
     def edit(self, *args, **kwargs):
         from corpkit import editor
         return editor(self, *args, **kwargs)
