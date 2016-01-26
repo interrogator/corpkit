@@ -188,28 +188,23 @@ def pmultiquery(corpus,
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), query) )
+           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), search) )
 
     elif multiple_queries:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, corpus.name, "', '".join(query.values())) )
+           "\n          Queries: '%s'\n" % (time, len(search), num_cores, corpus.name, "', '".join(search.values())) )
 
     elif multiple_search:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(search.keys()), num_cores, corpus.name, str(search.values())))
+           "\n          Queries: '%s'\n" % (time, len(search.keys()), num_cores, corpus.name, str(search.values())))
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, corpus.name, query) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, corpus.name, query) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
