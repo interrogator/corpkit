@@ -59,7 +59,8 @@ class Corpus:
         if self.singlefile and level == 'c':
             level = 'f'
         if level == 'c':
-            print '\nCorpus at: %s\n' % self.abspath
+            if print_info:
+                print '\nCorpus at: %s\n' % self.abspath
             subcorpora = Datalist(sorted([Subcorpus(os.path.join(self.path, d)) \
                                                for d in os.listdir(self.path) \
                                                if os.path.isdir(os.path.join(self.path, d))], \
@@ -210,6 +211,18 @@ class Corpus:
         :param num_proc: how many parallel processes to run -- default is the number of cores
         :type num_proc: int
 
+        :param only_format_match: when concordancing, if true, left and right window will just be words, regardless of what is in 'show'
+        :type only_format_match: bool
+
+        :param random: randomise concordance lines
+        :type random: bool
+
+        :param only_unique: only unique concordance lines
+        :type only_unique: bool
+
+        :param files_as_subcorpora: treat each file as a subcorpus
+        type files_as_subcorpora: bool
+
         :returns: A :class:`corpkit.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. 
                   If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.
 
@@ -292,7 +305,8 @@ class File(Corpus):
 class Datalist(object):
     """
     A list-like object containing subcorpora or corpus files that can be accessed
-    with indexing, slicing, etc."""
+    with indexing, slicing, etc.
+    """
 
     def __init__(self, data):
 
