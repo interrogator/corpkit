@@ -12,6 +12,7 @@ def interrogator(corpus,
             quicksave = False,
             just_speakers = False,
             preserve_case = False,
+            lemmatag = False,
             files_as_subcorpora = False,
             conc = False,
             only_unique = False,
@@ -54,6 +55,12 @@ def interrogator(corpus,
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
+
+    if type(show) == str:
+        show = [show]
+
+    # check if just counting
+    countmode = 'c' in show
 
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
@@ -204,36 +211,218 @@ def interrogator(corpus,
         """take a list of unicode words and a tag and return a lemmatised list."""
         
         output = []
-        for entry in list_of_words:
-            if phrases:
-                # just get the rightmost word
-                word = entry.pop()
-            else:
-                word = entry
+        for word in list_of_words:
             if translated_option.startswith('u'):
-                if word in taglemma:
-                    word = taglemma[word]
+                if word.lower() in taglemma.keys():
+                    word = taglemma[word.lower()]
                 else:
                     if word == 'x':
                         word = 'Other'
             # only use wordnet lemmatiser when appropriate
-            elif not dependency:
+            else:
                 if word in wordlist:
                     word = wordlist[word]
                 word = lmtzr.lemmatize(word, tag)
-            # do the manual_lemmatisation
-            else:
-                if word in wordlist:
-                    word = wordlist[word]
-            if phrases:
-                entry.append(word)
-                output.append(entry)
-            else:
-                output.append(word)
+            output.append(word)
         return output
 
+    def gettag(query, lemmatag = False):
+        """
+        Find tag for WordNet lemmatisation
+        """
+        import re
+
+        tagdict = {'N': 'n',
+                   'A': 'a',
+                   'V': 'v',
+                   'A': 'r',
+                   'None': False,
+                   '': False,
+                   'Off': False}
+
+        if lemmatag is False:
+            tag = 'n' # same default as wordnet
+            # attempt to find tag from tregex query
+            tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)')
+            tagchecker = re.compile(r'^[A-Z]{1,4}$')
+            treebank_tag = re.findall(tagfinder, query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', ''))
+            if re.match(tagchecker, treebank_tag[0]):
+                tag = tagdict.get(treebank_tag[0], 'n')
+        elif lemmatag:
+            tag = lemmatag
+        return tag
+
     def format_tregex(results):
-        return results
+        """format tregex by show list"""
+        if countmode:
+            return results
+        import re
+        done = []
+        if 'l' in show or 'pl' in show:
+            lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
+        else:
+            lemmata = [None for i in results]
+
+        for word, lemma in zip(results, lemmata):
+            bits = []
+            if exclude and exclude.get('w'):
+                if len(exclude.keys()) == 1 or excludemode == 'any':
+                    if re.search(exclude.get('w'), word):
+                        continue
+                if len(exclude.keys()) == 1 or excludemode == 'any':
+                    if re.search(exclude.get('l'), lemma):
+                        continue
+                if len(exclude.keys()) == 1 or excludemode == 'any':
+                    if re.search(exclude.get('p'), word):
+                        continue
+                if len(exclude.keys()) == 1 or excludemode == 'any':
+                    if re.search(exclude.get('pl'), lemma):
+                        continue
+            if exclude and excludemode == 'all':
+                num_to_cause_exclude = len(exclude.keys())
+                current_num = 0
+                if exclude.get('w'):
+                    if re.search(exclude.get('w'), word):
+                        current_num += 1
+                if exclude.get('l'):
+                    if re.search(exclude.get('l'), lemma):
+                        current_num += 1
+                if exclude.get('p'):
+                    if re.search(exclude.get('p'), word):
+                        current_num += 1
+                if exclude.get('pl'):
+                    if re.search(exclude.get('pl'), lemma):
+                        current_num += 1   
+                if current_num == num_to_cause_exclude:
+                    continue                 
+
+            for i in show:
+                if i == 't':
+                    bits.append(word)
+                if i == 'l':
+                    bits.append(lemma)
+                elif i == 'w':
+                    bits.append(word)
+                elif i == 'p':
+                    bits.append(word)
+                elif i == 'pl':
+                    bits.append(lemma)
+            joined = '/'.join(bits)
+            done.append(joined)
+        return done
+
+
+    def tok_by_list(pattern, list_of_toks, **kwargs):
+        """search for regex in plaintext corpora"""
+        if type(pattern) == str:
+            pattern = [pattern]
+        result = []
+        matches = [m for m in list_of_toks if m in pattern]
+        for m in matches:
+            result.append(m)
+        return result
+
+    def tok_ngrams(pattern, list_of_toks, split_contractions = True):
+        from collections import Counter
+        global gramsize
+        import re
+        ngrams = Counter()
+        result = []
+        # if it's not a compiled regex
+        list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
+
+        if not split_contractions:
+            list_of_toks = unsplitter(list_of_toks)
+            
+            #list_of_toks = [x for x in list_of_toks if "'" not in x]
+        for index, w in enumerate(list_of_toks):
+            try:
+                the_gram = [list_of_toks[index+x] for x in range(gramsize)]
+                if not any(re.search(query, x) for x in the_gram):
+                    continue
+                #if query != 'any':
+                #    if not any(re.search(query, w) is True for w in the_gram):
+                #        continue
+                ngrams[' '.join(the_gram)] += 1
+            except IndexError:
+                pass
+        # turn counter into list of results
+        for k, v in ngrams.items():
+            if v > 1:
+                for i in range(v):
+                    result.append(k)
+        return result
+
+    def tok_by_reg(pattern, list_of_toks):
+        """search for regex in plaintext corpora"""
+        try:
+            comped = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+
+        matches = [m for m in list_of_toks if re.search(comped, m)]
+
+        return matches
+
+    def plaintext_regex_search(pattern, plaintext_data):
+        """search for regex in plaintext corpora"""
+        result = []
+        #if not pattern.startswith(r'\b') and not pattern.endswith(r'\b'):
+            #pattern = r'\b' + pattern + '\b'
+        try:
+            compiled_pattern = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+        matches = re.findall(compiled_pattern, plaintext_data)
+        for index, i in enumerate(matches):
+            if type(i) == tuple:
+                matches[index] = i[0]
+        return matches
+
+    def plaintext_simple_search(pattern, plaintext_data):
+        """search for tokens in plaintext corpora"""
+        if type(pattern) == str:
+            pattern = [pattern]
+        result = []
+        try:
+            tmp = re.compile(pattern)
+        except:
+            import traceback
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lst = traceback.format_exception(exc_type, exc_value,
+                          exc_traceback)
+            error_message = lst[-1]
+            thetime = strftime("%H:%M:%S", localtime())
+            print '%s: Query %s' % (thetime, error_message)
+            return 'Bad query'
+
+        for p in pattern:
+            if case_sensitive:
+                pat = re.compile(r'\b' + re.escape(p) + r'\b')
+            else:
+                pat = re.compile(r'\b' + re.escape(p) + r'\b', re.IGNORECASE)
+            matches = re.findall(pat, plaintext_data)
+            for m in range(len(matches)):
+                result.append(p)
+        return result
+
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
@@ -245,8 +434,7 @@ def interrogator(corpus,
     from corpkit.process import determine_datatype
     datatype, singlefile = determine_datatype(corpus.path)
 
-    # check if just counting
-    countmode = 'c' in show
+
 
     # store all results in here
     results = {}
@@ -268,20 +456,20 @@ def interrogator(corpus,
                 optiontext = 'n-grams via plaintext'
             if search.get('w'):
                 if kwargs.get('regex', True):
-                    searcher = plaintext_regex
+                    searcher = plaintext_regex_search
                 else:
-                    searcher = plaintext_simple
+                    searcher = plaintext_simple_search
                 optiontext = 'Searching plaintext'
 
         elif corpus.datatype == 'tokens':
             if search.get('n'):
-                searcher = tokens_ngram
+                searcher = tok_ngrams
                 optiontext = 'n-grams via tokens'
             elif search.get('w'):
                 if kwargs.get('regex', True):
-                    searcher = tokens_regex
+                    searcher = tok_by_reg
                 else:
-                    searcher = tokens_simple
+                    searcher = tok_by_list
                 optiontext = 'Searching tokens'
 
         elif corpus.datatype == 'parse':
@@ -304,8 +492,10 @@ def interrogator(corpus,
     ############################################
 
     if search.get('t'):
+
         # check the query
-        q = tregex_engine(corpus = False, query = search.get('t'), options = ['-t'], check_query = True, root = root)
+        q = tregex_engine(corpus = False, query = search.get('t'), 
+                          options = ['-t'], check_query = True, root = root)
         if query is False:
             if root:
                 return 'Bad query'
@@ -313,7 +503,7 @@ def interrogator(corpus,
                 return
 
         optiontext = 'Searching parse trees'
-        if 'p' in show:
+        if 'p' in show or 'pl' in show:
             translated_option = 'u'
             if type(query) == list:
                 query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
@@ -427,6 +617,11 @@ def interrogator(corpus,
             op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = True)
+            
+            if countmode:
+                results[subcorpus_name].append(result)
+                continue
+
             result = format_tregex(result)
             if conc:
                 op.append('-w')
@@ -467,35 +662,41 @@ def interrogator(corpus,
                             case_sensitive = case_sensitive,
                             concordancing = conc,
                             only_format_match = only_format_match)
-                        if searcher == slow_tregex:
-                            res = format_tregex(res)
-                        
+
                         if countmode:
                             results[subcorpus_name].append(res)
                             continue
-
+                        
+                        if searcher == slow_tregex:
+                            res = format_tregex(res)
+                    
                         # add filename for conc
                         if conc:
                             for line in res:
                                 line.insert(0, f.name)
 
                 elif corpus.datatype == 'tokens':
-                    pass
+                    import pickle
+                    data = pickle.load(open(filepath, "rb"))
+                    res = searcher(search.values[0], data)
 
                 elif corpus.datatype == 'plaintext':
-                    pass
+                    with open(f.path, 'rb') as data:
+                        data = data.read()
+                        res = searcher(search.values[0], data)
 
                 if res:
                     for i in res:
                         result.append(i)
 
-        for r in result:
-            if not preserve_case:
-                if conc:
-                    r = [b.lower() for b in r]
-                else:
-                    r = r.lower()
-            results[subcorpus_name].append(r)
+        if not countmode:
+            for r in result:
+                if not preserve_case:
+                    if conc:
+                        r = [b.lower() for b in r]
+                    else:
+                        r = r.lower()
+                results[subcorpus_name].append(r)
         
         # turn data into counter object
         if not countmode and not conc:
