@@ -320,6 +320,7 @@ def dep_searcher(sents,
 
                     for i in show:
                         intermediate_result.append(single_wd[i])
+                    intermediate_result = [i.replace('/', '-slash-') for i in intermediate_result]
                     one_result.append('/'.join(intermediate_result))
                 # now we have formatted tokens as a list. we need to split
                 # it into start, middle and end
@@ -478,6 +479,7 @@ def dep_searcher(sents,
                     for i in show:
                         out.append(single_result[i])
 
+                    out = [i.replace('/', '-slash-') for i in out]
                     result.append('/'.join(out))
     
     if 'c' in show:
