@@ -237,7 +237,21 @@ class Corpus:
         dtype, singlefile = determine_datatype(self.path)
         if dtype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
-        return Corpus(make_corpus(self.path, *args, **kwargs))
+        kwargs.pop('parse', None)
+        kwargs.pop('tokenise', None)
+        return Corpus(make_corpus(self.path, parse = True, tokenise = False, *args, **kwargs))
+
+    def tokenise(self, *args, **kwargs):
+        from corpkit import make_corpus
+        from corpkit.corpus import Corpus
+        from corpkit.process import determine_datatype
+        dtype, singlefile = determine_datatype(self.path)
+        if dtype != 'plaintext':
+            raise ValueError('parse method can only be used on plaintext corpora.')
+        kwargs.pop('parse', None)
+        kwargs.pop('tokenise', None)
+
+        return Corpus(make_corpus(self.path, parse = False, tokenise = True, *args, **kwargs))
 
     def concordance(self, *args, **kwargs): 
         """
