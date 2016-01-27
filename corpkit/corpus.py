@@ -233,7 +233,8 @@ class Corpus:
     def parse(self, *args, **kwargs):
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
-        dtype = determine_datatype(self.path)
+        from corpkit.process import determine_datatype
+        dtype, singlefile = determine_datatype(self.path)
         if dtype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
         return Corpus(make_corpus(self.path, *args, **kwargs))
