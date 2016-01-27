@@ -857,7 +857,7 @@ def interrogator(corpus,
             the_big_dict = {}
             unique_results = set([item for sublist in results.values() for item in sublist])
             for word in unique_results:
-                the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
+                the_big_dict[word] = [subcorp_result[word] for subcorp_result in sorted(results.values())]
             # turn master dict into dataframe, sorted
             df = DataFrame(the_big_dict, index = sorted(results.keys()))
 
@@ -882,13 +882,11 @@ def interrogator(corpus,
 
         # sort by total
         if type(df) == pd.core.frame.DataFrame:
-            if df.empty:
-                print 'No results found, sorry.\n'
-                return
-            df.ix['Total-tmp'] = df.sum()
-            tot = df.ix['Total-tmp']
-            df = df[tot.argsort()[::-1]]
-            df = df.drop('Total-tmp', axis = 0)
+            if not df.empty:   
+                df.ix['Total-tmp'] = df.sum()
+                tot = df.ix['Total-tmp']
+                df = df[tot.argsort()[::-1]]
+                df = df.drop('Total-tmp', axis = 0)
 
         # format final string
         if kwargs.get('printstatus', True):
