@@ -21,6 +21,8 @@ def interrogator(corpus,
             num_proc = 'default',
             spelling = False,
             regex_nonword_filter = r'[A-Za-z0-9:_]',
+            gramsize = 2,
+            split_contractions = True,
             **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
@@ -360,7 +362,6 @@ def interrogator(corpus,
 
     def tok_ngrams(pattern, list_of_toks, split_contractions = True):
         from collections import Counter
-        global gramsize
         import re
         ngrams = Counter()
         result = []
@@ -381,6 +382,7 @@ def interrogator(corpus,
                 ngrams[' '.join(the_gram)] += 1
             except IndexError:
                 pass
+
         # turn counter into list of results
         for k, v in ngrams.items():
             if v > 1:
@@ -508,7 +510,8 @@ def interrogator(corpus,
     else:
         if corpus.datatype == 'plaintext':
             if search.get('n'):
-                searcher = plaintext_ngram
+                raise NotImplementedError('Use a tokenised corpus for n-gramming.')
+                #searcher = plaintext_ngram
                 optiontext = 'n-grams via plaintext'
             if search.get('w'):
                 if kwargs.get('regex', True):
@@ -745,7 +748,7 @@ def interrogator(corpus,
                     import pickle
                     with open(f.path, "rb") as fo:
                         data = pickle.load(fo)
-                    res = searcher(search.values()[0], data)
+                    res = searcher(search.values()[0], data, split_contractions = split_contractions)
 
                 elif corpus.datatype == 'plaintext':
                     with open(f.path, 'rb') as data:
@@ -764,7 +767,7 @@ def interrogator(corpus,
                             line = [b.lower() for b in line]
                         if spelling:
                             line = [correct_spelling(b) for b in line]
-                        results[subcorpus_name] += line
+                        results[subcorpus_name] += [line]
 
                 # do lowercasing and spelling
                 else:
@@ -794,7 +797,7 @@ def interrogator(corpus,
 
             #make into series
             pindex = 'c f s l m r'.encode('utf-8').split()
-
+            print unique_results
             for fname, spkr, start, word, end in unique_results:
                 spkr = unicode(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
@@ -884,8 +887,8 @@ def interrogator(corpus,
         if type(df) == pd.core.frame.DataFrame:
             if not df.empty:   
                 df.ix['Total-tmp'] = df.sum()
-                tot = df.ix['Total-tmp']
-                df = df[tot.argsort()[::-1]]
+                the_tot = df.ix['Total-tmp']
+                df = df[the_tot.argsort()[::-1]]
                 df = df.drop('Total-tmp', axis = 0)
 
         # format final string
