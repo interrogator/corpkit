@@ -658,7 +658,9 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     Multiple progress bars not supported in jupyter yet.
     """
 
-    if kwargs.get('root'):
+    if kwargs.get('note'):
+        perc_done = count * 100.0 / float(length)
+        kwargs['note'].progvar.set(perc_done)
         return
 
     if init:
