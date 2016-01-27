@@ -20,33 +20,7 @@ class Interrogation:
     def __repr__(self):
         return "<corpkit.interrogation.Interrogation instance: %d total results>" % (self.totals.sum())
 
-    def edit(operation = None,
-            dataframe2 = False,
-            sort_by = False,
-            keep_stats = False,
-            keep_top = False,
-            just_totals = False,
-            threshold = 'medium',
-            just_entries = False,
-            skip_entries = False,
-            merge_entries = False,
-            newname = 'combine',
-            multiple_merge = False,
-            just_subcorpora = False,
-            skip_subcorpora = False,
-            span_subcorpora = False,
-            merge_subcorpora = False,
-            new_subcorpus_name = False,
-            replace_names = False,
-            projection = False,
-            remove_above_p = False,
-            p = 0.05, 
-            revert_year = True,
-            print_info = True,
-            spelling = False,
-            selfdrop = True,
-            calc_all = True,
-            **kwargs):
+    def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
         ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
