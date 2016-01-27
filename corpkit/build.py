@@ -866,6 +866,9 @@ def make_no_id_corpus(pth, newpth):
                 if matched:
                     names.append(matched.group(1))
                     good_data.append(matched.group(2))
+                else:
+                    names.append('UNIDENTIFIED')
+                    good_data.append(datum)
         with open(f, "w") as fo:
             fo.write('\n'.join(good_data))
 
