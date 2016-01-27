@@ -1,3 +1,9 @@
+# full suite: must delete some corpora
+# nosetests corpkit/nosetests.py
+
+# skip parsing
+# nosetests corpkit/nosetests.py -a '!slow'
+
 import os
 from nose.tools import assert_equals
 from corpkit import *
@@ -9,6 +15,7 @@ def test_import():
     import corpkit
     from dictionaries.wordlists import wordlists
     from corpkit import Corpus
+    assert_equals(wordlists.articles, [u'a', u'an', u'the', u'teh'])
 
 def test_corpus_class():
     unparsed = Corpus(unparsed_path)
@@ -38,67 +45,52 @@ else:
 
 def test_interro1():
     print 'Testing interrogation 1'
-
     data = corp.interrogate('t', r'__ < /JJ.?/')
     assert_equals(data.results.shape, (2, 5))
 
 def test_interro2():
     print 'Testing interrogation 2'
-    corp = Corpus('data/test-parsed')
     data = corp.interrogate({'t': r'__ < /JJ.?/'})
     assert_equals(data.results.shape, (2, 5))
 
-#def test_interro3():
-#    print 'Testing interrogation 3'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro4():
-#    print 'Testing interrogation 4'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro5():
-#    print 'Testing interrogation 5'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro6():
-#    print 'Testing interrogation 6'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro7():
-#    print 'Testing interrogation 7'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro8():
-#    print 'Testing interrogation 8'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_interro9():
-#    print 'Testing interrogation 9'
-#    corp = Corpus('data/test-parsed')
-#    tot = False
-#    assert_equals(tot, tot)
-#
-#def test_edit1():
-#    print 'Testing edit'
-#    tot = False
-#    assert_equals(tot, tot)
+def test_interro3():
+    print 'Testing interrogation 3'
+    data = corp.interrogate({'w': r'^c'}, exclude = {'l': r'check'}, show = ['l', 'f'])
+    lst = ['corpus/nsubjpass', 'corpkit/nmod:poss', 'continuum/nmod:on', 'conduit/nmod:as', 
+           'concordancing/nmod:like', 'computational/amod', 'case/nmod:in', 'can/aux']
+    assert_equals(list(data.results.columns), lst)
 
+def test_interro4():
+    print 'Testing interrogation 4'
+    corp = Corpus('data/test-stripped-tokenised')
+    data = corp.interrogate({'n': 'any'})
+    d = {u'and interrogating': {'first': 0, 'second': 2},
+         u'concordancing and': {'first': 0, 'second': 2}}
+    assert_equals(data.results.to_dict(), d)
+
+def test_interro5():
+    print 'Testing interrogation 5'
+    corp = Corpus('data/test-stripped')
+    data = corp.interrogate({'w': r'\bl[a-z]+?\s'})
+    assert_equals(data.results.sum().sum(), 4)
+  
 def test_interro_multiindex_tregex_justspeakers():
+    print 'Testing multiindex'
     import pandas as pd
     data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers = ['each'])
-    assert_equals(all(data.multiindex().index), all(pd.MultiIndex(levels=[[u'ANONYMOUS', u'TESTER', u'Total'], 
-           [u'first', u'second', u'Total']],
-           labels=[[0, 0, 1, 1], [0, 1, 0, 1]],
+    assert_equals(all(data.multiindex().index), all(pd.MultiIndex(levels=[[u'ANONYMOUS', 
+           u'NEWCOMER', u'TESTER', u'UNIDENTIFIED', u'Total'], [u'first', u'second', u'Total']],
+           labels=[[3, 3, 1, 1, 0, 0, 2, 2], [0, 1, 0, 1, 0, 1, 0, 1]],
            names=[u'corpus', u'subcorpus'])))
+
+def test_conc():
+    print 'Testing concordancer'
+    data = corp.concordance({'f': 'amod'})
+    assert_equals('corpus linguistics and', data.ix[0][3])
+
+def test_edit():
+    print 'Testing simple edit'
+    data = corp.interrogate({'t': r'__ !< __'})
+    data = data.edit('%', 'self')
+    assert_equals(data.results.iloc[0,0], 8.1081081081081088)
+
