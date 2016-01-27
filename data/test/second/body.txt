@@ -1,3 +1,3 @@
 Corpus linguistics and computational linguistics, like concordancing and interrogating, are situated on a vast continuum.
 In both cases, Python can act as a fantastic conduit.
-NEWCOMER: Just checking I'm getting noticed.
+NEWCOMER: Just checking I'm getting noticed during parsing, concordancing and interrogating. This corpus linguistics is hard work!
