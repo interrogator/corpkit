@@ -1,0 +1,868 @@
+<root>
+<document>
+<sentences>
+<sentence id="1">
+<tokens>
+<token id="1">
+<word>This</word>
+<lemma>this</lemma>
+<characteroffsetbegin>0</characteroffsetbegin>
+<characteroffsetend>4</characteroffsetend>
+<pos>DT</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>small</word>
+<lemma>small</lemma>
+<characteroffsetbegin>5</characteroffsetbegin>
+<characteroffsetend>10</characteroffsetend>
+<pos>JJ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>corpus</word>
+<lemma>corpus</lemma>
+<characteroffsetbegin>11</characteroffsetbegin>
+<characteroffsetend>17</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>is</word>
+<lemma>be</lemma>
+<characteroffsetbegin>18</characteroffsetbegin>
+<characteroffsetend>20</characteroffsetend>
+<pos>VBZ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="5">
+<word>used</word>
+<lemma>use</lemma>
+<characteroffsetbegin>21</characteroffsetbegin>
+<characteroffsetend>25</characteroffsetend>
+<pos>VBN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="6">
+<word>in</word>
+<lemma>in</lemma>
+<characteroffsetbegin>26</characteroffsetbegin>
+<characteroffsetend>28</characteroffsetend>
+<pos>IN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="7">
+<word>corpkit</word>
+<lemma>corpkit</lemma>
+<characteroffsetbegin>29</characteroffsetbegin>
+<characteroffsetend>36</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="8">
+<word>'s</word>
+<lemma>'s</lemma>
+<characteroffsetbegin>36</characteroffsetbegin>
+<characteroffsetend>38</characteroffsetend>
+<pos>POS</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="9">
+<word>tests</word>
+<lemma>test</lemma>
+<characteroffsetbegin>39</characteroffsetbegin>
+<characteroffsetend>44</characteroffsetend>
+<pos>NNS</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="10">
+<word>.</word>
+<lemma>.</lemma>
+<characteroffsetbegin>44</characteroffsetbegin>
+<characteroffsetend>45</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (NP (DT This) (JJ small) (NN corpus)) (VP (VBZ is) (VP (VBN used) (PP (IN in) (NP (NP (NN corpkit) (POS 's)) (NNS tests))))) (. .))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">used</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">corpus</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">corpus</governor>
+<dependent idx="2">small</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="5">used</governor>
+<dependent idx="3">corpus</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="5">used</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="case">
+<governor idx="9">tests</governor>
+<dependent idx="6">in</dependent>
+</dep>
+<dep type="nmod:poss">
+<governor idx="9">tests</governor>
+<dependent idx="7">corpkit</dependent>
+</dep>
+<dep type="case">
+<governor idx="7">corpkit</governor>
+<dependent idx="8">'s</dependent>
+</dep>
+<dep type="nmod">
+<governor idx="5">used</governor>
+<dependent idx="9">tests</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">used</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">corpus</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">corpus</governor>
+<dependent idx="2">small</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="5">used</governor>
+<dependent idx="3">corpus</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="5">used</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="case">
+<governor idx="9">tests</governor>
+<dependent idx="6">in</dependent>
+</dep>
+<dep type="nmod:poss">
+<governor idx="9">tests</governor>
+<dependent idx="7">corpkit</dependent>
+</dep>
+<dep type="case">
+<governor idx="7">corpkit</governor>
+<dependent idx="8">'s</dependent>
+</dep>
+<dep type="nmod:in">
+<governor idx="5">used</governor>
+<dependent idx="9">tests</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">used</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">corpus</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">corpus</governor>
+<dependent idx="2">small</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="5">used</governor>
+<dependent idx="3">corpus</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="5">used</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="case">
+<governor idx="9">tests</governor>
+<dependent idx="6">in</dependent>
+</dep>
+<dep type="nmod:poss">
+<governor idx="9">tests</governor>
+<dependent idx="7">corpkit</dependent>
+</dep>
+<dep type="case">
+<governor idx="7">corpkit</governor>
+<dependent idx="8">'s</dependent>
+</dep>
+<dep type="nmod:in">
+<governor idx="5">used</governor>
+<dependent idx="9">tests</dependent>
+</dep>
+</dependencies>
+<speakername>TESTER</speakername></sentence>
+<sentence id="2">
+<tokens>
+<token id="1">
+<word>Not</word>
+<lemma>not</lemma>
+<characteroffsetbegin>46</characteroffsetbegin>
+<characteroffsetend>49</characteroffsetend>
+<pos>RB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>a</word>
+<lemma>a</lemma>
+<characteroffsetbegin>50</characteroffsetbegin>
+<characteroffsetend>51</characteroffsetend>
+<pos>DT</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>lot</word>
+<lemma>lot</lemma>
+<characteroffsetbegin>52</characteroffsetbegin>
+<characteroffsetend>55</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>of</word>
+<lemma>of</lemma>
+<characteroffsetbegin>56</characteroffsetbegin>
+<characteroffsetend>58</characteroffsetend>
+<pos>IN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="5">
+<word>data</word>
+<lemma>datum</lemma>
+<characteroffsetbegin>59</characteroffsetbegin>
+<characteroffsetend>63</characteroffsetend>
+<pos>NNS</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="6">
+<word>is</word>
+<lemma>be</lemma>
+<characteroffsetbegin>64</characteroffsetbegin>
+<characteroffsetend>66</characteroffsetend>
+<pos>VBZ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="7">
+<word>required</word>
+<lemma>require</lemma>
+<characteroffsetbegin>67</characteroffsetbegin>
+<characteroffsetend>75</characteroffsetend>
+<pos>VBN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="8">
+<word>.</word>
+<lemma>.</lemma>
+<characteroffsetbegin>75</characteroffsetbegin>
+<characteroffsetend>76</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (NP (NP (RB Not) (DT a) (NN lot)) (PP (IN of) (NP (NNS data)))) (VP (VBZ is) (VP (VBN required))) (. .))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="7">required</dependent>
+</dep>
+<dep type="neg">
+<governor idx="3">lot</governor>
+<dependent idx="1">Not</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">lot</governor>
+<dependent idx="2">a</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="7">required</governor>
+<dependent idx="3">lot</dependent>
+</dep>
+<dep type="case">
+<governor idx="5">data</governor>
+<dependent idx="4">of</dependent>
+</dep>
+<dep type="nmod">
+<governor idx="3">lot</governor>
+<dependent idx="5">data</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="7">required</governor>
+<dependent idx="6">is</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="7">required</dependent>
+</dep>
+<dep type="neg">
+<governor idx="3">lot</governor>
+<dependent idx="1">Not</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">lot</governor>
+<dependent idx="2">a</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="7">required</governor>
+<dependent idx="3">lot</dependent>
+</dep>
+<dep type="case">
+<governor idx="5">data</governor>
+<dependent idx="4">of</dependent>
+</dep>
+<dep type="nmod:of">
+<governor idx="3">lot</governor>
+<dependent idx="5">data</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="7">required</governor>
+<dependent idx="6">is</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="7">required</dependent>
+</dep>
+<dep type="neg">
+<governor idx="3">lot</governor>
+<dependent idx="1">Not</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">lot</governor>
+<dependent idx="2">a</dependent>
+</dep>
+<dep type="nsubjpass">
+<governor idx="7">required</governor>
+<dependent idx="3">lot</dependent>
+</dep>
+<dep type="case">
+<governor idx="5">data</governor>
+<dependent idx="4">of</dependent>
+</dep>
+<dep type="nmod:of">
+<governor idx="3">lot</governor>
+<dependent idx="5">data</dependent>
+</dep>
+<dep type="auxpass">
+<governor idx="7">required</governor>
+<dependent idx="6">is</dependent>
+</dep>
+</dependencies>
+<speakername>TESTER</speakername></sentence>
+<sentence id="3">
+<tokens>
+<token id="1">
+<word>Here</word>
+<lemma>here</lemma>
+<characteroffsetbegin>77</characteroffsetbegin>
+<characteroffsetend>81</characteroffsetend>
+<pos>RB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>,</word>
+<lemma>,</lemma>
+<characteroffsetbegin>81</characteroffsetbegin>
+<characteroffsetend>82</characteroffsetend>
+<pos>,</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>we</word>
+<lemma>we</lemma>
+<characteroffsetbegin>83</characteroffsetbegin>
+<characteroffsetend>85</characteroffsetend>
+<pos>PRP</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>'re</word>
+<lemma>be</lemma>
+<characteroffsetbegin>85</characteroffsetbegin>
+<characteroffsetend>88</characteroffsetend>
+<pos>VBP</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="5">
+<word>testing</word>
+<lemma>test</lemma>
+<characteroffsetbegin>89</characteroffsetbegin>
+<characteroffsetend>96</characteroffsetend>
+<pos>VBG</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="6">
+<word>the</word>
+<lemma>the</lemma>
+<characteroffsetbegin>97</characteroffsetbegin>
+<characteroffsetend>100</characteroffsetend>
+<pos>DT</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="7">
+<word>speaker_segmentation</word>
+<lemma>speaker_segmentation</lemma>
+<characteroffsetbegin>101</characteroffsetbegin>
+<characteroffsetend>121</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="8">
+<word>option</word>
+<lemma>option</lemma>
+<characteroffsetbegin>122</characteroffsetbegin>
+<characteroffsetend>128</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="9">
+<word>.</word>
+<lemma>.</lemma>
+<characteroffsetbegin>128</characteroffsetbegin>
+<characteroffsetend>129</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (ADVP (RB Here)) (, ,) (NP (PRP we)) (VP (VBP 're) (VP (VBG testing) (NP (DT the) (NN speaker_segmentation) (NN option)))) (. .))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">testing</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="5">testing</governor>
+<dependent idx="1">Here</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="5">testing</governor>
+<dependent idx="3">we</dependent>
+</dep>
+<dep type="aux">
+<governor idx="5">testing</governor>
+<dependent idx="4">'re</dependent>
+</dep>
+<dep type="det">
+<governor idx="8">option</governor>
+<dependent idx="6">the</dependent>
+</dep>
+<dep type="compound">
+<governor idx="8">option</governor>
+<dependent idx="7">speaker_segmentation</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="5">testing</governor>
+<dependent idx="8">option</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">testing</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="5">testing</governor>
+<dependent idx="1">Here</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="5">testing</governor>
+<dependent idx="3">we</dependent>
+</dep>
+<dep type="aux">
+<governor idx="5">testing</governor>
+<dependent idx="4">'re</dependent>
+</dep>
+<dep type="det">
+<governor idx="8">option</governor>
+<dependent idx="6">the</dependent>
+</dep>
+<dep type="compound">
+<governor idx="8">option</governor>
+<dependent idx="7">speaker_segmentation</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="5">testing</governor>
+<dependent idx="8">option</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="5">testing</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="5">testing</governor>
+<dependent idx="1">Here</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="5">testing</governor>
+<dependent idx="3">we</dependent>
+</dep>
+<dep type="aux">
+<governor idx="5">testing</governor>
+<dependent idx="4">'re</dependent>
+</dep>
+<dep type="det">
+<governor idx="8">option</governor>
+<dependent idx="6">the</dependent>
+</dep>
+<dep type="compound">
+<governor idx="8">option</governor>
+<dependent idx="7">speaker_segmentation</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="5">testing</governor>
+<dependent idx="8">option</dependent>
+</dep>
+</dependencies>
+<speakername>ANONYMOUS</speakername></sentence>
+<sentence id="4">
+<tokens>
+<token id="1">
+<word>Right</word>
+<lemma>right</lemma>
+<characteroffsetbegin>130</characteroffsetbegin>
+<characteroffsetend>135</characteroffsetend>
+<pos>RB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>you</word>
+<lemma>you</lemma>
+<characteroffsetbegin>136</characteroffsetbegin>
+<characteroffsetend>139</characteroffsetend>
+<pos>PRP</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>are</word>
+<lemma>be</lemma>
+<characteroffsetbegin>140</characteroffsetbegin>
+<characteroffsetend>143</characteroffsetend>
+<pos>VBP</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>.</word>
+<lemma>.</lemma>
+<characteroffsetbegin>143</characteroffsetbegin>
+<characteroffsetend>144</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (ADVP (RB Right)) (NP (PRP you)) (VP (VBP are)) (. .))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="3">are</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="3">are</governor>
+<dependent idx="1">Right</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="3">are</governor>
+<dependent idx="2">you</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="3">are</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="3">are</governor>
+<dependent idx="1">Right</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="3">are</governor>
+<dependent idx="2">you</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="3">are</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="3">are</governor>
+<dependent idx="1">Right</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="3">are</governor>
+<dependent idx="2">you</dependent>
+</dep>
+</dependencies>
+<speakername>TESTER</speakername></sentence>
+<sentence id="5">
+<tokens>
+<token id="1">
+<word>The</word>
+<lemma>the</lemma>
+<characteroffsetbegin>145</characteroffsetbegin>
+<characteroffsetend>148</characteroffsetend>
+<pos>DT</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>next</word>
+<lemma>next</lemma>
+<characteroffsetbegin>149</characteroffsetbegin>
+<characteroffsetend>153</characteroffsetend>
+<pos>JJ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>file</word>
+<lemma>file</lemma>
+<characteroffsetbegin>154</characteroffsetbegin>
+<characteroffsetend>158</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>,</word>
+<lemma>,</lemma>
+<characteroffsetbegin>158</characteroffsetbegin>
+<characteroffsetend>159</characteroffsetend>
+<pos>,</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="5">
+<word>however</word>
+<lemma>however</lemma>
+<characteroffsetbegin>160</characteroffsetbegin>
+<characteroffsetend>167</characteroffsetend>
+<pos>RB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="6">
+<word>,</word>
+<lemma>,</lemma>
+<characteroffsetbegin>167</characteroffsetbegin>
+<characteroffsetend>168</characteroffsetend>
+<pos>,</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="7">
+<word>wo</word>
+<lemma>will</lemma>
+<characteroffsetbegin>169</characteroffsetbegin>
+<characteroffsetend>171</characteroffsetend>
+<pos>MD</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="8">
+<word>n't</word>
+<lemma>not</lemma>
+<characteroffsetbegin>171</characteroffsetbegin>
+<characteroffsetend>174</characteroffsetend>
+<pos>RB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="9">
+<word>have</word>
+<lemma>have</lemma>
+<characteroffsetbegin>175</characteroffsetbegin>
+<characteroffsetend>179</characteroffsetend>
+<pos>VB</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="10">
+<word>speaker</word>
+<lemma>speaker</lemma>
+<characteroffsetbegin>180</characteroffsetbegin>
+<characteroffsetend>187</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="11">
+<word>IDs</word>
+<lemma>id</lemma>
+<characteroffsetbegin>188</characteroffsetbegin>
+<characteroffsetend>191</characteroffsetend>
+<pos>NNS</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="12">
+<word>.</word>
+<lemma>.</lemma>
+<characteroffsetbegin>191</characteroffsetbegin>
+<characteroffsetend>192</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (NP (DT The) (JJ next) (NN file)) (, ,) (ADVP (RB however)) (, ,) (VP (MD wo) (RB n't) (VP (VB have) (NP (NN speaker) (NNS IDs)))) (. .))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="9">have</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">file</governor>
+<dependent idx="1">The</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">file</governor>
+<dependent idx="2">next</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="9">have</governor>
+<dependent idx="3">file</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="9">have</governor>
+<dependent idx="5">however</dependent>
+</dep>
+<dep type="aux">
+<governor idx="9">have</governor>
+<dependent idx="7">wo</dependent>
+</dep>
+<dep type="neg">
+<governor idx="9">have</governor>
+<dependent idx="8">n't</dependent>
+</dep>
+<dep type="compound">
+<governor idx="11">IDs</governor>
+<dependent idx="10">speaker</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="9">have</governor>
+<dependent idx="11">IDs</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="9">have</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">file</governor>
+<dependent idx="1">The</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">file</governor>
+<dependent idx="2">next</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="9">have</governor>
+<dependent idx="3">file</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="9">have</governor>
+<dependent idx="5">however</dependent>
+</dep>
+<dep type="aux">
+<governor idx="9">have</governor>
+<dependent idx="7">wo</dependent>
+</dep>
+<dep type="neg">
+<governor idx="9">have</governor>
+<dependent idx="8">n't</dependent>
+</dep>
+<dep type="compound">
+<governor idx="11">IDs</governor>
+<dependent idx="10">speaker</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="9">have</governor>
+<dependent idx="11">IDs</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="9">have</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">file</governor>
+<dependent idx="1">The</dependent>
+</dep>
+<dep type="amod">
+<governor idx="3">file</governor>
+<dependent idx="2">next</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="9">have</governor>
+<dependent idx="3">file</dependent>
+</dep>
+<dep type="advmod">
+<governor idx="9">have</governor>
+<dependent idx="5">however</dependent>
+</dep>
+<dep type="aux">
+<governor idx="9">have</governor>
+<dependent idx="7">wo</dependent>
+</dep>
+<dep type="neg">
+<governor idx="9">have</governor>
+<dependent idx="8">n't</dependent>
+</dep>
+<dep type="compound">
+<governor idx="11">IDs</governor>
+<dependent idx="10">speaker</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="9">have</governor>
+<dependent idx="11">IDs</dependent>
+</dep>
+</dependencies>
+<speakername>TESTER</speakername></sentence>
+</sentences>
+</document>
+</root>
