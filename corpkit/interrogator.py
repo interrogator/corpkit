@@ -119,7 +119,10 @@ def interrogator(corpus,
         if root:
             root.update()
         os.remove(to_open)
-        return res
+        if countmode:
+            return(len(res))
+        else:
+            return res
 
     def get_stats(sents, **dummy_args):
         """get a bunch of frequencies on interpersonal phenomena"""
@@ -335,7 +338,10 @@ def interrogator(corpus,
         matches = [m for m in list_of_toks if m in pattern]
         for m in matches:
             result.append(m)
-        return result
+        if countmode:
+            return(len(result))
+        else:
+            return result
 
     def unsplitter(lst):
         """unsplit contractions and apostophes from tokenised text"""
@@ -380,7 +386,10 @@ def interrogator(corpus,
             if v > 1:
                 for i in range(v):
                     result.append(k)
-        return result
+        if countmode:
+            return(len(result))
+        else:
+            return result
 
     def tok_by_reg(pattern, list_of_toks, **kwargs):
         """search for regex in plaintext corpora"""
@@ -402,8 +411,10 @@ def interrogator(corpus,
             return 'Bad query'
 
         matches = [m for m in list_of_toks if re.search(comped, m)]
-
-        return matches
+        if countmode:
+            return(len(matches))
+        else:
+            return matches
 
     def plaintext_regex_search(pattern, plaintext_data, **kwargs):
         """search for regex in plaintext corpora
@@ -427,10 +438,14 @@ def interrogator(corpus,
         for index, i in enumerate(matches):
             if type(i) == tuple:
                 matches[index] = i[0]
-        return matches
+        if countmode:
+            return(len(matches))
+        else:
+            return matches
 
     def correct_spelling(a_string):
-        if spelling:
+        if not spelling:
+            return a_string
         from dictionaries.word_transforms import usa_convert
         if spelling.lower() == 'uk':
             usa_convert = {v: k for k, v in usa_convert.items()}
@@ -613,7 +628,8 @@ def interrogator(corpus,
         thetime = strftime("%H:%M:%S", localtime())
 
         sformat = '\n                 '.join(['%s: %s' %(k, v) for k, v in search.items()])
-        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % (thetime, message, corpus.name, optiontext, sformat)
+        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
+                  (thetime, message, corpus.name, optiontext, sformat)
         print welcome
 
     ############################################
@@ -630,8 +646,8 @@ def interrogator(corpus,
 
     par_args = {'printstatus': kwargs.get('printstatus', True),
                 'root': root, 
-                'note' = note,
-                'length' = total_files}
+                'note': note,
+                'length': total_files}
 
     if kwargs.get('paralleling'):
         from blessings import Terminal
@@ -650,9 +666,13 @@ def interrogator(corpus,
     ############################################
 
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
-        results[subcorpus_name] = Counter()
+
+        if countmode or conc:
+            results[subcorpus_name] = []
+        else:
+            results[subcorpus_name] = Counter()
         
-        # tregex over subcorpus
+        # tregex over subcorpora, not files
         if simple_tregex_mode:
 
             current_file += 1
@@ -673,11 +693,18 @@ def interrogator(corpus,
                 op.append('-w')
                 whole_result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = preserve_case)
+                
+                if not only_format_match:
+                    whole_result = format_tregex(whole_result)
 
                 result = make_conc_lines_from_whole_mid(whole_result, result, speakr = False)
 
-            else:
-                results[subcorpus_name] += result
+                if spelling:
+                    for index, line in enumerate(result):
+                        result[index] = [correct_spelling(b) for b in line]
+            
+            results[subcorpus_name] += result
+
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
@@ -711,30 +738,8 @@ def interrogator(corpus,
                             concordancing = conc,
                             only_format_match = only_format_match)
 
-                        if countmode:
-                            results[subcorpus_name].append(res)
-                            continue
-                        
-                        if searcher == slow_tregex:
+                        if searcher == slow_tregex and not countmode:
                             res = format_tregex(res)
-                    
-                        # add filename and do lowercasing for conc
-                        if conc:
-                            for index, line in enumerate(res):
-                                line.insert(0, f.name)
-                                if not preserve_case:
-                                    line = [b.lower() for b in line]
-                                if spelling:
-                                    line = [correct_spelling(b) for b in line]
-                                results[subcorpus_name].append(line)
-
-                        # do lowercasing and 
-                        else:
-                            if not preserve_case:
-                                res = [r.lower() for r in res]
-                            if spelling:
-                                res = [correct_spelling(r) for r in res]
-                            results[subcorpus_name] += Counter(res)
 
                 elif corpus.datatype == 'tokens':
                     import pickle
@@ -747,6 +752,28 @@ def interrogator(corpus,
                         data = data.read()
                         res = searcher(search.values()[0], data)
 
+                if countmode:
+                    results[subcorpus_name] += res
+                    continue
+            
+                # add filename and do lowercasing for conc
+                if conc:
+                    for index, line in enumerate(res):
+                        line.insert(0, f.name)
+                        if not preserve_case:
+                            line = [b.lower() for b in line]
+                        if spelling:
+                            line = [correct_spelling(b) for b in line]
+                        results[subcorpus_name] += line
+
+                # do lowercasing and spelling
+                else:
+                    if not preserve_case:
+                        res = [r.lower() for r in res]
+                    if spelling:
+                        res = [correct_spelling(r) for r in res]
+                    results[subcorpus_name] += Counter(res)
+
     # delete temp file if there
     import os
     if os.path.isfile('tmp.txt'):
@@ -758,14 +785,12 @@ def interrogator(corpus,
 
     if conc:
         all_conc_lines = []
-        for sc_name, results in results.items():
+        for sc_name, resu in results.items():
 
             if only_unique:
-                unique_results = uniquify(results)
+                unique_results = uniquify(resu)
             else:
-                unique_results = results
-
-            print unique_results
+                unique_results = resu
 
             #make into series
             pindex = 'c f s l m r'.encode('utf-8').split()
@@ -773,11 +798,6 @@ def interrogator(corpus,
             for fname, spkr, start, word, end in unique_results:
                 spkr = unicode(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
-                #start = start.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
-                #word = word.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
-                #end = end.replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
-                #spaces = ' ' * (maximum / 2 - (len(word) / 2))
-                #new_word = spaces + word + spaces
 
                 # the use of ascii here makes sure the string formats ok, but will also screw over
                 # anyone doing non-english work. so, change to utf-8, then fix errors as they come
@@ -797,8 +817,8 @@ def interrogator(corpus,
 
         df = pd.concat(all_conc_lines, axis = 1).T
 
+        # not doing anything yet --- this is for multimodal concordancing
         add_links = False
-
         if not add_links:
             df.columns = ['c', 'f', 's', 'l', 'm', 'r']
         else:
@@ -825,11 +845,6 @@ def interrogator(corpus,
 
         from corpkit.interrogation import Concordance
         output = Concordance(df)
-        #output = df
-        try:
-            del locs['corpus']
-        except:
-            pass
         output.query = locs
         return output 
 
