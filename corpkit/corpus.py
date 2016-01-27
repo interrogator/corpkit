@@ -290,6 +290,12 @@ class File(Corpus):
         self.path = os.path.join(dirname, path)
         kwargs = {'print_info': False, 'level': 'f'}
         Corpus.__init__(self, self.path, **kwargs)
+        if self.path.endswith('.p'):
+            self.datatype = 'tokens'
+        elif self.path.endswith('.xml'):
+            self.datatype = 'parse'
+        else:
+            self.datatype = 'plaintext'
 
     def __repr__(self):
         return "<corpkit.corpus.File instance: %s>" % self.name
@@ -298,9 +304,15 @@ class File(Corpus):
         return self.path
 
     def read(self, *args, **kwargs):
-        with open(self.abspath, 'r') as fo:
-            data = fo.read()
-            return data
+        if self.datatype == 'tokens':
+            import pickle
+            with open(self.abspath, "rb") as fo:
+                data = pickle.load(fo)
+                return data
+        else:
+            with open(self.abspath, 'r') as fo:
+                data = fo.read()
+                return data
 
 class Datalist(object):
     """
