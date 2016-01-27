@@ -417,7 +417,7 @@ Again, common sense dictates what is possible. When searching trees, only words,
 <a name="building-corpora"></a>
 ## Building corpora
 
-*corpkit*'s `Corpus()` class contains `parse()`, a modest method for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
+*corpkit*'s `Corpus()` class contains `parse()` and `tokenise()`, modest methods for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
 
 ```python
 >>> unparsed = Corpus('path/to/unparsed/files')
@@ -426,10 +426,10 @@ Again, common sense dictates what is possible. When searching trees, only words,
 >>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
 
 # to tokenise, turn parsing off, and point to nltk:
-# >>> corpus = unparsed.parse(parse = False, tokenise = True, nltk_data_path = 'Downloads/nltk_data')
+# >>> corpus = unparsed.tokenise(nltk_data_path = 'Downloads/nltk_data')
 ```
 
-which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. You can also optionally pass in a string of annotators:
+which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. When parsing, you can also optionally pass in a string of annotators:
 
 ```python
 ans = 'tokenize,ssplit,pos'
