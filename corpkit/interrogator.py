@@ -215,7 +215,6 @@ def interrogator(corpus,
 
     def uniquify(conc_lines):
         from collections import OrderedDict
-        od = OrderedDict()
         unique_lines = []
         checking = []
         for index, (f, speakr, start, middle, end) in enumerate(conc_lines):
@@ -566,41 +565,41 @@ def interrogator(corpus,
         optiontext = 'Searching parse trees'
         if 'p' in show or 'pl' in show:
             translated_option = 'u'
-            if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'__ < (/%s/ !< __)' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+            if search['t'] == 'any':
+                search['t'] = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 't' in show:
             translated_option = 'o'
-            if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'__ < (/%s/ !< __)' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+            if search['t'] == 'any':
+                search['t'] = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 'w' in show:
             translated_option = 't'
-            if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'c' in show:
             count_results = {}
             only_count = True
             translated_option = 'C'
-            if type(query) == list:
-                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __'  % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'l' in show:
             translated_option = 't'
-            if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
 
     ############################################
     # Make iterable for corpus/subcorpus/file  #
@@ -612,7 +611,7 @@ def interrogator(corpus,
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for k, v in corpus.structure.items():
+        for k, v in sorted(corpus.structure.items()):
             to_iterate_over[(k.name, k.path)] = v
     if files_as_subcorpora:
         to_iterate_over = {}
@@ -788,16 +787,14 @@ def interrogator(corpus,
 
     if conc:
         all_conc_lines = []
-        for sc_name, resu in results.items():
+        for sc_name, resu in sorted(results.items()):
 
             if only_unique:
                 unique_results = uniquify(resu)
             else:
                 unique_results = resu
-
             #make into series
             pindex = 'c f s l m r'.encode('utf-8').split()
-            print unique_results
             for fname, spkr, start, word, end in unique_results:
                 spkr = unicode(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
