@@ -1,0 +1,2 @@
+Corpus linguistics and computational linguistics, like concordancing and interrogating, are situated on a vast continuum.
+In both cases, Python can act as a fantastic conduit.
