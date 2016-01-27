@@ -181,9 +181,9 @@ def editor(dataframe1,
                 if sorted(set([i.lower() for i in dataframe1.keys()])) == \
                    sorted(set([i.lower() for i in dataframe2.keys()])):
                    saved_args['dataframe2'] = dataframe2[k]
-                   if 'use_df2_totals' in kwargs.keys():
-                       if kwargs['use_df2_totals'] is True:
-                            saved_args['dataframe2'] = dataframe2[k].totals
+                   
+                   if kwargs.get('use_df2_totals'):
+                        saved_args['dataframe2'] = dataframe2[k].totals
             outdict[k] = editor(v.results, **saved_args)
         if print_info:
             from time import localtime, strftime
@@ -1191,10 +1191,9 @@ def editor(dataframe1,
     if tk:
         df = add_tkt_index(df)
 
-    if 'df1_always_df' in kwargs.keys():
-        if kwargs['df1_always_df'] is True:
-            if type(df) == pandas.core.series.Series:
-                df = pandas.DataFrame(df)
+    if kwargs.get('df1_always_df'):
+        if type(df) == pandas.core.series.Series:
+            df = pandas.DataFrame(df)
 
     #make named_tuple
     the_operation = 'none'
@@ -1230,8 +1229,8 @@ def editor(dataframe1,
 
     #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, total)
-    from corpkit.interrogation import Interrogation, Results, Totals
-    output = Interrogation(results = Results(df), totals = Totals(total), query = the_options)
+    from corpkit.interrogation import Interrogation
+    output = Interrogation(results = df, totals = total, query = the_options)
 
     #print '\nResult (sample)\n'
     if print_info:

@@ -345,23 +345,23 @@ def new_project(name, loc = '.', root = False):
         time = strftime("%H:%M:%S", localtime())
         print '%s: New project created: "%s"' % (time, name)
 
-def interroplot(path, query):
+def interroplot(path, search, **kwargs):
     """Demo function for interrogator/plotter.
 
-        1. Interrogates path with Tregex query, 
+        1. Interrogates path with a query
         2. Gets relative frequencies
         3. Plots the top seven results
 
     :param path: path to corpus
     :type path: str
-    
-    :param query: Tregex query
-    :type query: str
-
+    :param search: search
     """
     import corpkit
     from corpkit import interrogator
-    quickstart = interrogator(path, 'w', query, show = ['w'])
+    if type(search) == str:
+        search = {'t': search}
+    kwargs['show'] = kwargs.pop('show', 'w')
+    quickstart = interrogator(path, search = search, **kwargs)
     edited = quickstart.edit('%', 'self', print_info = False)
     edited.plot(str(path))
 
@@ -380,18 +380,8 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     from time import localtime, strftime
     from corpkit.other import load
 
-    def get_root_note(kwargs):
-        if 'root' in kwargs.keys():
-            root = kwargs['root']
-        else:
-            root = False
-        if 'note' in kwargs.keys():
-            note = kwargs['note']
-        else:
-            note = False       
-        return root, note
-
-    root, note = get_root_note(kwargs)
+    root = kwargs.get('root', False)
+    note = kwargs.get('note', False)    
     
     datafiles = [f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f)) \
                  and f.endswith('.p')]
@@ -516,16 +506,51 @@ def make_multi(interrogation, indexnames = None):
     # get proper names for index if possible
     translator = {'f': 'Function',
                   'l': 'Lemma',
-                  'a': 'Distance',
+                  'r': 'Distance from root',
                   'w': 'Word',
                   't': 'Trees',
                   'i': 'Index',
                   'n': 'N-grams',
                   'p': 'POS',
                   'g': 'Governor',
-                  'd': 'Dependent'}
+                  'd': 'Dependent',
+                  'gp': 'Governor POS',
+                  'dp': 'Dependent POS',
+                  'gl': 'Governor lemma',
+                  'dl': 'Dependent lemma',
+                  'gf': 'Governor function',
+                  'df': 'Dependent function'}
     import numpy as np
     import pandas as pd
+
+    # if it's an interrodict, we want to make it into a single df
+    import corpkit
+    from corpkit.interrogation import Interrodict
+    if type(interrogation) == corpkit.interrogation.Interrodict:
+        import pandas as pd
+        import numpy as np
+
+        flat = [[], [], []]
+        for name, data in interrogation.items():
+            for subcorpus in list(data.results.index):
+                flat[0].append(name)
+                flat[1].append(subcorpus)
+                flat[2].append(data.results.ix[subcorpus])
+
+        flat[0] = np.array(flat[0])
+        flat[1] = np.array(flat[1])
+
+        df = pd.DataFrame(flat[2], index = flat[:2])
+        df.index.names = ['corpus', 'subcorpus']
+        df = df.fillna(0)
+        df = df.T
+        df[('Total', 'Total')] = df.sum(axis = 1)
+        df = df.sort(('Total', 'Total'), ascending = False).drop(('Total', 'Total'), axis = 1).T
+        try:
+            df = df.astype(int)
+        except:
+            pass
+        return df
     # determine datatype, get df and cols
     if type(interrogation) == pd.core.frame.DataFrame:
         df = interrogation
@@ -554,4 +579,5 @@ def make_multi(interrogation, indexnames = None):
     if indexnames:
         newdf.columns.names = indexnames
     pd.set_option('display.multi_sparse', False)
-    return newdf
+    from corpkit import editor
+    return editor(newdf)

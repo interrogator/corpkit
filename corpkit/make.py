@@ -56,6 +56,9 @@ def make_corpus(unparsed_corpus_path,
 
     # raise error if no tokeniser
     if tokenise:
+        newpath = unparsed_corpus_path + '-tokenised'
+        if os.path.isdir(newpath):
+            shutil.rmtree(newpath)
         import nltk
         if nltk_data_path:
             if nltk_data_path not in nltk.data.path:
@@ -87,6 +90,15 @@ def make_corpus(unparsed_corpus_path,
 
     if parse:
         if speaker_segmentation:
+            newpath = unparsed_corpus_path + '-stripped-parsed'
+            if os.path.isdir(newpath) and not root:
+                ans = raw_input('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
+                if ans.lower().strip()[0] == 'y':
+                    shutil.rmtree(newpath)
+                else:
+                    return
+            elif os.path.isdir(newpath) and root:
+                raise OSError('Path exists: %s' %newpath)
             print 'Processing speaker IDs ...'
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             to_parse = unparsed_corpus_path + '-stripped'

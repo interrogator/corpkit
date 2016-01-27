@@ -20,10 +20,12 @@ def load_verb_data():
     corpath = os.path.dirname(corpkit.__file__)
     baspat = os.path.dirname(corpath)
     dicpath = os.path.join(baspat, 'dictionaries')
+    lastpath = os.path.join(baspat, 'corpkit', 'dictionaries')
     
     paths_to_check = [resource_path('eng_verb_lexicon.p'),
                       os.path.join(dicpath, 'eng_verb_lexicon.p'),
-                      os.path.join(get_gui_resource_dir(), 'eng_verb_lexicon.p')]
+                      os.path.join(get_gui_resource_dir(), 'eng_verb_lexicon.p'),
+                      os.path.join(lastpath, 'eng_verb_lexicon.p')]
 
     for p in paths_to_check:
         try:

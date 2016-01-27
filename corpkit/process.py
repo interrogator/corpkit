@@ -44,10 +44,9 @@ def datareader(data, plaintext = False, **kwargs):
             options = ['-o', '-t']
 
             # if lemmatise, we get each word on a newline
-            if 'lemmatise' in kwargs:
-                if kwargs['lemmatise'] is True:
-                    query = r'__ <# (__ !< __)'
-                    options = ['-o']
+            if kwargs.get('lemmatise'):
+                query = r'__ <# (__ !< __)'
+                options = ['-o']
  
             # check for trees ...
             #while plaintext is False:
@@ -317,7 +316,7 @@ def tregex_engine(corpus = False,
         std_last_index = res.index(next(s for s in res \
                         if s.startswith('Parsed representation:')))
     res = res[std_last_index + n:]
-    res = [r.lstrip().rstrip() for r in res]
+    res = [r.lstrip().rstrip().replace('/', '-slash-') for r in res]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
@@ -630,12 +629,11 @@ def filtermaker(the_filter, case_sensitive = False):
             return False
     return output
 
-def searchfixer(search, query, datatype):
+def searchfixer(search, query, datatype = False):
     search_iterable = False
     if type(search) == str:
         search = search[0].lower()
-        if not search.lower().startswith('t') and not search.lower().startswith('n') \
-                                              and datatype == 'parse':
+        if not search.lower().startswith('t') and not search.lower().startswith('n'):
             search_iterable = True
             if query == 'any':
                 query = r'.*'
@@ -654,11 +652,17 @@ def is_number(s):
     return True
 
 def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
-             init = False, length = False):
+             init = False, length = False, **kwargs):
     """
     Animates progress bar in unique position in terminal
     Multiple progress bars not supported in jupyter yet.
     """
+
+    if kwargs.get('note'):
+        perc_done = count * 100.0 / float(length)
+        kwargs['note'].progvar.set(perc_done)
+        return
+
     if init:
         from textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)
@@ -695,3 +699,22 @@ def get_deps(sentence, dep_type):
         return sentence.collapsed_dependencies
     if dep_type == 'collapsed-ccprocessed-dependencies':
         return sentence.collapsed_ccprocessed_dependencies
+
+def timestring(input):
+    """print with time prepended"""
+    from time import localtime, strftime
+    thetime = strftime("%H:%M:%S", localtime())
+    print '%s: %s' % (thetime, input.lstrip())
+
+def makesafe(variabletext):
+    import re
+    from corpkit.process import is_number
+    variable_safe_r = re.compile('[\W_]+', re.UNICODE)
+    try:
+        txt = variabletext.name.split('.')[0].replace('-parsed', '')
+    except AttributeError:
+        txt = variabletext.split('.')[0].replace('-parsed', '')
+    variable_safe = re.sub(variable_safe_r, '', txt)
+    if is_number(variable_safe):
+        variable_safe = 'c' + variable_safe
+    return variable_safe

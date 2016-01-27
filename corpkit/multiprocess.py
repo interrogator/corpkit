@@ -1,4 +1,4 @@
-def pmultiquery(path, 
+def pmultiquery(corpus, 
     search,
     show = 'words',
     query = 'any', 
@@ -71,17 +71,18 @@ def pmultiquery(path,
     multiple_search = False
 
     denom = 1
-    if hasattr(path, '__iter__'):
+
+    if hasattr(corpus, '__iter__'):
         multiple_corpora = True
-        num_cores = best_num_parallel(num_cores, len(path))
-        denom = len(path)
+        num_cores = best_num_parallel(num_cores, len(corpus))
+        denom = len(corpus)
     elif hasattr(query, '__iter__'):
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
         denom = len(query)
-    elif hasattr(search, '__iter__'):
+    elif hasattr(search, '__iter__') and type(search) != dict:
         multiple_search = True
-        num_cores = best_num_parallel(num_cores, len(search.keys()))
+        num_cores = best_num_parallel(num_cores, len(search))
         denom = len(search.keys())
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
@@ -90,8 +91,8 @@ def pmultiquery(path,
     elif just_speakers:
         from corpkit.build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
-        if just_speakers == 'each':
-            just_speakers = get_speaker_names_from_xml_corpus(path)
+        if just_speakers == 'each' or just_speakers == ['each']:
+            just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
         if len(just_speakers) == 0:
             print 'No speaker name data found.'
             return
@@ -120,11 +121,10 @@ def pmultiquery(path,
     # with the iterable unique in every one
     ds = []
     if multiple_corpora:
-        path = sorted(path)
-        for index, p in enumerate(path):
-            name = os.path.basename(p)
+        for index, p in enumerate(corpus):
+            name = p.name
             a_dict = dict(d)
-            a_dict['path'] = p
+            a_dict['corpus'] = p
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -136,7 +136,7 @@ def pmultiquery(path,
     elif multiple_queries:
         for index, (name, q) in enumerate(query.items()):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = q
             a_dict['show'] = show
@@ -148,7 +148,7 @@ def pmultiquery(path,
     elif multiple_option:
         for index, (name, q) in enumerate(function_filter.items()):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -161,7 +161,7 @@ def pmultiquery(path,
     elif multiple_speakers:
         for index, name in enumerate(just_speakers):
             a_dict = dict(d)
-            a_dict['path'] = path
+            a_dict['corpus'] = corpus
             a_dict['search'] = search
             a_dict['query'] = query
             a_dict['show'] = show
@@ -172,10 +172,10 @@ def pmultiquery(path,
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_search:
-        for index, (name, v) in enumerate(search.items()):
+        for index, val in enumerate(search):
             a_dict = dict(d)
-            a_dict['path'] = path
-            a_dict['search'] = v
+            a_dict['corpus'] = corpus
+            a_dict['search'] = val
             a_dict['query'] = query
             a_dict['show'] = show
             a_dict['outname'] = name
@@ -188,28 +188,23 @@ def pmultiquery(path,
     time = strftime("%H:%M:%S", localtime())
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(path), num_cores, "\n              ".join(path), query) )
+           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), search) )
 
     elif multiple_queries:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(query), num_cores, os.path.basename(path), "', '".join(query.values())) )
+           "\n          Queries: '%s'\n" % (time, len(search), num_cores, corpus.name, "', '".join(search.values())) )
 
     elif multiple_search:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, len(search.keys()), num_cores, os.path.basename(path), str(search.values())))
+           "\n          Queries: '%s'\n" % (time, len(search.keys()), num_cores, corpus.name, str(search.values())))
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n\n          Query: '%s'" \
-           "\n          Interrogating corpus ... \n" % (time, num_cores, os.path.basename(path), query) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -239,11 +234,8 @@ def pmultiquery(path,
             failed = True
             print 'Multiprocessing failed.'
             raise
-        try:
-            res = sorted(res)
-        except:
+        if not res:
             failed = True
-            pass
     elif root or failed:
         res = []
         for index, d in enumerate(ds):
@@ -280,15 +272,11 @@ def pmultiquery(path,
     # save and return
     if 'c' not in show:
         out = {}
-        #print ''
-        for (name, data, stotal), d in zip(res, ds):
+        for interrog, d in zip(res, ds):
+            interrog.query = d
             for unpicklable in ['note', 'root']:
-                try:
-                    del d[unpicklable]
-                except KeyError:
-                    pass
-            output = Interrogation(results = data, totals = stotal, query = d)
-            out[name] = output
+                interrog.query.pop(unpicklable, None)
+            out[interrog.query['outname']] = interrog
     
         # could be wrong for unstructured corpora?
         if quicksave:
@@ -309,22 +297,40 @@ def pmultiquery(path,
             print "\n%s: %d files saved to %s" % ( time, len(out.keys()), fullpath)
 
         time = strftime("%H:%M:%S", localtime())
-        print "\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
-        
-        return out
+        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
+        from corpkit.interrogation import Interrodict
+        return Interrodict(out)
     # make query and total branch, save, return
     else:
-        out = pd.concat(res, axis = 1)
-        out = editor(out, sort_by = sort_by, print_info = False, keep_stats = False)
-        time = strftime("%H:%M:%S", localtime())
-        print '\n\n%s: Finished! %d unique results, %d total.' % (time, len(out.results.columns), out.totals.sum())
+        #print sers
+        #print ds
+        if multiple_corpora:
+            sers = [i.results for i in res]
+            out = pd.DataFrame(sers, index = [d['outname'] for d in ds])
+            out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
+            out = out.fillna(0) # nan to zero
+            out = out.astype(int) # float to int
+            out = out.T
+        else:
+            out = pd.concat([r.results for r in res], axis = 1)
+
+        # sort by total
+        if type(out) == pd.core.frame.DataFrame:
+            out.ix['Total-tmp'] = out.sum()
+            tot = out.ix['Total-tmp']
+            out = out[tot.argsort()[::-1]]
+            out = out.drop('Total-tmp', axis = 0)
+
+        out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
+        thetime = strftime("%H:%M:%S", localtime())
+        print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
         if quicksave:
             from corpkit.other import save
             save(out, quicksave)
         return out
 
 if __name__ == '__main__':
-    pmultiquery(path,
+    pmultiquery(corpus,
     search,
     query = False,
     show = 'words', 
