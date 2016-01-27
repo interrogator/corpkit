@@ -687,7 +687,7 @@ def interrogator(corpus,
                 results[subcorpus_name].append(result)
                 continue
 
-            result = format_tregex(result)
+            result = Counter(format_tregex(result))
 
             if conc:
                 op.append('-w')
