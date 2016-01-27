@@ -601,6 +601,8 @@ def interrogator(corpus,
             if search['t'] == 'any':
                 search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
 
+        query = search['t']
+
     ############################################
     # Make iterable for corpus/subcorpus/file  #
     ############################################

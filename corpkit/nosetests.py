@@ -86,7 +86,7 @@ def test_interro_multiindex_tregex_justspeakers():
 def test_conc():
     print 'Testing concordancer'
     data = corp.concordance({'f': 'amod'})
-    assert_equals('corpus linguistics and', data.ix[0][3])
+    assert_equals(data.ix[0]['m'], 'small')
 
 def test_edit():
     print 'Testing simple edit'

@@ -219,11 +219,15 @@ def pmultiquery(corpus,
         print '\n' * (len(ds) - 2)
         for dobj in ds:
             linenum = dobj['paralleling']
-            with terminal.location(0, terminal.height - (linenum + 1)):
-                # this is a really bad idea.
-                thetime = strftime("%H:%M:%S", localtime())
-                num_spaces = 26 - len(dobj['outname'])
-                print '%s: QUEUED: %s' % (thetime, dobj['outname'])
+            # this try handles nosetest problems in sublime text
+            try:
+                with terminal.location(0, terminal.height - (linenum + 1)):
+                    # this is a really bad idea.
+                    thetime = strftime("%H:%M:%S", localtime())
+                    num_spaces = 26 - len(dobj['outname'])
+                    print '%s: QUEUED: %s' % (thetime, dobj['outname'])
+            except:
+                pass
         
         #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
