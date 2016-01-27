@@ -652,7 +652,8 @@ def parse_corpus(proj_path = False,
         if type(operations) == list:
             operations = ','.join(operations)
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
-        proc = subprocess.Popen(['java', '-cp', 
+        try:
+            proc = subprocess.Popen(['java', '-cp', 
                      'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
@@ -662,6 +663,18 @@ def parse_corpus(proj_path = False,
                      '-noClobber',
                      '-outputDirectory', new_corpus_path, 
                      '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
+        # maybe a problem with stdout. sacrifice it if need be
+        except AttributeError:
+            proc = subprocess.Popen(['java', '-cp', 
+                     'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     '-Xmx%sm' % str(memory_mb), 
+                     'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
+                     '-annotators', 
+                     operations, 
+                     '-filelist', filelist,
+                     '-noClobber',
+                     '-outputDirectory', new_corpus_path, 
+                     '--parse.flags', ' -makeCopulaHead'])            
         #p = TextProgressBar(num_files_to_parse)
         while proc.poll() is None:
             sys.stdout = stdout
@@ -972,7 +985,7 @@ def get_speaker_names_from_xml_corpus(path):
     for filepath in list_of_files:
         res = get_names(filepath)
         if not res:
-            return False
+            continue
         for i in res:
             if i not in names:
                 names.append(i)
