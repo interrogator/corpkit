@@ -313,6 +313,14 @@ def pmultiquery(corpus,
             out = out.T
         else:
             out = pd.concat([r.results for r in res], axis = 1)
+
+        # sort by total
+        if type(out) == pd.core.frame.DataFrame:
+            out.ix['Total-tmp'] = out.sum()
+            tot = out.ix['Total-tmp']
+            out = out[tot.argsort()[::-1]]
+            out = out.drop('Total-tmp', axis = 0)
+
         out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
         thetime = strftime("%H:%M:%S", localtime())
         print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
