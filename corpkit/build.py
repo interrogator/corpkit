@@ -859,7 +859,7 @@ def make_no_id_corpus(pth, newpth):
     names = []
     for f in files:
         good_data = []
-        with open(f) as fo:
+        with open(f, 'r') as fo:
             data = fo.read().splitlines()
             for datum in data:
                 matched = re.search(idregex, datum)
