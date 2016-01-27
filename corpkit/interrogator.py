@@ -76,8 +76,10 @@ def interrogator(corpus,
         from collections import OrderedDict
         if hasattr(corpus, '__iter__'):
             im = True
+        # so we can do search = 't', query = ['NP', 'VP']:
         if type(query) == list:
-            query = {c.title(): c for c in query}
+            if query != search.values()[0] or len(search.keys()) > 1:
+                query = {c.title(): c for c in query}
         if type(query) == dict or type(query) == OrderedDict:
             im = True
         if just_speakers:
@@ -326,6 +328,7 @@ def interrogator(corpus,
 
     def tok_by_list(pattern, list_of_toks, **kwargs):
         """search for regex in plaintext corpora"""
+        import re
         if type(pattern) == str:
             pattern = [pattern]
         result = []
@@ -367,6 +370,7 @@ def interrogator(corpus,
 
     def tok_by_reg(pattern, list_of_toks, **kwargs):
         """search for regex in plaintext corpora"""
+        import re
         try:
             comped = re.compile(pattern)
         except:
@@ -385,10 +389,11 @@ def interrogator(corpus,
         return matches
 
     def plaintext_regex_search(pattern, plaintext_data, **kwargs):
-        """search for regex in plaintext corpora"""
-        result = []
-        #if not pattern.startswith(r'\b') and not pattern.endswith(r'\b'):
-            #pattern = r'\b' + pattern + '\b'
+        """search for regex in plaintext corpora
+
+        it searches over lines, so the user needs to be careful.
+        """
+        import re
         try:
             compiled_pattern = re.compile(pattern)
         except:
@@ -409,22 +414,10 @@ def interrogator(corpus,
 
     def plaintext_simple_search(pattern, plaintext_data, **kwargs):
         """search for tokens in plaintext corpora"""
+        import re
+        result = []
         if type(pattern) == str:
             pattern = [pattern]
-        result = []
-        try:
-            tmp = re.compile(pattern)
-        except:
-            import traceback
-            import sys
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            lst = traceback.format_exception(exc_type, exc_value,
-                          exc_traceback)
-            error_message = lst[-1]
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Query %s' % (thetime, error_message)
-            return 'Bad query'
-
         for p in pattern:
             if case_sensitive:
                 pat = re.compile(r'\b' + re.escape(p) + r'\b')
@@ -434,7 +427,6 @@ def interrogator(corpus,
             for m in range(len(matches)):
                 result.append(p)
         return result
-
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
@@ -582,8 +574,8 @@ def interrogator(corpus,
     if kwargs.get('printstatus', True):
         thetime = strftime("%H:%M:%S", localtime())
 
-        sformat = '\n          '.join(['%s: %s' %(k, v) for k, v in search.items()])
-        welcome = '\n%s: %s %s ...\n          %s\n          %s\n' % (thetime, message, corpus.name, optiontext, sformat)
+        sformat = '\n                 '.join(['%s: %s' %(k, v) for k, v in search.items()])
+        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % (thetime, message, corpus.name, optiontext, sformat)
         print welcome
 
     current_file = 0
@@ -690,13 +682,14 @@ def interrogator(corpus,
 
                 elif corpus.datatype == 'tokens':
                     import pickle
-                    data = pickle.load(open(filepath, "rb"))
-                    res = searcher(search.values[0], data)
+                    with open(f.path, "rb") as fo:
+                        data = pickle.load(fo)
+                    res = searcher(search.values()[0], data)
 
                 elif corpus.datatype == 'plaintext':
                     with open(f.path, 'rb') as data:
                         data = data.read()
-                        res = searcher(search.values[0], data)
+                        res = searcher(search.values()[0], data)
 
                 if res:
                     for i in res:
@@ -825,6 +818,7 @@ def interrogator(corpus,
                 the_big_dict[word] = [subcorp_result[word] for subcorp_result in results.values()]
             # turn master dict into dataframe, sorted
             df = DataFrame(the_big_dict, index = sorted(results.keys()))
+
             numentries = len(df.columns)
             tot = df.sum(axis = 1)
             total_total = df.sum().sum()
@@ -843,6 +837,14 @@ def interrogator(corpus,
                         numentries = len(df.index)
                         total_total = tot
 
+
+        # sort by total
+        if type(df) == pd.core.frame.DataFrame:
+            df.ix['Total-tmp'] = df.sum()
+            tot = df.ix['Total-tmp']
+            df = df[tot.argsort()[::-1]]
+            df = df.drop('Total-tmp', axis = 0)
+
         # format final string
         if kwargs.get('printstatus', True):
             thetime = strftime("%H:%M:%S", localtime())
@@ -850,7 +852,7 @@ def interrogator(corpus,
             if countmode:
                 finalstring += ' %d matches.' % tot
             else:
-                finalstring += ' %d unique results, %d total occurrences' % (numentries, total_total)
+                finalstring += ' %d unique results, %d total occurrences.' % (numentries, total_total)
             print finalstring
 
         return Interrogation(results = df, totals = tot, query = locs)
