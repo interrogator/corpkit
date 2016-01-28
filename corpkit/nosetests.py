@@ -26,7 +26,7 @@ def test_parse():
     print 'Testing parser'
     unparsed = Corpus(unparsed_path)
     try:
-        shutil.rmtree(parsed_path)
+        shutil.rmtree('data/parsed')
     except:
         pass
     parsed = unparsed.parse()
@@ -37,6 +37,10 @@ test_parse.slow = 1
 def test_parse_speakseg(skipassert = False):
     print 'Testing parser with speaker segmentation'
     unparsed = Corpus(unparsed_path)
+    try:
+        shutil.rmtree(parsed_path)
+    except:
+        pass
     parsed = unparsed.parse(speaker_segmentation = True)
     if skipassert:
         assert_equals(list([i.name for i in parsed.files]), ['intro.txt.xml', 'body.txt.xml'])
