@@ -68,3 +68,5 @@ corpkit/testinggroundtwo.py
 corpkit/log*
 *.app/
 .ipynb_checkpoints/
+corpkit/custom_wordlists.txt
+corpkit/tool_settings.ini
