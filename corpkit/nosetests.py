@@ -22,8 +22,13 @@ def test_corpus_class():
     assert_equals(os.path.basename(unparsed_path), unparsed.name)
  
 def test_parse():
+    import shutil
     print 'Testing parser'
     unparsed = Corpus(unparsed_path)
+    try:
+        shutil.rmtree(parsed_path)
+    except:
+        pass
     parsed = unparsed.parse()
     assert_equals(list([i.name for i in parsed.files]), ['intro.txt.xml', 'body.txt.xml'])
 
