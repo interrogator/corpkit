@@ -840,29 +840,39 @@ yeah          -3179.90            will      -679.06
 <a name="parallel-processing"></a>
 ## Parallel processing
 
-`interrogate()` can also parallel-process multiple corpora, speaker IDs, or queries.
+`interrogate()` can also do parallel-processing. You can generally improve the speed of an interrogation by setting the `multiprocess` argument:
+
+```python
+# set num of parallel processes manually
+>>> data = corpus.interrogate({'t': r'/NN.?/ >># NP'}, multiprocess = 3)
+# set num of parallel processes automatically
+>>> data = corpus.interrogate({'t': r'/NN.?/ >># NP'}, multiprocess = True)
+```
+
+Multiprocessing is particularly useful, however, when you are interested in multiple corpora, speaker IDs, or search queries. The sections below explain how.
 
 <a name="multiple-corpora"></a>
 #### Multiple corpora
 
-To parallel-process multiple corpora, first, wrap them up as a `Corpora()` object:
+To parallel-process multiple corpora, first, wrap them up as a `Corpora()` object. To do this, you can pass in:
+
+1. a list of paths
+2. a list of `Corpus()` objects
+3. A single path string that contains corpora
 
 ```python
 >>> import os
 >>> from corpkit.corpus import Corpora
 
-# make a list of Corpus objects, then pass it to Corpora()
->>> corpus_list = [Corpus(os.path.join(datadir, d)) for d in os.listdir(datadir)]
+>>> corpus_list = [os.path.join(datadir, d) for d in os.listdir(datadir)]
 >>> corpora = Corpora(corpus_list)
 
 # interrogate by parallel processing, 4 at a time
->>> output = corpora.interrogate('t', r'/NN.?/ < /(?i)^h/', show = 'l', num_proc = 4)
+>>> output = corpora.interrogate('t', r'/NN.?/ < /(?i)^h/', show = 'l', multiprocess = 4)
 
 ```
 
-`num_proc` dictates the number of parallel processes to start. If omitted, you'll get as many processes as your machine has cores.
-
-The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The only exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
+The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The main exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
 
 <a name="multiple-speakers"></a>
 #### Multiple speakers
