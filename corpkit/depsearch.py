@@ -228,7 +228,7 @@ def dep_searcher(sents,
         if mode == 'all':
             from collections import Counter
             counted = Counter(lks)
-            lks = [k for k, v in counted.items() if v >= len(search.keys())]
+            lks = [k for k, v in sorted(counted.items()) if v >= len(search.keys())]
         return lks
 
     result = []

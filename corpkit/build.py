@@ -620,7 +620,7 @@ def parse_corpus(proj_path = False,
             if any([f.endswith('.txt') for f in fs]):
                 print 'Folder containing tokens already exists: "%s-tokenised"' % basecp  
                 return False          
-    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
+    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
     if corenlppath is False:
         home = os.path.expanduser("~")
@@ -652,9 +652,13 @@ def parse_corpus(proj_path = False,
         if type(operations) == list:
             operations = ','.join(operations)
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
+        # get corenlp version number
+        import re
+        reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
+        fver = next(re.search(reg, s).group(1) for s in os.listdir('.') if re.search(reg, s))
         try:
             proc = subprocess.Popen(['java', '-cp', 
-                     'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
@@ -666,7 +670,7 @@ def parse_corpus(proj_path = False,
         # maybe a problem with stdout. sacrifice it if need be
         except AttributeError:
             proc = subprocess.Popen(['java', '-cp', 
-                     'stanford-corenlp-3.5.2.jar:stanford-corenlp-3.5.2-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
@@ -780,8 +784,8 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
 def corenlp_exists(corenlppath = False):
     import corpkit
     import os
-    important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
-                       'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
+    important_files = ['stanford-corenlp-3.6.0-javadoc.jar', 'stanford-corenlp-3.6.0-models.jar',
+                       'stanford-corenlp-3.6.0-sources.jar', 'stanford-corenlp-3.6.0.jar']
     if corenlppath is False:
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')

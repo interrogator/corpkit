@@ -18,9 +18,11 @@ def interrogator(corpus,
             only_unique = False,
             random = False,
             only_format_match = False,
-            num_proc = 'default',
+            multiprocess = False,
             spelling = False,
             regex_nonword_filter = r'[A-Za-z0-9:_]',
+            gramsize = 2,
+            split_contractions = False,
             **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
@@ -213,7 +215,6 @@ def interrogator(corpus,
 
     def uniquify(conc_lines):
         from collections import OrderedDict
-        od = OrderedDict()
         unique_lines = []
         checking = []
         for index, (f, speakr, start, middle, end) in enumerate(conc_lines):
@@ -360,7 +361,6 @@ def interrogator(corpus,
 
     def tok_ngrams(pattern, list_of_toks, split_contractions = True):
         from collections import Counter
-        global gramsize
         import re
         ngrams = Counter()
         result = []
@@ -381,6 +381,7 @@ def interrogator(corpus,
                 ngrams[' '.join(the_gram)] += 1
             except IndexError:
                 pass
+
         # turn counter into list of results
         for k, v in ngrams.items():
             if v > 1:
@@ -482,6 +483,12 @@ def interrogator(corpus,
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
+    
+    locs['search'] = search
+    locs['query'] = query
+    locs['just_speakers'] = just_speakers
+    locs['corpus'] = corpus
+
     if im:
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
@@ -495,7 +502,7 @@ def interrogator(corpus,
     # check if just counting
     countmode = 'c' in show
     # where we are at in interrogation
-    current_file = 0
+    current_iter = 0
 
     ############################################
     # Determine the search function to be used #
@@ -508,7 +515,8 @@ def interrogator(corpus,
     else:
         if corpus.datatype == 'plaintext':
             if search.get('n'):
-                searcher = plaintext_ngram
+                raise NotImplementedError('Use a tokenised corpus for n-gramming.')
+                #searcher = plaintext_ngram
                 optiontext = 'n-grams via plaintext'
             if search.get('w'):
                 if kwargs.get('regex', True):
@@ -563,41 +571,43 @@ def interrogator(corpus,
         optiontext = 'Searching parse trees'
         if 'p' in show or 'pl' in show:
             translated_option = 'u'
-            if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'__ < (/%s/ !< __)' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+            if search['t'] == 'any':
+                search['t'] = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 't' in show:
             translated_option = 'o'
-            if type(query) == list:
-                query = r'__ < (/%s/ !< __)' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'__ < (/%s/ !< __)' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
+            if search['t'] == 'any':
+                search['t'] = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
         elif 'w' in show:
             translated_option = 't'
-            if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'c' in show:
             count_results = {}
             only_count = True
             translated_option = 'C'
-            if type(query) == list:
-                query = r'/%s/ !< __'  % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __'  % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'l' in show:
             translated_option = 't'
-            if type(query) == list:
-                query = r'/%s/ !< __' % as_regex(query, boundaries = 'line', 
+            if type(search['t']) == list:
+                search['t'] = r'/%s/ !< __' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
-            if query == 'any':
-                query = r'/.?[A-Za-z0-9].?/ !< __'
+            if search['t'] == 'any':
+                search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
+
+        query = search['t']
 
     ############################################
     # Make iterable for corpus/subcorpus/file  #
@@ -609,7 +619,7 @@ def interrogator(corpus,
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for k, v in corpus.structure.items():
+        for k, v in sorted(corpus.structure.items()):
             to_iterate_over[(k.name, k.path)] = v
     if files_as_subcorpora:
         to_iterate_over = {}
@@ -627,7 +637,7 @@ def interrogator(corpus,
     if kwargs.get('printstatus', True):
         thetime = strftime("%H:%M:%S", localtime())
 
-        sformat = '\n                 '.join(['%s: %s' %(k, v) for k, v in search.items()])
+        sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
         welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
                   (thetime, message, corpus.name, optiontext, sformat)
         print welcome
@@ -649,7 +659,8 @@ def interrogator(corpus,
                 'note': note,
                 'length': total_files}
 
-    if kwargs.get('paralleling'):
+    term = None
+    if kwargs.get('paralleling', None) is not None:
         from blessings import Terminal
         term = Terminal()
         par_args['terminal'] = term
@@ -658,7 +669,7 @@ def interrogator(corpus,
     outn = kwargs.get('outname', '')
     if outn:
         outn = outn + ': '
-    tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
+    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
     p = animator(None, None, init = True, tot_string = tstr, **par_args)
 
     ############################################
@@ -675,9 +686,9 @@ def interrogator(corpus,
         # tregex over subcorpora, not files
         if simple_tregex_mode:
 
-            current_file += 1
-            tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
-            animator(p, current_file, tstr, **par_args)
+            current_iter += 1
+            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+            animator(p, current_iter, tstr, **par_args)
 
             op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
@@ -708,9 +719,9 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
-                current_file += 1
-                tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
-                animator(p, current_file, tstr, **par_args)
+                current_iter += 1
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                animator(p, current_iter, tstr, **par_args)
 
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
@@ -745,7 +756,7 @@ def interrogator(corpus,
                     import pickle
                     with open(f.path, "rb") as fo:
                         data = pickle.load(fo)
-                    res = searcher(search.values()[0], data)
+                    res = searcher(search.values()[0], data, split_contractions = split_contractions)
 
                 elif corpus.datatype == 'plaintext':
                     with open(f.path, 'rb') as data:
@@ -764,7 +775,7 @@ def interrogator(corpus,
                             line = [b.lower() for b in line]
                         if spelling:
                             line = [correct_spelling(b) for b in line]
-                        results[subcorpus_name] += line
+                        results[subcorpus_name] += [line]
 
                 # do lowercasing and spelling
                 else:
@@ -783,18 +794,25 @@ def interrogator(corpus,
     #   Tally everything into big DataFrame    #
     ############################################
 
+    if kwargs.get('paralleling', None) is not None:
+        if term:
+            try:
+                with term.location(0, term.height - (par_args['linenum'] + 1)):
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: [**********************100%% (%s]' % (thetime, kwargs['outname'] + ')'.ljust(26, '*'))
+            except TypeError:
+                pass
     if conc:
         all_conc_lines = []
-        for sc_name, resu in results.items():
+        for sc_name, resu in sorted(results.items()):
 
             if only_unique:
                 unique_results = uniquify(resu)
             else:
                 unique_results = resu
-
             #make into series
             pindex = 'c f s l m r'.encode('utf-8').split()
-
             for fname, spkr, start, word, end in unique_results:
                 spkr = unicode(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
@@ -884,8 +902,8 @@ def interrogator(corpus,
         if type(df) == pd.core.frame.DataFrame:
             if not df.empty:   
                 df.ix['Total-tmp'] = df.sum()
-                tot = df.ix['Total-tmp']
-                df = df[tot.argsort()[::-1]]
+                the_tot = df.ix['Total-tmp']
+                df = df[the_tot.argsort()[::-1]]
                 df = df.drop('Total-tmp', axis = 0)
 
         # format final string

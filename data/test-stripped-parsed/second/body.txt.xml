@@ -658,95 +658,377 @@
 <speaker>PER0</speaker>
 </token>
 <token id="7">
+<word>during</word>
+<lemma>during</lemma>
+<characteroffsetbegin>210</characteroffsetbegin>
+<characteroffsetend>216</characteroffsetend>
+<pos>IN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="8">
+<word>parsing</word>
+<lemma>parsing</lemma>
+<characteroffsetbegin>217</characteroffsetbegin>
+<characteroffsetend>224</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="9">
+<word>,</word>
+<lemma>,</lemma>
+<characteroffsetbegin>224</characteroffsetbegin>
+<characteroffsetend>225</characteroffsetend>
+<pos>,</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="10">
+<word>concordancing</word>
+<lemma>concordancing</lemma>
+<characteroffsetbegin>226</characteroffsetbegin>
+<characteroffsetend>239</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="11">
+<word>and</word>
+<lemma>and</lemma>
+<characteroffsetbegin>240</characteroffsetbegin>
+<characteroffsetend>243</characteroffsetend>
+<pos>CC</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="12">
+<word>interrogating</word>
+<lemma>interrogate</lemma>
+<characteroffsetbegin>244</characteroffsetbegin>
+<characteroffsetend>257</characteroffsetend>
+<pos>VBG</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="13">
 <word>.</word>
 <lemma>.</lemma>
-<characteroffsetbegin>209</characteroffsetbegin>
-<characteroffsetend>210</characteroffsetend>
+<characteroffsetbegin>257</characteroffsetbegin>
+<characteroffsetend>258</characteroffsetend>
 <pos>.</pos>
 <ner>O</ner>
 <speaker>PER0</speaker>
 </token>
 </tokens>
-<parse>(ROOT (S (NP (NP (RB Just) (VBG checking)) (SBAR (S (NP (PRP I)) (VP (VBP 'm) (VP (VBG getting)))))) (VP (VBN noticed)) (. .))) </parse>
+<parse>(ROOT (S (S (VP (ADVP (RB Just)) (VBG checking) (NP (PRP I)))) (VP (VBP 'm) (VP (VP (VBG getting) (S (VP (VBN noticed) (PP (IN during) (NP (NP (NN parsing)) (, ,) (NP (NN concordancing))))))) (CC and) (VP (VBG interrogating)))) (. .))) </parse>
 <dependencies type="basic-dependencies">
 <dep type="root">
 <governor idx="0">ROOT</governor>
-<dependent idx="6">noticed</dependent>
+<dependent idx="5">getting</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="6">noticed</governor>
+<dep type="advmod">
+<governor idx="2">checking</governor>
 <dependent idx="1">Just</dependent>
 </dep>
-<dep type="amod">
-<governor idx="1">Just</governor>
+<dep type="csubj">
+<governor idx="5">getting</governor>
 <dependent idx="2">checking</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="5">getting</governor>
+<dep type="dobj">
+<governor idx="2">checking</governor>
 <dependent idx="3">I</dependent>
 </dep>
 <dep type="aux">
 <governor idx="5">getting</governor>
 <dependent idx="4">'m</dependent>
 </dep>
-<dep type="acl:relcl">
-<governor idx="1">Just</governor>
-<dependent idx="5">getting</dependent>
+<dep type="dep">
+<governor idx="5">getting</governor>
+<dependent idx="6">noticed</dependent>
+</dep>
+<dep type="case">
+<governor idx="8">parsing</governor>
+<dependent idx="7">during</dependent>
+</dep>
+<dep type="nmod">
+<governor idx="6">noticed</governor>
+<dependent idx="8">parsing</dependent>
+</dep>
+<dep type="appos">
+<governor idx="8">parsing</governor>
+<dependent idx="10">concordancing</dependent>
+</dep>
+<dep type="cc">
+<governor idx="5">getting</governor>
+<dependent idx="11">and</dependent>
+</dep>
+<dep type="conj">
+<governor idx="5">getting</governor>
+<dependent idx="12">interrogating</dependent>
 </dep>
 </dependencies>
 <dependencies type="collapsed-dependencies">
 <dep type="root">
 <governor idx="0">ROOT</governor>
-<dependent idx="6">noticed</dependent>
+<dependent idx="5">getting</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="6">noticed</governor>
+<dep type="advmod">
+<governor idx="2">checking</governor>
 <dependent idx="1">Just</dependent>
 </dep>
-<dep type="amod">
-<governor idx="1">Just</governor>
+<dep type="csubj">
+<governor idx="5">getting</governor>
 <dependent idx="2">checking</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="5">getting</governor>
+<dep type="dobj">
+<governor idx="2">checking</governor>
 <dependent idx="3">I</dependent>
 </dep>
 <dep type="aux">
 <governor idx="5">getting</governor>
 <dependent idx="4">'m</dependent>
 </dep>
-<dep type="acl:relcl">
-<governor idx="1">Just</governor>
-<dependent idx="5">getting</dependent>
+<dep type="dep">
+<governor idx="5">getting</governor>
+<dependent idx="6">noticed</dependent>
+</dep>
+<dep type="case">
+<governor idx="8">parsing</governor>
+<dependent idx="7">during</dependent>
+</dep>
+<dep type="nmod:during">
+<governor idx="6">noticed</governor>
+<dependent idx="8">parsing</dependent>
+</dep>
+<dep type="appos">
+<governor idx="8">parsing</governor>
+<dependent idx="10">concordancing</dependent>
+</dep>
+<dep type="cc">
+<governor idx="5">getting</governor>
+<dependent idx="11">and</dependent>
+</dep>
+<dep type="conj:and">
+<governor idx="5">getting</governor>
+<dependent idx="12">interrogating</dependent>
 </dep>
 </dependencies>
 <dependencies type="collapsed-ccprocessed-dependencies">
 <dep type="root">
 <governor idx="0">ROOT</governor>
-<dependent idx="6">noticed</dependent>
+<dependent idx="5">getting</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="6">noticed</governor>
+<dep type="advmod">
+<governor idx="2">checking</governor>
 <dependent idx="1">Just</dependent>
 </dep>
-<dep type="amod">
-<governor idx="1">Just</governor>
+<dep type="csubj">
+<governor idx="5">getting</governor>
 <dependent idx="2">checking</dependent>
 </dep>
-<dep type="nsubj">
-<governor idx="5">getting</governor>
+<dep extra="true" type="csubj">
+<governor idx="12">interrogating</governor>
+<dependent idx="2">checking</dependent>
+</dep>
+<dep type="dobj">
+<governor idx="2">checking</governor>
 <dependent idx="3">I</dependent>
 </dep>
 <dep type="aux">
 <governor idx="5">getting</governor>
 <dependent idx="4">'m</dependent>
 </dep>
-<dep type="acl:relcl">
-<governor idx="1">Just</governor>
-<dependent idx="5">getting</dependent>
+<dep type="dep">
+<governor idx="5">getting</governor>
+<dependent idx="6">noticed</dependent>
+</dep>
+<dep type="case">
+<governor idx="8">parsing</governor>
+<dependent idx="7">during</dependent>
+</dep>
+<dep type="nmod:during">
+<governor idx="6">noticed</governor>
+<dependent idx="8">parsing</dependent>
+</dep>
+<dep type="appos">
+<governor idx="8">parsing</governor>
+<dependent idx="10">concordancing</dependent>
+</dep>
+<dep type="cc">
+<governor idx="5">getting</governor>
+<dependent idx="11">and</dependent>
+</dep>
+<dep type="conj:and">
+<governor idx="5">getting</governor>
+<dependent idx="12">interrogating</dependent>
+</dep>
+</dependencies>
+<speakername>NEWCOMER</speakername></sentence>
+<sentence id="4">
+<tokens>
+<token id="1">
+<word>This</word>
+<lemma>this</lemma>
+<characteroffsetbegin>259</characteroffsetbegin>
+<characteroffsetend>263</characteroffsetend>
+<pos>DT</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="2">
+<word>corpus</word>
+<lemma>corpus</lemma>
+<characteroffsetbegin>264</characteroffsetbegin>
+<characteroffsetend>270</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="3">
+<word>linguistics</word>
+<lemma>linguistics</lemma>
+<characteroffsetbegin>271</characteroffsetbegin>
+<characteroffsetend>282</characteroffsetend>
+<pos>NNS</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="4">
+<word>is</word>
+<lemma>be</lemma>
+<characteroffsetbegin>283</characteroffsetbegin>
+<characteroffsetend>285</characteroffsetend>
+<pos>VBZ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="5">
+<word>hard</word>
+<lemma>hard</lemma>
+<characteroffsetbegin>286</characteroffsetbegin>
+<characteroffsetend>290</characteroffsetend>
+<pos>JJ</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="6">
+<word>work</word>
+<lemma>work</lemma>
+<characteroffsetbegin>291</characteroffsetbegin>
+<characteroffsetend>295</characteroffsetend>
+<pos>NN</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+<token id="7">
+<word>!</word>
+<lemma>!</lemma>
+<characteroffsetbegin>295</characteroffsetbegin>
+<characteroffsetend>296</characteroffsetend>
+<pos>.</pos>
+<ner>O</ner>
+<speaker>PER0</speaker>
+</token>
+</tokens>
+<parse>(ROOT (S (NP (DT This) (NN corpus) (NNS linguistics)) (VP (VBZ is) (NP (JJ hard) (NN work))) (. !))) </parse>
+<dependencies type="basic-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">linguistics</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="compound">
+<governor idx="3">linguistics</governor>
+<dependent idx="2">corpus</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="4">is</governor>
+<dependent idx="3">linguistics</dependent>
+</dep>
+<dep type="amod">
+<governor idx="6">work</governor>
+<dependent idx="5">hard</dependent>
+</dep>
+<dep type="xcomp">
+<governor idx="4">is</governor>
+<dependent idx="6">work</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">linguistics</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="compound">
+<governor idx="3">linguistics</governor>
+<dependent idx="2">corpus</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="4">is</governor>
+<dependent idx="3">linguistics</dependent>
+</dep>
+<dep type="amod">
+<governor idx="6">work</governor>
+<dependent idx="5">hard</dependent>
+</dep>
+<dep type="xcomp">
+<governor idx="4">is</governor>
+<dependent idx="6">work</dependent>
+</dep>
+</dependencies>
+<dependencies type="collapsed-ccprocessed-dependencies">
+<dep type="root">
+<governor idx="0">ROOT</governor>
+<dependent idx="4">is</dependent>
+</dep>
+<dep type="det">
+<governor idx="3">linguistics</governor>
+<dependent idx="1">This</dependent>
+</dep>
+<dep type="compound">
+<governor idx="3">linguistics</governor>
+<dependent idx="2">corpus</dependent>
+</dep>
+<dep type="nsubj">
+<governor idx="4">is</governor>
+<dependent idx="3">linguistics</dependent>
+</dep>
+<dep type="amod">
+<governor idx="6">work</governor>
+<dependent idx="5">hard</dependent>
+</dep>
+<dep type="xcomp">
+<governor idx="4">is</governor>
+<dependent idx="6">work</dependent>
 </dep>
 </dependencies>
 <speakername>NEWCOMER</speakername></sentence>
 </sentences>
+<coreference>
+<coreference>
+<mention representative="true">
+<sentence>4</sentence>
+<start>1</start>
+<end>4</end>
+          3
+          <text>This corpus linguistics</text>
+</mention>
+<mention>
+<sentence>1</sentence>
+<start>1</start>
+<end>3</end>
+          2
+          <text>Corpus linguistics</text>
+</mention>
+</coreference>
+</coreference>
 </document>
 </root>

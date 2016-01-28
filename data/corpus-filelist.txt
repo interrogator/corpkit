@@ -1,0 +1,2 @@
+/Users/daniel/Work/corpkit/corpkit/data/test-stripped/first/intro.txt
+/Users/daniel/Work/corpkit/corpkit/data/test-stripped/second/body.txt
