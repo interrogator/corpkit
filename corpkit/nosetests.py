@@ -26,7 +26,7 @@ def test_parse():
     print 'Testing parser'
     unparsed = Corpus(unparsed_path)
     try:
-        shutil.rmtree('data/parsed')
+        shutil.rmtree('data/test-parsed')
     except:
         pass
     parsed = unparsed.parse()
@@ -37,12 +37,13 @@ test_parse.slow = 1
 def test_parse_speakseg(skipassert = False):
     print 'Testing parser with speaker segmentation'
     unparsed = Corpus(unparsed_path)
+    import shutil
     try:
         shutil.rmtree(parsed_path)
     except:
         pass
     parsed = unparsed.parse(speaker_segmentation = True)
-    if skipassert:
+    if not skipassert:
         assert_equals(list([i.name for i in parsed.files]), ['intro.txt.xml', 'body.txt.xml'])
 
 test_parse_speakseg.slow = 1
@@ -55,19 +56,27 @@ else:
 def test_interro1():
     print 'Testing interrogation 1'
     data = corp.interrogate('t', r'__ < /JJ.?/')
-    assert_equals(data.results.shape, (2, 5))
+    assert_equals(data.results.shape, (2, 6))
 
 def test_interro2():
     print 'Testing interrogation 2'
     data = corp.interrogate({'t': r'__ < /JJ.?/'})
-    assert_equals(data.results.shape, (2, 5))
+    assert_equals(data.results.shape, (2, 6))
 
 def test_interro3():
     print 'Testing interrogation 3'
     data = corp.interrogate({'w': r'^c'}, exclude = {'l': r'check'}, show = ['l', 'f'])
-    lst = ['corpus/nsubjpass', 'corpkit/nmod:poss', 'continuum/nmod:on', 'conduit/nmod:as', 
-           'concordancing/nmod:like', 'computational/amod', 'case/nmod:in', 'can/aux']
-    assert_equals(list(data.results.columns), lst)
+    st = set(['corpus/nsubjpass',
+             'corpus/compound',
+             'corpkit/nmod:poss',
+             'continuum/nmod:on',
+             'conduit/nmod:as',
+             'concordancing/nmod:like',
+             'concordancing/appos',
+             'computational/amod',
+             'case/nmod:in',
+             'can/aux'])
+    assert_equals(set(list(data.results.columns)), st)
 
 def test_interro4():
     print 'Testing interrogation 4'
@@ -101,5 +110,5 @@ def test_edit():
     print 'Testing simple edit'
     data = corp.interrogate({'t': r'__ !< __'})
     data = data.edit('%', 'self')
-    assert_equals(data.results.iloc[0,0], 8.1081081081081088)
+    assert_equals(data.results.iloc[0,0], 11.627906976744185)
 
