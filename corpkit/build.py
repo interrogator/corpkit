@@ -652,9 +652,13 @@ def parse_corpus(proj_path = False,
         if type(operations) == list:
             operations = ','.join(operations)
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
+        # get corenlp version number
+        import re
+        reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
+        fver = next(re.search(reg, s).group(1) for s in os.listdir('.') if re.search(reg, s))
         try:
             proc = subprocess.Popen(['java', '-cp', 
-                     'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
@@ -666,7 +670,7 @@ def parse_corpus(proj_path = False,
         # maybe a problem with stdout. sacrifice it if need be
         except AttributeError:
             proc = subprocess.Popen(['java', '-cp', 
-                     'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar', 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
