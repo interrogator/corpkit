@@ -521,7 +521,7 @@ Output:
 13       25807    8546   6966                4768              3778     2345        477                      257               200                    124             45        50                36                      15                  12           3                      2    
 ```
 
-This data can be very helpful when using `edit()` to generate relative frequencies, for example.
+Features such as relational processes are difficult to locate automatically, so these figures are perhaps best seen as approximations. Even so, this data can be very helpful when using `edit()` to generate relative frequencies, for example.
 
 <a name="concordancing"></a>
 ## Concordancing
