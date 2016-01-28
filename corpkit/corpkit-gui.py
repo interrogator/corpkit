@@ -5779,7 +5779,7 @@ def corpkit_gui():
                 downstall_nlp = tkMessageBox.askyesno("CoreNLP not found.", 
                               "CoreNLP parser not found. Download/install it?")
                 if downstall_nlp:
-                    corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-04-20.zip"
+                    corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip"
                     stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, 
                         root = root, note = note, actually_download = True, custom_corenlp_dir = corenlppath.get())
                     extract_cnlp(cnlp_zipfile, corenlppath = corenlppath.get(), root = root)
