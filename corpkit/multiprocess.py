@@ -4,7 +4,7 @@ def pmultiquery(corpus,
     query = 'any', 
     sort_by = 'total', 
     quicksave = False,
-    num_proc = 'default', 
+    multiprocess = 'default', 
     function_filter = False,
     just_speakers = False,
     root = False,
@@ -28,6 +28,7 @@ def pmultiquery(corpus,
     import collections
     from collections import namedtuple
     from time import strftime, localtime
+    import corpkit
     from corpkit.interrogator import interrogator
     from corpkit.editor import editor
     from corpkit.other import save
@@ -51,7 +52,10 @@ def pmultiquery(corpus,
             if (num_queries / num_cores) == num_cores:
                 return int(num_cores)
             if num_queries % num_cores == 0:
-                return max([int(num_queries / n) for n in range(2, num_cores) if int(num_queries / n) <= num_cores])        
+                try:
+                    return max([int(num_queries / n) for n in range(2, num_cores) if int(num_queries / n) <= num_cores])   
+                except ValueError:
+                    return num_cores
             else:
                 import math
                 if (float(math.sqrt(num_queries))).is_integer():
@@ -62,27 +66,28 @@ def pmultiquery(corpus,
 
     num_cores = multiprocessing.cpu_count()
 
-    # are we processing multiple queries or corpora?
-    # find out optimal number of cores to use.
+    # what is our iterable? ...
     multiple_option = False
     multiple_queries = False
     multiple_speakers = False
     multiple_corpora = False
     multiple_search = False
-
+    mult_corp_are_subs = False
     denom = 1
 
     if hasattr(corpus, '__iter__'):
         multiple_corpora = True
         num_cores = best_num_parallel(num_cores, len(corpus))
         denom = len(corpus)
+        if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
+            mult_corp_are_subs = True
     elif hasattr(query, '__iter__'):
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
         denom = len(query)
     elif hasattr(search, '__iter__') and type(search) != dict:
         multiple_search = True
-        num_cores = best_num_parallel(num_cores, len(search))
+        num_cores = best_num_parallel(num_cores, len(search.keys()))
         denom = len(search.keys())
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
@@ -99,8 +104,8 @@ def pmultiquery(corpus,
         num_cores = best_num_parallel(num_cores, len(just_speakers))
         denom = len(just_speakers)
         
-    if num_proc != 'default':
-        num_cores = num_proc
+    if type(multiprocess) == int:
+        num_cores = multiprocess
 
     # make sure quicksaves are right type
     if quicksave is True:
@@ -186,9 +191,10 @@ def pmultiquery(corpus,
             ds.append(a_dict)
 
     time = strftime("%H:%M:%S", localtime())
+    sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), search) )
+           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat) )
 
     elif multiple_queries:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
@@ -200,11 +206,11 @@ def pmultiquery(corpus,
 
     elif multiple_option:
         print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) )
 
     elif multiple_speakers:
         print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, search) )
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) )
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -213,7 +219,7 @@ def pmultiquery(corpus,
     #stdout=sys.stdout
     failed = False
     #ds = ds[::-1]
-    if not root:
+    if not root and multiprocess:
         from blessings import Terminal
         terminal = Terminal()
         print '\n' * (len(ds) - 2)
@@ -240,7 +246,7 @@ def pmultiquery(corpus,
             raise
         if not res:
             failed = True
-    elif root or failed:
+    elif root or failed or multiprocess is False:
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
@@ -274,7 +280,7 @@ def pmultiquery(corpus,
 
     # turn list into dict of results, make query and total branches,
     # save and return
-    if 'c' not in show:
+    if not all(type(i.results) == pd.core.series.Series for i in res):
         out = {}
         for interrog, d in zip(res, ds):
             interrog.query = d
@@ -308,7 +314,7 @@ def pmultiquery(corpus,
     else:
         #print sers
         #print ds
-        if multiple_corpora:
+        if multiple_corpora and not mult_corp_are_subs:
             sers = [i.results for i in res]
             out = pd.DataFrame(sers, index = [d['outname'] for d in ds])
             out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
@@ -317,6 +323,11 @@ def pmultiquery(corpus,
             out = out.T
         else:
             out = pd.concat([r.results for r in res], axis = 1)
+            # format like normal
+            out = out[sorted(list(out.columns))]
+            out = out.T
+            out = out.fillna(0) # nan to zero
+            out = out.astype(int)
 
         # sort by total
         if type(out) == pd.core.frame.DataFrame:
@@ -340,7 +351,7 @@ if __name__ == '__main__':
     show = 'words', 
     sort_by = False, 
     quicksave = False,
-    num_proc = False, 
+    multiprocess = False, 
     function_filter = False,
     just_speakers = False,
     root = False,

@@ -18,11 +18,11 @@ def interrogator(corpus,
             only_unique = False,
             random = False,
             only_format_match = False,
-            num_proc = 'default',
+            multiprocess = False,
             spelling = False,
             regex_nonword_filter = r'[A-Za-z0-9:_]',
             gramsize = 2,
-            split_contractions = True,
+            split_contractions = False,
             **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
@@ -483,6 +483,12 @@ def interrogator(corpus,
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
+    
+    locs['search'] = search
+    locs['query'] = query
+    locs['just_speakers'] = just_speakers
+    locs['corpus'] = corpus
+
     if im:
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
@@ -496,7 +502,7 @@ def interrogator(corpus,
     # check if just counting
     countmode = 'c' in show
     # where we are at in interrogation
-    current_file = 0
+    current_iter = 0
 
     ############################################
     # Determine the search function to be used #
@@ -631,7 +637,7 @@ def interrogator(corpus,
     if kwargs.get('printstatus', True):
         thetime = strftime("%H:%M:%S", localtime())
 
-        sformat = '\n                 '.join(['%s: %s' %(k, v) for k, v in search.items()])
+        sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
         welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
                   (thetime, message, corpus.name, optiontext, sformat)
         print welcome
@@ -653,7 +659,8 @@ def interrogator(corpus,
                 'note': note,
                 'length': total_files}
 
-    if kwargs.get('paralleling'):
+    term = None
+    if kwargs.get('paralleling', None) is not None:
         from blessings import Terminal
         term = Terminal()
         par_args['terminal'] = term
@@ -662,7 +669,7 @@ def interrogator(corpus,
     outn = kwargs.get('outname', '')
     if outn:
         outn = outn + ': '
-    tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
+    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
     p = animator(None, None, init = True, tot_string = tstr, **par_args)
 
     ############################################
@@ -679,9 +686,9 @@ def interrogator(corpus,
         # tregex over subcorpora, not files
         if simple_tregex_mode:
 
-            current_file += 1
-            tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
-            animator(p, current_file, tstr, **par_args)
+            current_iter += 1
+            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+            animator(p, current_iter, tstr, **par_args)
 
             op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
@@ -712,9 +719,9 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
-                current_file += 1
-                tstr = '%s%d/%d' % (outn, current_file + 1, total_files)
-                animator(p, current_file, tstr, **par_args)
+                current_iter += 1
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                animator(p, current_iter, tstr, **par_args)
 
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
@@ -787,6 +794,15 @@ def interrogator(corpus,
     #   Tally everything into big DataFrame    #
     ############################################
 
+    if kwargs.get('paralleling', None) is not None:
+        if term:
+            try:
+                with term.location(0, term.height - (par_args['linenum'] + 1)):
+                    from time import localtime, strftime
+                    thetime = strftime("%H:%M:%S", localtime())
+                    print '%s: [**********************100%% (%s]' % (thetime, kwargs['outname'] + ')'.ljust(26, '*'))
+            except TypeError:
+                pass
     if conc:
         all_conc_lines = []
         for sc_name, resu in sorted(results.items()):

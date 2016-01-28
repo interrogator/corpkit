@@ -228,7 +228,13 @@ class Corpus:
 
         """
         from corpkit import interrogator
-        return interrogator(self, search, *args, **kwargs)
+        par = kwargs.pop('multiprocess', None)
+        if par and self.subcorpora:
+            if type(par) == int:
+                kwargs['multiprocess'] = par
+            return interrogator(self.subcorpora, search, *args, **kwargs)
+        else:
+            return interrogator(self, search, *args, **kwargs)
 
     def parse(self, *args, **kwargs):
         from corpkit import make_corpus
@@ -400,6 +406,15 @@ class Datalist(object):
             self.current += 1
             return self.current - 1
 
+    def interrogate(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.interrogator.interrogator"""
+        from corpkit import interrogator
+        return interrogator([s for s in self], *args, **kwargs)
+
+    def concordance(self, *args, **kwargs):
+        """interrogate the corpus using corpkit.interrogator.interrogator"""
+        from corpkit import interrogator
+        return interrogator([s for s in self], conc = True, *args, **kwargs)
 
 from corpkit.corpus import Datalist
 class Corpora(Datalist):
@@ -407,6 +422,12 @@ class Corpora(Datalist):
     def __init__(self, data):
 
         from corpkit.corpus import Corpus
+        # handle a folder containing corpora
+        if type(data) == str or type(data) == unicode:
+            import os
+            data = sorted([os.path.join(data, d) for d in os.listdir(data) \
+                          if os.path.isdir(os.path.join(data, d))])
+        # make corpus objects from paths if need be
         for index, i in enumerate(data):
             if type(i) == str:
                 data[index] = Corpus(i)
@@ -434,12 +455,3 @@ class Corpora(Datalist):
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
-    def interrogate(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator"""
-        from corpkit import interrogator
-        return interrogator([s for s in self], *args, **kwargs)
-
-    def concordance(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator"""
-        from corpkit import interrogator
-        return interrogator([s for s in self], conc = True, *args, **kwargs)
