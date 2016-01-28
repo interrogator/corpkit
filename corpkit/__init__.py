@@ -9,7 +9,6 @@
 __all__ = ["interrogator",
     "editor",
     "plotter",
-    "conc",
     "save",
     "quickview",
     "load",
@@ -50,7 +49,6 @@ import corpkit.dictionaries as dictionaries
 from interrogator import interrogator
 from editor import editor
 from plotter import plotter
-from conc import conc
 from other import save
 from other import load
 from other import load_all_results

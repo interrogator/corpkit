@@ -1,28 +1,34 @@
 
 class Corpus:
-    """A class representing a linguistic text corpus, which contains files,
-       optionally within subcorpus folders.
+    """
+    A class representing a linguistic text corpus, which contains files,
+    optionally within subcorpus folders.
 
-       Methods for concordancing, interrogating, getting general stats"""
+    Methods for concordancing, interrogating, getting general stats.
+    """
 
     def __init__(self, path, **kwargs):
-
         import os
+        from os.path import join, isfile, isdir
         import re
         import operator
         from corpkit.process import determine_datatype
 
-        level = kwargs.pop('level', 'c')
+        # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which 
+        # one is determined automatically below, and processed accordingly. We 
+        # assume it is a full corpus to begin with.
 
+        level = kwargs.pop('level', 'c')
         print_info = kwargs.get('print_info', True)
 
         self.path = path
         self.name = os.path.basename(path)
         self.abspath = os.path.abspath(path)
 
-        # this messy code figures out as quickly as possible what the datatype and singlefile
-        # status of the path is. it's messy because it shortcuts full checking where possible
-        # some of the shortcutting could maybe be moved into the determine_datatype() funct.
+        # this messy code figures out as quickly as possible what the datatype 
+        # and singlefile status of the path is. it's messy because it shortcuts 
+        # full checking where possible some of the shortcutting could maybe be 
+        # moved into the determine_datatype() funct.
 
         if os.path.isfile(self.abspath):
             if self.abspath.endswith('.xml'):
@@ -30,48 +36,45 @@ class Corpus:
             self.singlefile = True
         elif path.endswith('-parsed'):
             self.datatype = 'parse'
-            if len([d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]) > 0:
+            if len([d for d in os.listdir(path) if isdir(join(path, d))]) > 0:
                 self.singlefile = False
-                #self.singlefile = True
-                #if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
-                #          and not f.startswith('.')]) > 0:
-                #    self.singlefile = False
-                #else:
-                #    self.singlefile = True
         else:
-        #    if os.path.split(path.rstrip('/'))[0].endswith('-parsed'):
-        #        self.datatype = 'parse'
-        #        if len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))\
-        #              and not f.startswith('.')]) > 0:
-        #            self.singlefile = False
-        #        else:
-        #            self.singlefile = True
-        #    else:
             self.datatype, self.singlefile = determine_datatype(path)
-
-            if len([d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]) == 0:
+            if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
                 level = 's'
+
         self.structure = None
         self.subcorpora = None
         self.files = None
+
+        # these two will become .structure and .files if they exist
         struct = {}
         all_files = []
+        
+        # if initialised on a file, process as file
         if self.singlefile and level == 'c':
             level = 'f'
+
+        # For corpora, make Datalist of subcorpora, make structure dict, make a
+        # Datalist of files, and print useful information
+
         if level == 'c':
             if print_info:
                 print '\nCorpus at: %s\n' % self.abspath
-            subcorpora = Datalist(sorted([Subcorpus(os.path.join(self.path, d)) \
+            subcorpora = Datalist(sorted([Subcorpus(join(self.path, d)) \
                                                for d in os.listdir(self.path) \
-                                               if os.path.isdir(os.path.join(self.path, d))], \
+                                               if isdir(join(self.path, d))], \
                                                key=operator.attrgetter('name')))
             self.subcorpora = subcorpora
-            for subcorpus in subcorpora:
-                file_list = Datalist(sorted([File(f, subcorpus.path) for f in os.listdir(subcorpus.path) \
-                                             if not f.startswith('.')], key=operator.attrgetter('name')))
-                struct[subcorpus] = file_list
+            for sbc in subcorpora:
+                
+                file_list = [File(f, sbc.path) for f in os.listdir(sbc.path) \
+                    if not f.startswith('.')]
+                file_list = sorted(file_list, key=operator.attrgetter('name'))
+                file_list = Datalist(file_list)
+                struct[sbc] = file_list
                 if print_info:
-                    print 'Subcorpus: %s\n\t%s\n' % (subcorpus.name, \
+                    print 'Subcorpus: %s\n\t%s\n' % (sbc.name, \
                                                      '\n\t'.join([f.name for f in file_list[:10]]))
                     if len(file_list) > 10:
                         print '... and %s more ... \n' % str(len(file_list) - 10)
@@ -80,15 +83,18 @@ class Corpus:
         
             self.structure = struct
 
+        # for subcorpora, we only need the filelist and a simple structure dict
         elif level == 's':
             all_files = sorted([File(f, self.path) for f in os.listdir(self.path) \
                                 if not f.startswith('.')], key=operator.attrgetter('name'))
             self.files = Datalist(all_files)
             self.structure = {'.': self.files}
 
+        # for non File, we will add files attribute
         if level != 'f':
             self.files = Datalist(all_files)
 
+        # this is the future home of the output of .get_stats()
         self.features = False
 
         # set accessible attribute names for subcorpora and files
@@ -96,7 +102,8 @@ class Corpus:
         if self.subcorpora is not None:
             if self.subcorpora and len(self.subcorpora) > 0:
                 for subcorpus in self.subcorpora:
-                    variable_safe = re.sub(variable_safe_r, '', subcorpus.name.lower().split(',')[0])
+                    variable_safe = re.sub(variable_safe_r, '', \
+                        subcorpus.name.lower().split(',')[0])
                     setattr(self, variable_safe, subcorpus)
         if self.files is not None:
             if self.files and len(self.files) > 0:
@@ -121,6 +128,7 @@ class Corpus:
         return st
 
     def __repr__(self):
+        """object representation of corpus"""
         if not self.files:
             sfiles = ''
         else:
@@ -133,7 +141,7 @@ class Corpus:
 
     # METHODS
     def get_stats(self, *args):
-        """get some basic stats"""
+        """Get some basic stats from the corpus, and store as `corpus.features`"""
         from corpkit import interrogator
         self.features = interrogator(self.path, 's', 'any').results
         print 'Features defined. See .features attribute ...' 
@@ -166,9 +174,11 @@ class Corpus:
         :type excludemode: str ('any'/'all')
         
         :param query: A search query for the interrogation
-        :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
+        :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; 
+        list -- word list to match
 
-        :param show: What to output. If multiple strings are passed, results will be colon-separated, in order
+        :param show: What to output. If multiple strings are passed, results 
+        will be colon-separated, in order
             - t/tree
             - w/word
             - l/lemma
@@ -183,23 +193,28 @@ class Corpus:
         :param lemmatise: Force lemmatisation on results
         :type lemmatise: bool
             
-        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
+        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when 
+            data is unparsed)
         :type lemmatag: False/'n'/'v'/'a'/'r'
         
-        :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results (turns 'phrases' on)
+        :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results 
+        (turns 'phrases' on)
         :type titlefilter: bool
         
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: False/'US'/'UK'
             
-        :param phrases: Use if your expected results are multiword (e.g. searching for NP, with
+        :param phrases: Use if your expected results are multiword (e.g. 
+            searching for NP, with
                         show as 'w'), and thus need tokenising
         :type phrases: bool
             
-        :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use:
+        :param dep_type: The kind of Stanford CoreNLP dependency parses you 
+        want to use:
         :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
         
-        :param quicksave: Save result as pickle to saved_interrogations/*quicksave* on completion
+        :param quicksave: Save result as pickle to 
+        `saved_interrogations/*quicksave*` on completion
         :type quicksave: str
         
         :param gramsize: size of ngrams (default 2)
@@ -208,10 +223,11 @@ class Corpus:
         :param split_contractions: make "don't" et al into two tokens
         :type split_contractions: bool
 
-        :param num_proc: how many parallel processes to run -- default is the number of cores
-        :type num_proc: int
+        :param multiprocess: how many parallel processes to run
+        :type multiprocess: int / bool (to determine automatically)
 
-        :param only_format_match: when concordancing, if true, left and right window will just be words, regardless of what is in 'show'
+        :param only_format_match: when concordancing, if true, left and right 
+        window will just be words, regardless of what is in 'show'
         :type only_format_match: bool
 
         :param random: randomise concordance lines
@@ -221,11 +237,12 @@ class Corpus:
         :type only_unique: bool
 
         :param files_as_subcorpora: treat each file as a subcorpus
-        type files_as_subcorpora: bool
+        :type files_as_subcorpora: bool
 
-        :returns: A :class:`corpkit.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. 
-                  If multiprocessing is invoked, result may be a dict containing corpus names, queries or speakers as keys.
-
+        :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
+        ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is 
+        invoked, result may be a :class:`corpus.interrogation.Interrodict` 
+        containing corpus names, queries or speakers as keys.
         """
         from corpkit import interrogator
         par = kwargs.pop('multiprocess', None)
@@ -237,6 +254,15 @@ class Corpus:
             return interrogator(self, search, *args, **kwargs)
 
     def parse(self, *args, **kwargs):
+        """Parse an unparsed corpus
+
+        :param speaker_segmentation: Attempt to detect and handle speaker IDs 
+        at start of lines in file
+        :type speaker_segmentation: bool
+
+        See :func:`corpkit.make.make_corpus()` for more information regarding 
+        keyword args
+        """
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
         from corpkit.process import determine_datatype
@@ -248,6 +274,7 @@ class Corpus:
         return Corpus(make_corpus(self.path, parse = True, tokenise = False, *args, **kwargs))
 
     def tokenise(self, *args, **kwargs):
+        """Tokenise a plaintext corpus"""
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
         from corpkit.process import determine_datatype
@@ -261,9 +288,10 @@ class Corpus:
 
     def concordance(self, *args, **kwargs): 
         """
-        A concordancer for Tregex queries, CoreNLP dependencies, tokenised data or plaintext.
+        A concordance method for Tregex queries, CoreNLP dependencies, 
+        tokenised data or plaintext.
 
-        Arguments are the same as `corpkit.interrogation.interrogate`.
+        Arguments are the same as :func:`corpkit.interrogation.Interogation.interrogate`.
 
         """
 
@@ -271,7 +299,15 @@ class Corpus:
         return interrogator(self, conc = True, *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
-        """interrogate, then plot, with very little customisability"""
+        """Interrogate, relativise, then plot, with very little customisability
+
+        A demo function.
+
+        :param search: search as per :func:`corpkit.corpus.interrogate()`
+        :type search: dict
+        :param kwargs: extra arguments to pass to `interrogate`/`plot`
+        :type kwargs: keyword arguments
+        """
         if type(search) == str:
             search = {'t': search}
         quickstart = self.interrogate(search = search, **kwargs)
@@ -279,7 +315,11 @@ class Corpus:
         edited.plot(str(self.path), **kwargs)
 
     def save(self, savename = False, **kwargs):
-        """Save data to pickle file"""
+        """Save data to pickle file
+
+        :param savename: name for the file
+        :type savename: str
+        """
         from corpkit import save
         if not savename:
             savename = self.name
@@ -287,7 +327,10 @@ class Corpus:
 
 from corpkit.corpus import Corpus
 class Subcorpus(Corpus):
-    """Model a subcorpus, so that it can be interrogated and concordanced"""
+    """Model a subcorpus, containing files but no subdirectories.
+
+    Methods for interrogating, concordancing are the same as 
+    :class:`corpkit.corpus.Corpus`."""
     
     def __init__(self, path):
         self.path = path
@@ -295,7 +338,8 @@ class Subcorpus(Corpus):
         Corpus.__init__(self, self.path, **kwargs)
 
     def __repr__(self):
-        return "<corpkit.corpus.Subcorpus instance: %s; %d files>" % (self.name, len(self.files))
+        return "<corpkit.corpus.Subcorpus instance: %s; %d files>" % (self.name, \
+            len(self.files))
 
     def __str__(self):
         return self.path
@@ -304,11 +348,12 @@ class Subcorpus(Corpus):
         return "<corpkit.corpus.Subcorpus instance: %s>" % self.name
 
 class File(Corpus):
-    """Models a corpus file, for reading, interrogating, concordancing"""
+    """Models a corpus file for reading, interrogating, concordancing"""
     
     def __init__(self, path, dirname):
         import os
-        self.path = os.path.join(dirname, path)
+        from os.path import join, isfile, isdir
+        self.path = join(dirname, path)
         kwargs = {'print_info': False, 'level': 'f'}
         Corpus.__init__(self, self.path, **kwargs)
         if self.path.endswith('.p'):
@@ -337,16 +382,18 @@ class File(Corpus):
 
 class Datalist(object):
     """
-    A list-like object containing subcorpora or corpus files that can be accessed
-    with indexing, slicing, etc.
+    A list-like object containing subcorpora or corpus files.
+
+    Objects can be accessed as attributes, dict keys or by indexing/slicing.
+
+    Methods for interrogating and concordancing are available.
     """
 
     def __init__(self, data):
-
-        from corpkit.process import makesafe
-
         import re
         import os
+        from os.path import join, isfile, isdir
+        from corpkit.process import makesafe
         self.current = 0
         if data:
             self.high = len(data)
@@ -418,30 +465,36 @@ class Datalist(object):
 
 from corpkit.corpus import Datalist
 class Corpora(Datalist):
+    """
+    Models a collection of corpora.
+
+    Methods are available for interrogating and plotting the entire collection.
+    """
 
     def __init__(self, data):
-
         from corpkit.corpus import Corpus
         # handle a folder containing corpora
         if type(data) == str or type(data) == unicode:
             import os
-            data = sorted([os.path.join(data, d) for d in os.listdir(data) \
-                          if os.path.isdir(os.path.join(data, d))])
-        # make corpus objects from paths if need be
+            from os.path import join, isfile, isdir
+            if not os.path.isdir(data):
+                raise ValueError('Corpora(str) needs to point to a directory.')
+            data = sorted([join(data, d) for d in os.listdir(data) \
+                          if isdir(join(data, d))])
+        # otherwise, make a list of Corpus objects
         for index, i in enumerate(data):
             if type(i) == str:
                 data[index] = Corpus(i)
 
+        # now turn it into a Datalist
         Datalist.__init__(self, data)
 
     def __repr__(self):
         return "<corpkit.corpus.Corpora instance: %d items>" % len(self)
 
-
     def __getitem__(self, key):
-
+        """allow slicing, indexing"""
         from corpkit.process import makesafe
-
         if isinstance( key, slice ) :
             #Get the start, stop, and step from the slice
             return Corpora([self[ii] for ii in xrange(*key.indices(len(self)))])
