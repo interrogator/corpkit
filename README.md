@@ -6,7 +6,7 @@
 
 > Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Over the last few months I've developed a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
+> **There's also a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`, and a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
 <!-- MarkdownTOC -->
 
@@ -80,6 +80,29 @@ as well as the following methods:
 | `corpus.concordance()` | Concordance via lexis and/or grammar |
 | `corpus.get_stats()` | Count features (characters, clauses, words, tokens, process types, passives, etc.) and store as `corpus.features` attribute |
 
+Once you've defined a Corpus, you can move around it very easily:
+
+```python
+>>> corpus = Corpus('data/NYT-parsed')
+
+>>> list(corpus.subcorpora)[:3]
+
+# [<corpkit.corpus.Subcorpus instance: 1987>,
+#  <corpkit.corpus.Subcorpus instance: 1988>,
+#  <corpkit.corpus.Subcorpus instance: 1989>]
+
+>>> corpus.subcorpora[0].abspath, corpus.subcorpora[0].datatype
+
+# ('/Users/daniel/Work/risk/data/NYT-parsed/1987', 'parse')
+
+>>> corpus.subcorpora.c1989.files[10:13]
+
+# [<corpkit.corpus.File instance: NYT-1989-01-01-10-1.txt.xml>,
+#  <corpkit.corpus.File instance: NYT-1989-01-01-10-2.txt.xml>,
+#  <corpkit.corpus.File instance: NYT-1989-01-01-11-1.txt.xml>]
+
+```
+
 Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` object also have a `.read()` method.
 
 <a name="interrogate-method"></a>
@@ -92,12 +115,13 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 * Restrict searches to particular speakers in a corpus
+* Works on collections of corpora, corpora, subcorpora, single files, or slices thereof
 * Quickly save to and load from disk with `save()` and `load()`
 
 <a name="concordance-method"></a>
 #### `concordance()` method
 
-* Equivalent API to `interrogate()`, but return DataFrame of concordance lines
+* Equivalent to `interrogate()`, but return DataFrame of concordance lines
 * Return any combination and order of words, lemmas, indices, functions, or POS tags
 * Editable and saveable
 * Output to LaTeX, CSV or string with `format()`

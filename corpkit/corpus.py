@@ -57,7 +57,6 @@ class Corpus:
 
         # For corpora, make Datalist of subcorpora, make structure dict, make a
         # Datalist of files, and print useful information
-
         if level == 'c':
             if print_info:
                 print '\nCorpus at: %s\n' % self.abspath
@@ -75,7 +74,7 @@ class Corpus:
                 struct[sbc] = file_list
                 if print_info:
                     print 'Subcorpus: %s\n\t%s\n' % (sbc.name, \
-                                                     '\n\t'.join([f.name for f in file_list[:10]]))
+                        '\n\t'.join([f.name for f in file_list[:10]]))
                     if len(file_list) > 10:
                         print '... and %s more ... \n' % str(len(file_list) - 10)
                 for f in file_list:
