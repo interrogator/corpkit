@@ -21,8 +21,12 @@ A GUI, incorporating much of corpkit's command line functionality, is documented
 Contents:
 
 .. toctree::
-   
-   corpkit
+   :maxdepth: 2
+
+   rst_docs/corpkit.corpus
+   rst_docs/corpkit.interrogation.rst
+   rst_docs/corpkit.other.rst
+   rst_docs/corpkit.dictionaries.rst
 
 .. _CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
