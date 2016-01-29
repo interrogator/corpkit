@@ -71,6 +71,3 @@ setup(name='corpkit',
                         "requests",
                         "chardet",
                         "blessings>=1.6"])
-    #)
-    #                    # ...
-    #)
