@@ -2,7 +2,7 @@
 Classes
 ---------------------------
 
-Most of *corpkit*'s functionality comes from the :class:``corpkit.corpus.Corpus`` and :class:``corpkit.interrogation.Interrogation`` classes, and their methods for interrogating, concordancing, editing and plotting. :class:``corpkit.corpus.Corpus`` subclasses its subcorpora and files.
+Most of *corpkit*'s functionality comes from the ``Corpus`` and ``Interrogation`` classes, and their methods for interrogating, concordancing, editing and plotting. ``Corpus`` subclasses its subcorpora and files.
 
 `Corpus`
 =================
@@ -60,7 +60,7 @@ Most of *corpkit*'s functionality comes from the :class:``corpkit.corpus.Corpus`
 Functions
 ----------------------
 
-*corpkit* contains a small set of standalone functions
+*corpkit* contains a small set of standalone functions.
 
 `as_regex`
 =================
@@ -85,22 +85,22 @@ Wordlists
 Closed class word types
 =================
 .. autodata:: corpkit.dictionaries.wordlists.wordlists
-   :annotation: Various wordlists. `wordlists.closedclass`, `wordlists.pronouns`, etc.
+   :annotation: Various wordlists.
 
 Systemic functional process types
 =================
 .. autodata:: corpkit.dictionaries.process_types.processes
-   :annotation: Process type wordlists. `processes.relational`, `processes.mental`, `processes.verbal`
+   :annotation: Process type wordlists.
 
 Stopwords
 =================
 .. data:: corpkit.dictionaries.stopwords.stopwords
-   :annotation: A list of stopwords (or, use `wordlists.closedclass`)
+   :annotation: A list of stopwords (or, use ``wordlists.closedclass``)
 
 Systemic/dependency label conversion
 =================
 .. autodata:: corpkit.dictionaries.roles.roles
-   :annotation: Translate systemic-functional to dependency roles. roles.actor, roles.predicator, roles.epithet
+   :annotation: Translate systemic-functional to dependency roles.
 
 BNC reference corpus
 =================
