@@ -133,7 +133,7 @@ class Interrogation:
         :param calc_all: When keywording, calculate words that appear in either corpus
         :type calc_all: bool
 
-        :returns: :class:``corpkit.interrogation.Interrogation``
+        :returns: :class:`corpkit.interrogation.Interrogation`
         """
         from corpkit import editor
         branch = kwargs.pop('branch', 'results')
@@ -270,7 +270,7 @@ class Interrogation:
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
 
-        :returns: :class:``corpkit.interrogation.Interrogation``, with ``pd.MultiIndex`` as :py:attr:``~corpkit.interrogation.Interrogation.results`` attribute
+        :returns: :class:`corpkit.interrogation.Interrogation`, with ``pd.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
         """
 
         from corpkit.other import make_multi
@@ -385,11 +385,11 @@ class Interrodict(dict):
         dict.__init__(self, data)
 
     def edit(self, *args, **kwargs):
-        """Edit each value with :func:``~corpkit.interrogation.edit``.
+        """Edit each value with :func:`~corpkit.interrogation.Interrogation.edit`.
 
-        See :func:``~corpkit.interrogation.edit`` for possible arguments.
+        See :func:`~corpkit.interrogation.Interrogation.edit` for possible arguments.
 
-        :returns: :class:``corpkit.interrogation.Interrodict``
+        :returns: :class:`corpkit.interrogation.Interrodict`
         """
 
         from corpkit import editor
@@ -401,7 +401,7 @@ class Interrodict(dict):
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
 
-        :returns: A :class:``corpkit.interrogation.Interrogation``
+        :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         from corpkit.other import make_multi
         return make_multi(self, indexnames = indexnames)

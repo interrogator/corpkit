@@ -4,9 +4,9 @@
 
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
-> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a toolkit for working with parsed and structured linguistic corpora. **Full documentation is available at [ReadTheDocs](http://corpkit.readthedocs.org/en/).**
 > 
-> **There's also a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`, and a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.** Full documentation is available at [ReadTheDocs](http://corpkit.readthedocs.org/en/).
+> **There's also a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`, and a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.** 
 
 <!-- MarkdownTOC -->
 
