@@ -55,6 +55,7 @@ Most of *corpkit*'s functionality comes from the ``Corpus`` and ``Interrogation`
     :undoc-members:
     :show-inheritance:
 
+----------------------
 
 ----------------------
 Functions
@@ -78,6 +79,8 @@ Functions
 =================
 .. autofunction:: corpkit.other.new_project
 
+------------------------
+
 ----------------------
 Wordlists
 ----------------------
@@ -89,11 +92,17 @@ Closed class word types
 
 Systemic functional process types
 =================================
+
+Inflected verbforms for process types.
+
 .. data:: corpkit.dictionaries.process_types.processes
    :annotation: Process type wordlists.
 
 Stopwords
 =========
+
+A list of arbitrary stopwords.
+
 .. data:: corpkit.dictionaries.stopwords.stopwords
    :annotation: A list of stopwords (or, use ``wordlists.closedclass``)
 
