@@ -236,8 +236,8 @@ class Interrogation:
         """
         Save an interrogation as pickle to *savedir*.
 
-           >>> interro_interrogator(corpus, 'words', 'any')
-           >>> save(interro, 'savename')
+           >>> o = corpus.interrogate('w', 'any')
+           >>> save(o, 'savename')
 
         will create saved_interrogations/savename.p
         
