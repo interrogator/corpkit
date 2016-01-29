@@ -39,13 +39,13 @@ class Interrogation:
 
         :param operation: Kind of maths to do on inputted lists:
 
-           '+', '-', '/', '*', '%': self explanatory
+           ``'+'``, ``'-'``, ``'/'``, ``'*'``, ``'%'``: self explanatory
 
-           'k': log likelihood (keywords)
+           ``'k'``: log likelihood (keywords)
 
-           'a': get distance metric (for use with interrogator 'a' option)
+           ``'a'``: get distance metric
 
-           'd': get percent difference (alternative approach to keywording)
+           ``'d'``: get percent difference (alternative approach to keywording)
 
         :type operation: str
         
@@ -56,17 +56,17 @@ class Interrogation:
            if 'self', do all merging/keeping operations, then use
            edited dataframe1 as dataframe2
 
-        :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
+        :type dataframe2: pandas.Series/pandas.DataFrame/dict/`self`
 
         :param sort_by: Calculate slope, stderr, r, p values, then sort by.
 
-           increase: highest to lowest slope value
-           decrease: lowest to highest slope value
-           turbulent: most change in y axis values
-           static: least change in y axis values
-           total/most: largest number first
-           infreq/least: smallest number first
-           name: alphabetically
+           ``'increase'``: highest to lowest slope value
+           ``'decrease'``: lowest to highest slope value
+           ``'turbulent'``: most change in y axis values
+           ``'static'``: least change in y axis values
+           ``'total/most'``: largest number first
+           ``'infreq/least'``: smallest number first
+           ``'name'``: alphabetically
 
         :type sort_by: str
 
@@ -81,11 +81,11 @@ class Interrogation:
         
         :param threshold: When using results list as dataframe 2, drop values occurring fewer than n times. If not keywording, you can use:
                                 
-           ``'high'``: dataframe2 total / 2500
+           ``'high'``: ``dataframe2 total / 2500``
            
-           ``'medium'``: dataframe2 total / 5000
+           ``'medium'``: ``dataframe2 total / 5000``
            
-           ``'low'``: dataframe2 total / 10000
+           ``'low'``: ``dataframe2 total / 10000``
                             
            If keywording, there are smaller default thresholds
 
@@ -97,7 +97,7 @@ class Interrogation:
         :param merge_entries: Merge matching entries
         :type merge_entries: see above
         :param newname: New name for merged entries
-        :type newname: str/'combine'
+        :type newname: str/``'combine'``
         :param just_subcorpora: Keep matching subcorpora
         :type just_subcorpora: see above
         :param skip_subcorpora: Skip matching subcorpora
@@ -113,7 +113,7 @@ class Interrogation:
         :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a regex to delete from names
         :param projection:         a  to multiply results in subcorpus by n
         :type projection: tuple -- ``(subcorpus_name, n)``
-        :param remove_above_p: Delete any result over p
+        :param remove_above_p: Delete any result over ``p``
         :type remove_above_p: bool
         :param p:                  set the p value
         :type p: float
@@ -133,7 +133,7 @@ class Interrogation:
         :param calc_all: When keywording, calculate words that appear in either corpus
         :type calc_all: bool
 
-        :returns: :class:`corpkit.interrogation.Interrogation`
+        :returns: :class:``corpkit.interrogation.Interrogation``
         """
         from corpkit import editor
         branch = kwargs.pop('branch', 'results')
@@ -269,6 +269,8 @@ class Interrogation:
 
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
+
+        :returns: :class:``corpkit.interrogation.Interrogation``, with ``pd.MultiIndex`` as :py:attr:``~corpkit.interrogation.Interrogation.results`` attribute
         """
 
         from corpkit.other import make_multi
@@ -354,10 +356,10 @@ class Concordance(pd.core.frame.DataFrame):
 
     def format(self, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
         """
-        Print conc lines nicely, to string, latex or csv
+        Print conc lines nicely, to string, LaTeX or CSV
 
         :param kind: output format
-        :type kind: str ('string'/'latex'/'csv')
+        :type kind: str (``'string'``/``'latex'``/``'csv'``)
         :param n: Print first n lines only
         :type n: int/'all'
         :param window: how many characters to show to left and right
@@ -383,10 +385,24 @@ class Interrodict(dict):
         dict.__init__(self, data)
 
     def edit(self, *args, **kwargs):
+        """Edit each value with :func:``~corpkit.interrogation.edit``.
+
+        See :func:``~corpkit.interrogation.edit`` for possible arguments.
+
+        :returns: :class:``corpkit.interrogation.Interrodict``
+        """
+
         from corpkit import editor
         return editor(self, *args, **kwargs)
 
     def multiindex(self, indexnames = False):
+        """Create a ``pd.MultiIndex`` version of results.
+
+        :param indexnames: provide custom names for the new index
+        :type indexnames: list of strings
+
+        :returns: A :class:``corpkit.interrogation.Interrogation``
+        """
         from corpkit.other import make_multi
         return make_multi(self, indexnames = indexnames)
         

@@ -2,7 +2,7 @@ def quickview(results, n = 25):
     """view top n results as painlessly as possible.
 
     :param results: Interrogation data
-    :type results: corpkit.interrogation.Interrogation
+    :type results: :class:``corpkit.interrogation.Interrogation``
     :param n: Show top *n* results
     :type n: int
     :returns: None
@@ -115,7 +115,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     """
     Print conc lines nicely, to string, latex or csv
 
-    :param df: concordance lines from conc()
+    :param df: concordance lines from :class:``corpkit.corpus.Concordance``
     :type df: pd.DataFame 
     :param kind: output format
     :type kind: str ('string'/'latex'/'csv')
@@ -185,7 +185,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', print_info =
        >>> interro_interrogator(corpus, 'words', 'any')
        >>> save(interro, 'savename')
 
-    will create saved_interrogations/savename.p
+    will create ``./saved_interrogations/savename.p``
 
     :param interrogation: Corpus interrogation to save
     :type interrogation: corpkit interogation/edited result
@@ -253,7 +253,7 @@ def load(savename, loaddir = 'saved_interrogations'):
 
         >>> loaded = load('interro')
 
-    will load saved_interrogations/interro.p as loaded
+    will load ``./saved_interrogations/interro.p`` as loaded
 
     :param savename: Filename with or without extension
     :type savename: str

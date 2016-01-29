@@ -2,6 +2,8 @@
 Classes
 ---------------------------
 
+Most of *corpkit*'s functionality comes from the :class:``corpkit.corpus.Corpus`` and :class:``corpkit.interrogation.Interrogation`` classes, and their methods for interrogating, concordancing, editing and plotting. :class:``corpkit.corpus.Corpus`` subclasses its subcorpora and files.
+
 `Corpus`
 =================
 
@@ -39,7 +41,6 @@ Classes
     :show-inheritance:
 
 
-
 `Interrogation`
 =================
 .. autoclass:: corpkit.interrogation.Interrogation
@@ -58,6 +59,8 @@ Classes
 ----------------------
 Functions
 ----------------------
+
+*corpkit* contains a small set of standalone functions
 
 `as_regex`
 =================
@@ -79,18 +82,28 @@ Functions
 Wordlists
 ----------------------
 
+Closed class word types
+=================
 .. autodata:: corpkit.dictionaries.wordlists.wordlists
    :annotation: Various wordlists. `wordlists.closedclass`, `wordlists.pronouns`, etc.
 
+Systemic functional process types
+=================
 .. autodata:: corpkit.dictionaries.process_types.processes
    :annotation: Process type wordlists. `processes.relational`, `processes.mental`, `processes.verbal`
 
+Stopwords
+=================
 .. data:: corpkit.dictionaries.stopwords.stopwords
    :annotation: A list of stopwords (or, use `wordlists.closedclass`)
-   
+
+Systemic/dependency label converstion
+=================
 .. autodata:: corpkit.dictionaries.roles.roles
    :annotation: Translate systemic-functional to dependency roles. roles.actor, roles.predicator, roles.epithet
 
+BNC reference corpus
+=================
 .. data:: corpkit.dictionaries.bnc.bnc
    :annotation: BNC word frequency list
 

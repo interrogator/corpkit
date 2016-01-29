@@ -140,7 +140,11 @@ class Corpus:
 
     # METHODS
     def get_stats(self, *args):
-        """Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`"""
+        """
+        Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`
+
+        :returns: None
+        """
         from corpkit import interrogator
         self.features = interrogator(self.path, 's', 'any').results
         print 'Features defined. See .features attribute ...' 
@@ -161,13 +165,13 @@ class Corpus:
            - p/pos
            - i/index
            - n/ngrams
-        :type search: str, or, for dependencies, a dict like {'w': 'help', 'p': r'^V'}
+        :type search: str, or, for dependencies, a dict like ``{'w': 'help', 'p': r'^V'}``
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: str ('any'/'all')
 
         :param exclude: The inverse of `search`, removing results from search
-        :type exclude: dict -- {'l': 'be'}
+        :type exclude: dict -- ``{'l': 'be'}``
 
         :param excludemode: Exclude results matching any/all criteria
         :type excludemode: str ('any'/'all')
@@ -193,25 +197,19 @@ class Corpus:
         :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
         :type lemmatag: False/'n'/'v'/'a'/'r'
         
-        :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results (turns 'phrases' on)
-        :type titlefilter: bool
-        
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: False/'US'/'UK'
            
-        :param phrases: Use if your expected results are multiword (e.g. searching for NP, with show as 'w'), and thus need tokenising
-        :type phrases: bool
-            
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
         :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
         
-        :param quicksave: Save result as pickle to `saved_interrogations/*quicksave*` on completion
+        :param quicksave: Save result as pickle to ```saved_interrogations/str``` on completion
         :type quicksave: str
         
         :param gramsize: size of ngrams (default 2)
         :type gramsize: int
 
-        :param split_contractions: make "don't" et al into two tokens
+        :param split_contractions: make ``"don't"`` et al into two tokens
         :type split_contractions: bool
 
         :param multiprocess: how many parallel processes to run
@@ -229,8 +227,8 @@ class Corpus:
         :param files_as_subcorpora: treat each file as a subcorpus
         :type files_as_subcorpora: bool
 
-        :returns: A :class:`corpkit.interrogation.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
-        invoked, result may be a :class:`corpus.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
+        :returns: A :class:``corpkit.interrogation.Interrogation`` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
+        invoked, result may be a :class:``corpkit.interrogation.Interrodict`` containing corpus names, queries or speakers as keys.
         """
         from corpkit import interrogator
         par = kwargs.pop('multiprocess', None)
@@ -261,6 +259,8 @@ class Corpus:
         :param copula_head: Make copula head in dependency parse
         :type copula_head: bool
 
+        :returns: The newly created :class:``corpkit.corpus.Corpus``
+
         """
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
@@ -280,6 +280,8 @@ class Corpus:
 
         :param nltk_data_path: path to tokeniser if not found automatically
         :type nltk_data_path: str
+
+        :returns: The newly created :class:``corpkit.corpus.Corpus``
         """
         
         from corpkit import make_corpus
@@ -298,7 +300,9 @@ class Corpus:
         A concordance method for Tregex queries, CoreNLP dependencies, 
         tokenised data or plaintext.
 
-        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`.
+        Arguments are the same as :func:``~corpkit.interrogation.Interrogation.interrogate``.
+
+        :returns: An :class:``corpkit.interrogation.Concordance`` instance
 
         """
 
@@ -306,14 +310,14 @@ class Corpus:
         return interrogator(self, conc = True, *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
-        """Interrogate, relativise, then plot, with very little customisability
+        """Interrogate, relativise, then plot, with very little customisability. A demo function.
 
-        A demo function.
-
-        :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
+        :param search: search as per :func:``~corpkit.corpus.Corpus.interrogate``
         :type search: dict
-        :param kwargs: extra arguments to pass to `interrogate`/`plot`
+        :param kwargs: extra arguments to pass to :func:``~corpkit.corpus.Corpus.interrogate``/:func:``~corpkit.corpus.Corpus.plot``
         :type kwargs: keyword arguments
+
+        :returns: None (but show a plot)
         """
         if type(search) == str:
             search = {'t': search}
@@ -326,6 +330,8 @@ class Corpus:
 
         :param savename: name for the file
         :type savename: str
+
+        :returns: None
         """
         from corpkit import save
         if not savename:
@@ -337,7 +343,7 @@ class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
 
     Methods for interrogating, concordancing are the same as 
-    :class:`corpkit.corpus.Corpus`."""
+    :class:``corpkit.corpus.Corpus``."""
     
     def __init__(self, path):
         self.path = path
@@ -377,6 +383,11 @@ class File(Corpus):
         return self.path
 
     def read(self, *args, **kwargs):
+        """Read file data. If data is pickled, unpickle first
+
+        :returns: str/unpickled data
+        """
+
         if self.datatype == 'tokens':
             import pickle
             with open(self.abspath, "rb") as fo:
@@ -461,12 +472,12 @@ class Datalist(object):
             return self.current - 1
 
     def interrogate(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator"""
+        """interrogate the corpus using :func:``~corpkit.corpus.Corpus.interrogate``"""
         from corpkit import interrogator
         return interrogator([s for s in self], *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
-        """interrogate the corpus using corpkit.interrogator.interrogator"""
+        """interrogate the corpus using :func:``~corpkit.corpus.Corpus.concordance``"""
         from corpkit import interrogator
         return interrogator([s for s in self], conc = True, *args, **kwargs)
 
@@ -476,7 +487,7 @@ class Corpora(Datalist):
     Models a collection of corpora. Methods are available for interrogating and plotting the entire collection.
 
     :param data: Corpora to model
-    :type data: str (path containing corpora), list (of corpus paths/:class:`corpkit.corpus.Corpus` objects)
+    :type data: str (path containing corpora), list (of corpus paths/:class:``corpkit.corpus.Corpus`` objects)
     """
 
     def __init__(self, data):
