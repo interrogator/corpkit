@@ -58,18 +58,19 @@ setup(name='corpkit',
     #data_files=[('./corpkit/dictionaries', [os.path.join('./corpkit/dictionaries', f) for f in os.listdir('./corpkit/dictionaries') if f.endswith('.py')])],
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
-    cmdclass={'install': CustomInstallCommand,},
+    #cmdclass={'install': CustomInstallCommand,},
     keywords = ['corpus', 'linguistics', 'nlp'],
     packages=['corpkit'],
-    install_requires=["matplotlib >= 1.4.3"])
-    #                    "nltk >= 3.0.0",
-    #                    "joblib",
-    #                    "pandas >= 0.16.1",
-    #                    "mpld3 >= 0.2", 
-    #                    "beautifulsoup4>=4.3.2",
-    #                    "lxml>=3.4.4",
-    #                    "blessings>=1.6"],
-    #                    # chardet
-    #                    # requests
+    install_requires=["matplotlib >= 1.4.3"]
+                        "nltk >= 3.0.0",
+                        "joblib",
+                        "pandas >= 0.16.1",
+                        "mpld3 >= 0.2", 
+                        "beautifulsoup4>=4.3.2",
+                        "lxml>=3.4.4",
+                        "requests",
+                        "chardet",
+                        "blessings>=1.6"])
+    #)
     #                    # ...
     #)
