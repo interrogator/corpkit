@@ -4,6 +4,10 @@
 
 """
 
+# quicker access to search, exclude, show types
+letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
+           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A',
+           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL']
 
 # asterisk import
 __all__ = ["interrogator",
@@ -19,7 +23,7 @@ __all__ = ["interrogator",
     "flatten_treestring",
     "interroplot",
     "Corpus",
-    "Corpora"]
+    "Corpora"] + letters
 
 #metadata
 __version__ = "1.84"
@@ -71,8 +75,8 @@ def editfunc(self, *args, **kwargs):
     return editor(self, *args, **kwargs)
 
 def savefunc(self, savename, *args, **kwargs):
-  from corpkit import save
-  save(self, savename, *args, **kwargs)
+    from corpkit import save
+    save(self, savename, *args, **kwargs)
 
 def quickviewfunc(self, n = 25):
     from corpkit.other import quickview
@@ -96,3 +100,32 @@ pd.Series.quickview = quickviewfunc
 
 pd.DataFrame.format = formatfunc
 pd.Series.format = formatfunc
+
+A = 'a'
+D = 'd'
+T = 't'
+W = 'w'
+C = 'c'
+L = 'l'
+F = 'f'
+G = 'g'
+D = 'd'
+P = 'p'
+I = 'i'
+R = 'r'
+N = 'n'
+K = 'k'
+M = 'm'
+V = 'v'
+GL = 'gl'
+DL = 'dl'
+GF = 'gf'
+DF = 'df'
+GP = 'gp'
+DP = 'dp'
+PL = 'pl'
+SELF = 'self'
+
+def letters():
+    global B
+    B = 'b'
