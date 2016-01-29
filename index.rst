@@ -14,7 +14,7 @@ Corpus interrogations can be quickly edited, sorted and visualised in complex wa
 
 .. image:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
 
-*corpkit* leverages `Stanford CoreNLP`_ and NLTK_, supports multiprocessing, and outputs interrogations as Pandas_ objects.
+*corpkit* leverages Stanford `CoreNLP`_ and NLTK_, supports multiprocessing, and outputs interrogations as Pandas_ objects.
 
 A GUI, incorporating much of corpkit's command line functionality, is documented and downloadable here_.
 
@@ -25,7 +25,6 @@ Contents:
    corpkit
 
 .. _CoreNLP: http://stanfordnlp.github.io/CoreNLP/
-__ CoreNLP_
 .. _NLTK: http://www.nltk.org/
 .. _Pandas: http://pandas.pydata.org/
 .. _here: http://interrogator.github.io/corpkit/
