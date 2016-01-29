@@ -61,7 +61,7 @@ setup(name='corpkit',
     #cmdclass={'install': CustomInstallCommand,},
     keywords = ['corpus', 'linguistics', 'nlp'],
     packages=['corpkit'],
-    install_requires=["matplotlib >= 1.4.3"]
+    install_requires=["matplotlib >= 1.4.3",
                         "nltk >= 3.0.0",
                         "joblib",
                         "pandas >= 0.16.1",
