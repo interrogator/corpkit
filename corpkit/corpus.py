@@ -152,15 +152,15 @@ class Corpus:
         :type path: str -- corpus path; list of strings -- list of paths
         
         :param search: What query should be matching
-            - t/tregex
-            - w/word
-            - l/lemma
-            - f/function
-            - g/governor
-            - d/dependent
-            - p/pos
-            - i/index
-            - n/ngrams
+           - t/tregex
+           - w/word
+           - l/lemma
+           - f/function
+           - g/governor
+           - d/dependent
+           - p/pos
+           - i/index
+           - n/ngrams
         :type search: str, or, for dependencies, a dict like {'w': 'help', 'p': r'^V'}
 
         :param searchmode: Return results matching any/all criteria
@@ -173,47 +173,39 @@ class Corpus:
         :type excludemode: str ('any'/'all')
         
         :param query: A search query for the interrogation
-        :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; 
-        list -- word list to match
-
-        :param show: What to output. If multiple strings are passed, results 
-        will be colon-separated, in order
-            - t/tree
-            - w/word
-            - l/lemma
-            - g/governor
-            - d/dependent
-            - f/function
-            - p/pos
-            - i/index
-            - a/distance from root
+        :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
+        
+        :param show: What to output. If multiple strings are passed, results will be colon-separated, in order
+           - t/tree
+           - w/word
+           - l/lemma
+           - g/governor
+           - d/dependent
+           - f/function
+           - p/pos
+           - i/index
+           - a/distance from root
         :type show: list of strings
 
         :param lemmatise: Force lemmatisation on results
         :type lemmatise: bool
-            
-        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when 
-            data is unparsed)
+           
+        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
         :type lemmatag: False/'n'/'v'/'a'/'r'
         
-        :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results 
-        (turns 'phrases' on)
+        :param titlefilter: Strip 'mr, 'the', 'dr.' etc. from multiword results (turns 'phrases' on)
         :type titlefilter: bool
         
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: False/'US'/'UK'
-            
-        :param phrases: Use if your expected results are multiword (e.g. 
-            searching for NP, with
-                        show as 'w'), and thus need tokenising
+           
+        :param phrases: Use if your expected results are multiword (e.g. searching for NP, with show as 'w'), and thus need tokenising
         :type phrases: bool
             
-        :param dep_type: The kind of Stanford CoreNLP dependency parses you 
-        want to use:
+        :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
         :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
         
-        :param quicksave: Save result as pickle to 
-        `saved_interrogations/*quicksave*` on completion
+        :param quicksave: Save result as pickle to `saved_interrogations/*quicksave*` on completion
         :type quicksave: str
         
         :param gramsize: size of ngrams (default 2)
@@ -225,8 +217,7 @@ class Corpus:
         :param multiprocess: how many parallel processes to run
         :type multiprocess: int / bool (to determine automatically)
 
-        :param only_format_match: when concordancing, if true, left and right 
-        window will just be words, regardless of what is in 'show'
+        :param only_format_match: when concordancing, if true, left and right window will just be words, regardless of what is in 'show'
         :type only_format_match: bool
 
         :param random: randomise concordance lines
@@ -238,10 +229,8 @@ class Corpus:
         :param files_as_subcorpora: treat each file as a subcorpus
         :type files_as_subcorpora: bool
 
-        :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
-        ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is 
-        invoked, result may be a :class:`corpus.interrogation.Interrodict` 
-        containing corpus names, queries or speakers as keys.
+        :returns: A :class:`corpkit.interrogation.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
+        invoked, result may be a :class:`corpus.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
         """
         from corpkit import interrogator
         par = kwargs.pop('multiprocess', None)
@@ -255,8 +244,7 @@ class Corpus:
     def parse(self, *args, **kwargs):
         """Parse an unparsed corpus
 
-        :param speaker_segmentation: Attempt to detect and handle speaker IDs 
-        at start of lines in file
+        :param speaker_segmentation: Attempt to detect and handle speaker IDs at start of lines in file
         :type speaker_segmentation: bool
 
         See :func:`corpkit.make.make_corpus()` for more information regarding 

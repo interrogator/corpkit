@@ -39,34 +39,34 @@ class Interrogation:
 
         :param operation: Kind of maths to do on inputted lists:
 
-            '+', '-', '/', '*', '%': self explanatory
+           '+', '-', '/', '*', '%': self explanatory
 
-            'k': log likelihood (keywords)
+           'k': log likelihood (keywords)
 
-            'a': get distance metric (for use with interrogator 'a' option)
+           'a': get distance metric (for use with interrogator 'a' option)
 
-            'd': get percent difference (alternative approach to keywording)
+           'd': get percent difference (alternative approach to keywording)
 
         :type operation: str
         
         :param dataframe2: List of results or totals.
 
-            If list of results, for each entry in dataframe 1, locate
-            entry with same name in dataframe 2, and do maths there
-            if 'self', do all merging/keeping operations, then use
-            edited dataframe1 as dataframe2
+           If list of results, for each entry in dataframe 1, locate
+           entry with same name in dataframe 2, and do maths there
+           if 'self', do all merging/keeping operations, then use
+           edited dataframe1 as dataframe2
 
         :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
 
         :param sort_by: Calculate slope, stderr, r, p values, then sort by.
 
-            increase: highest to lowest slope value
-            decrease: lowest to highest slope value
-            turbulent: most change in y axis values
-            static: least change in y axis values
-            total/most: largest number first
-            infreq/least: smallest number first
-            name: alphabetically
+           increase: highest to lowest slope value
+           decrease: lowest to highest slope value
+           turbulent: most change in y axis values
+           static: least change in y axis values
+           total/most: largest number first
+           infreq/least: smallest number first
+           name: alphabetically
 
         :type sort_by: str
 
@@ -79,16 +79,15 @@ class Interrogation:
         :param just_totals: Sum each column and work with sums
         :type just_totals: bool
         
-        :param threshold: When using results list as dataframe 2, drop values occurring
-                            fewer than n times. If not keywording, you can use:
+        :param threshold: When using results list as dataframe 2, drop values occurring fewer than n times. If not keywording, you can use:
                                 
-                                ``'high'``: dataframe2 total / 2500
-                                
-                                ``'medium'``: dataframe2 total / 5000
-                                
-                                ``'low'``: dataframe2 total / 10000
+           ``'high'``: dataframe2 total / 2500
+           
+           ``'medium'``: dataframe2 total / 5000
+           
+           ``'low'``: dataframe2 total / 10000
                             
-                                If keywording, there are smaller default thresholds
+           If keywording, there are smaller default thresholds
 
         :type threshold: int/bool
         :param just_entries: Keep matching entries
