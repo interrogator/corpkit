@@ -97,7 +97,7 @@ Stopwords
 .. data:: corpkit.dictionaries.stopwords.stopwords
    :annotation: A list of stopwords (or, use `wordlists.closedclass`)
 
-Systemic/dependency label converstion
+Systemic/dependency label conversion
 =================
 .. autodata:: corpkit.dictionaries.roles.roles
    :annotation: Translate systemic-functional to dependency roles. roles.actor, roles.predicator, roles.epithet
