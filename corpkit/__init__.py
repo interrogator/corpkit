@@ -126,6 +126,3 @@ DP = 'dp'
 PL = 'pl'
 SELF = 'self'
 
-def letters():
-    global B
-    B = 'b'
