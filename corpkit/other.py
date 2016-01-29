@@ -280,7 +280,7 @@ def load(savename, loaddir = 'saved_interrogations'):
         data = pickle.load(fo)
     return data
 
-def new_project(name, loc = '.', root = False):
+def new_project(name, loc = '.', **kwargs):
     """Make a new project in ./*loc*
 
     :param name: A name for the project
@@ -294,6 +294,8 @@ def new_project(name, loc = '.', root = False):
     import stat
     import platform
     from time import strftime, localtime
+
+    root = kwargs.get('root', False)
 
     path_to_corpkit = os.path.dirname(corpkit.__file__)
     thepath, corpkitname = os.path.split(path_to_corpkit)
