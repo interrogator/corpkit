@@ -140,7 +140,7 @@ class Corpus:
 
     # METHODS
     def get_stats(self, *args):
-        """Get some basic stats from the corpus, and store as `corpus.features`"""
+        """Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`"""
         from corpkit import interrogator
         self.features = interrogator(self.path, 's', 'any').results
         print 'Features defined. See .features attribute ...' 
@@ -298,7 +298,7 @@ class Corpus:
         A concordance method for Tregex queries, CoreNLP dependencies, 
         tokenised data or plaintext.
 
-        Arguments are the same as py:method::`corpkit.interrogation.Interrogation.interrogate`.
+        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`.
 
         """
 
@@ -310,7 +310,7 @@ class Corpus:
 
         A demo function.
 
-        :param search: search as per py:method::`corpkit.corpus.Corpus.interrogate`
+        :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: dict
         :param kwargs: extra arguments to pass to `interrogate`/`plot`
         :type kwargs: keyword arguments
