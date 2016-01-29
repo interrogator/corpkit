@@ -4,7 +4,7 @@
 
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
-> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a toolkit for working with parsed and structured linguistic corpora.
 > 
 > **There's also a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`, and a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
@@ -12,6 +12,7 @@
 
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)
+    - [Navigating `Corpus` objects](#navigating-corpus-objects)
     - [`interrogate()` method](#interrogate-method)
     - [`concordance()` method](#concordance-method)
   - [`Interrogation()`](#interrogation)
@@ -75,14 +76,19 @@ as well as the following methods:
 
 | Method | Purpose |
 |--------|---------|
-| `corpus.parse()` | Create a tokenised/parsed version of a plaintext corpus |
+| `corpus.parse()` | Create a parsed version of a plaintext corpus |
+| `corpus.tokenise()` | Create a tokenised version of a plaintext corpus |
 | `corpus.interrogate()` | Interrogate the corpus for lexicogrammatical features |
 | `corpus.concordance()` | Concordance via lexis and/or grammar |
 | `corpus.get_stats()` | Count features (characters, clauses, words, tokens, process types, passives, etc.) and store as `corpus.features` attribute |
 
+<a name="navigating-corpus-objects"></a>
+#### Navigating `Corpus` objects
+
 Once you've defined a Corpus, you can move around it very easily:
 
 ```python
+# corpus containing annual subcorpora of NYT articles
 >>> corpus = Corpus('data/NYT-parsed')
 
 >>> list(corpus.subcorpora)[:3]
@@ -100,15 +106,15 @@ Once you've defined a Corpus, you can move around it very easily:
 
 ```
 
-Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` object also have a `.read()` method.
+Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` objects also have a `.read()` method.
 
 <a name="interrogate-method"></a>
 #### `interrogate()` method
 
-* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
-* Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token matching a regular expression or wordlist
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html), regular expressions or wordlists to search parse trees, dependencies, token lists or plain text for complex lexicogrammatical phenomena
+* Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token
 * N-gramming
-* Two-way UK-US spelling conversion, and the ability to add words manually
+* Two-way UK-US spelling conversion
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 * Restrict searches to particular speakers in a corpus
@@ -196,7 +202,7 @@ and methods:
 | `interrogation.save()` | Save data as pickle |
 | `interrogation.quickview()` | Show top results and their absolute/relative frequency |
 
-These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well.
+These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well, so any slice of a result can be edited or plotted easily.
 
 <a name="edit-method"></a>
 #### `edit()` method
@@ -306,7 +312,7 @@ ipython notebook orientation.ipynb
 Or, just use *(I)Python*:
 
 ```python
->>> from corpkit import Corpus
+>>> from corpkit import *
 
 # Make corpus from path
 >>> unparsed = Corpus('data/nyt/years')
@@ -375,6 +381,7 @@ For parsed corpora, there are many other possible keys:
 | Key | Gloss |
 |-----|-------|
 | `P`    | Part of speech tag |
+| `PL`   | Word class |
 | `G`    | Governor word  |
 | `GL`   | Governor lemma form   |
 | `GP`   | Governor POS   |
@@ -400,13 +407,13 @@ Allowable combinations are subject to common sense. If you're searching trees, y
 | `{I: '0', F: '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
 | `{T: r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
 
-If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `'df'`. The following searches produce the same output:
+If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `GL` or `DF`. The following searches produce the same output:
 
 ```python
 crit = {W: r'^friend$', 
         D: {F: 'amod', 
-              W: 'great'}}
-crit = {W: r'^friend$', 'df': 'amod', D: 'great'}
+            W: 'great'}}
+crit = {W: r'^friend$', DF: 'amod', D: 'great'}
 ```
 
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
@@ -437,7 +444,7 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 | `[L, L]`    | `'champion/champion'`      |
 | `[C]` | `24` |
 
-Again, common sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `C`, you can't use anything else.
+Again, common sense dictates what is possible. When searching trees, only trees, words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `C`, you can't use anything else.
 
 <a name="building-corpora"></a>
 ## Building corpora
@@ -450,7 +457,7 @@ Again, common sense dictates what is possible. When searching trees, only words,
 # to parse, you can set a path to corenlp
 >>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
 
-# to tokenise, turn parsing off, and point to nltk:
+# to tokenise, point to nltk:
 # >>> corpus = unparsed.tokenise(nltk_data_path = 'Downloads/nltk_data')
 ```
 
@@ -458,7 +465,8 @@ which creates the parsed/tokenised corpora, and returns `Corpus()` objects repre
 
 ```python
 ans = 'tokenize,ssplit,pos'
-corpus = unparsed.parse(operations = ans)
+# you can also set memory and turn off copula head parsing
+corpus = unparsed.parse(operations = ans, memory_mb = 3000, copula_head = False)
 ```
 
 <a name="speaker-ids"></a>
@@ -522,12 +530,12 @@ Output:
 13       25807    8546   6966                4768              3778     2345        477                      257               200                    124             45        50                36                      15                  12           3                      2    
 ```
 
-Features such as *relational/mental/verbal* processes are difficult to locate automatically, so these figures are perhaps best seen as approximations. Even so, this data can be very helpful when using `edit()` to generate relative frequencies, for example.
+Features such as *relational/mental/verbal* processes are difficult to locate automatically, so these counts are perhaps best seen as approximations. Even so, this data can be very helpful when using `edit()` to generate relative frequencies, for example.
 
 <a name="concordancing"></a>
 ## Concordancing
 
-Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance gramatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
+Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance grammatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
 
 ```python
 >>> subcorpus = corpus.subcorpora.c2005
