@@ -13,7 +13,6 @@ It does a lot of the usual things, like parsing, interrogating, concordancing an
 Corpus interrogations can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
 
 .. image:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
-   :width: 40pt
 
 *corpkit* leverages `Stanford CoreNLP`_ and NLTK_, supports multiprocessing, and outputs interrogations as Pandas_ objects.
 
