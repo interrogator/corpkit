@@ -281,12 +281,14 @@ def load(savename, loaddir = 'saved_interrogations'):
     return data
 
 def new_project(name, loc = '.', **kwargs):
-    """Make a new project in ./*loc*
+    """Make a new project in ``loc``.
 
     :param name: A name for the project
     :type name: str
     :param loc: Relative path to directory in which project will be made
     :type loc: str
+
+    :returns: None
     """
     import corpkit
     import os
