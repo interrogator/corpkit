@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# corpkit-docs documentation build configuration file, created by
+# corpkit documentation build configuration file, created by
 # sphinx-quickstart on Thu Nov  5 11:43:02 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -52,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'corpkit-docs'
+project = u'corpkit'
 copyright = u'2015, Daniel McDonald'
 author = u'Daniel McDonald'
 
@@ -218,7 +218,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'corpkit-docsdoc'
+htmlhelp_basename = 'corpkitdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -240,7 +240,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'corpkit-docs.tex', u'corpkit-docs Documentation',
+  (master_doc, 'corpkit.tex', u'corpkit Documentation',
    u'Daniel McDonald', 'manual'),
 ]
 
@@ -270,7 +270,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'corpkit-docs', u'corpkit-docs Documentation',
+    (master_doc, 'corpkit', u'corpkit Documentation',
      [author], 1)
 ]
 
@@ -284,8 +284,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'corpkit-docs', u'corpkit-docs Documentation',
-   author, 'corpkit-docs', 'Corpus linguistic tools.',
+  (master_doc, 'corpkit', u'corpkit Documentation',
+   author, 'corpkit', 'Corpus linguistic tools.',
    'Linguistics'),
 ]
 
