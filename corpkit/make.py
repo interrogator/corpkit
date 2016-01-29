@@ -111,12 +111,15 @@ def make_corpus(unparsed_corpus_path,
         filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                 corpuspath = to_parse)
 
+        cop_head = kwargs.get('copula_head', True)
+
         new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = to_parse,
                                    filelist = filelist,
                                    corenlppath = corenlppath,
                                    nltk_data_path = nltk_data_path,
-                                   operations = operations)
+                                   operations = operations,
+                                   copula_head = cop_head)
 
         if new_parsed_corpus_path is False:
             return 
