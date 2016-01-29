@@ -40,8 +40,11 @@ class Interrogation:
         :param operation: Kind of maths to do on inputted lists:
 
             '+', '-', '/', '*', '%': self explanatory
+
             'k': log likelihood (keywords)
+
             'a': get distance metric (for use with interrogator 'a' option)
+
             'd': get percent difference (alternative approach to keywording)
 
         :type operation: str
@@ -54,8 +57,8 @@ class Interrogation:
             edited dataframe1 as dataframe2
 
         :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
-        
-        :param sort_by: Calculate slope, stderr, r, p values, then sort by:
+
+        :param sort_by: Calculate slope, stderr, r, p values, then sort by.
 
             increase: highest to lowest slope value
             decrease: lowest to highest slope value
@@ -64,7 +67,7 @@ class Interrogation:
             total/most: largest number first
             infreq/least: smallest number first
             name: alphabetically
-            
+
         :type sort_by: str
 
         :param keep_stats: Keep/drop stats values from dataframe after sorting
@@ -78,10 +81,15 @@ class Interrogation:
         
         :param threshold: When using results list as dataframe 2, drop values occurring
                             fewer than n times. If not keywording, you can use:
+                                
                                 ``'high'``: dataframe2 total / 2500
+                                
                                 ``'medium'``: dataframe2 total / 5000
+                                
                                 ``'low'``: dataframe2 total / 10000
-                            Note: if keywording, there are smaller default thresholds
+                            
+                                If keywording, there are smaller default thresholds
+
         :type threshold: int/bool
         :param just_entries: Keep matching entries
         :type just_entries: see above
@@ -111,7 +119,7 @@ class Interrogation:
         :param p:                  set the p value
         :type p: float
         
-        :param revert_year:        when doing linear regression on years, turn annual subcorpora into 1, 2 ...
+        :param revert_year: When doing linear regression on years, turn annual subcorpora into 1, 2 ...
         :type revert_year: bool
         
         :param print_info: Print stuff to console showing what's being edited
@@ -228,8 +236,8 @@ class Interrogation:
         """
         Save an interrogation as pickle to *savedir*.
 
-           >>> interro_interrogator(corpus, 'words', 'any')
-           >>> save(interro, 'savename')
+           >>> o = corpus.interrogate('w', 'any')
+           >>> save(o, 'savename')
 
         will create saved_interrogations/savename.p
         
@@ -258,6 +266,12 @@ class Interrogation:
         quickview(self, n = n)
 
     def multiindex(self, indexnames = False):
+        """Create a `pd.MultiIndex` object from slash-separated results.
+
+        :param indexnames: provide custom names for the new index
+        :type indexnames: list of strings
+        """
+
         from corpkit.other import make_multi
         return make_multi(self, indexnames = indexnames)
 
@@ -328,7 +342,7 @@ class Totals(pd.core.series.Series):
 class Concordance(pd.core.frame.DataFrame):
     """
     A class for concordance lines, with methods for saving,
-    formatting and editing
+    formatting and editing.
     """
     
     def __init__(self, data):
@@ -358,8 +372,9 @@ class Concordance(pd.core.frame.DataFrame):
 
 class Interrodict(dict):
     """
-    A class for concordance lines, with methods for saving,
-    formatting and editing
+    A class for interrogations that do not fit in a single-indexed DataFrame.
+
+    Methods for saving, editing, and generating multiindex DataFrame equivalent.
     """
     
     def __init__(self, data):

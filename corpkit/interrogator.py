@@ -330,22 +330,35 @@ def interrogator(corpus,
         return done
 
 
-    def tok_by_list(pattern, list_of_toks, **kwargs):
+    def tok_by_list(pattern, list_of_toks, concordancing = False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
         if type(pattern) == str:
             pattern = [pattern]
-        result = []
-        matches = [m for m in list_of_toks if m in pattern]
-        for m in matches:
-            result.append(m)
-        if countmode:
-            return(len(result))
+        if not case_sensitive:
+            pattern = [p.lower() for p in pattern]
+        if not concordancing:
+            if case_sensitive:
+                matches = [m for m in list_of_toks if m in pattern]
+            else:
+                matches = [m for m in list_of_toks if m.lower() in pattern]
         else:
-            return result
+            matches = []
+            for index, token in enumerate(list_of_toks):
+                if token in pattern:
+                    match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    match.append(token)
+                    match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    matches.append(match)
+        if countmode:
+            return(len(matches))
+        else:
+            return matches
 
     def unsplitter(lst):
         """unsplit contractions and apostophes from tokenised text"""
+        if split_contractions:
+            return lst
         unsplit = []
         for index, t in enumerate(lst):
             if index == 0 or index == len(lst) - 1:
@@ -359,7 +372,7 @@ def interrogator(corpus,
                     unsplit.append(t)
         return unsplit
 
-    def tok_ngrams(pattern, list_of_toks, split_contractions = True):
+    def tok_ngrams(pattern, list_of_toks, concordancing = False, split_contractions = True):
         from collections import Counter
         import re
         ngrams = Counter()
@@ -392,53 +405,70 @@ def interrogator(corpus,
         else:
             return result
 
-    def tok_by_reg(pattern, list_of_toks, **kwargs):
-        """search for regex in plaintext corpora"""
+    def compiler(pattern):
+        """compile regex or fail gracefully"""
         import re
         try:
             if case_sensitive:
                 comped = re.compile(pattern)
             else:
-                comped = re.compile(r'(?i)' + pattern)
+                comped = re.compile(pattern, re.IGNORECASE)
+            return comped
         except:
             import traceback
             import sys
+            from time import localtime, strftime
             exc_type, exc_value, exc_traceback = sys.exc_info()
             lst = traceback.format_exception(exc_type, exc_value,
                           exc_traceback)
             error_message = lst[-1]
             thetime = strftime("%H:%M:%S", localtime())
             print '%s: Query %s' % (thetime, error_message)
-            return 'Bad query'
+            if root:
+                return 'Bad query'
+            else:
+                raise ValueError('%s: Query %s' % (thetime, error_message))
 
-        matches = [m for m in list_of_toks if re.search(comped, m)]
+
+    def tok_by_reg(pattern, list_of_toks, concordancing = False, **kwargs):
+        """search for regex in plaintext corpora"""
+        import re
+        comped = compiler(pattern)
+        if comped == 'Bad query':
+            return 'Bad query'
+        if not concordancing:
+            matches = [m for m in list_of_toks if re.search(comped, m)]
+        else:
+            matches = []
+            for index, token in enumerate(list_of_toks):
+                if re.search(comped, token):
+                    match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    match.append(re.search(comped, token).group(0))
+                    match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    matches.append(match)
         if countmode:
             return(len(matches))
         else:
             return matches
 
-    def plaintext_regex_search(pattern, plaintext_data, **kwargs):
+    def plaintext_regex_search(pattern, plaintext_data, concordancing = False, **kwargs):
         """search for regex in plaintext corpora
 
         it searches over lines, so the user needs to be careful.
         """
         import re
-        try:
-            compiled_pattern = re.compile(pattern)
-        except:
-            import traceback
-            import sys
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            lst = traceback.format_exception(exc_type, exc_value,
-                          exc_traceback)
-            error_message = lst[-1]
-            thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Query %s' % (thetime, error_message)
+        if concordancing:
+            pattern = r'(.{,140})\b(' + pattern + r')\b(.{,140})'
+        compiled_pattern = compiler(pattern)
+        if compiled_pattern == 'Bad query':
             return 'Bad query'
         matches = re.findall(compiled_pattern, plaintext_data)
-        for index, i in enumerate(matches):
-            if type(i) == tuple:
-                matches[index] = i[0]
+        if concordancing:
+            matches = [list(m) for m in matches]
+        if not concordancing:
+            for index, i in enumerate(matches):
+                if type(i) == tuple:
+                    matches[index] = i[0]
         if countmode:
             return(len(matches))
         else:
@@ -465,20 +495,26 @@ def interrogator(corpus,
         return r
 
 
-    def plaintext_simple_search(pattern, plaintext_data, **kwargs):
+    def plaintext_simple_search(pattern, plaintext_data, concordancing = False, **kwargs):
         """search for tokens in plaintext corpora"""
         import re
         result = []
         if type(pattern) == str:
             pattern = [pattern]
         for p in pattern:
-            if case_sensitive:
-                pat = re.compile(r'\b' + re.escape(p) + r'\b')
-            else:
-                pat = re.compile(r'\b' + re.escape(p) + r'\b', re.IGNORECASE)
+            if concordancing:
+                pat = r'(.{0,140})\b(' + re.escape(p) + r')\b(.{0,140})'
+            pat = compiler(pat)
+            if pat == 'Bad query':
+                return 'Bad query'
             matches = re.findall(pat, plaintext_data)
-            for m in range(len(matches)):
-                result.append(p)
+            if concordancing:
+                matches = [list(m) for m in matches]
+                for i in matches:
+                    result.append(i)
+            else:   
+                for m in range(len(matches)):
+                    result.append(p)
         return result
 
     # do multiprocessing if need be
@@ -533,6 +569,8 @@ def interrogator(corpus,
                 if kwargs.get('regex', True):
                     searcher = tok_by_reg
                 else:
+                    searcher = tok_by_list
+                if type(search.get('w')) == list:
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
         only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f']
@@ -748,6 +786,9 @@ def interrogator(corpus,
                             case_sensitive = case_sensitive,
                             concordancing = conc,
                             only_format_match = only_format_match)
+                        
+                        if res == 'Bad query':
+                            return 'Bad query'
 
                         if searcher == slow_tregex and not countmode:
                             res = format_tregex(res)
@@ -756,12 +797,24 @@ def interrogator(corpus,
                     import pickle
                     with open(f.path, "rb") as fo:
                         data = pickle.load(fo)
-                    res = searcher(search.values()[0], data, split_contractions = split_contractions)
+                    res = searcher(search.values()[0], data, split_contractions = split_contractions, 
+                        concordancing = conc)
+                    if conc:
+                        for index, line in enumerate(res):
+                            line.insert(0, '')
+
 
                 elif corpus.datatype == 'plaintext':
                     with open(f.path, 'rb') as data:
                         data = data.read()
-                        res = searcher(search.values()[0], data)
+                        data = unicode(data, errors = 'ignore')
+                        res = searcher(search.values()[0], data, 
+                            concordancing = conc)
+                        if conc:
+                            for index, line in enumerate(res):
+                                line.insert(0, '')
+
+
 
                 if countmode:
                     results[subcorpus_name] += res
@@ -848,18 +901,10 @@ def interrogator(corpus,
         if kwargs.get('note'):
             kwargs['note'].progvar.set(100)
 
-        #if print_output:
-        #    formatl = lambda x: "{0}".format(x[-window:])
-        #    formatf = lambda x: "{0}".format(x[-20:])
-        #    #formatr = lambda x: 
-        #    formatr = lambda x: "{{:<{}s}}".format(df['r'].str.len().max()).format(x[:window])
-        #    st = df.head(n).to_string(header = False, formatters={'l': formatl,
-        #                                                          'r': formatr,
-        #                                                          'f': formatf}).splitlines()
-        #    
-        #    # hack because i can't figure out formatter:
-        #    rem = '\n'.join([re.sub('\s*\.\.\.\s*$', '', s) for s in st])
-        #    print rem
+        if kwargs.get('printstatus', True):
+            thetime = strftime("%H:%M:%S", localtime())
+            finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(df.index))
+            print finalstring
 
         from corpkit.interrogation import Concordance
         output = Concordance(df)

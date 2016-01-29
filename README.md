@@ -4,14 +4,15 @@
 
 ### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
-> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a simple toolkit for working with parsed and structured linguistic corpora.
+> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a toolkit for working with parsed and structured linguistic corpora.
 > 
-> **Over the last few months I've developed a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`. There is also a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
+> **There's also a GUI version of the tool. This resides as pure Python in `corpkit/corpkit-gui.py`, and a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.**
 
 <!-- MarkdownTOC -->
 
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)
+    - [Navigating `Corpus` objects](#navigating-corpus-objects)
     - [`interrogate()` method](#interrogate-method)
     - [`concordance()` method](#concordance-method)
   - [`Interrogation()`](#interrogation)
@@ -75,29 +76,55 @@ as well as the following methods:
 
 | Method | Purpose |
 |--------|---------|
-| `corpus.parse()` | Create a tokenised/parsed version of a plaintext corpus |
+| `corpus.parse()` | Create a parsed version of a plaintext corpus |
+| `corpus.tokenise()` | Create a tokenised version of a plaintext corpus |
 | `corpus.interrogate()` | Interrogate the corpus for lexicogrammatical features |
 | `corpus.concordance()` | Concordance via lexis and/or grammar |
 | `corpus.get_stats()` | Count features (characters, clauses, words, tokens, process types, passives, etc.) and store as `corpus.features` attribute |
 
-Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` object also have a `.read()` method.
+<a name="navigating-corpus-objects"></a>
+#### Navigating `Corpus` objects
+
+Once you've defined a Corpus, you can move around it very easily:
+
+```python
+# corpus containing annual subcorpora of NYT articles
+>>> corpus = Corpus('data/NYT-parsed')
+
+>>> list(corpus.subcorpora)[:3]
+# [<corpkit.corpus.Subcorpus instance: 1987>,
+#  <corpkit.corpus.Subcorpus instance: 1988>,
+#  <corpkit.corpus.Subcorpus instance: 1989>]
+
+>>> corpus.subcorpora[0].abspath, corpus.subcorpora[0].datatype
+# ('/Users/daniel/Work/risk/data/NYT-parsed/1987', 'parse')
+
+>>> corpus.subcorpora.c1989.files[10:13]
+# [<corpkit.corpus.File instance: NYT-1989-01-01-10-1.txt.xml>,
+#  <corpkit.corpus.File instance: NYT-1989-01-01-10-2.txt.xml>,
+#  <corpkit.corpus.File instance: NYT-1989-01-01-11-1.txt.xml>]
+
+```
+
+Most attributes, and the `.interrogate()` and `.concordance()` methods, can also be called on `Subcorpus` and `File` objects. `File` objects also have a `.read()` method.
 
 <a name="interrogate-method"></a>
 #### `interrogate()` method
 
-* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html) or regular expressions to search parse trees, dependencies or plain text for complex lexicogrammatical phenomena
-* Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token matching a regular expression or wordlist
+* Use [Tregex](http://nlp.stanford.edu/~manning/courses/ling289/Tregex.html), regular expressions or wordlists to search parse trees, dependencies, token lists or plain text for complex lexicogrammatical phenomena
+* Search for, exclude and show word, lemma, POS tag, semantic role, governor, dependent, index (etc) of a token
 * N-gramming
-* Two-way UK-US spelling conversion, and the ability to add words manually
+* Two-way UK-US spelling conversion
 * Output Pandas DataFrames that can be easily edited and visualised
 * Use parallel processing to search for a number of patterns, or search for the same pattern in multiple corpora
 * Restrict searches to particular speakers in a corpus
+* Works on collections of corpora, corpora, subcorpora, single files, or slices thereof
 * Quickly save to and load from disk with `save()` and `load()`
 
 <a name="concordance-method"></a>
 #### `concordance()` method
 
-* Equivalent API to `interrogate()`, but return DataFrame of concordance lines
+* Equivalent to `interrogate()`, but return DataFrame of concordance lines
 * Return any combination and order of words, lemmas, indices, functions, or POS tags
 * Editable and saveable
 * Output to LaTeX, CSV or string with `format()`
@@ -105,6 +132,10 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` and `concordance()` methods:
 
 ```python
+# import * mostly so that we can access global variables like G, P, V
+# otherwise, use 'w' instead of W, 'p' instead of P, etc. 
+>>> from corpkit import *
+
 # select parsed corpus
 >>> corpus = Corpus('data/postcounts-parsed')
 
@@ -114,18 +145,18 @@ The code below demonstrates the complex kinds of queries that can be handled by 
 
 # match tokens with governor that is in relational process wordlist, 
 # and whose function is `nsubj(pass)` or `csubj(pass)`:
->>> criteria = {'g': processes.relational, 'f': r'^.subj'}
+>>> criteria = {G: processes.relational, F: r'^.subj'}
 
 # exclude tokens whose part-of-speech is verbal, 
 # or whose word is in a list of pronouns
->>> exc = {'p': r'^V', 'w': wordlists.pronouns}
+>>> exc = {P: r'^V', W: wordlists.pronouns}
 
 # interrogate, returning slash-delimited function/lemma
->>> data = corpus.interrogate(criteria, exclude = exc, show = ['f', 'l'])
->>> lines = corpus.concordance(criteria, exclude = exc, show = ['f', 'l'])
+>>> data = corpus.interrogate(criteria, exclude = exc, show = [F, L])
+>>> lines = corpus.concordance(criteria, exclude = exc, show = [F, L])
 
 # show results
->>> print data, lines.format(n = 10, window = 40, columns = ['l', 'm', 'r'])
+>>> print data, lines.format(n = 10, window = 40, columns = [L, M, R])
 ```
 
 Output sample:
@@ -171,7 +202,7 @@ and methods:
 | `interrogation.save()` | Save data as pickle |
 | `interrogation.quickview()` | Show top results and their absolute/relative frequency |
 
-These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well.
+These methods have been monkey-patched to Pandas' DataFrame and Series objects, as well, so any slice of a result can be edited or plotted easily.
 
 <a name="edit-method"></a>
 #### `edit()` method
@@ -281,7 +312,7 @@ ipython notebook orientation.ipynb
 Or, just use *(I)Python*:
 
 ```python
->>> from corpkit import Corpus
+>>> from corpkit import *
 
 # Make corpus from path
 >>> unparsed = Corpus('data/nyt/years')
@@ -314,9 +345,9 @@ Here's an example of the three methods at work:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 # search trees, exclude 'risk of rain', output lemma
->>> risk_of = corpus.interrogate({'t': q}, exclude = {'w': '^rain$'}, show = ['l'])
+>>> risk_of = corpus.interrogate({T: q}, exclude = {W: '^rain$'}, show = [L])
 # alternative syntax which may be easier when there's only a single search criterion:
-# >>> risk_of = corpus.interrogate('t', q, exclude = {'w': '^rain$'}, show = ['l'])
+# >>> risk_of = corpus.interrogate(T, q, exclude = {W: '^rain$'}, show = [L])
 
 # use edit() to turn absolute into relative frequencies
 >>> to_plot = risk_of.edit('%', risk_of.totals)
@@ -340,79 +371,80 @@ the `search` and `exclude` arguments need a `dict`, with the **thing to be searc
 
 | Key | Gloss |
 |-----|-------|
-| `'w'`   | Word |
-| `'l'`   | Lemma   |
-| `'i'`   | Index of token in sentence |
-| `'n'`   | N-gram    |
+| `W`   | Word |
+| `L`   | Lemma   |
+| `I`   | Index of token in sentence |
+| `N`   | N-gram    |
 
 For parsed corpora, there are many other possible keys:
 
 | Key | Gloss |
 |-----|-------|
-| `'p'`    | Part of speech tag |
-| `'g'`    | Governor word  |
-| `'gl'`   | Governor lemma form   |
-| `'gp'`   | Governor POS   |
-| `'gf'`   | Governor function   |
-| `'d'`    | Dependent word   |
-| `'dl'`   | Dependent lemma form   |
-| `'dp'`   | Dependent POS   |
-| `'df'`   | Dependent function  |
-| `'f'`    | Dependency function |
-| `'r'`    | Distance from 'root' |
-| `'t'`    | Tree  |
-| `'v'`    | Predefined general stats |
+| `P`    | Part of speech tag |
+| `PL`   | Word class |
+| `G`    | Governor word  |
+| `GL`   | Governor lemma form   |
+| `GP`   | Governor POS   |
+| `GF`   | Governor function   |
+| `D`    | Dependent word   |
+| `DL`   | Dependent lemma form   |
+| `DP`   | Dependent POS   |
+| `DF`   | Dependent function  |
+| `F`    | Dependency function |
+| `R`    | Distance from 'root' |
+| `T`    | Tree  |
+| `V`    | Predefined general stats |
 
 Allowable combinations are subject to common sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
 
 | search/exclude | Gloss |
 |--------|-------|
-| `{'w': r'^p'}`       | Tokens starting with 'p'      |
-| `{'l': r'any'}`       | Any lemma (often equivalent to `r'.*'`)      |
-| `{'g': r'ing$'}`       | Tokens with governor word ending in 'ing'      |
-| `{'f': funclist}`       | Tokens whose dependency function matches a `str` in `funclist`       |
-| `{'d': r'^br', 'gl': r'$have$'}`       | Tokens with dependent starting with 'br' and 'have' as governor lemma  |
-| `{'i': '0', 'f': '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
-| `{'t': r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
+| `{W: r'^p'}`       | Tokens starting with P      |
+| `{L: r'any'}`       | Any lemma (often equivalent to `r'.*'`)      |
+| `{G: r'ing$'}`       | Tokens with governor word ending in 'ing'      |
+| `{F: funclist}`       | Tokens whose dependency function matches a `str` in `funclist`       |
+| `{D: r'^br', GL: r'$have$'}`       | Tokens with dependent starting with 'br' and 'have' as governor lemma  |
+| `{I: '0', F: '^nsubj$'}`       | Sentence initial tokens with role of `nsubj`      |
+| `{T: r'NP !<<# /NN.?'}`       | NPs with non-nominal heads    |
 
-If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `'df'`. The following searches produce the same output:
+If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `GL` or `DF`. The following searches produce the same output:
 
 ```python
-crit = {'w': r'^friend$', 
-        'd': {'f': 'amod', 
-              'w': 'great'}}
-crit = {'w': r'^friend$', 'df': 'amod', 'd': 'great'}
+crit = {W: r'^friend$', 
+        D: {F: 'amod', 
+            W: 'great'}}
+crit = {W: r'^friend$', DF: 'amod', D: 'great'}
 ```
 
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
 
 ```python
 # get words that end in 'ing' OR are nominal:
->>> out = interrogator({'w': 'ing$', 'p': r'^N'}, searchmode = 'any')
+>>> out = interrogator({W: 'ing$', P: r'^N'}, searchmode = 'any')
 # get any word, but exclude words that end in 'ing' AND are nominal:
->>> out = interrogator({'w': 'any'}, exclude = {'w': 'ing$', 'p': 'N'}, excludemode = 'all')
+>>> out = interrogator({W: 'any'}, exclude = {W: 'ing$', P: N}, excludemode = 'all')
 ```
 
-The `show` argument wants a list of keys you'd like to return for each result. The order will be respected. If you only want one thing, a `str` is OK. One additional possibility is `'c'`, which returns the number of occurrences only.
+The `show` argument wants a list of keys you'd like to return for each result. The order will be respected. If you only want one thing, a `str` is OK. One additional possibility is `C`, which returns the number of occurrences only.
 
 | `show` | return |
 |--------|--------|
-| `'w'` | `'champions'` |
-| `['w']` | `'champions'` |
-| `'l'` | `'champion'`  |
-| `'p'` | `'NNS'` |
-| `'pl'` | `'Noun'` |
-| `'t'` | `'(np (jj prevailing) (nns champions))'` (depending on Tregex query) |
-| `['p', 'w']`    | `'NNS/champions'`      |
-| `['w', 'p']`    | `'champions/NNS'`     |
-| `['i', 'l', 'r']`    | `'2/champion/1'`      |
-| `['l', 'd', 'f']`    | `'champion/prevailing/nsubj'`      |
-| `['g', 'gl', 'i']`    | `'are/be/2'`      |
-| `['gl', 'gf', 'gp']`    | `'be/root/vb'`      |
-| `['l', 'l']`    | `'champion/champion'`      |
-| `['c']` | `24` |
+| `W` | `'champions'` |
+| `[W]` | `'champions'` |
+| `L` | `'champion'`  |
+| `P` | `'NNS'` |
+| `PL` | `'Noun'` |
+| `T` | `'(np (jj prevailing) (nns champions))'` (depending on Tregex query) |
+| `[P, W]`    | `'NNS/champions'`      |
+| `[W, P]`    | `'champions/NNS'`     |
+| `[I, L, R]`    | `'2/champion/1'`      |
+| `[L, D, F]`    | `'champion/prevailing/nsubj'`      |
+| `[G, GL, I]`    | `'are/be/2'`      |
+| `[GL, GF, GP]`    | `'be/root/vb'`      |
+| `[L, L]`    | `'champion/champion'`      |
+| `[C]` | `24` |
 
-Again, common sense dictates what is possible. When searching trees, only words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `'c'`, you can't use anything else.
+Again, common sense dictates what is possible. When searching trees, only trees, words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `C`, you can't use anything else.
 
 <a name="building-corpora"></a>
 ## Building corpora
@@ -425,15 +457,16 @@ Again, common sense dictates what is possible. When searching trees, only words,
 # to parse, you can set a path to corenlp
 >>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
 
-# to tokenise, turn parsing off, and point to nltk:
+# to tokenise, point to nltk:
 # >>> corpus = unparsed.tokenise(nltk_data_path = 'Downloads/nltk_data')
 ```
 
-which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. When parsing, you can also optionally pass in a string of annotators:
+which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. When parsing, you can also optionally pass in a string of annotators, as per the [CoreNLP documentation](http://nlp.stanford.edu/software/corenlp.shtml):
 
 ```python
 ans = 'tokenize,ssplit,pos'
-corpus = unparsed.parse(operations = ans)
+# you can also set memory and turn off copula head parsing
+corpus = unparsed.parse(operations = ans, memory_mb = 3000, copula_head = False)
 ```
 
 <a name="speaker-ids"></a>
@@ -497,21 +530,21 @@ Output:
 13       25807    8546   6966                4768              3778     2345        477                      257               200                    124             45        50                36                      15                  12           3                      2    
 ```
 
-This data can be very helpful when using `edit()` to generate relative frequencies, for example.
+Features such as *relational/mental/verbal* processes are difficult to locate automatically, so these counts are perhaps best seen as approximations. Even so, this data can be very helpful when using `edit()` to generate relative frequencies, for example.
 
 <a name="concordancing"></a>
 ## Concordancing
 
-Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance gramatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
+Unlike most concordancers, which are based on plaintext corpora, *corpkit* can concordance grammatically, using the same kind of `search`, `exclude` and `show` values as `interrogate()`.
 
 ```python
 >>> subcorpus = corpus.subcorpora.c2005
-# 'c' is added above to make a valid variable name from an int
+# C is added above to make a valid variable name from an int
 # can also be accessed as corpus.subcorpora['2005']
 # or corpus.subcorpora[index]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
-# 't' option for tree searching
->>> lines = subcorpus.concordance('t', query, window = 50, n = 10, random = True)
+# T option for tree searching
+>>> lines = subcorpus.concordance(T, query, window = 50, n = 10, random = True)
 ```
 
 Output (a `Pandas DataFrame`):
@@ -533,10 +566,10 @@ You can also concordance via dependencies:
 
 ```python
 # match words starting with 'st' filling function of nsubj
->>> criteria = {'w': r'^st', 'f': r'nsubj$'}
+>>> criteria = {W: r'^st', F: r'nsubj$'}
 # show function, pos and lemma (in that order)
->>> lines = subcorpus.concordance(criteria, show = ['f', 'p', 'l'])
->>> lines.format(window = 30, n = 10, columns = ['l', 'm', 'r'])
+>>> lines = subcorpus.concordance(criteria, show = [F, P, L])
+>>> lines.format(window = 30, n = 10, columns = [L, M, R])
 ```
 
 Output:
@@ -559,8 +592,8 @@ You can search tokenised corpora or plaintext corpora for regular expressions or
 ```python
 r_query = r'^fr?iends?$'
 l_query = ['friend', 'friends', 'fiend', 'fiends']
->>> lines = subcorpus.concordance({'w': r_query})
->>> lines = subcorpus.concordance({'w': l_query})
+>>> lines = subcorpus.concordance({W: r_query})
+>>> lines = subcorpus.concordance({W: l_query})
 ```
 
 If you really wanted, you can then go on to use `concordance()` output as a dictionary, or extract keywords and ngrams from it, or keep or remove certain results with `edit()`. If you want to [give the GUI a try](http://interrogator.github.io/corpkit/), you can colour-code and create thematic categories for concordance lines as well.
@@ -574,9 +607,9 @@ Because I mostly use systemic functional grammar, there is also a simple tool fo
 >>> from dictionaries.process_types import processes
 
 # match nsubj with verbal process as governor
->>> crit = {'f': '^nsubj$', 'g': processes.verbal}
+>>> crit = {F: '^nsubj$', G: processes.verbal}
 # return lemma of the nsubj
->>> sayers = corpus.interrogate(crit, show = ['l'])
+>>> sayers = corpus.interrogate(crit, show = [L])
 
 # have a look at the top results
 >>> sayers.quickview(n = 20)
@@ -620,7 +653,7 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # >>> prps = ['he', 'she', 'you']
 # >>> prps = as_regex(wl.pronouns, boundaries = 'line')
 # or, by re-interrogating:
-# >>> sayers = corpus.interrogate(crit, show = ['l'], exclude = {'w': wordlists.pronouns})
+# >>> sayers = corpus.interrogate(crit, show = [L], exclude = {W: wordlists.pronouns})
 
 # give edit() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = sayers.edit(skip_entries = prps, skip_subcorpora = [1963])
@@ -646,7 +679,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
 # sort with edit()
-# use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or 'p'
+# use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or P
 # other sort_by options: 'name', 'total', 'infreq'
 >>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
@@ -672,10 +705,10 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 >>> sayers = sayers.edit(merge_subcorpora = merges)
 
 # now, get relative frequencies for he and she
-# 'self' calculates percentage after merging/removing etc has been performed,
-# so that he and she will sum to 100%.
-# pass in `sayers.totals` to calculate he/she as percentage of all sayers
->>> genders = sayers.edit('%', 'self', just_entries = ['he', 'she'])
+# SELF calculates percentage after merging/removing etc has been performed,
+# so that he and she will sum to 100%. Pass in `sayers.totals` to calculate 
+# he/she as percentage of all sayers
+>>> genders = sayers.edit('%', SELF, just_entries = ['he', 'she'])
 
 # and plot it as a series of pie charts, showing totals on the slices:
 >>> genders.plot('Pronominal sayers in the NYT', kind = 'pie',
@@ -699,7 +732,7 @@ So, what to do? Well, first, don't use 'general reference corpora' unless you re
 ```python
 # just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
->>> p = corpus.interrogate('trees', part, show = 'l')
+>>> p = corpus.interrogate('trees', part, show = L)
 ```
 
 When using `edit()` to calculate keywords, there are a few default parameters that can be easily changed:
@@ -713,13 +746,13 @@ When using `edit()` to calculate keywords, there are a few default parameters th
 Let's have a look at how these options change the output:
 
 ```python
-# 'self' as reference corpus uses p.results
+# SELF as reference corpus uses p.results
 >>> options = {'selfdrop': False, 
 ...            'calc_all': False, 
 ...            'threshold': False}
 
 >>> for k, v in options.items():
-...    key = p.edit('keywords', 'self', k = v)
+...    key = p.edit('keywords', SELF, k = v)
 ...    print key.results.ix['2011'].order(ascending = False)
 
 ```
@@ -774,7 +807,7 @@ adoboli        161.30
 
 ```python
 >>> terror = ['terror', 'terrorism', 'terrorist']
->>> terr = p.edit('k', 'self', merge_entries = terror, newname = 'terror')
+>>> terr = p.edit(K, SELF, merge_entries = terror, newname = 'terror')
 >>> print terr.results.terror
 ```
 
@@ -816,8 +849,8 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 ```python
 # arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
->>> print p.results.ix['2013'].edit('k', 'bnc.p', skip_entries = stopwords).results
->>> print p.results.ix['2013'].edit('k', 'bnc.p', calc_all = False).results
+>>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries = stopwords).results
+>>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all = False).results
 ```
 
 Output (not so useful):
@@ -844,9 +877,9 @@ yeah          -3179.90            will      -679.06
 
 ```python
 # set num of parallel processes manually
->>> data = corpus.interrogate({'t': r'/NN.?/ >># NP'}, multiprocess = 3)
+>>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = 3)
 # set num of parallel processes automatically
->>> data = corpus.interrogate({'t': r'/NN.?/ >># NP'}, multiprocess = True)
+>>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = True)
 ```
 
 Multiprocessing is particularly useful, however, when you are interested in multiple corpora, speaker IDs, or search queries. The sections below explain how.
@@ -868,7 +901,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 >>> corpora = Corpora(corpus_list)
 
 # interrogate by parallel processing, 4 at a time
->>> output = corpora.interrogate('t', r'/NN.?/ < /(?i)^h/', show = 'l', multiprocess = 4)
+>>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show = L, multiprocess = 4)
 
 ```
 
@@ -882,7 +915,7 @@ Passing in a list of speaker names will also trigger multiprocessing:
 ```python
 >>> from dictionary.wordlists import wordlists
 >>> spkrs = ['MEYER', 'JAY']
->>> each_speaker = corpus.interrogate('w', wordlists.closedclass, just_speakers = spkrs)
+>>> each_speaker = corpus.interrogate(W, wordlists.closedclass, just_speakers = spkrs)
 ```
 
 There is also `just_speakers = 'each'`, which will be automatically expanded to include every speaker name found in the corpus.
@@ -895,11 +928,11 @@ You can also run a number of queries over the same corpus in parallel. There are
 ```python
 # method one
 query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}`}
-phrases = corpus.interrogate('trees', query, show = 'c')
+phrases = corpus.interrogate('trees', query, show = C)
 
 # method two
-query = {'-ing words': {'w': r'ing$'}, '-ed verbs': {'p': r'^V', 'w': r'ed$'}}
-patterns = corpus.interrogate(query, show = 'l')
+query = {'-ing words': {W: r'ing$'}, '-ed verbs': {P: r'^V', W: r'ed$'}}
+patterns = corpus.interrogate(query, show = L)
 ```
 
 Let's try multiprocessing with multiple queries, showing count (i.e. returning a single results DataFrame). We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
@@ -932,7 +965,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
->>> noun_riskers = c.interrogate('trees', query, show = 'l')
+>>> noun_riskers = c.interrogate('trees', query, show = L)
  
 >>> noun_riskers.quickview(10)
 ```
@@ -982,7 +1015,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```python
 # find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
->>> noun_lemmata = corpus.interrogate('trees', query, show = 'l')
+>>> noun_lemmata = corpus.interrogate('trees', query, show = L)
 
 # get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
@@ -1006,7 +1039,7 @@ Output:
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
->>> modals = corpus.interrogate('trees', 'MD < __', show = 'l')
+>>> modals = corpus.interrogate('trees', 'MD < __', show = L)
 # simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = modals.edit('%', modals.totals)
 

@@ -246,8 +246,8 @@ def get_urls(url, criteria = False, remove = True):
 
 
 def downloader(url_list, new_path = 'html', wait = 5):
-    import corpkit
     """download a bunch of urls and store in a local folder"""
+    import corpkit
     import urllib
     import time
     import os
@@ -307,9 +307,6 @@ def simple_text_extractor(html, stopwords = 'English'):
         output.append(tup)
     return output
 
-
-
-
 def practice_run(path_to_html_file):
     import corpkit
     import os
@@ -332,7 +329,6 @@ def practice_run(path_to_html_file):
         warnings.warn('get_metadata function not defined. Using filename as metadata.')
         metadata = os.path.basename(path_to_html_file)
     print 'text: %s\n\nmetadata: %s' %(text, metadata)
-
 
 def souper(corpus_path):
     import corpkit
@@ -561,6 +557,7 @@ def parse_corpus(proj_path = False,
                 stdout = False, 
                 nltk_data_path = False, 
                 memory_mb = 2000,
+                copula_head = True,
                 **kwargs):
     """
     Create a CoreNLP-parsed and/or NLTK tokenised corpus
@@ -656,8 +653,7 @@ def parse_corpus(proj_path = False,
         import re
         reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
         fver = next(re.search(reg, s).group(1) for s in os.listdir('.') if re.search(reg, s))
-        try:
-            proc = subprocess.Popen(['java', '-cp', 
+        arglist = ['java', '-cp', 
                      'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
@@ -665,20 +661,15 @@ def parse_corpus(proj_path = False,
                      operations, 
                      '-filelist', filelist,
                      '-noClobber',
-                     '-outputDirectory', new_corpus_path, 
-                     '--parse.flags', ' -makeCopulaHead'], stdout=sys.stdout)
+                     '-outputDirectory', new_corpus_path]
+        if copula_head:
+            arglist.append('--parse.flags')
+            arglist.append(' -makeCopulaHead')
+        try:
+            proc = subprocess.Popen(arglist, stdout=sys.stdout)
         # maybe a problem with stdout. sacrifice it if need be
         except AttributeError:
-            proc = subprocess.Popen(['java', '-cp', 
-                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
-                     '-Xmx%sm' % str(memory_mb), 
-                     'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
-                     '-annotators', 
-                     operations, 
-                     '-filelist', filelist,
-                     '-noClobber',
-                     '-outputDirectory', new_corpus_path, 
-                     '--parse.flags', ' -makeCopulaHead'])            
+            proc = subprocess.Popen(arglist)            
         #p = TextProgressBar(num_files_to_parse)
         while proc.poll() is None:
             sys.stdout = stdout
@@ -784,6 +775,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
 def corenlp_exists(corenlppath = False):
     import corpkit
     import os
+
     important_files = ['stanford-corenlp-3.6.0-javadoc.jar', 'stanford-corenlp-3.6.0-models.jar',
                        'stanford-corenlp-3.6.0-sources.jar', 'stanford-corenlp-3.6.0.jar']
     if corenlppath is False:
@@ -794,7 +786,6 @@ def corenlp_exists(corenlppath = False):
                    if os.path.isdir(os.path.join(corenlppath, d)) \
                    and os.path.isfile(os.path.join(corenlppath, d, 'jollyday.jar'))]
 
-        #find_install = [d for d in os.listdir(corenlppath) if os.path.isdir(os.path.join(corenlppath, d))]
         if len(find_install) > 0:
             find_install = find_install[0]
         else:
@@ -802,7 +793,7 @@ def corenlp_exists(corenlppath = False):
         javalib = os.path.join(corenlppath, find_install)
         if len(javalib) == 0:
             return False
-        if not all([f in os.listdir(javalib) for f in important_files]):
+        if not any([f.endswith('-models.jar') for f in os.listdir(javalib)]):
             return False
         return True
     else:
@@ -828,23 +819,6 @@ def get_filepaths(a_path, ext = 'txt'):
                 if not f.endswith('.' + ext):
                     os.remove(os.path.join(root, f))
     return files
-
-def get_list_of_speaker_names(corpuspath):
-    """return a list of speaker names in a pre-processed corpus"""
-    import os
-    import re
-    from corpkit.build import get_filepaths
-    files = get_filepaths(corpuspath)
-    names = []
-    idregex = re.compile(r'(^.*?):\s+(.*$)')
-    for f in files:
-        data = open(f).read().splitlines()
-        for l in data:
-            m = re.search(idregex, l)
-            if m:
-                if m.group(1) not in names:
-                    names.append(m.group(1))
-    return sorted(list(set(names)))
 
 def make_no_id_corpus(pth, newpth):
     """make version of pth without ids"""
@@ -997,10 +971,6 @@ def get_speaker_names_from_xml_corpus(path):
             if i not in names:
                 names.append(i)
     return list(sorted(set(names)))
-
-def get_speakers(path):
-    from corpkit.build import get_speaker_names_from_xml_corpus
-    return get_speaker_names_from_xml_corpus(path)
 
 def rename_all_files(dirs_to_do):
     """get rid of the inserted dirname in filenames after parsing"""

@@ -93,11 +93,12 @@ def dep_searcher(sents,
             if type(pat) == dict:
                 del search[opt]
                 for k, v in pat.items():
-                    
                     if k != 'w':
                         search[opt + k] = v
                     else:
                         search[opt] = v
+            if type(pat) == str and pat.lower() == 'any':
+                search[opt] = re.compile(r'.*')
 
         for opt, pat in search.items():
             if opt == 'g':
