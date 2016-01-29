@@ -241,14 +241,26 @@ class Corpus:
         else:
             return interrogator(self, search, *args, **kwargs)
 
-    def parse(self, *args, **kwargs):
-        """Parse an unparsed corpus
+    def parse(self, corenlppath = False, operations = False, copula_head = True,
+              speaker_segmentation = False, memory_mb = False, *args, **kwargs):
+        """
+        Parse an unparsed corpus
 
-        :param speaker_segmentation: Attempt to detect and handle speaker IDs at start of lines in file
+        :param corenlppath: folder containing corenlp jar files
+        :type corenlppath: str
+                
+        :param operations: which kinds of annotations to do
+        :type operations: str
+        
+        :param speaker_segmentation: add speaker name to parser output if your corpus is script-like:
         :type speaker_segmentation: bool
 
-        See :func:`corpkit.make.make_corpus()` for more information regarding 
-        keyword args
+        :param memory_mb: Amount of memory in MB for parser
+        :type memory_mb: int
+
+        :param copula_head: Make copula head in dependency parse
+        :type copula_head: bool
+
         """
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
@@ -258,10 +270,18 @@ class Corpus:
             raise ValueError('parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
-        return Corpus(make_corpus(self.path, parse = True, tokenise = False, *args, **kwargs))
+        return Corpus(make_corpus(self.path, parse = True, tokenise = False, 
+              corenlppath = corenlppath, operations = operations, copula_head = copula_head,
+              speaker_segmentation = speaker_segmentation, memory_mb = memory_mb, *args, **kwargs))
 
     def tokenise(self, *args, **kwargs):
-        """Tokenise a plaintext corpus"""
+        """
+        Tokenise a plaintext corpus
+
+        :param nltk_data_path: path to tokeniser if not found automatically
+        :type nltk_data_path: str
+        """
+        
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
         from corpkit.process import determine_datatype
@@ -278,7 +298,7 @@ class Corpus:
         A concordance method for Tregex queries, CoreNLP dependencies, 
         tokenised data or plaintext.
 
-        Arguments are the same as :func:`corpkit.interrogation.Interogation.interrogate`.
+        Arguments are the same as py:method::`corpkit.interrogation.Interrogation.interrogate`.
 
         """
 
@@ -290,7 +310,7 @@ class Corpus:
 
         A demo function.
 
-        :param search: search as per :func:`corpkit.corpus.interrogate()`
+        :param search: search as per py:method::`corpkit.corpus.Corpus.interrogate`
         :type search: dict
         :param kwargs: extra arguments to pass to `interrogate`/`plot`
         :type kwargs: keyword arguments
@@ -453,9 +473,10 @@ class Datalist(object):
 from corpkit.corpus import Datalist
 class Corpora(Datalist):
     """
-    Models a collection of corpora.
+    Models a collection of corpora. Methods are available for interrogating and plotting the entire collection.
 
-    Methods are available for interrogating and plotting the entire collection.
+    :param data: Corpora to model
+    :type data: str (path containing corpora), list (of corpus paths/:class:`corpkit.corpus.Corpus` objects)
     """
 
     def __init__(self, data):

@@ -91,14 +91,6 @@ taglemma = {u"cc": u"Coordinating conjunction",
            u"to": u"To"
            }
 
-# Note: in this space were deptags, deptags_for_govrole and deptags_for_deprole
-# they were removed because they were a terrible idea.
-
-# and this one converts to american english (ONLY because of WordNnet, Stanford, etc.)
-# the current word list is nice and long, but has fairly redundant pluralising.
-# when using interrogator(), use spelling = 'US' to convert to US, or 'UK' to convert to
-# the superior spelling.
-
 usa_convert = {u"accessorise": u"accessorize",
         u"accessorised": u"accessorized",
         u"accessorises": u"accessorizes",
