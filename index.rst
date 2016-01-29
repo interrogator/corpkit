@@ -23,7 +23,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   rst_docs/corpkit.corpus
+   Installation and user guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
+   rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
