@@ -18,8 +18,25 @@ Corpus interrogations can be quickly edited, sorted and visualised in complex wa
 
 A GUI, incorporating much of corpkit's command line functionality, is documented and downloadable here_.
 
-Contents:
+Installation
+----------------------
 
+Via pip:
+
+.. code-block:: bash
+
+   pip install corpkit
+
+via Git:
+
+.. code-block:: bash
+
+   git clone https://www.github.com/interrogator/corpkit
+   cd corpkit-master
+   python setup.py install
+
+Contents
+---------------------
 .. toctree::
    :maxdepth: 2
 
