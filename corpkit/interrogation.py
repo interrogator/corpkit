@@ -236,7 +236,7 @@ class Interrogation:
         elif branch.lower().startswith('t'):
             plotter(title, self.totals, *args, **kwargs)
 
-    def save(self, savename, savedir = 'saved_interrogations', print_info = True):
+    def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
         Save an interrogation as pickle to ``savedir``.
 

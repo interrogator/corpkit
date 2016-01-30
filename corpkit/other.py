@@ -178,7 +178,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     print ''
 
 
-def save(interrogation, savename, savedir = 'saved_interrogations', print_info = True):
+def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     """
     Save an interrogation as pickle to *savedir*.
 
@@ -205,6 +205,8 @@ def save(interrogation, savename, savedir = 'saved_interrogations', print_info =
     import pickle
     import os
     from time import localtime, strftime
+
+    print_info = kwargs.get('print_info', True)
 
     def urlify(s):
         "Turn savename into filename"

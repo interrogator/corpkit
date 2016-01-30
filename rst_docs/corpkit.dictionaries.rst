@@ -3,16 +3,17 @@ Wordlists
 
 Closed class word types
 -------------------------------------------
+
+Various wordlists, mostly for subtypes of closed class words
+
 .. autodata:: corpkit.dictionaries.wordlists.wordlists
-   :annotation: Various wordlists.
 
 Systemic functional process types
 -------------------------------------------
 
-Inflected verbforms for process types.
+Inflected verbforms for systemic process types.
 
 .. data:: corpkit.dictionaries.process_types.processes
-   :annotation: Process type wordlists.
 
 Stopwords
 -------------------------------------------
@@ -20,23 +21,24 @@ Stopwords
 A list of arbitrary stopwords.
 
 .. data:: corpkit.dictionaries.stopwords.stopwords
-   :annotation: A list of stopwords.
 
 Systemic/dependency label conversion
 -------------------------------------------
 
+Systemic-functional to dependency role translation.
+
 .. autodata:: corpkit.dictionaries.roles.roles
-   :annotation: Translate systemic-functional to dependency roles.
 
 BNC reference corpus
 -------------------------------------------
 
-Frequencies for words appearing more than ten times in the BNC.
+BNC word frequency list.
 
 .. data:: corpkit.dictionaries.bnc.bnc
-   :annotation: BNC word frequency list
 
 Spelling conversion
 -------------------------------------------
+
+A dict with U.S. English spellings as keys, U.K. spellings as values.
+
 .. data:: corpkit.dictionaries.word_transforms.usa_convert
-   :annotation: A dict with U.S. English words as keys, U.K. words as values.
