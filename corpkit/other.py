@@ -83,6 +83,9 @@ def quickview(results, n = 25):
     else:
         raise ValueError('Results not recognised.')
 
+    # get longest word length for justification
+    longest = max([len(i) for i in the_list])
+
     for index, entry in enumerate(the_list):
         if option == 't':
             if dtype == corpkit.interrogation.Interrogation:
@@ -93,23 +96,23 @@ def quickview(results, n = 25):
                 to_get_from = results
 
             tot = to_get_from[entry].sum()
-            print '%s: %s (n=%d)' %(index, entry, tot)
+            print '%s: %s (n=%d)' %(str(index).rjust(3), entry.ljust(longest), tot)
         elif option == '%' or option == '/':
             if dtype == corpkit.interrogation.Interrogation:
                 to_get_from = results.totals
                 tot = to_get_from[entry]
                 totstr = "%.3f" % tot
-                print '%s: %s (%s%%)' % (index, entry, totstr) 
+                print '%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr) 
             elif dtype == corpkit.interrogation.Results:
-                print '%s: %s (%s)' %(index, entry, option)
+                print '%s: %s (%s)' %(str(index).rjust(3), entry.ljust(longest), option)
             elif dtype == corpkit.interrogation.Totals:
                 tot = results[entry]
                 totstr = "%.3f" % tot
-                print '%s: %s (%s%%)' % (index, entry, totstr) 
+                print '%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr) 
         elif option == 'k':
-            print '%s: %s (l/l)' %(index, entry)
+            print '%s: %s (l/l)' %(str(index).rjust(3), entry.ljust(longest))
         else:
-            print '%s: %s' %(index, entry)
+            print '%s: %s' %(str(index).rjust(3), entry.ljust(longest))
 
 def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
     """

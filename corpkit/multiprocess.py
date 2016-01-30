@@ -106,6 +106,9 @@ def pmultiquery(corpus,
         
     if type(multiprocess) == int:
         num_cores = multiprocess
+    if multiprocess is False:
+        multiprocess = 1
+        num_cores = 1
 
     # make sure quicksaves are right type
     if quicksave is True:
@@ -118,6 +121,7 @@ def pmultiquery(corpus,
          'root': root,
          'note': note,
          'denominator': denom}
+    
     # add kwargs to query
     for k, v in kwargs.items():
         d[k] = v
@@ -194,7 +198,7 @@ def pmultiquery(corpus,
     sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
     if multiple_corpora and not multiple_option:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat) )
+           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat))
 
     elif multiple_queries:
         print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
@@ -218,8 +222,9 @@ def pmultiquery(corpus,
     #reload(sys)
     #stdout=sys.stdout
     failed = False
+    terminal = False
     #ds = ds[::-1]
-    if not root and multiprocess:
+    if not root:
         from blessings import Terminal
         terminal = Terminal()
         print '\n' * (len(ds) - 2)
@@ -232,21 +237,22 @@ def pmultiquery(corpus,
                     thetime = strftime("%H:%M:%S", localtime())
                     num_spaces = 26 - len(dobj['outname'])
                     print '%s: QUEUED: %s' % (thetime, dobj['outname'])
+
             except:
                 pass
-        
+
+    if not root and multiprocess:
         #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
             #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
             res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
-            print '\n'
         except:
             failed = True
             print 'Multiprocessing failed.'
             raise
         if not res:
             failed = True
-    elif root or failed or multiprocess is False:
+    else:
         res = []
         for index, d in enumerate(ds):
             d['startnum'] = (100 / denom) * index
@@ -338,7 +344,11 @@ def pmultiquery(corpus,
 
         out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
         thetime = strftime("%H:%M:%S", localtime())
-        print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
+        if terminal:
+            with terminal.location(0, terminal.height):
+                print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n' * len(ds))
+        else:
+            print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
         if quicksave:
             from corpkit.other import save
             save(out, quicksave)

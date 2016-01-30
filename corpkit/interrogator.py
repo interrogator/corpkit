@@ -518,6 +518,7 @@ def interrogator(corpus,
     locs['query'] = query
     locs['just_speakers'] = just_speakers
     locs['corpus'] = corpus
+    locs['multiprocess'] = multiprocess
 
     if im:
         from corpkit.multiprocess import pmultiquery
@@ -708,8 +709,10 @@ def interrogator(corpus,
     outn = kwargs.get('outname', '')
     if outn:
         outn = outn + ': '
-    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+    tstr = '%s%d/%d' % (outn, current_iter, total_files)
     p = animator(None, None, init = True, tot_string = tstr, **par_args)
+    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+    animator(p, current_iter, tstr, **par_args)
 
     ############################################
     # Iterate over data, doing interrogations  #
@@ -724,10 +727,6 @@ def interrogator(corpus,
         
         # tregex over subcorpora, not files
         if simple_tregex_mode:
-
-            current_iter += 1
-            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-            animator(p, current_iter, tstr, **par_args)
 
             op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
@@ -755,13 +754,16 @@ def interrogator(corpus,
             
             results[subcorpus_name] += result
 
+            current_iter += 1
+            if kwargs.get('paralleling', None) is not None:
+                tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
+            else:
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+            animator(p, current_iter, tstr, **par_args)
+
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
-                if not statsmode:
-                    current_iter += 1
-                    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                    animator(p, current_iter, tstr, **par_args)
 
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
@@ -837,21 +839,17 @@ def interrogator(corpus,
                         res = [correct_spelling(r) for r in res]
                     results[subcorpus_name] += Counter(res)
 
+                if not statsmode:
+                    current_iter += 1
+                    if kwargs.get('paralleling', None) is not None:
+                        tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
+                    else:
+                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+
     # delete temp file if there
     import os
     if os.path.isfile('tmp.txt'):
         os.remove('tmp.txt')
-
-    # hack to show progress bar completion in multiquery
-    if kwargs.get('paralleling', None) is not None:
-        if term:
-            try:
-                with term.location(0, term.height - (par_args['linenum'] + 1)):
-                    from time import localtime, strftime
-                    thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: [**********************100%% (%s]' % (thetime, kwargs['outname'] + ')'.ljust(26, '*'))
-            except TypeError:
-                pass
 
     ############################################
     #     Get concordances into DataFrame      #
