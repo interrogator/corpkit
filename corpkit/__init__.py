@@ -6,7 +6,7 @@
 
 # quicker access to search, exclude, show types
 letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
-           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A',
+           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'ANY',
            'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL']
 
 # asterisk import
@@ -26,7 +26,7 @@ __all__ = ["interrogator",
     "Corpora"] + letters
 
 #metadata
-__version__ = "1.85"
+__version__ = "1.86"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -125,3 +125,4 @@ GP = 'gp'
 DP = 'dp'
 PL = 'pl'
 SELF = 'self'
+ANY = 'any'
