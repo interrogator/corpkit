@@ -32,7 +32,7 @@ Here's a basic workflow, which involves parsing a corpus, interrogating dependen
    >>> crit = {F: '^nsubj$', G: processes.verbal, P: r'^N'}
 
    >>> # interrogate corpus, outputting lemma forms
-   >>> sayers = corpus.interrogate(crit, show = L)
+   >>> sayers = parsed.interrogate(crit, show = L)
    >>> sayers.quickview(10)
 
       0: official    (n=4348)
@@ -50,8 +50,7 @@ Here's a basic workflow, which involves parsing a corpus, interrogating dependen
    >>> rel_say = sayers.edit('%', SELF, sort_by = 'increase')
 
    >>> # plot via matplotlib, using tex if possible
-   >>> rel_say.plot('Sayers, increasing', kind = 'area', \
-   ...              y_label = 'Percentage of all sayers')
+   >>> rel_say.plot('Sayers, increasing', kind = 'area', y_label = 'Percentage of all sayers')
 
 Output:
 
