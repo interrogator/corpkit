@@ -32,7 +32,7 @@ via Git:
 .. code-block:: bash
 
    git clone https://www.github.com/interrogator/corpkit
-   cd corpkit-master
+   cd corpkit
    python setup.py install
 
 Contents
@@ -40,7 +40,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   Installation and user guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
+   User guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
    rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
