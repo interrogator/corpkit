@@ -845,6 +845,7 @@ def interrogator(corpus,
                         tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
                     else:
                         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                    animator(p, current_iter, tstr, **par_args)
 
     # delete temp file if there
     import os

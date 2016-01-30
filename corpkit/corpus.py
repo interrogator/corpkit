@@ -21,9 +21,11 @@ class Corpus:
         level = kwargs.pop('level', 'c')
         print_info = kwargs.get('print_info', True)
 
-        self.path = path
+        path = os.path.abspath(path)
+
+        self.path = os.path.relpath(path)
         self.name = os.path.basename(path)
-        self.abspath = os.path.abspath(path)
+        self.abspath = path
 
         # this messy code figures out as quickly as possible what the datatype 
         # and singlefile status of the path is. it's messy because it shortcuts 
@@ -88,6 +90,10 @@ class Corpus:
                                 if not f.startswith('.')], key=operator.attrgetter('name'))
             self.files = Datalist(all_files)
             self.structure = {'.': self.files}
+            if print_info:
+                print '\nCorpus created with %d files:\n\t%s\n' % (len(self.files), '\n\t'.join([i.name for i in self.files][:10]))
+                if len(self.files) > 10:
+                    print '... and %s more ... \n' % str(len(self.files) - 10)
 
         # for non File, we will add files attribute
         if level != 'f':
