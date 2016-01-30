@@ -30,6 +30,9 @@ Systemic/dependency label conversion
 
 BNC reference corpus
 -------------------------------------------
+
+Frequencies for words appearing more than ten times in the BNC.
+
 .. data:: corpkit.dictionaries.bnc.bnc
    :annotation: BNC word frequency list
 

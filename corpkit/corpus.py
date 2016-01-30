@@ -143,17 +143,20 @@ class Corpus:
         """
         Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`
 
+           >>> corpus.get_stats()
+
         :returns: None
         """
         from corpkit import interrogator
         self.features = interrogator(self.path, 's', 'any').results
-        print 'Features defined. See .features attribute ...' 
+        print '\nFeatures defined. See .features attribute ...' 
 
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
-        :param path: Path to a corpus
-        :type path: str -- corpus path; list of strings -- list of paths
+            # show lemma form of nouns ending in ing
+            >>> q = {'w': r'ing$', 'p': r'^N'}
+            >>> data = corpus.interrogate(q, show = 'l')
         
         :param search: What query should be matching
            - t/tregex
@@ -165,6 +168,7 @@ class Corpus:
            - p/pos
            - i/index
            - n/ngrams
+           - s/general stats
         :type search: str, or, for dependencies, a dict like ``{'w': 'help', 'p': r'^V'}``
 
         :param searchmode: Return results matching any/all criteria
@@ -215,15 +219,6 @@ class Corpus:
         :param multiprocess: how many parallel processes to run
         :type multiprocess: int / bool (to determine automatically)
 
-        :param only_format_match: when concordancing, if true, left and right window will just be words, regardless of what is in 'show'
-        :type only_format_match: bool
-
-        :param random: randomise concordance lines
-        :type random: bool
-
-        :param only_unique: only unique concordance lines
-        :type only_unique: bool
-
         :param files_as_subcorpora: treat each file as a subcorpus
         :type files_as_subcorpora: bool
 
@@ -242,7 +237,9 @@ class Corpus:
     def parse(self, corenlppath = False, operations = False, copula_head = True,
               speaker_segmentation = False, memory_mb = False, *args, **kwargs):
         """
-        Parse an unparsed corpus
+        Parse an unparsed corpus, saving to disk
+
+           >>> parsed = corpus.parse(speaker_segmentation = True)
 
         :param corenlppath: folder containing corenlp jar files
         :type corenlppath: str
@@ -260,13 +257,12 @@ class Corpus:
         :type copula_head: bool
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
-
         """
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
-        from corpkit.process import determine_datatype
-        dtype, singlefile = determine_datatype(self.path)
-        if dtype != 'plaintext':
+        #from corpkit.process import determine_datatype
+        #dtype, singlefile = determine_datatype(self.path)
+        if self.datatype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
@@ -276,7 +272,9 @@ class Corpus:
 
     def tokenise(self, *args, **kwargs):
         """
-        Tokenise a plaintext corpus
+        Tokenise a plaintext corpus, saving to disk
+
+           >>> tok = corpus.tokenise()
 
         :param nltk_data_path: path to tokeniser if not found automatically
         :type nltk_data_path: str
@@ -286,9 +284,9 @@ class Corpus:
         
         from corpkit import make_corpus
         from corpkit.corpus import Corpus
-        from corpkit.process import determine_datatype
-        dtype, singlefile = determine_datatype(self.path)
-        if dtype != 'plaintext':
+        #from corpkit.process import determine_datatype
+        #dtype, singlefile = determine_datatype(self.path)
+        if self.datatype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
@@ -300,7 +298,19 @@ class Corpus:
         A concordance method for Tregex queries, CoreNLP dependencies, 
         tokenised data or plaintext.
 
-        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`.
+           >>> wv = ['want', 'need', 'feel', 'desire']
+           >>> corpus.concordance({'l': wv, 'f': 'root'})
+
+        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
+
+        :param only_format_match: if True, left and right window will just be words, regardless of what is in 'show'
+        :type only_format_match: bool
+
+        :param random: randomise lines
+        :type random: bool
+
+        :param only_unique: only unique lines
+        :type only_unique: bool
 
         :returns: A :class:`corpkit.interrogation.Concordance` instance
 
@@ -311,6 +321,8 @@ class Corpus:
 
     def interroplot(self, search, **kwargs):
         """Interrogate, relativise, then plot, with very little customisability. A demo function.
+
+           >>> corpus.interroplot(r'/NN.?/ >># NP')
 
         :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: dict
@@ -326,7 +338,9 @@ class Corpus:
         edited.plot(str(self.path), **kwargs)
 
     def save(self, savename = False, **kwargs):
-        """Save data to pickle file
+        """Save corpus class to file
+
+           >>> corpus.save()
 
         :param savename: name for the file
         :type savename: str

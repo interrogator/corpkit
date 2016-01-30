@@ -23,6 +23,9 @@ class Interrogation:
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
+           # relative frequencies for words without initial capital
+           >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
+
         ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
 
         * str: treated as regular expression to match
@@ -166,6 +169,8 @@ class Interrogation:
             **kwargs):
         """Visualise corpus interrogations.
 
+           >>> data.plot('An example plot', kind = 'bar', save = True)
+
         :param title: A title for the plot
         :type title: str
         :param x_label: A label for the x axis
@@ -233,12 +238,12 @@ class Interrogation:
 
     def save(self, savename, savedir = 'saved_interrogations', print_info = True):
         """
-        Save an interrogation as pickle to *savedir*.
+        Save an interrogation as pickle to ``savedir``.
 
            >>> o = corpus.interrogate('w', 'any')
-           >>> save(o, 'savename')
+           >>> o.save('savename')
 
-        will create saved_interrogations/savename.p
+        will create ``saved_interrogations/savename.p``
         
         :param savename: A name for the saved file
         :type savename: str
@@ -257,6 +262,8 @@ class Interrogation:
     def quickview(self, n = 25):
         """view top n results as painlessly as possible.
 
+           >>> data.quickview(n = 5)
+
         :param n: Show top *n* results
         :type n: int
         :returns: None
@@ -266,6 +273,8 @@ class Interrogation:
 
     def multiindex(self, indexnames = False):
         """Create a `pd.MultiIndex` object from slash-separated results.
+
+           >>> mi = data.multiindex()
 
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
@@ -358,9 +367,11 @@ class Concordance(pd.core.frame.DataFrame):
         """
         Print conc lines nicely, to string, LaTeX or CSV
 
+           >>> lines.format(window = 25, n = 10, columns = ['l', 'm', 'r'])
+
         :param kind: output format
         :type kind: str (``'string'``/``'latex'``/``'csv'``)
-        :param n: Print first n lines only
+        :param n: Print first ``n`` lines only
         :type n: int/'all'
         :param window: how many characters to show to left and right
         :type window: int

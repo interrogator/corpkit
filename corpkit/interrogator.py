@@ -49,7 +49,7 @@ def interrogator(corpus,
 
     # convert path to corpus object
     if type(corpus) == str:
-        from corpkit.Corpus import Corpus
+        from corpkit.corpus import Corpus
         corpus = Corpus(corpus)
 
     # figure out how the user has entered the query and normalise
@@ -178,14 +178,13 @@ def interrogator(corpus,
             numdone += 1
             if root:
                 root.update()
-            #if not root:
-            #    tot_string = str(numdone + 1) + '/' + str(total_files * len(tregex_qs.keys()))
-            #    if kwargs.get('outname'):
-            #        tot_string = '%s: %s' % (kwargs['outname'], tot_string)
-            #    animator(p, numdone, tot_string, **par_args)
+            else:
+                tot_string = str(numdone + 1) + '/' + str(total_files)
+                if kwargs.get('outname'):
+                    tot_string = '%s: %s' % (kwargs['outname'], tot_string)
+                animator(p, numdone, tot_string, **par_args)
             if kwargs.get('note', False):
-                kwargs['note'].progvar.set((numdone * 100.0 / (total_files * \
-                                    len(tregex_qs.keys())) / denom) + startnum)
+                kwargs['note'].progvar.set((numdone * 100.0 / total_files / denom) + startnum)
         os.remove(to_open)
         return statsmode_results
 
@@ -226,7 +225,6 @@ def interrogator(corpus,
 
     def lemmatiser(list_of_words, tag):
         """take a list of unicode words and a tag and return a lemmatised list."""
-        
         output = []
         for word in list_of_words:
             if translated_option.startswith('u'):
@@ -280,7 +278,6 @@ def interrogator(corpus,
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
         else:
             lemmata = [None for i in results]
-
         for word, lemma in zip(results, lemmata):
             bits = []
             if exclude and exclude.get('w'):
@@ -328,7 +325,6 @@ def interrogator(corpus,
             joined = '/'.join(bits)
             done.append(joined)
         return done
-
 
     def tok_by_list(pattern, list_of_toks, concordancing = False, **kwargs):
         """search for regex in plaintext corpora"""
@@ -429,7 +425,6 @@ def interrogator(corpus,
             else:
                 raise ValueError('%s: Query %s' % (thetime, error_message))
 
-
     def tok_by_reg(pattern, list_of_toks, concordancing = False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
@@ -494,7 +489,6 @@ def interrogator(corpus,
         r = '/'.join(bits)
         return r
 
-
     def plaintext_simple_search(pattern, plaintext_data, concordancing = False, **kwargs):
         """search for tokens in plaintext corpora"""
         import re
@@ -529,9 +523,8 @@ def interrogator(corpus,
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
 
-    # determine if data is parsed/single file
-    from corpkit.process import determine_datatype
-    datatype, singlefile = determine_datatype(corpus.path)
+    datatype = corpus.datatype
+    singlefile = corpus.singlefile
 
     # store all results in here
     results = {}
@@ -540,12 +533,17 @@ def interrogator(corpus,
     # where we are at in interrogation
     current_iter = 0
 
+    # multiprocessing progress bar
+    denom = kwargs.get('denominator', 1)
+    startnum = kwargs.get('startnum', 0)
+
     ############################################
     # Determine the search function to be used #
     ############################################
     
     # simple tregex is tregex over whole dirs
     simple_tregex_mode = False
+    statsmode = False
     if not just_speakers and 't' in search.keys():
         simple_tregex_mode = True
     else:
@@ -580,8 +578,9 @@ def interrogator(corpus,
         elif corpus.datatype == 'parse':
             if search.get('t'):
                 searcher = slow_tregex
-            elif search.get('v'):
+            elif search.get('s'):
                 searcher = get_stats
+                statsmode = True
                 optiontext = 'General statistics'
                 global numdone
                 numdone = 0
@@ -665,7 +664,7 @@ def interrogator(corpus,
             to_iterate_over[(f.name, f.path)] = [f]
 
     ############################################
-    # Print welcome message #
+    #           Print welcome message          #
     ############################################
 
     if conc:
@@ -676,18 +675,20 @@ def interrogator(corpus,
         thetime = strftime("%H:%M:%S", localtime())
 
         sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
+        if search == {'s': r'.*'}:
+            sformat = 'features'
         welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
                   (thetime, message, corpus.name, optiontext, sformat)
         print welcome
 
     ############################################
-    # Make progress bar  #
+    #           Make progress bar              #
     ############################################
 
     if simple_tregex_mode:
         total_files = len(to_iterate_over.keys())
     else:
-        if search.get('v'):
+        if search.get('s'):
             total_files = sum([len(x) for x in to_iterate_over.values()]) * 12
         else:
             total_files = sum([len(x) for x in to_iterate_over.values()])
@@ -757,9 +758,10 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
-                current_iter += 1
-                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                animator(p, current_iter, tstr, **par_args)
+                if not statsmode:
+                    current_iter += 1
+                    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                    animator(p, current_iter, tstr, **par_args)
 
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
@@ -803,7 +805,6 @@ def interrogator(corpus,
                         for index, line in enumerate(res):
                             line.insert(0, '')
 
-
                 elif corpus.datatype == 'plaintext':
                     with open(f.path, 'rb') as data:
                         data = data.read()
@@ -813,8 +814,6 @@ def interrogator(corpus,
                         if conc:
                             for index, line in enumerate(res):
                                 line.insert(0, '')
-
-
 
                 if countmode:
                     results[subcorpus_name] += res
@@ -843,10 +842,7 @@ def interrogator(corpus,
     if os.path.isfile('tmp.txt'):
         os.remove('tmp.txt')
 
-    ############################################
-    #   Tally everything into big DataFrame    #
-    ############################################
-
+    # hack to show progress bar completion in multiquery
     if kwargs.get('paralleling', None) is not None:
         if term:
             try:
@@ -856,6 +852,11 @@ def interrogator(corpus,
                     print '%s: [**********************100%% (%s]' % (thetime, kwargs['outname'] + ')'.ljust(26, '*'))
             except TypeError:
                 pass
+
+    ############################################
+    #     Get concordances into DataFrame      #
+    ############################################
+
     if conc:
         all_conc_lines = []
         for sc_name, resu in sorted(results.items()):
@@ -909,9 +910,14 @@ def interrogator(corpus,
         from corpkit.interrogation import Concordance
         output = Concordance(df)
         output.query = locs
+        if quicksave:
+            interro.save()
         return output 
 
-    # if interrogate, make into Interrogation
+    ############################################
+    #     Get interrogation into DataFrame     #
+    ############################################
+
     else:
         if countmode:
             df = Series({k: sum(v) for k, v in sorted(results.items())})
@@ -961,4 +967,9 @@ def interrogator(corpus,
                 finalstring += ' %d unique results, %d total occurrences.' % (numentries, total_total)
             print finalstring
 
-        return Interrogation(results = df, totals = tot, query = locs)
+        interro = Interrogation(results = df, totals = tot, query = locs)
+        
+        if quicksave:
+            interro.save()
+        
+        return interro
