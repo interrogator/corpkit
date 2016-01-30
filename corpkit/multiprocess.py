@@ -107,7 +107,6 @@ def pmultiquery(corpus,
     if type(multiprocess) == int:
         num_cores = multiprocess
     if multiprocess is False:
-        multiprocess = 1
         num_cores = 1
 
     # make sure quicksaves are right type
@@ -223,6 +222,7 @@ def pmultiquery(corpus,
     #stdout=sys.stdout
     failed = False
     terminal = False
+    used_joblib = False
     #ds = ds[::-1]
     if not root:
         from blessings import Terminal
@@ -246,6 +246,7 @@ def pmultiquery(corpus,
         try:
             #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
             res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+            used_joblib = True
         except:
             failed = True
             print 'Multiprocessing failed.'
@@ -346,9 +347,11 @@ def pmultiquery(corpus,
         thetime = strftime("%H:%M:%S", localtime())
         if terminal:
             with terminal.location(0, terminal.height):
-                print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
+                print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n')
         else:
-            print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
+            print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n')
+        if used_joblib:
+            print '\n' * (len(ds) - 3)
         if quicksave:
             from corpkit.other import save
             save(out, quicksave)
