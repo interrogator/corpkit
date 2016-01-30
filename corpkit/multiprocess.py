@@ -346,7 +346,7 @@ def pmultiquery(corpus,
         thetime = strftime("%H:%M:%S", localtime())
         if terminal:
             with terminal.location(0, terminal.height):
-                print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n' * len(ds))
+                print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
         else:
             print '\n\n%s: Finished! %d unique results, %d total.' % (thetime, len(out.results.columns), out.totals.sum())
         if quicksave:
