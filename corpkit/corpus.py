@@ -154,7 +154,7 @@ class Corpus:
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
-            # show lemma form of nouns ending in ing
+            >>> # show lemma form of nouns ending in 'ing'
             >>> q = {'w': r'ing$', 'p': r'^N'}
             >>> data = corpus.interrogate(q, show = 'l')
         

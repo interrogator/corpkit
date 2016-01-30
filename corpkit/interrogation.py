@@ -23,7 +23,7 @@ class Interrogation:
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
-           # relative frequencies for words without initial capital
+           >>> # rel. frequencies for words without initial capital
            >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
 
         ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
