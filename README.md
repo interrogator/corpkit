@@ -894,11 +894,14 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 3. A single path string that contains corpora
 
 ```python
->>> import os
+>>> import glob
 >>> from corpkit.corpus import Corpora
 
->>> corpus_list = [os.path.join(datadir, d) for d in os.listdir(datadir)]
+>>> corpus_list = glob.glob('data/*')
 >>> corpora = Corpora(corpus_list)
+>>> corpora
+
+<corpkit.corpus.Corpora instance: 6 items>
 
 # interrogate by parallel processing, 4 at a time
 >>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show = L, multiprocess = 4)
