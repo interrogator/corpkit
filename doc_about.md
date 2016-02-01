@@ -20,6 +20,6 @@ Special thanks to James Davidson, who has contributed documentation to the proje
 
 I'm Daniel McDonald, a PhD student and Research Fellow at University of Melbourne. Currently though, I'm a visiting researcher at Saarland Uni, Germany, where I'm very lucky to get to work on [some really awesome, geeky stuff](http://www.sfb1102.uni-saarland.de/?page_id=59).
 
-In general, most of my research revolves around looking for lexicogrammatical and discourse-semantic patterns and changes in large datasets. More and more, though I'm shifting toward the computational side of things, and am currently very interested in discourse/semantic annotation.
+In general, most of my research revolves around looking for lexicogrammatical and discourse-semantic patterns and changes in large datasets. More and more, though, I'm shifting toward the computational side of things, and am currently very interested in discourse/semantic annotation.
 
 I'm fortunate enough to work on a number of cool projects related to corpus, computational linguistics and systemic functional linguistics, as well as open science more generally. I develop [resources for teaching researchers to code](https://github.com/interrogator/wwc), and teach linguistics (slides for my most recent class are available on [*academia.edu*](https://unimelb.academia.edu/danielmcdonald)). I'm on [Twitter](https://twitter.com/interro_gator), too.
