@@ -27,14 +27,14 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-    version='1.88',
+    version='1.89',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
     packages=['corpkit'],
     package_dir={'corpkit': 'corpkit'},
     package_data={'corpkit': ['*.jar', 'corpkit/*.jar', '*.sh', 'corpkit/*.sh', 
-                                '*.ipynb', 'corpkit/*.ipynb', '*.p', 'dictionaries/*.p']},
+                                '*.ipynb', 'corpkit/*.ipynb', '*.p', 'dictionaries/*.p', '*.py', 'dictionaries/*.py']},
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
     cmdclass={'install': CustomInstallCommand,},
