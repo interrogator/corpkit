@@ -86,6 +86,10 @@ def formatfunc(self, *args, **kwargs):
     from corpkit.other import concprinter
     concprinter(self, *args, **kwargs)
 
+def texifyfunc(self, *args, **kwargs):
+    from corpkit.other import texify
+    texify(self, *args, **kwargs)
+
 pd.DataFrame.edit = editfunc
 pd.Series.edit = editfunc
 
@@ -100,6 +104,8 @@ pd.Series.quickview = quickviewfunc
 
 pd.DataFrame.format = formatfunc
 pd.Series.format = formatfunc
+
+pd.Series.texify = texifyfunc
 
 A = 'a'
 D = 'd'

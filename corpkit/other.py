@@ -416,11 +416,11 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     from corpkit.interrogation import Interrodict
     return Interrodict(output)
 
-def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
+def texify(series, n = 20, colname = 'Keyness', toptail = False, sort = False):
     """turn a series into a latex table"""
     import corpkit
     import pandas as pd
-    if sort_by:
+    if sort:
         df = pd.DataFrame(series.order(ascending = False))
     else:
         df = pd.DataFrame(series)
