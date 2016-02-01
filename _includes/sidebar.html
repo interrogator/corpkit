@@ -53,11 +53,11 @@
                     {% for item in subcategory.items %}
                     {% if item.audience contains audience and item.product contains product and item.platform contains platform and item.version contains version and item.web != false %}
                     {% if item.external_url %}
-                    <li><a href="{{item.external_url}}" target="_blank">{{subcategory.title}}</a></li>
+                    <li><a href="{{item.external_url}}" target="_blank">{{subcategory.title}}ReadTheDocs</a></li>
                     {% elsif page.url == item.url %}
-                    <li class="active"><a href="{{item.url | replace: "/",""}}">{{item.title}}</a></li>
+                    <li class="active"><a href="{{item.url | replace: "/",""}}">{{item.title}}ReadTheDocs</a></li>
                     {% else %}
-                    <li><a href="{{item.url | replace: "/",""}}">{{item.title}}</a></li>
+                    <li><a href="{{item.url | replace: "/",""}}">{{item.title}}ReadTheDocs</a></li>
                     {% endif %}
 
                     {% for thirdlevel in item.thirdlevel %}
