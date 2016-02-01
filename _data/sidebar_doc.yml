@@ -157,7 +157,7 @@ entries:
       items:
 
         - title: Command line documentation
-          url: http://corpkit.readthedocs.org/en/latest/
+          external_url: http://corpkit.readthedocs.org/en/latest/
           audience: writers, designers
           platform: all
           product: all
