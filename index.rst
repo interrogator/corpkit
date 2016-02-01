@@ -17,7 +17,25 @@ Corpus interrogations can be quickly edited, sorted and visualised in complex wa
 Example
 ----------------------
 
-Here's a basic workflow, which involves parsing a corpus, interrogating dependencies, editing the interrogation results, and then creating a visualisation:
+Here's a basic workflow, using a corpus of news articles published between 1987 and 2014, structured like this:
+
+.. code-block:: bash
+   
+   ./data/NYT:
+
+   ├───1987
+   │   ├───NYT-1987-01-01-01.txt
+   │   ├───NYT-1987-01-02-01.txt
+   │   ...
+   │
+   ├───1988
+   │   ├───NYT-1988-01-01-01.txt
+   │   ├───NYT-1988-01-02-01.txt
+   │   ...
+   ...
+
+
+Below, this corpus is made into a ``Corpus`` object, parsed with *Stanford CoreNLP*, and interrogated for a lexicogrammatical feature. Absolute frequencies are turned into relative frequencies, and results sorted by trajectory. The edited data is then plotted.
 
 .. code-block:: python
 
@@ -56,7 +74,7 @@ Output:
 
 .. figure:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
 
-A GUI, incorporating much of corpkit's command line functionality, is documented and downloadable here_.
+A graphical interface, incorporating much of corpkit's command line functionality, is documented and downloadable here_.
 
 Installation
 ----------------------
