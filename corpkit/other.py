@@ -554,7 +554,7 @@ def make_multi(interrogation, indexnames = None):
         df = df.fillna(0)
         df = df.T
         df[('Total', 'Total')] = df.sum(axis = 1)
-        df = df.sort(('Total', 'Total'), ascending = False).drop(('Total', 'Total'), axis = 1).T
+        df = df.sort_values(by=('Total', 'Total'), ascending = False).drop(('Total', 'Total'), axis = 1).T
         try:
             df = df.astype(int)
         except:
