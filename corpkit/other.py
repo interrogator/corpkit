@@ -413,7 +413,8 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
             root.update()
     time = strftime("%H:%M:%S", localtime())
     print '%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir))
-    return output
+    from corpkit.interrogation import Interrodict
+    return Interrodict(output)
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort_by = False):
     """turn a series into a latex table"""
