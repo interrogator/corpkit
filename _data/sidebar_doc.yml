@@ -156,8 +156,8 @@ entries:
       print: true
       items:
 
-        - title: API documentation
-          url: apiindex.html
+        - title: Command line documentation
+          url: http://corpkit.readthedocs.org/en/latest/
           audience: writers, designers
           platform: all
           product: all
@@ -176,7 +176,6 @@ entries:
           platform: all
           product: all
           version: all
-
 
     - title: Contributing
       audience: writers, designers
