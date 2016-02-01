@@ -1,0 +1,11 @@
+language: python
+python:
+- '2.7'
+deploy:
+  provider: pypi
+  user: interrogator
+  password:
+    secure: AofV72C6C+e6FYXcmtIV+9Hxuj/GZ4mQAISP3hKko2Vo5/MFNRY75Rc6LntziLnFOaGdpj0q8B4HcYKdWcSFuZP2EKm5BEFSLYG3noE7//fWuZbSGqEo3qw/ERl7Jnrb8Axuh6ZN4U0zmHv+j3xdODPylTSK0CN00GG5FPwyNvD5wv0fLrN5+hsgVnj2fCqJJIYAQPDY2RJEDwcP9nfLbSXIlDegkDgOidcj0L78bbQ8UvXFdRJxJza5VL1IzT5z1dZuaEGe0XLhCk6UjfUV2f/j/XfzMd/e8bWfcCB79eZYS2n7/4l3kg/ZX7f4Ujfzkh8xK+5arEYdhB1tD+PqSULkGlkc3E0Bsf4gnWVm9g8hs2/u9n60o3SbKeOWoD5ZBRUDX15Njb+25/hCFHyr5fql3bFn6V4H61tDTo5qxVNxPiQAne8Ns7CDXX1LsDsw+lQSsOG/4UQ5mS/d28on1BETVD2lnlu/EKNRYMZ4kexDZLmawU1Ua4PLq2bFd1hgu3dl+vNHlzAIayNu6S53n/1MJLyD0/akWeda9YUtO7AMBYd+zjTkNe7m69vSCAwNRLTRGeJVTFHvyYIM7wWnC9ntlkZ8kiO1JmNoC8e7+4mq/PCM7s18SZI3E9BvPSTuWHkZeMPjct02fJ6gVBp4F7aldDBPUtpGNm0q3EyIAYY=
+  on:
+    tags: true
+    branch: master
