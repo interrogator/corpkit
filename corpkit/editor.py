@@ -324,7 +324,7 @@ def editor(dataframe1,
                     import warnings
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        d = pd.concat([df.T, df2.T]).sort()
+                        d = pd.concat([df.T, df2.T])
                         # make index nums
                         d = d.reset_index()
                         # sum and remove duplicates
@@ -704,9 +704,9 @@ def editor(dataframe1,
 
         if just_totals:
             if sort_by == 'infreq':
-                df = df.sort(columns = 'Combined total', ascending = True)
+                df = df.sort_values(by = 'Combined total', ascending = True, axis = 1)
             elif sort_by == 'total':
-                df = df.sort(columns = 'Combined total', ascending = False)
+                df = df.sort_values(by = 'Combined total', ascending = False, axis = 1)
             elif sort_by == 'name':
                 df = df.sort_index()
             return df
@@ -741,7 +741,7 @@ def editor(dataframe1,
             # currently case sensitive...
             df = df.reindex_axis(sorted(df.columns), axis=1)
         elif sort_by == 'p':
-            df = df.T.sort('p').T
+            df = df.T.sort_values(by='p').T
         else:
             statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
             
