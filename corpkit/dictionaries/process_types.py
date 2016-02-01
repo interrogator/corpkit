@@ -33,7 +33,7 @@ def load_verb_data():
         except:
             pass
 
-    return lexemes
+    return
 
 def find_lexeme(verb):
     """ For a regular verb (base form), returns the forms using a rule-based approach.

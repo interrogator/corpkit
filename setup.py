@@ -6,28 +6,7 @@ import os
 class CustomInstallCommand(install):
     """Customized setuptools install command."""
     def run(self):
-
-        def install_with_pip(package_name, package):
-            import importlib
-            try:
-                importlib.import_module(package_name)
-            except ImportError:
-                import pip
-                pip.main(['install', package])
-
         install.run(self)
-        install_with_pip('corenlp_xml', 'git+git://github.com/interrogator/corenlp-xml-lib.git')
-        install_with_pip('tkintertable', 'git+git://github.com/interrogator/tkintertable.git')
-        install_with_pip('PIL', 'http://effbot.org/media/downloads/Imaging-1.1.7.tar.gz')
-        install_with_pip('matplotlib', 'matplotlib')
-        install_with_pip('nltk', 'nltk')
-        install_with_pip('joblib', 'joblib')
-        install_with_pip('pandas', 'pandas')
-        install_with_pip('mpld3', 'mpld3')
-        install_with_pip('beautifulsoup4', 'beautifulsoup4')
-        install_with_pip('lxml', 'lxml')
-        install_with_pip('blessings', 'blessings')
-
         # since nltk may have just been install
         # we need to update our PYTHONPATH
         import site
@@ -48,19 +27,18 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-    version='1.86',
+    version='1.88',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
+    packages=['corpkit'],
+    package_dir={'corpkit': 'corpkit'},
     package_data={'corpkit': ['*.jar', 'corpkit/*.jar', '*.sh', 'corpkit/*.sh', 
-                                '*.ipynb', 'corpkit/*.ipynb', '*.p', 
-                                'dictionaries/*.py']},
-    #data_files=[('./corpkit/dictionaries', [os.path.join('./corpkit/dictionaries', f) for f in os.listdir('./corpkit/dictionaries') if f.endswith('.py')])],
+                                '*.ipynb', 'corpkit/*.ipynb', '*.p', 'dictionaries/*.p']},
     author_email='mcdonaldd@unimelb.edu.au',
     license='MIT',
-    #cmdclass={'install': CustomInstallCommand,},
+    cmdclass={'install': CustomInstallCommand,},
     keywords = ['corpus', 'linguistics', 'nlp'],
-    packages=['corpkit'],
     install_requires=["matplotlib >= 1.4.3",
                         "nltk >= 3.0.0",
                         "joblib",
