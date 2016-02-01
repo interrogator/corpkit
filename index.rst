@@ -85,6 +85,7 @@ Contents
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
+   rst_docs/corpkit.about.rst
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
