@@ -732,11 +732,10 @@ def interrogator(corpus,
             result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = preserve_case)
             
-            if countmode:
-                results[subcorpus_name].append(result)
-                continue
+            current_iter += 1
 
-            result = Counter(format_tregex(result))
+            if not countmode:
+                result = Counter(format_tregex(result))
 
             if conc:
                 op.append('-w')
@@ -751,10 +750,12 @@ def interrogator(corpus,
                 if spelling:
                     for index, line in enumerate(result):
                         result[index] = [correct_spelling(b) for b in line]
-            
-            results[subcorpus_name] += result
 
-            current_iter += 1
+            if countmode:
+                results[subcorpus_name].append(result)
+            else:
+                results[subcorpus_name] += result
+
             if kwargs.get('paralleling', None) is not None:
                 tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
             else:
