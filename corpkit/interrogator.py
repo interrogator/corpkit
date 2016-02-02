@@ -31,6 +31,10 @@ def interrogator(corpus,
     see corpkit.interrogation.interrogate() for docstring"""
     # store kwargs
     locs = locals()
+    if kwargs:
+        for k, v in kwargs.items():
+            locs[k] = v
+        locs.pop('kwargs', None)
 
     from interrogation import Interrogation
     from process import tregex_engine
@@ -682,7 +686,7 @@ def interrogator(corpus,
         sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in list(search.items())])
         if search == {'s': r'.*'}:
             sformat = 'features'
-        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
+        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n          Interrogating corpus ... \n' % \
                   (thetime, message, corpus.name, optiontext, sformat)
         print(welcome)
 
@@ -764,12 +768,12 @@ def interrogator(corpus,
                 tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
             else:
                 tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+
             animator(p, current_iter, tstr, **par_args)
 
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
-
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
                         data = data.read()
