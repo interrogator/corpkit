@@ -8,11 +8,13 @@ corpkit documentation
 
 *corpkit* is a Python-based tool for doing more sophisticated corpus linguistics.
 
-It does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can concordance by searching for combinations of lexical and grammatical features, and can do keywording of lemmas, of subcorpora compared to corpora, or of words in certain positions within clauses. 
+It does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can create structured corpora with speaker ID labels, and easily restrict searches to individual speakers, subcorpora or groups of files.
 
-Corpus interrogations can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
+Concordancing can take advantage of parser output, rather than simply lexis. You can keyword lemmas or lexicogrammatical features, or compare keywords in each subcorpus compared to the corpus as a whole. 
 
-*corpkit* leverages `Stanford CoreNLP`_ and NLTK_, supports multiprocessing, and outputs interrogations as Pandas_ objects.
+Interrogations can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
+
+*corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via `joblib`, and Python 2 and 3 are both supported.
 
 Example
 ----------------------
@@ -68,13 +70,16 @@ Below, this corpus is made into a ``Corpus`` object, parsed with *Stanford CoreN
    >>> rel_say = sayers.edit('%', SELF, sort_by = 'increase')
 
    >>> # plot via matplotlib, using tex if possible
-   >>> rel_say.plot('Sayers, increasing', kind = 'area', y_label = 'Percentage of all sayers')
+   >>> rel_say.visualise('Sayers, increasing', kind = 'area', y_label = 'Percentage of all sayers')
 
 Output:
 
 .. figure:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
 
-A graphical interface, incorporating much of corpkit's command line functionality, is documented and downloadable here_.
+A graphical interface, incorporating much of corpkit's command line functionality, is documented and downloadable here_. The app is also distributed in the GitHub/pip versions of *corpkit* as a .py file. It can be started with:
+
+.. code-block:: bash
+    python corpkit/corpkit-gui.py
 
 Installation
 ----------------------
