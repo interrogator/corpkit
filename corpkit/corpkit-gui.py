@@ -20,10 +20,18 @@ import string
 import time
 import os
 import threading
-import tkinter
-from tkinter import *
-import tkinter.scrolledtext
-from tkinter.ttk import Progressbar, Style
+try:
+    import Tkinter as tkinter
+    from Tkinter import *
+    from ttk import Progressbar, Style
+#try:
+#    import Tkinter
+#    #from Tkinter import *
+#    #from Tkinter.ttk import Progressbar, Style
+except ImportError:
+    import tkinter
+    from tkinter import * 
+    from tkinter.ttk import Progressbar, Style
 from PIL import Image
 from PIL import ImageTk
 # obsolete:
@@ -56,7 +64,6 @@ class SplashScreen( object ):
         self._minSplashTime     = time.time() + minSplashTime
       
     def __enter__( self ):
-
         # Remove the app window from the display
         #self._root.withdraw( )
         
@@ -71,16 +78,16 @@ class SplashScreen( object ):
         imgYPos = (scrnHt / 2) - (imgHt / 2)
 
         # Create the splash screen      
-        self._splash = tkinter.Toplevel()
+        self._splash = Toplevel()
         self._splash.overrideredirect(1)
         self._splash.geometry( '+%d+%d' % (imgXPos, imgYPos) )
 
-        background_label = tkinter.Label(self._splash, image=self._image)
+        background_label = Label(self._splash, image=self._image)
         background_label.grid(row = 1, column = 1, sticky = W)
         import corpkit
         oldstver = str(corpkit.__version__)
         txt = 'Loading corpkit v%s ...' % oldstver
-        cnv = tkinter.Canvas(self._splash, width=200, height=20)
+        cnv = Canvas(self._splash, width=200, height=20)
         cnv.create_text((100, 14), text = txt, font = ("Helvetica", 14, "bold"))
         cnv.grid(row = 1, column = 1, sticky = 'SW', padx = 20, pady = 20)
         self._splash.lift()
@@ -130,8 +137,6 @@ class RedirectText(object):
                 string = re.sub(del_reg, '', string).rstrip('\n').rstrip()
                 string = string.split('\n')[-1]
                 self.output.set(string.lstrip().rstrip('\n').rstrip())
-
-from tkinter import *
 
 class HyperlinkManager:
     """Hyperlinking for About"""
@@ -308,8 +313,6 @@ def corpkit_gui():
         import os
         import corpkit
         from process import get_gui_resource_dir, get_fullpath_to_jars
-        import tkinter, tkinter.constants, tkinter.filedialog, tkinter.messagebox, tkinter.simpledialog
-        from tkinter import StringVar, Listbox, Text
         from tkintertable import TableCanvas, TableModel
         from nltk.draw.table import MultiListbox, Table
         from collections import OrderedDict
@@ -422,7 +425,10 @@ def corpkit_gui():
         global conc_saved
         conc_saved = False
         import itertools
-        toggle = itertools.cycle([True, False]).__next__
+        try:
+            toggle = itertools.cycle([True, False]).__next__
+        except AttributeError:
+            toggle = itertools.cycle([True, False]).next
 
         # manage pane: obsolete
         manage_box = {}
@@ -434,7 +440,10 @@ def corpkit_gui():
 
         # not currently using this sort feature---should use in conc though
         import itertools
-        direct = itertools.cycle([0,1]).__next__
+        try:
+            direct = itertools.cycle([0,1]).__next__
+        except AttributeError:
+            direct = itertools.cycle([0,1]).next
         corpus_names_and_speakers = {}
 
         # datatype of current corpus
@@ -5365,7 +5374,10 @@ def corpkit_gui():
         def load_config():
             """use configparser to get project settings"""
             import os
-            import configparser
+            try:
+                import configparser
+            except:
+                import ConfigParser as configparser
             Config = configparser.ConfigParser()
             f = os.path.join(project_fullpath.get(), 'settings.ini')
             Config.read(f)
@@ -6262,7 +6274,10 @@ def corpkit_gui():
 
         def save_tool_prefs(printout = True):
             """save any preferences to tool preferences"""
-            import configparser
+            try:
+                import configparser
+            except:
+                import ConfigParser as configparser
             import os
             Config = configparser.ConfigParser()
             settingsfile = get_tool_pref_file()
@@ -6299,7 +6314,10 @@ def corpkit_gui():
         def load_tool_prefs():
             """load preferences"""
             import os
-            import configparser
+            try:
+                import configparser
+            except:
+                import ConfigParser as configparser
             settingsfile = get_tool_pref_file()
             if settingsfile is None:
                 timestring('No settings file found.')
@@ -6342,7 +6360,10 @@ def corpkit_gui():
             timestring('Tool preferences loaded.')
 
         def save_config():
-            import configparser
+            try:
+                import configparser
+            except:
+                import ConfigParser as configparser
             import os
             if any(v != '' for v in list(entryboxes.values())):
                 codscheme = ','.join([i.get().replace(',', '') for i in list(entryboxes.values())])
