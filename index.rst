@@ -112,5 +112,7 @@ Contents
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
-.. _Pandas: http://pandas.pydata.org/
+.. _pandas: http://pandas.pydata.org/
 .. _here: http://interrogator.github.io/corpkit/
+.. _pattern: http://www.clips.ua.ac.be/pages/pattern-en
+.. _matplotlib: http://matplotlib.org/
