@@ -222,9 +222,10 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
         s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
         return s
 
+    if savename.endswith('.p'):
+        savename = savename[:-2]
+        
     savename = urlify(savename)
-
-    savename = savename.replace('.p', '')
     
     if not savename.endswith('.p'):
         savename = savename + '.p'
@@ -399,7 +400,7 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     output = {}
 
     l = 0
-    for f in datafiles:    
+    for index, f in enumerate(datafiles):    
         try:
             loadname = f.replace('.p', '')
             output[loadname] = load(f, loaddir = data_dir)
@@ -410,7 +411,7 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
             time = strftime("%H:%M:%S", localtime())
             print('%s: %s failed to load. Try using load to find out the matter.' % (time, f))
         if note and len(datafiles) > 3:
-            note.progvar.set((index + 1) * 100.0 / len(fs))
+            note.progvar.set((index + 1) * 100.0 / len(datafiles))
         if root:
             root.update()
     time = strftime("%H:%M:%S", localtime())
