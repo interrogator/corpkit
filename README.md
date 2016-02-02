@@ -17,7 +17,7 @@
     - [`concordance()` method](#concordance-method)
   - [`Interrogation()`](#interrogation)
     - [`edit()` method](#edit-method)
-    - [`plot()` method](#plot-method)
+    - [`visualise()` method](#visualise-method)
   - [Functions, lists, etc.](#functions-lists-etc)
 - [Installation](#installation)
   - [By downloading the repository](#by-downloading-the-repository)
@@ -33,7 +33,7 @@
 - [Concordancing](#concordancing)
 - [Systemic functional stuff](#systemic-functional-stuff)
 - [Keywording](#keywording)
-  - [Plotting keywords](#plotting-keywords)
+  - [Visualising keywords](#visualising-keywords)
   - [Traditional reference corpora](#traditional-reference-corpora)
 - [Parallel processing](#parallel-processing)
   - [Multiple corpora](#multiple-corpora)
@@ -198,7 +198,7 @@ and methods:
 | Method | Purpose |
 |------------|---------|
 | `interrogation.edit()`        | Get relative frequencies, merge/remove results/subcorpora, calculate keywords, sort using linear regression, etc. |
-| `interrogation.plot()`       | visualise results via *matplotlib* | 
+| `interrogation.visualise()`       | visualise results via *matplotlib* | 
 | `interrogation.save()` | Save data as pickle |
 | `interrogation.quickview()` | Show top results and their absolute/relative frequency |
 
@@ -219,8 +219,8 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
     * etc.
 * Plot more advanced kinds of relative frequency: for example, find all proper nouns that are subjects of clauses, and plot each word as a percentage of all instances of that word in the corpus (see below)
 
-<a name="plot-method"></a>
-#### `plot()` method
+<a name="visualise-method"></a>
+#### `visualise()` method
 
 * Plot using *Matplotlib*
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
@@ -336,7 +336,7 @@ Output:
 
 1. uses `interrogate()` to search corpus for a (Regex- or Tregex-based) query
 2. uses `edit()` to calculate the relative frequencies of each result
-3. uses `plot()` to show the top seven results
+3. uses `visualise()` to show the top seven results
  
 Here's an example of the three methods at work:
 
@@ -353,7 +353,7 @@ Here's an example of the three methods at work:
 >>> to_plot = risk_of.edit('%', risk_of.totals)
 
 # plot the results
->>> to_plot.plot('Risk of (noun)', y_label = 'Percentage of all results',
+>>> to_plot.visualise('Risk of (noun)', y_label = 'Percentage of all results',
 ...    style = 'fivethirtyeight')
 ```
 
@@ -684,7 +684,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 >>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
 # make an area chart with custom y label
->>> sayers_no_prp.plot('Sayers, increasing', kind = 'area', 
+>>> sayers_no_prp.visualise('Sayers, increasing', kind = 'area', 
 ...    y_label = 'Percentage of all sayers')
 ```
 
@@ -711,7 +711,7 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 >>> genders = sayers.edit('%', SELF, just_entries = ['he', 'she'])
 
 # and plot it as a series of pie charts, showing totals on the slices:
->>> genders.plot('Pronominal sayers in the NYT', kind = 'pie',
+>>> genders.visualise('Pronominal sayers in the NYT', kind = 'pie',
 ...    subplots = True, figsize = (15, 2.75), show_totals = 'plot')
 ```
 
@@ -823,17 +823,17 @@ Output:
 Name: terror, dtype: float64
 ```
 
-<a name="plotting-keywords"></a>
-### Plotting keywords
+<a name="visualising-keywords"></a>
+### Visualising keywords
 
-Naturally, we can use `plot()` for our keywords too:
+Naturally, we can use `visualise()` for our keywords too:
 
 ```python
->>> pols.results.terror.plot('Terror* as Participant in the \emph{NYT}', 
+>>> pols.results.terror.visualise('Terror* as Participant in the \emph{NYT}', 
 ...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
 >>> politicians = ['bush', 'obama', 'gore', 'clinton', 'mccain', 
 ...                'romney', 'dole', 'reagan', 'gorbachev']
->>> k.results[politicans].plot('Keyness of politicians in the \emph{NYT}', 
+>>> k.results[politicans].visualise('Keyness of politicians in the \emph{NYT}', 
 ...    num_to_plot = 'all', y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
 ```
 Output:
@@ -950,7 +950,7 @@ Let's try multiprocessing with multiple queries, showing count (i.e. returning a
 # show = 'count' will collapse results from each search into single dataframe
 >>> processes = corpus.interrogate('trees', q, show = 'count')
 >>> proc_rel = processes.edit('%', processes.totals)
->>> proc_rel.plot('Risk processes')
+>>> proc_rel.visualise('Risk processes')
 ```
 
 Output:
@@ -1005,7 +1005,7 @@ We can use `edit()` to make some thematic categories:
 ...    just_entries = ['Everyday people', 'Institutions'])
 
 # plot result
->>> them_cat.plot('Types of riskers', y_label = 'Percentage of all riskers')
+>>> them_cat.visualise('Types of riskers', y_label = 'Percentage of all riskers')
 ```
 
 Output:
@@ -1027,7 +1027,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
 # make a bar chart:
->>> selected.plot('Risk and power', num_to_plot = 'all', kind = 'bar', 
+>>> selected.visualise('Risk and power', num_to_plot = 'all', kind = 'bar', 
 ...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
 ```
 
@@ -1105,15 +1105,15 @@ Now, some intense plotting:
 
 ```python
 # exploded pie chart
->>> each_md.plot('Pie chart of common modals in the NYT', explode = ['other'],
+>>> each_md.visualise('Pie chart of common modals in the NYT', explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
 # bar chart, transposing and reversing the data
->>> modals.results.iloc[::-1].T.iloc[::-1].plot('Modals use by decade', kind = 'barh',
+>>> modals.results.iloc[::-1].T.iloc[::-1].visualise('Modals use by decade', kind = 'barh',
 ...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 
 # stacked area chart
->>> rel_modals.results.drop('1963').plot('An ocean of modals', kind = 'area', 
+>>> rel_modals.results.drop('1963').visualise('An ocean of modals', kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
 ...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
 ```

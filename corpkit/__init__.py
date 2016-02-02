@@ -96,8 +96,8 @@ def texifyfunc(self, *args, **kwargs):
 pd.DataFrame.edit = editfunc
 pd.Series.edit = editfunc
 
-pd.DataFrame.plot = plotfunc
-pd.Series.plot = plotfunc
+pd.DataFrame.visualise = plotfunc
+pd.Series.visualise = plotfunc
 
 pd.DataFrame.save = savefunc
 pd.Series.save = savefunc

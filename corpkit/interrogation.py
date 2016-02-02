@@ -147,7 +147,8 @@ class Interrogation:
         elif branch.lower().startswith('t'):
             return editor(self.totals, *args, **kwargs)
 
-    def plot(title,
+    def visualise(self,
+            title = '',
             x_label = None,
             y_label = None,
             style = 'ggplot',
@@ -171,7 +172,7 @@ class Interrogation:
             **kwargs):
         """Visualise corpus interrogations.
 
-           >>> data.plot('An example plot', kind = 'bar', save = True)
+           >>> data.visualise('An example plot', kind = 'bar', save = True)
 
         :param title: A title for the plot
         :type title: str
@@ -231,12 +232,20 @@ class Interrogation:
         :type interactive: list -- [1, 2, 3]
         :returns: matplotlib figure
         """
-        from corpkit import plotter
+        locs = locals()
+        locs.pop('title', None)
+        locs.pop('self', None)
+        if kwargs:
+            for k, v in kwargs.items():
+                locs[k] = v
+        locs.pop('kwargs', None)
+
+        from plotter import plotter
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
-            plotter(title, self.results, *args, **kwargs)
+            plotter(title, self.results, **locs)
         elif branch.lower().startswith('t'):
-            plotter(title, self.totals, *args, **kwargs)
+            plotter(title, self.totals, **locs)   
 
     def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
@@ -258,8 +267,8 @@ class Interrogation:
         
         :returns: None
         """
-        from corpkit import save
-        save(self, savename, *args, **kwargs)
+        from other import save
+        save(self, savename, **kwargs)
 
     def quickview(self, n = 25):
         """view top n results as painlessly as possible.
@@ -270,7 +279,7 @@ class Interrogation:
         :type n: int
         :returns: None
         """
-        from corpkit import quickview
+        from other import quickview
         quickview(self, n = n)
 
     def multiindex(self, indexnames = False):
@@ -290,7 +299,7 @@ class Interrogation:
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
     """
-    A class for interrogation results, with methods for editing, plotting,
+    A class for interrogation results, with methods for editing, visualising,
     saving and quickviewing
     """
 
@@ -302,22 +311,22 @@ class Results(pd.core.frame.DataFrame):
 
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
-        from corpkit import editor
+        from editor import editor
         return editor(self, *args, **kwargs)
 
-    def plot(self, title, *args, **kwargs):
+    def visualise(self, title, *args, **kwargs):
         """calls corpkit.plotter.plotter()"""
-        from corpkit import plotter
+        from plotter import plotter
         plotter(title, self, *args, **kwargs)
 
     def save(self, savename, *args, **kwargs):
         """Save data to pickle file"""
-        from corpkit import save
+        from other import save
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
         """Print top results from an interrogation or edit"""
-        from corpkit import quickview
+        from other import quickview
         quickview(self, n = n)
     
 class Totals(pd.core.series.Series):
@@ -333,22 +342,22 @@ class Totals(pd.core.series.Series):
 
     def edit(self, *args, **kwargs):
         """calls corpkit.editor.editor()"""
-        from corpkit import editor
+        from editor import editor
         return editor(self, *args, **kwargs)
 
-    def plot(self, title, *args, **kwargs):
+    def visualise(self, title, *args, **kwargs):
         """calls corpkit.plotter.plotter()"""
-        from corpkit import plotter
+        from plotter import plotter
         plotter(title, self, *args, **kwargs)
 
     def save(self, savename, *args, **kwargs):
         """Save data to pickle file"""
-        from corpkit import save
+        from other import save
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
         """Print top results from an interrogation or edit"""
-        from corpkit import quickview
+        from other import quickview
         quickview(self, n = n)
     
 class Concordance(pd.core.frame.DataFrame):
@@ -405,7 +414,7 @@ class Interrodict(dict):
         :returns: :class:`corpkit.interrogation.Interrodict`
         """
 
-        from corpkit import editor
+        from editor import editor
         return editor(self, *args, **kwargs)
 
     def multiindex(self, indexnames = False):

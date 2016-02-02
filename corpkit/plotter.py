@@ -121,7 +121,7 @@ def plotter(title,
         import mpld3
         import collections
         from mpld3 import plugins, utils
-        from .plugins import InteractiveLegendPlugin, HighlightLines
+        from plugins import InteractiveLegendPlugin, HighlightLines
 
     # check what environment we're in
     tk = check_t_kinter()
@@ -998,7 +998,7 @@ def plotter(title,
             width = ax.containers[0][0].get_width()
 
         # show grid
-        a.grid(b=kwargs.get('grid', False))
+        ax.grid(b=kwargs.get('grid', False))
         kwargs.pop('grid', None)
 
     if was_series:
