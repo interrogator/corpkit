@@ -664,8 +664,12 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     """
 
     if kwargs.get('note'):
-        perc_done = count * 100.0 / float(length)
+        if count is None:
+            perc_done = 0.0
+        else:
+            perc_done = count * 100.0 / float(length)
         kwargs['note'].progvar.set(perc_done)
+        kwargs['root'].update()
         return
 
     if init:
