@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """A toolkit for corpus linguistics
 
 .. moduleauthor:: Daniel McDonald <mcdonaldd@unimelb.edu.au>
@@ -26,7 +28,7 @@ __all__ = ["interrogator",
     "Corpora"] + letters
 
 #metadata
-__version__ = "1.90"
+__version__ = "1.91"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -34,6 +36,7 @@ __license__ = "MIT"
 import sys
 import os
 import inspect
+
 corpath = inspect.getfile(inspect.currentframe())
 baspat = os.path.dirname(corpath)
 #dicpath = os.path.join(baspat, 'dictionaries')
@@ -47,7 +50,7 @@ for p in [corpath, baspat]:
 from corpus import Corpus
 from corpus import Corpora
 
-import corpkit.dictionaries as dictionaries
+import dictionaries as dictionaries
 
 # import functions, though most are now class methods
 from interrogator import interrogator

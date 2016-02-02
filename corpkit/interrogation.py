@@ -1,3 +1,5 @@
+from __future__ import print_function
+import corpkit
 
 class Interrogation:
     """
@@ -138,7 +140,7 @@ class Interrogation:
 
         :returns: :class:`corpkit.interrogation.Interrogation`
         """
-        from corpkit import editor
+        from editor import editor
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
             return editor(self.results, *args, **kwargs)
@@ -282,7 +284,7 @@ class Interrogation:
         :returns: :class:`corpkit.interrogation.Interrogation`, with ``pd.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
         """
 
-        from corpkit.other import make_multi
+        from other import make_multi
         return make_multi(self, indexnames = indexnames)
 
 import pandas as pd
@@ -379,7 +381,7 @@ class Concordance(pd.core.frame.DataFrame):
         :type columns: list
         :returns: None
         """
-        from corpkit.other import concprinter
+        from other import concprinter
         concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
 
 class Interrodict(dict):
@@ -390,8 +392,8 @@ class Interrodict(dict):
     """
     
     def __init__(self, data):
-        from corpkit.process import makesafe
-        for k, v in data.items():
+        from process import makesafe
+        for k, v in list(data.items()):
             setattr(self, makesafe(k), v)
         dict.__init__(self, data)
 
@@ -414,6 +416,6 @@ class Interrodict(dict):
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
-        from corpkit.other import make_multi
+        from other import make_multi
         return make_multi(self, indexnames = indexnames)
         

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 def quickview(results, n = 25):
     """view top n results as painlessly as possible.
 
@@ -13,7 +15,7 @@ def quickview(results, n = 25):
     import numpy as np
     import os
     import corpkit
-    from corpkit.interrogation import Interrogation, Results, Totals
+    from interrogation import Interrogation, Results, Totals
 
     # handle dictionaries too:
     dictpath = 'dictionaries'
@@ -30,15 +32,15 @@ def quickview(results, n = 25):
             import pickle
             from collections import Counter
             unpickled = pickle.load(open(os.path.join(dictpath, results), 'rb'))
-            print '\nTop %d entries in %s:\n' % (n, os.path.join(dictpath, results))
+            print('\nTop %d entries in %s:\n' % (n, os.path.join(dictpath, results)))
             for index, (w, f) in enumerate(unpickled.most_common(n)):
                 fildex = '% 3d' % index
-                print '%s: %s (n=%d)' %(fildex, w, f)
+                print('%s: %s (n=%d)' %(fildex, w, f))
             return
 
         elif os.path.isfile(os.path.join(savedpath, results)):
             from corpkit import load
-            print '\n%s loaded temporarily from file:\n' % results
+            print('\n%s loaded temporarily from file:\n' % results)
             results = load(results)
         else:
             raise ValueError('File %s not found in saved_interrogations or dictionaries')
@@ -60,7 +62,7 @@ def quickview(results, n = 25):
         dtype = corpkit.interrogation.Totals
 
     elif results.__class__ == corpkit.interrogation.Interrogation:
-        if 'results' in results.__dict__.keys():
+        if 'results' in list(results.__dict__.keys()):
             datatype = results.results.iloc[0,0].dtype
             if datatype == 'int64':
                 option = 't'
@@ -78,7 +80,7 @@ def quickview(results, n = 25):
             except:
                 the_list = list(results.results.index)[:n]
         else:
-            print results.totals
+            print(results.totals)
             return
     else:
         raise ValueError('Results not recognised.')
@@ -96,23 +98,23 @@ def quickview(results, n = 25):
                 to_get_from = results
 
             tot = to_get_from[entry].sum()
-            print '%s: %s (n=%d)' %(str(index).rjust(3), entry.ljust(longest), tot)
+            print('%s: %s (n=%d)' %(str(index).rjust(3), entry.ljust(longest), tot))
         elif option == '%' or option == '/':
             if dtype == corpkit.interrogation.Interrogation:
                 to_get_from = results.totals
                 tot = to_get_from[entry]
                 totstr = "%.3f" % tot
-                print '%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr) 
+                print('%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr)) 
             elif dtype == corpkit.interrogation.Results:
-                print '%s: %s (%s)' %(str(index).rjust(3), entry.ljust(longest), option)
+                print('%s: %s (%s)' %(str(index).rjust(3), entry.ljust(longest), option))
             elif dtype == corpkit.interrogation.Totals:
                 tot = results[entry]
                 totstr = "%.3f" % tot
-                print '%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr) 
+                print('%s: %s (%s%%)' % (str(index).rjust(3), entry.ljust(longest), totstr)) 
         elif option == 'k':
-            print '%s: %s (l/l)' %(str(index).rjust(3), entry.ljust(longest))
+            print('%s: %s (l/l)' %(str(index).rjust(3), entry.ljust(longest)))
         else:
-            print '%s: %s' %(str(index).rjust(3), entry.ljust(longest))
+            print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
 def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
     """
@@ -137,7 +139,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     pd.set_option('display.max_colwidth', 100)
 
     if type(n) == int:
-        to_show = df.ix[range(n)]
+        to_show = df.ix[list(range(n))]
     elif n is False:
         to_show = df
     elif n == 'all':
@@ -162,23 +164,23 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     if columns != 'all':
         to_show = to_show[columns]
 
-    print ''
+    print('')
     if kind.startswith('s'):
         if 'r' in list(to_show.columns):
-            print to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs)
+            print(to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs))
         else:
-            print to_show.to_string(header = False, **kwargs)
+            print(to_show.to_string(header = False, **kwargs))
     if kind.startswith('l'):
         if 'r' in list(to_show.columns):
-            print to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1, **kwargs)
+            print(to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1, **kwargs))
         else:
-            print to_show.to_latex(header = False, **kwargs)
+            print(to_show.to_latex(header = False, **kwargs))
     if kind.startswith('c'):
         if 'r' in list(to_show.columns):
-            print to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs)
+            print(to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs))
         else:
-            print to_show.to_csv(header = False, **kwargs)
-    print ''
+            print(to_show.to_csv(header = False, **kwargs))
+    print('')
 
 
 def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
@@ -235,7 +237,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
         fullpath = savename
 
     while os.path.isfile(fullpath):
-        selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+        selection = input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
         if selection == 'o' or selection == 'O':
             import os
             os.remove(fullpath)
@@ -250,7 +252,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     
     time = strftime("%H:%M:%S", localtime())
     if print_info:
-        print '\n%s: Data saved: %s\n' % (time, fullpath)
+        print('\n%s: Data saved: %s\n' % (time, fullpath))
 
 def load(savename, loaddir = 'saved_interrogations'):
     """
@@ -314,7 +316,7 @@ def new_project(name, loc = '.', **kwargs):
     except:
         if root:
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Directory already exists: "%s"' %( thetime, fullpath)
+            print('%s: Directory already exists: "%s"' %( thetime, fullpath))
             return
         else:
             raise
@@ -352,7 +354,7 @@ def new_project(name, loc = '.', **kwargs):
     # if not GUI
     if not root:
         time = strftime("%H:%M:%S", localtime())
-        print '%s: New project created: "%s"' % (time, name)
+        print('%s: New project created: "%s"' % (time, name))
 
 def interroplot(path, search, **kwargs):
     """Demo function for interrogator/plotter.
@@ -387,7 +389,7 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     """
     import os
     from time import localtime, strftime
-    from corpkit.other import load
+    from other import load
 
     root = kwargs.get('root', False)
     note = kwargs.get('note', False)    
@@ -402,18 +404,18 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
             loadname = f.replace('.p', '')
             output[loadname] = load(f, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
-            print '%s: %s loaded as %s.' % (time, f, loadname)
+            print('%s: %s loaded as %s.' % (time, f, loadname))
             l += 1
         except:
             time = strftime("%H:%M:%S", localtime())
-            print '%s: %s failed to load. Try using load to find out the matter.' % (time, f)
+            print('%s: %s failed to load. Try using load to find out the matter.' % (time, f))
         if note and len(datafiles) > 3:
             note.progvar.set((index + 1) * 100.0 / len(fs))
         if root:
             root.update()
     time = strftime("%H:%M:%S", localtime())
-    print '%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir))
-    from corpkit.interrogation import Interrodict
+    print('%s: %d interrogations loaded from %s.' % (time, l, os.path.basename(data_dir)))
+    from interrogation import Interrodict
     return Interrodict(output)
 
 def texify(series, n = 20, colname = 'Keyness', toptail = False, sort = False):
@@ -535,13 +537,13 @@ def make_multi(interrogation, indexnames = None):
 
     # if it's an interrodict, we want to make it into a single df
     import corpkit
-    from corpkit.interrogation import Interrodict
-    if type(interrogation) == corpkit.interrogation.Interrodict:
+    from interrogation import Interrodict
+    if interrogation.__class__ == Interrodict:
         import pandas as pd
         import numpy as np
 
         flat = [[], [], []]
-        for name, data in interrogation.items():
+        for name, data in list(interrogation.items()):
             for subcorpus in list(data.results.index):
                 flat[0].append(name)
                 flat[1].append(subcorpus)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 def editor(dataframe1, 
             operation = None,
@@ -167,7 +168,7 @@ def editor(dataframe1,
     # if passing a multiquery, do each result separately and return
     if type(dataframe1) == dict:
         outdict = {}
-        from corpkit.editor import editor
+        from editor import editor
         del saved_args['dataframe1']
         for i, (k, v) in enumerate(dataframe1.items()):
             # only print the first time around
@@ -178,8 +179,8 @@ def editor(dataframe1,
                 saved_args['print_info'] = False
             # if df2 is also a dict, get the relevant entry
             if type(dataframe2) == dict:
-                if sorted(set([i.lower() for i in dataframe1.keys()])) == \
-                   sorted(set([i.lower() for i in dataframe2.keys()])):
+                if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
+                   sorted(set([i.lower() for i in list(dataframe2.keys())])):
                    saved_args['dataframe2'] = dataframe2[k]
                    
                    if kwargs.get('use_df2_totals'):
@@ -188,7 +189,7 @@ def editor(dataframe1,
         if print_info:
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
-            print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys())))
+            print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys()))))
         return outdict
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
@@ -196,7 +197,7 @@ def editor(dataframe1,
     pd.options.mode.chained_assignment = None
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
-    from corpkit.tests import check_pytex
+    from tests import check_pytex
     if check_pytex():
         print_info = False
 
@@ -216,11 +217,11 @@ def editor(dataframe1,
                             to_show.append('...')
                             [to_show.append(w) for w in to_drop[-5:]]
                         if len(to_drop) > 0:
-                            print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
+                            print('Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show)))
                         if len(to_drop) > 10:
-                            print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+                            print('... and %d more ... \n' % (len(to_drop) - len(to_show) + 1))
                         else:
-                            print ''
+                            print('')
                 else:
                     denom = df2
         else:
@@ -234,21 +235,21 @@ def editor(dataframe1,
                 except ValueError:
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
+                    print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '+':
                 try:
                     df = df.add(denom, axis = 0)
                 except ValueError:
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
+                    print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '-':
                 try:
                     df = df.sub(denom, axis = 0)
                 except ValueError:
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
+                    print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '*':
                 totals = df.sum() * float(df.sum().sum())
                 try:
@@ -256,7 +257,7 @@ def editor(dataframe1,
                 except ValueError:
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
+                    print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '/':
                 try:
                     totals = df.sum() / float(df.sum().sum())
@@ -264,7 +265,7 @@ def editor(dataframe1,
                 except ValueError:
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
-                    print '%s: cannot combine DataFrame 1 and 2: different shapes' % thetime
+                    print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == 'd':
                 #df.ix['Combined total'] = df.sum()
                 #to_drop = to_drop = list(df.T[df.T['Combined total'] < threshold].index)
@@ -278,11 +279,11 @@ def editor(dataframe1,
                         to_show.append('...')
                         [to_show.append(w) for w in to_drop[-5:]]
                     if len(to_drop) > 0:
-                        print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
+                        print('Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show)))
                     if len(to_drop) > 10:
-                        print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+                        print('... and %d more ... \n' % (len(to_drop) - len(to_show) + 1))
                     else:
-                        print ''
+                        print('')
 
                 # get normalised num in target corpus
                 norm_in_target = df.div(denom, axis = 0)
@@ -386,7 +387,7 @@ def editor(dataframe1,
             except:
                 pass
             the_input = [the_input]
-        elif type(the_input) == str or type(the_input) == unicode:
+        elif type(the_input) == str or type(the_input) == str:
             try:
                 regex = re.compile(the_input)
                 parsed_input = [w for w in list(df) if re.search(regex, w)]
@@ -396,7 +397,7 @@ def editor(dataframe1,
         if type(the_input) == list:
             if type(the_input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
-            elif type(the_input[0]) == str or type(the_input[0]) == unicode:
+            elif type(the_input[0]) == str or type(the_input[0]) == str:
                 try:
                     parsed_input = [word for word in the_input if word in df.columns]
                 except AttributeError: # if series
@@ -427,9 +428,9 @@ def editor(dataframe1,
         """turn dataframes into us/uk spelling"""
         from dictionaries.word_transforms import usa_convert
         if print_info:
-            print 'Converting spelling ... \n'
+            print('Converting spelling ... \n')
         if convert_to == 'UK':
-            usa_convert = {v: k for k, v in usa_convert.items()}
+            usa_convert = {v: k for k, v in list(usa_convert.items())}
         fixed = []
         for val in list(df.columns):
             try:
@@ -441,7 +442,7 @@ def editor(dataframe1,
 
     def merge_duplicates(df, print_info = print_info):
         if print_info:
-            print 'Merging duplicate entries ... \n'
+            print('Merging duplicate entries ... \n')
         # now we have to merge all duplicates
         for dup in df.columns.get_duplicates():
             #num_dupes = len(list(df[dup].columns))
@@ -461,13 +462,13 @@ def editor(dataframe1,
             if type(replace_names[0]) == str:
                 replace_names = [replace_names]
         if type(replace_names) == dict:
-            replace_names = [(v, k) for k, v in replace_names.items()]
+            replace_names = [(v, k) for k, v in list(replace_names.items())]
         for to_find, replacement in replace_names:
             if print_info:
                 try:
-                    print 'Replacing "%s" with "%s" ...\n' % (to_find, replacement)
+                    print('Replacing "%s" with "%s" ...\n' % (to_find, replacement))
                 except:
-                    print 'Deleting "%s" from entry names ...\n' % (to_find)
+                    print('Deleting "%s" from entry names ...\n' % (to_find))
             to_find = re.compile(to_find)
             try:
                 replacement = replacement
@@ -480,21 +481,21 @@ def editor(dataframe1,
     def just_these_entries(df, parsed_input, prinf = True):
         entries = [word for word in list(df) if word not in parsed_input]
         if prinf:
-            print 'Keeping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
+            print('Keeping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10])))
             if len(parsed_input) > 10:
-                print '... and %d more ... \n' % (len(parsed_input) - 10)
+                print('... and %d more ... \n' % (len(parsed_input) - 10))
             else:
-                print ''
+                print('')
         df = df.drop(entries, axis = 1)
         return df
 
     def skip_these_entries(df, parsed_input, prinf = True):
         if prinf:     
-            print 'Skipping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10]))
+            print('Skipping %d entries:\n    %s' % (len(parsed_input), '\n    '.join(parsed_input[:10])))
             if len(parsed_input) > 10:
-                print '... and %d more ... \n' % (len(parsed_input) - 10)
+                print('... and %d more ... \n' % (len(parsed_input) - 10))
             else:
-                print ''
+                print('')
         df = df.drop(parsed_input, axis = 1)
         return df
 
@@ -520,9 +521,9 @@ def editor(dataframe1,
             for item in parsed_input:
                 summed = sum(list(df[item]))
                 sumdict[item] = summed
-            the_newname = max(sumdict.iteritems(), key=operator.itemgetter(1))[0]
-        if type(the_newname) != unicode:
-            the_newname = unicode(the_newname, errors = 'ignore')
+            the_newname = max(iter(sumdict.items()), key=operator.itemgetter(1))[0]
+        if type(the_newname) != str:
+            the_newname = str(the_newname, errors = 'ignore')
         return the_newname
 
     def merge_these_entries(df, parsed_input, the_newname, prinf = True, merging = 'entries'):
@@ -532,11 +533,11 @@ def editor(dataframe1,
             warnings.warn('No %s could be automatically merged.\n' % merging)
         else:
             if prinf:
-                print 'Merging %d %s as "%s":\n    %s' % (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10]))
+                print('Merging %d %s as "%s":\n    %s' % (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10])))
                 if len(parsed_input) > 10:
-                    print '... and %d more ... \n' % (len(parsed_input) - 10)
+                    print('... and %d more ... \n' % (len(parsed_input) - 10))
                 else:
-                    print ''
+                    print('')
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
         if not multiple_merge:
@@ -552,11 +553,11 @@ def editor(dataframe1,
             lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
         good_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
         if prinf:
-            print 'Keeping %d subcorpora:\n    %s' % (len(good_years), '\n    '.join(good_years[:10]))
+            print('Keeping %d subcorpora:\n    %s' % (len(good_years), '\n    '.join(good_years[:10])))
             if len(good_years) > 10:
-                print '... and %d more ... \n' % (len(good_years) - 10)
+                print('... and %d more ... \n' % (len(good_years) - 10))
             else:
-                print ''
+                print('')
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         return df
 
@@ -571,11 +572,11 @@ def editor(dataframe1,
             warnings.warn('No subcorpora skipped.\n')
         else:
             if prinf:       
-                print 'Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]]))
+                print('Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]])))
                 if len(bad_years) > 10:
-                    print '... and %d more ... \n' % (len(bad_years) - 10)
+                    print('... and %d more ... \n' % (len(bad_years) - 10))
                 else:
-                    print ''
+                    print('')
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis = 0)
         return df
 
@@ -588,7 +589,7 @@ def editor(dataframe1,
             warnings.warn('Span not identified.\n')
         else:        
             if prinf:        
-                print 'Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1]))
+                print('Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1])))
         df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
         # retotal needed here
         return df
@@ -600,17 +601,17 @@ def editor(dataframe1,
             for a, b in list_of_tuples:
                 tdict[a] = b
             list_of_tuples = tdict
-        for subcorpus, projection_value in list_of_tuples.items():
+        for subcorpus, projection_value in list(list_of_tuples.items()):
             if type(subcorpus) == int:
                 subcorpus = str(subcorpus)
             df.ix[subcorpus] = df.ix[subcorpus] * projection_value
             if prinf:
                 if type(projection_value) == float:
-                    print 'Projection: %s * %s' % (subcorpus, projection_value)
+                    print('Projection: %s * %s' % (subcorpus, projection_value))
                 if type(projection_value) == int:
-                    print 'Projection: %s * %d' % (subcorpus, projection_value)
+                    print('Projection: %s * %d' % (subcorpus, projection_value))
         if prinf:
-            print ''
+            print('')
         return df
 
     def do_stats(df):
@@ -620,7 +621,7 @@ def editor(dataframe1,
         except ImportError:
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: sort type not available in this verion of corpkit.' % thetime
+            print('%s: sort type not available in this verion of corpkit.' % thetime)
             return False
         #from stats.stats import linregress
 
@@ -635,7 +636,7 @@ def editor(dataframe1,
         try:
             x = [int(y) - int(first_year) for y in indices]
         except ValueError:
-            x = range(len(indices))
+            x = list(range(len(indices)))
         statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
         for entry in list(df.columns):
             entries.append(entry)
@@ -792,7 +793,7 @@ def editor(dataframe1,
         else:
             the_threshold = threshold
         if prinf:
-            print 'Threshold: %d\n' % the_threshold
+            print('Threshold: %d\n' % the_threshold)
         return the_threshold
 
     # check if we're in concordance mode
@@ -811,7 +812,7 @@ def editor(dataframe1,
         no_good_dataframe1 = True
         while no_good_dataframe1:
             if 'interrogation' in str(type(dataframe1)):
-                sel = raw_input("\nIt looks like you're trying to edit an interrogation, " \
+                sel = input("\nIt looks like you're trying to edit an interrogation, " \
                                   "rather than an interrogation's .results or .totals branch. You can:\n\n    a) select .results branch\n    b) select .totals branch\n    c) exit\n\nYour choice: ")
                 if sel.startswith('a'):
                     try:
@@ -873,7 +874,7 @@ def editor(dataframe1,
         return df
 
     if print_info:
-        print '\n***Processing results***\n========================\n'
+        print('\n***Processing results***\n========================\n')
 
     df1_istotals = False
     if type(df) == pandas.core.series.Series:
@@ -985,7 +986,7 @@ def editor(dataframe1,
     # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
         if type(merge_entries) != list:
-            if type(merge_entries) == str or type(merge_entries) == unicode:
+            if type(merge_entries) == str or type(merge_entries) == str:
                 merge_entries = {newname: merge_entries}
             # for newname, criteria    
             for name, the_input in sorted(merge_entries.items()):
@@ -1005,7 +1006,7 @@ def editor(dataframe1,
             if type(merge_subcorpora) == list:
                 if type(merge_subcorpora[0]) == tuple:
                     merge_subcorpora = {x: y for x, y in merge_subcorpora}
-                elif type(merge_subcorpora[0]) == str or type(merge_subcorpora[0]) == unicode:
+                elif type(merge_subcorpora[0]) == str or type(merge_subcorpora[0]) == str:
                     merge_subcorpora = {new_subcorpus_name: [x for x in merge_subcorpora]}
                 elif type(merge_subcorpora[0]) == int:
                     merge_subcorpora = {new_subcorpus_name: [str(x) for x in merge_subcorpora]}
@@ -1084,7 +1085,7 @@ def editor(dataframe1,
     
     # if doing keywording...
     if operation.startswith('k'):
-        from keys import keywords
+        from .keys import keywords
 
         # allow saved dicts to be df2, etc
         try:
@@ -1186,7 +1187,7 @@ def editor(dataframe1,
         return df
 
     # while tkintertable can't sort rows
-    from corpkit.tests import check_t_kinter
+    from tests import check_t_kinter
     tk = check_t_kinter()
     if tk:
         df = add_tkt_index(df)
@@ -1229,14 +1230,14 @@ def editor(dataframe1,
 
     #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, total)
-    from corpkit.interrogation import Interrogation
+    from interrogation import Interrogation
     output = Interrogation(results = df, totals = total, query = the_options)
 
     #print '\nResult (sample)\n'
     if print_info:
         #if merge_entries or merge_subcorpora or span_subcorpora or just_subcorpora or \
            #just_entries or skip_entries or skip_subcorpora or printed_th or projection:
-        print '***Done!***\n========================\n'
+        print('***Done!***\n========================\n')
     #print df.head().T
     #print ''
     if operation.startswith('k') or just_totals or df1_istotals:

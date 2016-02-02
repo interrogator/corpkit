@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # in here are functions used internally by corpkit
 # not intended to be called by users. 
 
@@ -16,7 +18,7 @@ def datareader(data, plaintext = False, **kwargs):
     """
     import os
     import pandas
-    from corpkit.process import tregex_engine
+    from process import tregex_engine
     from tests import check_dit
     try:
         get_ipython().getoutput()
@@ -29,7 +31,7 @@ def datareader(data, plaintext = False, **kwargs):
     tregex_engine_used = False
     
     # if unicode, make it a string
-    if type(data) == unicode:
+    if type(data) == str:
         if not os.path.isdir(data):
             if not os.path.isfile(data):
                 return good
@@ -73,7 +75,7 @@ def datareader(data, plaintext = False, **kwargs):
                 import nltk
                 sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
                 for f in fs:
-                    raw = unicode(open(f).read(), 'utf-8', errors = 'ignore')
+                    raw = str(open(f).read(), 'utf-8', errors = 'ignore')
                     sents = sent_tokenizer.tokenize(raw)
                     tokenized_sents = [nltk.word_tokenize(i) for i in sents]
                     for sent in tokenized_sents:
@@ -106,7 +108,7 @@ def datareader(data, plaintext = False, **kwargs):
     # make unicode
     if not tregex_engine_used:
         try:
-            good = unicode(good, 'utf-8', errors = 'ignore')
+            good = str(good, 'utf-8', errors = 'ignore')
         except TypeError:
             pass
 
@@ -145,13 +147,13 @@ def tregex_engine(corpus = False,
 
     """
     import corpkit
-    from corpkit.process import add_corpkit_to_path
+    from process import add_corpkit_to_path
     add_corpkit_to_path()
     import subprocess 
     from subprocess import Popen, PIPE, STDOUT
     import re
     from time import localtime, strftime
-    from corpkit.tests import check_dit
+    from tests import check_dit
     from dictionaries.word_transforms import wordlist
     import os
     import sys
@@ -177,12 +179,14 @@ def tregex_engine(corpus = False,
     an_error_occurred = True
 
     # site pack path
-    corpath = os.path.join(os.path.dirname(corpkit.__file__), 'tregex.sh')
+    corpath = os.path.join(os.path.dirname(corpkit.__file__))
+    cor1 = os.path.join(corpath, 'tregex.sh')
+    cor2 = os.path.join(corpath, 'corpkit', 'tregex.sh')
 
     # pyinstaller
     pyi = sys.argv[0].split('Contents/MacOS')[0] + 'Contents/MacOS/tregex.sh'
 
-    possible_paths = ['tregex.sh', corpath, pyi]
+    possible_paths = ['tregex.sh', corpath, pyi, cor1, cor2]
 
     while an_error_occurred:
         tregex_file_found = False
@@ -193,7 +197,7 @@ def tregex_engine(corpus = False,
                 break
         if not tregex_file_found:
             thetime = strftime("%H:%M:%S", localtime())
-            print "%s: Couldn't find Tregex in %s." % (thetime, ', '.join(possible_paths))
+            print("%s: Couldn't find Tregex in %s." % (thetime, ', '.join(possible_paths)))
             return False
 
         if not query:
@@ -229,17 +233,18 @@ def tregex_engine(corpus = False,
         #try:
         if type(options) != bool:
             if not '-filter' in options:
-                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).splitlines()
+                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).decode(encoding='UTF-8').splitlines()
             else:
                 p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
                 p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
-                res = p.communicate()[0].splitlines()
+                res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
                 p.stdin.close()
-                print res
+                print(res)
         else:
             p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
             p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
-            res = p.communicate()[0].splitlines()
+            res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
+            print(type(res))
             p.stdin.close()
         # exception handling for regex error
         #except Exception, e:
@@ -257,23 +262,23 @@ def tregex_engine(corpus = False,
                 tregex_error_output = ""
                 if root:
                     time = strftime("%H:%M:%S", localtime())
-                    print '%s: Error parsing Tregex query.' % time
+                    print('%s: Error parsing Tregex query.' % time)
                     return False
                 time = strftime("%H:%M:%S", localtime())
-                selection = raw_input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
+                selection = input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
                 if 'a' in selection:
-                    query = raw_input('\nNew Tregex query: ')
+                    query = input('\nNew Tregex query: ')
                 elif 'b' in selection:
-                    print ''
+                    print('')
                     return False
             
             # if regex error, try to help
             elif re.match(regex_error, res[0]):
                 if root:
                     time = strftime("%H:%M:%S", localtime())
-                    print '%s: Regular expression in Tregex query contains an error.' % time
+                    print('%s: Regular expression in Tregex query contains an error.' % time)
                     return False
                 info = res[0].split(':')
                 index_of_error = re.findall(r'index [0-9]+', info[1])
@@ -282,14 +287,14 @@ def tregex_engine(corpus = False,
                 remove_start = query.split('/', 1)
                 remove_end = remove_start[1].split('/', -1)
                 time = strftime("%H:%M:%S", localtime())
-                selection = raw_input('\n%s: Error parsing regex inside Tregex query: %s'\
+                selection = input('\n%s: Error parsing regex inside Tregex query: %s'\
                 '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
                 '              a) rewrite it now\n' \
                 '              b) exit\n\nYour selection: ' % (time, str(info[1]), str(remove_end[0]), spaces))
                 if 'a' in selection:
-                    query = raw_input('\nNew Tregex query: ')
+                    query = input('\nNew Tregex query: ')
                 elif 'b' in selection:
-                    print ''
+                    print('')
                     return                
             else:
                 an_error_occurred = False
@@ -339,14 +344,14 @@ def tregex_engine(corpus = False,
                 
     if not filenaming:
         if preserve_case:
-            res = [unicode(w, 'utf-8', errors = 'ignore') for w in res]
+            pass # res = [str(w, 'utf-8', errors = 'ignore') for w in res]
         else:
-            res = [unicode(w, 'utf-8', errors = 'ignore').lower() for w in res]
+            res = [w.lower() for w in res]
     else:
         if preserve_case:
-            res = [(unicode(t, 'utf-8', errors = 'ignore'), unicode(w, 'utf-8', errors = 'ignore')) for t, w in res]
+            pass # res = [(str(t, 'utf-8', errors = 'ignore'), str(w, 'utf-8', errors = 'ignore')) for t, w in res]
         else:
-            res = [(unicode(t), unicode(w, 'utf-8', errors = 'ignore').lower()) for t, w in res]
+            res = [(t, w.lower()) for t, w in res]
 
     if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
@@ -395,7 +400,7 @@ def make_nltk_text(directory,
     Turn a lot of trees into an nltk style text"""
     import nltk
     import os
-    from corpkit.process import tregex_engine
+    from process import tregex_engine
     if type(directory) == str:
         dirs = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
         if len(dirs) == 0:
@@ -420,7 +425,7 @@ def make_nltk_text(directory,
     all_out = []
 
     for d in dirs:
-        print "Flattening %s ... " % str(d)
+        print("Flattening %s ... " % str(d))
         res = tregex_engine(corpus = d, 
                             query = query, 
                             options = options,
@@ -471,7 +476,7 @@ def add_nltk_data_to_nltk_path(**kwargs):
     nltkpath = os.path.dirname(npat)
     if nltkpath not in nltk.data.path:
         nltk.data.path.append(nltkpath)
-        if 'note' in kwargs.keys():
+        if 'note' in list(kwargs.keys()):
             path_within_gui = os.path.join(nltkpath.split('/lib/python2.7')[0], 'nltk_data')
             if path_within_gui not in nltk.data.path:
                 nltk.data.path.append(path_within_gui)
@@ -589,7 +594,7 @@ def determine_datatype(path):
 def filtermaker(the_filter, case_sensitive = False):
     import re
     if type(the_filter) == list:
-        from corpkit.other import as_regex
+        from other import as_regex
         the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
     try:
         output = re.compile(the_filter)
@@ -604,28 +609,28 @@ def filtermaker(the_filter, case_sensitive = False):
                           exc_traceback)
             error_message = lst[-1]
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Filter %s' % (thetime, error_message)
+            print('%s: Filter %s' % (thetime, error_message))
             return 'Bad query'
     
     while not is_valid:
         if root:
             time = strftime("%H:%M:%S", localtime())
-            print the_filter
-            print '%s: Invalid the_filter regular expression.' % time
+            print(the_filter)
+            print('%s: Invalid the_filter regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
-        selection = raw_input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+        selection = input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
             '              a) rewrite it now\n' \
             '              b) exit\n\nYour selection: ' % (time, the_filter))
         if 'a' in selection:
-            the_filter = raw_input('\nNew regular expression: ')
+            the_filter = input('\nNew regular expression: ')
             try:
                 output = re.compile(r'\b' + the_filter + r'\b')
                 is_valid = True
             except re.error:
                 is_valid = False
         elif 'b' in selection:
-            print ''
+            print('')
             return False
     return output
 
@@ -691,7 +696,7 @@ def parse_just_speakers(just_speakers, path):
         just_speakers = [just_speakers]
     if type(just_speakers) == list:
         if just_speakers == ['each']:
-            from corpkit.build import get_speaker_names_from_xml_corpus
+            from build import get_speaker_names_from_xml_corpus
             just_speakers = get_speaker_names_from_xml_corpus(path)
     return just_speakers
 
@@ -708,11 +713,11 @@ def timestring(input):
     """print with time prepended"""
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
-    print '%s: %s' % (thetime, input.lstrip())
+    print('%s: %s' % (thetime, input.lstrip()))
 
 def makesafe(variabletext):
     import re
-    from corpkit.process import is_number
+    from process import is_number
     variable_safe_r = re.compile('[\W_]+', re.UNICODE)
     try:
         txt = variabletext.name.split('.')[0].replace('-parsed', '')

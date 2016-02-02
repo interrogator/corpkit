@@ -9,4 +9,4 @@ def test_import():
     import corpkit
     from dictionaries.wordlists import wordlists
     from corpkit import Corpus
-    assert_equals(wordlists.articles, [u'a', u'an', u'the', u'teh'])
+    assert_equals(wordlists.articles, ['a', 'an', 'the', 'teh'])

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 def pmultiquery(corpus, 
     search,
     show = 'words',
@@ -29,10 +31,10 @@ def pmultiquery(corpus,
     from collections import namedtuple
     from time import strftime, localtime
     import corpkit
-    from corpkit.interrogator import interrogator
-    from corpkit.editor import editor
-    from corpkit.other import save
-    from corpkit.interrogation import Interrogation
+    from interrogator import interrogator
+    from editor import editor
+    from other import save
+    from interrogation import Interrogation
     try:
         from joblib import Parallel, delayed
     except:
@@ -81,25 +83,25 @@ def pmultiquery(corpus,
         denom = len(corpus)
         if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
             mult_corp_are_subs = True
-    elif hasattr(query, '__iter__'):
+    elif type(query) == list or type(query) == dict:
         multiple_queries = True
         num_cores = best_num_parallel(num_cores, len(query))
         denom = len(query)
     elif hasattr(search, '__iter__') and type(search) != dict:
         multiple_search = True
-        num_cores = best_num_parallel(num_cores, len(search.keys()))
-        denom = len(search.keys())
+        num_cores = best_num_parallel(num_cores, len(list(search.keys())))
+        denom = len(list(search.keys()))
     elif hasattr(function_filter, '__iter__'):
         multiple_option = True
-        num_cores = best_num_parallel(num_cores, len(function_filter.keys()))
-        denom = len(function_filter.keys())
+        num_cores = best_num_parallel(num_cores, len(list(function_filter.keys())))
+        denom = len(list(function_filter.keys()))
     elif just_speakers:
-        from corpkit.build import get_speaker_names_from_xml_corpus
+        from build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
         if just_speakers == 'each' or just_speakers == ['each']:
             just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
         if len(just_speakers) == 0:
-            print 'No speaker name data found.'
+            print('No speaker name data found.')
             return
         num_cores = best_num_parallel(num_cores, len(just_speakers))
         denom = len(just_speakers)
@@ -122,7 +124,7 @@ def pmultiquery(corpus,
          'denominator': denom}
     
     # add kwargs to query
-    for k, v in kwargs.items():
+    for k, v in list(kwargs.items()):
         d[k] = v
 
     # make a list of dicts to pass to interrogator,
@@ -194,26 +196,26 @@ def pmultiquery(corpus,
             ds.append(a_dict)
 
     time = strftime("%H:%M:%S", localtime())
-    sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
+    sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in list(search.items())])
     if multiple_corpora and not multiple_option:
-        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat))
+        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
+           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat)))
 
     elif multiple_queries:
-        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n" % (time, len(search), num_cores, corpus.name, "', '".join(search.values())) )
+        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
+           "\n          Queries: '%s'\n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values()))) ))
 
     elif multiple_search:
-        print ("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n" % (time, len(search.keys()), num_cores, corpus.name, str(search.values())))
+        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
+           "\n          Queries: '%s'\n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())))))
 
     elif multiple_option:
-        print ("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) )
+        print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) ))
 
     elif multiple_speakers:
-        print ("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) )
+        print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
+           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) ))
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -227,7 +229,7 @@ def pmultiquery(corpus,
     if not root:
         from blessings import Terminal
         terminal = Terminal()
-        print '\n' * (len(ds) - 2)
+        print('\n' * (len(ds) - 2))
         for dobj in ds:
             linenum = dobj['paralleling']
             # this try handles nosetest problems in sublime text
@@ -236,7 +238,7 @@ def pmultiquery(corpus,
                     # this is a really bad idea.
                     thetime = strftime("%H:%M:%S", localtime())
                     num_spaces = 26 - len(dobj['outname'])
-                    print '%s: QUEUED: %s' % (thetime, dobj['outname'])
+                    print('%s: QUEUED: %s' % (thetime, dobj['outname']))
 
             except:
                 pass
@@ -249,7 +251,7 @@ def pmultiquery(corpus,
             used_joblib = True
         except:
             failed = True
-            print 'Multiprocessing failed.'
+            print('Multiprocessing failed.')
             raise
         if not res:
             failed = True
@@ -265,7 +267,7 @@ def pmultiquery(corpus,
 
     # multiprocessing way
     #from multiprocessing import Process
-    #from corpkit.interrogator import interrogator
+    #from interrogator import interrogator
     #jobs = []
     ##for d in ds:
     ##    p = multiprocessing.Process(target=interrogator, kwargs=(**d,))
@@ -299,7 +301,7 @@ def pmultiquery(corpus,
         if quicksave:
             fullpath = os.path.join('saved_interrogations', quicksave)
             while os.path.isdir(fullpath):
-                selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (quicksave, 'saved_interrogations'))
+                selection = input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (quicksave, 'saved_interrogations'))
                 if selection == 'o' or selection == 'O':
                     import shutil
                     shutil.rmtree(fullpath)
@@ -307,15 +309,15 @@ def pmultiquery(corpus,
                     import os
                     fullpath = os.path.join('saved_interrogations', selection)
 
-            for k, v in out.items():
+            for k, v in list(out.items()):
                 save(v, k, savedir = fullpath, print_info = False)
         
             time = strftime("%H:%M:%S", localtime())
-            print "\n%s: %d files saved to %s" % ( time, len(out.keys()), fullpath)
+            print("\n%s: %d files saved to %s" % ( time, len(list(out.keys())), fullpath))
 
         time = strftime("%H:%M:%S", localtime())
-        print "\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys())))
-        from corpkit.interrogation import Interrodict
+        print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
+        from interrogation import Interrodict
         return Interrodict(out)
     # make query and total branch, save, return
     else:
@@ -347,13 +349,13 @@ def pmultiquery(corpus,
         thetime = strftime("%H:%M:%S", localtime())
         if terminal:
             with terminal.location(0, terminal.height):
-                print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n')
+                print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         else:
-            print '\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n')
+            print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         if used_joblib:
-            print '\n' * (len(ds) - 3)
+            print('\n' * (len(ds) - 3))
         if quicksave:
-            from corpkit.other import save
+            from other import save
             save(out, quicksave)
         return out
 

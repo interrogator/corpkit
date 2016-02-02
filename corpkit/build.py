@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 def dictmaker(path, 
               dictname,
               query = 'any',
@@ -14,11 +16,11 @@ def dictmaker(path,
     import re
     import nltk
     from time import localtime, strftime
-    from StringIO import StringIO
+    from io import StringIO
     import shutil
     from collections import Counter
-    from textprogressbar import TextProgressBar
-    from corpkit.process import tregex_engine
+    from .textprogressbar import TextProgressBar
+    from process import tregex_engine
     try:
         from IPython.display import display, clear_output
     except ImportError:
@@ -59,16 +61,16 @@ def dictmaker(path,
         if not os.path.exists(dictpath):
             os.makedirs(dictpath)
     except IOError:
-        print "Error making " + dictpath + "/ directory."
+        print("Error making " + dictpath + "/ directory.")
     while os.path.isfile(os.path.join(dictpath, dictname)):
         time = strftime("%H:%M:%S", localtime())
-        selection = raw_input('\n%s: %s already exists in %s.\n' \
+        selection = input('\n%s: %s already exists in %s.\n' \
                '          You have the following options:\n\n' \
                '              a) save with a new name\n' \
                '              b) delete %s\n' \
                '              c) exit\n\nYour selection: ' % (time, dictname, dictpath, os.path.join(dictpath, dictname)))
         if 'a' in selection:
-            sel = raw_input('\nNew save name: ')
+            sel = input('\nNew save name: ')
             dictname = sel
             if lemmatise:
                 dictname = dictname.replace('-lemmatised.p', '')
@@ -78,14 +80,14 @@ def dictmaker(path,
         elif 'b' in selection:
             os.remove(os.path.join(dictpath, dictname))
         elif 'c' in selection:
-            print ''
+            print('')
             return
         else:
             as_str = str(selection)
-            print '          Choice "%s" not recognised.' % selection
+            print('          Choice "%s" not recognised.' % selection)
 
     time = strftime("%H:%M:%S", localtime())
-    print '\n%s: Extracting words from files ... \n' % time
+    print('\n%s: Extracting words from files ... \n' % time)
 
     # all this just to get a list of files and make a better progress bar
     if use_dependencies:
@@ -195,7 +197,7 @@ def dictmaker(path,
         if not use_dependencies:
             if not trees_found:
                 for f in os.listdir(subcorp):
-                    raw = unicode(open(os.path.join(subcorp, f)).read(), 'utf-8', errors = 'ignore')
+                    raw = str(open(os.path.join(subcorp, f)).read(), 'utf-8', errors = 'ignore')
                     sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
                     sents = sent_tokenizer.tokenize(raw)
                     tokenized_sents = [nltk.word_tokenize(i) for i in sents]
@@ -212,7 +214,7 @@ def dictmaker(path,
     with open(os.path.join(dictpath, dictname), 'wb') as handle:
         pickle.dump(dictionary, handle)
     time = strftime("%H:%M:%S", localtime())
-    print '\n\n' + time + ': Done! ' + dictname + ' created in ' + dictpath + '/'
+    print('\n\n' + time + ': Done! ' + dictname + ' created in ' + dictpath + '/')
 
 def get_urls(url, criteria = False, remove = True):
     import corpkit
@@ -240,7 +242,7 @@ def get_urls(url, criteria = False, remove = True):
         else:
             urls.append(a_url)
     urls.sort()
-    filtered_urls = filter(None, urls)
+    filtered_urls = [_f for _f in urls if _f]
     unique_urls = sorted(set(filtered_urls))
     return unique_urls
 
@@ -248,13 +250,13 @@ def get_urls(url, criteria = False, remove = True):
 def downloader(url_list, new_path = 'html', wait = 5):
     """download a bunch of urls and store in a local folder"""
     import corpkit
-    import urllib
+    import urllib.request, urllib.parse, urllib.error
     import time
     import os
     from time import localtime, strftime
-    from textprogressbar import TextProgressBar
+    from .textprogressbar import TextProgressBar
     thetime = strftime("%H:%M:%S", localtime())
-    print "\n%s: Attempting to download %d URLs with %d seconds wait-time ... \n" % (thetime, len(url_list), wait)
+    print("\n%s: Attempting to download %d URLs with %d seconds wait-time ... \n" % (thetime, len(url_list), wait))
     p = TextProgressBar(len(urls))
     if not os.path.exists(new_path):
         os.makedirs(new_path)
@@ -264,12 +266,12 @@ def downloader(url_list, new_path = 'html', wait = 5):
         base = os.path.basename(url)
         new_filename = os.path.join(new_path, base)
         paths.append(new_filename)
-        urllib.urlretrieve(url, new_filename)
+        urllib.request.urlretrieve(url, new_filename)
         time.sleep(wait)
     p.animate(len(url_list))
     num_downloaded = len(paths)
     thetime = strftime("%H:%M:%S", localtime())
-    print '\n\n%s: Done! %d files downloaded.' % (thetime, num_downloaded)
+    print('\n\n%s: Done! %d files downloaded.' % (thetime, num_downloaded))
     return paths
 
 def simple_text_extractor(html, stopwords = 'English'):
@@ -316,19 +318,19 @@ def practice_run(path_to_html_file):
         path_to_html_file = str(path_to_html_file[0])
     f = open(path_to_html_file)
     raw = f.read()
-    soup = BeautifulSoup(raw)
+    soup = BeautifulSoup(raw, 'lxml')
     try:
         text = get_text(soup)
     except:
         function_defined = False
-        from build import simple_text_extractor
+        from .build import simple_text_extractor
         simple_text_extractor(path_to_html_file)
     try:
         metadata = get_metadata(soup)
     except:
         warnings.warn('get_metadata function not defined. Using filename as metadata.')
         metadata = os.path.basename(path_to_html_file)
-    print 'text: %s\n\nmetadata: %s' %(text, metadata)
+    print('text: %s\n\nmetadata: %s' %(text, metadata))
 
 def souper(corpus_path):
     import corpkit
@@ -340,7 +342,7 @@ def souper(corpus_path):
             filepath = os.path.join(root, name)
             f = open(filepath)
             raw = f.read()
-            soup = BeautifulSoup(raw)
+            soup = BeautifulSoup(raw, 'lxml')
 
 
 def correctspelling(path, newpath):
@@ -352,16 +354,16 @@ def correctspelling(path, newpath):
     subdirs = [d for d in os.listdir(path) if os.path.isdir(d)]
     for subdir in subdirs:
         txtFiles = [f for f in os.listdir(os.path.join(path,subdir)) if f.endswith(".txt")]
-        print 'Doing ' + subdir + ' ...'
+        print('Doing ' + subdir + ' ...')
         for txtFile in txtFiles: 
             d = enchant.Dict("en_UK")
             try:
                 f = codecs.open(os.path.join(path,subdir,txtFile), "r", "utf-8")
             except IOError:
-                print "Error reading the file, right filepath?"
+                print("Error reading the file, right filepath?")
                 return
             textdata = f.read()
-            textdata = unicode(textdata, 'utf-8')
+            textdata = str(textdata, 'utf-8')
             mispelled = [] # empty list. Gonna put mispelled words in here
             words = textdata.split()
             for word in words:
@@ -386,7 +388,7 @@ def correctspelling(path, newpath):
                     os.makedirs(newpath)
                 fo=open(os.path.join(newpath, txtFile), "w")
             except IOError:
-                print "Error"
+                print("Error")
                 return 
             fo.write(textdata.encode("UTF-8"))
             fo.close()
@@ -412,15 +414,15 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
         if not os.path.exists(subcorpus_path):
             os.makedirs(subcorpus_path)
         shutil.copy(filepath, subcorpus_path)
-    print 'Done!'
+    print('Done!')
 
 def download_large_file(proj_path, url, actually_download = True, root = False, **kwargs):
     """download something to proj_path"""
     import corpkit
     import os
-    import urllib2
+    import urllib.request, urllib.error, urllib.parse
     from time import localtime, strftime
-    from textprogressbar import TextProgressBar
+    from .textprogressbar import TextProgressBar
     import shutil
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
@@ -457,24 +459,24 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             block_sz = 8192
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Downloading ... ' % thetime
+            print('%s: Downloading ... ' % thetime)
             with open(fullfile, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=block_sz): 
                     if chunk: # filter out keep-alive new chunks
                         f.write(chunk)
                         file_size_dl += len(chunk)
                         #print file_size_dl * 100.0 / file_size
-                        if 'note' in kwargs.keys():
+                        if 'note' in list(kwargs.keys()):
                             kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
                         else:
                             p.animate(file_size_dl)
                         if root:
                             root.update()
-        except Exception, err:
+        except Exception as err:
             import traceback
-            print traceback.format_exc()
+            print(traceback.format_exc())
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Downloaded failed' % thetime
+            print('%s: Downloaded failed' % thetime)
             try:
                 f.close()
             except:
@@ -482,12 +484,12 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             if root:
                 root.update()
             return
-        if 'note' in kwargs.keys():  
+        if 'note' in list(kwargs.keys()):  
             kwargs['note'].progvar.set(100)
         else:    
             p.animate(int(file_size))
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Downloaded successully.' % thetime
+        print('%s: Downloaded successully.' % thetime)
         try:
             f.close()
         except:
@@ -501,7 +503,7 @@ def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     import os
     from time import localtime, strftime
     time = strftime("%H:%M:%S", localtime())
-    print '%s: Extracting CoreNLP files ...' % time
+    print('%s: Extracting CoreNLP files ...' % time)
     if root:
         root.update()
     if corenlppath is False:
@@ -510,7 +512,7 @@ def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     with zipfile.ZipFile(fullfilepath) as zf:
         zf.extractall(corenlppath)
     time = strftime("%H:%M:%S", localtime())
-    print '%s: CoreNLP extracted. ' % time
+    print('%s: CoreNLP extracted. ' % time)
 
 def get_corpus_filepaths(projpath = False, corpuspath = False):
     import corpkit
@@ -541,7 +543,7 @@ def check_jdk():
     from subprocess import PIPE, STDOUT, Popen
     p = Popen(["java", "-version"], stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
-    if 'java version "1.8' in stderr:
+    if 'java version "1.8' in stderr.decode(encoding='utf-8'):
         return True
     else:
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
@@ -573,7 +575,7 @@ def parse_corpus(proj_path = False,
     
     if not only_tokenise:
         if not check_jdk():
-            print 'Need latest Java.'
+            print('Need latest Java.')
             return
 
     curdir = os.getcwd()
@@ -587,7 +589,7 @@ def parse_corpus(proj_path = False,
 
     # add nltk to path
     #td = {}
-    #from corpkit.other import add_nltk_data_to_nltk_path
+    #from other import add_nltk_data_to_nltk_path
     #if 'note' in kwargs.keys():
     #    td['note'] = kwargs['note']
     #add_nltk_data_to_nltk_path(**td)
@@ -611,11 +613,11 @@ def parse_corpus(proj_path = False,
         fs = os.listdir(new_corpus_path)
         if not only_tokenise:
             if any([f.endswith('.xml') for f in fs]):
-                print 'Folder containing xml already exists: "%s-parsed"' % basecp
+                print('Folder containing xml already exists: "%s-parsed"' % basecp)
                 return False
         else:
             if any([f.endswith('.txt') for f in fs]):
-                print 'Folder containing tokens already exists: "%s-tokenised"' % basecp  
+                print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
                 return False          
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
@@ -628,7 +630,7 @@ def parse_corpus(proj_path = False,
         if len(find_install) > 0:
             corenlppath = os.path.join(corenlppath, find_install[0])
         else:
-            print 'No parser found. Try using the keyword arg "corenlp = <path>".'
+            print('No parser found. Try using the keyword arg "corenlp = <path>".')
             return
 
     # if not gui, don't mess with stdout
@@ -668,7 +670,7 @@ def parse_corpus(proj_path = False,
         try:
             proc = subprocess.Popen(arglist, stdout=sys.stdout)
         # maybe a problem with stdout. sacrifice it if need be
-        except AttributeError:
+        except:
             proc = subprocess.Popen(arglist)            
         #p = TextProgressBar(num_files_to_parse)
         while proc.poll() is None:
@@ -677,11 +679,11 @@ def parse_corpus(proj_path = False,
             num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
             if num_parsed == 0:
                 if root:
-                    print '%s: Initialising parser ... ' % (thetime)
+                    print('%s: Initialising parser ... ' % (thetime))
             if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
                 if root:
-                    print '%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse)
-                if 'note' in kwargs.keys():
+                    print('%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse))
+                if 'note' in list(kwargs.keys()):
                     kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
                 #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
             time.sleep(1)
@@ -701,17 +703,17 @@ def parse_corpus(proj_path = False,
             one_big_corpus = False
         if any(os.path.isdir(os.path.join(new_corpus_path, d)) for d in dirs):
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Directory already exists. Delete it if need be.' % thetime
+            print('%s: Directory already exists. Delete it if need be.' % thetime)
             return False
         for d in dirs:
             os.makedirs(os.path.join(new_corpus_path, d))
         nfiles = len(fs)
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Tokenising ... ' % (thetime)
+        print('%s: Tokenising ... ' % (thetime))
         for index, f in enumerate(fs):
             data = open(f).read()
             enc = chardet.detect(data)
-            enc_text = unicode(data, enc['encoding'], errors = 'ignore')
+            enc_text = str(data, enc['encoding'], errors = 'ignore')
             tokens = tokenise(enc_text)
             thedir = os.path.basename(os.path.dirname(f))
             newname = os.path.basename(f).replace('.txt', '-tokenised.p')
@@ -721,17 +723,17 @@ def parse_corpus(proj_path = False,
                 pth = os.path.join(new_corpus_path, thedir, newname)
             with open(pth, "wb") as fo:
                 pickle.dump(tokens, fo)
-            if 'note' in kwargs.keys():
+            if 'note' in list(kwargs.keys()):
                 kwargs['note'].progvar.set((index + 1) * 100.0 / nfiles)
             if root:
                 root.update()
 
     #p.animate(num_files_to_parse)
-    if 'note' in kwargs.keys():
+    if 'note' in list(kwargs.keys()):
         kwargs['note'].progvar.set(100)
     sys.stdout = stdout
     thetime = strftime("%H:%M:%S", localtime())
-    print '%s: Parsing finished. Moving parsed files into place ...' % thetime
+    print('%s: Parsing finished. Moving parsed files into place ...' % thetime)
     os.chdir(curdir)
     return new_corpus_path
 
@@ -825,7 +827,7 @@ def make_no_id_corpus(pth, newpth):
     import os
     import re
     import shutil
-    from corpkit.build import get_filepaths
+    from build import get_filepaths
     # define regex broadly enough to accept timestamps, locations if need be
     idregex = re.compile(r'(^.*?):\s+(.*$)')
     try:
@@ -853,13 +855,13 @@ def make_no_id_corpus(pth, newpth):
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
     if len(names) == 0:
-        print '%s: No speaker names found. Turn off speaker segmentation.' % thetime
+        print('%s: No speaker names found. Turn off speaker segmentation.' % thetime)
         shutil.rmtree(newpth)
     else:
         if len(sorted(set(names))) < 19:
-            print '%s: Speaker names found: %s' % (thetime, ', '.join(sorted(set(names))))
+            print('%s: Speaker names found: %s' % (thetime, ', '.join(sorted(set(names)))))
         else:
-            print '%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20]))))
+            print('%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20])))))
 
 def add_ids_to_xml(corpuspath, root = False, note = False):
     """add ids to the xml in corpuspath
@@ -871,14 +873,14 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
     import os
     import re
     from bs4 import BeautifulSoup, SoupStrainer
-    from corpkit.build import get_filepaths
+    from build import get_filepaths
     from time import strftime, localtime
 
     files = get_filepaths(corpuspath, ext = 'xml')
     if note:
         note.progvar.set(0)
     thetime = strftime("%H:%M:%S", localtime())
-    print '%s: Processing speaker IDs ...' % thetime
+    print('%s: Processing speaker IDs ...' % thetime)
     if root:
         root.update()
 
@@ -886,7 +888,7 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         if note:
             note.progvar.set(i * 100.0 / len(files))
         thetime = strftime("%H:%M:%S", localtime())
-        print '%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files))
+        print('%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files)))
         if root:
             root.update()
         xmlf = open(f)
@@ -906,7 +908,7 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         idttxt.close()
 
         # todo: do this with lxml
-        soup = BeautifulSoup(data, "lxml")
+        soup = BeautifulSoup(data, 'lxml')
         for s in soup.find_all('sentence'):
             # don't get corefs
             if s.parent.name == 'sentences':
@@ -932,7 +934,7 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         html = str(soup.root)
         # make changes
         with open(f, "wb") as fopen:
-            fopen.write(html)
+            fopen.write(bytes(html.encode('utf-8')))
     if note:
         note.progvar.set(100)
 
@@ -975,7 +977,7 @@ def get_speaker_names_from_xml_corpus(path):
 def rename_all_files(dirs_to_do):
     """get rid of the inserted dirname in filenames after parsing"""
     import os
-    from corpkit.build import get_filepaths
+    from build import get_filepaths
     if type(dirs_to_do) == str:
         dirs_to_do = [dirs_to_do]
     for d in dirs_to_do:

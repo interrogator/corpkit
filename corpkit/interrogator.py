@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 def interrogator(corpus, 
             search, 
             query = 'any', 
@@ -30,18 +32,20 @@ def interrogator(corpus,
     # store kwargs
     locs = locals()
 
-    from corpkit.interrogation import Interrogation
-    from corpkit.process import tregex_engine
+    from interrogation import Interrogation
+    from process import tregex_engine
     import pandas as pd
     from pandas import DataFrame, Series
     from collections import Counter
-    from corpkit.other import as_regex
-    from corpkit.process import get_deps
+    from other import as_regex
+    from process import get_deps
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
-    from corpkit.textprogressbar import TextProgressBar
-    from corpkit.process import animator
-    from corpkit.dictionaries.word_transforms import wordlist, taglemma
+    from textprogressbar import TextProgressBar
+    from process import animator
+    from dictionaries.word_transforms import wordlist, taglemma
+    import corenlp_xml
+    import codecs
 
     # find out if using gui
     root = kwargs.get('root')
@@ -49,17 +53,17 @@ def interrogator(corpus,
 
     # convert path to corpus object
     if type(corpus) == str:
-        from corpkit.corpus import Corpus
+        from corpus import Corpus
         corpus = Corpus(corpus)
 
     # figure out how the user has entered the query and normalise
-    from corpkit.process import searchfixer
+    from process import searchfixer
     search, search_iterable = searchfixer(search, query)
     
     # for better printing of query, esp during multiprocess
     # can remove if multiprocess printing improved
-    if len(search.keys()) == 1:
-        query = search.values()[0]
+    if len(list(search.keys())) == 1:
+        query = list(search.values())[0]
 
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -77,7 +81,7 @@ def interrogator(corpus,
             im = True
         # so we can do search = 't', query = ['NP', 'VP']:
         if type(query) == list:
-            if query != search.values()[0] or len(search.keys()) > 1:
+            if query != list(search.values())[0] or len(list(search.keys())) > 1:
                 query = {c.title(): c for c in query}
         if type(query) == dict or type(query) == OrderedDict:
             im = True
@@ -94,14 +98,14 @@ def interrogator(corpus,
                 if len(just_speakers) > 1:
                     im = True
         if type(search) == dict:
-            if all(type(i) == dict for i in search.values()):
+            if all(type(i) == dict for i in list(search.values())):
                 im = True
         return im, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
         import os
-        from corpkit.process import tregex_engine
+        from process import tregex_engine
         # first, put the relevant trees into temp file
         if kwargs.get('outname'):
             to_open = 'tmp-%s.txt' % kwargs['outname']
@@ -112,7 +116,7 @@ def interrogator(corpus,
         to_write.encode('utf-8', errors = 'ignore')
         with open(to_open, "w") as fo:
             fo.write(to_write)
-        q = search.values()[0]
+        q = list(search.values())[0]
         res = tregex_engine(query = q, 
                             options = ['-o', '-%s' % translated_option], 
                             corpus = to_open,
@@ -153,7 +157,7 @@ def interrogator(corpus,
 
         # count moods via trees          (/\?/ !< __)
         from dictionaries.process_types import processes
-        from corpkit.other import as_regex
+        from other import as_regex
         tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
                      'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
                      'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
@@ -228,7 +232,7 @@ def interrogator(corpus,
         output = []
         for word in list_of_words:
             if translated_option.startswith('u'):
-                if word.lower() in taglemma.keys():
+                if word.lower() in list(taglemma.keys()):
                     word = taglemma[word.lower()]
                 else:
                     if word == 'x':
@@ -281,20 +285,20 @@ def interrogator(corpus,
         for word, lemma in zip(results, lemmata):
             bits = []
             if exclude and exclude.get('w'):
-                if len(exclude.keys()) == 1 or excludemode == 'any':
+                if len(list(exclude.keys())) == 1 or excludemode == 'any':
                     if re.search(exclude.get('w'), word):
                         continue
-                if len(exclude.keys()) == 1 or excludemode == 'any':
+                if len(list(exclude.keys())) == 1 or excludemode == 'any':
                     if re.search(exclude.get('l'), lemma):
                         continue
-                if len(exclude.keys()) == 1 or excludemode == 'any':
+                if len(list(exclude.keys())) == 1 or excludemode == 'any':
                     if re.search(exclude.get('p'), word):
                         continue
-                if len(exclude.keys()) == 1 or excludemode == 'any':
+                if len(list(exclude.keys())) == 1 or excludemode == 'any':
                     if re.search(exclude.get('pl'), lemma):
                         continue
             if exclude and excludemode == 'all':
-                num_to_cause_exclude = len(exclude.keys())
+                num_to_cause_exclude = len(list(exclude.keys()))
                 current_num = 0
                 if exclude.get('w'):
                     if re.search(exclude.get('w'), word):
@@ -392,7 +396,7 @@ def interrogator(corpus,
                 pass
 
         # turn counter into list of results
-        for k, v in ngrams.items():
+        for k, v in list(ngrams.items()):
             if v > 1:
                 for i in range(v):
                     result.append(k)
@@ -419,7 +423,7 @@ def interrogator(corpus,
                           exc_traceback)
             error_message = lst[-1]
             thetime = strftime("%H:%M:%S", localtime())
-            print '%s: Query %s' % (thetime, error_message)
+            print('%s: Query %s' % (thetime, error_message))
             if root:
                 return 'Bad query'
             else:
@@ -474,7 +478,7 @@ def interrogator(corpus,
             return a_string
         from dictionaries.word_transforms import usa_convert
         if spelling.lower() == 'uk':
-            usa_convert = {v: k for k, v in usa_convert.items()}
+            usa_convert = {v: k for k, v in list(usa_convert.items())}
         spell_out = []
         bits = a_string.split('/')
         for index, i in enumerate(bits):
@@ -521,7 +525,7 @@ def interrogator(corpus,
     locs['multiprocess'] = multiprocess
 
     if im:
-        from corpkit.multiprocess import pmultiquery
+        from multiprocess import pmultiquery
         return pmultiquery(**locs)
 
     datatype = corpus.datatype
@@ -545,7 +549,7 @@ def interrogator(corpus,
     # simple tregex is tregex over whole dirs
     simple_tregex_mode = False
     statsmode = False
-    if not just_speakers and 't' in search.keys():
+    if not just_speakers and 't' in list(search.keys()):
         simple_tregex_mode = True
     else:
         if corpus.datatype == 'plaintext':
@@ -573,8 +577,8 @@ def interrogator(corpus,
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
         only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f']
-        if corpus.datatype != 'parse' and any(i in only_parse for i in search.keys()):
-            raise ValueError('Need parsed corpus to search with "%s" option(s).' % ', '.join([i for i in search.keys() if i in only_parse]))
+        if corpus.datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
+            raise ValueError('Need parsed corpus to search with "%s" option(s).' % ', '.join([i for i in list(search.keys()) if i in only_parse]))
 
         elif corpus.datatype == 'parse':
             if search.get('t'):
@@ -586,7 +590,7 @@ def interrogator(corpus,
                 global numdone
                 numdone = 0
             else:
-                from corpkit.depsearch import dep_searcher
+                from depsearch import dep_searcher
                 searcher = dep_searcher
                 optiontext = 'Dependency querying'
 
@@ -657,7 +661,7 @@ def interrogator(corpus,
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for k, v in sorted(corpus.structure.items()):
+        for k, v in sorted(corpus.structure.items(), key=lambda obj: obj[0].name):
             to_iterate_over[(k.name, k.path)] = v
     if files_as_subcorpora:
         to_iterate_over = {}
@@ -675,24 +679,24 @@ def interrogator(corpus,
     if kwargs.get('printstatus', True):
         thetime = strftime("%H:%M:%S", localtime())
 
-        sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in search.items()])
+        sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in list(search.items())])
         if search == {'s': r'.*'}:
             sformat = 'features'
         welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n' % \
                   (thetime, message, corpus.name, optiontext, sformat)
-        print welcome
+        print(welcome)
 
     ############################################
     #           Make progress bar              #
     ############################################
 
     if simple_tregex_mode:
-        total_files = len(to_iterate_over.keys())
+        total_files = len(list(to_iterate_over.keys()))
     else:
         if search.get('s'):
-            total_files = sum([len(x) for x in to_iterate_over.values()]) * 12
+            total_files = sum([len(x) for x in list(to_iterate_over.values())]) * 12
         else:
-            total_files = sum([len(x) for x in to_iterate_over.values()])
+            total_files = sum([len(x) for x in list(to_iterate_over.values())])
 
     par_args = {'printstatus': kwargs.get('printstatus', True),
                 'root': root, 
@@ -773,7 +777,7 @@ def interrogator(corpus,
                         try:
                             corenlp_xml = Document(data)
                         except:
-                            print 'Could not read file: %s' % f.path
+                            print('Could not read file: %s' % f.path)
                             continue
                         if just_speakers:  
                             sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
@@ -800,19 +804,18 @@ def interrogator(corpus,
 
                 elif corpus.datatype == 'tokens':
                     import pickle
-                    with open(f.path, "rb") as fo:
+                    with codecs.open(f.path, "rb") as fo:
                         data = pickle.load(fo)
-                    res = searcher(search.values()[0], data, split_contractions = split_contractions, 
+                    res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
                         concordancing = conc)
                     if conc:
                         for index, line in enumerate(res):
                             line.insert(0, '')
 
                 elif corpus.datatype == 'plaintext':
-                    with open(f.path, 'rb') as data:
+                    with codecs.open(f.path, 'rb', encoding = 'utf-8') as data:
                         data = data.read()
-                        data = unicode(data, errors = 'ignore')
-                        res = searcher(search.values()[0], data, 
+                        res = searcher(list(search.values())[0], data, 
                             concordancing = conc)
                         if conc:
                             for index, line in enumerate(res):
@@ -868,18 +871,18 @@ def interrogator(corpus,
             #make into series
             pindex = 'c f s l m r'.encode('utf-8').split()
             for fname, spkr, start, word, end in unique_results:
-                spkr = unicode(spkr, errors = 'ignore')
+                #spkr = str(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
 
                 # the use of ascii here makes sure the string formats ok, but will also screw over
                 # anyone doing non-english work. so, change to utf-8, then fix errors as they come
                 # in the corpkit-gui "add_conc_lines_to_window" function
-                all_conc_lines.append(Series([sc_name.encode('ascii', errors = 'ignore'),
-                                     fname.encode('ascii', errors = 'ignore'), \
-                                     spkr.encode('ascii', errors = 'ignore'), \
-                                     start.encode('ascii', errors = 'ignore'), \
-                                     word.encode('ascii', errors = 'ignore'), \
-                                     end.encode('ascii', errors = 'ignore')], \
+                all_conc_lines.append(Series([sc_name,
+                                     fname, \
+                                     spkr, \
+                                     start, \
+                                     word, \
+                                     end], \
                                      index = pindex))
 
         # randomise results...
@@ -905,9 +908,9 @@ def interrogator(corpus,
         if kwargs.get('printstatus', True):
             thetime = strftime("%H:%M:%S", localtime())
             finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(df.index))
-            print finalstring
+            print(finalstring)
 
-        from corpkit.interrogation import Concordance
+        from interrogation import Concordance
         output = Concordance(df)
         output.query = locs
         if quicksave:
@@ -924,9 +927,9 @@ def interrogator(corpus,
             tot = df.sum()
         else:
             the_big_dict = {}
-            unique_results = set([item for sublist in results.values() for item in sublist])
+            unique_results = set([item for sublist in list(results.values()) for item in sublist])
             for word in unique_results:
-                the_big_dict[word] = [subcorp_result[word] for subcorp_result in sorted(results.values())]
+                the_big_dict[word] = [subcorp_result[word] for name, subcorp_result in sorted(results.items(), key=lambda x: x[0])]
             # turn master dict into dataframe, sorted
             df = DataFrame(the_big_dict, index = sorted(results.keys()))
 
@@ -965,7 +968,7 @@ def interrogator(corpus,
                 finalstring += ' %d matches.' % tot
             else:
                 finalstring += ' %d unique results, %d total occurrences.' % (numentries, total_total)
-            print finalstring
+            print(finalstring)
 
         interro = Interrogation(results = df, totals = tot, query = locs)
         

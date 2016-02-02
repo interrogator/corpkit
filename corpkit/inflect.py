@@ -52,7 +52,7 @@ is_vowel = lambda ch: ch in VOWELS
 # Based on the Ruby Linguistics module by Michael Granger:
 # http://www.deveiate.org/projects/Linguistics/wiki/English
 
-RE_ARTICLE = map(lambda x: (re.compile(x[0]), x[1]), (
+RE_ARTICLE = [(re.compile(x[0]), x[1]) for x in (
     ("euler|hour(?!i)|heir|honest|hono", "an"),       # exceptions: an hour, an honor
     # Abbreviations:
     # strings of capitals starting with a vowel-sound consonant followed by another consonant,
@@ -68,7 +68,7 @@ RE_ARTICLE = map(lambda x: (re.compile(x[0]), x[1]), (
     (r"^[aeiou]"             , "an"), # vowels: an owl
     (r"y(b[lor]|cl[ea]|fere|gg|p[ios]|rou|tt)", "an"), # y like "i": an yclept, a year
     (r""                     , "a" )  # guess "a"
-))
+)]
 
 def definite_article(word):
     return "the"
@@ -417,7 +417,7 @@ def pluralize(word, pos=NOUN, custom={}, classical=True):
         else:
             return word.replace(w[-1], pluralize(w[-1], pos, custom, classical))
     # Only a very few number of adjectives inflect.
-    n = range(len(plural_rules))
+    n = list(range(len(plural_rules)))
     if pos.startswith(ADJECTIVE):
         n = [0, 1]
     # Apply pluralization rules.

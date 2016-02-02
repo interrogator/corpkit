@@ -30,7 +30,7 @@ def keywords(data,
     except ImportError:
         pass
 
-    from keys import keywords_and_ngrams, turn_input_into_counter
+    from .keys import keywords_and_ngrams, turn_input_into_counter
 
     the_threshold = False
 
@@ -54,7 +54,7 @@ def keywords(data,
 
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
-        print "\n%s: Generating keywords ...\n" % time
+        print("\n%s: Generating keywords ...\n" % time)
     
     def set_threshold_and_remove_under(reference_corpus, threshold, for_keywords = False):
         from collections import Counter
@@ -77,11 +77,11 @@ def keywords(data,
         else:
             the_threshold = threshold
         if printstatus:
-            print 'Threshold: %d\n' % the_threshold
+            print('Threshold: %d\n' % the_threshold)
 
         # drop infrequent words from keywording
         to_drop = []
-        for w, v in reference_corpus.items():
+        for w, v in list(reference_corpus.items()):
             if v < the_threshold:
                 to_drop.append(w)
                 #if type(data) == collections.Counter or type(data) == dict:
@@ -95,11 +95,11 @@ def keywords(data,
                 to_show.append('...')
                 [to_show.append(w) for w in to_drop[-5:]]
             if len(to_drop) > 0:
-                print 'Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show))
+                print('Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show)))
             if len(to_drop) > 10:
-                print '... and %d more ... \n' % (len(to_drop) - len(to_show) + 1)
+                print('... and %d more ... \n' % (len(to_drop) - len(to_show) + 1))
             else:
-                print ''
+                print('')
         return reference_corpus, the_threshold, to_drop
 
 
@@ -183,7 +183,7 @@ def keywords(data,
             pass
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Done! %d results.\n' % (time, len(list(out.index)))
+        print('%s: Done! %d results.\n' % (time, len(list(out.index))))
 
     if n  == 'all':
         n = len(out)
@@ -225,8 +225,8 @@ def ngrams(data,
         else:
             stopwords = [i.lower() for i in blacklist]
 
-    from corpkit.keys import keywords_and_ngrams, turn_input_into_counter
-    from corpkit.process import datareader
+    from keys import keywords_and_ngrams, turn_input_into_counter
+    from process import datareader
 
     #loaded_ref_corpus = turn_input_into_counter(reference_corpus)
 
@@ -235,7 +235,7 @@ def ngrams(data,
 
     time = strftime("%H:%M:%S", localtime())
     if printstatus:
-        print "\n%s: Generating ngrams... \n" % time
+        print("\n%s: Generating ngrams... \n" % time)
     
     good = datareader(data, **kwargs)
 
@@ -281,7 +281,7 @@ def ngrams(data,
             pass
     if printstatus:
         time = strftime("%H:%M:%S", localtime())
-        print '%s: Done! %d results.\n' % (time, len(list(out.index)))
+        print('%s: Done! %d results.\n' % (time, len(list(out.index))))
 
     if n  == 'all':
         n = len(out)
@@ -303,7 +303,7 @@ def keywords_and_ngrams(target_corpus,
     import re
     import json
     import os
-    import cPickle as pickle
+    import pickle as pickle
 
     # from Spindle: just altered reference_corpus stuff and number to show
     def spindle_ngrams(words, n=2, nngram = 'all'):
@@ -315,16 +315,16 @@ def keywords_and_ngrams(target_corpus,
         target_sum = len(target_corpus)
     else:
         n_gramming = False
-        target_sum = sum(target_corpus.itervalues())
+        target_sum = sum(target_corpus.values())
     
     if show == 'keywords':
         # Total number of words in reference qcorpus
-        ref_sum = sum(reference_corpus.itervalues())
+        ref_sum = sum(reference_corpus.values())
         dicLL = {}
         if calc_all:
-            wordlist = list(set(target_corpus.keys() + reference_corpus.keys()))
+            wordlist = list(set(list(target_corpus.keys()) + list(reference_corpus.keys())))
         else:
-            wordlist = target_corpus.keys()
+            wordlist = list(target_corpus.keys())
         for w in wordlist:
             # this try for non-Counter dicts, which return keyerror if no result
             try:
@@ -380,10 +380,10 @@ def keywords_and_ngrams(target_corpus,
         regex_nonword_filter = re.compile("[0-9A-Za-z\']")
 
         listBigrams = []
-        for c, ng in sorted(((c, ng) for ng, c in counter_ngrams.items()), reverse=True):
+        for c, ng in sorted(((c, ng) for ng, c in list(counter_ngrams.items())), reverse=True):
             w0 = ng[0]
             w1 = ng[1]
-            if 'whitelist' in kwargs.keys():
+            if 'whitelist' in list(kwargs.keys()):
                 if kwargs['whitelist'] != 'any':
                     quereg = re.compile(kwargs['whitelist'])
                     if not any(re.search(quereg, w) for w in ng):
@@ -405,7 +405,7 @@ def turn_input_into_counter(data, **kwargs):
     import collections
     import pickle
     import pandas
-    from corpkit.process import datareader
+    from process import datareader
     
     dict_found = False
 
@@ -481,7 +481,7 @@ def turn_input_into_counter(data, **kwargs):
             
             d_for_print = '\n'.join(d_for_print) 
 
-            selection = raw_input("\nReference corpus not found. Select an existing reference corpus or exit or type 'exit' to quit.\n\n%s\n\nYour selection: " % d_for_print)
+            selection = input("\nReference corpus not found. Select an existing reference corpus or exit or type 'exit' to quit.\n\n%s\n\nYour selection: " % d_for_print)
             if selection.startswith('e'):
                 import sys
                 sys.exit()
@@ -489,6 +489,6 @@ def turn_input_into_counter(data, **kwargs):
                 try:
                     data = dict_of_dicts[int(selection)]
                 except:
-                    print '\nInput "%s" not recognised.' % data
+                    print('\nInput "%s" not recognised.' % data)
 
 

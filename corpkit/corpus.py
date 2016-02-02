@@ -1,3 +1,5 @@
+from __future__ import print_function
+import corpkit
 
 class Corpus:
     """
@@ -12,7 +14,7 @@ class Corpus:
         from os.path import join, isfile, isdir
         import re
         import operator
-        from corpkit.process import determine_datatype
+        from process import determine_datatype
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which 
         # one is determined automatically below, and processed accordingly. We 
@@ -32,6 +34,7 @@ class Corpus:
         # full checking where possible some of the shortcutting could maybe be 
         # moved into the determine_datatype() funct.
 
+        self.singlefile = False
         if os.path.isfile(self.abspath):
             if self.abspath.endswith('.xml'):
                 self.datatype = 'parse'
@@ -61,7 +64,7 @@ class Corpus:
         # Datalist of files, and print useful information
         if level == 'c':
             if print_info:
-                print '\nCorpus at: %s\n' % self.abspath
+                print('\nCorpus at: %s\n' % self.abspath)
             subcorpora = Datalist(sorted([Subcorpus(join(self.path, d)) \
                                                for d in os.listdir(self.path) \
                                                if isdir(join(self.path, d))], \
@@ -75,10 +78,10 @@ class Corpus:
                 file_list = Datalist(file_list)
                 struct[sbc] = file_list
                 if print_info:
-                    print 'Subcorpus: %s\n\t%s\n' % (sbc.name, \
-                        '\n\t'.join([f.name for f in file_list[:10]]))
+                    print('Subcorpus: %s\n\t%s\n' % (sbc.name, \
+                        '\n\t'.join([f.name for f in file_list[:10]])))
                     if len(file_list) > 10:
-                        print '... and %s more ... \n' % str(len(file_list) - 10)
+                        print('... and %s more ... \n' % str(len(file_list) - 10))
                 for f in file_list:
                     all_files.append(f)
         
@@ -91,9 +94,9 @@ class Corpus:
             self.files = Datalist(all_files)
             self.structure = {'.': self.files}
             if print_info:
-                print '\nCorpus created with %d files:\n\t%s\n' % (len(self.files), '\n\t'.join([i.name for i in self.files][:10]))
+                print('\nCorpus created with %d files:\n\t%s\n' % (len(self.files), '\n\t'.join([i.name for i in self.files][:10])))
                 if len(self.files) > 10:
-                    print '... and %s more ... \n' % str(len(self.files) - 10)
+                    print('... and %s more ... \n' % str(len(self.files) - 10))
 
         # for non File, we will add files attribute
         if level != 'f':
@@ -152,10 +155,10 @@ class Corpus:
            >>> corpus.get_stats()
 
         :returns: None
-        """
-        from corpkit import interrogator
+        """  
+        from interrogator import interrogator
         self.features = interrogator(self.path, 's', 'any').results
-        print '\nFeatures defined. See .features attribute ...' 
+        print('\nFeatures defined. See .features attribute ...') 
 
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
@@ -231,7 +234,7 @@ class Corpus:
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
         invoked, result may be a :class:`corpkit.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
         """
-        from corpkit import interrogator
+        from interrogator import interrogator
         par = kwargs.pop('multiprocess', None)
         if par and self.subcorpora:
             if type(par) == int:
@@ -264,9 +267,9 @@ class Corpus:
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
-        from corpkit import make_corpus
-        from corpkit.corpus import Corpus
-        #from corpkit.process import determine_datatype
+        from make import make_corpus
+        from corpus import Corpus
+        #from process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
         if self.datatype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
@@ -289,8 +292,8 @@ class Corpus:
         """
         
         from corpkit import make_corpus
-        from corpkit.corpus import Corpus
-        #from corpkit.process import determine_datatype
+        from corpus import Corpus
+        #from process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
         if self.datatype != 'plaintext':
             raise ValueError('parse method can only be used on plaintext corpora.')
@@ -322,7 +325,7 @@ class Corpus:
 
         """
 
-        from corpkit.interrogator import interrogator
+        from interrogator import interrogator
         return interrogator(self, conc = True, *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
@@ -358,7 +361,7 @@ class Corpus:
             savename = self.name
         save(self, savename, savedir = 'data', **kwargs)
 
-from corpkit.corpus import Corpus
+from corpus import Corpus
 class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
 
@@ -431,7 +434,7 @@ class Datalist(object):
         import re
         import os
         from os.path import join, isfile, isdir
-        from corpkit.process import makesafe
+        from process import makesafe
         self.current = 0
         if data:
             self.high = len(data)
@@ -457,18 +460,18 @@ class Datalist(object):
 
     def __getitem__(self, key):
 
-        from corpkit.process import makesafe
+        from process import makesafe
 
         if isinstance( key, slice ) :
             #Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in xrange(*key.indices(len(self)))])
+            return Datalist([self[ii] for ii in range(*key.indices(len(self)))])
         elif type(key) == int:
             return self.__getitem__(makesafe(self.data[key]))
         else:
             try:
                 return self.__getattribute__(key)
             except:
-                from corpkit.process import is_number
+                from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
@@ -484,7 +487,7 @@ class Datalist(object):
     def __len__(self):
         return len(self.data)
 
-    def next(self): # Python 3: def __next__(self)
+    def __next__(self): # Python 3: def __next__(self)
         if self.current > self.high:
             raise StopIteration
         else:
@@ -493,15 +496,15 @@ class Datalist(object):
 
     def interrogate(self, *args, **kwargs):
         """interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
-        from corpkit import interrogator
+        from interrogator import interrogator
         return interrogator([s for s in self], *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
         """interrogate the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
-        from corpkit import interrogator
+        from interrogator import interrogator
         return interrogator([s for s in self], conc = True, *args, **kwargs)
 
-from corpkit.corpus import Datalist
+from corpus import Datalist
 class Corpora(Datalist):
     """
     Models a collection of corpora. Methods are available for interrogating and plotting the entire collection.
@@ -511,9 +514,9 @@ class Corpora(Datalist):
     """
 
     def __init__(self, data):
-        from corpkit.corpus import Corpus
+        from corpus import Corpus
         # handle a folder containing corpora
-        if type(data) == str or type(data) == unicode:
+        if type(data) == str or type(data) == str:
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):
@@ -533,17 +536,17 @@ class Corpora(Datalist):
 
     def __getitem__(self, key):
         """allow slicing, indexing"""
-        from corpkit.process import makesafe
+        from process import makesafe
         if isinstance( key, slice ) :
             #Get the start, stop, and step from the slice
-            return Corpora([self[ii] for ii in xrange(*key.indices(len(self)))])
+            return Corpora([self[ii] for ii in range(*key.indices(len(self)))])
         elif type(key) == int:
             return self.__getitem__(makesafe(self.data[key]))
         else:
             try:
                 return self.__getattribute__(key)
             except:
-                from corpkit.process import is_number
+                from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 

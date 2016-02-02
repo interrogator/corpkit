@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 class TextProgressBar:
     """a text progress bar for CLI operations
        no need for user to call"""
@@ -33,7 +35,7 @@ class TextProgressBar:
             have_ipython = False
         from time import localtime, strftime
         import sys
-        print '\r', self,
+        print('\r', end=' ')
         if have_ipython:
             try:
                 sys.stdout.flush()
@@ -43,7 +45,11 @@ class TextProgressBar:
 
     def update_iteration(self, elapsed_iter, dirname = None):
         from time import localtime, strftime
-        self.__update_amount((elapsed_iter / float(self.iterations)) * 100.0, dirname)
+        num = float(self.iterations)
+        if num != 0:
+            self.__update_amount((elapsed_iter / float(self.iterations)) * 100.0, dirname)
+        else:
+            self.__update_amount(0 * 100.0, dirname)
         self.prog_bar += ' ' # + ' %d of %s complete' % (elapsed_iter, self.iterations)
 
     def __update_amount(self, new_amount, dirname = None):
@@ -64,7 +70,7 @@ class TextProgressBar:
         except StopIteration:
             index_of_space = 0
         # put middle string in centre, adjust so that spaces are always aligned
-        pct_place = (len(self.prog_bar) / 2) - index_of_space
+        pct_place = int(len(self.prog_bar) / float(2)) - index_of_space
         #if len(pct_string) < 20:
             #pct_string = ' ' * (20 - len(pct_string)) + pct_string
         self.prog_bar = self.prog_bar[0:pct_place] + \

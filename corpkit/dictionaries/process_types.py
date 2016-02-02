@@ -16,7 +16,7 @@ def load_verb_data():
     import os
     import corpkit
     import pickle
-    from corpkit.process import get_gui_resource_dir
+    from process import get_gui_resource_dir
     corpath = os.path.dirname(corpkit.__file__)
     baspat = os.path.dirname(corpath)
     dicpath = os.path.join(baspat, 'dictionaries')
@@ -143,12 +143,8 @@ def add_verb_inflections(verb_list):
     # ensure unicode
     t = []
     for w in verbforms:
-        if type(w) != unicode:
-            t.append(unicode(w, 'utf-8', errors = 'ignore'))
-        else:
-            t.append(w)
-    verbforms = t
-    return verbforms
+        t.append(w)
+    return t
     
 def process_types():
     """Make a named tuple for each process type (no material yet)"""

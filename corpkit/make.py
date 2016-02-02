@@ -43,7 +43,7 @@ def make_corpus(unparsed_corpus_path,
     import sys
     import os    
     import shutil
-    from corpkit.build import (get_corpus_filepaths, 
+    from build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
                                rename_all_files,
@@ -66,12 +66,12 @@ def make_corpus(unparsed_corpus_path,
         try:
             from nltk import word_tokenize as tokenise
         except:
-            print '\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n'
+            print('\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n')
             raise
 
     if sys.platform == "darwin":
         if not check_jdk():
-            print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
+            print("Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html")
 
     # make absolute path to corpus
     unparsed_corpus_path = os.path.abspath(unparsed_corpus_path)
@@ -81,7 +81,7 @@ def make_corpus(unparsed_corpus_path,
         pass
     else:
         if not root:
-            print 'Copying files to project ...'
+            print('Copying files to project ...')
         shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
         unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
 
@@ -92,21 +92,21 @@ def make_corpus(unparsed_corpus_path,
         if speaker_segmentation:
             newpath = unparsed_corpus_path + '-stripped-parsed'
             if os.path.isdir(newpath) and not root:
-                ans = raw_input('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
+                ans = input('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                 if ans.lower().strip()[0] == 'y':
                     shutil.rmtree(newpath)
                 else:
                     return
             elif os.path.isdir(newpath) and root:
                 raise OSError('Path exists: %s' %newpath)
-            print 'Processing speaker IDs ...'
+            print('Processing speaker IDs ...')
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
             to_parse = unparsed_corpus_path + '-stripped'
         else:
             to_parse = unparsed_corpus_path
 
         if not root:
-            print 'Making list of files ... '
+            print('Making list of files ... ')
     
         filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                 corpuspath = to_parse)
@@ -146,5 +146,5 @@ def make_corpus(unparsed_corpus_path,
         outpath = new_tokenised_corpus_path
 
     rename_all_files(outpath)
-    print 'Done!\n'
+    print('Done!\n')
     return outpath

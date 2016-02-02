@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 def dep_searcher(sents,
                  search,
                  show = 'w',
@@ -14,8 +16,8 @@ def dep_searcher(sents,
     import re
     from corenlp_xml.document import Document
     from collections import Counter
-    from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator, get_deps
+    from build import flatten_treestring
+    from process import filtermaker, animator, get_deps
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -76,7 +78,7 @@ def dep_searcher(sents,
     def get_matches_from_sent(s, search, deps = False, tokens = False, 
         dep_type = 'basic-dependencies', mode = 'all'):
         """process a sentence object, returning matching tok ids"""
-        from corpkit.process import get_deps
+        from process import get_deps
         import re
         lks = []
         if not deps:
@@ -84,7 +86,7 @@ def dep_searcher(sents,
         if not tokens:
             tokens = s.tokens
 
-        for opt, pat in search.items():
+        for opt, pat in list(search.items()):
             if type(pat) == list:
                 if all(type(x) == int for x in pat):
                     pat = [str(x) for x in pat]
@@ -92,7 +94,7 @@ def dep_searcher(sents,
                 search[opt] = pat
             if type(pat) == dict:
                 del search[opt]
-                for k, v in pat.items():
+                for k, v in list(pat.items()):
                     if k != 'w':
                         search[opt + k] = v
                     else:
@@ -100,7 +102,7 @@ def dep_searcher(sents,
             if type(pat) == str and pat.lower() == 'any':
                 search[opt] = re.compile(r'.*')
 
-        for opt, pat in search.items():
+        for opt, pat in list(search.items()):
             if opt == 'g':
                 got = []
                 for l in deps.links:
@@ -195,7 +197,7 @@ def dep_searcher(sents,
                 for tok in tokens:
                     from dictionaries.word_transforms import taglemma
                     postag = tok.pos
-                    if postag.lower() in taglemma.keys():
+                    if postag.lower() in list(taglemma.keys()):
                         stemmedtag = taglemma[postag.lower()]
                     else:
                         stemmedtag = postag.lower()
@@ -229,7 +231,7 @@ def dep_searcher(sents,
         if mode == 'all':
             from collections import Counter
             counted = Counter(lks)
-            lks = [k for k, v in sorted(counted.items()) if v >= len(search.keys())]
+            lks = [k for k, v in counted.items() if v >= len(list(search.keys()))]
         return lks
 
     result = []
@@ -285,7 +287,7 @@ def dep_searcher(sents,
                         single_wd['w'] = tok.word
                     if 'l' in show:
                         from dictionaries.word_transforms import wordlist
-                        if tok.lemma in wordlist.keys():
+                        if tok.lemma in list(wordlist.keys()):
                             lem = wordlist[tok.lemma]
                         else:
                             lem = tok.lemma
@@ -296,7 +298,7 @@ def dep_searcher(sents,
                     if 'pl' in show:
                         single_wd['pl'] = lk.pos
                         from dictionaries.word_transforms import taglemma
-                        if postag.lower() in taglemma.keys():
+                        if postag.lower() in list(taglemma.keys()):
                             single_wd['pl'] = taglemma[postag.lower()]
                         else:
                             single_wd['pl'] = postag.lower()
@@ -349,7 +351,7 @@ def dep_searcher(sents,
                         single_result['w'] = lk.word
                 if 'l' in show:
                     from dictionaries.word_transforms import wordlist
-                    if lk.lemma in wordlist.keys():
+                    if lk.lemma in list(wordlist.keys()):
                         lem = wordlist[lk.lemma]
                     else:
                         lem = lk.lemma
@@ -359,7 +361,7 @@ def dep_searcher(sents,
                     postag = lk.pos
                     if lemmatise:
                         from dictionaries.word_transforms import taglemma
-                        if postag.lower() in taglemma.keys():
+                        if postag.lower() in list(taglemma.keys()):
                             single_result['p'] = taglemma[postag.lower()]
                         else:
                             single_result['p'] = postag.lower()
@@ -372,7 +374,7 @@ def dep_searcher(sents,
                     single_result['pl'] = 'none'
                     postag = lk.pos
                     from dictionaries.word_transforms import taglemma
-                    if postag.lower() in taglemma.keys():
+                    if postag.lower() in list(taglemma.keys()):
                         single_result['pl'] = taglemma[postag.lower()]
                     else:
                         single_result['pl'] = postag.lower()

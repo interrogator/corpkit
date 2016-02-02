@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 def plotter(title,
             df,
             kind = 'line',
@@ -113,13 +115,13 @@ def plotter(title,
 
     import numpy
     from time import localtime, strftime
-    from corpkit.tests import check_pytex, check_spider, check_t_kinter
+    from tests import check_pytex, check_spider, check_t_kinter
 
     if interactive:
         import mpld3
         import collections
         from mpld3 import plugins, utils
-        from plugins import InteractiveLegendPlugin, HighlightLines
+        from .plugins import InteractiveLegendPlugin, HighlightLines
 
     # check what environment we're in
     tk = check_t_kinter()
@@ -594,7 +596,7 @@ def plotter(title,
                 try:
                     the_loc = possible[legend_pos]
                 except KeyError:
-                    raise KeyError('legend_pos value must be one of:\n%s\n or an int between 0-10.' %', '.join(possible.keys()))
+                    raise KeyError('legend_pos value must be one of:\n%s\n or an int between 0-10.' %', '.join(list(possible.keys())))
             leg_options['loc'] = the_loc
             #weirdness needed for outside plot
             if legend_pos in ['o r', 'outside right', 'outside upper right']:
@@ -780,7 +782,7 @@ def plotter(title,
                     line.set_marker(COLORMAP[c]['marker'])
                     line.set_markersize(MARKERSIZE)
                     c += 1
-                    if c == len(COLORMAP.keys()):
+                    if c == len(list(COLORMAP.keys())):
                         c = 0
 
         # draw legend with proper placement etc
@@ -1062,7 +1064,7 @@ def plotter(title,
             plt.gcf().savefig(savename, dpi=150, format = output_format)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
-            print '\n' + time + ": " + savename + " created."
+            print('\n' + time + ": " + savename + " created.")
         else:
             raise ValueError("Error making %s." % savename)
 
