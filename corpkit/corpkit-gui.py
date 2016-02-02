@@ -1363,9 +1363,9 @@ def corpkit_gui():
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
             interrogator_args = {'search': queryd,
-                                 'lemmatise': lem.get(),
-                                 'phrases': phras.get(),
-                                 'titlefilter': tit_fil.get(),
+                                 #'lemmatise': lem.get(),
+                                 #'phrases': phras.get(),
+                                 #'titlefilter': tit_fil.get(),
                                  'case_sensitive': case_sensitive.get(),
                                  'convert_spelling': conv,
                                  'root': root,
@@ -1673,6 +1673,12 @@ def corpkit_gui():
                 ck8.config(state=NORMAL)
                 ck9.config(state=DISABLED)
                 ck10.config(state=DISABLED)
+                ck11.config(state=DISABLED)
+                ck12.config(state=DISABLED)
+                ck13.config(state=DISABLED)
+                ck14.config(state=DISABLED)
+                ck15.config(state=DISABLED)
+                ck116.config(state=DISABLED)
             else:
                 ck1.config(state=NORMAL)
                 ck2.config(state=NORMAL)
@@ -1684,6 +1690,12 @@ def corpkit_gui():
                 ck8.config(state=NORMAL)
                 ck9.config(state=NORMAL)
                 ck10.config(state=NORMAL)
+                ck11.config(state=NORMAL)
+                ck12.config(state=NORMAL)
+                ck13.config(state=NORMAL)
+                ck14.config(state=NORMAL)
+                ck15.config(state=NORMAL)
+                ck116.config(state=NORMAL)
             if datatype_picked.get() == 'Trees':
                 ck4.config(state=NORMAL)
             else:
@@ -2050,15 +2062,15 @@ def corpkit_gui():
                 #    pass
 
         # boolean interrogation arguments need fixing, right now use 0 and 1
-        lem = IntVar()
-        lbut = Checkbutton(interro_opt, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
-        lbut.grid(column = 0, row = 8, sticky=W)
-        phras = IntVar()
-        mwbut = Checkbutton(interro_opt, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
-        mwbut.grid(column = 1, row = 8, sticky=E)
-        tit_fil = IntVar()
-        tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
-        tfbut.grid(row = 9, column = 0, sticky=W)
+        #lem = IntVar()
+        #lbut = Checkbutton(interro_opt, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
+        #lbut.grid(column = 0, row = 8, sticky=W)
+        #phras = IntVar()
+        #mwbut = Checkbutton(interro_opt, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
+        #mwbut.grid(column = 1, row = 8, sticky=E)
+        #tit_fil = IntVar()
+        #tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
+        #tfbut.grid(row = 9, column = 0, sticky=W)
         case_sensitive = IntVar()
         Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
 
@@ -2089,29 +2101,22 @@ def corpkit_gui():
             #    datatype_listbox.insert(END, e)
 
             if chosen == 'Trees':
+
+                def desel_and_turn_off(but):
+                    but.config(state=NORMAL)
+                    but.deselect()
+                    but.config(state=DISABLED)
+
+                for but in [ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]:
+                    desel_and_turn_off(but)
+
                 ck1.config(state=NORMAL)
                 ck1.select()
                 ck2.config(state=NORMAL)
                 ck3.config(state=NORMAL)
                 ck4.config(state=NORMAL)
-                ck5.config(state=NORMAL)
-                ck5.deselect()
-                ck6.config(state=NORMAL)
-                ck6.deselect()
-                ck7.config(state=NORMAL)
-                ck7.deselect()
-                ck5.config(state=DISABLED)
-                ck6.config(state=DISABLED)
-                ck7.config(state=DISABLED)
+                ck8.config(state=NORMAL)
 
-                ck8.config(state=NORMAL)
-                ck9.config(state=NORMAL)
-                ck9.deselect()
-                ck9.config(state=DISABLED)
-                ck8.config(state=NORMAL)
-                ck10.config(state=NORMAL)
-                ck10.deselect()
-                ck10.config(state=DISABLED)
                 #q.config(state=DISABLED)
                 qr.config(state=DISABLED)
                 exclude.config(state = DISABLED)
@@ -2188,13 +2193,13 @@ def corpkit_gui():
         datatype_picked.trace("w", callback)
         
         # trees, words, functions, governors, dependents, pos, lemma, count
-        frm = Frame(interro_opt)
-        Label(frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
-        frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
+        interro_return_frm = Frame(interro_opt)
+        Label(interro_return_frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
+        interro_return_frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
 
         return_token = StringVar()
         return_token.set('')
-        ck1 = Checkbutton(frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
+        ck1 = Checkbutton(interro_return_frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
         ck1.select()
         ck1.grid(row = 1, column = 0, sticky = W)
 
@@ -2208,7 +2213,7 @@ def corpkit_gui():
 
         return_lemma = StringVar()
         return_lemma.set('')
-        ck2 = Checkbutton(frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
+        ck2 = Checkbutton(interro_return_frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
         ck2.grid(row = 1, column = 1, sticky = W)
 
         def return_lemma_callback(*args):
@@ -2221,7 +2226,7 @@ def corpkit_gui():
 
         return_pos = StringVar()
         return_pos.set('')
-        ck3 = Checkbutton(frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
+        ck3 = Checkbutton(interro_return_frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
         ck3.grid(row = 1, column = 2, sticky = W)
 
         def return_pos_callback(*args):
@@ -2234,7 +2239,7 @@ def corpkit_gui():
 
         return_tree = StringVar()
         return_tree.set('')
-        ck4 = Checkbutton(frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
+        ck4 = Checkbutton(interro_return_frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
         ck4.grid(row = 1, column = 3, sticky = W)
 
         def return_tree_callback(*args):
@@ -2247,27 +2252,28 @@ def corpkit_gui():
 
         return_index = StringVar()
         return_index.set('')
-        ck5 = Checkbutton(frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
-        ck5.grid(row = 2, column = 0, sticky = W)
+        ck5 = Checkbutton(interro_return_frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
+        ck5.grid(row = 2, column = 1, sticky = W)
 
         return_distance = StringVar()
         return_distance.set('')
-        ck6 = Checkbutton(frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
-        ck6.grid(row = 2, column = 1, sticky = W)
+        ck6 = Checkbutton(interro_return_frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
+        ck6.grid(row = 2, column = 2, sticky = W)
 
         return_function = StringVar()
         return_function.set('')
-        ck7 = Checkbutton(frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
-        ck7.grid(row = 2, column = 2, sticky = W)
+        ck7 = Checkbutton(interro_return_frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
+        ck7.grid(row = 2, column = 3, sticky = W)
 
         return_count = StringVar()
         return_count.set('')
-        ck8 = Checkbutton(frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
-        ck8.grid(row = 1, column = 4, sticky = W)
+        ck8 = Checkbutton(interro_return_frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
+        ck8.grid(row = 2, column = 0, sticky = W)
 
         def countmode(*args):
             if datatype_picked.get() != 'Trees':
-                buttons = [ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck9, ck10]
+                buttons = [ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck9, 
+                           ck10, ck11, ck12, ck13, ck14, ck15, ck16]
                 if return_count.get() == 'c':
                     for b in buttons:
                         b.deselect()
@@ -2287,22 +2293,51 @@ def corpkit_gui():
 
         return_gov = StringVar()
         return_gov.set('')
-        ck9 = Checkbutton(frm, text = 'Governor', variable = return_gov, onvalue = 'g', offvalue = '')
-        ck9.grid(row = 2, column = 3, sticky = W)
+        ck9 = Checkbutton(interro_return_frm, text = 'Governor', variable = return_gov, 
+                          onvalue = 'g', offvalue = '')
+        ck9.grid(row = 3, column = 0, sticky = W)
 
-        #def r#eturn_gov_callback(*args):
-        #    if return_gov.get():
-        #        ck10.config(state=NORMAL)
-        #        ck10.deselect()
-        #        ck10.config(state=DISABLED)
-        #    else:
-        #        ck10.config(state=NORMAL)
-        #return_gov.trace("w", return_gov_callback)
+        return_gov_lemma = StringVar()
+        return_gov_lemma.set('')
+        ck10 = Checkbutton(interro_return_frm, text = 'Gov. lemma', variable = return_gov_lemma, 
+                          onvalue = 'gl', offvalue = '')
+        ck10.grid(row = 3, column = 1, sticky = W)
+
+        return_gov_pos = StringVar()
+        return_gov_pos.set('')
+        ck11 = Checkbutton(interro_return_frm, text = 'Gov. POS', variable = return_gov_pos, 
+                          onvalue = 'gp', offvalue = '')
+        ck11.grid(row = 3, column = 2, sticky = W)
+
+        return_gov_function = StringVar()
+        return_gov_function.set('')
+        ck12 = Checkbutton(interro_return_frm, text = 'Gov. function', variable = return_gov_function, 
+                          onvalue = 'gf', offvalue = '')
+        ck12.grid(row = 3, column = 3, sticky = W)
 
         return_dep = StringVar()
         return_dep.set('')
-        ck10 = Checkbutton(frm, text = 'Dependent', variable = return_dep, onvalue = 'd', offvalue = '')
-        ck10.grid(row = 2, column = 4, sticky = W)
+        ck13 = Checkbutton(interro_return_frm, text = 'Dependent', variable = return_dep, 
+                          onvalue = 'd', offvalue = '')
+        ck13.grid(row = 4, column = 0, sticky = W)
+
+        return_dep_lemma = StringVar()
+        return_dep_lemma.set('')
+        ck14 = Checkbutton(interro_return_frm, text = 'Dep. lemma', variable = return_dep_lemma, 
+                          onvalue = 'dl', offvalue = '')
+        ck14.grid(row = 4, column = 1, sticky = W)
+
+        return_dep_pos = StringVar()
+        return_dep_pos.set('')
+        ck15 = Checkbutton(interro_return_frm, text = 'Dep. POS', variable = return_dep_pos, 
+                          onvalue = 'dp', offvalue = '')
+        ck15.grid(row = 4, column = 2, sticky = W)
+
+        return_dep_func = StringVar()
+        return_dep_func.set('')
+        ck16 = Checkbutton(interro_return_frm, text = 'Dep. function', variable = return_dep_func, 
+                          onvalue = 'df', offvalue = '')
+        ck16.grid(row = 4, column = 3, sticky = W)
 
         #def return_dep_callback(*args):
         #    if return_gov.get():
@@ -2350,7 +2385,7 @@ def corpkit_gui():
         special_queries.set('Off')
         Label(interro_opt, text = 'Preset:').grid(row = 6, column = 0, sticky = W)
         pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
-        pick_a_query.config(width = 11)
+        pick_a_query.config(width = 11, state = DISABLED)
         pick_a_query.grid(row = 6, column = 0, padx = (60, 0), columnspan = 2, sticky = W)
         special_queries.trace("w", q_callback)
 
