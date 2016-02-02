@@ -1621,9 +1621,11 @@ def corpkit_gui():
                 conc_pick_a_query.configure(state = NORMAL)
                 concbut.config(state = DISABLED)
                 for i in ['Trees', 'Words', 'POS', 'Lemmata', \
+                          'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
                           'Functions', 'Governors', 'Dependents', 'N-grams', 'Stats', 'Index']:
                     pick_a_datatype['menu'].add_command(label = i, command=tkinter._setit(datatype_picked, i))
                 for i in ['Trees', 'Words', 'POS', 'Lemmata', \
+                          'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
                           'Functions', 'Governors', 'Dependents', 'Index']:                
                     pick_a_conc_datatype['menu'].add_command(label = i, command=tkinter._setit(corpus_search_type, i))
                 #parsebut.config(state = DISABLED)
@@ -1752,7 +1754,8 @@ def corpkit_gui():
         Label(interro_opt, text = 'Exclude:').grid(row = 5, column = 0, sticky = W)
         exclude_op = StringVar()
         exclude_op.set('None')
-        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index')))
+        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
+                             'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
         exclude.config(width = 11)
         exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 21, state = DISABLED)
@@ -1948,7 +1951,9 @@ def corpkit_gui():
                     n_items.remove(i)
                 chosen = StringVar()
                 poss = tuple(('None', 'Words', 'POS', 'Lemmata', \
-                              'Functions', 'Dependents', 'Governors', 'Index'))
+                             'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', \
+                             'Dependent functions', 'Dependent POS', \
+                             'Functions', 'Dependents', 'Governors', 'Index'))
                 chosen.set('Words')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 t = total + 1
@@ -2015,14 +2020,20 @@ def corpkit_gui():
                        'Dependents': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Words': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Lemmata': r'\b(want|desire|need)\b',
+                       'Governor lemmata': r'\b(want|desire|need)\b',
+                       'Dependent lemmata': r'\b(want|desire|need)\b',
                        'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Tokens': r'\b(m.n|wom.n|child(ren)?)\b',
                        'Other': r'[cat,cats,mouse,mice,cheese]',
                        'other2': r'\b(amod|nn|advm|vmod|tmod)\b',
                        'Functions': r'\b(amod|nn|advm|vmod|tmod)\b',
+                       'Governor functions': r'\b(amod|nn|advm|vmod|tmod)\b',
+                       'Dependent functions': r'\b(amod|nn|advm|vmod|tmod)\b',
                        'N-grams': r'any',
                        'Index': r'[012345]',
                        'POS': r'^[NJR]',
+                       'Governor POS': r'^[NJR]',
+                       'Dependent POS': r'^[NJR]',
                        'Functions': r'\b(amod|nn|advm|vmod|tmod)',
                        'other3': 'any'}
 
@@ -2125,7 +2136,9 @@ def corpkit_gui():
                 ex_plusbut.config(state = DISABLED) 
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
-                          'Index', 'Distance', 'POS', 'Lemmata']:
+                            'Governor lemmata', 'Governor functions', 'Governor POS', \
+                            'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
+                            'Index', 'Distance', 'POS', 'Lemmata']:
                 if current_corpus.get().endswith('-parsed'):     
                     plusbut.config(state = NORMAL)
                     ex_plusbut.config(state = NORMAL)
@@ -2187,7 +2200,9 @@ def corpkit_gui():
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
         Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', 'Stats')))
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
+                            'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
+                             'Stats', 'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
