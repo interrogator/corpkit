@@ -10,7 +10,10 @@ class CustomInstallCommand(install):
         # since nltk may have just been install
         # we need to update our PYTHONPATH
         import site
-        reload(site)
+        try:
+            reload(site)
+        except NameError:
+            pass
         # Now we can import nltk
         import nltk
         import os
@@ -27,7 +30,7 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-    version='1.91',
+    version='1.92',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
