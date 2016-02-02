@@ -71,3 +71,4 @@ corpkit/log*
 corpkit/custom_wordlists.txt
 corpkit/tool_settings.ini
 _build/
+*.bak
