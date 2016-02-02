@@ -30,7 +30,7 @@ def keywords(data,
     except ImportError:
         pass
 
-    from .keys import keywords_and_ngrams, turn_input_into_counter
+    from keys import keywords_and_ngrams, turn_input_into_counter
 
     the_threshold = False
 

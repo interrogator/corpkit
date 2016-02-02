@@ -1085,7 +1085,7 @@ def editor(dataframe1,
     
     # if doing keywording...
     if operation.startswith('k'):
-        from .keys import keywords
+        from keys import keywords
 
         # allow saved dicts to be df2, etc
         try:

@@ -19,7 +19,7 @@ def dictmaker(path,
     from io import StringIO
     import shutil
     from collections import Counter
-    from .textprogressbar import TextProgressBar
+    from textprogressbar import TextProgressBar
     from process import tregex_engine
     try:
         from IPython.display import display, clear_output
@@ -254,7 +254,7 @@ def downloader(url_list, new_path = 'html', wait = 5):
     import time
     import os
     from time import localtime, strftime
-    from .textprogressbar import TextProgressBar
+    from textprogressbar import TextProgressBar
     thetime = strftime("%H:%M:%S", localtime())
     print("\n%s: Attempting to download %d URLs with %d seconds wait-time ... \n" % (thetime, len(url_list), wait))
     p = TextProgressBar(len(urls))
@@ -323,7 +323,7 @@ def practice_run(path_to_html_file):
         text = get_text(soup)
     except:
         function_defined = False
-        from .build import simple_text_extractor
+        from build import simple_text_extractor
         simple_text_extractor(path_to_html_file)
     try:
         metadata = get_metadata(soup)
@@ -422,7 +422,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     import os
     import urllib.request, urllib.error, urllib.parse
     from time import localtime, strftime
-    from .textprogressbar import TextProgressBar
+    from textprogressbar import TextProgressBar
     import shutil
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
