@@ -114,5 +114,5 @@ Contents
 .. _NLTK: http://www.nltk.org/
 .. _pandas: http://pandas.pydata.org/
 .. _here: http://interrogator.github.io/corpkit/
-.. _pattern: http://www.clips.ua.ac.be/pages/pattern-en
+.. _pattern: http://www.clips.ua.ac.be/pages/pattern-en/
 .. _matplotlib: http://matplotlib.org/
