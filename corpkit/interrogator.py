@@ -686,8 +686,8 @@ def interrogator(corpus,
         sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in list(search.items())])
         if search == {'s': r'.*'}:
             sformat = 'features'
-        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n          Interrogating corpus ... \n' % \
-                  (thetime, message, corpus.name, optiontext, sformat)
+        welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n          %s corpus ... \n' % \
+                  (thetime, message, corpus.name, optiontext, sformat, message)
         print(welcome)
 
     ############################################

@@ -569,11 +569,11 @@ def corpkit_gui():
                 pass
             return "break"
 
-        def runner(button, command):
+        def runner(button, command, conc = False):
             """runs the command of a button, disabling the button till it is done,
             whether it returns early or not"""
             try:
-                command()
+                command(conc)
             except Exception as err:
                 import traceback
                 print(traceback.format_exc())
@@ -1308,7 +1308,10 @@ def corpkit_gui():
         def do_interrogation(conc = False):
             """the main function: calls interrogator()"""
             # no pressing while running
-            interrobut.config(state = DISABLED)
+            if not conc:
+                interrobut.config(state = DISABLED)
+            else:
+                interrobut_conc.config(state = DISABLED)
             # progbar to zero
             note.progvar.set(0)
 
@@ -1335,7 +1338,11 @@ def corpkit_gui():
 
             else:
                 if special_queries.get() != 'Stats':
-                    query = qa.get(1.0, END)
+                    if conc:
+                        query = c_qa.get(1.0, END)
+                    else:
+                        query = qa.get(1.0, END)
+                    entrytext.set(query)
                     query = query.replace('\n', '')
                     # allow list queries
                     if query.startswith('[') and query.endswith(']') and ',' in query:
@@ -1349,7 +1356,8 @@ def corpkit_gui():
                             return
 
             # make name for interrogation
-            the_name = namer(nametext.get(), type_of_data = 'interrogation')
+            if not conc:
+                the_name = namer(nametext.get(), type_of_data = 'interrogation')
             
             selected_option = datatype_picked.get().lower()[0]
 
@@ -1394,7 +1402,6 @@ def corpkit_gui():
                 interrogator_args['excludemode'] = excludemode.get()
             except:
                 pass
-
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1655,45 +1662,27 @@ def corpkit_gui():
             interrobut_conc.config(state = NORMAL)
             timestring('Set corpus directory: "%s"' % corpus_name)
             editf.set('Edit file: ')
+            parse_only = [ck3, ck4, ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16, \
+                          c_ck3, c_ck4, c_ck5, c_ck6, c_ck7, c_ck9, c_ck10, c_ck11, c_ck12, c_ck13, c_ck14, c_ck15, c_ck16]
+            non_parsed = [ck1, ck2, ck8]
 
             if not corpus_name.endswith('-parsed'):
-                ck1.config(state=NORMAL)
-                ck2.config(state=NORMAL)
-                ck3.config(state=DISABLED)
-                ck4.config(state=DISABLED)
-                ck5.config(state=DISABLED)
-                ck6.config(state=DISABLED)
-                ck7.config(state=DISABLED)
-                ck8.config(state=NORMAL)
-                ck9.config(state=DISABLED)
-                ck10.config(state=DISABLED)
-                ck11.config(state=DISABLED)
-                ck12.config(state=DISABLED)
-                ck13.config(state=DISABLED)
-                ck14.config(state=DISABLED)
-                ck15.config(state=DISABLED)
-                ck16.config(state=DISABLED)
+                for but in parse_only:
+                    desel_and_turn_off(but)
+                for but in non_parsed:
+                    turnon(but)                
             else:
-                ck1.config(state=NORMAL)
-                ck2.config(state=NORMAL)
-                ck3.config(state=NORMAL)
-                ck4.config(state=NORMAL)
-                ck5.config(state=NORMAL)
-                ck6.config(state=NORMAL)
-                ck7.config(state=NORMAL)
-                ck8.config(state=NORMAL)
-                ck9.config(state=NORMAL)
-                ck10.config(state=NORMAL)
-                ck11.config(state=NORMAL)
-                ck12.config(state=NORMAL)
-                ck13.config(state=NORMAL)
-                ck14.config(state=NORMAL)
-                ck15.config(state=NORMAL)
-                ck16.config(state=NORMAL)
+                for but in parse_only:
+                    turnon(but)
+                for but in non_parsed:
+                    turnon(but)  
+
             if datatype_picked.get() == 'Trees':
                 ck4.config(state=NORMAL)
+                c_ck4.config(state=NORMAL)
             else:
                 ck4.config(state=DISABLED)
+                c_ck4.config(state=DISABLED)
 
         Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
@@ -1744,7 +1733,7 @@ def corpkit_gui():
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
                              'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
-        exclude.config(width = 11)
+        exclude.config(width = 16)
         exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 21, state = DISABLED)
         qr.grid(row = 5, column = 0, columnspan = 2, sticky = E, padx = (0,40))
@@ -1937,6 +1926,7 @@ def corpkit_gui():
                              'Functions', 'Dependents', 'Governors', 'Index'))
                 chosen.set('Words')
                 opt = OptionMenu(more_criteria, chosen, *poss)
+                opt.config(width = 16)
                 t = total + 1
                 opt.grid(row = total, column = 0, sticky = W)
                 text_str = StringVar()
@@ -1992,6 +1982,9 @@ def corpkit_gui():
             qa.config(state = NORMAL)
             qa.delete(1.0, END)
             qa.insert(END, entrytext.get())
+            c_qa.config(state = NORMAL)
+            c_qa.delete(1.0, END)
+            c_qa.insert(END, entrytext.get())
         entrytext.trace("w", entry_callback)
 
         # these are example queries for each data type
@@ -2084,6 +2077,14 @@ def corpkit_gui():
         spl.configure(width = 7)
         spl.grid(row = 6, column = 1, sticky = E, padx = (2, 0))
 
+        def desel_and_turn_off(but):
+            but.config(state=NORMAL)
+            but.deselect()
+            but.config(state=DISABLED)
+
+        def turnon(but):
+            but.config(state = NORMAL)
+
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
             #datatype_listbox.delete(0, 'end')
@@ -2093,81 +2094,75 @@ def corpkit_gui():
             #    datatype_listbox.insert(END, e)
 
             if chosen == 'Trees':
-
-                def desel_and_turn_off(but):
-                    but.config(state=NORMAL)
-                    but.deselect()
-                    but.config(state=DISABLED)
-
-                for but in [ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]:
+                for but in [ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16, \
+                            c_ck5, c_ck6, c_ck7, c_ck9, c_ck10, c_ck11, c_ck12, c_ck13, \
+                            c_ck14, c_ck15, c_ck16]:
                     desel_and_turn_off(but)
 
-                ck1.config(state=NORMAL)
+                for but in [ck1, ck2, ck4, ck4, ck8, \
+                            c_ck1, c_ck2, c_ck4, c_ck4, c_ck8]:
+                    turnon(but)
                 ck1.select()
-                ck2.config(state=NORMAL)
-                ck3.config(state=NORMAL)
-                ck4.config(state=NORMAL)
-                ck8.config(state=NORMAL)
+                c_ck1.select()
 
                 #q.config(state=DISABLED)
                 qr.config(state=DISABLED)
-                exclude.config(state = DISABLED)
+                #exclude.config(state = DISABLED)
                 #sec_match.config(state = DISABLED)
                 plusbut.config(state = DISABLED) 
-                ex_plusbut.config(state = DISABLED) 
+                #ex_plusbut.config(state = DISABLED) 
+                c_qr.config(state=DISABLED)
+                #c_exclude.config(state = DISABLED)
+                #c_sec_match.config(state = DISABLED)
+                c_plusbut.config(state = DISABLED) 
+                c_ex_plusbut.config(state = DISABLED) 
 
             elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
                             'Governor lemmata', 'Governor functions', 'Governor POS', \
                             'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
                             'Index', 'Distance', 'POS', 'Lemmata']:
                 if current_corpus.get().endswith('-parsed'):     
-                    plusbut.config(state = NORMAL)
-                    ex_plusbut.config(state = NORMAL)
-                    #q.config(state=NORMAL)
-                    qr.config(state=NORMAL)
-                    ck1.config(state=NORMAL)
-                    ck2.config(state=NORMAL)
-                    ck3.config(state=NORMAL)
-                    ck4.config(state=DISABLED)
-                    ck5.config(state=NORMAL)
-                    ck6.config(state=NORMAL)
-                    ck7.config(state=NORMAL)
-                    ck8.config(state=NORMAL)
-                    ck9.config(state=NORMAL)
-                    ck10.config(state=NORMAL)
-                    exclude.config(state = NORMAL)
+                    for but in [ck1, ck2, ck3, ck5, ck6, ck7, ck8, ck9, ck10, \
+                                ck11, ck12, ck13, ck14, ck15, ck16, c_ck1, c_ck2, \
+                                c_ck3, c_ck5, c_ck6, c_ck7, c_ck8, c_ck9, c_ck10, \
+                                c_ck11, c_ck12, c_ck13, c_ck14, c_ck15, c_ck16, \
+                                plusbut, ex_plusbut, exclude, qr, \
+                                c_plusbut, c_ex_plusbut, c_exclude, c_qr]:
+                        turnon(but)
+
                     #sec_match.config(state = NORMAL)
-            if chosen == 'Governors':
-                ck9.config(state=DISABLED)
-            #else:
-                #ck10.config(state=NORMAL)
-            if chosen == 'Dependents':
-                ck10.config(state=DISABLED)
+            #if chosen == 'Governors':
+            #    ck9.config(state=DISABLED)
+            #    c_ck9.config(state=DISABLED)
+            ##else:
+            #    #ck10.config(state=NORMAL)
+            #if chosen == 'Dependents':
+            #    ck10.config(state=DISABLED)
+            #    c_ck10.config(state=DISABLED)
             #else:
                 #ck9.config(state=NORMAL)
 
             if chosen == 'Stats' or chosen == 'N-grams':
-                ck1.config(state=NORMAL)
+                for but in [ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, \
+                                ck11, ck12, ck13, ck14, ck15, ck16, c_ck2, \
+                                c_ck3, c_ck4, c_ck5, c_ck6, c_ck7, c_ck8, c_ck9, c_ck10, \
+                                c_ck11, c_ck12, c_ck13, c_ck14, c_ck15, c_ck16]:
+                    desel_and_turn_off(but)
+                turnon(ck1)
+                turnon(c_ck1)
                 ck1.select()
-                ck1.config(state=DISABLED)
-                ck2.config(state=DISABLED)
-                ck3.config(state=DISABLED)
-                ck4.config(state=DISABLED)
-                ck5.config(state=DISABLED)
-                ck6.config(state=DISABLED)
-                ck7.config(state=DISABLED)
-                ck8.config(state=DISABLED)
-                ck9.config(state=DISABLED)
-                ck10.config(state=DISABLED)
+                c_ck1.select()
                 if chosen == 'N-grams':
-                    lbut.config(state = DISABLED)
+                    #lbut.config(state = DISABLED)
                     ngmsize.config(state = NORMAL)
                     split_contract.config(state = NORMAL)
                 else:
                     if chosen != 'Stats' not in value:
-                        lbut.config(state = NORMAL)
+                        #lbut.config(state = NORMAL)
+                        pass
                     else:
-                        lbut.config(state = DISABLED)
+                        #lbut.config(state = DISABLED)
+                        pass
                     ngmsize.config(state = DISABLED)
                     split_contract.config(state = DISABLED)
             
@@ -3835,21 +3830,20 @@ def corpkit_gui():
                 timestring('Concordancing done: %d results.' % len(lines))
 
         def do_concordancing_old():
+            """leftover subcorpus stuff, reimplement soon"""
             interrobut_conc.config(state = DISABLED)
             for i in list(itemcoldict.keys()):
                 del itemcoldict[i]
             import os
-            """when you press 'run'"""
             timestring('Concordancing in progress ... ')
             from conc import conc
             # if nothing selected, if all selected, or if none available
             if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or selected_corpus_has_no_subcorpora.get() == 1:
                 corpus = corpus_fullpath.get()
-
             else:
                 corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
         
-            
+        
         def delete_conc_lines(*args):
                
             if type(current_conc[0]) == str:
@@ -3992,7 +3986,6 @@ def corpkit_gui():
                 try:
                     low = [l.lower() for l in df['s']]
                 except:
-                    
                     timestring('No speaker information to sort by.')
                     return
                 df['tosorton'] = low
@@ -4506,7 +4499,6 @@ def corpkit_gui():
         conc_right_button_frame = Frame(tab4)
         conc_right_button_frame.grid(row = 1, column = 2, padx = (60,0), sticky = 'NE', pady = (10, 0))
 
-
         # todo: implement this
         subc_pick = StringVar()
         subc_pick.set('Subcorpus')
@@ -4518,161 +4510,154 @@ def corpkit_gui():
         pick_subcorpora.configure(width = 14)
         #pick_subcorpora.grid(row = 1, column = 0, sticky = W)
 
-
         Label(conc_left_button_frame, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
-        available_corpora = OptionMenu(conc_left_button_frame, current_corpus, *tuple(('Select corpus')))
-        available_corpora.config(width = 25, state = DISABLED, justify = CENTER)
-        current_corpus.trace("w", corpus_callback)
-        available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = W, padx = (136,0))
+        c_available_corpora = OptionMenu(conc_left_button_frame, current_corpus, *tuple(('Select corpus')))
+        c_available_corpora.config(width = 25, state = DISABLED, justify = CENTER)
+        c_available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = W, padx = (136,0))
 
-        available_corpora_build = OptionMenu(tab0, current_corpus, *tuple(('Select corpus')))
-        available_corpora_build.config(width = 25, justify = CENTER, state = DISABLED)
-        available_corpora_build.grid(row = 4, column = 0, sticky=W)
+        #available_corpora_build = OptionMenu(tab0, current_corpus, *tuple(('Select corpus')))
+        #available_corpora_build.config(width = 25, justify = CENTER, state = DISABLED)
+        #available_corpora_build.grid(row = 4, column = 0, sticky=W)
 
         Label(conc_middle_button_frame, text = 'Exclude:').grid(row = 5, column = 0, rowspan = 2, sticky = W)
-        exclude = OptionMenu(conc_middle_button_frame, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
+        c_exclude = OptionMenu(conc_middle_button_frame, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
                              'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
-        exclude.config(width = 11)
-        exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
-        qr = Entry(conc_middle_button_frame, textvariable = exclude_str, width = 28, state = DISABLED)
-        qr.grid(row = 6, column = 0, columnspan = 2, sticky = E, padx = (0,0))
-        all_text_widgets.append(qr)
-        ex_plusbut = Button(conc_middle_button_frame, text = '+', \
+        c_exclude.config(width = 11)
+        c_exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
+        c_qr = Entry(conc_middle_button_frame, textvariable = exclude_str, width = 28, state = DISABLED)
+        c_qr.grid(row = 6, column = 0, columnspan = 2, sticky = E, padx = (0,0))
+        all_text_widgets.append(c_qr)
+        c_ex_plusbut = Button(conc_middle_button_frame, text = '+', \
                         command = lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state = DISABLED)
-        ex_plusbut.grid(row = 5, column = 1, sticky = E)
+        c_ex_plusbut.grid(row = 5, column = 1, sticky = E)
 
 
         Label(conc_middle_button_frame, text = 'Result word class:').grid(row = 13, column = 0, columnspan = 2, sticky = W)
-        lmt = OptionMenu(conc_middle_button_frame, lemtag, *lemtags)
-        lmt.config(state = NORMAL, width = 10)
-        lmt.grid(row = 13, column = 1, sticky=E)
+        c_lmt = OptionMenu(conc_middle_button_frame, lemtag, *lemtags)
+        c_lmt.config(state = NORMAL, width = 10)
+        c_lmt.grid(row = 13, column = 1, sticky=E)
         #lemtag.trace("w", d_callback)
 
         # speaker names
         # button
-        speakcheck = Checkbutton(conc_middle_button_frame, text='Speakers:', variable=only_sel_speakers, command = togglespeaker)
-        speakcheck.grid(column = 0, row = 14, sticky=W)
-        # add data on press
-        only_sel_speakers.trace("w", togglespeaker)
+        c_speakcheck = Checkbutton(conc_middle_button_frame, text='Speakers:', variable=only_sel_speakers, command = togglespeaker)
+        c_speakcheck.grid(column = 0, row = 14, sticky=W)
+
         # frame to hold speaker names listbox
-        spk_scrl = Frame(conc_middle_button_frame)
-        spk_scrl.grid(row = 15, column = 0, rowspan = 2, columnspan = 2, sticky = E)
+        c_spk_scrl = Frame(conc_middle_button_frame)
+        c_spk_scrl.grid(row = 15, column = 0, rowspan = 2, columnspan = 2, sticky = E)
         # scrollbar for the listbox
-        spk_sbar = Scrollbar(spk_scrl)
-        spk_sbar.pack(side=RIGHT, fill=Y)
+        c_spk_sbar = Scrollbar(spk_scrl)
+        c_spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
-        speaker_listbox = Listbox(spk_scrl, selectmode = EXTENDED, width = 32, height = 4, relief = SUNKEN, bg = '#F4F4F4',
-                                  yscrollcommand=spk_sbar.set, exportselection = False)
-        speaker_listbox.pack()
-        speaker_listbox.configure(state = DISABLED)
-        spk_sbar.config(command=speaker_listbox.yview)
+        c_speaker_listbox = Listbox(c_spk_scrl, selectmode = EXTENDED, width = 32, height = 4, relief = SUNKEN, bg = '#F4F4F4',
+                                  yscrollcommand=c_spk_sbar.set, exportselection = False)
+        c_speaker_listbox.pack()
+        c_speaker_listbox.configure(state = DISABLED)
+        c_spk_sbar.config(command=c_speaker_listbox.yview)
 
         # dep type
-        dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
         Label(conc_middle_button_frame, text = 'Dependency type:').grid(row = 17, column = 0, sticky = W)
-        pick_dep_type = OptionMenu(conc_middle_button_frame, kind_of_dep, *dep_types)
-        pick_dep_type.config(state = DISABLED)
-        pick_dep_type.grid(row = 17, column = 1, sticky=E)
+        c_pick_dep_type = OptionMenu(conc_middle_button_frame, kind_of_dep, *dep_types)
+        c_pick_dep_type.config(state = DISABLED)
+        c_pick_dep_type.grid(row = 17, column = 1, sticky=E)
         #kind_of_dep.trace("w", d_callback)
 
         # query
         Label(conc_left_button_frame, text = 'Query:').grid(row = 3, column = 0, sticky = 'NW', pady = (5,0))
-        qa = Text(conc_left_button_frame, width = 34, height = 4, borderwidth = 0.5, 
+        c_qa = Text(conc_left_button_frame, width = 34, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD, highlightthickness=0)
-        qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
-        all_text_widgets.append(qa)
+        c_qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
+        all_text_widgets.append(c_qa)
 
-        plusbut = Button(conc_left_button_frame, text = '+', \
+        c_plusbut = Button(conc_left_button_frame, text = '+', \
                         command = lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
                         state = DISABLED)
-        plusbut.grid(row = 3, column = 0, sticky = 'SW', padx = 20, pady = 10)
+        c_plusbut.grid(row = 3, column = 0, sticky = 'SW', padx = 20, pady = 10)
 
         #Checkbutton(conc_middle_button_frame, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
 
         Label(conc_middle_button_frame, text = 'Spelling:').grid(row = 7, column = 1, sticky = E, padx = (0, 75))
-        spl = MyOptionMenu(conc_middle_button_frame, 'Off','UK','US')
-        spl.configure(width = 7)
-        spl.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
+        c_spl = MyOptionMenu(conc_middle_button_frame, 'Off','UK','US')
+        c_spl.configure(width = 7)
+        c_spl.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
 
-        datatype_picked.set('Trees')
         Label(conc_left_button_frame, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
-        pick_a_datatype = OptionMenu(conc_left_button_frame, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
+        c_pick_a_datatype = OptionMenu(conc_left_button_frame, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
                             'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
                              'Stats', 'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
-        pick_a_datatype.configure(width = 25, justify = CENTER)
-        pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
-        datatype_picked.trace("w", callback)
+        c_pick_a_datatype.configure(width = 25, justify = CENTER)
+        c_pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         
         # trees, words, functions, governors, dependents, pos, lemma, count
-        interro_return_frm = Frame(conc_left_button_frame)
-        Label(interro_return_frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
-        interro_return_frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
+        conc_return_frm = Frame(conc_left_button_frame)
+        Label(conc_return_frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
+        conc_return_frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
 
-        ck1 = Checkbutton(interro_return_frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
-        ck1.select()
-        ck1.grid(row = 1, column = 0, sticky = W)
+        c_ck1 = Checkbutton(conc_return_frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
+        c_ck1.select()
+        c_ck1.grid(row = 1, column = 0, sticky = W)
 
-        ck2 = Checkbutton(interro_return_frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
-        ck2.grid(row = 1, column = 1, sticky = W)
+        c_ck2 = Checkbutton(conc_return_frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
+        c_ck2.grid(row = 1, column = 1, sticky = W)
 
-        ck3 = Checkbutton(interro_return_frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
-        ck3.grid(row = 1, column = 2, sticky = W)
+        c_ck3 = Checkbutton(conc_return_frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
+        c_ck3.grid(row = 1, column = 2, sticky = W)
 
-        ck4 = Checkbutton(interro_return_frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
-        ck4.grid(row = 1, column = 3, sticky = W)
+        c_ck4 = Checkbutton(conc_return_frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
+        c_ck4.grid(row = 1, column = 3, sticky = W)
 
-        ck5 = Checkbutton(interro_return_frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
-        ck5.grid(row = 2, column = 1, sticky = W)
+        c_ck5 = Checkbutton(conc_return_frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
+        c_ck5.grid(row = 2, column = 1, sticky = W)
 
-        ck6 = Checkbutton(interro_return_frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
-        ck6.grid(row = 2, column = 2, sticky = W)
+        c_ck6 = Checkbutton(conc_return_frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
+        c_ck6.grid(row = 2, column = 2, sticky = W)
 
-        ck7 = Checkbutton(interro_return_frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
-        ck7.grid(row = 2, column = 3, sticky = W)
+        c_ck7 = Checkbutton(conc_return_frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
+        c_ck7.grid(row = 2, column = 3, sticky = W)
 
-        ck8 = Checkbutton(interro_return_frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
-        ck8.grid(row = 2, column = 0, sticky = W)
+        c_ck8 = Checkbutton(conc_return_frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
+        c_ck8.grid(row = 2, column = 0, sticky = W)
 
-        ck9 = Checkbutton(interro_return_frm, text = 'Governor', variable = return_gov, 
+        c_ck9 = Checkbutton(conc_return_frm, text = 'Governor', variable = return_gov, 
                           onvalue = 'g', offvalue = '')
-        ck9.grid(row = 3, column = 0, sticky = W)
+        c_ck9.grid(row = 3, column = 0, sticky = W)
 
-        ck10 = Checkbutton(interro_return_frm, text = 'Gov. lemma', variable = return_gov_lemma, 
+        c_ck10 = Checkbutton(conc_return_frm, text = 'Gov. lemma', variable = return_gov_lemma, 
                           onvalue = 'gl', offvalue = '')
-        ck10.grid(row = 3, column = 1, sticky = W)
+        c_ck10.grid(row = 3, column = 1, sticky = W)
 
-        ck11 = Checkbutton(interro_return_frm, text = 'Gov. POS', variable = return_gov_pos, 
+        c_ck11 = Checkbutton(conc_return_frm, text = 'Gov. POS', variable = return_gov_pos, 
                           onvalue = 'gp', offvalue = '')
-        ck11.grid(row = 3, column = 2, sticky = W)
+        c_ck11.grid(row = 3, column = 2, sticky = W)
 
-        ck12 = Checkbutton(interro_return_frm, text = 'Gov. function', variable = return_gov_func, 
+        c_ck12 = Checkbutton(conc_return_frm, text = 'Gov. function', variable = return_gov_func, 
                           onvalue = 'gf', offvalue = '')
-        ck12.grid(row = 3, column = 3, sticky = W)
+        c_ck12.grid(row = 3, column = 3, sticky = W)
 
-        ck13 = Checkbutton(interro_return_frm, text = 'Dependent', variable = return_dep, 
+        c_ck13 = Checkbutton(conc_return_frm, text = 'Dependent', variable = return_dep, 
                           onvalue = 'd', offvalue = '')
-        ck13.grid(row = 4, column = 0, sticky = W)
+        c_ck13.grid(row = 4, column = 0, sticky = W)
 
-        ck14 = Checkbutton(interro_return_frm, text = 'Dep. lemma', variable = return_dep_lemma, 
+        c_ck14 = Checkbutton(conc_return_frm, text = 'Dep. lemma', variable = return_dep_lemma, 
                           onvalue = 'dl', offvalue = '')
-        ck14.grid(row = 4, column = 1, sticky = W)
+        c_ck14.grid(row = 4, column = 1, sticky = W)
 
-        ck15 = Checkbutton(interro_return_frm, text = 'Dep. POS', variable = return_dep_pos, 
+        c_ck15 = Checkbutton(conc_return_frm, text = 'Dep. POS', variable = return_dep_pos, 
                           onvalue = 'dp', offvalue = '')
-        ck15.grid(row = 4, column = 2, sticky = W)
+        c_ck15.grid(row = 4, column = 2, sticky = W)
 
-        ck16 = Checkbutton(interro_return_frm, text = 'Dep. function', variable = return_dep_func, 
+        c_ck16 = Checkbutton(conc_return_frm, text = 'Dep. function', variable = return_dep_func, 
                           onvalue = 'df', offvalue = '')
-        ck16.grid(row = 4, column = 3, sticky = W)
+        c_ck16.grid(row = 4, column = 3, sticky = W)
 
         Label(conc_middle_button_frame, text = 'Preset:').grid(row = 7, column = 0, sticky = W)
-        pick_a_query = OptionMenu(conc_middle_button_frame, special_queries, *queries)
-        pick_a_query.config(width = 11, state = DISABLED)
-        pick_a_query.grid(row = 7, column = 0, padx = (60, 0), columnspan = 2, sticky = W)
-        special_queries.trace("w", q_callback)
+        c_pick_a_query = OptionMenu(conc_middle_button_frame, special_queries, *queries)
+        c_pick_a_query.config(width = 11, state = DISABLED)
+        c_pick_a_query.grid(row = 7, column = 0, padx = (60, 0), columnspan = 2, sticky = W)
 
         # Interrogation name
         #Label(conc_middle_button_frame, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
@@ -4682,7 +4667,7 @@ def corpkit_gui():
         #all_text_widgets.append(tmp)
         
         interrobut_conc = Button(conc_middle_button_frame, text = 'Concordance')
-        interrobut_conc.config(command = lambda: runner(interrobut_conc, do_interrogation(conc = True)), state = DISABLED)
+        interrobut_conc.config(command = lambda: runner(interrobut_conc, do_interrogation, conc = True), state = DISABLED)
         interrobut_conc.grid(row = 18, column = 1, sticky = E)
 
         # edit conc lines
@@ -4825,6 +4810,14 @@ def corpkit_gui():
         # disabling because turning index off can cause problems when sorting, etc
         indbut.config(state = DISABLED)
         show_index.trace('w', toggle_filenames)
+
+
+        win = StringVar()
+        win.set('Window')
+        wind_size = OptionMenu(conc_right_button_frame, win, *tuple(('Window', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+        wind_size.config(width = 10)
+        wind_size.grid(row = 2, column = 0, columnspan = 3)
+        win.trace("w", conc_sort)
 
         # possible sort
         sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')

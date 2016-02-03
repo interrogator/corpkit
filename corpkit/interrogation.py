@@ -6,7 +6,7 @@ class Interrogation:
     Stores results of a corpus interrogation, before or after editing.
     """
 
-    def __init__(self, results = None, totals = None, query = None):
+    def __init__(self, results = None, totals = None, query = None, concordance = None):
         """initialise the class"""
         self.results = results
         """pandas `DataFrame` containing counts for each subcorpus"""
