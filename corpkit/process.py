@@ -231,6 +231,7 @@ def tregex_engine(corpus = False,
                     tregex_command.append(corpus)
         # do query
         #try:
+        
         if type(options) != bool:
             if not '-filter' in options:
                 res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).decode(encoding='UTF-8').splitlines()
@@ -321,7 +322,7 @@ def tregex_engine(corpus = False,
         std_last_index = res.index(next(s for s in res \
                         if s.startswith('Parsed representation:')))
     res = res[std_last_index + n:]
-    res = [r.lstrip().rstrip().replace('/', '-slash-') for r in res]
+    res = [r.lstrip().rstrip() for r in res]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
@@ -336,6 +337,7 @@ def tregex_engine(corpus = False,
     res = res[:-1]
     # make unicode and lowercase
     make_tuples = []
+
     if filenaming:
         for index, r in enumerate(res):
             if r.startswith('# /'):
@@ -346,12 +348,12 @@ def tregex_engine(corpus = False,
         if preserve_case:
             pass # res = [str(w, 'utf-8', errors = 'ignore') for w in res]
         else:
-            res = [w.lower() for w in res]
+            res = [w.lower().replace('/', '-slash-') for w in res]
     else:
         if preserve_case:
             pass # res = [(str(t, 'utf-8', errors = 'ignore'), str(w, 'utf-8', errors = 'ignore')) for t, w in res]
         else:
-            res = [(t, w.lower()) for t, w in res]
+            res = [(t, w.lower().replace('/', '-slash-')) for t, w in res]
 
     if lemmatise or return_tuples:
         # CAN'T BE USED WITH ALMOST EVERY OPTION!
@@ -731,3 +733,26 @@ def makesafe(variabletext):
     if is_number(variable_safe):
         variable_safe = 'c' + variable_safe
     return variable_safe
+
+def interrogation_from_conclines(newdata):
+    """make new interrogation result from its conc lines"""
+    from collections import Counter
+    from pandas import DataFrame
+    import corpkit
+    from corpkit import editor
+    results = {}
+    conc = newdata
+    subcorpora = list(set(conc['c']))
+    for subcorpus in subcorpora:
+        counted = Counter(list(conc[conc['c'] == subcorpus]['m']))
+        results[subcorpus] = counted
+
+    the_big_dict = {}
+    unique_results = set([item for sublist in list(results.values()) for item in sublist])
+    for word in unique_results:
+        the_big_dict[word] = [subcorp_result[word] for name, subcorp_result in sorted(results.items(), key=lambda x: x[0])]
+    # turn master dict into dataframe, sorted
+    df = DataFrame(the_big_dict, index = sorted(results.keys())) 
+    df = editor(df, sort_by = 'total', print_info = False)
+    df.concordance = conc
+    return df
