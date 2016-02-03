@@ -16,7 +16,6 @@ def interrogator(corpus,
             preserve_case = False,
             lemmatag = False,
             files_as_subcorpora = False,
-            conc = False,
             only_unique = False,
             random = False,
             only_format_match = False,
@@ -25,17 +24,29 @@ def interrogator(corpus,
             regex_nonword_filter = r'[A-Za-z0-9:_]',
             gramsize = 2,
             split_contractions = False,
+            do_concordancing = False,
             **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
     see corpkit.interrogation.interrogate() for docstring"""
+
+    only_conc = False
+    no_conc = False
+    if do_concordancing is False:
+        no_conc = True
+    if type(do_concordancing) == str and do_concordancing.lower() == 'only':
+        only_conc = True
+        no_conc = False
+
     # store kwargs
     locs = locals()
+    
     if kwargs:
         for k, v in kwargs.items():
             locs[k] = v
         locs.pop('kwargs', None)
 
+    import corpkit
     from interrogation import Interrogation
     from process import tregex_engine
     import pandas as pd
@@ -44,7 +55,6 @@ def interrogator(corpus,
     from other import as_regex
     from process import get_deps
     from time import localtime, strftime
-    thetime = strftime("%H:%M:%S", localtime())
     from textprogressbar import TextProgressBar
     from process import animator
     from dictionaries.word_transforms import wordlist, taglemma
@@ -108,6 +118,7 @@ def interrogator(corpus,
 
     def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
+        speakr = dummy_args.get('speaker', False)
         import os
         from process import tregex_engine
         # first, put the relevant trees into temp file
@@ -119,20 +130,35 @@ def interrogator(corpus,
                               if sent.parse_string is not None])
         to_write.encode('utf-8', errors = 'ignore')
         with open(to_open, "w") as fo:
-            fo.write(to_write)
+            encd = to_write.encode('utf-8', errors = 'ignore') + '\n'
+            fo.write(encd)
         q = list(search.values())[0]
+        ops = ['-o', '-%s' % translated_option]
+        concs = []
         res = tregex_engine(query = q, 
-                            options = ['-o', '-%s' % translated_option], 
+                            options = ops, 
                             corpus = to_open,
                             root = root,
                             preserve_case = True)
+        if not no_conc:
+            ops += ['-w', '-f']
+            whole_res = tregex_engine(query = q, 
+                            options = ops, 
+                            corpus = to_open,
+                            root = root,
+                            preserve_case = True) 
+
+            res = format_tregex(res)
+            whole_res = format_tregex(whole_res, whole = True)
+            concs = make_conc_lines_from_whole_mid(whole_res, res, speakr)
+
         if root:
             root.update()
         os.remove(to_open)
         if countmode:
             return(len(res))
         else:
-            return res
+            return res, concs
 
     def get_stats(sents, **dummy_args):
         """get a bunch of frequencies on interpersonal phenomena"""
@@ -198,6 +224,7 @@ def interrogator(corpus,
 
     def make_conc_lines_from_whole_mid(wholes, middle_column_result, 
                                        speakr = False):
+        import re, os
         if speakr is False:
             speakr = ''
         conc_lines = []
@@ -276,12 +303,17 @@ def interrogator(corpus,
             tag = lemmatag
         return tag
 
-    def format_tregex(results):
+    def format_tregex(results, whole = False):
         """format tregex by show list"""
         if countmode:
             return results
         import re
         done = []
+        
+        if whole:
+            fnames = [x for x, y in results]
+            results = [y for x, y in results]
+
         if 'l' in show or 'pl' in show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
         else:
@@ -332,6 +364,10 @@ def interrogator(corpus,
                     bits.append(lemma)
             joined = '/'.join(bits)
             done.append(joined)
+
+        if whole:
+            done = zip(fnames, done)
+
         return done
 
     def tok_by_list(pattern, list_of_toks, concordancing = False, **kwargs):
@@ -537,8 +573,13 @@ def interrogator(corpus,
 
     # store all results in here
     results = {}
+    count_results = {}
+    conc_results = {}
     # check if just counting
     countmode = 'c' in show
+    if countmode:
+        no_conc = True
+        only_conc = False
     # where we are at in interrogation
     current_iter = 0
 
@@ -637,7 +678,6 @@ def interrogator(corpus,
             if search['t'] == 'any':
                 search['t'] = r'/.?[A-Za-z0-9].?/ !< __'
         elif 'c' in show:
-            count_results = {}
             only_count = True
             translated_option = 'C'
             if type(search['t']) == list:
@@ -676,10 +716,10 @@ def interrogator(corpus,
     #           Print welcome message          #
     ############################################
 
-    if conc:
-        message = 'Concordancing'
-    else:
+    if no_conc:
         message = 'Interrogating'
+    else:
+        message = 'Interrogating and concordancing'
     if kwargs.get('printstatus', True):
         thetime = strftime("%H:%M:%S", localtime())
 
@@ -728,10 +768,9 @@ def interrogator(corpus,
 
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
 
-        if countmode or conc:
-            results[subcorpus_name] = []
-        else:
-            results[subcorpus_name] = Counter()
+        conc_results[subcorpus_name] = []
+        count_results[subcorpus_name] = []
+        results[subcorpus_name] = Counter()
         
         # tregex over subcorpora, not files
         if simple_tregex_mode:
@@ -739,31 +778,29 @@ def interrogator(corpus,
             op = ['-o', '-' + translated_option]                
             result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = preserve_case)
-            
-            current_iter += 1
 
             if not countmode:
-                result = Counter(format_tregex(result))
+                result = format_tregex(result)
 
-            if conc:
-                op.append('-w')
+            if not no_conc:
+                op += ['-w', '-f']
                 whole_result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = preserve_case)
                 
                 if not only_format_match:
-                    whole_result = format_tregex(whole_result)
+                    whole_result = format_tregex(whole_result, whole = True)
 
-                result = make_conc_lines_from_whole_mid(whole_result, result, speakr = False)
-
-                if spelling:
-                    for index, line in enumerate(result):
-                        result[index] = [correct_spelling(b) for b in line]
+                conc_result = make_conc_lines_from_whole_mid(whole_result, result, speakr = False)
 
             if countmode:
-                results[subcorpus_name].append(result)
+                count_results[subcorpus_name] += result            
             else:
+                result = Counter(result)
                 results[subcorpus_name] += result
+                if not no_conc:
+                    conc_results[subcorpus_name] += conc_result
 
+            current_iter += 1
             if kwargs.get('paralleling', None) is not None:
                 tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
             else:
@@ -774,6 +811,7 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens or slow_tregex
         else:
             for f in files:
+                slow_treg_speaker_guess = kwargs.get('outname', False)
                 if corpus.datatype == 'parse':
                     with open(f.path, 'r') as data:
                         data = data.read()
@@ -785,62 +823,73 @@ def interrogator(corpus,
                             continue
                         if just_speakers:  
                             sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                            if len(just_speakers) == 1:
+                                slow_treg_speaker_guess = just_speakers[0]
                             if not sents:
                                 continue
                         else:
                             sents = corenlp_xml.sentences
 
-                        res = searcher(sents, search = search, show = show,
+                        res, conc_res = searcher(sents, search = search, show = show,
                             dep_type = dep_type,
                             exclude = exclude,
                             excludemode = excludemode,
                             searchmode = searchmode,
                             lemmatise = False,
                             case_sensitive = case_sensitive,
-                            concordancing = conc,
-                            only_format_match = only_format_match)
+                            do_concordancing = do_concordancing,
+                            only_format_match = only_format_match,
+                            speaker = slow_treg_speaker_guess)
                         
                         if res == 'Bad query':
                             return 'Bad query'
-
-                        if searcher == slow_tregex and not countmode:
-                            res = format_tregex(res)
 
                 elif corpus.datatype == 'tokens':
                     import pickle
                     with codecs.open(f.path, "rb") as fo:
                         data = pickle.load(fo)
-                    res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
-                        concordancing = conc)
-                    if conc:
-                        for index, line in enumerate(res):
+                    if not only_conc:
+                        res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
+                        concordancing = False)
+                    if not no_conc:
+                        conc_res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
+                        concordancing = True)
+                    if not no_conc:
+                        for index, line in enumerate(conc_res):
                             line.insert(0, '')
 
                 elif corpus.datatype == 'plaintext':
                     with codecs.open(f.path, 'rb', encoding = 'utf-8') as data:
                         data = data.read()
-                        res = searcher(list(search.values())[0], data, 
-                            concordancing = conc)
-                        if conc:
-                            for index, line in enumerate(res):
+                        if not only_conc:
+                            res = searcher(list(search.values())[0], data, 
+                            concordancing = False)
+                        if not no_conc:
+                            conc_res = searcher(list(search.values())[0], data, 
+                            concordancing = True)
+                        if not no_conc:
+                            for index, line in enumerate(conc_res):
                                 line.insert(0, '')
 
                 if countmode:
-                    results[subcorpus_name] += res
+                    count_results[subcorpus_name] += res
                     continue
             
                 # add filename and do lowercasing for conc
-                if conc:
-                    for index, line in enumerate(res):
-                        line.insert(0, f.name)
+                if not no_conc:
+                    for index, line in enumerate(conc_res):
+                        if searcher != slow_tregex:
+                            line.insert(0, f.name)
+                        else:
+                            line[0] = f.name
                         if not preserve_case:
                             line = [b.lower() for b in line]
                         if spelling:
                             line = [correct_spelling(b) for b in line]
-                        results[subcorpus_name] += [line]
+                        conc_results[subcorpus_name] += [line]
 
                 # do lowercasing and spelling
-                else:
+                if not only_conc:
                     if not preserve_case:
                         res = [r.lower() for r in res]
                     if spelling:
@@ -864,10 +913,9 @@ def interrogator(corpus,
     #     Get concordances into DataFrame      #
     ############################################
 
-    if conc:
+    if not no_conc:
         all_conc_lines = []
-        for sc_name, resu in sorted(results.items()):
-
+        for sc_name, resu in sorted(conc_results.items()):
             if only_unique:
                 unique_results = uniquify(resu)
             else:
@@ -894,38 +942,43 @@ def interrogator(corpus,
             from random import shuffle
             shuffle(all_conc_lines)
 
-        df = pd.concat(all_conc_lines, axis = 1).T
+        conc_df = pd.concat(all_conc_lines, axis = 1).T
 
         # not doing anything yet --- this is for multimodal concordancing
         add_links = False
         if not add_links:
-            df.columns = ['c', 'f', 's', 'l', 'm', 'r']
+            conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r']
         else:
-            df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
+            conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
 
-        if all(x == '' for x in list(df['s'].values)):
-            df.drop('s', axis = 1, inplace = True)
+        if all(x == '' for x in list(conc_df['s'].values)):
+            conc_df.drop('s', axis = 1, inplace = True)
 
-        if kwargs.get('note'):
-            kwargs['note'].progvar.set(100)
+        #if kwargs.get('note'):
+        #    kwargs['note'].progvar.set(100)
 
-        if kwargs.get('printstatus', True):
-            thetime = strftime("%H:%M:%S", localtime())
-            finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(df.index))
-            print(finalstring)
+        #if kwargs.get('printstatus', True):
+        #    thetime = strftime("%H:%M:%S", localtime())
+        #    finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(conc_df.index))
+        #    print(finalstring)
 
         from interrogation import Concordance
-        output = Concordance(df)
-        output.query = locs
-        if quicksave:
-            interro.save()
-        return output 
+        output = Concordance(conc_df)
+        if only_conc:
+            output.query = locs
+            if quicksave:
+                output.save()
+            return output
+
+        #output.query = locs
+
+        #return output 
 
     ############################################
     #     Get interrogation into DataFrame     #
     ############################################
 
-    else:
+    if not only_conc:
         if countmode:
             df = Series({k: sum(v) for k, v in sorted(results.items())})
             tot = df.sum()
@@ -950,11 +1003,10 @@ def interrogator(corpus,
                 if not files_as_subcorpora:
                     if not kwargs.get('df1_always_df'):
                         df = Series(df.ix[0])
-                        df.sort(ascending = False)
+                        df.sort_values(ascending = False, inplace = True)
                         tot = df.sum()
                         numentries = len(df.index)
                         total_total = tot
-
 
         # sort by total
         if type(df) == pd.core.frame.DataFrame:
@@ -974,8 +1026,11 @@ def interrogator(corpus,
                 finalstring += ' %d unique results, %d total occurrences.' % (numentries, total_total)
             print(finalstring)
 
-        interro = Interrogation(results = df, totals = tot, query = locs)
-        
+        if not no_conc:
+            interro = Interrogation(results = df, totals = tot, query = locs, concordance = output)
+        else:
+            interro = Interrogation(results = df, totals = tot, query = locs)
+
         if quicksave:
             interro.save()
         

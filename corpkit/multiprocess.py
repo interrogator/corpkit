@@ -287,8 +287,14 @@ def pmultiquery(corpus,
     #for job in jobs: job.join()
     #results = [result_queue.get() for mc in funs]
 
-    # turn list into dict of results, make query and total branches,
-    # save and return
+    import corpkit
+    from interrogation import Concordance
+    if kwargs.get('do_concordancing') == 'only':
+        concs = pd.concat([x for x in res])
+        thetime = strftime("%H:%M:%S", localtime())
+        print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
+        return Concordance(concs)
+
     if not all(type(i.results) == pd.core.series.Series for i in res):
         out = {}
         for interrog, d in zip(res, ds):
@@ -297,7 +303,6 @@ def pmultiquery(corpus,
                 interrog.query.pop(unpicklable, None)
             out[interrog.query['outname']] = interrog
     
-        # could be wrong for unstructured corpora?
         if quicksave:
             fullpath = os.path.join('saved_interrogations', quicksave)
             while os.path.isdir(fullpath):
@@ -344,8 +349,12 @@ def pmultiquery(corpus,
             tot = out.ix['Total-tmp']
             out = out[tot.argsort()[::-1]]
             out = out.drop('Total-tmp', axis = 0)
-
         out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
+        if kwargs.get('do_concordancing') is True:
+            concs = pd.concat([x.concordance for x in res], ignore_index = True)
+            concs = concs.sort_values(by='c')
+            concs = concs.reset_index(drop=True)
+            out.concordance = Concordance(concs)
         thetime = strftime("%H:%M:%S", localtime())
         if terminal:
             with terminal.location(0, terminal.height):

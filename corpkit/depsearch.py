@@ -5,14 +5,15 @@ def dep_searcher(sents,
                  show = 'w',
                  dep_type = 'collapsed-ccprocessed-dependencies',
                  regex_nonword_filter = r'[A-Za-z0-9:_]',
-                 concordancing = False,
+                 do_concordancing = False,
                  exclude = False,
                  excludemode = 'any',
                  searchmode = 'all',
                  lemmatise = False,
                  case_sensitive = False,
                  progbar = False,
-                 only_format_match = False):
+                 only_format_match = False,
+                 speaker = False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -235,6 +236,7 @@ def dep_searcher(sents,
         return lks
 
     result = []
+    conc_result = []
     numdone = 0
 
     for s in sents:
@@ -243,8 +245,8 @@ def dep_searcher(sents,
         tokens = s.tokens
         lks = get_matches_from_sent(s, search, deps, tokens, dep_type, mode = searchmode)
 
-        if not concordancing:
-            lks = list(set([x for x in lks if x and re.search(regex_nonword_filter, x.word)]))
+        #if not concordancing:
+        #    lks = list(set([x for x in lks if x and re.search(regex_nonword_filter, x.word)]))
 
         if exclude is not False:
             to_remove = get_matches_from_sent(s, exclude, deps, tokens, dep_type, mode = excludemode)
@@ -263,7 +265,7 @@ def dep_searcher(sents,
             result.append(len(lks))
             continue
 
-        if concordancing:
+        if do_concordancing:
             for lk in lks: # for each concordance middle part
                 one_result = []
                 if not lk:
@@ -336,156 +338,158 @@ def dep_searcher(sents,
 
                 for bit in start, middle, end:
                     conc_line.append(bit)
-                result.append(conc_line)
-        else:
-            # figure out what to show
-            for lk in lks:
-                single_result = {}
-                if not lk:
-                    continue
-                if 'w' in show:
-                    single_result['w'] = 'none'
-                    if lemmatise:
-                        single_result['w'] = lk.lemma
-                    else:
-                        single_result['w'] = lk.word
-                if 'l' in show:
-                    from dictionaries.word_transforms import wordlist
-                    if lk.lemma in list(wordlist.keys()):
-                        lem = wordlist[lk.lemma]
-                    else:
-                        lem = lk.lemma
-                    single_result['l'] = lem
-                if 'p' in show:
-                    single_result['p'] = 'none'
-                    postag = lk.pos
-                    if lemmatise:
-                        from dictionaries.word_transforms import taglemma
-                        if postag.lower() in list(taglemma.keys()):
-                            single_result['p'] = taglemma[postag.lower()]
-                        else:
-                            single_result['p'] = postag.lower()
-                    else:
-                        single_result['p'] = postag
-                    if not single_result['p']:
-                        single_result['p'] == 'none'
+                conc_result.append(conc_line)
 
-                if 'pl' in show:
-                    single_result['pl'] = 'none'
-                    postag = lk.pos
+        # figure out what to show
+        for lk in lks:
+            single_result = {}
+            if not lk:
+                continue
+            if 'w' in show:
+                single_result['w'] = 'none'
+                if lemmatise:
+                    single_result['w'] = lk.lemma
+                else:
+                    single_result['w'] = lk.word
+            if 'l' in show:
+                from dictionaries.word_transforms import wordlist
+                if lk.lemma in list(wordlist.keys()):
+                    lem = wordlist[lk.lemma]
+                else:
+                    lem = lk.lemma
+                single_result['l'] = lem
+            if 'p' in show:
+                single_result['p'] = 'none'
+                postag = lk.pos
+                if lemmatise:
                     from dictionaries.word_transforms import taglemma
                     if postag.lower() in list(taglemma.keys()):
-                        single_result['pl'] = taglemma[postag.lower()]
+                        single_result['p'] = taglemma[postag.lower()]
                     else:
-                        single_result['pl'] = postag.lower()
-                    if not single_result['pl']:
-                        single_result['pl'] == 'none'
+                        single_result['p'] = postag.lower()
+                else:
+                    single_result['p'] = postag
+                if not single_result['p']:
+                    single_result['p'] == 'none'
 
-                if 'f' in show:
-                    single_result['f'] = 'none'
-                    for i in deps.links:
-                        if i.dependent.idx == lk.id:
-                            single_result['f'] = i.type.rstrip(',')
-                            break
-                    if single_result['f'] == '':
-                        single_result['f'] = 'root'
+            if 'pl' in show:
+                single_result['pl'] = 'none'
+                postag = lk.pos
+                from dictionaries.word_transforms import taglemma
+                if postag.lower() in list(taglemma.keys()):
+                    single_result['pl'] = taglemma[postag.lower()]
+                else:
+                    single_result['pl'] = postag.lower()
+                if not single_result['pl']:
+                    single_result['pl'] == 'none'
 
-                if 'g' in show:
-                    single_result['g'] = 'none'
-                    for i in deps.links:
-                        if i.dependent.idx == lk.id:
-                            if s.get_token_by_id(i.governor.idx):
-                                if lemmatise:                          
-                                        single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
-                                else:
-                                    single_result['g'] = i.governor.text
+            if 'f' in show:
+                single_result['f'] = 'none'
+                for i in deps.links:
+                    if i.dependent.idx == lk.id:
+                        single_result['f'] = i.type.rstrip(',')
+                        break
+                if single_result['f'] == '':
+                    single_result['f'] = 'root'
+
+            if 'g' in show:
+                single_result['g'] = 'none'
+                for i in deps.links:
+                    if i.dependent.idx == lk.id:
+                        if s.get_token_by_id(i.governor.idx):
+                            if lemmatise:                          
+                                    single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
                             else:
-                                single_result['g'] = 'root'
-                            break
+                                single_result['g'] = i.governor.text
+                        else:
+                            single_result['g'] = 'root'
+                        break
 
-                if 'd' in show:
-                    single_result['d'] = 'none'
-                    for i in deps.links:
-                        if i.governor.idx == lk.id:
-                            if s.get_token_by_id(i.dependent.idx):       
-                                if lemmatise:
-                                    single_result['d'] = s.get_token_by_id(i.dependent.idx).lemma
-                                else:
-                                    single_result['d'] = i.dependent.text
-                            break
-
-                if 'gl' in show:
-                    single_result['gl'] = 'none'
-                    for i in deps.links:
-                        if i.dependent.idx == lk.id:
-                            if s.get_token_by_id(i.governor.idx):
-                                single_result['gl'] = s.get_token_by_id(i.governor.idx).lemma
+            if 'd' in show:
+                single_result['d'] = 'none'
+                for i in deps.links:
+                    if i.governor.idx == lk.id:
+                        if s.get_token_by_id(i.dependent.idx):       
+                            if lemmatise:
+                                single_result['d'] = s.get_token_by_id(i.dependent.idx).lemma
                             else:
-                                single_result['gl'] = 'root'
-                            break
+                                single_result['d'] = i.dependent.text
+                        break
 
-                if 'dl' in show:
-                    single_result['dl'] = 'none'
-                    for i in deps.links:
-                        if i.governor.idx == lk.id:
-                            if s.get_token_by_id(i.dependent.idx):       
-                                single_result['dl'] = s.get_token_by_id(i.dependent.idx).lemma
-                            break
+            if 'gl' in show:
+                single_result['gl'] = 'none'
+                for i in deps.links:
+                    if i.dependent.idx == lk.id:
+                        if s.get_token_by_id(i.governor.idx):
+                            single_result['gl'] = s.get_token_by_id(i.governor.idx).lemma
+                        else:
+                            single_result['gl'] = 'root'
+                        break
 
-                if 'gp' in show:
-                    single_result['gp'] = 'none'
-                    for i in deps.links:
-                        if i.dependent.idx == lk.id:
-                            if s.get_token_by_id(i.governor.idx):       
-                                single_result['gp'] = s.get_token_by_id(i.governor.idx).pos
-                            break
+            if 'dl' in show:
+                single_result['dl'] = 'none'
+                for i in deps.links:
+                    if i.governor.idx == lk.id:
+                        if s.get_token_by_id(i.dependent.idx):       
+                            single_result['dl'] = s.get_token_by_id(i.dependent.idx).lemma
+                        break
 
-                if 'dp' in show:
-                    single_result['dp'] = 'none'
-                    for i in deps.links:
-                        if i.governor.idx == lk.id:
-                            if s.get_token_by_id(i.dependent.idx):       
-                                single_result['dp'] = s.get_token_by_id(i.dependent.idx).pos
-                            break
+            if 'gp' in show:
+                single_result['gp'] = 'none'
+                for i in deps.links:
+                    if i.dependent.idx == lk.id:
+                        if s.get_token_by_id(i.governor.idx):       
+                            single_result['gp'] = s.get_token_by_id(i.governor.idx).pos
+                        break
 
-                if 'df' in show:
-                    single_result['df'] = 'none'
-                    for i in deps.links:
-                        if i.governor.idx == lk.id:
-                            single_result['df'] = i.type
-                            break  
+            if 'dp' in show:
+                single_result['dp'] = 'none'
+                for i in deps.links:
+                    if i.governor.idx == lk.id:
+                        if s.get_token_by_id(i.dependent.idx):       
+                            single_result['dp'] = s.get_token_by_id(i.dependent.idx).pos
+                        break
 
-                if 'gf' in show:
-                    single_result['gf'] = 'none'
-                    for i in deps.links:
-                        # if the result is the dependent, get the governor, find where
-                        # it is a dependent, then gt the type
-                        if i.dependent.idx == lk.id:
-                            gv = next(x for x in deps.links if x.dependent.idx == i.governor.idx)
-                            single_result['gf'] = gv.type
-                            break                
+            if 'df' in show:
+                single_result['df'] = 'none'
+                for i in deps.links:
+                    if i.governor.idx == lk.id:
+                        single_result['df'] = i.type
+                        break  
 
-                if 'r' in show:
+            if 'gf' in show:
+                single_result['gf'] = 'none'
+                for i in deps.links:
+                    # if the result is the dependent, get the governor, find where
+                    # it is a dependent, then gt the type
+                    if i.dependent.idx == lk.id:
+                        gv = next(x for x in deps.links if x.dependent.idx == i.governor.idx)
+                        single_result['gf'] = gv.type
+                        break                
 
-                    all_lks = [l for l in deps.links]
-                    distance = distancer(all_lks, lk)
-                    if distance is not False and distance is not None:
-                        single_result['r'] = str(distance)
+            if 'r' in show:
 
-                if 'i' in show:
-                    single_result['i'] = str(lk.id)
+                all_lks = [l for l in deps.links]
+                distance = distancer(all_lks, lk)
+                if distance is not False and distance is not None:
+                    single_result['r'] = str(distance)
 
-                if 'c' not in show:
-                    
-                    # add them in order
-                    out = []
-                    for i in show:
-                        out.append(single_result[i])
+            if 'i' in show:
+                single_result['i'] = str(lk.id)
 
-                    out = [i.replace('/', '-slash-') for i in out]
-                    result.append('/'.join(out))
+            if 'c' not in show:
+                
+                # add them in order
+                out = []
+                for i in show:
+                    out.append(single_result[i])
+
+                out = [i.replace('/', '-slash-') for i in out]
+                result.append('/'.join(out))
     
     if 'c' in show:
         result = sum(result)
 
-    return result
+    if type(do_concordancing) == str and do_concordancing.lower() == 'only':
+        result = []
+    return result, conc_result

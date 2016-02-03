@@ -1,7 +1,7 @@
 from __future__ import print_function
 import corpkit
 
-class Interrogation:
+class Interrogation(object):
     """
     Stores results of a corpus interrogation, before or after editing.
     """
@@ -14,6 +14,9 @@ class Interrogation:
         """pandas `Series` containing summed results"""
         self.query = query
         """`dict` containing values that generated the result"""
+        self.concordance = concordance
+        """pandas `DataFrame` containing concordance lines"""
+        self.__initialised = True
 
     def __str__(self):
         st = 'Corpus interrogation: %s\n\n' % (self.query['path'])
@@ -21,6 +24,18 @@ class Interrogation:
 
     def __repr__(self):
         return "<corpkit.interrogation.Interrogation instance: %d total results>" % (self.totals.sum())
+
+    def recalc(self, inplace = False):
+        """Make new Interrogation object from (modified) concordance lines"""
+        from process import interrogation_from_conclines
+        newdata = interrogation_from_conclines(self.concordance)
+        if not inplace:
+            return newdata
+        else:
+            self.results = newdata.results
+            self.totals = newdata.totals
+            self.concordance = newdata.concordance
+            self.query = self.query
 
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
@@ -392,6 +407,22 @@ class Concordance(pd.core.frame.DataFrame):
         """
         from other import concprinter
         concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
+
+    def shuffle(self, inplace = False):
+        """Shuffle concordance lines
+
+        :param inplace: Modify current object, or create a new one
+        :type inplace: bool
+        """
+        import random
+        index = list(self.index)
+        random.shuffle(index)
+        shuffled = self.ix[index]
+        shuffled.reset_index()
+        if inplace:
+            self = shuffled
+        else:
+            return shuffled
 
 class Interrodict(dict):
     """

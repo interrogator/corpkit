@@ -326,7 +326,9 @@ class Corpus:
         """
 
         from interrogator import interrogator
-        return interrogator(self, conc = True, *args, **kwargs)
+        kwargs.pop('do_concordancing', None)
+        kwargs.pop('conc', None)
+        return interrogator(self, do_concordancing = 'only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
         """Interrogate, relativise, then plot, with very little customisability. A demo function.
@@ -502,7 +504,7 @@ class Datalist(object):
     def concordance(self, *args, **kwargs):
         """interrogate the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
         from interrogator import interrogator
-        return interrogator([s for s in self], conc = True, *args, **kwargs)
+        return interrogator([s for s in self], do_concordancing = 'only', *args, **kwargs)
 
 from corpus import Datalist
 class Corpora(Datalist):
