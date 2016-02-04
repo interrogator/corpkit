@@ -25,6 +25,7 @@ def interrogator(corpus,
             gramsize = 2,
             split_contractions = False,
             do_concordancing = False,
+            maxconc = 9999,
             **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
@@ -37,6 +38,9 @@ def interrogator(corpus,
     if type(do_concordancing) == str and do_concordancing.lower() == 'only':
         only_conc = True
         no_conc = False
+
+    # iteratively count conc lines
+    numconc = 0
 
     # store kwargs
     locs = locals()
@@ -220,7 +224,7 @@ def interrogator(corpus,
             if kwargs.get('note', False):
                 kwargs['note'].progvar.set((numdone * 100.0 / total_files / denom) + startnum)
         os.remove(to_open)
-        return statsmode_results
+        return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes, middle_column_result, 
                                        speakr = False):
@@ -634,6 +638,9 @@ def interrogator(corpus,
                 optiontext = 'General statistics'
                 global numdone
                 numdone = 0
+                no_conc = True
+                only_conc = False
+                do_concordancing = False
             else:
                 from depsearch import dep_searcher
                 searcher = dep_searcher
@@ -745,7 +752,9 @@ def interrogator(corpus,
     par_args = {'printstatus': kwargs.get('printstatus', True),
                 'root': root, 
                 'note': note,
-                'length': total_files}
+                'length': total_files,
+                'startnum': kwargs.get('startnum'),
+                'denom': kwargs.get('denominator', 1)}
 
     term = None
     if kwargs.get('paralleling', None) is not None:
@@ -793,7 +802,7 @@ def interrogator(corpus,
                 conc_result = make_conc_lines_from_whole_mid(whole_result, result, speakr = False)
 
             if countmode:
-                count_results[subcorpus_name] += result            
+                count_results[subcorpus_name] += [result]            
             else:
                 result = Counter(result)
                 results[subcorpus_name] += result
@@ -802,7 +811,7 @@ def interrogator(corpus,
 
             current_iter += 1
             if kwargs.get('paralleling', None) is not None:
-                tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
             else:
                 tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
 
@@ -872,34 +881,38 @@ def interrogator(corpus,
                                 line.insert(0, '')
 
                 if countmode:
-                    count_results[subcorpus_name] += res
-                    continue
-            
-                # add filename and do lowercasing for conc
-                if not no_conc:
-                    for index, line in enumerate(conc_res):
-                        if searcher != slow_tregex:
-                            line.insert(0, f.name)
-                        else:
-                            line[0] = f.name
-                        if not preserve_case:
-                            line = [b.lower() for b in line]
-                        if spelling:
-                            line = [correct_spelling(b) for b in line]
-                        conc_results[subcorpus_name] += [line]
+                    count_results[subcorpus_name] += [res]
+                else:
+                    # add filename and do lowercasing for conc
+                    if not no_conc:
+                        for index, line in enumerate(conc_res):
+                            if searcher != slow_tregex:
+                                line.insert(0, f.name)
+                            else:
+                                line[0] = f.name
+                            if not preserve_case:
+                                line = [b.lower() for b in line]
+                            if spelling:
+                                line = [correct_spelling(b) for b in line]
+                            conc_results[subcorpus_name] += [line]
 
-                # do lowercasing and spelling
-                if not only_conc:
-                    if not preserve_case:
-                        res = [r.lower() for r in res]
-                    if spelling:
-                        res = [correct_spelling(r) for r in res]
-                    results[subcorpus_name] += Counter(res)
+                    # do lowercasing and spelling
+                    if not only_conc:
+                        if not preserve_case:
+                            if not statsmode:
+                                res = [r.lower() for r in res]
+                        if spelling:
+                            if not statsmode:
+                                res = [correct_spelling(r) for r in res]
+                        #if not statsmode:
+                        results[subcorpus_name] += Counter(res)
+                        #else:
+                        #results[subcorpus_name] += res
 
                 if not statsmode:
                     current_iter += 1
                     if kwargs.get('paralleling', None) is not None:
-                        tstr = '%s%d/%d' % (outn, current_iter + 2, total_files)
+                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
                     else:
                         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
                     animator(p, current_iter, tstr, **par_args)
@@ -980,7 +993,7 @@ def interrogator(corpus,
 
     if not only_conc:
         if countmode:
-            df = Series({k: sum(v) for k, v in sorted(results.items())})
+            df = Series({k: sum(v) for k, v in sorted(count_results.items())})
             tot = df.sum()
         else:
             the_big_dict = {}
