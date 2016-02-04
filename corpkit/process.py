@@ -664,13 +664,18 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     Animates progress bar in unique position in terminal
     Multiple progress bars not supported in jupyter yet.
     """
-
+    
+    # add startnum
+    start_at = kwargs.get('startnum', 0)
+    if start_at is None:
+        start_at = 0.0
+    denominator = kwargs.get('denom', 1)
     if kwargs.get('note'):
         if count is None:
             perc_done = 0.0
         else:
-            perc_done = count * 100.0 / float(length)
-        kwargs['note'].progvar.set(perc_done)
+            perc_done = (count * 100.0 / float(length)) / float(denominator)
+        kwargs['note'].progvar.set(start_at + perc_done)
         kwargs['root'].update()
         return
 
