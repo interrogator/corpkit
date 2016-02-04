@@ -157,7 +157,7 @@ class Corpus:
         :returns: None
         """  
         from interrogator import interrogator
-        self.features = interrogator(self.path, 's', 'any').results
+        self.features = interrogator(self, 's', 'any').results
         print('\nFeatures defined. See .features attribute ...') 
 
     def interrogate(self, search, *args, **kwargs):
