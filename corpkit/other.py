@@ -346,11 +346,11 @@ def new_project(name, loc = '.', **kwargs):
         corpath = os.path.dirname(corpkit.__file__)
         corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
         baspat = os.path.dirname(corpath)
-        dicpath = os.path.join(baspat, 'dictionaries')
+        dicpath = os.path.join(corpath, 'dictionaries')
         try:
-            shutil.copy(os.path.join(dicpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
+            shutil.copy(os.path.join(dicpath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
         except:
-            shutil.copy(resource_path('bnc.p'), os.path.join(fullpath, 'dictionaries'))
+            shutil.copy(resource_path(os.path.join('dictionaries', 'bnc.p')), os.path.join(fullpath, 'dictionaries'))
 
     # if not GUI
     if not root:
