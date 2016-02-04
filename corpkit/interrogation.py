@@ -19,7 +19,7 @@ class Interrogation(object):
         self.__initialised = True
 
     def __str__(self):
-        st = 'Corpus interrogation: %s\n\n' % (self.query['path'])
+        st = 'Corpus interrogation: %s\n\n' % (self.query['corpus'].name)
         return st
 
     def __repr__(self):
@@ -424,7 +424,8 @@ class Concordance(pd.core.frame.DataFrame):
         else:
             return shuffled
 
-class Interrodict(dict):
+from collections import OrderedDict
+class Interrodict(OrderedDict):
     """
     A class for interrogations that do not fit in a single-indexed DataFrame.
 
@@ -435,7 +436,16 @@ class Interrodict(dict):
         from process import makesafe
         for k, v in list(data.items()):
             setattr(self, makesafe(k), v)
-        dict.__init__(self, data)
+        super(Interrodict, self).__init__(data)
+
+    def __repr__(self):
+        return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
+
+    def __str__(self):
+        return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
+
+    #def __str__(self):
+    #    return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
 
     def edit(self, *args, **kwargs):
         """Edit each value with :func:`~corpkit.interrogation.Interrogation.edit`.
