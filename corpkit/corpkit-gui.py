@@ -20,9 +20,10 @@ import string
 import time
 import os
 import threading
+import tkMessageBox as messagebox
+import tkSimpleDialog as simpledialog
+import tkFileDialog as filedialog
 try:
-    import tkMessageBox as messagebox
-    import tkSimpleDialog as simpledialog
     import Tkinter as tkinter
     from Tkinter import *
     from ttk import Progressbar, Style
@@ -32,16 +33,12 @@ try:
 #    #from Tkinter import *
 #    #from Tkinter.ttk import Progressbar, Style
 except ImportError:
-    import tkMessageBox as messagebox
     import tkinter
     from tkinter import * 
     from tkinter.ttk import Progressbar, Style
     from tkinter import _setit
-    from tkinter import messagebox
 from PIL import Image
 from PIL import ImageTk
-# obsolete:
-from process import get_gui_resource_dir
 
 # determine path to gui resources:
 py_script = False
@@ -495,9 +492,8 @@ def corpkit_gui():
                 'Get ngrams from trees':                            'n',
                 'Get part-of-speech tag':                           'p',
                 'Regular expression search':                        'r',
-                'Simple search string search':                      's',
                 'Get tokens matching regex':                        't',
-                'Get stats':                                        'v',
+                'Get stats':                                        's',
                 'Get words':                                        'w',
                 'Get tokens by regex':                              'h',
                 'Get tokens matching list':                         'e'}
@@ -577,7 +573,10 @@ def corpkit_gui():
             """runs the command of a button, disabling the button till it is done,
             whether it returns early or not"""
             try:
-                command(conc)
+                if button == interrobut or button == interrobut_conc:
+                    command(conc)
+                else:
+                    command()
             except Exception as err:
                 import traceback
                 print(traceback.format_exc())
@@ -645,8 +644,7 @@ def corpkit_gui():
             return dict_obj
 
         def update_spreadsheet(frame_to_update, df_to_show = None, model = False, 
-                               height = 140, width = False, indexwidth = 70,
-                               just_default_sort = False):
+                               height = 140, width = False, indexwidth = 70):
             """refresh a spreadsheet"""
             from collections import OrderedDict
             import pandas
@@ -662,53 +660,50 @@ def corpkit_gui():
                 kwarg['width'] = width
             if model and not df_to_show:
                 df_to_show = make_df_from_model(model)
-                if need_make_totals:
-                    df_to_show = make_df_totals(df_to_show)
+                #if need_make_totals:
+                df_to_show = make_df_totals(df_to_show)
             if df_to_show is not None:
-                if just_default_sort is False:    
-                    # for abs freq, make total
-                    model = TableModel()
-                    df_to_show = pandas.DataFrame(df_to_show, dtype = object)
-                    if need_make_totals(df_to_show):
-                        df_to_show = make_df_totals(df_to_show)
-                    
-                    # turn pandas into dict
-                    raw_data = df_to_show.to_dict()
-                    
-                    # convert to int if possible
-                    raw_data = convert_pandas_dict_to_ints(raw_data)
-                            
-                    table = TableCanvas(frame_to_update, model=model, 
-                                        showkeynamesinheader=True, 
-                                        height = height,
-                                        rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(), **kwarg)
-                    table.createTableFrame()
-                    model = table.model
-                    model.importDict(raw_data)
-                    # move columns into correct positions
-                    for index, name in enumerate(list(df_to_show.index)):
-                        model.moveColumn(model.getColumnIndex(name), index)
-                    table.createTableFrame()
-                    # sort the rows
-                    if 'tkintertable-order' in list(df_to_show.index):
-                        table.sortTable(columnName = 'tkintertable-order')
-                        ind = model.columnNames.index('tkintertable-order')
-                        try:
-                            model.deleteColumn(ind)
-                        except:
-                            pass
-                    else:
-                        #nm = os.path.basename(corpus_fullpath.get().rstrip('/'))
-                        #table.sortTable(columnIndex = 0, reverse = 1)
+                # for abs freq, make total
+                model = TableModel()
+                df_to_show = pandas.DataFrame(df_to_show, dtype = object)
+                #if need_make_totals(df_to_show):
+                df_to_show = make_df_totals(df_to_show)
+                
+                # turn pandas into dict
+                raw_data = df_to_show.to_dict()
+                
+                # convert to int if possible
+                raw_data = convert_pandas_dict_to_ints(raw_data)
+                        
+                table = TableCanvas(frame_to_update, model=model, 
+                                    showkeynamesinheader=True, 
+                                    height = height,
+                                    rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(), **kwarg)
+                table.createTableFrame()
+                model = table.model
+                model.importDict(raw_data)
+                # move columns into correct positions
+                for index, name in enumerate(list(df_to_show.index)):
+                    model.moveColumn(model.getColumnIndex(name), index)
+                table.createTableFrame()
+                # sort the rows
+                if 'tkintertable-order' in list(df_to_show.index):
+                    table.sortTable(columnName = 'tkintertable-order')
+                    ind = model.columnNames.index('tkintertable-order')
+                    try:
+                        model.deleteColumn(ind)
+                    except:
                         pass
+                if 'Total' in list(df_to_show.index):
+                    table.sortTable(columnName = 'Total', reverse = True)
+                elif len(df_to_show.index) == 1:
+                    table.sortTable(columnIndex = 0, reverse = True)
+
                 else:
-                    table = TableCanvas(frame_to_update, model=model, 
-                                        showkeynamesinheader=True, 
-                                        height = height,
-                                        rowheaderwidth=row_label_width.get(), cellwidth=cell_width.get(),
-                                        **kwarg)
-                    table.createTableFrame()
-                    table.sortTable(columnName = 'Total', reverse = direct())
+                    #nm = os.path.basename(corpus_fullpath.get().rstrip('/'))
+                    ind = len(df_to_show.columns) - 1
+                    table.sortTable(columnIndex = ind, reverse = 1)
+                    #pass
 
                 table.redrawTable()
                 editor_tables[frame_to_update] = model
@@ -727,7 +722,7 @@ def corpkit_gui():
                 except:
                     direct()           
                     table.sortTable(reverse = direct())
-                table.createTableFrame()            # sorts by total freq, ok for now
+                table.createTableFrame()
                 table.redrawTable()
             else:
                 table = TableCanvas(frame_to_update, height = height, cellwidth=cell_width.get(), 
@@ -789,7 +784,7 @@ def corpkit_gui():
                                 return lst_of_matches
                             asr = as_regex(lst_of_matches, 
                                            boundaries = the_bound, 
-                                           case_sensitive = case_sensitive.get(), 
+                                           case_sensitive = bool(case_sensitive.get()), 
                                            inverse = False)
                             query = divided.group(1) + asr + divided.group(5)
                         except:
@@ -854,7 +849,8 @@ def corpkit_gui():
                 #csv_data.append('\n')
                 #writer.writerow(recs[row])
             csv = '\n'.join(csv_data)
-            newdata = pandas.read_csv(StringIO(csv), index_col=0, header=0)
+            uc = unicode(csv, errors = 'ignore')
+            newdata = pandas.read_csv(StringIO(uc), index_col=0, header=0)
             newdata = pandas.DataFrame(newdata, dtype = object)
             newdata = newdata.T
             newdata = newdata.drop('Total', errors = 'ignore')
@@ -1001,7 +997,7 @@ def corpkit_gui():
             if name_box_text.lower() == 'untitled' or name_box_text == '':
                 c = 0
                 the_name = '%s-%s' % (type_of_data, str(c).zfill(2))
-                while the_name in list(all_interrogations.keys()):
+                while any(x.startswith(the_name) for x in list(all_interrogations.keys())):
                     c += 1
                     the_name = '%s-%s' % (type_of_data, str(c).zfill(2))
             else:
@@ -1013,6 +1009,9 @@ def corpkit_gui():
             import pandas
             currentname = name_of_interro_spreadsheet.get()
             # get index of current index
+            if not currentname:
+                prev.configure(state=DISABLED)
+                return
             ind = list(all_interrogations.keys()).index(currentname)
             # if it's higher than zero
             if ind > 0:
@@ -1098,7 +1097,7 @@ def corpkit_gui():
             """replaces a namedtuple results/totals with newdata
                --- such a hack, should upgrade to recordtype"""
             namedtup = all_interrogations[namedtupname]
-            the_branch == namedtup.__dict__[branch]
+            the_branch = namedtup.__dict__[branch]
             if branch == 'results':
                 the_branch.drop(the_branch.index, inplace = True)
                 the_branch.drop(the_branch.columns, axis = 1, inplace = True)
@@ -1316,9 +1315,11 @@ def corpkit_gui():
 
         tab1.grid_columnconfigure(2, weight=5)
 
-
         def do_interrogation(conc = True):
             """the main function: calls interrogator()"""
+            import pandas
+            import corpkit
+            from interrogator import interrogator
             # no pressing while running
             #if not conc:
             interrobut.config(state = DISABLED)
@@ -1326,11 +1327,8 @@ def corpkit_gui():
             interrobut_conc.config(state = DISABLED)
             # progbar to zero
             note.progvar.set(0)
-
-            import pandas
-            from corpkit import interrogator
-
-            prev_num_interrogations = len(list(all_interrogations.keys()))
+            for i in list(itemcoldict.keys()):
+                del itemcoldict[i]
             
             # spelling conversion?
             conv = (spl.var).get()
@@ -1377,10 +1375,13 @@ def corpkit_gui():
                 queryd[k] = v
             queryd[selected_option] = query
 
+            if selected_option == 's':
+                queryd = {'s': 'any'}
+
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
             interrogator_args = {'search': queryd,
-                                 'case_sensitive': case_sensitive.get(),
+                                 'case_sensitive': bool(case_sensitive.get()),
                                  'spelling': conv,
                                  'root': root,
                                  'note': note,
@@ -1418,6 +1419,9 @@ def corpkit_gui():
                             return_dep_lemma, return_dep_pos, return_dep_func]
 
             to_show = [i.get() for i in poss_returns if i.get() != '']
+            if not to_show:
+                timestring('Interrogation must return something.')
+                return
             interrogator_args['show'] = to_show
 
             # speaker ids
@@ -1461,27 +1465,20 @@ def corpkit_gui():
                 elif (split_contract.var).get() == 'Yes':
                     interrogator_args['split_contractions'] = True
 
+            if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or selected_corpus_has_no_subcorpora.get() == 1:
+                corp_to_search = corpus_fullpath.get()
+            else:
+                corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
+
             # do interrogation
-            interrodata = interrogator(corpus_fullpath.get(), **interrogator_args)
+            interrodata = interrogator(corp_to_search, **interrogator_args)
             
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
 
-            if conc:
-                if interrodata is not None and interrodata is not False:
-                    numresults = len(interrodata.concordance.index)
-                    if numresults > truncate_conc_after.get() - 1:
-                        truncate = messagebox.askyesno("Long results list", 
-                                  "%d unique results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
-                        if truncate:
-                            interrodata = interrodata.concordance.head(truncate_conc_after.get())
-                    add_conc_lines_to_window(interrodata, preserve_colour = False)
-            
-                global conc_saved
-                conc_saved = False
-
+            from interrogation import Interrogation, Interrodict
             # update spreadsheets
-            if not interrodata or interrodata == 'Bad query':
+            if type(interrodata) not in [Interrogation, Interrodict]:
                 update_spreadsheet(interro_results, df_to_show = None, height = 340)
                 update_spreadsheet(interro_totals, df_to_show = None, height = 10)            
                 return
@@ -1489,8 +1486,9 @@ def corpkit_gui():
             # make non-dict results into dict, so we can iterate no matter
             # if there were multiple results or not
             interrogation_returned_dict = False
-            if type(interrodata) != dict:
-                dict_of_results = {the_name: interrodata}
+            from collections import OrderedDict
+            if type(interrodata) == Interrogation:
+                dict_of_results = OrderedDict({the_name: interrodata})
             else:
                 dict_of_results = interrodata
                 interrogation_returned_dict = True
@@ -1498,9 +1496,11 @@ def corpkit_gui():
             # remove dummy entry from master
             all_interrogations.pop('None', None)
 
+            prev_num_interrogations = len(all_interrogations.keys())
+
             # post-process each result and add to master list
-            for nm, r in sorted(dict_of_results.items()):
-                # drop over 9999?
+            for nm, r in sorted(dict_of_results.items(), key=lambda x: x[0]):
+                # drop over 9999
                 # type check probably redundant now
                 if r.results is not None:
                     large = [n for i, n in enumerate(list(r.results.columns)) if i > truncate_spreadsheet_after.get()]
@@ -1511,13 +1511,29 @@ def corpkit_gui():
                 # add interrogation to master list
                 if interrogation_returned_dict:
                     all_interrogations[the_name + '-' + nm] = r
+                    all_conc[the_name + '-' + nm] = r.concordance
+                    dict_of_results[the_name + '-' + nm] = dict_of_results.pop(nm)
+                    # make multi for conc...
                 else:
                     all_interrogations[nm] = r
                     all_conc[nm] = r.concordance
 
             # show most recent (alphabetically last) interrogation spreadsheet
-            recent_interrogation_name = list(all_interrogations.keys())[prev_num_interrogations]
-            recent_interrogation_data = all_interrogations[recent_interrogation_name]
+            recent_interrogation_name = dict_of_results.keys()[0]
+            recent_interrogation_data = dict_of_results.values()[0]
+
+            if conc:
+                conc_to_show = recent_interrogation_data.concordance
+                numresults = len(conc_to_show.index)
+                if numresults > truncate_conc_after.get() - 1:
+                    truncate = messagebox.askyesno("Long results list", 
+                                 "%d unique concordance results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
+                    if truncate:
+                        conc_to_show = conc_to_show.head(truncate_conc_after.get())
+                add_conc_lines_to_window(conc_to_show, preserve_colour = False)
+            
+                global conc_saved
+                conc_saved = False
 
             name_of_interro_spreadsheet.set(recent_interrogation_name)
             i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
@@ -1694,11 +1710,22 @@ def corpkit_gui():
 
         Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
-        current_corpus.set('Select corpus')
+        current_corpus.set('Corpus')
         available_corpora = OptionMenu(interro_opt, current_corpus, *tuple(('Select corpus')))
-        available_corpora.config(width = 30, state = DISABLED, justify = CENTER)
+        available_corpora.config(width = 21, state = DISABLED, justify = CENTER)
         current_corpus.trace("w", corpus_callback)
-        available_corpora.grid(row = 0, column = 0, columnspan = 2, sticky = W, padx = (136,0))
+        available_corpora.grid(row = 0, column = 0, columnspan = 2, padx = (0, 33))
+
+        # todo: implement this
+        subc_pick = StringVar()
+        subc_pick.set('Subcorpus')
+        if os.path.isdir(corpus_fullpath.get()):
+            current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+        else:
+            current_subcorpora = []
+        pick_subcorpora = OptionMenu(interro_opt, subc_pick, *tuple(['All'] + current_subcorpora))
+        pick_subcorpora.configure(width = 12)
+        pick_subcorpora.grid(row = 0, column = 1, sticky = E)
 
         # for build tab
         #Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
@@ -1723,7 +1750,7 @@ def corpkit_gui():
 
         ex_additional_criteria = {}
         ex_anyall = StringVar()
-        ex_anyall.set('all')
+        ex_anyall.set('any')
 
         ex_objs = OrderedDict()
         # fill it with null data
@@ -1736,21 +1763,21 @@ def corpkit_gui():
 
         exclude_str = StringVar()
         exclude_str.set('')
-        Label(interro_opt, text = 'Exclude:').grid(row = 5, column = 0, sticky = W)
+        Label(interro_opt, text = 'Exclude:').grid(row = 5, column = 0, sticky = W, pady = (0, 10))
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
                              'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
         exclude.config(width = 14)
-        exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0))
+        exclude.grid(row = 5, column = 0, sticky = W, padx = (60, 0), pady = (0, 10))
         qr = Entry(interro_opt, textvariable = exclude_str, width = 18, state = DISABLED)
-        qr.grid(row = 5, column = 0, columnspan = 2, sticky = E, padx = (0,40))
+        qr.grid(row = 5, column = 0, columnspan = 2, sticky = E, padx = (0,40), pady = (0, 10))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text = '+', \
                         command = lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state = DISABLED)
-        ex_plusbut.grid(row = 5, column = 1, sticky = E)
+        ex_plusbut.grid(row = 5, column = 1, sticky = E, pady = (0, 10))
 
         #blklst = StringVar()
         #Label(interro_opt, text = 'Blacklist:').grid(row = 12, column = 0, sticky = W)
@@ -1764,7 +1791,7 @@ def corpkit_gui():
         lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
         lemtag = StringVar(root)
         lemtag.set('')
-        Label(interro_opt, text = 'Result word class (for lemmatisation):').grid(row = 13, column = 0, columnspan = 2, sticky = W)
+        Label(interro_opt, text = 'Result word class:').grid(row = 13, column = 0, columnspan = 2, sticky = E, padx = (0, 120))
         lmt = OptionMenu(interro_opt, lemtag, *lemtags)
         lmt.config(state = NORMAL, width = 10)
         lmt.grid(row = 13, column = 1, sticky=E)
@@ -1808,7 +1835,7 @@ def corpkit_gui():
         only_sel_speakers.trace("w", togglespeaker)
         # frame to hold speaker names listbox
         spk_scrl = Frame(interro_opt)
-        spk_scrl.grid(row = 14, column = 0, rowspan = 2, columnspan = 2, sticky = E)
+        spk_scrl.grid(row = 14, column = 0, rowspan = 2, columnspan = 2, sticky = E, pady = 10)
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
@@ -1842,7 +1869,7 @@ def corpkit_gui():
         additional_criteria = {}
 
         anyall = StringVar()
-        anyall.set('any')
+        anyall.set('all')
 
         objs = OrderedDict()
         # fill it with null data
@@ -1854,10 +1881,11 @@ def corpkit_gui():
         permref = []
 
         def add_criteria(objs, permref, anyalltoggle, output_dict,
-                         optvar, enttext, title = "Dependency criteria"):
-            """this is a popup for adding additional search criteria. it's also used
-            for excludes"""
-            if title == 'Dependency criteria':
+                         optvar, enttext, title = "Additional criteria"):
+            """this is a popup for adding additional search criteria.
+
+            it's also used for excludes"""
+            if title == 'Additional criteria':
                 enttext.set(qa.get(1.0, END).strip('\n').strip())
             from tkinter import Toplevel
             try:
@@ -1881,13 +1909,14 @@ def corpkit_gui():
                     if index == 0:
                         enttext.set(entstring.get())
                         optvar.set(optvar.get())
+                        datatype_picked.set(optvar.get())
                     if optvar is not None:
                         o = optvar.get().lower()[0]
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
                         output_dict[o] = q
                 # may not work on mac ...
-                if title == 'Dependency criteria':
+                if title == 'Additional criteria':
                     if len(list(objs.values())[:total]) > 0:
                         plusbut.config(bg = '#F4F4F4')
                     else:
@@ -1983,7 +2012,7 @@ def corpkit_gui():
                         command = lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
                         state = DISABLED)
-        plusbut.grid(row = 3, column = 0, sticky = 'SW', padx = 20, pady = 10)
+        plusbut.grid(row = 1, column = 0, columnspan = 2, padx = (0,200))
 
         def entry_callback(*args):
             """when entry is changed, add it to the textbox"""
@@ -2012,6 +2041,7 @@ def corpkit_gui():
                        'Governor functions': r'\b(amod|nn|advm|vmod|tmod)\b',
                        'Dependent functions': r'\b(amod|nn|advm|vmod|tmod)\b',
                        'N-grams': r'any',
+                       'Stats': r'any',
                        'Index': r'[012345]',
                        'POS': r'^[NJR]',
                        'Governor POS': r'^[NJR]',
@@ -2065,7 +2095,7 @@ def corpkit_gui():
         #tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
         #tfbut.grid(row = 9, column = 0, sticky=W)
         case_sensitive = IntVar()
-        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 9, column = 1, sticky=E)
+        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row = 13, column = 0, sticky=W)
 
         global ngmsize
         Label(interro_opt, text = 'Ngrams:').grid(row = 7, column = 0, sticky = W) 
@@ -2114,12 +2144,12 @@ def corpkit_gui():
                 c_ck1.select()
 
                 #q.config(state=DISABLED)
-                qr.config(state=DISABLED)
+                #qr.config(state=DISABLED)
                 #exclude.config(state = DISABLED)
                 #sec_match.config(state = DISABLED)
                 plusbut.config(state = DISABLED) 
-                #ex_plusbut.config(state = DISABLED) 
-                c_qr.config(state=DISABLED)
+                ex_plusbut.config(state = DISABLED) 
+                #c_qr.config(state=DISABLED)
                 #c_exclude.config(state = DISABLED)
                 #c_sec_match.config(state = DISABLED)
                 c_plusbut.config(state = DISABLED) 
@@ -2137,6 +2167,7 @@ def corpkit_gui():
                                 plusbut, ex_plusbut, exclude, qr, \
                                 c_plusbut, c_ex_plusbut, c_exclude, c_qr]:
                         turnon(but)
+                    desel_and_turn_off(ck4)
 
                     #sec_match.config(state = NORMAL)
             #if chosen == 'Governors':
@@ -2175,7 +2206,13 @@ def corpkit_gui():
                     split_contract.config(state = DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
-            if qa.get(1.0, END).strip('\n').strip() not in list(qd.values()):
+            clean_query = qa.get(1.0, END).strip('\n').strip()
+            if clean_query not in list(qd.values()) and clean_query in list(def_queries.values()):
+                try:
+                    entrytext.set(def_queries[chosen])
+                except:
+                    pass
+            if not clean_query:
                 try:
                     entrytext.set(def_queries[chosen])
                 except:
@@ -2183,7 +2220,7 @@ def corpkit_gui():
 
         datatype_picked = StringVar(root)
         datatype_picked.set('Trees')
-        Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W)
+        Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W, pady = 10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
                             'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
                              'Stats', 'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
@@ -2193,40 +2230,57 @@ def corpkit_gui():
         
         # trees, words, functions, governors, dependents, pos, lemma, count
         interro_return_frm = Frame(interro_opt)
-        Label(interro_return_frm, text = 'Return:').grid(row = 0, column = 0, sticky = 'NW')
-        interro_return_frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10)
+
+        Label(interro_return_frm, text = '   Return', font = ("Courier New", 13, "bold")).grid(row = 0, column = 0, sticky = E)
+        interro_return_frm.grid(row = 4, column = 0, columnspan = 2, sticky = W, pady = 10, padx = (10,0))
+
+        Label(interro_return_frm, text = '    Token', font = ("Courier New", 13)).grid(row = 0, column = 1, sticky = E)
+        Label(interro_return_frm, text = '    Lemma', font = ("Courier New", 13)).grid(row = 0, column = 2, sticky = E)
+        Label(interro_return_frm, text = '  POS tag', font = ("Courier New", 13)).grid(row = 0, column = 3, sticky = E)
+        Label(interro_return_frm, text =  'Function', font = ("Courier New", 13)).grid(row = 0, column = 4, sticky = E)
+        Label(interro_return_frm, text = '    Match', font = ("Courier New", 13)).grid(row = 1, column = 0, sticky = E)
+        Label(interro_return_frm, text = ' Governor', font = ("Courier New", 13)).grid(row = 2, column = 0, sticky = E)
+        Label(interro_return_frm, text = 'Dependent', font = ("Courier New", 13)).grid(row = 3, column = 0, sticky = E)
+        Label(interro_return_frm, text = '    Other', font = ("Courier New", 13)).grid(row = 4, column = 0, sticky = E)
+        Label(interro_return_frm, text = '    Count', font = ("Courier New", 13)).grid(row = 4, column = 1, sticky = E)
+        Label(interro_return_frm, text = '    Index', font = ("Courier New", 13)).grid(row = 4, column = 2, sticky = E)
+        Label(interro_return_frm, text = ' Distance', font = ("Courier New", 13)).grid(row = 4, column = 3, sticky = E)
+        Label(interro_return_frm, text = '     Tree', font = ("Courier New", 13)).grid(row = 4, column = 4, sticky = E)
 
         return_token = StringVar()
         return_token.set('')
-        ck1 = Checkbutton(interro_return_frm, text = 'Token', variable = return_token, onvalue = 'w', offvalue = '')
+        ck1 = Checkbutton(interro_return_frm, variable = return_token, onvalue = 'w', offvalue = '')
         ck1.select()
-        ck1.grid(row = 1, column = 0, sticky = W)
+        ck1.grid(row = 1, column = 1, sticky = E)
 
         def return_token_callback(*args):
             if datatype_picked.get() == 'Trees':
                 if return_token.get():
-                    for but in [ck2, ck3, ck4, ck8]:
+                    for but in [ck3, ck4, ck8]:
                         but.config(state=NORMAL)
                         but.deselect()
         return_token.trace("w", return_token_callback)
 
         return_lemma = StringVar()
         return_lemma.set('')
-        ck2 = Checkbutton(interro_return_frm, text = 'Lemma', variable = return_lemma, onvalue = 'l', offvalue = '')
-        ck2.grid(row = 1, column = 1, sticky = W)
+        ck2 = Checkbutton(interro_return_frm, anchor = E, variable = return_lemma, onvalue = 'l', offvalue = '')
+        ck2.grid(row = 1, column = 2, sticky = E)
 
         def return_lemma_callback(*args):
             if datatype_picked.get() == 'Trees':
                 if return_lemma.get():
-                    for but in [ck1, ck3, ck4, ck8]:
+                    for but in [ck3, ck4, ck8]:
                         but.config(state=NORMAL)
                         but.deselect()
+                    lmt.configure(state=NORMAL)
+                else:
+                    lmt.configure(state=DISABLED)
         return_lemma.trace("w", return_lemma_callback)
 
         return_pos = StringVar()
         return_pos.set('')
-        ck3 = Checkbutton(interro_return_frm, text = 'POS', variable = return_pos, onvalue = 'p', offvalue = '')
-        ck3.grid(row = 1, column = 2, sticky = W)
+        ck3 = Checkbutton(interro_return_frm, variable = return_pos, onvalue = 'p', offvalue = '')
+        ck3.grid(row = 1, column = 3, sticky = E)
 
         def return_pos_callback(*args):
             if datatype_picked.get() == 'Trees':
@@ -2236,10 +2290,15 @@ def corpkit_gui():
                         but.deselect()
         return_pos.trace("w", return_pos_callback)
 
+        return_function = StringVar()
+        return_function.set('')
+        ck7 = Checkbutton(interro_return_frm, variable = return_function, onvalue = 'f', offvalue = '')
+        ck7.grid(row = 1, column = 4, sticky = E)
+
         return_tree = StringVar()
         return_tree.set('')
-        ck4 = Checkbutton(interro_return_frm, text = 'Tree', variable = return_tree, onvalue = 't', offvalue = '')
-        ck4.grid(row = 1, column = 3, sticky = W)
+        ck4 = Checkbutton(interro_return_frm, anchor = E, variable = return_tree, onvalue = 't', offvalue = '')
+        ck4.grid(row = 5, column = 4, sticky = E)
 
         def return_tree_callback(*args):
             if datatype_picked.get() == 'Trees':
@@ -2251,23 +2310,18 @@ def corpkit_gui():
 
         return_index = StringVar()
         return_index.set('')
-        ck5 = Checkbutton(interro_return_frm, text = 'Index', variable = return_index, onvalue = 'i', offvalue = '')
-        ck5.grid(row = 2, column = 1, sticky = W)
+        ck5 = Checkbutton(interro_return_frm, anchor = E, variable = return_index, onvalue = 'i', offvalue = '')
+        ck5.grid(row = 5, column = 2, sticky = E)
 
         return_distance = StringVar()
         return_distance.set('')
-        ck6 = Checkbutton(interro_return_frm, text = 'Distance', variable = return_distance, onvalue = 'r', offvalue = '')
-        ck6.grid(row = 2, column = 2, sticky = W)
-
-        return_function = StringVar()
-        return_function.set('')
-        ck7 = Checkbutton(interro_return_frm, text = 'Function', variable = return_function, onvalue = 'f', offvalue = '')
-        ck7.grid(row = 2, column = 3, sticky = W)
+        ck6 = Checkbutton(interro_return_frm, anchor = E, variable = return_distance, onvalue = 'r', offvalue = '')
+        ck6.grid(row = 5, column = 3, sticky = E)
 
         return_count = StringVar()
         return_count.set('')
-        ck8 = Checkbutton(interro_return_frm, text = 'Count', variable = return_count, onvalue = 'c', offvalue = '')
-        ck8.grid(row = 2, column = 0, sticky = W)
+        ck8 = Checkbutton(interro_return_frm, variable = return_count, onvalue = 'c', offvalue = '')
+        ck8.grid(row = 5, column = 1, sticky = E)
 
         def countmode(*args):
             if datatype_picked.get() != 'Trees':
@@ -2292,51 +2346,51 @@ def corpkit_gui():
 
         return_gov = StringVar()
         return_gov.set('')
-        ck9 = Checkbutton(interro_return_frm, text = 'Governor', variable = return_gov, 
+        ck9 = Checkbutton(interro_return_frm, variable = return_gov, 
                           onvalue = 'g', offvalue = '')
-        ck9.grid(row = 3, column = 0, sticky = W)
+        ck9.grid(row = 2, column = 1, sticky = E)
 
         return_gov_lemma = StringVar()
         return_gov_lemma.set('')
-        ck10 = Checkbutton(interro_return_frm, text = 'Gov. lemma', variable = return_gov_lemma, 
+        ck10 = Checkbutton(interro_return_frm, variable = return_gov_lemma, 
                           onvalue = 'gl', offvalue = '')
-        ck10.grid(row = 3, column = 1, sticky = W)
+        ck10.grid(row = 2, column = 2, sticky = E)
 
         return_gov_pos = StringVar()
         return_gov_pos.set('')
-        ck11 = Checkbutton(interro_return_frm, text = 'Gov. POS', variable = return_gov_pos, 
+        ck11 = Checkbutton(interro_return_frm, variable = return_gov_pos, 
                           onvalue = 'gp', offvalue = '')
-        ck11.grid(row = 3, column = 2, sticky = W)
+        ck11.grid(row = 2, column = 3, sticky = E)
 
         return_gov_func = StringVar()
         return_gov_func.set('')
-        ck12 = Checkbutton(interro_return_frm, text = 'Gov. function', variable = return_gov_func, 
+        ck12 = Checkbutton(interro_return_frm, variable = return_gov_func, 
                           onvalue = 'gf', offvalue = '')
-        ck12.grid(row = 3, column = 3, sticky = W)
+        ck12.grid(row = 2, column = 4, sticky = E)
 
         return_dep = StringVar()
         return_dep.set('')
-        ck13 = Checkbutton(interro_return_frm, text = 'Dependent', variable = return_dep, 
+        ck13 = Checkbutton(interro_return_frm, variable = return_dep, 
                           onvalue = 'd', offvalue = '')
-        ck13.grid(row = 4, column = 0, sticky = W)
+        ck13.grid(row = 3, column = 1, sticky = E)
 
         return_dep_lemma = StringVar()
         return_dep_lemma.set('')
-        ck14 = Checkbutton(interro_return_frm, text = 'Dep. lemma', variable = return_dep_lemma, 
+        ck14 = Checkbutton(interro_return_frm, variable = return_dep_lemma, 
                           onvalue = 'dl', offvalue = '')
-        ck14.grid(row = 4, column = 1, sticky = W)
+        ck14.grid(row = 3, column = 2, sticky = E)
 
         return_dep_pos = StringVar()
         return_dep_pos.set('')
-        ck15 = Checkbutton(interro_return_frm, text = 'Dep. POS', variable = return_dep_pos, 
+        ck15 = Checkbutton(interro_return_frm, variable = return_dep_pos, 
                           onvalue = 'dp', offvalue = '')
-        ck15.grid(row = 4, column = 2, sticky = W)
+        ck15.grid(row = 3, column = 3, sticky = E)
 
         return_dep_func = StringVar()
         return_dep_func.set('')
-        ck16 = Checkbutton(interro_return_frm, text = 'Dep. function', variable = return_dep_func, 
+        ck16 = Checkbutton(interro_return_frm, variable = return_dep_func, 
                           onvalue = 'df', offvalue = '')
-        ck16.grid(row = 4, column = 3, sticky = W)
+        ck16.grid(row = 3, column = 4, sticky = E)
 
         #def return_dep_callback(*args):
         #    if return_gov.get():
@@ -2481,9 +2535,9 @@ def corpkit_gui():
                 operation_text = None
             else:
                 operation_text = opp.get()[0]
-            if opp.get() == "\u00F7":
+            if opp.get() == u"\u00F7":
                 operation_text = '/'
-            if opp.get() == "\u00D7":
+            if opp.get() == u"\u00D7":
                 operation_text = '*'
             if opp.get() == '%-diff':
                 operation_text = 'd'
@@ -2768,7 +2822,7 @@ def corpkit_gui():
         # operation for editor
         opp = StringVar(root)
         opp.set('None')
-        operations = ('None', '%', "\u00D7", "\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'rel. dist.')
+        operations = ('None', '%', u"\u00D7", u"\u00F7", '-', '+', 'combine', 'keywords', '%-diff', 'rel. dist.')
         Label(editor_buttons, text='Operation and denominator', font = ("Helvetica", 13, "bold")).grid(row = 2, column = 0, sticky = W, pady = (15,0))
         ops = OptionMenu(editor_buttons, opp, *operations)
         ops.grid(row = 3, column = 0, sticky = W)
@@ -3666,7 +3720,7 @@ def corpkit_gui():
         # chart type
         Label(plot_option_frame, text='Colour scheme:').grid(row = 16, column = 0, sticky = W)
         chart_cols = StringVar(root)
-        chart_cols.set('Paired')
+        chart_cols.set('Set2')
         schemes = tuple(sorted(('Paired', 'Spectral', 'summer', 'Set1', 'Set2', 'Set3', 
                     'Dark2', 'prism', 'RdPu', 'YlGnBu', 'RdYlBu', 'gist_stern', 'cool', 'coolwarm',
                     'gray', 'GnBu', 'gist_ncar', 'gist_rainbow', 'Wistia', 'CMRmap', 'bone', 
@@ -3771,7 +3825,7 @@ def corpkit_gui():
             pd.set_option('display.max_colwidth', 200)
             import corpkit
             from interrogation import Concordance
-            if data.__class__ == corpkit.interrogation.Concordance or data.__class__ == Concordance:
+            if data.__class__ == Concordance:
                 current_conc[0] = data
 
             elif type(data) == pd.core.frame.DataFrame:
@@ -3849,19 +3903,6 @@ def corpkit_gui():
             else:
                 timestring('Concordancing done: %d results.' % len(lines))
 
-        def do_concordancing_old():
-            """leftover subcorpus stuff, reimplement soon"""
-            interrobut_conc.config(state = DISABLED)
-            for i in list(itemcoldict.keys()):
-                del itemcoldict[i]
-            import os
-            timestring('Concordancing in progress ... ')
-            from conc import conc
-            # if nothing selected, if all selected, or if none available
-            if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or selected_corpus_has_no_subcorpora.get() == 1:
-                corpus = corpus_fullpath.get()
-            else:
-                corpus = os.path.join(corpus_fullpath.get(), subc_pick.get())
         
         
         def delete_conc_lines(*args):
@@ -3992,10 +4033,13 @@ def corpkit_gui():
                 df['tosorton'] = colist
             elif sortval.get() == 'Scheme':
                 themelist = get_list_of_themes(df)
-                df.insert(1, 't', themelist)
+                #df.insert(1, 't', themelist)
                 df.insert(1, 'tosorton', themelist)
             elif sortval.get() == 'Index':
                 df = df.sort(ascending = sort_way)
+            elif sortval.get() == 'Subcorpus':
+                sbs = [l.lower() for l in df['c']]
+                df['tosorton'] = sbs
             elif sortval.get() == 'Random':
                 import pandas
                 import numpy as np
@@ -4436,14 +4480,14 @@ def corpkit_gui():
         # conc box needs to be defined up here
         fsize = IntVar()
         fsize.set(12)
-        cfrm = Frame(tab4, height = 550, width = 1360)
+        cfrm = Frame(tab4, height = 565, width = 1360)
         cfrm.grid(column = 0, columnspan = 60, row = 0)
         cscrollbar = Scrollbar(cfrm)
         cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
         cscrollbar.pack(side=RIGHT, fill=Y)
         cscrollbarx.pack(side=BOTTOM, fill=X)
         conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief = SUNKEN, bg = '#F4F4F4',
-                              xscrollcommand=cscrollbarx.set, height = 550, 
+                              xscrollcommand=cscrollbarx.set, height = 565, 
                               width = 1050, font = ('Courier New', fsize.get()), 
                               selectmode = EXTENDED)
         conclistbox.pack(fill=BOTH)
@@ -4518,17 +4562,6 @@ def corpkit_gui():
         conc_right_button_frame = Frame(tab4)
         conc_right_button_frame.grid(row = 1, column = 0, padx = (10,0), sticky = 'N', pady = (5, 0))
 
-        # todo: implement this
-        subc_pick = StringVar()
-        subc_pick.set('Subcorpus')
-        if os.path.isdir(corpus_fullpath.get()):
-            current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
-        else:
-            current_subcorpora = []
-        pick_subcorpora = OptionMenu(conc_left_button_frame, subc_pick, *tuple(['All'] + current_subcorpora))
-        pick_subcorpora.configure(width = 14)
-        #pick_subcorpora.grid(row = 1, column = 0, sticky = W)
-
         Label(conc_left_button_frame, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         c_available_corpora = OptionMenu(conc_left_button_frame, current_corpus, *tuple(('Select corpus')))
         c_available_corpora.config(width = 25, state = DISABLED, justify = CENTER)
@@ -4568,7 +4601,7 @@ def corpkit_gui():
         c_spk_scrl = Frame(conc_middle_button_frame)
         c_spk_scrl.grid(row = 15, column = 0, rowspan = 2, columnspan = 2, sticky = E)
         # scrollbar for the listbox
-        c_spk_sbar = Scrollbar(spk_scrl)
+        c_spk_sbar = Scrollbar(c_spk_scrl)
         c_spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
         c_speaker_listbox = Listbox(c_spk_scrl, selectmode = EXTENDED, width = 32, height = 4, relief = SUNKEN, bg = '#F4F4F4',
@@ -4694,7 +4727,7 @@ def corpkit_gui():
         editbuts.grid(row=1, column=0, columnspan = 6, sticky = 'W')
         Button(editbuts, text = 'Delete selected', command = lambda: delete_conc_lines(), ).grid(row = 0, column = 0, sticky = W)
         Button(editbuts, text = 'Just selected', command = lambda: delete_reverse_conc_lines(), ).grid(row = 0, column = 1)
-        Button(editbuts, text = 'Sort', command = lambda: conc_sort()).grid(row = 0, column = 3)
+        #Button(editbuts, text = 'Sort', command = lambda: conc_sort()).grid(row = 0, column = 4)
 
         def toggle_filenames(*args):
             if type(current_conc[0]) == str:
@@ -4854,13 +4887,14 @@ def corpkit_gui():
         win.trace("w", conc_sort)
 
         # possible sort
-        sort_vals = ('Index', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
+        sort_vals = ('Index', 'Subcorpus', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
         sortval = StringVar()
         sortval.set('Index')
         prev_sortval = ['None']
         srtkind = OptionMenu(editbuts, sortval, *sort_vals)
         srtkind.config(width = 10)
         srtkind.grid(row = 0, column = 3)
+        sortval.trace("w", conc_sort)
 
         # export to csv
         Button(editbuts, text = 'Export', command = lambda: conc_export()).grid(row = 0, column = 6)
@@ -4868,10 +4902,10 @@ def corpkit_gui():
         Label(conc_right_button_frame, text = 'Stored concordances', font = ("Helvetica", 13, "bold")).grid(row = 0, column = 6, sticky = E, padx = (380,0))
 
         prev_conc = Frame(conc_right_button_frame)
-        prev_conc.grid(row = 0, column = 7, rowspan = 3, columnspan = 2, sticky = E, pady = (10,0))
+        prev_conc.grid(row = 0, column = 7, rowspan = 3, columnspan = 2, sticky = E, padx = (10,0), pady = (4,0))
         prevcbar = Scrollbar(prev_conc)
         prevcbar.pack(side=RIGHT, fill=Y)
-        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 20, height = 5, relief = SUNKEN, bg = '#F4F4F4',
+        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width = 20, height = 4, relief = SUNKEN, bg = '#F4F4F4',
                                     yscrollcommand=prevcbar.set, exportselection = False)
         prev_conc_listbox.pack()
         cscrollbar.config(command=prev_conc_listbox.yview)
