@@ -1320,6 +1320,7 @@ def corpkit_gui():
             import pandas
             import corpkit
             from interrogator import interrogator
+            doing_concondancing = True
             # no pressing while running
             #if not conc:
             interrobut.config(state = DISABLED)
@@ -1377,16 +1378,32 @@ def corpkit_gui():
 
             if selected_option == 's':
                 queryd = {'s': 'any'}
+                doing_concondancing = False
+
+            # to do: make this order customisable for the gui too
+            poss_returns = [return_function, return_pos, return_lemma, return_token, \
+                            return_gov, return_dep, return_tree, return_index, return_distance, \
+                            return_count, return_gov_lemma, return_gov_pos, return_gov_func, \
+                            return_dep_lemma, return_dep_pos, return_dep_func]
+
+            to_show = [i.get() for i in poss_returns if i.get() != '']
+            if not to_show:
+                timestring('Interrogation must return something.')
+                return
+            
+            if 'c' in to_show:
+                doing_concondancing = False
 
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
             interrogator_args = {'search': queryd,
+                                 'show': to_show,
                                  'case_sensitive': bool(case_sensitive.get()),
                                  'spelling': conv,
                                  'root': root,
                                  'note': note,
                                  'df1_always_df': True,
-                                 'do_concordancing': True,
+                                 'do_concordancing': doing_concondancing,
                                  'only_format_match': bool(only_format_match.get()),
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path}
@@ -1411,18 +1428,6 @@ def corpkit_gui():
                 interrogator_args['excludemode'] = excludemode.get()
             except:
                 pass
-
-            # to do: make this order customisable for the gui too
-            poss_returns = [return_function, return_pos, return_lemma, return_token, \
-                            return_gov, return_dep, return_tree, return_index, return_distance, \
-                            return_count, return_gov_lemma, return_gov_pos, return_gov_func, \
-                            return_dep_lemma, return_dep_pos, return_dep_func]
-
-            to_show = [i.get() for i in poss_returns if i.get() != '']
-            if not to_show:
-                timestring('Interrogation must return something.')
-                return
-            interrogator_args['show'] = to_show
 
             # speaker ids
             if only_sel_speakers.get():
@@ -1522,7 +1527,9 @@ def corpkit_gui():
             recent_interrogation_name = dict_of_results.keys()[0]
             recent_interrogation_data = dict_of_results.values()[0]
 
-            if conc:
+            if queryd == {'s': 'any'}:
+                conc = False
+            if doing_concondancing:
                 conc_to_show = recent_interrogation_data.concordance
                 numresults = len(conc_to_show.index)
                 if numresults > truncate_conc_after.get() - 1:
