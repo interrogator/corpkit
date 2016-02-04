@@ -83,10 +83,10 @@ def pmultiquery(corpus,
         denom = len(corpus)
         if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
             mult_corp_are_subs = True
-    elif type(query) == list or type(query) == dict:
-        multiple_queries = True
-        num_cores = best_num_parallel(num_cores, len(query))
-        denom = len(query)
+    elif (type(query) == list or type(query) == dict) and not hasattr(search, '__iter__'):
+            multiple_queries = True
+            num_cores = best_num_parallel(num_cores, len(query))
+            denom = len(query)
     elif hasattr(search, '__iter__') and type(search) != dict:
         multiple_search = True
         num_cores = best_num_parallel(num_cores, len(list(search.keys())))
@@ -195,27 +195,44 @@ def pmultiquery(corpus,
             a_dict['printstatus'] = False
             ds.append(a_dict)
 
+    if kwargs.get('do_concordancing') is False:
+        message = 'Interrogating'
+    elif kwargs.get('do_concordancing') is True:
+        message = 'Interrogating and concordancing'
+    elif kwargs.get('do_concordancing').lower() == 'only':
+        message = 'Concordancing'
     time = strftime("%H:%M:%S", localtime())
-    sformat = '\n                 '.join(['%s: %s' % (k.rjust(3), v) for k, v in list(search.items())])
+    sformat = ''
+    for i, (k, v) in enumerate(list(search.items())):
+        if type(v) == list:
+            vformat = ', '.join(v[:5])
+            if len(v) > 5:
+                vformat += ' ...'
+        else:
+            vformat = v
+        sformat += '%s: %s' %(k, vformat)
+        if i < len(search.keys()) - 1:
+            sformat += '\n                  '
+
     if multiple_corpora and not multiple_option:
         print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat)))
+           "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat, message)))
 
     elif multiple_queries:
         print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values()))) ))
+           "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values())), message) ))
 
     elif multiple_search:
         print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())))))
+           "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())), message)))
 
     elif multiple_option:
         print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) ))
+           "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
     elif multiple_speakers:
         print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n          Query: '%s'\n" % (time, num_cores, corpus.name, sformat) ))
+           "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -295,10 +312,10 @@ def pmultiquery(corpus,
         print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
         return Concordance(concs)
 
+    from collections import OrderedDict
     if not all(type(i.results) == pd.core.series.Series for i in res):
-        out = {}
+        out = OrderedDict()
         for interrog, d in zip(res, ds):
-            interrog.query = d
             for unpicklable in ['note', 'root']:
                 interrog.query.pop(unpicklable, None)
             out[interrog.query['outname']] = interrog
@@ -321,7 +338,7 @@ def pmultiquery(corpus,
             print("\n%s: %d files saved to %s" % ( time, len(list(out.keys())), fullpath))
 
         time = strftime("%H:%M:%S", localtime())
-        print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
+        print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         from interrogation import Interrodict
         return Interrodict(out)
     # make query and total branch, save, return
@@ -330,11 +347,11 @@ def pmultiquery(corpus,
         #print ds
         if multiple_corpora and not mult_corp_are_subs:
             sers = [i.results for i in res]
-            out = pd.DataFrame(sers, index = [d['outname'] for d in ds])
+            out = pd.DataFrame(sers, index = [i.query['outname'] for i in res])
             out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
             out = out.fillna(0) # nan to zero
             out = out.astype(int) # float to int
-            out = out.T
+            out = out.T            
         else:
             out = pd.concat([r.results for r in res], axis = 1)
             # format like normal
@@ -342,6 +359,9 @@ def pmultiquery(corpus,
             out = out.T
             out = out.fillna(0) # nan to zero
             out = out.astype(int)
+            if 'c' in show and mult_corp_are_subs:
+                out = out.sum()
+                out.index = sorted(list(out.index))
 
         # sort by total
         if type(out) == pd.core.frame.DataFrame:
@@ -349,7 +369,10 @@ def pmultiquery(corpus,
             tot = out.ix['Total-tmp']
             out = out[tot.argsort()[::-1]]
             out = out.drop('Total-tmp', axis = 0)
-        out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False)
+        out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False, \
+                      df1_always_df = kwargs.get('df1_always_df'))
+        if len(out.results.columns) == 1:
+            out.results = out.results.sort_index()   
         if kwargs.get('do_concordancing') is True:
             concs = pd.concat([x.concordance for x in res], ignore_index = True)
             concs = concs.sort_values(by='c')
