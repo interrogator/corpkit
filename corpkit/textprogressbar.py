@@ -35,7 +35,7 @@ class TextProgressBar:
             have_ipython = False
         from time import localtime, strftime
         import sys
-        print(str(self) + '\r', end=' ')
+        print(str(self) + '\r', end='')
         if have_ipython:
             try:
                 sys.stdout.flush()
