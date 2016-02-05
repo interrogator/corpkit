@@ -1074,13 +1074,15 @@ def corpkit_gui():
             
             dpath = os.path.join(project_fullpath.get(), 'dictionaries')
             dataname = name_of_interro_spreadsheet.get()
-            fname = urlify(dataname) + '.p'
+            fname = urlify(dataname)
             if fname.startswith('interrogation') or fname.startswith('edited'):
                 fname = simpledialog.askstring('Dictionary name', 'Choose a name for your dictionary:')
             if fname == '' or fname is False:
                 return
             else:
-                fname = fname + '.p'
+                fname = fname
+            if not fname.endswith('.p'):
+                fname += '.p'
             fpn = os.path.join(dpath, fname)
             data = all_interrogations[dataname]
             if data.results is not None:
@@ -1326,6 +1328,7 @@ def corpkit_gui():
             interrobut.config(state = DISABLED)
             #else:
             interrobut_conc.config(state = DISABLED)
+            recalc_but.config(state=DISABLED)
             # progbar to zero
             note.progvar.set(0)
             for i in list(itemcoldict.keys()):
@@ -1584,6 +1587,7 @@ def corpkit_gui():
 
             interrobut.config(state = NORMAL)
             interrobut_conc.config(state = NORMAL)
+            recalc_but.config(state=NORMAL)
 
         class MyOptionMenu(OptionMenu):
             """Simple OptionMenu for things that don't change."""
@@ -1650,6 +1654,7 @@ def corpkit_gui():
                 #parsebut.config(state = NORMAL)
                 #speakcheck_build.config(state = NORMAL)
                 interrobut_conc.config(state = DISABLED)
+                recalc_but.config(state=DISABLED)
                 #sensplitbut.config(state = NORMAL)
             else:
                 if datatype_picked.get() not in ['Trees', 'N-grams']:
@@ -1659,6 +1664,7 @@ def corpkit_gui():
                     #q.config(state = DISABLED)
                 #sensplitbut.config(state = DISABLED)
                 interrobut_conc.config(state = DISABLED)
+                recalc_but.config(state=DISABLED)
                 for i in ['Trees', 'Words', 'POS', 'Lemmata', \
                           'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
                           'Functions', 'Governors', 'Dependents', 'N-grams', 'Stats', 'Index']:
@@ -1689,6 +1695,7 @@ def corpkit_gui():
                 speakcheck.config(state = DISABLED)
             interrobut.config(state = NORMAL)
             interrobut_conc.config(state = NORMAL)
+            recalc_but.config(state=NORMAL)
             timestring('Set corpus directory: "%s"' % corpus_name)
             editf.set('Edit file: ')
             parse_only = [ck3, ck4, ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16, \
@@ -1865,9 +1872,10 @@ def corpkit_gui():
         entrytext = StringVar()
 
         Label(interro_opt, text = 'Query:').grid(row = 3, column = 0, sticky = 'NW', pady = (5,0))
-        entrytext.set(r'JJ > (NP <<# /NN.?/)')
+        entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
         qa = Text(interro_opt, width = 40, height = 4, borderwidth = 0.5, 
                   font = ("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD, highlightthickness=0)
+        qa.insert(END, entrytext.get())
         qa.grid(row = 3, column = 0, columnspan = 2, sticky = E, pady = (5,0), padx = (0, 4))
         all_text_widgets.append(qa)
 
@@ -2224,7 +2232,7 @@ def corpkit_gui():
                     pass
 
         datatype_picked = StringVar(root)
-        datatype_picked.set('Trees')
+        datatype_picked.set('Words')
         Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W, pady = 10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
                             'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
@@ -4874,23 +4882,38 @@ def corpkit_gui():
         interrobut_conc.grid(row = 0, column = 6, padx = (5,0))
 
         def recalc(*args):
+            import pandas as pd
             name = simpledialog.askstring('New name', 'Choose a name for the data:')
             if not name:
                 return
             else:
-                out = current_conc[0].recalc(inplace = False)
+                out = current_conc[0].calculate()
 
             all_interrogations[name] = out
             name_of_interro_spreadsheet.set(name)
             i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
-            totals_as_df = pandas.DataFrame(out.totals, dtype = object)
+            totals_as_df = pd.DataFrame(out.totals, dtype = object)
             if out.results is not None:
                 update_spreadsheet(interro_results, out.results, height = 340)
+                subs = out.results.index
             else:
                 update_spreadsheet(interro_results, df_to_show = None, height = 340)
+                subs = out.totals.index
 
             update_spreadsheet(interro_totals, totals_as_df, height = 10)
-            
+
+            ind = list(all_interrogations.keys()).index(name_of_interro_spreadsheet.get())
+            if ind == 0:
+                prev.configure(state=DISABLED)
+            else:
+                prev.configure(state=NORMAL)
+
+            if ind + 1 == len(list(all_interrogations.keys())):
+                nex.configure(state = DISABLED)
+            else:
+                nex.configure(state = NORMAL)
+            refresh()
+
             subc_listbox.delete(0, 'end')
             for e in list(subs):
                 if e != 'tkintertable-order':

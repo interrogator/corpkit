@@ -173,8 +173,9 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     if return_it:
         return functi(to_show, header = False, **kwargs)
     else:
+        print('\n')
         print(functi(to_show, header = False, **kwargs))
-
+        print('\n')
 
 def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     """
