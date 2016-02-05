@@ -32,7 +32,7 @@ exclude:
 host: 127.0.0.1
 feedback_email: "mcdonaldd@unimelb.edu.au"
 sidebar_accordion: true
-markdown: redcarpet
+markdown: kramdown
 print: false
 
 # only use suffix if you need to force index.html to display
