@@ -45,8 +45,8 @@ def editor(interrogation,
 
     where criteria is a string, list, etc.
 
-    :param dataframe1: Results to edit
-    :type dataframe1: pandas.core.frame.DataFrame
+    :param interrogation: Results to edit
+    :type interrogation: pandas.core.frame.DataFrame
     
     :param operation: Kind of maths to do on inputted lists:
 
@@ -62,7 +62,7 @@ def editor(interrogation,
         If list of results, for each entry in dataframe 1, locate
         entry with same name in dataframe 2, and do maths there
         if 'self', do all merging/keeping operations, then use
-        edited dataframe1 as denominator
+        edited interrogation as denominator
 
     :type denominator: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
     
@@ -87,7 +87,7 @@ def editor(interrogation,
     :param just_totals: Sum each column and work with sums
     :type just_totals: bool
     
-    :param threshold: When using results list as dataframe 2, drop values occurring
+    :param threshold: When using results list as denominator, drop values occurring
                         fewer than n times. If not keywording, you can use:
                             ``'high'``: denominator total / 2500
                             ``'medium'``: denominator total / 5000
@@ -165,8 +165,9 @@ def editor(interrogation,
     except ImportError:
         pass
 
-    from interrogation import Interrodict
-    if type(interrogation) == Interrodict:
+    return_conc = False
+    from interrogation import Interrodict, Interrogation, Concordance
+    if interrogation.__class__ == corpkit.interrogation.Interrodict:
         from collections import OrderedDict
         outdict = OrderedDict()
         from editor import editor
@@ -194,7 +195,9 @@ def editor(interrogation,
 
     elif type(interrogation) in [pandas.core.frame.DataFrame, pandas.core.series.Series]:
         dataframe1 = interrogation
-    else:
+    elif interrogation.__class__ == corpkit.interrogation.Interrogation:
+        #if interrogation.__dict__.get('concordance', None) is not None:
+        #    concordances = interrogation.concordance
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r') :
             dataframe1 = interrogation.results
@@ -202,6 +205,17 @@ def editor(interrogation,
             dataframe1 = interrogation.totals
         elif branch.lower().startswith('c'):
             dataframe1 = interrogation.concordance
+            return_conc = True
+        else:
+            dataframe1 = interrogation.results
+    
+    elif interrogation.__class__ == Concordance or \
+                        all(x in list(dataframe1.columns) for x in ['l', 'm', 'r']):
+            return_conc = True
+            dataframe1 = interrogation
+    # hope for the best
+    else:
+        dataframe1 = interrogation
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
@@ -807,15 +821,6 @@ def editor(interrogation,
             print('Threshold: %d\n' % the_threshold)
         return the_threshold
 
-    # check if we're in concordance mode
-    try:
-        if all(x in list(dataframe1.columns) for x in ['l', 'm', 'r']):
-            conc_lines = True
-        else:
-            conc_lines = False
-    except:
-        conc_lines = False
-
     # copy dataframe to be very safe
     df = dataframe1.copy()
     # make cols into strings
@@ -828,12 +833,7 @@ def editor(interrogation,
         operation = 'None'
 
     # do concordance work
-    if conc_lines:
-        # int is index
-        # str is subcorpus name or entry name
-        # list of ints is list of indices
-        # list of strs is list of names
-
+    if return_conc:
         if just_entries:
             if type(just_entries) == int:
                 just_entries = [just_entries]
@@ -882,8 +882,7 @@ def editor(interrogation,
                 else:
                     df = df.drop(skip_subcorpora, axis = 0)
 
-
-        return df
+        return Concordance(df)
 
     if print_info:
         print('\n***Processing results***\n========================\n')
@@ -908,26 +907,24 @@ def editor(interrogation,
     using_totals = False
     outputmode = False
 
-    try:
-        if denominator.empty is False:            
-            df2 = denominator.copy()
-            using_totals = True
-
-            if type(df2) == pandas.core.frame.DataFrame:
-                if len(df2.columns) > 1:
-                    single_totals = False
-                else:
-                    df2 = pd.Series(df2)
-                if operation == 'd':
-                    df2 = df2.sum(axis = 1)
-                    single_totals = True
-            elif type(df2) == pandas.core.series.Series:
-                single_totals = True
-                #if operation == 'k':
-                    #raise ValueError('Keywording requires a DataFrame for denominator. Use "self"?')
+    if denominator is not False and type(denominator) != str:
+        df2 = denominator.copy()
+        using_totals = True
+        if type(df2) == pandas.core.frame.DataFrame:
+            if len(df2.columns) > 1:
+                single_totals = False
             else:
-                raise ValueError('denominator not recognised.')
-    except AttributeError:
+                df2 = pandas.Series(df2)
+            if operation == 'd':
+                df2 = df2.sum(axis = 1)
+                single_totals = True
+        elif type(df2) == pandas.core.series.Series:
+            single_totals = True
+            #if operation == 'k':
+                #raise ValueError('Keywording requires a DataFrame for denominator. Use "self"?')
+        else:
+            raise ValueError('Denominator not recognised.')
+    else:
         if operation in ['k', 'd', 'a', '%', '/', '*', '-', '+']:
             denominator = 'self'         
         if denominator == 'self':
@@ -1212,16 +1209,15 @@ def editor(interrogation,
     #output = outputnames(the_options, df, total)
 
     # delete non-appearing conc lines
-    if not interrogation.__dict__.get('concordance', False):
+    if interrogation.__dict__.get('concordance', None) is None:
         lns = None
     else:
-        from interrogation import Concordance
         col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
         ind_crit = interrogation.concordance['c'].map(lambda x: x in list(df.index))
-        lns = interrogation.concordance.loc[col_crit]
-        lns = Concordance(lns.loc[ind_crit])
+        lns = interrogation.concordance[col_crit]
+        lns = lns.loc[ind_crit]
+        lns = Concordance(lns)
     
-    from interrogation import Interrogation
     output = Interrogation(results = df, totals = total, query = locs, concordance = lns)
 
     #print '\nResult (sample)\n'
