@@ -139,7 +139,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     pd.set_option('display.max_colwidth', 100)
 
     if type(n) == int:
-        to_show = df.ix[list(range(n))]
+        to_show = df.head(nq)
     elif n is False:
         to_show = df
     elif n == 'all':
@@ -148,15 +148,12 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
         raise ValueError('n argument "%s" not recognised.' % str(n))
 
     def resize_by_window_size(df, window):
-        cpd = df.copy()
-        lengths = list(cpd['l'].str.len())
-        for index, (i, lgth) in enumerate(zip(list(cpd['l']), lengths)):
-            if lgth > window:
-                cpd.ix[index]['l'] = i[lgth - window:]
-        lengths = list(cpd['r'].str.len())
-        for index, (i, lgth) in enumerate(zip(list(cpd['r']), lengths)):
-            cpd.ix[index]['r'] = i[:window]
-        return cpd
+        df['l'] = df['l'].str.slice(start=-window, stop=None)
+        df['l'] = df['l'].str.rjust(window)
+        df['r'] = df['r'].str.slice(start = 0, stop = window)
+        df['r'] = df['r'].str.ljust(window)
+        df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+        return df
 
     if window:
         to_show = resize_by_window_size(to_show, window)
@@ -164,23 +161,19 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     if columns != 'all':
         to_show = to_show[columns]
 
-    print('')
     if kind.startswith('s'):
-        if 'r' in list(to_show.columns):
-            print(to_show.to_string(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs))
-        else:
-            print(to_show.to_string(header = False, **kwargs))
+        functi = pd.DataFrame.to_string
     if kind.startswith('l'):
-        if 'r' in list(to_show.columns):
-            print(to_show.to_latex(header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}).replace('llll', 'lrrl', 1, **kwargs))
-        else:
-            print(to_show.to_latex(header = False, **kwargs))
+        functi = pd.DataFrame.to_latex
     if kind.startswith('c'):
-        if 'r' in list(to_show.columns):
-            print(to_show.to_csv(sep = '\t', header = False, formatters={'r':'{{:<{}s}}'.format(to_show['r'].str.len().max()).format}, **kwargs))
-        else:
-            print(to_show.to_csv(header = False, **kwargs))
-    print('')
+        functi = pd.DataFrame.to_csv
+
+    return_it = kwargs.pop('return_it', False)
+
+    if return_it:
+        return functi(to_show, header = False, **kwargs)
+    else:
+        print(functi(to_show, header = False, **kwargs))
 
 
 def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
