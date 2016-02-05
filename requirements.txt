@@ -1,6 +1,5 @@
 git+git://github.com/interrogator/corenlp-xml-lib.git
 git+git://github.com/interrogator/tkintertable.git
-http://effbot.org/media/downloads/Imaging-1.1.7.tar.gz
 matplotlib >= 1.4.3
 nltk >= 3.0.0
 joblib
