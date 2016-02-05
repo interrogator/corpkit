@@ -100,7 +100,7 @@ def dep_searcher(sents,
                         search[opt + k] = v
                     else:
                         search[opt] = v
-            if type(pat) == str and pat.lower() == 'any':
+            if pat == 'any':
                 search[opt] = re.compile(r'.*')
 
         for opt, pat in list(search.items()):
@@ -323,9 +323,69 @@ def dep_searcher(sents,
                     if 'i' in show:
                         single_wd['i'] = str(tok.id)
 
+                    if any(x.startswith('g') for x in show):
+                        thegovid = next((q.governor.idx for q in deps.links \
+                                        if q.dependent.idx == tok.id), False)
+                        govtok = False
+                        if thegovid is not False:
+                            govtok = s.get_token_by_id(thegovid)
+                            
+                        if 'g' in show:
+                            if govtok:
+                                single_wd['g'] = govtok.word
+                            else:
+                                single_wd['g'] = 'none'
+                        if 'gl' in show:
+                            if govtok:
+                                single_wd['gl'] = govtok.lemma
+                            else: 
+                                single_wd['gl'] = 'none'
+                        if 'gp' in show:
+                            if govtok:
+                                single_wd['gp'] = govtok.pos
+                            else: 
+                                single_wd['gp'] = 'none'
+
+                        if 'gf' in show:
+                            if govtok:
+                                single_wd['gf'] = next(x.type for x in deps.links \
+                                            if x.dependent.idx == thegovid)
+                            else: 
+                                single_wd['gf'] = 'none'
+
+                    if any(x.startswith('d') for x in show):
+                        thedepid = next((q.dependent.idx for q in deps.links \
+                                        if q.governor.idx == tok.id), False)
+
+                        deptok = False
+                        if thedepid is not False:
+                            deptok = s.get_token_by_id(thedepid)
+
+                        if 'd' in show:
+                            if thedepid:
+                                single_wd['d'] = deptok.word
+                            else: 
+                                single_wd['d'] = 'none'
+
+                        if 'dl' in show:
+                            if thedepid:
+                                single_wd['dl'] = deptok.lemma
+                            else: 
+                                single_wd['dl'] = 'none'
+                        if 'dp' in show:
+                            if thedepid:
+                                single_wd['dp'] = deptok.pos
+                            else: 
+                                single_wd['dp'] = 'none'
+                        if 'df' in show:
+                            if thedepid:
+                                single_wd['df'] = next(x.type for x in deps.links \
+                                if x.dependent.idx == thedepid)
+                            else: 
+                                single_wd['df'] = 'none'
                     for i in show:
                         intermediate_result.append(single_wd[i])
-                    intermediate_result = [i.replace('/', '-slash-') for i in intermediate_result]
+                    intermediate_result = [i.replace('/', '-slash-').encode('utf-8', errors = 'ignore') for i in intermediate_result]
                     one_result.append('/'.join(intermediate_result))
                 # now we have formatted tokens as a list. we need to split
                 # it into start, middle and end
