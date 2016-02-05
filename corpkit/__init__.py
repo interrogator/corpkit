@@ -93,6 +93,10 @@ def texifyfunc(self, *args, **kwargs):
     from corpkit.other import texify
     texify(self, *args, **kwargs)
 
+def calculatefunc(self, *args, **kwargs):
+    from corpkit.process import interrogation_from_conclines
+    return interrogation_from_conclines(self)
+
 pd.DataFrame.edit = editfunc
 pd.Series.edit = editfunc
 
@@ -109,6 +113,9 @@ pd.DataFrame.format = formatfunc
 pd.Series.format = formatfunc
 
 pd.Series.texify = texifyfunc
+
+pd.DataFrame.calculate = calculatefunc
+pd.Series.calculate = calculatefunc
 
 A = 'a'
 D = 'd'
