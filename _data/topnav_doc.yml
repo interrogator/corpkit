@@ -10,7 +10,7 @@ topnav:
       product: all
       version: all
     - title: <i class="fa fa-download"></i> Download (OSX)
-      external_url: https://github.com/interrogator/corpkit-app/raw/master/corpkit-1.94.tar.gz
+      external_url: https://github.com/interrogator/corpkit-app/raw/master/corpkit-1.95.tar.gz
       audience: writers, designers
       platform: all
       product: all

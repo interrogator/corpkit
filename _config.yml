@@ -41,7 +41,7 @@ print: false
 redcarpet:
   extensions: ["no_intra_emphasis", "fenced_code_blocks", "tables", "with_toc_data"]
 
-highlighter: pygments
+highlighter: rouge
 
 collections:
   tooltips:
