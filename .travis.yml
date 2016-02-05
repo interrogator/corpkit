@@ -1,7 +1,10 @@
 language: python
 python:
 - '2.7'
-script: touch foo
+- '3.5'
+install: 
+- pip install -r requirements.txt
+script: python -c "import corpkit; from corpkit import *; from dictionaries.process_types import processes"
 deploy:
   provider: pypi
   user: mcddjx
