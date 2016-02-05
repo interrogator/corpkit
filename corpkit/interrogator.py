@@ -807,7 +807,10 @@ def interrogator(corpus,
                 result = Counter(result)
                 results[subcorpus_name] += result
                 if not no_conc:
-                    conc_results[subcorpus_name] += conc_result
+                    for lin in conc_result:
+                        if numconc < maxconc or not maxconc:
+                            conc_results[subcorpus_name].append(lin)
+                        numconc += 1
 
             current_iter += 1
             if kwargs.get('paralleling', None) is not None:
@@ -894,7 +897,9 @@ def interrogator(corpus,
                                 line = [b.lower() for b in line]
                             if spelling:
                                 line = [correct_spelling(b) for b in line]
-                            conc_results[subcorpus_name] += [line]
+                            if numconc < maxconc or not maxconc:
+                                conc_results[subcorpus_name].append(line)
+                                numconc += 1
 
                     # do lowercasing and spelling
                     if not only_conc:
