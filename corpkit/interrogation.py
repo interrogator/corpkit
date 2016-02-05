@@ -25,7 +25,7 @@ class Interrogation(object):
     def __repr__(self):
         return "<corpkit.interrogation.Interrogation instance: %d total results>" % (int(self.totals.sum()))
 
-    def edit(self, branch = 'results', *args, **kwargs):
+    def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
            >>> # rel. frequencies for words without initial capital
@@ -57,14 +57,14 @@ class Interrogation(object):
 
         :type operation: str
         
-        :param dataframe2: List of results or totals.
+        :param denominator: List of results or totals.
 
            If list of results, for each entry in dataframe 1, locate
            entry with same name in dataframe 2, and do maths there
            if 'self', do all merging/keeping operations, then use
-           edited dataframe1 as dataframe2
+           edited dataframe1 as denominator
 
-        :type dataframe2: pandas.Series/pandas.DataFrame/dict/`self`
+        :type denominator: pandas.Series/pandas.DataFrame/dict/`self`
 
         :param sort_by: Calculate slope, stderr, r, p values, then sort by.
 
@@ -89,11 +89,11 @@ class Interrogation(object):
         
         :param threshold: When using results list as dataframe 2, drop values occurring fewer than n times. If not keywording, you can use:
                                 
-           ``'high'``: ``dataframe2 total / 2500``
+           ``'high'``: ``denominator total / 2500``
            
-           ``'medium'``: ``dataframe2 total / 5000``
+           ``'medium'``: ``denominator total / 5000``
            
-           ``'low'``: ``dataframe2 total / 10000``
+           ``'low'``: ``denominator total / 10000``
                             
            If keywording, there are smaller default thresholds
 
@@ -144,7 +144,7 @@ class Interrogation(object):
         :returns: :class:`corpkit.interrogation.Interrogation`
         """
         from editor import editor
-        return editor(self, branch = branch, *args, **kwargs)
+        return editor(self, *args, **kwargs)
 
     def visualise(self,
             title = '',
