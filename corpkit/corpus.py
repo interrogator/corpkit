@@ -231,6 +231,12 @@ class Corpus:
         :param files_as_subcorpora: treat each file as a subcorpus
         :type files_as_subcorpora: bool
 
+        :param do_concordancing: Concordance while interrogating, store as .concordance attribute
+        :type do_concordancing: bool/'only'
+
+        :param maxconc: Maximum number of concordance lines
+        :type maxcond: int
+
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
         invoked, result may be a :class:`corpkit.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
         """

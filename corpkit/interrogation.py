@@ -23,21 +23,9 @@ class Interrogation(object):
         return st
 
     def __repr__(self):
-        return "<corpkit.interrogation.Interrogation instance: %d total results>" % (self.totals.sum())
+        return "<corpkit.interrogation.Interrogation instance: %d total results>" % (int(self.totals.sum()))
 
-    def recalc(self, inplace = False):
-        """Make new Interrogation object from (modified) concordance lines"""
-        from process import interrogation_from_conclines
-        newdata = interrogation_from_conclines(self.concordance)
-        if not inplace:
-            return newdata
-        else:
-            self.results = newdata.results
-            self.totals = newdata.totals
-            self.concordance = newdata.concordance
-            self.query = self.query
-
-    def edit(self, *args, **kwargs):
+    def edit(self, branch = 'results', *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
            >>> # rel. frequencies for words without initial capital
@@ -156,11 +144,7 @@ class Interrogation(object):
         :returns: :class:`corpkit.interrogation.Interrogation`
         """
         from editor import editor
-        branch = kwargs.pop('branch', 'results')
-        if branch.lower().startswith('r'):
-            return editor(self.results, *args, **kwargs)
-        elif branch.lower().startswith('t'):
-            return editor(self.totals, *args, **kwargs)
+        return editor(self, branch = branch, *args, **kwargs)
 
     def visualise(self,
             title = '',
@@ -386,9 +370,6 @@ class Concordance(pd.core.frame.DataFrame):
         pd.core.frame.DataFrame.__init__(self, data)
         self.results = data
 
-    #def __repr__(self):
-        #return 'corpkit.interrogation.Concordance instance: %d lines' % (len(self))
-
     def format(self, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
         """
         Print conc lines nicely, to string, LaTeX or CSV
@@ -406,7 +387,16 @@ class Concordance(pd.core.frame.DataFrame):
         :returns: None
         """
         from other import concprinter
-        concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
+        return concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
+
+    def __repr__(self):
+        return self.format(return_it = True)
+
+    def calculate(self):
+        """Make new Interrogation object from (modified) concordance lines"""
+        from process import interrogation_from_conclines
+        newdata = interrogation_from_conclines(self)
+        return newdata
 
     def shuffle(self, inplace = False):
         """Shuffle concordance lines
@@ -423,6 +413,10 @@ class Concordance(pd.core.frame.DataFrame):
             self = shuffled
         else:
             return shuffled
+
+    def edit(self, *args, **kwargs):
+        from editor import editor
+        return editor(self, *args, **kwargs)
 
 from collections import OrderedDict
 class Interrodict(OrderedDict):

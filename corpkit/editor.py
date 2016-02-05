@@ -1,8 +1,8 @@
 from __future__ import print_function
 
-def editor(dataframe1, 
+def editor(interrogation, 
             operation = None,
-            dataframe2 = False,
+            denominator = False,
             sort_by = False,
             keep_stats = False,
             keep_top = False,
@@ -57,14 +57,14 @@ def editor(dataframe1,
 
     :type operation: str
     
-    :param dataframe2: List of results or totals.
+    :param denominator: List of results or totals.
 
         If list of results, for each entry in dataframe 1, locate
         entry with same name in dataframe 2, and do maths there
         if 'self', do all merging/keeping operations, then use
-        edited dataframe1 as dataframe2
+        edited dataframe1 as denominator
 
-    :type dataframe2: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
+    :type denominator: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
     
     :param sort_by: Calculate slope, stderr, r, p values, then sort by:
 
@@ -89,9 +89,9 @@ def editor(dataframe1,
     
     :param threshold: When using results list as dataframe 2, drop values occurring
                         fewer than n times. If not keywording, you can use:
-                            ``'high'``: dataframe2 total / 2500
-                            ``'medium'``: dataframe2 total / 5000
-                            ``'low'``: dataframe2 total / 10000
+                            ``'high'``: denominator total / 2500
+                            ``'medium'``: denominator total / 5000
+                            ``'low'``: denominator total / 10000
                         Note: if keywording, there are smaller default thresholds
     :type threshold: int/bool
     :param just_entries: Keep matching entries
@@ -141,7 +141,7 @@ def editor(dataframe1,
     """
 
     # grab arguments, in case we get dict input and have to iterate
-    saved_args = locals()
+    locs = locals()
 
     import corpkit
     import pandas
@@ -165,32 +165,43 @@ def editor(dataframe1,
     except ImportError:
         pass
 
-    # if passing a multiquery, do each result separately and return
-    if type(dataframe1) == dict:
-        outdict = {}
+    from interrogation import Interrodict
+    if type(interrogation) == Interrodict:
+        from collections import OrderedDict
+        outdict = OrderedDict()
         from editor import editor
-        del saved_args['dataframe1']
-        for i, (k, v) in enumerate(dataframe1.items()):
+        for i, (k, v) in enumerate(interrogation.items()):
             # only print the first time around
             if i == 0:
                 pass
                 #saved_args['print_info'] = True
             else:
-                saved_args['print_info'] = False
+                locs['print_info'] = False
             # if df2 is also a dict, get the relevant entry
-            if type(dataframe2) == dict:
+            if type(denominator) == dict:
                 if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
-                   sorted(set([i.lower() for i in list(dataframe2.keys())])):
-                   saved_args['dataframe2'] = dataframe2[k]
+                   sorted(set([i.lower() for i in list(denominator.keys())])):
+                   locs['denominator'] = denominator[k]
                    
                    if kwargs.get('use_df2_totals'):
-                        saved_args['dataframe2'] = dataframe2[k].totals
+                        saved_args['denominator'] = denominator[k].totals
             outdict[k] = editor(v.results, **saved_args)
         if print_info:
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys()))))
-        return outdict
+        return Interrodict(outdict)
+
+    elif type(interrogation) in [pandas.core.frame.DataFrame, pandas.core.series.Series]:
+        dataframe1 = interrogation
+    else:
+        branch = kwargs.pop('branch', 'results')
+        if branch.lower().startswith('r') :
+            dataframe1 = interrogation.results
+        elif branch.lower().startswith('t'):
+            dataframe1 = interrogation.totals
+        elif branch.lower().startswith('c'):
+            dataframe1 = interrogation.concordance
 
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
@@ -798,7 +809,7 @@ def editor(dataframe1,
 
     # check if we're in concordance mode
     try:
-        if list(dataframe1.columns) == ['l', 'm', 'r']:
+        if all(x in list(dataframe1.columns) for x in ['l', 'm', 'r']):
             conc_lines = True
         else:
             conc_lines = False
@@ -806,34 +817,7 @@ def editor(dataframe1,
         conc_lines = False
 
     # copy dataframe to be very safe
-    try:
-        df = dataframe1.copy()
-    except AttributeError:
-        no_good_dataframe1 = True
-        while no_good_dataframe1:
-            if 'interrogation' in str(type(dataframe1)):
-                sel = input("\nIt looks like you're trying to edit an interrogation, " \
-                                  "rather than an interrogation's .results or .totals branch. You can:\n\n    a) select .results branch\n    b) select .totals branch\n    c) exit\n\nYour choice: ")
-                if sel.startswith('a'):
-                    try:
-                        dataframe1 = dataframe1.results
-                        no_good_dataframe1 = False
-                    except:
-                        pass
-                elif sel.startswith('b'):
-                    try:
-                        dataframe1 = dataframe1.totals
-                        no_good_dataframe1 = False
-                    except:
-                        pass
-                else:
-                    return
-            else:
-                raise ValueError("Thing to be edited (dataframe1) needs to be a Pandas DataFrame or Series. " \
-                                  "Right now, its type is: '%s'." % type(dataframe1).__name__)
-
-        df = dataframe1.copy()
-
+    df = dataframe1.copy()
     # make cols into strings
     try:
         df.columns = [str(c) for c in list(df.columns)]
@@ -845,7 +829,10 @@ def editor(dataframe1,
 
     # do concordance work
     if conc_lines:
-        df = dataframe1.copy()
+        # int is index
+        # str is subcorpus name or entry name
+        # list of ints is list of indices
+        # list of strs is list of names
 
         if just_entries:
             if type(just_entries) == int:
@@ -853,11 +840,11 @@ def editor(dataframe1,
             if type(just_entries) == str:
                 df = df[df['m'].str.contains(just_entries)]
             if type(just_entries) == list:
-                if type(just_entries[0]) == str:
-                    regex = re.compile(r'(?i)^(' + r'|'.join(just_entries) + r')$')
-                    df = df[df['m'].str.contains(regex)]
+                if all(type(e) == str for e in just_entries):
+                    mp = df['m'].map(lambda x: x in just_entries)
+                    df = df[mp]
                 else:
-                    df = df.ix[just_entries].reset_index(drop = True)
+                    df = df.ix[just_entries]
 
         if skip_entries:
             if type(skip_entries) == int:
@@ -865,11 +852,36 @@ def editor(dataframe1,
             if type(skip_entries) == str:
                 df = df[~df['m'].str.contains(skip_entries)]
             if type(skip_entries) == list:
-                if type(skip_entries[0]) == str:
-                    regex = re.compile(r'(?i)^(' + r'|'.join(skip_entries) + r')$')
-                    df = df[~df['m'].str.contains(regex)]
+                if all(type(e) == str for e in skip_entries):
+                    mp = df['m'].map(lambda x: x not in skip_entries)
+                    df = df[mp]
                 else:
-                    df = df.ix[[e for e in list(df.index) if e not in skip_entries]].reset_index(drop = True)
+                    df = df.drop(skip_entries, axis = 0)
+
+        if just_subcorpora:
+            if type(just_subcorpora) == int:
+                just_subcorpora = [just_subcorpora]
+            if type(just_subcorpora) == str:
+                df = df[df['c'].str.contains(just_subcorpora)]
+            if type(just_subcorpora) == list:
+                if all(type(e) == str for e in just_subcorpora):
+                    mp = df['c'].map(lambda x: x in just_subcorpora)
+                    df = df[mp]
+                else:
+                    df = df.ix[just_subcorpora]
+
+        if skip_subcorpora:
+            if type(skip_subcorpora) == int:
+                skip_subcorpora = [skip_subcorpora]
+            if type(skip_subcorpora) == str:
+                df = df[~df['c'].str.contains(skip_subcorpora)]
+            if type(skip_subcorpora) == list:
+                if all(type(e) == str for e in skip_subcorpora):
+                    mp = df['c'].map(lambda x: x not in skip_subcorpora)
+                    df = df[mp]
+                else:
+                    df = df.drop(skip_subcorpora, axis = 0)
+
 
         return df
 
@@ -897,8 +909,8 @@ def editor(dataframe1,
     outputmode = False
 
     try:
-        if dataframe2.empty is False:            
-            df2 = dataframe2.copy()
+        if denominator.empty is False:            
+            df2 = denominator.copy()
             using_totals = True
 
             if type(df2) == pandas.core.frame.DataFrame:
@@ -912,13 +924,13 @@ def editor(dataframe1,
             elif type(df2) == pandas.core.series.Series:
                 single_totals = True
                 #if operation == 'k':
-                    #raise ValueError('Keywording requires a DataFrame for dataframe2. Use "self"?')
+                    #raise ValueError('Keywording requires a DataFrame for denominator. Use "self"?')
             else:
-                raise ValueError('dataframe2 not recognised.')
+                raise ValueError('denominator not recognised.')
     except AttributeError:
         if operation in ['k', 'd', 'a', '%', '/', '*', '-', '+']:
-            dataframe2 = 'self'         
-        if dataframe2 == 'self':
+            denominator = 'self'         
+        if denominator == 'self':
             outputmode = True
 
     if operation.startswith('a') or operation.startswith('A'):
@@ -1089,13 +1101,13 @@ def editor(dataframe1,
 
         # allow saved dicts to be df2, etc
         try:
-            if dataframe2 == 'self':
+            if denominator == 'self':
                 df2 = df.copy()
         except TypeError:
             pass
-        if type(dataframe2) == str:
-            if dataframe2 != 'self':
-                df2 = dataframe2
+        if type(denominator) == str:
+            if denominator != 'self':
+                df2 = denominator
     
         else:
             the_threshold = False
@@ -1196,42 +1208,21 @@ def editor(dataframe1,
         if type(df) == pandas.core.series.Series:
             df = pandas.DataFrame(df)
 
-    #make named_tuple
-    the_operation = 'none'
-    if using_totals:
-        the_operation = operation
-
-    the_options = {}
-    the_options['time_started'] = the_time_started
-    the_options['function'] = 'editor'
-    the_options['dataframe1'] = dataframe1
-    the_options['operation'] = operation
-    the_options['dataframe2'] = dataframe2
-    the_options['datatype'] = datatype
-    the_options['sort_by'] = sort_by
-    the_options['keep_stats'] = keep_stats
-    the_options['just_totals'] = just_totals
-    the_options['threshold'] = threshold # can be wrong!
-    the_options['just_entries'] = just_entries
-    the_options['just_entries'] = just_entries
-    the_options['skip_entries'] = skip_entries
-    the_options['merge_entries'] = merge_entries
-    the_options['newname'] = newname
-    the_options['just_subcorpora'] = just_subcorpora
-    the_options['skip_subcorpora'] = skip_subcorpora
-    the_options['span_subcorpora'] = span_subcorpora
-    the_options['merge_subcorpora'] = merge_subcorpora
-    the_options['new_subcorpus_name'] = new_subcorpus_name
-    the_options['projection'] = projection
-    the_options['remove_above_p'] = remove_above_p
-    the_options['p'] = p
-    the_options['revert_year'] = revert_year
-    the_options['print_info'] = print_info
-
     #outputnames = collections.namedtuple('edited_interrogation', ['query', 'results', 'totals'])
     #output = outputnames(the_options, df, total)
+
+    # delete non-appearing conc lines
+    if not interrogation.__dict__.get('concordance', False):
+        lns = None
+    else:
+        from interrogation import Concordance
+        col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
+        ind_crit = interrogation.concordance['c'].map(lambda x: x in list(df.index))
+        lns = interrogation.concordance.loc[col_crit]
+        lns = Concordance(lns.loc[ind_crit])
+    
     from interrogation import Interrogation
-    output = Interrogation(results = df, totals = total, query = the_options)
+    output = Interrogation(results = df, totals = total, query = locs, concordance = lns)
 
     #print '\nResult (sample)\n'
     if print_info:

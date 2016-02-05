@@ -1501,8 +1501,6 @@ def corpkit_gui():
             # remove dummy entry from master
             all_interrogations.pop('None', None)
 
-            prev_num_interrogations = len(all_interrogations.keys())
-
             # post-process each result and add to master list
             for nm, r in sorted(dict_of_results.items(), key=lambda x: x[0]):
                 # drop over 9999
@@ -3866,25 +3864,21 @@ def corpkit_gui():
                 if any(t != '' for t in themelist):
                     data.insert(0, 't', themelist)
 
-
-            formatl = lambda x: "{0}".format(x[-window:])
-            formatm = '{{:<{}s}}'.format(data['m'].str.len().max()).format
-            formatr = lambda x: "{{:<{}s}}".format(data['r'].str.len().max()).format(x[:window])
-            fmters = {'l':formatl, 'm': formatm,'r':formatr}
-
             # only do left align when long result ...
             # removed because it's no big deal if always left aligned, and this
             # copes when people search for 'root' or something.
 
-            #if conc_special_queries.get() in ['Imperatives', 
-            #                                  'Modalised declaratives', 
-            #                                  'Unmodalised declaratives', 
-            #                                  'Interrogatives']:
-            
-            fmters['m'] = formatm
+            def resize_by_window_size(df, window):
+                df['l'] = df['l'].str.slice(start=-window, stop=None)
+                df['l'] = df['l'].str.rjust(window)
+                df['r'] = df['r'].str.slice(start = 0, stop = window)
+                df['r'] = df['r'].str.ljust(window)
+                df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+                return df
 
-            lines = data.to_string(header = False, index = show_index.get(), formatters=fmters).splitlines()
-            lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
+            moddata = resize_by_window_size(data, window)
+            lines = moddata.to_string(header = False, index = show_index.get()).splitlines()
+            #lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
             conclistbox.delete(0, END)
             for line in lines:
                 conclistbox.insert(END, line)
@@ -4879,10 +4873,32 @@ def corpkit_gui():
         interrobut_conc.config(command = lambda: runner(interrobut_conc, do_interrogation, conc = True), state = DISABLED)
         interrobut_conc.grid(row = 0, column = 6, padx = (5,0))
 
-        def recalc():
-            pass
+        def recalc(*args):
+            name = simpledialog.askstring('New name', 'Choose a name for the data:')
+            if not name:
+                return
+            else:
+                out = current_conc[0].recalc(inplace = False)
 
-        recalc_but = Button(showbuts, text = 'Re-calculate')
+            all_interrogations[name] = out
+            name_of_interro_spreadsheet.set(name)
+            i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
+            totals_as_df = pandas.DataFrame(out.totals, dtype = object)
+            if out.results is not None:
+                update_spreadsheet(interro_results, out.results, height = 340)
+            else:
+                update_spreadsheet(interro_results, df_to_show = None, height = 340)
+
+            update_spreadsheet(interro_totals, totals_as_df, height = 10)
+            
+            subc_listbox.delete(0, 'end')
+            for e in list(subs):
+                if e != 'tkintertable-order':
+                    subc_listbox.insert(END, e)
+                timestring('Calculation done. "%s" created.' % name)
+                note.change_tab(1)
+
+        recalc_but = Button(showbuts, text = 'Calculate', command = recalc)
         recalc_but.config(command = recalc, state = DISABLED)
         recalc_but.grid(row = 0, column = 7, padx = (5,0))
 
