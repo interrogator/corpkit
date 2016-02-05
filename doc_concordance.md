@@ -2,24 +2,14 @@
 title: "Concordance"
 tags: [pandas, concordance]
 keywords: pandas, concordance, gui, corpkit
-summary: "This concordancer does the basics, but also does some more sophisticated stuff: you can searching constituency and dependency parses, save, load and merge results, and define coloured annotation schemes for thematic categorisation."
-last_updated: 2015-09-01
+summary: "This concordancer does all the basics you'd expect, but also, much more!"
+last_updated: 2016-02-04
 ---
 {% include linkrefs.html %}
 
-Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that you can search using Tregex patterns, or by dependency function(s). You can reuse your queries from `Interrogate` if you like.
-
-When searching Trees, you can use the `Trees` option to output bracketted trees instead of plain text. This can be useful in understanding phrase structure grammar, or how to write Tregex queries.
-
-Depending on the kind of data you wish to search, different options become available. If using dependencies, for example, you can select the type of dependency, or write a regular expression to match functions, in addition to words. As with `Interrogate`, you can use special queries, like `ROLES:ACTOR`, or select some preset queries.
+Many features this pane are similar to those provided by other concordancers, such as `Window`, `Random`, and some of the kinds of sorting. A key difference, however, is that the search interface is the same as the one provided in the `Interrogate` tab, meaning that you have access to very complex kinds of searches. In fact, when you interrogate the corpus, concordance lines are automatically generated, so you can move in and out between levels of abstraction with ease.
 
 {{tip}} You can use <code>ctrl/cmd-minus</code> <code>ctrl/cmd-plus</code> to change the concordance window font size. {{end}}
-
-## Speaker IDs
-
-If you have speaker segmented data, you can restrict your concordancing to specific speakers. Concordancing using speaker IDs is often slow, however. If you want to concordance your data faster, and you don't care if you don't get speaker ID information, leave the `Speakers` option unchecked.
-
-If you select `ALL` as the speaker, you'll get speaker IDs for every line, but it will be quite slow, especially for tree-based queries.
 
 ## Editing
 

@@ -292,4 +292,4 @@ If you want, you can use the `Save as dictionary` button to generate a reference
 
 ## Next steps
 
-It can be hard to learn anything interesting from absolute frequencies alone. Generally, you'll next want to go to the `Edit` tab to modify the results into something more informative.
+It can be hard to learn anything interesting from absolute frequencies alone. Generally, you'll next want to go to the `Edit` tab to modify the results into something more informative. Or, go and check out your results in context via the `Concordance` tab.
