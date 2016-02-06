@@ -23,11 +23,8 @@ class Corpus:
         level = kwargs.pop('level', 'c')
         print_info = kwargs.get('print_info', True)
 
-        path = os.path.abspath(path)
-
-        self.path = os.path.relpath(path)
+        self.path = os.path.abspath(path)
         self.name = os.path.basename(path)
-        self.abspath = path
 
         # this messy code figures out as quickly as possible what the datatype 
         # and singlefile status of the path is. it's messy because it shortcuts 
@@ -35,14 +32,16 @@ class Corpus:
         # moved into the determine_datatype() funct.
 
         self.singlefile = False
-        if os.path.isfile(self.abspath):
-            if self.abspath.endswith('.xml'):
+        if os.path.isfile(self.path):
+            if self.path.endswith('.xml'):
                 self.datatype = 'parse'
             self.singlefile = True
         elif path.endswith('-parsed'):
             self.datatype = 'parse'
             if len([d for d in os.listdir(path) if isdir(join(path, d))]) > 0:
                 self.singlefile = False
+            if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
+                level = 's'
         else:
             self.datatype, self.singlefile = determine_datatype(path)
             if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
@@ -64,14 +63,13 @@ class Corpus:
         # Datalist of files, and print useful information
         if level == 'c':
             if print_info:
-                print('\nCorpus at: %s\n' % self.abspath)
+                print('\nCorpus at: %s\n' % self.path)
             subcorpora = Datalist(sorted([Subcorpus(join(self.path, d)) \
                                                for d in os.listdir(self.path) \
                                                if isdir(join(self.path, d))], \
                                                key=operator.attrgetter('name')))
             self.subcorpora = subcorpora
             for sbc in subcorpora:
-                
                 file_list = [File(f, sbc.path) for f in os.listdir(sbc.path) \
                     if not f.startswith('.')]
                 file_list = sorted(file_list, key=operator.attrgetter('name'))
@@ -122,7 +120,7 @@ class Corpus:
     def __str__(self):
         """string representation of corpus"""
         st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' \
-             'Number of files: %d\n' % (self.abspath, self.datatype, len(self.subcorpora), len(self.files))
+             'Number of files: %d\n' % (self.path, self.datatype, len(self.subcorpora), len(self.files))
         if self.singlefile:
             st = st + '\nCorpus is a single file.\n'
         if self.features is not False:
@@ -421,11 +419,11 @@ class File(Corpus):
 
         if self.datatype == 'tokens':
             import pickle
-            with open(self.abspath, "rb") as fo:
+            with open(self.path, "rb") as fo:
                 data = pickle.load(fo)
                 return data
         else:
-            with open(self.abspath, 'r') as fo:
+            with open(self.path, 'r') as fo:
                 data = fo.read()
                 return data
 
