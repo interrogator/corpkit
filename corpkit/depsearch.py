@@ -528,11 +528,12 @@ def dep_searcher(sents,
                         break                
 
             if 'r' in show:
-
                 all_lks = [l for l in deps.links]
                 distance = distancer(all_lks, lk)
                 if distance is not False and distance is not None:
                     single_result['r'] = str(distance)
+                else:
+                    single_result['r'] = '-1'
 
             if 'i' in show:
                 single_result['i'] = str(lk.id)
