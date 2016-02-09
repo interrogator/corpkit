@@ -574,24 +574,30 @@ def determine_datatype(path):
     singlefile = False
     if os.path.isfile(path):
         singlefile = True
-        exts = [os.path.splitext(path)[1]]
+        if '.' in path:
+            exts = [os.path.splitext(path)[1]]
+        else:
+            exts = ['.txt']
     else:
         for (root, dirs, fs) in os.walk(path):
             for f in fs:
-                try:
+                if '.' in f:
                     ext = os.path.splitext(f)[1]
                     exts.append(ext)
-                except:
-                    pass
     counted = Counter(exts)
-    mc = counted.most_common(1)[0][0]
+    counted.pop('', None)
+    try:
+        mc = counted.most_common(1)[0][0]
+    except IndexError:
+        mc = '.txt'
     if mc == '.xml':
         return 'parse', singlefile
     elif mc == '.txt':
         return 'plaintext', singlefile
     elif mc == '.p':
         return 'tokens', singlefile
-
+    else:
+        return 'plaintext', singlefile
 
 def filtermaker(the_filter, case_sensitive = False):
     import re
