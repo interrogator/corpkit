@@ -70,7 +70,7 @@ With the `Corpus()` class, the following attributes are available:
 | `corpus.subcorpora` | list of subcorpus objects with indexing/slicing methods |
 | `corpus.files` | list of corpus file objects with indexing/slicing methods |
 | `corpus.structure` | `dict` containing subcorpora and their files |
-| `corpus.features` | Where feature counting will be stored, `None` initially |
+| `corpus.features` | Corpus features (characters, clauses, words, tokens, process types, passives, etc.)  |
 
 as well as the following methods:
 
@@ -80,7 +80,6 @@ as well as the following methods:
 | `corpus.tokenise()` | Create a tokenised version of a plaintext corpus |
 | `corpus.interrogate()` | Interrogate the corpus for lexicogrammatical features |
 | `corpus.concordance()` | Concordance via lexis and/or grammar |
-| `corpus.get_stats()` | Count features (characters, clauses, words, tokens, process types, passives, etc.) and store as `corpus.features` attribute |
 
 <a name="navigating-corpus-objects"></a>
 #### Navigating `Corpus` objects
@@ -96,7 +95,7 @@ Once you've defined a Corpus, you can move around it very easily:
 #  <corpkit.corpus.Subcorpus instance: 1988>,
 #  <corpkit.corpus.Subcorpus instance: 1989>]
 
->>> corpus.subcorpora[0].abspath, corpus.subcorpora[0].datatype
+>>> corpus.subcorpora[0].path, corpus.subcorpora[0].datatype
 # ('/Users/daniel/Work/risk/data/NYT-parsed/1987', 'parse')
 
 >>> corpus.subcorpora.c1989.files[10:13]
@@ -503,11 +502,10 @@ This makes it possible to not only investigate individual speakers, but to form 
 <a name="getting-general-stats"></a>
 ### Getting general stats
 
-Once you have a parsed `Corpus()` object, you can use `corpus.get_stats()` to fill `corpus.features` with data.
+Once you have a parsed `Corpus()` object, enter `corpus.features` to interrogate the corpus for some basic frequencies:
 
 ```python
 >>> corpus = Corpus('data/sessions-parsed')
->>> corpus.get_stats()
 >>> corpus.features
 ```
 

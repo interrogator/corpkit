@@ -158,7 +158,10 @@ def interrogator(corpus,
 
         if root:
             root.update()
-        os.remove(to_open)
+        try:
+            os.remove(to_open)
+        except OSError:
+            pass
         if countmode:
             return(len(res))
         else:
@@ -625,7 +628,7 @@ def interrogator(corpus,
                 if type(search.get('w')) == list:
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
-        only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f']
+        only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
         if corpus.datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
             raise ValueError('Need parsed corpus to search with "%s" option(s).' % ', '.join([i for i in list(search.keys()) if i in only_parse]))
 
@@ -713,8 +716,10 @@ def interrogator(corpus,
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for k, v in sorted(corpus.structure.items(), key=lambda obj: obj[0].name):
-            to_iterate_over[(k.name, k.path)] = v
+        for subcorpus in corpus.subcorpora:
+            to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+        #for k, v in sorted(corpus.structure.items(), key=lambda obj: obj[0].name):
+        #    to_iterate_over[(k.name, k.path)] = v
     if files_as_subcorpora:
         to_iterate_over = {}
         for f in corpus.files:
@@ -987,6 +992,11 @@ def interrogator(corpus,
             output.query = locs
             if quicksave:
                 output.save()
+
+            if kwargs.get('printstatus', True):
+                thetime = strftime("%H:%M:%S", localtime())
+                finalstring = '\n\n%s: Concordancing finished! %d results.' % (thetime, len(conc_df))
+                print(finalstring)
             return output
 
         #output.query = locs

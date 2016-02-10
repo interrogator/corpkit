@@ -1,6 +1,15 @@
 from __future__ import print_function
 import corpkit
 
+def lazyprop(fn):
+    attr_name = '_lazy_' + fn.__name__
+    @property
+    def _lazyprop(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, fn(self))
+        return getattr(self, attr_name)
+    return _lazyprop
+
 class Corpus:
     """
     A class representing a linguistic text corpus, which contains files,
@@ -21,6 +30,7 @@ class Corpus:
         # assume it is a full corpus to begin with.
 
         level = kwargs.pop('level', 'c')
+        self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
         self.path = os.path.abspath(path)
@@ -30,6 +40,9 @@ class Corpus:
         # and singlefile status of the path is. it's messy because it shortcuts 
         # full checking where possible some of the shortcutting could maybe be 
         # moved into the determine_datatype() funct.
+
+        if print_info:
+            print('\nCorpus at: %s\n' % self.path)
 
         self.singlefile = False
         if os.path.isfile(self.path):
@@ -43,79 +56,47 @@ class Corpus:
             if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
                 level = 's'
         else:
-            self.datatype, self.singlefile = determine_datatype(path)
+            if level == 'c':
+                if not self.datatype:
+                    self.datatype, self.singlefile = determine_datatype(path)
             if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
                 level = 's'
-
-        self.structure = None
-        self.subcorpora = None
-        self.files = None
-
-        # these two will become .structure and .files if they exist
-        struct = {}
-        all_files = []
         
         # if initialised on a file, process as file
         if self.singlefile and level == 'c':
             level = 'f'
 
-        # For corpora, make Datalist of subcorpora, make structure dict, make a
-        # Datalist of files, and print useful information
-        if level == 'c':
-            if print_info:
-                print('\nCorpus at: %s\n' % self.path)
-            subcorpora = Datalist(sorted([Subcorpus(join(self.path, d)) \
-                                               for d in os.listdir(self.path) \
-                                               if isdir(join(self.path, d))], \
-                                               key=operator.attrgetter('name')))
-            self.subcorpora = subcorpora
-            for sbc in subcorpora:
-                file_list = [File(f, sbc.path) for f in os.listdir(sbc.path) \
-                    if not f.startswith('.')]
-                file_list = sorted(file_list, key=operator.attrgetter('name'))
-                file_list = Datalist(file_list)
-                struct[sbc] = file_list
-                if print_info:
-                    print('Subcorpus: %s\n\t%s\n' % (sbc.name, \
-                        '\n\t'.join([f.name for f in file_list[:10]])))
-                    if len(file_list) > 10:
-                        print('... and %s more ... \n' % str(len(file_list) - 10))
-                for f in file_list:
-                    all_files.append(f)
-        
-            self.structure = struct
+        self.level = level
 
-        # for subcorpora, we only need the filelist and a simple structure dict
-        elif level == 's':
-            all_files = sorted([File(f, self.path) for f in os.listdir(self.path) \
-                                if not f.startswith('.')], key=operator.attrgetter('name'))
-            self.files = Datalist(all_files)
-            self.structure = {'.': self.files}
-            if print_info:
-                print('\nCorpus created with %d files:\n\t%s\n' % (len(self.files), '\n\t'.join([i.name for i in self.files][:10])))
-                if len(self.files) > 10:
-                    print('... and %s more ... \n' % str(len(self.files) - 10))
+    @lazyprop
+    def subcorpora(self):
+        import re, os, operator
+        from os.path import join, isdir
+        if self.level == 'c':
+            variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
+            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype) \
+                                       for d in os.listdir(self.path) \
+                                       if isdir(join(self.path, d))], \
+                                       key=operator.attrgetter('name')))
+            for subcorpus in sbs:
+                variable_safe = re.sub(variable_safe_r, '', \
+                    subcorpus.name.lower().split(',')[0])
+                setattr(self, variable_safe, subcorpus)
+            return sbs
 
-        # for non File, we will add files attribute
-        if level != 'f':
-            self.files = Datalist(all_files)
-
-        # this is the future home of the output of .get_stats()
-        self.features = False
-
-        # set accessible attribute names for subcorpora and files
-        variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
-        if self.subcorpora is not None:
-            if self.subcorpora and len(self.subcorpora) > 0:
-                for subcorpus in self.subcorpora:
-                    variable_safe = re.sub(variable_safe_r, '', \
-                        subcorpus.name.lower().split(',')[0])
-                    setattr(self, variable_safe, subcorpus)
-        if self.files is not None:
-            if self.files and len(self.files) > 0:
-                for f in self.files:
-                    variable_safe = re.sub(variable_safe_r, '', f.name.lower().split('.')[0])
-                    setattr(self, variable_safe, f)
+    @lazyprop
+    def files(self):
+        import re, os, operator
+        from os.path import join, isdir
+        if self.level == 's':
+            #variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
+            fs = sorted([File(f, self.path, self.datatype) for f in os.listdir(self.path) \
+                        if not f.startswith('.')], key=operator.attrgetter('name'))
+            fs = Datalist(fs)
+            #for f in fs:
+            #    variable_safe = re.sub(variable_safe_r, '', f.name.lower().split('.')[0])
+            #    setattr(self, variable_safe, f)
+            return fs
 
     def __str__(self):
         """string representation of corpus"""
@@ -135,28 +116,24 @@ class Corpus:
 
     def __repr__(self):
         """object representation of corpus"""
-        if not self.files:
-            sfiles = ''
-        else:
-            sfiles = self.files
         if not self.subcorpora:
             ssubcorpora = ''
         else:
             ssubcorpora = self.subcorpora
-        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora; %d files>" % (self.name, len(ssubcorpora), len(sfiles))
+        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (self.name, len(ssubcorpora))
 
     # METHODS
-    def get_stats(self, *args):
+    @lazyprop
+    def features(self):
         """
         Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`
 
            >>> corpus.get_stats()
 
         :returns: None
-        """  
+        """
         from interrogator import interrogator
-        self.features = interrogator(self, 's', 'any').results
-        print('\nFeatures defined. See .features attribute ...') 
+        return interrogator(self, 's', 'any').results
 
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
@@ -374,9 +351,9 @@ class Subcorpus(Corpus):
     Methods for interrogating, concordancing are the same as 
     :class:`corpkit.corpus.Corpus`."""
     
-    def __init__(self, path):
+    def __init__(self, path, datatype):
         self.path = path
-        kwargs = {'print_info': False, 'level': 's'}
+        kwargs = {'print_info': False, 'level': 's', 'datatype': datatype}
         Corpus.__init__(self, self.path, **kwargs)
 
     def __repr__(self):
@@ -392,11 +369,11 @@ class Subcorpus(Corpus):
 class File(Corpus):
     """Models a corpus file for reading, interrogating, concordancing"""
     
-    def __init__(self, path, dirname):
+    def __init__(self, path, dirname, datatype):
         import os
         from os.path import join, isfile, isdir
         self.path = join(dirname, path)
-        kwargs = {'print_info': False, 'level': 'f'}
+        kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
         Corpus.__init__(self, self.path, **kwargs)
         if self.path.endswith('.p'):
             self.datatype = 'tokens'
@@ -555,4 +532,3 @@ class Corpora(Datalist):
                 from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
-

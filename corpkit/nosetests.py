@@ -33,7 +33,11 @@ def test_parse():
     except:
         pass
     parsed = unparsed.parse()
-    assert_equals(list([i.name for i in parsed.files]), ['intro.txt.xml', 'body.txt.xml'])
+    fnames = []
+    for subc in parsed.subcorpora:
+        for f in subc.files:
+            fnames.append(f.name)
+    assert_equals(fnames, ['intro.txt.xml', 'body.txt.xml'])
 
 test_parse.slow = 1
 
@@ -46,8 +50,11 @@ def test_parse_speakseg(skipassert = False):
     except:
         pass
     parsed = unparsed.parse(speaker_segmentation = True)
-    if not skipassert:
-        assert_equals(list([i.name for i in parsed.files]), ['intro.txt.xml', 'body.txt.xml'])
+    fnames = []
+    for subc in parsed.subcorpora:
+        for f in subc.files:
+            fnames.append(f.name)
+    assert_equals(fnames, ['intro.txt.xml', 'body.txt.xml'])
 
 test_parse_speakseg.slow = 1
 
