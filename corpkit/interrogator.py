@@ -651,6 +651,7 @@ def interrogator(corpus,
     ############################################
 
     if search.get('t'):
+        translated_option = 't'
         query = search.get('t')
 
         # check the query
