@@ -139,7 +139,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     pd.set_option('display.max_colwidth', 100)
 
     if type(n) == int:
-        to_show = df.head(nq)
+        to_show = df.head(n)
     elif n is False:
         to_show = df
     elif n == 'all':
@@ -148,6 +148,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
         raise ValueError('n argument "%s" not recognised.' % str(n))
 
     def resize_by_window_size(df, window):
+        df.is_copy = False
         df['l'] = df['l'].str.slice(start=-window, stop=None)
         df['l'] = df['l'].str.rjust(window)
         df['r'] = df['r'].str.slice(start = 0, stop = window)
@@ -155,6 +156,7 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
         df['m'] = df['m'].str.ljust(df['m'].str.len().max())
         return df
 
+    to_show.is_copy = False
     if window:
         to_show = resize_by_window_size(to_show, window)
 
