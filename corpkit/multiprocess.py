@@ -215,8 +215,11 @@ def pmultiquery(corpus,
             sformat += '\n                  '
 
     if multiple_corpora and not multiple_option:
+        corplist = "\n              ".join([i.name for i in corpus[:20]])
+        if len(corpus) > 20:
+            corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
         print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, "\n              ".join([i.name for i in corpus]), sformat, message)))
+           "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
 
     elif multiple_queries:
         print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
@@ -384,11 +387,12 @@ def pmultiquery(corpus,
                 print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         else:
             print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
-        if used_joblib:
-            print('\n' * (len(ds) - 3))
+        #if used_joblib:
+            
         if quicksave:
             from other import save
             save(out, quicksave)
+        print('\n')
         return out
 
 if __name__ == '__main__':

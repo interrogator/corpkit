@@ -89,6 +89,7 @@ class Corpus:
         import re, os, operator
         from os.path import join, isdir
         if self.level == 's':
+
             #variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
             fs = sorted([File(f, self.path, self.datatype) for f in os.listdir(self.path) \
                         if not f.startswith('.')], key=operator.attrgetter('name'))

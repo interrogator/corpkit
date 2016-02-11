@@ -64,6 +64,29 @@ def interrogator(corpus,
     from dictionaries.word_transforms import wordlist, taglemma
     import corenlp_xml
     import codecs
+    import signal
+
+    original_sigint = signal.getsignal(signal.SIGINT)
+
+    if kwargs.get('paralleling', None) is None:
+        original_sigint = signal.getsignal(signal.SIGINT)
+        
+        def signal_handler(signal, frame):
+            """pause on ctrl+c, rather than just stop loop"""   
+            import signal
+            import sys
+            from time import localtime, strftime
+            signal.signal(signal.SIGINT, original_sigint)
+            thetime = strftime("%H:%M:%S", localtime())
+            try:
+                sel = raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+            except NameError:
+                sel = input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+            time = strftime("%H:%M:%S", localtime())
+            print('%s: Interrogation resumed.\n' % time)
+            signal.signal(signal.SIGINT, signal_handler)
+
+        signal.signal(signal.SIGINT, signal_handler)
 
     # find out if using gui
     root = kwargs.get('root')
@@ -572,6 +595,7 @@ def interrogator(corpus,
     locs['multiprocess'] = multiprocess
 
     if im:
+        signal.signal(signal.SIGINT, original_sigint)
         from multiprocess import pmultiquery
         return pmultiquery(**locs)
 
