@@ -393,7 +393,7 @@ For parsed corpora, there are many other possible keys:
 | `F`    | Dependency function |
 | `R`    | Distance from 'root' |
 | `T`    | Tree  |
-| `V`    | Predefined general stats |
+| `S`    | Predefined general stats |
 
 Allowable combinations are subject to common sense. If you're searching trees, you can't also search governors or dependents. If you're searching an unparsed corpus, you can't search for information provided by the parser. Here are some example `search`/`exclude` values:
 
