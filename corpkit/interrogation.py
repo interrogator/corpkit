@@ -428,7 +428,10 @@ class Interrodict(OrderedDict):
     
     def __init__(self, data):
         from process import makesafe
-        for k, v in list(data.items()):
+        if type(data) == list:
+            from collections import OrderedDict
+            data = OrderedDict(data)
+        for k, v in data.items():
             setattr(self, makesafe(k), v)
         super(Interrodict, self).__init__(data)
 
@@ -462,4 +465,28 @@ class Interrodict(OrderedDict):
         """
         from other import make_multi
         return make_multi(self, indexnames = indexnames)
+
+
+    def save(self, savename, savedir = 'saved_interrogations', **kwargs):
+        """
+        Save an interrogation as pickle to ``savedir``.
+
+           >>> o = corpus.interrogate('w', 'any')
+           >>> o.save('savename')
+
+        will create ``saved_interrogations/savename.p``
+        
+        :param savename: A name for the saved file
+        :type savename: str
+        
+        :param savedir: Relative path to directory in which to save file
+        :type savedir: str
+        
+        :param print_info: Show/hide stdout
+        :type print_info: bool
+        
+        :returns: None
+        """
+        from other import save
+        save(self, savename, **kwargs)
         
