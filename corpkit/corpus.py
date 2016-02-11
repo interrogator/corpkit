@@ -101,27 +101,42 @@ class Corpus:
 
     def __str__(self):
         """string representation of corpus"""
-        st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' \
-             'Number of files: %d\n' % (self.path, self.datatype, len(self.subcorpora), len(self.files))
+        st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (self.path, self.datatype, len(self.subcorpora))
         if self.singlefile:
             st = st + '\nCorpus is a single file.\n'
-        if self.features is not False:
+        if 'features' in self.__dict__.keys():
             if not self.singlefile:
                 cols = list(self.features.columns)[:10]
                 st = st + '\nFeatures:\n\n' + self.features.head(10).to_string(columns = cols)
             else:
                 st = st + '\nFeatures:\n\n' + self.features.head(10).to_string()
         else:
-            st = st + '\nFeatures not analysed yet. Use .get_stats() method.\n'
+            st = st + '\nFeatures not analysed yet. Use .features to calculate them.\n'
         return st
 
     def __repr__(self):
         """object representation of corpus"""
+        import os
         if not self.subcorpora:
             ssubcorpora = ''
         else:
             ssubcorpora = self.subcorpora
-        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (self.name, len(ssubcorpora))
+        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (os.path.basename(self.path), len(ssubcorpora))
+
+    def __getitem__(self, key):
+        from process import makesafe
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return Datalist([self[ii] for ii in range(*key.indices(len(self.subcorpora)))])
+        elif type(key) == int:
+            return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
+        else:
+            try:
+                return self.subcorpora.__getattribute__(key)
+            except:
+                from process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
 
     # METHODS
     @lazyprop
@@ -367,6 +382,23 @@ class Subcorpus(Corpus):
     def __repr__(self):
         return "<corpkit.corpus.Subcorpus instance: %s>" % self.name
 
+    def __getitem__(self, key):
+
+        from process import makesafe
+
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return Datalist([self[ii] for ii in range(*key.indices(len(self.files)))])
+        elif type(key) == int:
+            return self.files.__getitem__(makesafe(self.files[key]))
+        else:
+            try:
+                return self.files.__getattribute__(key)
+            except:
+                from process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
+
 class File(Corpus):
     """Models a corpus file for reading, interrogating, concordancing"""
     
@@ -388,6 +420,27 @@ class File(Corpus):
 
     def __str__(self):
         return self.path
+
+    @lazyprop
+    def document(self):
+        from corenlp_xml.document import Document
+        return Document(self.read())
+
+    def __getitem__(self, key):
+        from process import makesafe
+
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return Datalist([self[ii] for ii in range(*key.indices(len(self.subcorpora)))])
+        elif type(key) == int:
+            return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
+        else:
+            try:
+                return self.subcorpora.__getattribute__(key)
+            except:
+                from process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
 
     def read(self, *args, **kwargs):
         """Read file data. If data is pickled, unpickle first
