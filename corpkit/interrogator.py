@@ -900,7 +900,7 @@ def interrogator(corpus,
                             else:
                                 line[0] = f.name
                             if not preserve_case:
-                                line = [b.lower() for b in line]
+                                line[3:] = [x.lower() for x in line[3:]]
                             if spelling:
                                 line = [correct_spelling(b) for b in line]
                             if numconc < maxconc or not maxconc:
@@ -911,7 +911,7 @@ def interrogator(corpus,
                     if not only_conc:
                         if not preserve_case:
                             if not statsmode:
-                                res = [r.lower() for r in res]
+                                res = [i.lower() for i in res]
                         if spelling:
                             if not statsmode:
                                 res = [correct_spelling(r) for r in res]
@@ -949,10 +949,6 @@ def interrogator(corpus,
             for fname, spkr, start, word, end in unique_results:
                 #spkr = str(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
-
-                # the use of ascii here makes sure the string formats ok, but will also screw over
-                # anyone doing non-english work. so, change to utf-8, then fix errors as they come
-                # in the corpkit-gui "add_conc_lines_to_window" function
                 all_conc_lines.append(Series([sc_name,
                                      fname, \
                                      spkr, \
