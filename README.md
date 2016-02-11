@@ -29,6 +29,7 @@
   - [`search`, `exclude` and `show`](#search-exclude-and-show)
 - [Building corpora](#building-corpora)
   - [Speaker IDs](#speaker-ids)
+  - [Navigating parsed corpora](#navigating-parsed-corpora)
   - [Getting general stats](#getting-general-stats)
 - [Concordancing](#concordancing)
 - [Systemic functional stuff](#systemic-functional-stuff)
@@ -498,6 +499,19 @@ When interrogating or concordancing, you can then pass in a keyword argument to 
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
+
+<a name="navigating-parsed-corpora"></a>
+### Navigating parsed corpora
+
+When your data is parsed, `Corpus` objects draw on [CoreNLP XML](http://corenlp-xml-library.readthedocs.org/en/latest/) to keep everything seamlessly connected:
+
+```python
+>>> corp = Corpus('data/CHT-parsed')
+>>> corp.subcorpora['2013'].files[1].document.sentences[4235].parse_string
+# "(ROOT (FRAG (CC And) (NP (NP (RB not) (RB just)) (NP (NP (NNP Metrione) ... "
+>>> corp.subcorpora['1997'].files[0].document.sentences[3509].tokens[30].word
+# 'linguistics'
+```
 
 <a name="getting-general-stats"></a>
 ### Getting general stats
