@@ -1,7 +1,7 @@
 from __future__ import print_function
 
-def plotter(title,
-            df,
+def plotter(df,
+            title = False,
             kind = 'line',
             x_label = None,
             y_label = None,
@@ -23,6 +23,7 @@ def plotter(title,
             black_and_white = False,
             show_p_val = False,
             indices = False,
+            transpose = False,
             **kwargs):
     """Visualise corpus interrogations.
 
@@ -88,7 +89,6 @@ def plotter(title,
     """
     import corpkit
     import os
-
     try:
         from IPython.utils.shimmodule import ShimWarning
         import warnings
@@ -127,6 +127,9 @@ def plotter(title,
     tk = check_t_kinter()
     running_python_tex = check_pytex()
     running_spider = check_spider()
+
+    if not title:
+        title = ''
 
     def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
         """remove extreme values from colourmap --- no pure white"""
@@ -245,8 +248,7 @@ def plotter(title,
         colours = False
 
     # use 'draggable = True' to make a draggable legend
-    dragmode = kwargs.get('draggable', False)
-    kwargs.pop('draggable', None)
+    dragmode = kwargs.pop('draggable', False)
 
     if kwargs.get('savepath'):
         mpl.rcParams['savefig.directory'] = kwargs.get('savepath')
@@ -325,6 +327,8 @@ def plotter(title,
             dataframe = DataFrame(dataframe.cumsum())
     else:
         # don't know if this is much good.
+        if transpose:
+            dataframe = dataframe.T
         if cumulative:
             dataframe = DataFrame(dataframe.cumsum())
         if len(list(dataframe.columns)) == 1:
@@ -406,7 +410,7 @@ def plotter(title,
     else:
         kwargs.pop('explode', None)
 
-    legend = kwargs.get('legend', False)
+    legend = kwargs.get('legend', True)
 
     #cut data short
     plotting_a_totals_column = False
