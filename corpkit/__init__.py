@@ -69,53 +69,53 @@ from build import flatten_treestring
 # monkeypatch editing and plotting to pandas objects
 import pandas as pd
 
-def plotfunc(self, title, *args, **kwargs):
+def _plot(self, *args, **kwargs):
     from corpkit import plotter
-    plotter(title, self, *args, **kwargs)
+    plotter(self, *args, **kwargs)
 
-def editfunc(self, *args, **kwargs):
+def _edit(self, *args, **kwargs):
     from corpkit import editor
     return editor(self, *args, **kwargs)
 
-def savefunc(self, savename, *args, **kwargs):
+def _save(self, savename, **kwargs):
     from corpkit import save
-    save(self, savename, *args, **kwargs)
+    save(self, savename, **kwargs)
 
-def quickviewfunc(self, n = 25):
+def _quickview(self, n = 25):
     from corpkit.other import quickview
     quickview(self, n = n)
 
-def formatfunc(self, *args, **kwargs):
+def _format(self, *args, **kwargs):
     from corpkit.other import concprinter
     concprinter(self, *args, **kwargs)
 
-def texifyfunc(self, *args, **kwargs):
+def _texify(self, *args, **kwargs):
     from corpkit.other import texify
     texify(self, *args, **kwargs)
 
-def calculatefunc(self, *args, **kwargs):
+def _calculate(self, *args, **kwargs):
     from corpkit.process import interrogation_from_conclines
     return interrogation_from_conclines(self)
 
-pd.DataFrame.edit = editfunc
-pd.Series.edit = editfunc
+pd.DataFrame.edit = _edit
+pd.Series.edit = _edit
 
-pd.DataFrame.visualise = plotfunc
-pd.Series.visualise = plotfunc
+pd.DataFrame.visualise = _plot
+pd.Series.visualise = _plot
 
-pd.DataFrame.save = savefunc
-pd.Series.save = savefunc
+pd.DataFrame.save = _save
+pd.Series.save = _save
 
-pd.DataFrame.quickview = quickviewfunc
-pd.Series.quickview = quickviewfunc
+pd.DataFrame.quickview = _quickview
+pd.Series.quickview = _quickview
 
-pd.DataFrame.format = formatfunc
-pd.Series.format = formatfunc
+pd.DataFrame.format = _format
+pd.Series.format = _format
 
-pd.Series.texify = texifyfunc
+pd.Series.texify = _texify
 
-pd.DataFrame.calculate = calculatefunc
-pd.Series.calculate = calculatefunc
+pd.DataFrame.calculate = _calculate
+pd.Series.calculate = _calculate
 
 A = 'a'
 D = 'd'
