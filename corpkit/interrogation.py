@@ -168,6 +168,7 @@ class Interrogation(object):
             black_and_white = False,
             show_p_val = False,
             indices = False,
+            transpose = False,
             **kwargs):
         """Visualise corpus interrogations.
 
@@ -232,7 +233,6 @@ class Interrogation(object):
         :returns: matplotlib figure
         """
         locs = locals()
-        locs.pop('title', None)
         locs.pop('self', None)
         if kwargs:
             for k, v in kwargs.items():
@@ -242,9 +242,9 @@ class Interrogation(object):
         from plotter import plotter
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
-            plotter(title, self.results, **locs)
+            plotter(self.results, **locs)
         elif branch.lower().startswith('t'):
-            plotter(title, self.totals, **locs)   
+            plotter(self.totals, **locs)   
 
     def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
