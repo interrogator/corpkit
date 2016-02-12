@@ -61,6 +61,7 @@ def closed_class_wordlists():
             u"their",
             u"theirs",
             u"them",
+            u"there",
             u"themselves",
             u"these",
             u"they",
