@@ -167,7 +167,7 @@ def editor(interrogation,
 
     return_conc = False
     from interrogation import Interrodict, Interrogation, Concordance
-    if interrogation.__class__ == corpkit.interrogation.Interrodict:
+    if interrogation.__class__ == Interrodict:
         from collections import OrderedDict
         outdict = OrderedDict()
         from editor import editor
@@ -195,7 +195,7 @@ def editor(interrogation,
 
     elif type(interrogation) in [pandas.core.frame.DataFrame, pandas.core.series.Series]:
         dataframe1 = interrogation
-    elif interrogation.__class__ == corpkit.interrogation.Interrogation:
+    elif interrogation.__class__ == Interrogation:
         #if interrogation.__dict__.get('concordance', None) is not None:
         #    concordances = interrogation.concordance
         branch = kwargs.pop('branch', 'results')
