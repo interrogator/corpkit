@@ -513,7 +513,7 @@ def plotter(df,
                     import numpy as np
                     the_range = np.linspace(0, 1, num_to_plot)
                     cmap = plt.get_cmap(colours)
-                    kwargs['colors'] = [cmap(n) for n in the_range]
+                    kwargs['color'] = [cmap(n) for n in the_range]
                 # make a bar width ... ? ...
                 #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
@@ -562,6 +562,8 @@ def plotter(df,
         if len(max(xvals, key=len)) > 6:
             if not piemode:
                 kwargs['rot'] = 45
+        else:
+            kwargs['rot'] = False
 
     # no title for subplots because ugly,
     if title and not sbplt:
