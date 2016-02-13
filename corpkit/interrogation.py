@@ -489,4 +489,42 @@ class Interrodict(OrderedDict):
         """
         from other import save
         save(self, savename, **kwargs)
+
+    def collapse(self, axis = 'y'):
+        """
+        Collapse Interrodict on an axis or along interrogation name
+
+        :param axis: collapse along x, y or name axis
+        :type axis: str ('x'/'y'/'n')
+        :returns: corpkit.interrogation.Interrogation
+        """
+        import pandas as pd
+        if axis.lower()[0] not in ['x', 'y']:
+            order = list(self.values()[0].results.columns)
+            df = self.values()[0].results
+            for i in self.values()[1:]:
+                df = df.add(i.results, fill_value = 0)
+        else:
+            out = []
+            for corpus_name, interro in self.items():
+                if axis.lower().startswith('y'):
+                    ax = 0
+                elif axis.lower().startswith('x'):
+                    ax = 1
+                data = interro.results.sum(axis = ax)
+                data.name = corpus_name
+                out.append(data)
+            # concatenate and transpose
+            df = pd.concat(out, axis = 1).T
+            # turn NaN to 0, sort
+            df = df.fillna(0)
         
+        #make interrogation object from df
+        if not axis.lower().startswith('x'):
+            df = df.edit(sort_by = 'total')
+        else:
+            df = df.edit()
+        # make sure everything is int, not float
+        for col in list(df.results.columns):
+            df.results[col] = df.results[col].astype(int)
+        return df
