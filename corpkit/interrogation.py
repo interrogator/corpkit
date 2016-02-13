@@ -16,14 +16,16 @@ class Interrogation(object):
         """`dict` containing values that generated the result"""
         self.concordance = concordance
         """pandas `DataFrame` containing concordance lines"""
-        self.__initialised = True
 
     def __str__(self):
         st = 'Corpus interrogation: %s\n\n' % (self.query['corpus'].name)
         return st
 
     def __repr__(self):
-        return "<corpkit.interrogation.Interrogation instance: %d total results>" % (int(self.totals.sum()))
+        if 'results' in self.__dict__:
+            return "<corpkit.interrogation.Interrogation instance: %d subcorpora, %d entries>" % relt.results.shape
+        else:
+            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
 
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.

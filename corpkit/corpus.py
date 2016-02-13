@@ -42,7 +42,7 @@ class Corpus:
         # moved into the determine_datatype() funct.
 
         if print_info:
-            print('\nCorpus at: %s\n' % self.path)
+            print('\nCorpus at: %s' % self.path)
 
         self.singlefile = False
         if os.path.isfile(self.path):
