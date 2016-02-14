@@ -23,7 +23,7 @@ class Interrogation(object):
 
     def __repr__(self):
         if 'results' in self.__dict__:
-            return "<corpkit.interrogation.Interrogation instance: %d subcorpora, %d entries>" % relt.results.shape
+            return "<corpkit.interrogation.Interrogation instance: %d subcorpora, %d entries>" % self.results.shape
         else:
             return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
 
