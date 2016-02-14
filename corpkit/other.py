@@ -387,6 +387,7 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     import os
     from time import localtime, strftime
     from other import load
+    from process import makesafe
 
     root = kwargs.get('root', False)
     note = kwargs.get('note', False)    
@@ -401,7 +402,7 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
             loadname = f.replace('.p', '')
             output[loadname] = load(f, loaddir = data_dir)
             time = strftime("%H:%M:%S", localtime())
-            print('%s: %s loaded as %s.' % (time, f, loadname))
+            print('%s: %s loaded as %s.' % (time, f, makesafe(loadname)))
             l += 1
         except:
             time = strftime("%H:%M:%S", localtime())

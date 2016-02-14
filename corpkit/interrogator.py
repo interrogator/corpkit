@@ -1011,7 +1011,7 @@ def interrogator(corpus,
         if only_conc:
             output.query = locs
             if quicksave:
-                output.save()
+                output.save(quicksave)
 
             if kwargs.get('printstatus', True):
                 thetime = strftime("%H:%M:%S", localtime())
@@ -1081,6 +1081,6 @@ def interrogator(corpus,
             interro = Interrogation(results = df, totals = tot, query = locs)
 
         if quicksave:
-            interro.save()
+            interro.save(quicksave)
         
         return interro
