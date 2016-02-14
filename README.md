@@ -69,8 +69,6 @@ With the `Corpus()` class, the following attributes are available:
 | Attribute | Purpose |
 |-----------|---------|
 | `corpus.subcorpora` | list of subcorpus objects with indexing/slicing methods |
-| `corpus.files` | list of corpus file objects with indexing/slicing methods |
-| `corpus.structure` | `dict` containing subcorpora and their files |
 | `corpus.features` | Corpus features (characters, clauses, words, tokens, process types, passives, etc.)  |
 
 as well as the following methods:
@@ -508,7 +506,7 @@ When your data is parsed, `Corpus` objects draw on [CoreNLP XML](http://corenlp-
 ```python
 >>> corp = Corpus('data/CHT-parsed')
 >>> corp.subcorpora['2013'].files[1].document.sentences[4235].parse_string
-# "(ROOT (FRAG (CC And) (NP (NP (RB not) (RB just)) (NP (NP (NNP Metrione) ... "
+# '(ROOT (FRAG (CC And) (NP (NP (RB not) (RB just)) (NP (NP (NNP Metrione) ... '
 >>> corp.subcorpora['1997'].files[0].document.sentences[3509].tokens[30].word
 # 'linguistics'
 ```
