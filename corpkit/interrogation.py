@@ -444,23 +444,36 @@ class Interrodict(OrderedDict):
         if type(data) == list:
             from collections import OrderedDict
             data = OrderedDict(data)
+        # attribute access
+        for index, (k, v) in enumerate(data.items()):
+            setattr(self, makesafe(k), v)
         super(Interrodict, self).__init__(data)
 
     def __getitem__(self, key):
         """allow slicing, indexing"""
+        from collections import OrderedDict
         from process import makesafe
+        # allow slicing
         if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
-            return Corpora([self[ii] for ii in range(*key.indices(len(self)))])
+            n = OrderedDict()
+            for ii in range(*key.indices(len(self))):
+                n[self.keys()[ii]] = self[ii]
+            return Interrodict(n) 
+
+            return Interrodict([self[ii] for ii in range(*key.indices(len(self)))])
+        # allow integer index
         elif type(key) == int:
-            return self.__getitem__(makesafe(self.data[key]))
+            return next(v for i, (k, v) in enumerate(self.items()) if i == key)
+            #return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
+        # dict key access
         else:
             try:
-                return self.__getattribute__(key)
+                return OrderedDict.__getitem__(self, key)
             except:
                 from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
+        
 
 
     def __repr__(self):
