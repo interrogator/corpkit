@@ -23,7 +23,6 @@
   - [By downloading the repository](#by-downloading-the-repository)
   - [By cloning the repository](#by-cloning-the-repository)
   - [Via `pip`](#via-pip)
-- [Unpacking the orientation data](#unpacking-the-orientation-data)
 - [Quickstart](#quickstart)
 - [More detailed examples](#more-detailed-examples)
   - [`search`, `exclude` and `show`](#search-exclude-and-show)
@@ -236,8 +235,6 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
 
 There are quite a few helper functions for making regular expressions, making new projects, and so on, with more documentation forthcoming. Also included are some lists of words and dependency roles, which can be used to match functional linguistic categories. These are explained in more detail [here](#systemic-functional-stuff).
 
-Included here is `orientation/orientation.ipynb`, which is a Jupyter Notebook version of this readme. In `orientation/data` is a sample corpus of paragraph from *The New York Times* containing the word *risk*. Due to size restrictions, This data only includes parse trees (no dependencies), and isn't included in the pip package. With the notebook and the data, you can easily run all the code in this document yourself.
-
 <a name="installation"></a>
 ## Installation
 
@@ -287,38 +284,22 @@ If you get an NLTK error, you might need to manually download the tokeniser and 
 >>> nltk.download('wordnet')
 ```
 
-<a name="unpacking-the-orientation-data"></a>
-## Unpacking the orientation data
-
-If you installed by downloading or cloning this repository, you'll have the orientation project installed. To use it, `cd` into the orientation project and unzip the data files:
-
-```shell
-cd orientation
-# unzip data to data folder
-gzip -dc data/nyt.tar.gz | tar -xf - -C data
-```
-
 <a name="quickstart"></a>
 ## Quickstart
 
-The best way to use *corpkit* is by opening `orientation/orientation.ipynb` with Jupyter, and executing the relevant cells:
-
-```shell
-ipython notebook orientation.ipynb
-```
-
-Or, just use *(I)Python*:
+Once you've got *corpkit*, and a folder containing text files, you're ready to go:
 
 ```python
+# import everything
 >>> from corpkit import *
 
-# Make corpus from path
+# Make corpus object from path to subcorpora/text files
 >>> unparsed = Corpus('data/nyt/years')
 
 # parse it, return the new parsed corpus object
 >>> corpus = unparsed.parse()
 
-# search corpus for modal auxiliaries:
+# search corpus for modal auxiliaries and plot the top results
 >>> corpus.interroplot('MD')
 ```
 
