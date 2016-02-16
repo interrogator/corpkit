@@ -630,7 +630,7 @@ def parse_corpus(proj_path = False,
         if len(find_install) > 0:
             corenlppath = os.path.join(corenlppath, find_install[0])
         else:
-            print('No parser found. Try using the keyword arg "corenlp = <path>".')
+            print('No parser found. Try using the keyword arg "corenlp = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
             return
 
     # if not gui, don't mess with stdout
