@@ -276,7 +276,7 @@ class Interrogation(object):
         :returns: None
         """
         from other import save
-        save(self, savename, **kwargs)
+        save(self, savename, savedir = savedir, **kwargs)
 
     def quickview(self, n = 25):
         """view top n results as painlessly as possible.
@@ -501,7 +501,7 @@ class Interrodict(OrderedDict):
         :returns: None
         """
         from other import save
-        save(self, savename, **kwargs)
+        save(self, savename, savedir = savedir, **kwargs)
 
     def collapse(self, axis = 'y'):
         """
