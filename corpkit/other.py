@@ -29,7 +29,10 @@ def quickview(results, n = 25):
 
     if type(results) == str:
         if os.path.isfile(os.path.join(dictpath, results)):
-            import pickle
+            try:
+                import cPickle as pickle
+            except ImportError:
+                import pickle as pickle
             from collections import Counter
             unpickled = pickle.load(open(os.path.join(dictpath, results), 'rb'))
             print('\nTop %d entries in %s:\n' % (n, os.path.join(dictpath, results)))
@@ -203,7 +206,10 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     :returns: None
     """
 
-    import pickle
+    try:
+        import cPickle as pickle
+    except ImportError:
+        import pickle as pickle
     import os
     from time import localtime, strftime
 
@@ -270,7 +276,10 @@ def load(savename, loaddir = 'saved_interrogations'):
 
     :returns: loaded data
     """    
-    import pickle
+    try:
+        import cPickle as pickle
+    except ImportError:
+        import pickle as pickle
     import os
     if not savename.endswith('.p'):
         savename = savename + '.p'
