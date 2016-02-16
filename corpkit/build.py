@@ -655,8 +655,12 @@ def parse_corpus(proj_path = False,
         import re
         reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
         fver = next(re.search(reg, s).group(1) for s in os.listdir('.') if re.search(reg, s))
+        if fver == '3.6.0':
+            extra_jar = 'slf4j-api.jar:slf4j-simple.jar:'
+        else:
+            extra_jar = ''
         arglist = ['java', '-cp', 
-                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:slf4j-api.jar:slf4j-simple.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:%sjollyday.jar:ejml-0.23.jar' % (fver, fver, extra_jar), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 

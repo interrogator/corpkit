@@ -444,9 +444,24 @@ class Interrodict(OrderedDict):
         if type(data) == list:
             from collections import OrderedDict
             data = OrderedDict(data)
-        for k, v in data.items():
-            setattr(self, makesafe(k), v)
         super(Interrodict, self).__init__(data)
+
+    def __getitem__(self, key):
+        """allow slicing, indexing"""
+        from process import makesafe
+        if isinstance( key, slice ) :
+            #Get the start, stop, and step from the slice
+            return Corpora([self[ii] for ii in range(*key.indices(len(self)))])
+        elif type(key) == int:
+            return self.__getitem__(makesafe(self.data[key]))
+        else:
+            try:
+                return self.__getattribute__(key)
+            except:
+                from process import is_number
+                if is_number(key):
+                    return self.__getattribute__('c' + key)
+
 
     def __repr__(self):
         return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
@@ -541,3 +556,4 @@ class Interrodict(OrderedDict):
         for col in list(df.results.columns):
             df.results[col] = df.results[col].astype(int)
         return df
+
