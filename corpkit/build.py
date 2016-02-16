@@ -656,13 +656,14 @@ def parse_corpus(proj_path = False,
         reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
         fver = next(re.search(reg, s).group(1) for s in os.listdir('.') if re.search(reg, s))
         arglist = ['java', '-cp', 
-                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
+                     'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:slf4j-api.jar:slf4j-simple.jar:jollyday.jar:ejml-0.23.jar' % (fver, fver), 
                      '-Xmx%sm' % str(memory_mb), 
                      'edu.stanford.nlp.pipeline.StanfordCoreNLP', 
                      '-annotators', 
                      operations, 
                      '-filelist', filelist,
                      '-noClobber',
+                     '-outputExtension', '.xml',
                      '-outputDirectory', new_corpus_path]
         if copula_head:
             arglist.append('--parse.flags')
