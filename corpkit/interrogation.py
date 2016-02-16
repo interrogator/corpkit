@@ -15,10 +15,17 @@ class Interrogation(object):
         self.query = query
         """`dict` containing values that generated the result"""
         self.concordance = concordance
-        """pandas `DataFrame` containing concordance lines"""
+        """pandas `DataFrame` containing concordance lines, if concordance lines were requested."""
 
     def __str__(self):
-        st = 'Corpus interrogation: %s\n\n' % (self.query['corpus'].name)
+        if self.query.get('corpus'):
+            prst = self.query['corpus'].name
+        else:
+            try:
+                prst = self.query['interrogation'].query['corpus'].name
+            except:
+                prst = 'edited'
+        st = 'Corpus interrogation: %s\n\n' % (prst)
         return st
 
     def __repr__(self):
@@ -417,6 +424,10 @@ class Concordance(pd.core.frame.DataFrame):
             return shuffled
 
     def edit(self, *args, **kwargs):
+        """Delete or keep rows by subcorpus or by middle column text.
+
+        >>> skipped = conc.edit(skip_entries = r'to_?match')"""
+
         from editor import editor
         return editor(self, *args, **kwargs)
 
@@ -494,11 +505,11 @@ class Interrodict(OrderedDict):
 
     def collapse(self, axis = 'y'):
         """
-        Collapse Interrodict on an axis or along interrogation name
+        Collapse Interrodict on an axis or along interrogation name.
 
         :param axis: collapse along x, y or name axis
         :type axis: str ('x'/'y'/'n')
-        :returns: corpkit.interrogation.Interrogation
+        :returns: `corpkit.interrogation.Interrogation`
         """
         import pandas as pd
         if axis.lower()[0] not in ['x', 'y']:
@@ -523,9 +534,9 @@ class Interrodict(OrderedDict):
         
         #make interrogation object from df
         if not axis.lower().startswith('x'):
-            df = df.edit(sort_by = 'total')
+            df = df.edit(sort_by = 'total', print_info = False)
         else:
-            df = df.edit()
+            df = df.edit(print_info = False)
         # make sure everything is int, not float
         for col in list(df.results.columns):
             df.results[col] = df.results[col].astype(int)

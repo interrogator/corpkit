@@ -70,6 +70,7 @@ class Corpus:
 
     @lazyprop
     def subcorpora(self):
+        """A list-like object containing a corpus' subcorpora."""
         import re, os, operator
         from os.path import join, isdir
         if self.level == 'c':
@@ -86,6 +87,7 @@ class Corpus:
 
     @lazyprop
     def files(self):
+        """A list-like object containing the files in a folder"""
         import re, os, operator
         from os.path import join, isdir
         if self.level == 's':
@@ -100,7 +102,7 @@ class Corpus:
             return fs
 
     def __str__(self):
-        """string representation of corpus"""
+        """String representation of corpus"""
         st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (self.path, self.datatype, len(self.subcorpora))
         if self.singlefile:
             st = st + '\nCorpus is a single file.\n'
@@ -348,7 +350,7 @@ class Corpus:
     def save(self, savename = False, **kwargs):
         """Save corpus class to file
 
-           >>> corpus.save()
+           >>> corpus.save(filename)
 
         :param savename: name for the file
         :type savename: str
@@ -423,6 +425,7 @@ class File(Corpus):
 
     @lazyprop
     def document(self):
+        """Return the parsed XML of a parsed file"""
         from corenlp_xml.document import Document
         return Document(self.read())
 
@@ -544,7 +547,7 @@ class Datalist(object):
 from corpus import Datalist
 class Corpora(Datalist):
     """
-    Models a collection of corpora. Methods are available for interrogating and plotting the entire collection.
+    Models a collection of Corpus objects. Methods are available for interrogating and plotting the entire collection. This is the highest level of abstraction available.
 
     :param data: Corpora to model
     :type data: str (path containing corpora), list (of corpus paths/:class:`corpkit.corpus.Corpus` objects)
