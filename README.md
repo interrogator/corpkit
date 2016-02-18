@@ -921,7 +921,7 @@ You can also run a number of queries over the same corpus in parallel. There are
 
 ```python
 # method one
-query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}`}
+query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}
 phrases = corpus.interrogate('trees', query, show = C)
 
 # method two
