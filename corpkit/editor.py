@@ -168,25 +168,25 @@ def editor(interrogation,
     return_conc = False
     from interrogation import Interrodict, Interrogation, Concordance
     if interrogation.__class__ == Interrodict:
+        locs.pop('interrogation', None)
         from collections import OrderedDict
         outdict = OrderedDict()
         from editor import editor
         for i, (k, v) in enumerate(interrogation.items()):
             # only print the first time around
-            if i == 0:
-                pass
-                #saved_args['print_info'] = True
-            else:
+            if i != 0:
                 locs['print_info'] = False
             # if df2 is also a dict, get the relevant entry
-            if type(denominator) == dict:
-                if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
-                   sorted(set([i.lower() for i in list(denominator.keys())])):
-                   locs['denominator'] = denominator[k]
-                   
-                   if kwargs.get('use_df2_totals'):
-                        saved_args['denominator'] = denominator[k].totals
-            outdict[k] = editor(v.results, **saved_args)
+            if type(denominator) == dict or denominator.__class__ == Interrodict:
+                #if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
+                #   sorted(set([i.lower() for i in list(denominator.keys())])):
+                #   locs['denominator'] = denominator[k]
+                    if kwargs.get('denominator_totals'):
+                        locs['denominator'] = denominator[k].totals
+                    else:
+                        locs['denominator'] = denominator[k].results
+
+            outdict[k] = editor(v.results, **locs)
         if print_info:
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
@@ -906,6 +906,12 @@ def editor(interrogation,
     single_totals = True
     using_totals = False
     outputmode = False
+
+    if denominator.__class__ == Interrogation:
+        try:
+            denominator = denominator.results
+        except AttributeError:
+            denominator = denominator.totals
 
     if denominator is not False and type(denominator) != str:
         df2 = denominator.copy()
