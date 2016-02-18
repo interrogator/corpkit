@@ -685,9 +685,6 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
         kwargs['root'].update()
         return
 
-    if not kwargs.get('printstatus', False):
-        return
-
     if init:
         from textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)

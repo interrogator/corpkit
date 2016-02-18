@@ -85,10 +85,11 @@ def pmultiquery(corpus,
             multiple_queries = True
             num_cores = best_num_parallel(num_cores, len(query))
             denom = len(query)
-    elif hasattr(search, '__iter__') and type(search) != dict:
+    elif hasattr(search, '__iter__') and all(type(i) == dict for i in list(search.values())):
         multiple_search = True
         num_cores = best_num_parallel(num_cores, len(list(search.keys())))
         denom = len(list(search.keys()))
+
     elif just_speakers:
         from build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
@@ -162,7 +163,7 @@ def pmultiquery(corpus,
             a_dict['printstatus'] = False
             ds.append(a_dict)
     elif multiple_search:
-        for index, val in enumerate(search):
+        for index, (name, val) in enumerate(search.items()):
             a_dict = dict(d)
             a_dict['corpus'] = corpus
             a_dict['search'] = val
@@ -340,7 +341,10 @@ def pmultiquery(corpus,
             out = out.astype(int) # float to int
             out = out.T            
         else:
-            out = pd.concat([r.results for r in res], axis = 1)
+            try:
+                out = pd.concat([r.results for r in res], axis = 1)
+            except ValueError:
+                return None
             # format like normal
             out = out[sorted(list(out.columns))]
             out = out.T

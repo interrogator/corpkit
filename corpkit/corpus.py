@@ -153,6 +153,10 @@ class Corpus:
         from interrogator import interrogator
         return interrogator(self, 's', 'any').results
 
+    def configurations(self, search, **kwargs):
+        from configurations import configurations
+        return configurations(self, search, **kwargs)
+
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
@@ -545,124 +549,8 @@ class Datalist(object):
         return interrogator([s for s in self], do_concordancing = 'only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
-        """Get behaviour of a word"""
-        import corpkit
-        from collections import OrderedDict
-        from dictionaries.wordlists import wordlists
-        from interrogation import Interrodict
-        from interrogator import interrogator
-        from process import animator
-
-        root = kwargs.get('root')
-        note = kwargs.get('note')
-
-        queries = {'participant': 
-
-                  {'left_participant_in':             
-                    {'search': {'w': search.get('w'),
-                                'f': r'^.subj.*',
-                                'gl': 'root'},
-                     'show': 'gl'},
-
-                   'right_participant_in':
-                    {'search': {'w': search.get('w'),
-                                'f': r'^[di]obj',
-                                'gl': 'root'}, 
-                     'show': 'gl'},
-
-                   'modified_by':
-                    {'search': {'f': r'^amod', 
-                                'g': search.get('w')},
-                     'show': 'l'},
-                  },
-
-                 'process':
-
-                  {'has_subject':
-                    {'search': {'f': r'^.subj.*',
-                                'g': search.get('w')},
-                     'show': 'l'},
-
-                  'has_object':
-                    {'search': {'f': r'^[di]obj',
-                                'g': search.get('w')},
-                     'show': 'l'},
-
-                  'modalised_by':
-                    {'search': {'f': r'aux',
-                                'w': wordlists.modals,
-                                'g': search.get('w')},
-                     'show': 'l'},
-
-                  'has_circumstance':
-                    {'search': {'f': 'nmod.*'},
-                     'show': ['f', 'l']},
-                  }
-                }
-
-        if search.get('f'):
-            if search.get('f').lower().startswith('part'):
-                queries.pop('process')
-        if search.get('f'):
-            if search.get('f').lower().startswith('proc'):
-                queries.pop('participant')
-
-        total_queries = 0
-        for k, v in queries.items():
-            for subk, subv in v.items():
-                total_queries += 1
-
-        par_args = {'printstatus': kwargs.get('printstatus', True),
-                    'root': root, 
-                    'note': note,
-                    'length': total_queries,
-                    'startnum': kwargs.get('startnum'),
-                    'denom': kwargs.get('denominator', 1)}
-
-        term = None
-        if kwargs.get('paralleling', None) is not None:
-            from blessings import Terminal
-            term = Terminal()
-            par_args['terminal'] = term
-            par_args['linenum'] = kwargs.get('paralleling')
-
-
-        outn = kwargs.get('outname', '')
-        if outn:
-            outn = outn + ': '
-
-        print('\nGetting configurations for "%s" ... \n' % search.get('w'))
-
-        current_iter = 0
-        tstr = '%s%d/%d' % (outn, current_iter, total_queries)
-        p = animator(None, None, init = True, tot_string = tstr, **par_args)        
-        tstr = '%s%d/%d' % (outn, current_iter + 1, total_queries)
-        animator(p, current_iter, tstr, **par_args)
-
-        results = OrderedDict()
-        for role, dct in queries.items():
-            for resultname, criteria in dct.items():
-                keyword_args = criteria.copy()
-                keyword_args.update(kwargs)
-                keyword_args['printstatus'] = False
-                try:
-                    data = interrogator([s for s in self], **keyword_args)
-                # if no results
-                except ValueError:
-                    data = None
-                results[resultname] = data
-                current_iter += 1
-                if kwargs.get('paralleling', None) is not None:
-                    tstr = '%s: %d/%d' % (resultname, current_iter + 1, total_queries)
-                else:
-                    tstr = '%s: %d/%d' % (resultname, current_iter + 1, total_queries)
-                animator(p, current_iter, tstr, **par_args)
-        idct = Interrodict(results)
-        kwargs['search'] = search
-        idct.query = kwargs
-        print('\n\nDone!\n')
-        return idct
-
+        from configurations import configurations
+        return configurations([s for s in self], search, **kwargs)
 
 from corpus import Datalist
 class Corpora(Datalist):
