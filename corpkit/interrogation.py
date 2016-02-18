@@ -571,3 +571,18 @@ class Interrodict(OrderedDict):
             df.results[col] = df.results[col].astype(int)
         return df
 
+    def get_totals(self):
+        """helper function: get totals from dict of interrogations"""
+        import pandas as pd
+        lst = []
+        # for each interrogation name and data
+        for k, v in self.items():
+            # get the totals
+            tot = v.totals
+            # name the totals with the newspaper
+            tot.name = k
+            # add to a list
+            lst.append(tot)
+        # turn the list into a dataframe
+        return pd.concat(lst, axis = 1)
+        
