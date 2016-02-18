@@ -208,7 +208,7 @@ def pmultiquery(corpus,
 
         elif multiple_search:
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())), message)))
+               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, sformat, message)))
 
         elif multiple_option:
             print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
