@@ -7,7 +7,6 @@ def pmultiquery(corpus,
     sort_by = 'total', 
     quicksave = False,
     multiprocess = 'default', 
-    function_filter = False,
     just_speakers = False,
     root = False,
     note = False,
@@ -15,14 +14,9 @@ def pmultiquery(corpus,
     **kwargs):
     """Parallel process multiple queries or corpora.
 
-    This function is used by interrogator() if:
-
-        a) path is a list of paths
-        b) query is a dict of named queries
-        c) just speakers == 'each', or a list of speakers with len(list) > 1
+    This function is used by interrogator() for multiprocessing.
     
-    This function needs joblib 0.8.4 or above in order to run properly.
-    There's no reason to call it yourself."""
+    There's no reason to call this function yourself."""
     
     import collections
     import os
@@ -42,6 +36,10 @@ def pmultiquery(corpus,
         #raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
         #                 'Install with:\n\n        pip install joblib')
     import multiprocessing
+
+    locs = locals()
+    for k, v in kwargs.items():
+        locs[k] = v
 
     def best_num_parallel(num_cores, num_queries):
         import corpkit
@@ -91,10 +89,6 @@ def pmultiquery(corpus,
         multiple_search = True
         num_cores = best_num_parallel(num_cores, len(list(search.keys())))
         denom = len(list(search.keys()))
-    elif hasattr(function_filter, '__iter__'):
-        multiple_option = True
-        num_cores = best_num_parallel(num_cores, len(list(function_filter.keys())))
-        denom = len(list(function_filter.keys()))
     elif just_speakers:
         from build import get_speaker_names_from_xml_corpus
         multiple_speakers = True
@@ -155,19 +149,6 @@ def pmultiquery(corpus,
             a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
-    elif multiple_option:
-        for index, (name, q) in enumerate(function_filter.items()):
-            a_dict = dict(d)
-            a_dict['corpus'] = corpus
-            a_dict['search'] = search
-            a_dict['query'] = query
-            a_dict['show'] = show
-            a_dict['outname'] = name
-            a_dict['just_speakers'] = just_speakers
-            a_dict['paralleling'] = index
-            a_dict['function_filter'] = q
-            a_dict['printstatus'] = False
-            ds.append(a_dict)
     elif multiple_speakers:
         for index, name in enumerate(just_speakers):
             a_dict = dict(d)
@@ -177,7 +158,6 @@ def pmultiquery(corpus,
             a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = [name]
-            a_dict['function_filter'] = function_filter
             a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
@@ -190,7 +170,6 @@ def pmultiquery(corpus,
             a_dict['show'] = show
             a_dict['outname'] = name
             a_dict['just_speakers'] = just_speakers
-            a_dict['function_filter'] = function_filter
             a_dict['paralleling'] = index
             a_dict['printstatus'] = False
             ds.append(a_dict)
@@ -343,7 +322,9 @@ def pmultiquery(corpus,
         time = strftime("%H:%M:%S", localtime())
         print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         from interrogation import Interrodict
-        return Interrodict(out)
+        idict = Interrodict(out)
+        idict.query = locs
+        return idict
     # make query and total branch, save, return
     else:
         #print sers
@@ -403,7 +384,6 @@ if __name__ == '__main__':
     sort_by = False, 
     quicksave = False,
     multiprocess = False, 
-    function_filter = False,
     just_speakers = False,
     root = False,
     note = False,

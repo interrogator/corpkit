@@ -447,6 +447,7 @@ class Interrodict(OrderedDict):
         # attribute access
         for index, (k, v) in enumerate(data.items()):
             setattr(self, makesafe(k), v)
+        self.query = None
         super(Interrodict, self).__init__(data)
 
     def __getitem__(self, key):
