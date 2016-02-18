@@ -593,6 +593,7 @@ def interrogator(corpus,
     locs['just_speakers'] = just_speakers
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
+    locs['print_info'] = kwargs.get('printstatus', True)
 
     if im:
         signal.signal(signal.SIGINT, original_sigint)

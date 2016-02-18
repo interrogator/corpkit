@@ -685,6 +685,9 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
         kwargs['root'].update()
         return
 
+    if not kwargs.get('printstatus', False):
+        return
+
     if init:
         from textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)
@@ -735,7 +738,7 @@ def timestring(input):
 def makesafe(variabletext):
     import re
     from process import is_number
-    variable_safe_r = re.compile('[\W_]+', re.UNICODE)
+    variable_safe_r = re.compile(r'[^A-Za-z0-9_]+', re.UNICODE)
     try:
         txt = variabletext.name.split('.')[0].replace('-parsed', '')
     except AttributeError:

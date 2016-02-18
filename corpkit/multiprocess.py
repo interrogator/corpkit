@@ -193,28 +193,29 @@ def pmultiquery(corpus,
         if i < len(search.keys()) - 1:
             sformat += '\n                  '
 
-    if multiple_corpora and not multiple_option:
-        corplist = "\n              ".join([i.name for i in corpus[:20]])
-        if len(corpus) > 20:
-            corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
-        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-           "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
+    if print_info:
+        if multiple_corpora and not multiple_option:
+            corplist = "\n              ".join([i.name for i in corpus[:20]])
+            if len(corpus) > 20:
+                corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
+               "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
 
-    elif multiple_queries:
-        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values())), message) ))
+        elif multiple_queries:
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
+               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values())), message) ))
 
-    elif multiple_search:
-        print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-           "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())), message)))
+        elif multiple_search:
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
+               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, str(list(search.values())), message)))
 
-    elif multiple_option:
-        print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-           "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+        elif multiple_option:
+            print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
+               "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
-    elif multiple_speakers:
-        print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
-           "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+        elif multiple_speakers:
+            print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
+               "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -225,7 +226,7 @@ def pmultiquery(corpus,
     terminal = False
     used_joblib = False
     #ds = ds[::-1]
-    if not root:
+    if not root and print_info:
         from blessings import Terminal
         terminal = Terminal()
         print('\n' * (len(ds) - 2))
@@ -291,7 +292,8 @@ def pmultiquery(corpus,
     if kwargs.get('do_concordancing') == 'only':
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
-        print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
+        if print_info:
+            print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
         return Concordance(concs)
 
     from collections import OrderedDict
@@ -320,7 +322,8 @@ def pmultiquery(corpus,
             print("\n%s: %d files saved to %s" % ( time, len(list(out.keys())), fullpath))
 
         time = strftime("%H:%M:%S", localtime())
-        print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
+        if print_info:
+            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         from interrogation import Interrodict
         idict = Interrodict(out)
         idict.query = locs
@@ -363,17 +366,17 @@ def pmultiquery(corpus,
             concs = concs.reset_index(drop=True)
             out.concordance = Concordance(concs)
         thetime = strftime("%H:%M:%S", localtime())
-        if terminal:
+        if terminal and print_info:
             with terminal.location(0, terminal.height):
                 print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         else:
-            print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
+            if print_info:
+                print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         #if used_joblib:
             
         if quicksave:
             from other import save
             save(out, quicksave)
-        print('\n')
         return out
 
 if __name__ == '__main__':
