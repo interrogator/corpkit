@@ -184,7 +184,7 @@ class Interrogation(object):
             indices = False,
             transpose = False,
             **kwargs):
-        """Visualise corpus interrogations.
+        """Visualise corpus interrogations using `matplotlib`.
 
         :Example:
 
