@@ -40,8 +40,13 @@ def lazyprop(fn):
             Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
 
             :Example:
-
+    
             >>> corpus.features
+                ..  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+                01       26873    8513   7308                4809              3704     2212   
+                02       25844    7933   6920                4313              3620     2270   
+                03       18376    5683   4877                3067              2616     1640   
+                04       20066    6354   5366                3587              2767     1775
                
             """
             if not hasattr(self, attr_name):
@@ -209,7 +214,7 @@ class Corpus(object):
         :Example:
 
         >>> corpus.features
-            ..  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
             01       26873    8513   7308                4809              3704     2212   
             02       25844    7933   6920                4313              3620     2270   
             03       18376    5683   4877                3067              2616     1640   
@@ -223,7 +228,9 @@ class Corpus(object):
         """
         Get the overall behaviour of tokens or lemmas matching a regular expression. The search below makes DataFrames containing the most common subjects, objects, modifiers (etc.) of 'see':
         
-        :param search: Similar to `search` in the `interrogate()` / `concordance() methods. `F`, however, restricts features to 'participant', 'process' or 'modifier'.
+        :param search: Similar to `search` in the `interrogate()` / `concordance() methods.
+           - `W`/`L: match word or lemma
+           - 'f': specify semantic role (`'participant'`, `'process'` or `'modifier'`. If not specified, each role will be searched for. 
         :type search: dict
 
         :Example:
@@ -247,8 +254,14 @@ class Corpus(object):
 
         :Example:
         >>> # show lemma form of nouns ending in 'ing'
-        >>> q = {'w': r'ing$', 'p': r'^N'}
-        >>> data = corpus.interrogate(q, show = 'l')
+        >>> q = {W: r'ing$', 'p': r'^N'}
+        >>> data = corpus.interrogate(q, show = L)
+        >>> data.results
+            ..  something  anything  thing  feeling  everything  nothing  morning
+            01         14        11     12        1           6        0        1   
+            02         10        20      4        4           8        3        0   
+            03         14         5      5        3           1        0        0
+            ...                                                               ...   
         
         :param search: What query should be matching
            - t/tregex
@@ -261,19 +274,22 @@ class Corpus(object):
            - i/index
            - n/ngrams
            - s/general stats
-        :type search: str, or, for dependencies, a dict like ``{'w': 'help', 'p': r'^V'}``
+        :type search: str, or, for dependencies, a dict like `{W: 'help', 'p': r'^V'}`
 
         :param searchmode: Return results matching any/all criteria
-        :type searchmode: str ('any'/'all')
+        :type searchmode: str -- `'any'`/`'all'`
 
         :param exclude: The inverse of `search`, removing results from search
-        :type exclude: dict -- ``{'l': 'be'}``
+        :type exclude: dict -- `{L: 'be'}`
 
         :param excludemode: Exclude results matching any/all criteria
-        :type excludemode: str ('any'/'all')
+        :type excludemode: str -- `'any'`/`'all'`
         
         :param query: A search query for the interrogation
-        :type query: str -- regex/Tregex pattern; dict -- ``{name: pattern}``; list -- word list to match
+        :type query: 
+           - str -- regex/Tregex pattern
+           - dict -- `{name: pattern}`
+           - list -- word list to match
         
         :param show: What to output. If multiple strings are passed, results will be colon-separated, in order
            - t/tree
@@ -299,13 +315,13 @@ class Corpus(object):
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
         :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
         
-        :param quicksave: Save result as pickle to ```saved_interrogations/str``` on completion
+        :param quicksave: Save result as pickle to `saved_interrogations/str` on completion
         :type quicksave: str
         
         :param gramsize: size of ngrams (default 2)
         :type gramsize: int
 
-        :param split_contractions: make ``"don't"`` et al into two tokens
+        :param split_contractions: make `"don't"` et al into two tokens
         :type split_contractions: bool
 
         :param multiprocess: how many parallel processes to run
@@ -320,7 +336,7 @@ class Corpus(object):
         :param maxconc: Maximum number of concordance lines
         :type maxcond: int
 
-        :returns: A :class:`corpkit.interrogation.Interrogation` object, with ``.query``, ``.results``, ``.totals`` attributes. If multiprocessing is \
+        :returns: A :class:`corpkit.interrogation.Interrogation` object, with `.query`, `.results`, `.totals` attributes. If multiprocessing is \
         invoked, result may be a :class:`corpkit.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
         """
         from interrogator import interrogator
@@ -337,10 +353,6 @@ class Corpus(object):
         """
         Parse an unparsed corpus, saving to disk
 
-        :Example:
-
-        >>> parsed = corpus.parse(speaker_segmentation = True)
-
         :param corenlppath: folder containing corenlp jar files
         :type corenlppath: str
                 
@@ -355,6 +367,13 @@ class Corpus(object):
 
         :param copula_head: Make copula head in dependency parse
         :type copula_head: bool
+
+        :Example:
+
+        >>> parsed = corpus.parse(speaker_segmentation = True)
+        >>> parsed
+        <corpkit.corpus.Corpus instance: speeches-parsed; 9 subcorpora>
+
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
@@ -374,12 +393,14 @@ class Corpus(object):
         """
         Tokenise a plaintext corpus, saving to disk
 
+        :param nltk_data_path: path to tokeniser if not found automatically
+        :type nltk_data_path: str
+
         :Example:
 
         >>> tok = corpus.tokenise()
-
-        :param nltk_data_path: path to tokeniser if not found automatically
-        :type nltk_data_path: str
+        >>> tok
+        <corpkit.corpus.Corpus instance: speeches-tokenised; 9 subcorpora>
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
@@ -403,7 +424,13 @@ class Corpus(object):
         :Example:
 
         >>> wv = ['want', 'need', 'feel', 'desire']
-        >>> corpus.concordance({'l': wv, 'f': 'root'})
+        >>> corpus.concordance({L: wv, 'f': 'root'})
+           0   01  1-01.txt.xml                But , so I  feel     like i do that for w
+           1   01  1-01.txt.xml                         I  felt     a little like oh , i
+           2   01  1-01.txt.xml   he 's a difficult man I  feel     like his work ethic 
+           3   01  1-01.txt.xml                      So I  felt     like i recognized li
+           ...                                                                       ...
+
 
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
@@ -428,7 +455,10 @@ class Corpus(object):
     def interroplot(self, search, **kwargs):
         """Interrogate, relativise, then plot, with very little customisability. A demo function.
 
-           >>> corpus.interroplot(r'/NN.?/ >># NP')
+        :Example:
+
+        >>> corpus.interroplot(r'/NN.?/ >># NP')
+        <matplotlib figure>
 
         :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: dict
@@ -462,7 +492,7 @@ from corpus import Corpus
 class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
 
-    Methods for interrogating, concordancing are the same as 
+    Methods for interrogating, concordancing and configurations are the same as 
     :class:`corpkit.corpus.Corpus`."""
     
     def __init__(self, path, datatype):
@@ -563,7 +593,7 @@ class Datalist(object):
 
     Objects can be accessed as attributes, dict keys or by indexing/slicing.
 
-    Methods for interrogating and concordancing are available.
+    Methods for interrogating, concordancing and getting configurations are the same as for :class:`corpkit.corpus.Corpus`
     """
 
     def __init__(self, data):
