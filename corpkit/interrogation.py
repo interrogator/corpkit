@@ -34,7 +34,9 @@ class Interrogation(object):
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
-           >>> # rel. frequencies for words without initial capital
+           :Example:
+
+           ### rel. frequencies for words without initial capital
            >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
 
         ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
@@ -178,7 +180,9 @@ class Interrogation(object):
             **kwargs):
         """Visualise corpus interrogations.
 
-           >>> data.visualise('An example plot', kind = 'bar', save = True)
+        :Example:
+        
+        >>> data.visualise('An example plot', kind = 'bar', save = True)
 
         :param title: A title for the plot
         :type title: str
@@ -256,10 +260,10 @@ class Interrogation(object):
         """
         Save an interrogation as pickle to ``savedir``.
 
-           >>> o = corpus.interrogate('w', 'any')
-           >>> o.save('savename')
-
-        will create ``saved_interrogations/savename.p``
+        :Example:
+        ### create ``./saved_interrogations/savename.p``
+        >>> o = corpus.interrogate('w', 'any')
+        >>> o.save('savename')
         
         :param savename: A name for the saved file
         :type savename: str
@@ -278,7 +282,9 @@ class Interrogation(object):
     def quickview(self, n = 25):
         """view top n results as painlessly as possible.
 
-           >>> data.quickview(n = 5)
+        :Example:
+        
+        >>> data.quickview(n = 5)
 
         :param n: Show top *n* results
         :type n: int
@@ -290,7 +296,9 @@ class Interrogation(object):
     def multiindex(self, indexnames = False):
         """Create a `pd.MultiIndex` object from slash-separated results.
 
-           >>> mi = data.multiindex()
+        :Example:
+
+        >>> mi = interro.multiindex()
 
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
@@ -330,7 +338,12 @@ class Results(pd.core.frame.DataFrame):
         save(self, savename, *args, **kwargs)
 
     def quickview(self, n = 25):
-        """Print top results from an interrogation or edit"""
+        """Print top results from an interrogation or edit
+
+        :param n: show top n results
+        :type n: int
+
+        :returns: None"""
         from other import quickview
         quickview(self, n = n)
     
@@ -346,12 +359,12 @@ class Totals(pd.core.series.Series):
         #return "<corpkit.interrogation.Totals instance: %d unique results>" % self.sum()
 
     def edit(self, *args, **kwargs):
-        """calls corpkit.editor.editor()"""
+        """Calls corpkit.editor.editor()"""
         from editor import editor
         return editor(self, *args, **kwargs)
 
     def visualise(self, title, *args, **kwargs):
-        """calls corpkit.plotter.plotter()"""
+        """Calls corpkit.plotter.plotter()"""
         from plotter import plotter
         plotter(title, self, *args, **kwargs)
 
@@ -380,7 +393,10 @@ class Concordance(pd.core.frame.DataFrame):
         """
         Print conc lines nicely, to string, LaTeX or CSV
 
-           >>> lines.format(window = 25, n = 10, columns = ['l', 'm', 'r'])
+        :Example:
+
+        ### show 25 characters either side, 10 lines, just text columns
+        >>> lines.format(window = 25, n = 10, columns = ['l', 'm', 'r'])
 
         :param kind: output format
         :type kind: str (``'string'``/``'latex'``/``'csv'``)
@@ -488,7 +504,7 @@ class Interrodict(OrderedDict):
 
         See :func:`~corpkit.interrogation.Interrogation.edit` for possible arguments.
 
-        :returns: :class:`corpkit.interrogation.Interrodict`
+        :returns: A :class:`corpkit.interrogation.Interrodict`
         """
 
         from editor import editor
@@ -535,7 +551,7 @@ class Interrodict(OrderedDict):
 
         :param axis: collapse along x, y or name axis
         :type axis: str ('x'/'y'/'n')
-        :returns: `corpkit.interrogation.Interrogation`
+        :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         import pandas as pd
         if axis.lower()[0] not in ['x', 'y']:

@@ -1037,6 +1037,7 @@ def interrogator(corpus,
                 thetime = strftime("%H:%M:%S", localtime())
                 finalstring = '\n\n%s: Concordancing finished! %d results.' % (thetime, len(conc_df))
                 print(finalstring)
+            signal.signal(signal.SIGINT, original_sigint)
             return output
 
         #output.query = locs
@@ -1102,5 +1103,5 @@ def interrogator(corpus,
 
         if quicksave:
             interro.save(quicksave)
-        
+        signal.signal(signal.SIGINT, original_sigint)
         return interro

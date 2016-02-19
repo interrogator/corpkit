@@ -1,14 +1,59 @@
 from __future__ import print_function
 import corpkit
+from functools import wraps
 
 def lazyprop(fn):
+    """Lazy loading class attributes, with hard-coded docstrings for now..."""
     attr_name = '_lazy_' + fn.__name__
-    __doc__ = fn.__doc__
-    @property
-    def _lazyprop(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, fn(self))
-        return getattr(self, attr_name)
+    if fn.__name__ == 'subcorpora':
+        @property
+        def _lazyprop(self):
+            """A list-like object containing a corpus' subcorpora.
+
+            :Example:
+
+            >>> corpus.subcorpora
+            <corpkit.corpus.Datalist instance: 12 items>
+
+            """
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, fn(self))
+            return getattr(self, attr_name)
+    if fn.__name__ == 'files':
+        @property
+        def _lazyprop(self):
+            """A list-like object containing the files in a folder.
+
+            :Example:
+
+            >>> corpus.subcorpora[0].files
+            <corpkit.corpus.Datalist instance: 240 items>
+
+            """
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, fn(self))
+            return getattr(self, attr_name)
+    if fn.__name__ == 'features':
+        @property
+        def _lazyprop(self):
+            """
+            Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+
+            :Example:
+
+            >>> corpus.features
+               
+            """
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, fn(self))
+            return getattr(self, attr_name)
+    if fn.__name__ == 'document':
+        @property
+        def _lazyprop(self):
+            """Return the parsed XML of a parsed file"""
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, fn(self))
+            return getattr(self, attr_name)
     return _lazyprop
 
 class Corpus(object):
@@ -98,7 +143,11 @@ class Corpus(object):
 
     @lazyprop
     def files(self):
-        """A list-like object containing the files in a folder"""
+        """A list-like object containing the files in a folder
+
+        >>> corpus.subcorpora[0].files
+
+        """
         import re, os, operator
         from os.path import join, isdir
         if self.level == 's':
@@ -157,9 +206,15 @@ class Corpus(object):
         """
         Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
 
-           >>> corpus.features
+        :Example:
 
-        :returns: None
+        >>> corpus.features
+            ..  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            01       26873    8513   7308                4809              3704     2212   
+            02       25844    7933   6920                4313              3620     2270   
+            03       18376    5683   4877                3067              2616     1640   
+            04       20066    6354   5366                3587              2767     1775
+
         """
         from interrogator import interrogator
         return interrogator(self, 's', 'any').results
@@ -168,10 +223,18 @@ class Corpus(object):
         """
         Get the overall behaviour of tokens or lemmas matching a regular expression. The search below makes DataFrames containing the most common subjects, objects, modifiers (etc.) of 'see':
         
-        >>> see = corpus.configurations({L: 'see', F: 'process'}, show = L)
-
         :param search: Similar to `search` in the `interrogate()` / `concordance() methods. `F`, however, restricts features to 'participant', 'process' or 'modifier'.
         :type search: dict
+
+        :Example:
+        
+        >>> see = corpus.configurations({L: 'see', F: 'process'}, show = L)
+        >>> see.has_subject.results.sum()
+            i           452
+            it          227
+            you         162
+            we          111
+            he           94
 
         :returns: :class:`corpkit.interrogation.Interrodict`
         """
@@ -561,16 +624,17 @@ class Datalist(object):
             return self.current - 1
 
     def interrogate(self, *args, **kwargs):
-        """interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
+        """Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
         from interrogator import interrogator
         return interrogator([s for s in self], *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
-        """interrogate the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
+        """Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
         from interrogator import interrogator
         return interrogator([s for s in self], do_concordancing = 'only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
+        """Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`"""
         from configurations import configurations
         return configurations([s for s in self], search, **kwargs)
 
