@@ -88,11 +88,6 @@ def dep_searcher(sents,
             tokens = s.tokens
 
         for opt, pat in list(search.items()):
-            if type(pat) == list:
-                if all(type(x) == int for x in pat):
-                    pat = [str(x) for x in pat]
-                pat = filtermaker(pat, case_sensitive = case_sensitive)
-                search[opt] = pat
             if type(pat) == dict:
                 del search[opt]
                 for k, v in list(pat.items()):
@@ -100,10 +95,19 @@ def dep_searcher(sents,
                         search[opt + k] = v
                     else:
                         search[opt] = v
-            if pat == 'any':
-                search[opt] = re.compile(r'.*')
 
         for opt, pat in list(search.items()):
+            if pat == 'any':
+                pat = re.compile(r'.*')
+            elif type(pat) == list:
+                if all(type(x) == int for x in pat):
+                    pat = [str(x) for x in pat]
+                pat = filtermaker(pat, case_sensitive = case_sensitive)
+            else:
+                if case_sensitive:
+                    pat = re.compile(pat)
+                else:
+                    pat = re.compile(pat, re.IGNORECASE)
             if opt == 'g':
                 got = []
                 for l in deps.links:
