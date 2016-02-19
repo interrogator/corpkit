@@ -245,9 +245,10 @@ class Corpus(object):
     def interrogate(self, search, *args, **kwargs):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
-            >>> # show lemma form of nouns ending in 'ing'
-            >>> q = {'w': r'ing$', 'p': r'^N'}
-            >>> data = corpus.interrogate(q, show = 'l')
+        :Example:
+        >>> # show lemma form of nouns ending in 'ing'
+        >>> q = {'w': r'ing$', 'p': r'^N'}
+        >>> data = corpus.interrogate(q, show = 'l')
         
         :param search: What query should be matching
            - t/tregex
@@ -336,7 +337,9 @@ class Corpus(object):
         """
         Parse an unparsed corpus, saving to disk
 
-           >>> parsed = corpus.parse(speaker_segmentation = True)
+        :Example:
+
+        >>> parsed = corpus.parse(speaker_segmentation = True)
 
         :param corenlppath: folder containing corenlp jar files
         :type corenlppath: str
@@ -371,7 +374,9 @@ class Corpus(object):
         """
         Tokenise a plaintext corpus, saving to disk
 
-           >>> tok = corpus.tokenise()
+        :Example:
+
+        >>> tok = corpus.tokenise()
 
         :param nltk_data_path: path to tokeniser if not found automatically
         :type nltk_data_path: str
@@ -395,8 +400,10 @@ class Corpus(object):
         A concordance method for Tregex queries, CoreNLP dependencies, 
         tokenised data or plaintext.
 
-           >>> wv = ['want', 'need', 'feel', 'desire']
-           >>> corpus.concordance({'l': wv, 'f': 'root'})
+        :Example:
+
+        >>> wv = ['want', 'need', 'feel', 'desire']
+        >>> corpus.concordance({'l': wv, 'f': 'root'})
 
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
