@@ -28,7 +28,7 @@ __all__ = ["interrogator",
     "Corpora"] + letters
 
 #metadata
-__version__ = "1.98"
+__version__ = "1.99"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
