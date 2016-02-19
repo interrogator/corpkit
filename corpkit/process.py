@@ -643,15 +643,16 @@ def filtermaker(the_filter, case_sensitive = False):
     return output
 
 def searchfixer(search, query, datatype = False):
-    search_iterable = False
+    """normalise query/search value"""
+    if type(search) == str and type(query) == dict:
+        return search
     if type(search) == str:
         search = search[0].lower()
         if not search.lower().startswith('t') and not search.lower().startswith('n'):
-            search_iterable = True
             if query == 'any':
                 query = r'.*'
         search = {search: query}
-    return search, search_iterable
+    return search
 
 def is_number(s):
     """check if str can be can be made into float/int"""
@@ -740,6 +741,7 @@ def makesafe(variabletext):
         txt = variabletext.name.split('.')[0].replace('-parsed', '')
     except AttributeError:
         txt = variabletext.split('.')[0].replace('-parsed', '')
+    txt = txt.replace(' ', '_')
     variable_safe = re.sub(variable_safe_r, '', txt)
     if is_number(variable_safe):
         variable_safe = 'c' + variable_safe
