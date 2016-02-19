@@ -37,6 +37,10 @@ def configurations(corpus, search, **kwargs):
                 'modified_by':
                   {'f': r'^amod', 
                    gov_word_or_lemma: byme},
+
+                 'and_or':
+                  {'f': 'conj:(and|or)',
+                   gov_word_or_lemma: byme},
                 },
 
                'process':
@@ -57,6 +61,10 @@ def configurations(corpus, search, **kwargs):
                  'modulated_by':
                   {'f': 'advmod',
                    gov_word_or_lemma: byme},
+
+                 'and_or':
+                  {'f': 'conj:(and|or)',
+                   gov_word_or_lemma: byme},
               
                 },
 
@@ -65,6 +73,11 @@ def configurations(corpus, search, **kwargs):
                 {'modifies':
                   {'df': 'a(dv)?mod', 
                    dep_word_or_lemma: byme},
+
+                 'and_or':
+                  {'f': 'conj:(and|or)',
+                   gov_word_or_lemma: byme},
+
                 }
             }
 
@@ -89,5 +102,9 @@ def configurations(corpus, search, **kwargs):
 
     kwargs['search'] = queries
     data = interrogator(corpus, **kwargs)
+    for k, v in data.items():
+        v.results = v.results.drop(byme, axis = 1, errors = 'ignore')
+        v.totals = v.results.sum(axis = 1)
+        data[k] = v
     return data
 
