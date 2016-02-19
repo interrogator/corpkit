@@ -9,6 +9,9 @@ Most of *corpkit*'s functionality comes from the ``Corpus`` and ``Interrogation`
 
 .. autoclass:: corpkit.corpus.Corpus
     :members:
+    .. automethod:: subcorpora(self)
+    .. automethod:: files(self)
+    .. automethod:: features(self)
     :undoc-members:
     :show-inheritance:
 
@@ -30,6 +33,7 @@ Most of *corpkit*'s functionality comes from the ``Corpus`` and ``Interrogation`
 =================
 .. autoclass:: corpkit.corpus.File
     :members:
+    .. automethod:: document(self)
     :undoc-members:
     :show-inheritance:
 

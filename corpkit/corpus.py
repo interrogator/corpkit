@@ -3,6 +3,7 @@ import corpkit
 
 def lazyprop(fn):
     attr_name = '_lazy_' + fn.__name__
+    __doc__ = fn.__doc__
     @property
     def _lazyprop(self):
         if not hasattr(self, attr_name):
@@ -154,9 +155,9 @@ class Corpus(object):
     @lazyprop
     def features(self):
         """
-        Get some basic stats from the corpus, and store as :py:attr:`~corpkit.corpus.Corpus.features`
+        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
 
-           >>> corpus.get_stats()
+           >>> corpus.features
 
         :returns: None
         """
