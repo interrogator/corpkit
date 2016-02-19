@@ -10,7 +10,7 @@ def lazyprop(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
-class Corpus:
+class Corpus(object):
     """
     A class representing a linguistic text corpus, which contains files,
     optionally within subcorpus folders.
@@ -20,21 +20,29 @@ class Corpus:
 
     def __init__(self, path, **kwargs):
         import os
-        from os.path import join, isfile, isdir
+        from os.path import join, isfile, isdir, abspath, dirname, basename
         import re
         import operator
         from process import determine_datatype
+        from corpus import Datalist
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which 
         # one is determined automatically below, and processed accordingly. We 
         # assume it is a full corpus to begin with.
 
+        self.data = None
+
         level = kwargs.pop('level', 'c')
         self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
-        self.path = os.path.abspath(path)
-        self.name = os.path.basename(path)
+        if path.__class__ == Datalist or type(path) == list:
+            self.path = abspath(dirname(path[0].path.rstrip('/')))
+            self.name = basename(self.path)
+            self.data = path
+        else:
+            self.path = abspath(path)
+            self.name = basename(path)
 
         # this messy code figures out as quickly as possible what the datatype 
         # and singlefile status of the path is. it's messy because it shortcuts 
@@ -49,17 +57,17 @@ class Corpus:
             if self.path.endswith('.xml'):
                 self.datatype = 'parse'
             self.singlefile = True
-        elif path.endswith('-parsed'):
+        elif self.path.endswith('-parsed'):
             self.datatype = 'parse'
-            if len([d for d in os.listdir(path) if isdir(join(path, d))]) > 0:
+            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) > 0:
                 self.singlefile = False
-            if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
+            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) == 0:
                 level = 's'
         else:
             if level == 'c':
                 if not self.datatype:
-                    self.datatype, self.singlefile = determine_datatype(path)
-            if len([d for d in os.listdir(path) if isdir(join(path, d))]) == 0:
+                    self.datatype, self.singlefile = determine_datatype(self.path)
+            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) == 0:
                 level = 's'
         
         # if initialised on a file, process as file
@@ -73,6 +81,8 @@ class Corpus:
         """A list-like object containing a corpus' subcorpora."""
         import re, os, operator
         from os.path import join, isdir
+        if self.data.__class__ == Datalist or type(self.data) == list:
+            return self.data
         if self.level == 'c':
             variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
             sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype) \
@@ -154,6 +164,17 @@ class Corpus:
         return interrogator(self, 's', 'any').results
 
     def configurations(self, search, **kwargs):
+        """
+        Get the overall behaviour of tokens or lemmas matching a regular expression. The search below makes DataFrames containing the most common subjects, objects, modifiers (etc.) of 'see':
+        
+        >>> see = corpus.configurations({L: 'see', F: 'process'}, show = L)
+
+        :param search: Similar to `search` in the `interrogate()` / `concordance() methods. `F`, however, restricts features to 'participant', 'process' or 'modifier'.
+        :type search: dict
+
+        :returns: :class:`corpkit.interrogation.Interrodict`
+        """
+
         from configurations import configurations
         return configurations(self, search, **kwargs)
 

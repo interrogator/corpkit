@@ -100,7 +100,19 @@ def pmultiquery(corpus,
             return
         num_cores = best_num_parallel(num_cores, len(just_speakers))
         denom = len(just_speakers)
-        
+
+    # if this thing has already come through multiquery, don't multiprocess this time
+    #if kwargs.get('outname'):
+    #    multiprocess = False
+
+    if multiple_corpora and any(x is True for x in [multiple_speakers, multiple_queries, 
+                                                    multiple_search, multiple_option]):
+        from corpus import Corpus, Corpora
+        if corpus.__class__ == Corpora:
+            multiprocess = False
+        else:
+            corpus = Corpus(corpus)
+
     if type(multiprocess) == int:
         num_cores = multiprocess
     if multiprocess is False:
@@ -183,16 +195,29 @@ def pmultiquery(corpus,
         message = 'Concordancing'
     time = strftime("%H:%M:%S", localtime())
     sformat = ''
-    for i, (k, v) in enumerate(list(search.items())):
+    if multiple_queries:
+        to_it_over = query
+    else:
+        to_it_over = search
+    for i, (k, v) in enumerate(list(to_it_over.items())):
         if type(v) == list:
             vformat = ', '.join(v[:5])
             if len(v) > 5:
                 vformat += ' ...'
+        elif type(v) == dict:
+            vformat = ''
+            for kk, vv in v.items():
+                if type(vv) == list:
+                    vv = ', '.join(vv[:5])
+
+                vformat += '\n                     %s: %s' % (kk, vv)
+                if len(vv) > 5:
+                    vformat += ' ...'
         else:
             vformat = v
         sformat += '%s: %s' %(k, vformat)
-        if i < len(search.keys()) - 1:
-            sformat += '\n                  '
+        if i < len(to_it_over.keys()) - 1:
+            sformat += '\n                   '
 
     if print_info:
         if multiple_corpora and not multiple_option:
@@ -200,23 +225,23 @@ def pmultiquery(corpus,
             if len(corpus) > 20:
                 corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-               "\n          Query: '%s'\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
+               "\n          Query: %s\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
 
         elif multiple_queries:
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(search), num_cores, corpus.name, "', '".join(list(search.values())), message) ))
+               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(query), num_cores, corpus.name, sformat, message) ))
 
         elif multiple_search:
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-               "\n          Queries: '%s'\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, sformat, message)))
+               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, sformat, message)))
 
         elif multiple_option:
             print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-               "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
         elif multiple_speakers:
             print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
-               "\n          Query: '%s'\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -303,7 +328,10 @@ def pmultiquery(corpus,
         for interrog, d in zip(res, ds):
             for unpicklable in ['note', 'root']:
                 interrog.query.pop(unpicklable, None)
-            out[interrog.query['outname']] = interrog
+            try:
+                out[interrog.query['outname']] = interrog
+            except KeyError:
+                out[d['outname']] = interrog
     
         if quicksave:
             fullpath = os.path.join('saved_interrogations', quicksave)

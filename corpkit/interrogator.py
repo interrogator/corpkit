@@ -52,6 +52,7 @@ def interrogator(corpus,
 
     import corpkit
     from interrogation import Interrogation
+    from corpus import Datalist
     from process import tregex_engine
     import pandas as pd
     from pandas import DataFrame, Series
@@ -93,19 +94,16 @@ def interrogator(corpus,
     note = kwargs.get('note')
 
     # convert path to corpus object
-    if type(corpus) == str:
-        from corpus import Corpus
-        corpus = Corpus(corpus)
+    from corpus import Corpus
+
+    if corpus.__class__ != Corpus:
+        if not multiprocess and not kwargs.get('outname'):
+            corpus = Corpus(corpus, print_info = False)
 
     # figure out how the user has entered the query and normalise
     from process import searchfixer
-    search, search_iterable = searchfixer(search, query)
+    search = searchfixer(search, query)
     
-    # for better printing of query, esp during multiprocess
-    # can remove if multiprocess printing improved
-    if len(list(search.keys())) == 1:
-        query = list(search.values())[0]
-
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
@@ -118,8 +116,8 @@ def interrogator(corpus,
         do some retyping if need be as well"""
         im = False
         from collections import OrderedDict
-        if hasattr(corpus, '__iter__'):
-            im = True
+        #if hasattr(corpus, '__iter__'):
+        #    im = True
         # so we can do search = 't', query = ['NP', 'VP']:
         if type(query) == list:
             if query != list(search.values())[0] or len(list(search.keys())) > 1:
@@ -587,6 +585,16 @@ def interrogator(corpus,
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
+
+    if hasattr(corpus, '__iter__') and im:
+        corpus = Corpus(corpus)
+    if hasattr(corpus, '__iter__') and not im:
+        im = True
+
+    if not im and multiprocess:
+        im = True
+        corpus = corpus[:]
+    # if it's already been through pmultiquery, don't do it again
     
     locs['search'] = search
     locs['query'] = query
@@ -600,9 +608,16 @@ def interrogator(corpus,
         from multiprocess import pmultiquery
         return pmultiquery(**locs)
 
-    datatype = corpus.datatype
-    singlefile = corpus.singlefile
-
+    cname = corpus.name
+    subcorpora = corpus.subcorpora
+    
+    try:
+        datatype = corpus.datatype
+        singlefile = corpus.singlefile
+    except AttributeError:
+        datatype = 'parse'
+        singlefile = False
+        
     # store all results in here
     results = {}
     count_results = {}
@@ -629,7 +644,7 @@ def interrogator(corpus,
     if not just_speakers and 't' in list(search.keys()):
         simple_tregex_mode = True
     else:
-        if corpus.datatype == 'plaintext':
+        if datatype == 'plaintext':
             if search.get('n'):
                 raise NotImplementedError('Use a tokenised corpus for n-gramming.')
                 #searcher = plaintext_ngram
@@ -641,7 +656,7 @@ def interrogator(corpus,
                     searcher = plaintext_simple_search
                 optiontext = 'Searching plaintext'
 
-        elif corpus.datatype == 'tokens':
+        elif datatype == 'tokens':
             if search.get('n'):
                 searcher = tok_ngrams
                 optiontext = 'n-grams via tokens'
@@ -654,10 +669,10 @@ def interrogator(corpus,
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
         only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
-        if corpus.datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
+        if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
             raise ValueError('Need parsed corpus to search with "%s" option(s).' % ', '.join([i for i in list(search.keys()) if i in only_parse]))
 
-        elif corpus.datatype == 'parse':
+        elif datatype == 'parse':
             if search.get('t'):
                 searcher = slow_tregex
             elif search.get('s'):
@@ -735,13 +750,17 @@ def interrogator(corpus,
     # Make iterable for corpus/subcorpus/file  #
     ############################################
 
-    if corpus.singlefile:
+    if corpus.__class__ == Datalist:
+        to_iterate_over = {}
+        for subcorpus in corpus:
+            to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+    elif singlefile:
         to_iterate_over = {(corpus.name, corpus.path): [corpus]}
-    elif not corpus.subcorpora:
+    elif not subcorpora:
         to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for subcorpus in corpus.subcorpora:
+        for subcorpus in subcorpora:
             to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         #for k, v in sorted(corpus.structure.items(), key=lambda obj: obj[0].name):
         #    to_iterate_over[(k.name, k.path)] = v
@@ -765,7 +784,7 @@ def interrogator(corpus,
         if search == {'s': r'.*'}:
             sformat = 'features'
         welcome = '\n%s: %s %s ...\n          %s\n          Query: %s\n          %s corpus ... \n' % \
-                  (thetime, message, corpus.name, optiontext, sformat, message)
+                  (thetime, message, cname, optiontext, sformat, message)
         print(welcome)
 
     ############################################
@@ -855,7 +874,7 @@ def interrogator(corpus,
         else:
             for f in files:
                 slow_treg_speaker_guess = kwargs.get('outname', False)
-                if corpus.datatype == 'parse':
+                if datatype == 'parse':
                     with open(f.path, 'r') as data:
                         data = data.read()
                         from corenlp_xml.document import Document
@@ -887,7 +906,7 @@ def interrogator(corpus,
                         if res == 'Bad query':
                             return 'Bad query'
 
-                elif corpus.datatype == 'tokens':
+                elif datatype == 'tokens':
                     import pickle
                     with codecs.open(f.path, "rb") as fo:
                         data = pickle.load(fo)
@@ -901,7 +920,7 @@ def interrogator(corpus,
                         for index, line in enumerate(conc_res):
                             line.insert(0, '')
 
-                elif corpus.datatype == 'plaintext':
+                elif datatype == 'plaintext':
                     with codecs.open(f.path, 'rb', encoding = 'utf-8') as data:
                         data = data.read()
                         if not only_conc:
@@ -1049,7 +1068,7 @@ def interrogator(corpus,
         ############################################
 
         if not countmode:
-            if not corpus.subcorpora or singlefile:
+            if not subcorpora or singlefile:
                 if not files_as_subcorpora:
                     if not kwargs.get('df1_always_df'):
                         df = Series(df.ix[0])
