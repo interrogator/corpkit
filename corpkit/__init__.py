@@ -97,6 +97,17 @@ def _calculate(self, *args, **kwargs):
     from corpkit.process import interrogation_from_conclines
     return interrogation_from_conclines(self)
 
+def _shuffle(self, inplace = False):
+    import random
+    index = list(self.index)
+    random.shuffle(index)
+    shuffled = self.ix[index]
+    shuffled.reset_index()
+    if inplace:
+        self = shuffled
+    else:
+        return shuffled
+
 pd.DataFrame.edit = _edit
 pd.Series.edit = _edit
 
@@ -116,6 +127,8 @@ pd.Series.texify = _texify
 
 pd.DataFrame.calculate = _calculate
 pd.Series.calculate = _calculate
+
+pd.DataFrame.shuffle = _shuffle
 
 A = 'a'
 D = 'd'

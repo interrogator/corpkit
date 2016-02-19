@@ -34,12 +34,18 @@ class Interrogation(object):
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
 
-           :Example:
+        :Example:
 
-           ### rel. frequencies for words without initial capital
-           >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
+        ### relative frequencies for words without initial capital
+        >>> data = corpus.interrogate({W: r'^t'}, preserve_case = True)
+        >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
+            ..    to  that   the  then ...   toilet  tolerant  tolerate  ton
+            01 18.50 14.65 14.44  6.20 ...     0.00      0.00      0.11 0.00
+            02 24.10 14.34 13.73  8.80 ...     0.00      0.00      0.00 0.00
+            03 17.31 18.01  9.97  7.62 ...     0.00      0.00      0.00 0.00
+            ...                                                          ...
 
-        ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
+        `just/skip_entries` and `just/skip_subcorpora` can take a few different kinds of input:
 
         * str: treated as regular expression to match
         * list: 
@@ -47,21 +53,21 @@ class Interrogation(object):
           * of integers: indices to match
           * of strings: entries/subcorpora to match
 
-        ``merge_entries`` and ``merge_subcorpora``, however, are best entered as dicts:
+        `merge_entries` and `merge_subcorpora`, however, are best entered as `dict`s:
 
-        ``{newname: criteria, newname2: criteria2}```
+        `{newname: criteria, newname2: criteria2}`
 
         where criteria is a string, list, etc.
 
         :param operation: Kind of maths to do on inputted lists:
 
-           ``'+'``, ``'-'``, ``'/'``, ``'*'``, ``'%'``: self explanatory
+           '+', '-', '/', '*', '%': self explanatory
 
-           ``'k'``: log likelihood (keywords)
+           'k': log likelihood (keywords)
 
-           ``'a'``: get distance metric
+           'a': get distance metric
 
-           ``'d'``: get percent difference (alternative approach to keywording)
+           'd': get percent difference (alternative approach to keywording)
 
         :type operation: str
         
@@ -76,13 +82,13 @@ class Interrogation(object):
 
         :param sort_by: Calculate slope, stderr, r, p values, then sort by.
 
-           ``'increase'``: highest to lowest slope value
-           ``'decrease'``: lowest to highest slope value
-           ``'turbulent'``: most change in y axis values
-           ``'static'``: least change in y axis values
-           ``'total/most'``: largest number first
-           ``'infreq/least'``: smallest number first
-           ``'name'``: alphabetically
+           `'increase'`: highest to lowest slope value
+           `'decrease'`: lowest to highest slope value
+           `'turbulent'`: most change in y axis values
+           `'static'`: least change in y axis values
+           `'total/most'`: largest number first
+           `'infreq/least'`: smallest number first
+           `'name'`: alphabetically
 
         :type sort_by: str
 
@@ -97,11 +103,11 @@ class Interrogation(object):
         
         :param threshold: When using results list as dataframe 2, drop values occurring fewer than n times. If not keywording, you can use:
                                 
-           ``'high'``: ``denominator total / 2500``
+           `'high'`: `denominator total / 2500`
            
-           ``'medium'``: ``denominator total / 5000``
+           `'medium'`: `denominator total / 5000`
            
-           ``'low'``: ``denominator total / 10000``
+           `'low'`: `denominator total / 10000`
                             
            If keywording, there are smaller default thresholds
 
@@ -113,23 +119,23 @@ class Interrogation(object):
         :param merge_entries: Merge matching entries
         :type merge_entries: see above
         :param newname: New name for merged entries
-        :type newname: str/``'combine'``
+        :type newname: str/`'combine'`
         :param just_subcorpora: Keep matching subcorpora
         :type just_subcorpora: see above
         :param skip_subcorpora: Skip matching subcorpora
         :type skip_subcorpora: see above
         :param span_subcorpora: If subcorpora are numerically named, span all from *int* to *int2*, inclusive
-        :type span_subcorpora: tuple -- ``(int, int2)``
+        :type span_subcorpora: tuple -- `(int, int2)`
         :param merge_subcorpora: Merge matching subcorpora
         :type merge_subcorpora: see above
         :param new_subcorpus_name: Name for merged subcorpora
-        :type new_subcorpus_name: str/``'combine'``
+        :type new_subcorpus_name: str/`'combine'`
 
         :param replace_names: Edit result names and then merge duplicate names.
-        :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a regex to delete from names
+        :type replace_names: dict -- `{criteria: replacement_text}`; str -- a regex to delete from names
         :param projection:         a  to multiply results in subcorpus by n
-        :type projection: tuple -- ``(subcorpus_name, n)``
-        :param remove_above_p: Delete any result over ``p``
+        :type projection: tuple -- `(subcorpus_name, n)`
+        :param remove_above_p: Delete any result over `p`
         :type remove_above_p: bool
         :param p:                  set the p value
         :type p: float
@@ -141,7 +147,7 @@ class Interrogation(object):
         :type print_info: bool
         
         :param spelling: Convert/normalise spelling:
-        :type spelling: str -- ``'US'``/``'UK'``
+        :type spelling: str -- `'US'`/`'UK'`
         
         :param selfdrop: When keywording, try to remove target corpus from reference corpus
         :type selfdrop: bool
@@ -181,8 +187,9 @@ class Interrogation(object):
         """Visualise corpus interrogations.
 
         :Example:
-        
+
         >>> data.visualise('An example plot', kind = 'bar', save = True)
+        <matplotlib figure>
 
         :param title: A title for the plot
         :type title: str
@@ -285,6 +292,11 @@ class Interrogation(object):
         :Example:
         
         >>> data.quickview(n = 5)
+            0: to    (n=2227)
+            1: that  (n=2026)
+            2: the   (n=1302)
+            3: then  (n=857)
+            4: think (n=676)
 
         :param n: Show top *n* results
         :type n: int
@@ -312,8 +324,7 @@ class Interrogation(object):
 import pandas as pd
 class Results(pd.core.frame.DataFrame):
     """
-    A class for interrogation results, with methods for editing, visualising,
-    saving and quickviewing
+    A class for interrogation results, with methods for editing, visualising, saving and quickviewing.
     """
 
     def __init__(self, data):
@@ -391,12 +402,7 @@ class Concordance(pd.core.frame.DataFrame):
 
     def format(self, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
         """
-        Print conc lines nicely, to string, LaTeX or CSV
-
-        :Example:
-
-        ### show 25 characters either side, 10 lines, just text columns
-        >>> lines.format(window = 25, n = 10, columns = ['l', 'm', 'r'])
+        Print concordance lines nicely, to string, LaTeX or CSV
 
         :param kind: output format
         :type kind: str (``'string'``/``'latex'``/``'csv'``)
@@ -406,6 +412,18 @@ class Concordance(pd.core.frame.DataFrame):
         :type window: int
         :param columns: which columns to show
         :type columns: list
+
+        :Example:
+
+        ### show 25 characters either side, 4 lines, just text columns
+        >>> lines = corpus.concordance({T: r'/NN.?/ >># NP'}, show = L)
+        >>> lines.format(window = 25, n = 4, columns = ['l', 'm', 'r'])
+            0                  we 're in  tucson     , then up north to flagst
+            1  e 're in tucson , then up  north      to flagstaff , then we we
+            2  tucson , then up north to  flagstaff  , then we went through th
+            3   through the grand canyon  area       and then phoenix and i sp
+        ...                                                            ...
+
         :returns: None
         """
         from other import concprinter
@@ -425,6 +443,15 @@ class Concordance(pd.core.frame.DataFrame):
 
         :param inplace: Modify current object, or create a new one
         :type inplace: bool
+
+        :Example:
+
+        >>> lines[:4].shuffle()
+            3  01  1-01.txt.xml   through the grand canyon  area       and then phoenix and i sp
+            1  01  1-01.txt.xml  e 're in tucson , then up  north      to flagstaff , then we we
+            0  01  1-01.txt.xml                  we 're in  tucson     , then up north to flagst
+            2  01  1-01.txt.xml  tucson , then up north to  flagstaff  , then we went through th
+
         """
         import random
         index = list(self.index)
@@ -524,13 +551,8 @@ class Interrodict(OrderedDict):
 
     def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
-        Save an interrogation as pickle to ``savedir``.
+        Save an interrogation as pickle to `savedir`.
 
-           >>> o = corpus.interrogate('w', 'any')
-           >>> o.save('savename')
-
-        will create ``saved_interrogations/savename.p``
-        
         :param savename: A name for the saved file
         :type savename: str
         
@@ -540,6 +562,12 @@ class Interrodict(OrderedDict):
         :param print_info: Show/hide stdout
         :type print_info: bool
         
+        :Example:
+        
+        ### create ``saved_interrogations/savename.p``
+        >>> o = corpus.interrogate('w', 'any')
+        >>> o.save('savename')
+
         :returns: None
         """
         from other import save
@@ -585,7 +613,7 @@ class Interrodict(OrderedDict):
         return df
 
     def get_totals(self):
-        """helper function: get totals from dict of interrogations"""
+        """Helper function to concatenate all totals"""
         import pandas as pd
         lst = []
         # for each interrogation name and data

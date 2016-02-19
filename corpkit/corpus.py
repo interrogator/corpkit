@@ -228,9 +228,7 @@ class Corpus(object):
         """
         Get the overall behaviour of tokens or lemmas matching a regular expression. The search below makes DataFrames containing the most common subjects, objects, modifiers (etc.) of 'see':
         
-        :param search: Similar to `search` in the `interrogate()` / `concordance() methods.
-           - `W`/`L: match word or lemma
-           - 'f': specify semantic role (`'participant'`, `'process'` or `'modifier'`. If not specified, each role will be searched for. 
+        :param search: Similar to `search` in the `interrogate()` / `concordance() methods. `W`/`L keys match word or lemma; `F`: key specifies semantic role (`'participant'`, `'process'` or `'modifier'`. If `F` not specified, each role will be searched for. 
         :type search: dict
 
         :Example:
@@ -253,7 +251,8 @@ class Corpus(object):
         """Interrogate a corpus of texts for a lexicogrammatical phenomenon
 
         :Example:
-        >>> # show lemma form of nouns ending in 'ing'
+
+        ### show lemma form of nouns ending in 'ing'
         >>> q = {W: r'ing$', 'p': r'^N'}
         >>> data = corpus.interrogate(q, show = L)
         >>> data.results
@@ -330,7 +329,7 @@ class Corpus(object):
         :param files_as_subcorpora: treat each file as a subcorpus
         :type files_as_subcorpora: bool
 
-        :param do_concordancing: Concordance while interrogating, store as .concordance attribute
+        :param do_concordancing: Concordance while interrogating, store as `.concordance` attribute
         :type do_concordancing: bool/'only'
 
         :param maxconc: Maximum number of concordance lines
