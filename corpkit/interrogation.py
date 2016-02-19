@@ -29,10 +29,7 @@ class Interrogation(object):
         return st
 
     def __repr__(self):
-        if 'results' in self.__dict__:
-            return "<corpkit.interrogation.Interrogation instance: %d subcorpora, %d entries>" % self.results.shape
-        else:
-            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
+        return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
 
     def edit(self, *args, **kwargs):
         """Edit results of interrogations, do keywording, sort, etc.
@@ -585,4 +582,3 @@ class Interrodict(OrderedDict):
             lst.append(tot)
         # turn the list into a dataframe
         return pd.concat(lst, axis = 1)
-        
