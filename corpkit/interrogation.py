@@ -32,20 +32,53 @@ class Interrogation(object):
         return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
 
     def edit(self, *args, **kwargs):
-        """Edit results of interrogations, do keywording, sort, etc.
+        """Manipulate results of interrogations.
 
-        :Example:
+        There are a few overall kinds of edit, most of which can be combined into a single function call. It's useful to keep in mind that many are basic wrappers around `pandas` operations---if you're comfortable with `pandas` syntax, it may be faster at times to use its syntax instead.
 
-        ### relative frequencies for words without initial capital
-        >>> data = corpus.interrogate({W: r'^t'}, preserve_case = True)
-        >>> rel = data.edit('%', 'self', skip_entries = r'^[A-Z]')
+        :Basic mathematical operations:
+
+        First, you can do basic maths on results, optionally passing in some data to serve as the denominator. Very commonly, you'll want to get relative frequencies:
+
+        :Example: 
+
+        >>> data = corpus.interrogate({W: r'^t'})
+        >>> rel = data.edit('%', SELF)
+        >>> rel.results
             ..    to  that   the  then ...   toilet  tolerant  tolerate  ton
             01 18.50 14.65 14.44  6.20 ...     0.00      0.00      0.11 0.00
             02 24.10 14.34 13.73  8.80 ...     0.00      0.00      0.00 0.00
             03 17.31 18.01  9.97  7.62 ...     0.00      0.00      0.00 0.00
             ...                                                          ...
 
-        `just/skip_entries` and `just/skip_subcorpora` can take a few different kinds of input:
+        For the operation, there are a number of possible values, each of which is to be passed in as a `str`:
+
+           `+`, `-`, `/`, `*`, `%`: self explanatory
+
+           `k`: log likelihood (keywords)
+
+           `a`: get distance metric
+
+           `d`: get percent difference (alternative approach to keywording)
+        
+        `SELF` is a very useful shorthand denominator. When used, all editing is performed on the data. The totals are then extracted from the edited data, and used as denominator. If this is not the desired behaviour, however, a more specific `interrogation.results` or `interrogation.totals` branch can be used.
+
+        In the example above, `SELF` (or `'self'`) is equivalent to:
+
+        :Example:
+
+        >>> rel = data.edit('%', data.totals)
+
+        :Keeping and skipping data:
+
+        There are four keyword arguments that can be used to keep or skip rows or columns in the data:
+
+        * `just_entries`
+        * `just_subcorpora`
+        * `skip_entries`
+        * `skip_subcorpora`
+
+        Each can accept different input types:
 
         * str: treated as regular expression to match
         * list: 
@@ -53,44 +86,59 @@ class Interrogation(object):
           * of integers: indices to match
           * of strings: entries/subcorpora to match
 
-        `merge_entries` and `merge_subcorpora`, however, are best entered as `dict`s:
+        :Example:
 
-        `{newname: criteria, newname2: criteria2}`
+        >>> data.edit(just_entries = r'^fr', 
+        ...           skip_entries = ['free', 'freedom'],
+        ...           skip_subcorpora = r'[0-9]')
 
-        where criteria is a string, list, etc.
+        :Merging data:
 
-        :param operation: Kind of maths to do on inputted lists:
+        There are also keyword arguments for merging entries and subcorpora.
 
-           '+', '-', '/', '*', '%': self explanatory
+        * `merge_entries`
+        * `merge_subcorpora`
 
-           'k': log likelihood (keywords)
+        These take a `dict`, with the new name as key and the criteria as value. The criteria can be a str (regex) or wordlist.
 
-           'a': get distance metric
-
-           'd': get percent difference (alternative approach to keywording)
-
-        :type operation: str
+        :Example:
         
-        :param denominator: List of results or totals.
+        >>> from dictionaries.wordlists import wordlists
+        >>> mer = {'Articles: ['the', 'an', 'a'], Modals': wordlists.modals}
+        >>> data.edit(merge_entries = mer)
 
-           If list of results, for each entry in dataframe 1, locate
-           entry with same name in dataframe 2, and do maths there
-           if 'self', do all merging/keeping operations, then use
-           edited dataframe1 as denominator
+        :Sorting:
 
-        :type denominator: pandas.Series/pandas.DataFrame/dict/`self`
+        The `sort_by` keyword argument takes a `str`, which represents the way the result columns should be ordered.
 
-        :param sort_by: Calculate slope, stderr, r, p values, then sort by.
+        * `'increase'`: highest to lowest slope value
+        * `'decrease'`: lowest to highest slope value
+        * `'turbulent'`: most change in y axis values
+        * `'static'`: least change in y axis values
+        * `'total/most'`: largest number first
+        * `'infreq/least'`: smallest number first
+        * `'name'`: alphabetically
 
-           `'increase'`: highest to lowest slope value
-           `'decrease'`: lowest to highest slope value
-           `'turbulent'`: most change in y axis values
-           `'static'`: least change in y axis values
-           `'total/most'`: largest number first
-           `'infreq/least'`: smallest number first
-           `'name'`: alphabetically
+        :Example:
 
-        :type sort_by: str
+        >>> data.edit(sort_by = 'increase')
+
+        :Editing entry text:
+        
+        Column labels, corresponding to individual interrogation results, can also be edited with `replace_names`.
+
+        :param replace_names: Edit result names, then merge duplicate entries
+        :type replace_names: str/dict
+
+        If `replace_names` is a string, it is treated as a regex to delete from each name. If `replace_names` is a dict, the value is the regex, and the key is the replacement text:
+
+        :Example:
+
+        >>> data.edit(replace_names = {r'object': r'[di]obj'})
+
+        :Other options:
+
+        There are many other miscellaneous options.
 
         :param keep_stats: Keep/drop stats values from dataframe after sorting
         :type keep_stats: bool
@@ -112,27 +160,10 @@ class Interrogation(object):
            If keywording, there are smaller default thresholds
 
         :type threshold: int/bool
-        :param just_entries: Keep matching entries
-        :type just_entries: see above
-        :param skip_entries: Skip matching entries
-        :type skip_entries: see above
-        :param merge_entries: Merge matching entries
-        :type merge_entries: see above
-        :param newname: New name for merged entries
-        :type newname: str/`'combine'`
-        :param just_subcorpora: Keep matching subcorpora
-        :type just_subcorpora: see above
-        :param skip_subcorpora: Skip matching subcorpora
-        :type skip_subcorpora: see above
+
         :param span_subcorpora: If subcorpora are numerically named, span all from *int* to *int2*, inclusive
         :type span_subcorpora: tuple -- `(int, int2)`
-        :param merge_subcorpora: Merge matching subcorpora
-        :type merge_subcorpora: see above
-        :param new_subcorpus_name: Name for merged subcorpora
-        :type new_subcorpus_name: str/`'combine'`
 
-        :param replace_names: Edit result names and then merge duplicate names.
-        :type replace_names: dict -- `{criteria: replacement_text}`; str -- a regex to delete from names
         :param projection:         a  to multiply results in subcorpus by n
         :type projection: tuple -- `(subcorpus_name, n)`
         :param remove_above_p: Delete any result over `p`
@@ -268,8 +299,9 @@ class Interrogation(object):
         Save an interrogation as pickle to ``savedir``.
 
         :Example:
-        ### create ``./saved_interrogations/savename.p``
+        
         >>> o = corpus.interrogate('w', 'any')
+        ### create ``./saved_interrogations/savename.p``
         >>> o.save('savename')
         
         :param savename: A name for the saved file
@@ -306,93 +338,26 @@ class Interrogation(object):
         quickview(self, n = n)
 
     def multiindex(self, indexnames = False):
-        """Create a `pd.MultiIndex` object from slash-separated results.
+        """Create a `pandas.MultiIndex` object from slash-separated results.
 
         :Example:
 
-        >>> mi = interro.multiindex()
+        >>> mi = data.multiindex()
 
         :param indexnames: provide custom names for the new index
         :type indexnames: list of strings
 
-        :returns: :class:`corpkit.interrogation.Interrogation`, with ``pd.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
+        :returns: :class:`corpkit.interrogation.Interrogation`, with ``pandas.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
         """
 
         from other import make_multi
         return make_multi(self, indexnames = indexnames)
 
 import pandas as pd
-class Results(pd.core.frame.DataFrame):
-    """
-    A class for interrogation results, with methods for editing, visualising, saving and quickviewing.
-    """
 
-    def __init__(self, data):
-        pd.core.frame.DataFrame.__init__(self, data)
-
-    #def __repr__(self):
-        #return "<corpkit.interrogation.Results instance: %d unique results>" % len(self.columns)
-
-    def edit(self, *args, **kwargs):
-        """calls corpkit.editor.editor()"""
-        from editor import editor
-        return editor(self, *args, **kwargs)
-
-    def visualise(self, title, *args, **kwargs):
-        """calls corpkit.plotter.plotter()"""
-        from plotter import plotter
-        plotter(title, self, *args, **kwargs)
-
-    def save(self, savename, *args, **kwargs):
-        """Save data to pickle file"""
-        from other import save
-        save(self, savename, *args, **kwargs)
-
-    def quickview(self, n = 25):
-        """Print top results from an interrogation or edit
-
-        :param n: show top n results
-        :type n: int
-
-        :returns: None"""
-        from other import quickview
-        quickview(self, n = n)
-    
-class Totals(pd.core.series.Series):
-    """
-    A class for interrogation totals, with methods for editing, plotting,
-    saving and quickviewing
-    """
-    def __init__(self, data):
-        pd.core.series.Series.__init__(self, data)
-
-    #def __repr__(self):
-        #return "<corpkit.interrogation.Totals instance: %d unique results>" % self.sum()
-
-    def edit(self, *args, **kwargs):
-        """Calls corpkit.editor.editor()"""
-        from editor import editor
-        return editor(self, *args, **kwargs)
-
-    def visualise(self, title, *args, **kwargs):
-        """Calls corpkit.plotter.plotter()"""
-        from plotter import plotter
-        plotter(title, self, *args, **kwargs)
-
-    def save(self, savename, *args, **kwargs):
-        """Save data to pickle file"""
-        from other import save
-        save(self, savename, *args, **kwargs)
-
-    def quickview(self, n = 25):
-        """Print top results from an interrogation or edit"""
-        from other import quickview
-        quickview(self, n = n)
-    
 class Concordance(pd.core.frame.DataFrame):
     """
-    A class for concordance lines, with methods for saving,
-    formatting and editing.
+    A class for concordance lines, with methods for saving, formatting and editing.
     """
     
     def __init__(self, data):
@@ -422,7 +387,7 @@ class Concordance(pd.core.frame.DataFrame):
             1  e 're in tucson , then up  north      to flagstaff , then we we
             2  tucson , then up north to  flagstaff  , then we went through th
             3   through the grand canyon  area       and then phoenix and i sp
-        ...                                                            ...
+            ...                                                            ...
 
         :returns: None
         """
@@ -476,7 +441,15 @@ class Interrodict(OrderedDict):
     """
     A class for interrogations that do not fit in a single-indexed DataFrame.
 
-    Methods for saving, editing, and generating multiindex DataFrame equivalent.
+    Individual interrogations can be looked up via dict keys, indexes or attributes:
+
+    :Example:
+
+    >>> out_data['WSJ'].results
+    >>> out_data.WSJ.results
+    >>> out_data[3].results
+
+    Methods for saving, editing, etc. are similar to :class:`corpkit.corpus.Interrogation`. Additional methods are available for collapsing into single (multiindexed) DataFrames.
     """
     
     def __init__(self, data):
