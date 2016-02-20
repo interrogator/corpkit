@@ -106,7 +106,7 @@ def test_interro_multiindex_tregex_justspeakers():
     print('Testing multiindex')
     import pandas as pd
     data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers = ['each'])
-    assert_equals(all(data.multiindex().index), all(pd.MultiIndex(levels=[['ANONYMOUS', 
+    assert_equals(all(data.multiindex().results.index), all(pd.MultiIndex(levels=[['ANONYMOUS', 
            'NEWCOMER', 'TESTER', 'UNIDENTIFIED', 'Total'], ['first', 'second', 'Total']],
            labels=[[3, 3, 1, 1, 0, 0, 2, 2], [0, 1, 0, 1, 0, 1, 0, 1]],
            names=['corpus', 'subcorpus'])))

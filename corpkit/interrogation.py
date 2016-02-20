@@ -49,7 +49,6 @@ class Interrogation(object):
             01 18.50 14.65 14.44  6.20 ...     0.00      0.00      0.11 0.00
             02 24.10 14.34 13.73  8.80 ...     0.00      0.00      0.00 0.00
             03 17.31 18.01  9.97  7.62 ...     0.00      0.00      0.00 0.00
-            ...                                                          ...
 
         For the operation, there are a number of possible values, each of which is to be passed in as a `str`:
 
@@ -104,7 +103,7 @@ class Interrogation(object):
         :Example:
         
         >>> from dictionaries.wordlists import wordlists
-        >>> mer = {'Articles: ['the', 'an', 'a'], Modals': wordlists.modals}
+        >>> mer = {'Articles': ['the', 'an', 'a'], 'Modals': wordlists.modals}
         >>> data.edit(merge_entries = mer)
 
         :Sorting:
@@ -301,7 +300,7 @@ class Interrogation(object):
         :Example:
         
         >>> o = corpus.interrogate('w', 'any')
-        ### create ``./saved_interrogations/savename.p``
+        ### create ./saved_interrogations/savename.p
         >>> o.save('savename')
         
         :param savename: A name for the saved file
@@ -337,14 +336,25 @@ class Interrogation(object):
         from other import quickview
         quickview(self, n = n)
 
-    def multiindex(self, indexnames = False):
+    def multiindex(self, indexnames = None):
         """Create a `pandas.MultiIndex` object from slash-separated results.
 
         :Example:
 
-        >>> mi = data.multiindex()
+        >>> data = corpus.interrogate({W: 'st$'}, show = [L, F])
+        >>> data.results
+            ..  just/advmod  almost/advmod  last/amod 
+            01           79             12          6 
+            02          105              6          7 
+            03           86             10          1 
+        >>> data.multiindex().results
+            Lemma       just almost last first   most 
+            Function  advmod advmod amod  amod advmod 
+            0             79     12    6     2      3 
+            1            105      6    7     1      3 
+            2             86     10    1     3      0                                   
 
-        :param indexnames: provide custom names for the new index
+        :param indexnames: provide custom names for the new index, or leave blank to guess.
         :type indexnames: list of strings
 
         :returns: :class:`corpkit.interrogation.Interrogation`, with ``pandas.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
@@ -387,7 +397,6 @@ class Concordance(pd.core.frame.DataFrame):
             1  e 're in tucson , then up  north      to flagstaff , then we we
             2  tucson , then up north to  flagstaff  , then we went through th
             3   through the grand canyon  area       and then phoenix and i sp
-            ...                                                            ...
 
         :returns: None
         """
@@ -510,17 +519,36 @@ class Interrodict(OrderedDict):
         from editor import editor
         return editor(self, *args, **kwargs)
 
-    def multiindex(self, indexnames = False):
-        """Create a ``pd.MultiIndex`` version of results.
+    def multiindex(self, indexnames = None):
+        """Create a `pandas.MultiIndex` version of results.
 
-        :param indexnames: provide custom names for the new index
-        :type indexnames: list of strings
+        :Example:
+
+        >>> d = corpora.interrogate({F: 'compound', GL: r'\brisk'}, show = L)
+        >>> d.keys()
+            ['CHT', 'WAP', 'WSJ']
+        >>> d['CHT'].results
+            ....  health  cancer  security  credit  flight  safety  heart
+            1987      87      25        28      13       7       6      4
+            1988      72      24        20      15       7       4      9
+            1989     137      61        23      10       5       5      6
+        >>> d.multiindex().results
+            ...               health  cancer  credit  security  downside  
+            Corpus Subcorpus                                             
+            CHT    1987           87      25      13        28        20 
+                   1988           72      24      15        20        12 
+                   1989          137      61      10        23        10                                                      
+            WAP    1987           83      44       8        44        10 
+                   1988           83      27      13        40         6 
+                   1989           95      77      18        25        12 
+            WSJ    1987           52      27      33         4        21 
+                   1988           39      11      37         9        22 
+                   1989           55      47      43         9        24 
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         from other import make_multi
         return make_multi(self, indexnames = indexnames)
-
 
     def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
@@ -552,6 +580,33 @@ class Interrodict(OrderedDict):
 
         :param axis: collapse along x, y or name axis
         :type axis: str ('x'/'y'/'n')
+
+        :Example:
+
+        >>> d = corpora.interrogate({F: 'compound', GL: r'\brisk'}, show = L)
+        >>> d.keys()
+            ['CHT', 'WAP', 'WSJ']
+        >>> d['CHT'].results
+            ....  health  cancer  security  credit  flight  safety  heart
+            1987      87      25        28      13       7       6      4
+            1988      72      24        20      15       7       4      9
+            1989     137      61        23      10       5       5      6
+        >>> d.collapse().results
+            ...  health  cancer  credit  security
+            CHT    3174    1156     566       697
+            WAP    2799     933     582      1127
+            WSJ    1812     680    2009       537
+        >>> d.collapse(axis = 'x').results
+            ...  1987  1988  1989
+            CHT   384   328   464
+            WAP   389   355   435
+            WSJ   428   410   473
+        >>> d.collapse(axis = 'key').results
+            ...   health  cancer  credit  security
+            1987     282     127      65        93
+            1988     277     100      70       107
+            1989     379     253      83        91
+
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         import pandas as pd
