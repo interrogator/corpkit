@@ -379,10 +379,10 @@ class Concordance(pd.core.frame.DataFrame):
         """
         Print concordance lines nicely, to string, LaTeX or CSV
 
-        :param kind: output format
-        :type kind: str (``'string'``/``'latex'``/``'csv'``)
-        :param n: Print first ``n`` lines only
-        :type n: int/'all'
+        :param kind: output format: `'string'`/`'latex'`/`'csv'`
+        :type kind: str
+        :param n: Print first `n` lines only
+        :type n: int/`'all'`
         :param window: how many characters to show to left and right
         :type window: int
         :param columns: which columns to show

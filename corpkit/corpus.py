@@ -61,7 +61,7 @@ def lazyprop(fn):
             return getattr(self, attr_name)
     return _lazyprop
 
-class Corpus(object):
+class Corpus:
     """
     A class representing a linguistic text corpus, which contains files,
     optionally within subcorpus folders.
@@ -663,17 +663,17 @@ class Datalist(object):
     def interrogate(self, *args, **kwargs):
         """Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
         from interrogator import interrogator
-        return interrogator([s for s in self], *args, **kwargs)
+        return interrogator(self, *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
         """Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
         from interrogator import interrogator
-        return interrogator([s for s in self], do_concordancing = 'only', *args, **kwargs)
+        return interrogator(self, do_concordancing = 'only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
         """Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`"""
         from configurations import configurations
-        return configurations([s for s in self], search, **kwargs)
+        return configurations(self, search, **kwargs)
 
 from corpus import Datalist
 class Corpora(Datalist):

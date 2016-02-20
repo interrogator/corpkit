@@ -52,13 +52,12 @@ def interrogator(corpus,
 
     import corpkit
     from interrogation import Interrogation
-    from corpus import Datalist
-    from process import tregex_engine
+    from corpus import Datalist, Corpora, Corpus
+    from process import tregex_engine, get_deps
     import pandas as pd
     from pandas import DataFrame, Series
     from collections import Counter
     from other import as_regex
-    from process import get_deps
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
     from process import animator
@@ -94,9 +93,7 @@ def interrogator(corpus,
     note = kwargs.get('note')
 
     # convert path to corpus object
-    from corpus import Corpus
-
-    if corpus.__class__ != Corpus:
+    if corpus.__class__ not in [Corpus, Corpora]:
         if not multiprocess and not kwargs.get('outname'):
             corpus = Corpus(corpus, print_info = False)
 
@@ -589,6 +586,8 @@ def interrogator(corpus,
     if hasattr(corpus, '__iter__') and im:
         corpus = Corpus(corpus)
     if hasattr(corpus, '__iter__') and not im:
+        im = True
+    if corpus.__class__ == Corpora:
         im = True
 
     if not im and multiprocess:
