@@ -355,6 +355,13 @@ def pmultiquery(corpus,
             print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         from interrogation import Interrodict
         idict = Interrodict(out)
+
+        # remove unpicklable bits from query
+        from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
+        locs = {k: v for k, v in locs.items() if not isinstance(v, ModuleType) \
+                                             and not isinstance(v, FunctionType) \
+                                             and not isinstance(v, BuiltinFunctionType) \
+                                             and not isinstance(v, BuiltinMethodType)}
         idict.query = locs
         return idict
     # make query and total branch, save, return

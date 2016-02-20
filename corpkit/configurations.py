@@ -1,10 +1,12 @@
 def configurations(corpus, search, **kwargs):
-    """Get behaviour of a word"""
+    """Get behaviour of a word---see corpkit.corpus.Corpus.configurations() for docs"""
+
     import corpkit
-    from collections import OrderedDict
     from dictionaries.wordlists import wordlists
     from interrogation import Interrodict
     from interrogator import interrogator
+
+    from collections import OrderedDict
 
     root = kwargs.get('root')
     note = kwargs.get('note')
