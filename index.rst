@@ -37,7 +37,7 @@ Here's a basic workflow, using a corpus of news articles published between 1987 
    ...
 
 
-Below, this corpus is made into a ``Corpus`` object, parsed with *Stanford CoreNLP*, and interrogated for a lexicogrammatical feature. Absolute frequencies are turned into relative frequencies, and results sorted by trajectory. The edited data is then plotted.
+Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP*, and interrogated for a lexicogrammatical feature. Absolute frequencies are turned into relative frequencies, and results sorted by trajectory. The edited data is then plotted.
 
 .. code-block:: python
 
