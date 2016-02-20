@@ -111,13 +111,13 @@ class Interrogation(object):
 
         The `sort_by` keyword argument takes a `str`, which represents the way the result columns should be ordered.
 
-        * `'increase'`: highest to lowest slope value
-        * `'decrease'`: lowest to highest slope value
-        * `'turbulent'`: most change in y axis values
-        * `'static'`: least change in y axis values
-        * `'total/most'`: largest number first
-        * `'infreq/least'`: smallest number first
-        * `'name'`: alphabetically
+        * `increase`: highest to lowest slope value
+        * `decrease`: lowest to highest slope value
+        * `turbulent`: most change in y axis values
+        * `static`: least change in y axis values
+        * `total/most`: largest number first
+        * `infreq/least`: smallest number first
+        * `name`: alphabetically
 
         :Example:
 
@@ -380,8 +380,8 @@ class Concordance(pd.core.frame.DataFrame):
 
         :Example:
 
-        ### show 25 characters either side, 4 lines, just text columns
         >>> lines = corpus.concordance({T: r'/NN.?/ >># NP'}, show = L)
+        ### show 25 characters either side, 4 lines, just text columns
         >>> lines.format(window = 25, n = 4, columns = ['l', 'm', 'r'])
             0                  we 're in  tucson     , then up north to flagst
             1  e 're in tucson , then up  north      to flagstaff , then we we
@@ -535,10 +535,10 @@ class Interrodict(OrderedDict):
         :param print_info: Show/hide stdout
         :type print_info: bool
         
-        :Example:
-        
-        ### create ``saved_interrogations/savename.p``
+        :Example: 
+
         >>> o = corpus.interrogate('w', 'any')
+        ### create ``saved_interrogations/savename.p``
         >>> o.save('savename')
 
         :returns: None

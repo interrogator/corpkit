@@ -252,6 +252,7 @@ class Corpus(object):
 
         :Example:
 
+        >>> corpus = Corpus('data/conversations-parsed')
         ### show lemma form of nouns ending in 'ing'
         >>> q = {W: r'ing$', 'p': r'^N'}
         >>> data = corpus.interrogate(q, show = L)
