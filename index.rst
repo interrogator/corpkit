@@ -79,7 +79,9 @@ Output:
 A graphical interface, incorporating much of corpkit's command line functionality, is documented and downloadable here_. The app is also distributed in the GitHub/pip versions of *corpkit* as a .py file. It can be started with:
 
 .. code-block:: bash
-    python corpkit/corpkit-gui.py
+
+   python corpkit/corpkit-gui.py
+
 
 Installation
 ----------------------
