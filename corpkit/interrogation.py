@@ -640,6 +640,44 @@ class Interrodict(OrderedDict):
             df.results[col] = df.results[col].astype(int)
         return df
 
+    def topwords(self, relative = True, n = 10):
+        """Show top n results in each corpus alongside absolute or relative frequencies.
+
+        :param relative: show abs/rel frequencies
+        :type relative: bool
+        :param n: number of result to show
+        :type n: int
+
+        :Example:
+
+        >>> data.topwords(n = 5)
+            TBT            %   UST            %   WAP            %   WSJ            %
+            health     25.70   health     15.25   health     19.64   credit      9.22
+            security    6.48   cancer     10.85   security    7.91   health      8.31
+            cancer      6.19   heart       6.31   cancer      6.55   downside    5.46
+            flight      4.45   breast      4.29   credit      4.08   inflation   3.37
+            safety      3.49   security    3.94   safety      3.26   cancer      3.12
+
+        :returns: None
+        """
+        strings = []
+        for name, data in self.items():
+            if relative:
+                operation = '%'
+                relsum = data.results.sum() * 100.0 / data.totals.sum()
+            else:
+                operation = 'n'
+                relsum = data.results.sum()
+            #relsum.index.name = name
+            as_str = relsum[:n].to_string(header = False)
+            linelen = len(as_str.splitlines()[1])
+            strings.append(name.ljust(linelen - 1) + '%s\n' % operation + as_str)
+        # strings is a list of series as strings
+        output = ''
+        for tup in zip(*[i.splitlines() for i in strings]):
+            output += '   '.join(tup) + '\n'
+        print(output)
+
     def get_totals(self):
         """Helper function to concatenate all totals"""
         import pandas as pd

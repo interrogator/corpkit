@@ -66,7 +66,7 @@ class Corpus(object):
     A class representing a linguistic text corpus, which contains files,
     optionally within subcorpus folders.
 
-    Methods for concordancing, interrogating, getting general stats.
+    Methods for concordancing, interrogating, getting general stats, getting behaviour of particular word, etc.
     """
 
     def __init__(self, path, **kwargs):
