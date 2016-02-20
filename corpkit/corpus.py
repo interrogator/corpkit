@@ -254,7 +254,7 @@ class Corpus(object):
 
         >>> corpus = Corpus('data/conversations-parsed')
         ### show lemma form of nouns ending in 'ing'
-        >>> q = {W: r'ing$', 'p': r'^N'}
+        >>> q = {W: r'ing$', P: r'^N'}
         >>> data = corpus.interrogate(q, show = L)
         >>> data.results
             ..  something  anything  thing  feeling  everything  nothing  morning
@@ -274,7 +274,7 @@ class Corpus(object):
            - i/index
            - n/ngrams
            - s/general stats
-        :type search: str, or, for dependencies, a dict like `{W: 'help', 'p': r'^V'}`
+        :type search: str, or, for dependencies, a dict like `{W: 'help', P: r'^V'}`
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: str -- `'any'`/`'all'`
@@ -424,7 +424,7 @@ class Corpus(object):
         :Example:
 
         >>> wv = ['want', 'need', 'feel', 'desire']
-        >>> corpus.concordance({L: wv, 'f': 'root'})
+        >>> corpus.concordance({L: wv, F: 'root'})
            0   01  1-01.txt.xml                But , so I  feel     like i do that for w
            1   01  1-01.txt.xml                         I  felt     a little like oh , i
            2   01  1-01.txt.xml   he 's a difficult man I  feel     like his work ethic 
