@@ -2,7 +2,7 @@
 Classes
 ---------------------------
 
-Most of *corpkit*'s functionality comes from the ``Corpus`` and ``Interrogation`` classes, and their methods for interrogating, concordancing, editing and plotting. ``Corpus`` subclasses its subcorpora and files.
+Most of *corpkit*'s functionality comes from the `Corpus` and `Interrogation` classes, and their methods for interrogating, concordancing, editing, plotting, and getting configurations of a specific word or lemma. `Corpus` subclasses its subcorpora and files.
 
 `Corpus`
 =================

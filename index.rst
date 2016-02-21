@@ -119,6 +119,7 @@ Contents
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
    rst_docs/corpkit.about.rst
+   GUI documentation <http://interrogator.github.io/corpkit>
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
