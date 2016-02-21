@@ -15,7 +15,7 @@ def translator():
        'existential':    ['expl'],
        'finite':         ['aux'],
        'goal':           ['nsubjpass', 'acomp', 'dobj', 'csubjpass', 'iobj'],
-       'modifier':       ['advmod', 'amod', 'compound', 'nn', r'nmod.*'] 
+       'modifier':       ['advmod', 'amod', 'compound', 'nn', r'nmod.*'],
        'modal':          ['auxpass', 'aux'],
        'numerative':     ['number', 'quantmod'],
        'participant':    ['xsubj', 'nsubj', 'agent', 'nsubjpass', 'acomp', 
