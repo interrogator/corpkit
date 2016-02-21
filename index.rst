@@ -80,7 +80,7 @@ A graphical interface, incorporating much of corpkit's command line functionalit
 
 .. code-block:: bash
 
-   python corpkit/corpkit-gui.py
+   python -m corpkit.corpkit-gui
 
 
 Installation
