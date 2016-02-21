@@ -8,11 +8,11 @@ corpkit documentation
 
 *corpkit* is a Python-based tool for doing more sophisticated corpus linguistics.
 
-It does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can create structured corpora with speaker ID labels, and easily restrict searches to individual speakers, subcorpora or groups of files.
+It does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can create structured corpora with speaker ID labels, and easily restrict searches to individual speakers, subcorpora or groups of files. 
 
-Concordancing can take advantage of parser output, rather than simply lexis. You can keyword lemmas or lexicogrammatical features, or compare keywords in each subcorpus compared to the corpus as a whole. 
+You can interrogate parse trees, CoreNLP dependencies, lists of tokens or plain text for combinations of lexical and grammatical features. Results can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
 
-Interrogations can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
+Concordancing is extended to allow the user to query and display grammatical features alongside tokens. Keywording can be restricted to certain word classes or positions within the clause. If your corpus contains multiple documents or subcorpora, you can identify keywords in each, when compared to the corpus as a whole.
 
 *corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via `joblib`, and Python 2 and 3 are both supported.
 
@@ -44,14 +44,16 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    >>> from corpkit import *
    >>> from dictionaries.process_types import processes
    
-   >>> # parse corpus of NYT articles containing annual subcorpoa
+   ### parse corpus of NYT articles containing annual subcorpoa
    >>> unparsed = Corpus('data/NYT')
    >>> parsed = unparsed.parse()
    
-   >>> # query: nominal nsubjs that have verbal process as governor
-   >>> crit = {F: '^nsubj$', G: processes.verbal, P: r'^N'}
+   ### query: nominal nsubjs that have verbal process as governor
+   >>> crit = {F: '^nsubj$',
+   ...         G: processes.verbal,
+   ...         P: r'^N'}
 
-   >>> # interrogate corpus, outputting lemma forms
+   ### interrogate corpus, outputting lemma forms
    >>> sayers = parsed.interrogate(crit, show = L)
    >>> sayers.quickview(10)
 
@@ -66,22 +68,15 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
       8: critic      (n=826)
       9: person      (n=802)
 
-   >>> # get relative frequency and sort by increasing
+   ### get relative frequency and sort by increasing
    >>> rel_say = sayers.edit('%', SELF, sort_by = 'increase')
 
-   >>> # plot via matplotlib, using tex if possible
+   ### plot via matplotlib, using tex if possible
    >>> rel_say.visualise('Sayers, increasing', kind = 'area', y_label = 'Percentage of all sayers')
 
 Output:
 
 .. figure:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
-
-A graphical interface, incorporating much of corpkit's command line functionality, is documented and downloadable here_. The app is also distributed in the GitHub/pip versions of *corpkit* as a .py file. It can be started with:
-
-.. code-block:: bash
-
-   python -m corpkit.corpkit-gui
-
 
 Installation
 ----------------------
@@ -99,6 +94,19 @@ via Git:
    git clone https://www.github.com/interrogator/corpkit
    cd corpkit
    python setup.py install
+
+Parsing and interrogation of parse trees will also require *Stanford CoreNLP*.
+
+Graphical interface
+---------------------
+
+Much of corpkit's command line functionality is also available in the *corpkit* GUI. After installation, it can be started with:
+
+.. code-block:: bash
+
+   python -m corpkit.corpkit-gui
+
+Alternatively, it's available as a standalone OSX app here_.
 
 Contents
 ---------------------
