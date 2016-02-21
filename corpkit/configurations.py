@@ -3,9 +3,9 @@ def configurations(corpus, search, **kwargs):
 
     import corpkit
     from dictionaries.wordlists import wordlists
+    from dictionaries.roles import roles
     from interrogation import Interrodict
     from interrogator import interrogator
-
     from collections import OrderedDict
 
     root = kwargs.get('root')
@@ -17,68 +17,77 @@ def configurations(corpus, search, **kwargs):
     if search.get('l'):
         dep_word_or_lemma = 'dl'
         gov_word_or_lemma = 'gl'
-        byme = search.get('l')
+        word_or_token = search.get('l')
     else:
         if search.get('w'):
             dep_word_or_lemma = 'd'
             gov_word_or_lemma = 'g'
-            byme = search.get('w')
+            word_or_token = search.get('w')
 
     queries = {'participant': 
 
                 {'left_participant_in':             
-                  {dep_word_or_lemma: byme,
+                  {dep_word_or_lemma: word_or_token,
                    'df': r'^.subj.*',
-                   'f': 'root'},
+                   'f': roles.event},
 
                 'right_participant_in':
-                  {dep_word_or_lemma: byme,
+                  {dep_word_or_lemma: word_or_token,
                    'df': r'^[di]obj',
-                   'f': 'root'},
+                   'f': roles.event},
 
                 'modified_by':
                   {'f': r'^amod', 
-                   gov_word_or_lemma: byme},
+                   gov_word_or_lemma: word_or_token},
 
                  'and_or':
                   {'f': 'conj:(and|or)',
-                   gov_word_or_lemma: byme},
+                   'gf': roles.participant,
+                   gov_word_or_lemma: word_or_token},
                 },
 
                'process':
 
                 {'has_subject':
-                  {'f': r'^.subj.*',
-                   gov_word_or_lemma: byme},
+                  {'f': roles.participant1,
+                   gov_word_or_lemma: word_or_token},
 
                  'has_object':
-                  {'f': r'^[di]obj',
-                   gov_word_or_lemma: byme},
+                  {'f': roles.participant2,
+                   gov_word_or_lemma: word_or_token},
 
                  'modalised_by':
                   {'f': r'aux',
                    'w': wordlists.modals,
-                   gov_word_or_lemma: byme},
+                   gov_word_or_lemma: word_or_token},
 
                  'modulated_by':
                   {'f': 'advmod',
-                   gov_word_or_lemma: byme},
+                   'gf': roles.event,
+                   gov_word_or_lemma: word_or_token},
 
                  'and_or':
                   {'f': 'conj:(and|or)',
-                   gov_word_or_lemma: byme},
+                   'gf': roles.event,                 
+                   gov_word_or_lemma: word_or_token},
               
                 },
 
                'modifier':
 
                 {'modifies':
-                  {'df': 'a(dv)?mod', 
-                   dep_word_or_lemma: byme},
+                  {'df': roles.modifier,
+                   dep_word_or_lemma: word_or_token},
+
+                 'modulated_by':
+                  {'f': 'advmod',
+                   'gf': roles.modifier,
+                   gov_word_or_lemma: word_or_token},
 
                  'and_or':
                   {'f': 'conj:(and|or)',
-                   gov_word_or_lemma: byme},
+                   'gf': roles.modifier,
+                   gov_word_or_lemma: word_or_token},
 
                 }
             }
@@ -96,6 +105,7 @@ def configurations(corpus, search, **kwargs):
             for name, pattern in v.items():
                 newqueries[name] = pattern
         queries = newqueries
+        queries['and_or'] = {'f': 'conj:(and|or)', gov_word_or_lemma: word_or_token},
 
     total_queries = 0
     for k, v in queries.items():
@@ -105,7 +115,7 @@ def configurations(corpus, search, **kwargs):
     kwargs['search'] = queries
     data = interrogator(corpus, **kwargs)
     for k, v in data.items():
-        v.results = v.results.drop(byme, axis = 1, errors = 'ignore')
+        v.results = v.results.drop(word_or_token, axis = 1, errors = 'ignore')
         v.totals = v.results.sum(axis = 1)
         data[k] = v
     return data
