@@ -341,32 +341,26 @@ def new_project(name, loc = '.', **kwargs):
     #for subdir in subdirs_to_make:
         #os.makedirs(os.path.join(fullpath, 'data', subdir))
     # copy the bnc dictionary to dictionaries
-    if root:
 
-        # clean this up
-        import corpkit
-        def resource_path(relative):
-            import os
-            return os.path.join(
-                os.environ.get(
-                    "_MEIPASS2",
-                    os.path.abspath(".")
-                ),
-                relative
-            )
-        corpath = os.path.dirname(corpkit.__file__)
+    def resource_path(relative):
+        import os
+        return os.path.join(os.environ.get("_MEIPASS2",os.path.abspath(".")),relative)
+
+    corpath = os.path.dirname(corpkit.__file__)
+    if root:
         corpath = corpath.replace('/lib/python2.7/site-packages.zip/corpkit', '')
-        baspat = os.path.dirname(corpath)
-        dicpath = os.path.join(corpath, 'dictionaries')
-        try:
-            shutil.copy(os.path.join(dicpath, 'dictionaries', 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
-        except:
+    baspat = os.path.dirname(corpath)
+    dicpath = os.path.join(corpath, 'dictionaries')
+    try:
+        shutil.copy(os.path.join(dicpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
+    except:
+        if root:
             shutil.copy(resource_path(os.path.join('dictionaries', 'bnc.p')), os.path.join(fullpath, 'dictionaries'))
 
-    # if not GUI
     if not root:
-        time = strftime("%H:%M:%S", localtime())
-        print('%s: New project created: "%s"' % (time, name))
+        thetime = strftime("%H:%M:%S", localtime())
+        print('\n%s: New project created: "%s"\n' % (thetime, name))
+        
 
 def interroplot(path, search, **kwargs):
     """Demo function for interrogator/plotter.

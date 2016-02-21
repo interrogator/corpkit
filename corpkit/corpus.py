@@ -61,7 +61,7 @@ def lazyprop(fn):
             return getattr(self, attr_name)
     return _lazyprop
 
-class Corpus:
+class Corpus(object):
     """
     A class representing a linguistic text corpus, which contains files,
     optionally within subcorpus folders.
