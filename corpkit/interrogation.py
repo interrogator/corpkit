@@ -363,6 +363,33 @@ class Interrogation(object):
         from other import make_multi
         return make_multi(self, indexnames = indexnames)
 
+    def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
+        """Show top n results in each corpus alongside absolute or relative frequencies.
+
+        :param relative: show abs/rel frequencies
+        :type relative: bool
+        :param n: number of result to show
+        :type n: int
+
+        :Example:
+
+        >>> data.topwords(n = 5)
+            1987           %   1988           %   1989           %   1990           %
+            health     25.70   health     15.25   health     19.64   credit      9.22
+            security    6.48   cancer     10.85   security    7.91   health      8.31
+            cancer      6.19   heart       6.31   cancer      6.55   downside    5.46
+            flight      4.45   breast      4.29   credit      4.08   inflation   3.37
+            safety      3.49   security    3.94   safety      3.26   cancer      3.12
+
+        :returns: None
+        """
+        import pandas as pd
+        from other import topwords
+        if df:
+            return topwords(self, relative = relative, n = n, df = True, sort = sort)
+        else:
+            topwords(self, relative = relative, n = n, sort = sort)
+
 import pandas as pd
 
 class Concordance(pd.core.frame.DataFrame):
@@ -482,7 +509,6 @@ class Interrodict(OrderedDict):
             for ii in range(*key.indices(len(self))):
                 n[self.keys()[ii]] = self[ii]
             return Interrodict(n) 
-
             return Interrodict([self[ii] for ii in range(*key.indices(len(self)))])
         # allow integer index
         elif type(key) == int:
@@ -496,9 +522,12 @@ class Interrodict(OrderedDict):
                 from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
+
+    def __setitem__(self, key, value):
+        from process import makesafe
+        setattr(self, makesafe(key), value)
+        super(Interrodict, self).__setitem__(key, value)
         
-
-
     def __repr__(self):
         return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
 
@@ -640,7 +669,7 @@ class Interrodict(OrderedDict):
             df.results[col] = df.results[col].astype(int)
         return df
 
-    def topwords(self, relative = True, n = 10):
+    def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param relative: show abs/rel frequencies
@@ -660,23 +689,12 @@ class Interrodict(OrderedDict):
 
         :returns: None
         """
-        strings = []
-        for name, data in self.items():
-            if relative:
-                operation = '%'
-                relsum = data.results.sum() * 100.0 / data.totals.sum()
-            else:
-                operation = 'n'
-                relsum = data.results.sum()
-            #relsum.index.name = name
-            as_str = relsum[:n].to_string(header = False)
-            linelen = len(as_str.splitlines()[1])
-            strings.append(name.ljust(linelen - 1) + '%s\n' % operation + as_str)
-        # strings is a list of series as strings
-        output = ''
-        for tup in zip(*[i.splitlines() for i in strings]):
-            output += '   '.join(tup) + '\n'
-        print(output)
+        import pandas as pd
+        from other import topwords
+        if df:
+            return topwords(self, relative = relative, n = n, df = True, sort = sort)
+        else:
+            topwords(self, relative = relative, n = n, sort = sort)
 
     def get_totals(self):
         """Helper function to concatenate all totals"""
