@@ -119,7 +119,7 @@ def quickview(results, n = 25):
         else:
             print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
-def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kwargs):
+def concprinter(dataframe, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
     """
     Print conc lines nicely, to string, latex or csv
 
@@ -132,12 +132,15 @@ def concprinter(df, kind = 'string', n = 100, window = 60, columns = 'all', **kw
     :returns: None
     """
     import corpkit
+
+    df = dataframe.copy()
+
     if n > len(df):
         n = len(df)
     if not kind.startswith('l') and kind.startswith('c') and kind.startswith('s'):
         raise ValueError('kind argument must start with "l" (latex), "c" (csv) or "s" (string).')
     import pandas as pd
-    
+
     # shitty thing to hardcode
     pd.set_option('display.max_colwidth', 100)
 
