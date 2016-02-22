@@ -222,7 +222,11 @@ def editor(interrogation,
     pd.options.mode.chained_assignment = None
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
-    from tests import check_pytex
+    try:
+        from tests import check_pytex
+    except ImportError:
+        from corpkit.tests import check_pytex
+        
     if check_pytex():
         print_info = False
 
@@ -399,10 +403,7 @@ def editor(interrogation,
     def parse_input(df, the_input):
         """turn whatever has been passed in into list of words that can 
            be used as pandas indices---maybe a bad way to go about it"""
-
-        # FIX MERGE ERROR HERE
         parsed_input = False
-
         import re
         if the_input == 'all':
             the_input = r'.*'
@@ -422,12 +423,11 @@ def editor(interrogation,
         if type(the_input) == list:
             if type(the_input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
-            elif type(the_input[0]) == str or type(the_input[0]) == str:
+            elif type(the_input[0]) == str or type(the_input[0]) == unicode:
                 try:
                     parsed_input = [word for word in the_input if word in df.columns]
                 except AttributeError: # if series
                     parsed_input = [word for word in the_input if word in df.index]
-        
         return parsed_input
 
     def synonymise(df, pos = 'n'):
@@ -1036,7 +1036,6 @@ def editor(interrogation,
             if using_totals:
                 df2 = merge_these_entries(df2.T, parse_input(df2.T, the_input), the_newname, merging = 'subcorpora', prinf = False).T
     
-
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf = print_info)
         if using_totals:
@@ -1056,6 +1055,7 @@ def editor(interrogation,
         df = just_these_entries(df, parse_input(df, just_entries), prinf = print_info)
         if not single_totals:
             df2 = just_these_entries(df2, parse_input(df2, just_entries), prinf = False)
+    
     if skip_entries:
         df = skip_these_entries(df, parse_input(df, skip_entries), prinf = print_info)
         if not single_totals:
@@ -1202,7 +1202,10 @@ def editor(interrogation,
         return df
 
     # while tkintertable can't sort rows
-    from tests import check_t_kinter
+    try:
+        from tests import check_t_kinter
+    except ImportError:
+        from corpkit.tests import check_t_kinter
     tk = check_t_kinter()
     if tk:
         df = add_tkt_index(df)
