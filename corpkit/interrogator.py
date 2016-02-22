@@ -52,7 +52,7 @@ def interrogator(corpus,
 
     import corpkit
     from interrogation import Interrogation
-    from corpus import Datalist, Corpora, Corpus
+    from corpus import Datalist, Corpora, Corpus, File
     from process import tregex_engine, get_deps
     import pandas as pd
     from pandas import DataFrame, Series
@@ -93,7 +93,7 @@ def interrogator(corpus,
     note = kwargs.get('note')
 
     # convert path to corpus object
-    if corpus.__class__ not in [Corpus, Corpora]:
+    if corpus.__class__ not in [Corpus, Corpora, File]:
         if not multiprocess and not kwargs.get('outname'):
             corpus = Corpus(corpus, print_info = False)
 
