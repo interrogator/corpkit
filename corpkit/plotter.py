@@ -488,7 +488,6 @@ def plotter(df,
                             colours = 'Paired'
                         kwargs['colormap'] = colours
         #else:
-
             if colours:
                 if colours == 'Default':
                     colours = 'Paired'
@@ -512,8 +511,9 @@ def plotter(df,
                 if not black_and_white:
                     import numpy as np
                     the_range = np.linspace(0, 1, num_to_plot)
+                    middle = len(the_range) / 2
                     cmap = plt.get_cmap(colours)
-                    kwargs['color'] = [cmap(n) for n in the_range]
+                    kwargs['color'] = [cmap(n) for n in the_range][middle]
                 # make a bar width ... ? ...
                 #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
