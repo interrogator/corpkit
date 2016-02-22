@@ -611,3 +611,72 @@ def make_multi(interrogation, indexnames = None):
     except:
         conco = None
     return Interrogation(newdf, totals, query, conco)
+
+def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
+
+    """Show top n results in each corpus alongside absolute or relative frequencies.
+
+    :param relative: show abs/rel frequencies
+    :type relative: bool
+    :param n: number of result to show
+    :type n: int
+
+    :Example:
+
+    >>> data.topwords(n = 5)
+        TBT            %   UST            %   WAP            %   WSJ            %
+        health     25.70   health     15.25   health     19.64   credit      9.22
+        security    6.48   cancer     10.85   security    7.91   health      8.31
+        cancer      6.19   heart       6.31   cancer      6.55   downside    5.46
+        flight      4.45   breast      4.29   credit      4.08   inflation   3.37
+        safety      3.49   security    3.94   safety      3.26   cancer      3.12
+
+    :returns: None
+    """
+    import corpkit
+    from interrogation import Interrogation, Interrodict
+    import pandas as pd
+    pd.set_option('display.float_format', lambda x: format(x, '.%df' % precision))
+    strings = []
+    if relative:
+        operation = '%'
+    else:
+        operation = 'n'
+    if type(self) == corpkit.interrogation.Interrodict:
+        to_iterate = self.items()
+    else:
+        if sort:
+            to_iterate = [(x, self.results.ix[x].sort_values(ascending = False)) for x in list(self.results.index)]
+        else:
+            to_iterate = [(x, self.results.ix[x]) for x in list(self.results.index)]
+    for name, data in to_iterate:
+        if type(self) == corpkit.interrogation.Interrodict:
+            if sort:
+                data = data.results.sum().sort_values(ascending = False)
+            else:
+                data = data.results.sum()
+        if relative:
+            data = data * 100.0 / data.sum()
+        else:
+            data = data.astype(int)
+        if df:
+            data.index.name = name
+            ser1 = pd.Series(list(data.index), index = range(len(data)))[:n]
+            ser2 = pd.Series(list(data), index = range(len(data)))[:n]
+            ser1.name = name
+            ser2.name = operation
+            strings.append(ser1)
+            strings.append(ser2)
+        else:
+            as_str = data[:n].to_string(header = False)
+            linelen = len(as_str.splitlines()[1])
+            strings.append(name.ljust(linelen - 1) + '%s\n' % operation + as_str)
+
+    # strings is a list of series as strings
+    if df:
+        dataframe = pd.concat(strings, axis = 1)
+        return dataframe
+    output = ''
+    for tup in zip(*[i.splitlines() for i in strings]):
+        output += '   '.join(tup) + '\n'
+    print(output)
