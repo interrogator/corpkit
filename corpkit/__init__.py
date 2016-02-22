@@ -9,7 +9,7 @@ from __future__ import print_function
 # quicker access to search, exclude, show types
 letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
            'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'ANY',
-           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL']
+           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL', 'ANYWORD']
 
 # asterisk import
 __all__ = ["interrogator",
@@ -20,6 +20,9 @@ __all__ = ["interrogator",
     "load",
     "load_all_results",
     "as_regex",
+    "Interrogation",
+    "Interrodict",
+    "Concordance",
     "new_project",
     "make_corpus",
     "flatten_treestring",
@@ -65,6 +68,7 @@ from other import new_project
 from other import interroplot
 from make import make_corpus
 from build import flatten_treestring
+from interrogation import Interrogation, Interrodict, Concordance
 
 # monkeypatch editing and plotting to pandas objects
 import pandas as pd
@@ -155,3 +159,4 @@ DP = 'dp'
 PL = 'pl'
 SELF = 'self'
 ANY = 'any'
+ANYWORD = r'[A-Za-z0-9:_]'

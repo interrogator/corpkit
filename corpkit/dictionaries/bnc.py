@@ -1,9 +1,14 @@
 def _get_bnc():
     """Load the BNC"""
     import corpkit
-    import pickle
+    try:
+        import cPickle as pickle
+    except ImportError:
+        import pickle
     import os
-    fullpath = os.path.join(os.path.dirname(corpkit.__file__), 'dictionaries', 'bnc.p')
+    fullpaths = [os.path.join(os.path.dirname(corpkit.__file__), 'corpkit', 'dictionaries', 'bnc.p'),
+                 os.path.join(os.path.dirname(corpkit.__file__), 'dictionaries', 'bnc.p')]
+    fullpath = next(x for x in fullpaths if os.path.isfile(x))
     with open(fullpath, 'rb') as fo:
         data = pickle.load(fo)
     return data
