@@ -1,65 +1,7 @@
 from __future__ import print_function
 import corpkit
 from functools import wraps
-
-def lazyprop(fn):
-    """Lazy loading class attributes, with hard-coded docstrings for now..."""
-    attr_name = '_lazy_' + fn.__name__
-    if fn.__name__ == 'subcorpora':
-        @property
-        def _lazyprop(self):
-            """A list-like object containing a corpus' subcorpora.
-
-            :Example:
-
-            >>> corpus.subcorpora
-            <corpkit.corpus.Datalist instance: 12 items>
-
-            """
-            if not hasattr(self, attr_name):
-                setattr(self, attr_name, fn(self))
-            return getattr(self, attr_name)
-    if fn.__name__ == 'files':
-        @property
-        def _lazyprop(self):
-            """A list-like object containing the files in a folder.
-
-            :Example:
-
-            >>> corpus.subcorpora[0].files
-            <corpkit.corpus.Datalist instance: 240 items>
-
-            """
-            if not hasattr(self, attr_name):
-                setattr(self, attr_name, fn(self))
-            return getattr(self, attr_name)
-    if fn.__name__ == 'features':
-        @property
-        def _lazyprop(self):
-            """
-            Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
-
-            :Example:
-    
-            >>> corpus.features
-                ..  Characters  Tokens  Words  Closed class words  Open class words  Clauses
-                01       26873    8513   7308                4809              3704     2212   
-                02       25844    7933   6920                4313              3620     2270   
-                03       18376    5683   4877                3067              2616     1640   
-                04       20066    6354   5366                3587              2767     1775
-               
-            """
-            if not hasattr(self, attr_name):
-                setattr(self, attr_name, fn(self))
-            return getattr(self, attr_name)
-    if fn.__name__ == 'document':
-        @property
-        def _lazyprop(self):
-            """Return the parsed XML of a parsed file"""
-            if not hasattr(self, attr_name):
-                setattr(self, attr_name, fn(self))
-            return getattr(self, attr_name)
-    return _lazyprop
+from lazyprop import lazyprop
 
 class Corpus(object):
     """
@@ -642,9 +584,11 @@ class Datalist(object):
                     return self.__getattribute__('c' + key)
 
     def __setitem__(self, key, value):
-        self.__setattr__(key, value)
-        if key.startswith('c'):
+        from process import makesafe, is_number
+        if key.startswith('c') and len(key) > 1 and all(is_number(x) for x in key[1:]):
             self.__setattr__(key.lstrip('c'), value)
+        else:
+            self.__setattr__(key, value)
 
     def __iter__(self):
         for datum in self.data:
