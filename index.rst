@@ -12,7 +12,7 @@ It does a lot of the usual things, like parsing, interrogating, concordancing an
 
 You can interrogate parse trees, CoreNLP dependencies, lists of tokens or plain text for combinations of lexical and grammatical features. Results can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
 
-Concordancing is extended to allow the user to query and display grammatical features alongside tokens. Keywording can be restricted to certain word classes or positions within the clause. If your corpus contains multiple documents or subcorpora, you can identify keywords in each, when compared to the corpus as a whole.
+Concordancing is extended to allow the user to query and display grammatical features alongside tokens. Keywording can be restricted to certain word classes or positions within the clause. If your corpus contains multiple documents or subcorpora, you can identify keywords in each, compared to the corpus as a whole.
 
 *corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via `joblib`, and Python 2 and 3 are both supported.
 
@@ -48,9 +48,9 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    >>> unparsed = Corpus('data/NYT')
    >>> parsed = unparsed.parse()
    
-   ### query: nominal nsubjs that have verbal process as governor
+   ### query: nominal nsubjs that have verbal process as governor lemma
    >>> crit = {F: r'^nsubj$',
-   ...         G: processes.verbal,
+   ...         GL: processes.verbal.lemmata,
    ...         P: r'^N'}
 
    ### interrogate corpus, outputting lemma forms
@@ -113,7 +113,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   User guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
+   README.md
    rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst

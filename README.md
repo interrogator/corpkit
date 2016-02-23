@@ -84,21 +84,21 @@ as well as the following methods:
 Once you've defined a Corpus, you can move around it very easily:
 
 ```python
-# corpus containing annual subcorpora of NYT articles
+### corpus containing annual subcorpora of NYT articles
 >>> corpus = Corpus('data/NYT-parsed')
 
 >>> list(corpus.subcorpora)[:3]
-# [<corpkit.corpus.Subcorpus instance: 1987>,
-#  <corpkit.corpus.Subcorpus instance: 1988>,
-#  <corpkit.corpus.Subcorpus instance: 1989>]
+### [<corpkit.corpus.Subcorpus instance: 1987>,
+###  <corpkit.corpus.Subcorpus instance: 1988>,
+###  <corpkit.corpus.Subcorpus instance: 1989>]
 
 >>> corpus.subcorpora[0].path, corpus.subcorpora[0].datatype
-# ('/Users/daniel/Work/risk/data/NYT-parsed/1987', 'parse')
+### ('/Users/daniel/Work/risk/data/NYT-parsed/1987', 'parse')
 
 >>> corpus.subcorpora.c1989.files[10:13]
-# [<corpkit.corpus.File instance: NYT-1989-01-01-10-1.txt.xml>,
-#  <corpkit.corpus.File instance: NYT-1989-01-01-10-2.txt.xml>,
-#  <corpkit.corpus.File instance: NYT-1989-01-01-11-1.txt.xml>]
+### [<corpkit.corpus.File instance: NYT-1989-01-01-10-1.txt.xml>,
+###  <corpkit.corpus.File instance: NYT-1989-01-01-10-2.txt.xml>,
+###  <corpkit.corpus.File instance: NYT-1989-01-01-11-1.txt.xml>]
 
 ```
 
@@ -128,30 +128,29 @@ Most attributes, and the `.interrogate()` and `.concordance()` methods, can also
 The code below demonstrates the complex kinds of queries that can be handled by the `interrogate()` and `concordance()` methods:
 
 ```python
-# import * mostly so that we can access global variables like G, P, V
-# otherwise, use 'w' instead of W, 'p' instead of P, etc. 
+### import * mostly so that we can access global variables like G, P, V
+### otherwise, use 'w' instead of W, 'p' instead of P, etc. 
 >>> from corpkit import *
 
-# select parsed corpus
+### select parsed corpus
 >>> corpus = Corpus('data/postcounts-parsed')
 
-# import process type lists and closed class wordlists
->>> from dictionaries.process_types import processes
->>> from dictionaries.wordlists import wordlists
+### import process type lists and closed class wordlists
+>>> from dictionaries import *
 
-# match tokens with governor that is in relational process wordlist, 
-# and whose function is `nsubj(pass)` or `csubj(pass)`:
->>> criteria = {G: processes.relational, F: r'^.subj'}
+### match tokens with governor that is in relational process wordlist, 
+### and whose function is `nsubj(pass)` or `csubj(pass)`:
+>>> criteria = {GL: processes.relational.lemmata, F: r'^.subj'}
 
-# exclude tokens whose part-of-speech is verbal, 
-# or whose word is in a list of pronouns
+### exclude tokens whose part-of-speech is verbal, 
+### or whose word is in a list of pronouns
 >>> exc = {P: r'^V', W: wordlists.pronouns}
 
 # interrogate, returning slash-delimited function/lemma
 >>> data = corpus.interrogate(criteria, exclude = exc, show = [F, L])
 >>> lines = corpus.concordance(criteria, exclude = exc, show = [F, L])
 
-# show results
+### show results
 >>> print data, lines.format(n = 10, window = 40, columns = [L, M, R])
 ```
 
@@ -274,31 +273,22 @@ pip install corpkit
 
 *corpkit* should install all the necessary dependencies, including *pandas*, *NLTK*, *matplotlib*, etc, as well as some NLTK data files. 
 
-If you get an NLTK error, you might need to manually download the tokeniser and lemmatiser data:
-
-```python
->>> import nltk
-# change 'punkt' to 'all' to get everything
->>> nltk.download('punkt')
->>> nltk.download('wordnet')
-```
-
 <a name="quickstart"></a>
 ## Quickstart
 
 Once you've got *corpkit*, and a folder containing text files, you're ready to go:
 
 ```python
-# import everything
+### import everything
 >>> from corpkit import *
 
-# Make corpus object from path to subcorpora/text files
+### Make corpus object from path to subcorpora/text files
 >>> unparsed = Corpus('data/nyt/years')
 
-# parse it, return the new parsed corpus object
+### parse it, return the new parsed corpus object
 >>> corpus = unparsed.parse()
 
-# search corpus for modal auxiliaries and plot the top results
+### search corpus for modal auxiliaries and plot the top results
 >>> corpus.interroplot('MD')
 ```
 
@@ -319,18 +309,18 @@ Output:
 Here's an example of the three methods at work:
 
 ```python
-# make tregex query: head of NP in PP containing 'of' in NP headed by risk word:
+### make tregex query: head of NP in PP containing 'of' in NP headed by risk word:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
-# search trees, exclude 'risk of rain', output lemma
+### search trees, exclude 'risk of rain', output lemma
 >>> risk_of = corpus.interrogate({T: q}, exclude = {W: '^rain$'}, show = [L])
-# alternative syntax which may be easier when there's only a single search criterion:
+### alternative syntax which may be easier when there's only a single search criterion:
 # >>> risk_of = corpus.interrogate(T, q, exclude = {W: '^rain$'}, show = [L])
 
-# use edit() to turn absolute into relative frequencies
+### use edit() to turn absolute into relative frequencies
 >>> to_plot = risk_of.edit('%', risk_of.totals)
 
-# plot the results
+### plot the results
 >>> to_plot.visualise('Risk of (noun)', y_label = 'Percentage of all results',
 ...    style = 'fivethirtyeight')
 ```
@@ -388,18 +378,19 @@ Allowable combinations are subject to common sense. If you're searching trees, y
 If you'd prefer, you can make a `dict` to handle dependent and governor information, instead of using things like `GL` or `DF`. The following searches produce the same output:
 
 ```python
-crit = {W: r'^friend$', 
-        D: {F: 'amod', 
-            W: 'great'}}
-crit = {W: r'^friend$', DF: 'amod', D: 'great'}
+>>> crit = {W: r'^friend$', 
+...         D: {F: 'amod', 
+...             W: 'great'}}
+
+>>> crit = {W: r'^friend$', DF: 'amod', D: 'great'}
 ```
 
 By default, all `search` criteria must match, but any `exclude` criterion is enough to exclude a match. This beahviour can be changed with the `searchmode` and `excludemode` arguments:
 
 ```python
-# get words that end in 'ing' OR are nominal:
+### get words that end in 'ing' OR are nominal:
 >>> out = interrogator({W: 'ing$', P: r'^N'}, searchmode = 'any')
-# get any word, but exclude words that end in 'ing' AND are nominal:
+### get any word, but exclude words that end in 'ing' AND are nominal:
 >>> out = interrogator({W: 'any'}, exclude = {W: 'ing$', P: N}, excludemode = 'all')
 ```
 
@@ -432,19 +423,19 @@ Again, common sense dictates what is possible. When searching trees, only trees,
 ```python
 >>> unparsed = Corpus('path/to/unparsed/files')
 
-# to parse, you can set a path to corenlp
+### to parse, you can set a path to corenlp
 >>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
 
-# to tokenise, point to nltk:
+### to tokenise, point to nltk:
 # >>> corpus = unparsed.tokenise(nltk_data_path = 'Downloads/nltk_data')
 ```
 
 which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. When parsing, you can also optionally pass in a string of annotators, as per the [CoreNLP documentation](http://nlp.stanford.edu/software/corenlp.shtml):
 
 ```python
-ans = 'tokenize,ssplit,pos'
-# you can also set memory and turn off copula head parsing
-corpus = unparsed.parse(operations = ans, memory_mb = 3000, copula_head = False)
+>>> ans = 'tokenize,ssplit,pos'
+### you can also set memory and turn off copula head parsing
+>>> corpus = unparsed.parse(operations = ans, memory_mb = 3000, copula_head = False)
 ```
 
 <a name="speaker-ids"></a>
@@ -486,9 +477,9 @@ When your data is parsed, `Corpus` objects draw on [CoreNLP XML](http://corenlp-
 ```python
 >>> corp = Corpus('data/CHT-parsed')
 >>> corp.subcorpora['2013'].files[1].document.sentences[4235].parse_string
-# '(ROOT (FRAG (CC And) (NP (NP (RB not) (RB just)) (NP (NP (NNP Metrione) ... '
+### '(ROOT (FRAG (CC And) (NP (NP (RB not) (RB just)) (NP (NP (NNP Metrione) ... '
 >>> corp.subcorpora['1997'].files[0].document.sentences[3509].tokens[30].word
-# 'linguistics'
+### 'linguistics'
 ```
 
 <a name="getting-general-stats"></a>
@@ -529,11 +520,11 @@ Unlike most concordancers, which are based on plaintext corpora, *corpkit* can c
 
 ```python
 >>> subcorpus = corpus.subcorpora.c2005
-# C is added above to make a valid variable name from an int
-# can also be accessed as corpus.subcorpora['2005']
-# or corpus.subcorpora[index]
+### C is added above to make a valid variable name from an int
+### can also be accessed as corpus.subcorpora['2005']
+### or corpus.subcorpora[index]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
-# T option for tree searching
+### T option for tree searching
 >>> lines = subcorpus.concordance(T, query, window = 50, n = 10, random = True)
 ```
 
@@ -555,9 +546,9 @@ Output (a `Pandas DataFrame`):
 You can also concordance via dependencies:
 
 ```python
-# match words starting with 'st' filling function of nsubj
+### match words starting with 'st' filling function of nsubj
 >>> criteria = {W: r'^st', F: r'nsubj$'}
-# show function, pos and lemma (in that order)
+### show function, pos and lemma (in that order)
 >>> lines = subcorpus.concordance(criteria, show = [F, P, L])
 >>> lines.format(window = 30, n = 10, columns = [L, M, R])
 ```
@@ -580,8 +571,8 @@ Output:
 You can search tokenised corpora or plaintext corpora for regular expressions or lists of words to match. The two queries below will return identical results:
 
 ```python
-r_query = r'^fr?iends?$'
-l_query = ['friend', 'friends', 'fiend', 'fiends']
+>>> r_query = r'^fr?iends?$'
+>>> l_query = ['friend', 'friends', 'fiend', 'fiends']
 >>> lines = subcorpus.concordance({W: r_query})
 >>> lines = subcorpus.concordance({W: l_query})
 ```
@@ -596,12 +587,12 @@ Because I mostly use systemic functional grammar, there is also a simple tool fo
 ```python
 >>> from dictionaries.process_types import processes
 
-# match nsubj with verbal process as governor
+### match nsubj with verbal process as governor
 >>> crit = {F: '^nsubj$', G: processes.verbal}
-# return lemma of the nsubj
+### return lemma of the nsubj
 >>> sayers = corpus.interrogate(crit, show = [L])
 
-# have a look at the top results
+### have a look at the top results
 >>> sayers.quickview(n = 20)
 ```
 
@@ -645,7 +636,7 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # or, by re-interrogating:
 # >>> sayers = corpus.interrogate(crit, show = [L], exclude = {W: wordlists.pronouns})
 
-# give edit() indices, words, wordlists or regexes to keep remove or merge
+### give edit() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = sayers.edit(skip_entries = prps, skip_subcorpora = [1963])
 >>> sayers_no_prp.quickview(n = 10)
 ```
@@ -668,12 +659,12 @@ Output:
 Great. Now, let's sort the entries by trajectory, and then plot:
 
 ```python
-# sort with edit()
-# use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or P
-# other sort_by options: 'name', 'total', 'infreq'
+### sort with edit()
+### use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or P
+### other sort_by options: 'name', 'total', 'infreq'
 >>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
 
-# make an area chart with custom y label
+### make an area chart with custom y label
 >>> sayers_no_prp.visualise('Sayers, increasing', kind = 'area', 
 ...    y_label = 'Percentage of all sayers')
 ```
@@ -694,13 +685,13 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 
 >>> sayers = sayers.edit(merge_subcorpora = merges)
 
-# now, get relative frequencies for he and she
-# SELF calculates percentage after merging/removing etc has been performed,
-# so that he and she will sum to 100%. Pass in `sayers.totals` to calculate 
-# he/she as percentage of all sayers
+### now, get relative frequencies for he and she
+### SELF calculates percentage after merging/removing etc has been performed,
+### so that he and she will sum to 100%. Pass in `sayers.totals` to calculate 
+### he/she as percentage of all sayers
 >>> genders = sayers.edit('%', SELF, just_entries = ['he', 'she'])
 
-# and plot it as a series of pie charts, showing totals on the slices:
+### and plot it as a series of pie charts, showing totals on the slices:
 >>> genders.visualise('Pronominal sayers in the NYT', kind = 'pie',
 ...    subplots = True, figsize = (15, 2.75), show_totals = 'plot')
 ```
@@ -720,7 +711,7 @@ As I see it, there are two main problems with keywording, as typically performed
 So, what to do? Well, first, don't use 'general reference corpora' unless you really really have to. With *corpkit*, you can use your entire corpus as the reference corpus, and look for keywords in subcorpora. Second, rather than using lists of stopwords, simply do not send all words in the corpus to the keyworder for calculation. Instead, try looking for key *predicators* (rightmost verbs in the VP), or key *participants* (heads of arguments of these VPs):
 
 ```python
-# just heads of participants' lemma form (no pronouns, though!)
+### just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
 >>> p = corpus.interrogate('trees', part, show = L)
 ```
@@ -736,7 +727,7 @@ When using `edit()` to calculate keywords, there are a few default parameters th
 Let's have a look at how these options change the output:
 
 ```python
-# SELF as reference corpus uses p.results
+### SELF as reference corpus uses p.results
 >>> options = {'selfdrop': False, 
 ...            'calc_all': False, 
 ...            'threshold': False}
@@ -837,7 +828,7 @@ Output:
 If you still want to use a standard reference corpus, you can do that (and a dictionary version of the BNC is included). For the reference corpus, `edit()` recognises `dicts`, `DataFrames`, `Series`, files containing `dicts`, or paths to plain text files or trees.
 
 ```python
-# arbitrary list of common/boring words
+### arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries = stopwords).results
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all = False).results
@@ -866,9 +857,9 @@ yeah          -3179.90            will      -679.06
 `interrogate()` can also do parallel-processing. You can generally improve the speed of an interrogation by setting the `multiprocess` argument:
 
 ```python
-# set num of parallel processes manually
+### set num of parallel processes manually
 >>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = 3)
-# set num of parallel processes automatically
+### set num of parallel processes automatically
 >>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = True)
 ```
 
@@ -919,13 +910,13 @@ There is also `just_speakers = 'each'`, which will be automatically expanded to 
 You can also run a number of queries over the same corpus in parallel. There are two ways to do this.
 
 ```python
-# method one
-query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}
-phrases = corpus.interrogate('trees', query, show = C)
+### method one
+>>> query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}
+>>> phrases = corpus.interrogate('trees', query, show = C)
 
-# method two
-query = {'-ing words': {W: r'ing$'}, '-ed verbs': {P: r'^V', W: r'ed$'}}
-patterns = corpus.interrogate(query, show = L)
+### method two
+>>> query = {'-ing words': {W: r'ing$'}, '-ed verbs': {P: r'^V', W: r'ed$'}}
+>>> patterns = corpus.interrogate(query, show = L)
 ```
 
 Let's try multiprocessing with multiple queries, showing count (i.e. returning a single results DataFrame). We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
@@ -954,7 +945,7 @@ Output:
 Next, let's find out what kinds of noun lemmas are subjects of any of these risk processes:
 
 ```python
-# a query to find heads of nps that are subjects of risk processes
+### a query to find heads of nps that are subjects of risk processes
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
@@ -981,12 +972,12 @@ Output:
 We can use `edit()` to make some thematic categories:
 
 ```python
-# get everyday people
+### get everyday people
 >>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
 
 >>> them_cat = noun_riskers.edit(merge_entries = p, newname = 'Everyday people')
 
-# get business, gov, institutions
+### get business, gov, institutions
 >>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
 ...      'politician', 'institution', 'agency', 'candidate', 'firm']
 
@@ -994,7 +985,7 @@ We can use `edit()` to make some thematic categories:
 ...    newname = 'Institutions', sort_by = 'total', skip_subcorpora = 1963,
 ...    just_entries = ['Everyday people', 'Institutions'])
 
-# plot result
+### plot result
 >>> them_cat.visualise('Types of riskers', y_label = 'Percentage of all riskers')
 ```
 
@@ -1006,17 +997,17 @@ Output:
 Let's also find out what percentage of the time some nouns appear as riskers:
 
 ```python
-# find any head of an np not containing risk
+### find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
 >>> noun_lemmata = corpus.interrogate('trees', query, show = L)
 
-# get some key terms
+### get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
 ...           'senator', 'obama', 'clinton', 'bush']
 >>> selected = noun_riskers.edit('%', noun_lemmata.results, 
 ...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
-# make a bar chart:
+### make a bar chart:
 >>> selected.visualise('Risk and power', num_to_plot = 'all', kind = 'bar', 
 ...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
 ```
@@ -1033,19 +1024,19 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 
 ```python
 >>> modals = corpus.interrogate('trees', 'MD < __', show = L)
-# simple stuff: make relative frequencies for individual or total results
+### simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = modals.edit('%', modals.totals)
 
-# trickier: make an 'others' result from low-total entries
+### trickier: make an 'others' result from low-total entries
 >>> low_indices = range(7, modals.results.shape[1])
 >>> each_md = modals.edit('%', modals.totals, merge_entries = low_indices, 
 ...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
 
-# complex stuff: merge results
+### complex stuff: merge results
 >>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m', r'^sh']
 >>> modals = modals.edit(merge_entries = entries_to_merge)
     
-# complex stuff: merge subcorpora
+### complex stuff: merge subcorpora
 >>> merges = {'1960s': r'^196', 
 ...           '1980s': r'^198', 
 ...           '1990s': r'^199', 
@@ -1054,11 +1045,11 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 
 >>> modals = sayers.edit(merge_subcorpora = merges)
     
-# make relative, sort, remove what we don't want
+### make relative, sort, remove what we don't want
 >>> modals = modals.edit('%', modals.totals, keep_stats = False,
 ...    just_subcorpora = merges.keys(), sort_by = 'total', keep_top = 4)
 
-# show results
+### show results
 >>> print rel_modals.results, each_md.results, modals.results
 ```
 Output:
@@ -1094,15 +1085,15 @@ Name: Combined total, dtype: float64
 Now, some intense plotting:
 
 ```python
-# exploded pie chart
+### exploded pie chart
 >>> each_md.visualise('Pie chart of common modals in the NYT', explode = ['other'],
 ...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
 
-# bar chart, transposing and reversing the data
+### bar chart, transposing and reversing the data
 >>> modals.results.iloc[::-1].T.iloc[::-1].visualise('Modals use by decade', kind = 'barh',
 ...    x_label = 'Percentage of all modals', y_label = 'Modal group')
 
-# stacked area chart
+### stacked area chart
 >>> rel_modals.results.drop('1963').visualise('An ocean of modals', kind = 'area', 
 ...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
 ...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
