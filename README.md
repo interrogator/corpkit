@@ -41,7 +41,6 @@
   - [Multiple queries](#multiple-queries)
 - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
-- [More information](#more-information)
 - [Cite](#cite)
 
 <!-- /MarkdownTOC -->
@@ -1115,15 +1114,6 @@ Output:
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/modals-use-by-decade.png"  height="230" width="500"/>
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png"  height="600" width="500"/>
 </p>
-
-<a name="more-information"></a>
-## More information
-
-Some things are likely lacking documentation right now. For now, the more complex functionality of the toolkit is presented best in some of the research projects I'm working on:
-
-1. [Longitudinal linguistic change in an online support group](https://github.com/interrogator/sfl_corpling) (thesis project)
-2. [Discourse-semantics of *risk* in the NYT, 1963&ndash;2014](https://github.com/interrogator/risk) (most *corpkit* use)
-3. [Learning Python, IPython and NLTK by investigating a corpus of Malcolm Fraser's speeches](https://github.com/resbaz/nltk)
 
 <a name="cite"></a>
 ## Cite
