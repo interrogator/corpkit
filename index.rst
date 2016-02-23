@@ -113,7 +113,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   README.md
+   User guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
    rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
