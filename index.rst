@@ -49,7 +49,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    >>> parsed = unparsed.parse()
    
    ### query: nominal nsubjs that have verbal process as governor
-   >>> crit = {F: '^nsubj$',
+   >>> crit = {F: r'^nsubj$',
    ...         G: processes.verbal,
    ...         P: r'^N'}
 
