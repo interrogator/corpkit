@@ -11,7 +11,7 @@ def interrogator(corpus,
             searchmode = 'all',
             dep_type = 'collapsed-ccprocessed-dependencies',
             case_sensitive = False,
-            quicksave = False,
+            save = False,
             just_speakers = False,
             preserve_case = False,
             lemmatag = False,
@@ -1029,8 +1029,8 @@ def interrogator(corpus,
         output = Concordance(conc_df)
         if only_conc:
             output.query = locs
-            if quicksave:
-                output.save(quicksave)
+            if save:
+                output.save(save)
 
             if kwargs.get('printstatus', True):
                 thetime = strftime("%H:%M:%S", localtime())
@@ -1100,7 +1100,7 @@ def interrogator(corpus,
         else:
             interro = Interrogation(results = df, totals = tot, query = locs)
 
-        if quicksave:
-            interro.save(quicksave)
+        if save:
+            interro.save(save)
         signal.signal(signal.SIGINT, original_sigint)
         return interro

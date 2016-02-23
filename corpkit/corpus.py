@@ -257,8 +257,8 @@ class Corpus(object):
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
         :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
         
-        :param quicksave: Save result as pickle to `saved_interrogations/str` on completion
-        :type quicksave: str
+        :param save: Save result as pickle to `saved_interrogations/<save>` on completion
+        :type save: str
         
         :param gramsize: size of ngrams (default 2)
         :type gramsize: int
