@@ -2,9 +2,9 @@
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![Travis](https://img.shields.io/travis/interrogator/corpkit.svg)](https://travis-ci.org/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit) [![ReadTheDocs](https://readthedocs.org/projects/corpkit/badge/?version=latest)](http://corpkit.readthedocs.org/en/latest/)
 
-> **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora.
+> **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways.
 > 
-> **corpkit also has a comprehensive graphical interface. After [installation](#installation), you can open it with `python -m corpkit.corpkit-gui`. Alternatively, there's a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/).** 
+> A comprehensive graphical interface is included. After [pip/Git installation](#installation), you can open it from the command line with `python -m corpkit.corpkit-gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/). 
 
 <!-- MarkdownTOC -->
 
