@@ -2,11 +2,9 @@
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![Travis](https://img.shields.io/travis/interrogator/corpkit.svg)](https://travis-ci.org/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit) [![ReadTheDocs](https://readthedocs.org/projects/corpkit/badge/?version=latest)](http://corpkit.readthedocs.org/en/latest/)
 
-### Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
-
-> Because I kept building new tools for my linguistic research, I decided to put them together into *corpkit*, a toolkit for working with parsed and structured linguistic corpora. **Full documentation is available at [ReadTheDocs](http://corpkit.readthedocs.org/en/).**
+> **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora.
 > 
-> **There's also a GUI version of the tool. You can run it after installing *corpkit* with `python -m corpkit.corpkit-gui`. Alternatively, there's a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/). From here on out, though, this readme concerns the command line interface only.** 
+> **corpkit also has a comprehensive graphical interface. After [installation](#installation), you can open it with `python -m corpkit.corpkit-gui`. Alternatively, there's a zipped up version of an OSX executable in the [`corpkit-app` submodule](https://www.github.com/interrogator/corpkit-app). Documentation for the GUI is [here](http://interrogator.github.io/corpkit/).** 
 
 <!-- MarkdownTOC -->
 
@@ -41,7 +39,7 @@
   - [Multiple queries](#multiple-queries)
 - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
-- [Cite](#cite)
+- [Contact, cite](#contact-cite)
 
 <!-- /MarkdownTOC -->
 
@@ -881,8 +879,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 >>> corpus_list = glob.glob('data/*')
 >>> corpora = Corpora(corpus_list)
 >>> corpora
-
-<corpkit.corpus.Corpora instance: 6 items>
+### <corpkit.corpus.Corpora instance: 6 items>
 
 # interrogate by parallel processing, 4 at a time
 >>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show = L, multiprocess = 4)
@@ -1106,8 +1103,10 @@ Output:
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png"  height="600" width="500"/>
 </p>
 
-<a name="cite"></a>
-## Cite
+<a name="contact-cite"></a>
+## Contact, cite
+
+Twitter: Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
 
 If you want to cite *corpkit*, please use:
 
