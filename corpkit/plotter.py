@@ -115,7 +115,7 @@ def plotter(df,
 
     import numpy
     from time import localtime, strftime
-    from tests import check_pytex, check_spider, check_t_kinter
+    from process import checkstack
 
     if interactive:
         import mpld3
@@ -124,9 +124,9 @@ def plotter(df,
         from plugins import InteractiveLegendPlugin, HighlightLines
 
     # check what environment we're in
-    tk = check_t_kinter()
-    running_python_tex = check_pytex()
-    running_spider = check_spider()
+    tk = checkstack('tkinter')
+    running_python_tex = checkstack('pythontex')
+    running_spider = checkstack('spyder')
 
     if not title:
         title = ''
@@ -341,15 +341,16 @@ def plotter(df,
         pass
 
     # remove totals and tkinter order
-    if not was_series and not all(x.lower() == 'total' for x in list(dataframe.columns)):
-        for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
-            try:
-                dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
-            except:
-                pass
-    else:
-        dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
-        dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
+    if all(type(x) in [str, unicode] for x in list(df.columns)):
+        if not was_series and not all(x.lower() == 'total' for x in list(dataframe.columns)):
+            for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+                try:
+                    dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+                except:
+                    pass
+        else:
+            dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
+            dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
             
     # look at columns to see if all can be ints, in which case, set up figure
     # for depnumming

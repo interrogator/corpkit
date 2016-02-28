@@ -223,11 +223,11 @@ def editor(interrogation,
     pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     try:
-        from tests import check_pytex
+        from process import checkstack
     except ImportError:
-        from corpkit.tests import check_pytex
+        from corpkit.process import checkstack
         
-    if check_pytex():
+    if checkstack('pythontex'):
         print_info = False
 
     def combiney(df, df2, operation = '%', threshold = 'medium', prinf = True):
@@ -1182,7 +1182,7 @@ def editor(interrogation,
         total = tots
 
     if type(df) == pandas.core.frame.DataFrame:
-        datatype = df.ix[0].dtype
+        datatype = df.iloc[0].dtype
     else:
         datatype = df.dtype
 
@@ -1202,12 +1202,7 @@ def editor(interrogation,
         return df
 
     # while tkintertable can't sort rows
-    try:
-        from tests import check_t_kinter
-    except ImportError:
-        from corpkit.tests import check_t_kinter
-    tk = check_t_kinter()
-    if tk:
+    if checkstack('tkinter'):
         df = add_tkt_index(df)
 
     if kwargs.get('df1_always_df'):

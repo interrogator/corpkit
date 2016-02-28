@@ -19,7 +19,6 @@ def datareader(data, plaintext = False, **kwargs):
     import os
     import pandas
     from process import tregex_engine
-    from tests import check_dit
     try:
         get_ipython().getoutput()
     except TypeError:
@@ -153,12 +152,12 @@ def tregex_engine(corpus = False,
     from subprocess import Popen, PIPE, STDOUT
     import re
     from time import localtime, strftime
-    from tests import check_dit
+    from process import checkstack
     from dictionaries.word_transforms import wordlist
     import os
     import sys
 
-    on_cloud = check_dit()
+    on_cloud = checkstack('/opt/python/lib')
 
     def find_wordnet_tag(tag):
         import corpkit
@@ -769,3 +768,38 @@ def interrogation_from_conclines(newdata):
     df = editor(df, sort_by = 'total', print_info = False)
     df.concordance = conc
     return df
+
+
+def checkstack(the_string):
+    """checks for pytex"""
+    import inspect
+    thestack = []
+    for bit in inspect.stack():
+        for b in bit:
+            thestack.append(str(b))
+    as_string = ' '.join(thestack)
+    if as_string.lower().count(the_string) > 1:
+        return True
+    else:
+        return False
+
+def check_tex(have_ipython = True):
+    """see if tex is available"""
+    import os
+    if have_ipython:
+        checktex_command = 'which latex'
+        o = get_ipython().getoutput(checktex_command)[0]
+        if o.startswith('which: no latex in'):
+            have_tex = False
+        else:
+            have_tex = True
+    else:
+        import subprocess
+        FNULL = open(os.devnull, 'w')
+        checktex_command = ["which", "latex"]
+        try:
+            o = subprocess.check_output(checktex_command, stderr=FNULL)
+            have_tex = True
+        except subprocess.CalledProcessError:
+            have_tex = False
+    return have_tex
