@@ -1106,7 +1106,7 @@ Output:
 <a name="contact-cite"></a>
 ## Contact, cite
 
-Twitter: Daniel McDonald ([@interro_gator](https://twitter.com/interro_gator))
+Twitter: [@interro_gator](https://twitter.com/interro_gator)
 
 If you want to cite *corpkit*, please use:
 
