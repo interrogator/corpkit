@@ -39,7 +39,8 @@
   - [Multiple queries](#multiple-queries)
 - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
-- [Contact, cite](#contact-cite)
+- [Contact](#contact)
+- [Cite](#cite)
 
 <!-- /MarkdownTOC -->
 
@@ -1103,11 +1104,12 @@ Output:
 <img src="https://raw.githubusercontent.com/interrogator/risk/master/images/an-ocean-of-modals2.png"  height="600" width="500"/>
 </p>
 
-<a name="contact-cite"></a>
-## Contact, cite
+<a name="contact"></a>
+## Contact
 
 Twitter: [@interro_gator](https://twitter.com/interro_gator)
 
-If you want to cite *corpkit*, please use:
+<a name="cite"></a>
+## Cite
 
 > `McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
