@@ -112,6 +112,13 @@ def _shuffle(self, inplace = False):
     else:
         return shuffled
 
+def _top(self):
+    """Show as many rows and cols as possible without truncation"""
+    import pandas as pd
+    max_row = pd.options.display.max_rows
+    max_col = pd.options.display.max_columns
+    return self.iloc[:max_row,:max_col]
+
 pd.DataFrame.edit = _edit
 pd.Series.edit = _edit
 
@@ -133,6 +140,8 @@ pd.DataFrame.calculate = _calculate
 pd.Series.calculate = _calculate
 
 pd.DataFrame.shuffle = _shuffle
+
+pd.DataFrame.top = _top
 
 A = 'a'
 D = 'd'
