@@ -641,6 +641,7 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
     import pandas as pd
     pd.set_option('display.float_format', lambda x: format(x, '.%df' % precision))
     strings = []
+
     if relative:
         operation = '%'
     else:
@@ -664,12 +665,15 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
             data = data.astype(int)
         if df:
             data.index.name = name
-            ser1 = pd.Series(list(data.index), index = range(len(data)))[:n]
-            ser2 = pd.Series(list(data), index = range(len(data)))[:n]
-            ser1.name = name
-            ser2.name = operation
-            strings.append(ser1)
-            strings.append(ser2)
+            df1 = pd.DataFrame({'Result': list(data.index)[:n], operation: list(data)[:n]})
+            df1 = df1[['Result', operation]]
+            strings.append(df1)
+            #ser1 = pd.Series(list(data.index), index = range(len(data)))[:n]
+            #ser2 = pd.Series(list(data), index = range(len(data)))[:n]
+            #ser1.name = 'Result'
+            #ser2.name = operation
+            #strings.append(ser1)
+            #strings.append(ser2)
         else:
             as_str = data[:n].to_string(header = False)
             linelen = len(as_str.splitlines()[1])
@@ -677,7 +681,7 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
 
     # strings is a list of series as strings
     if df:
-        dataframe = pd.concat(strings, axis = 1)
+        dataframe = pd.concat(strings, axis = 1, keys = [i for i, j in to_iterate])
         return dataframe
     output = ''
     for tup in zip(*[i.splitlines() for i in strings]):
