@@ -882,7 +882,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 >>> corpora
 ### <corpkit.corpus.Corpora instance: 6 items>
 
-# interrogate by parallel processing, 4 at a time
+### interrogate by parallel processing, 4 at a time
 >>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show = L, multiprocess = 4)
 
 ```
