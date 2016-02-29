@@ -220,7 +220,6 @@ def editor(interrogation,
     the_time_started = strftime("%Y-%m-%d %H:%M:%S")
 
     pd.options.mode.chained_assignment = None
-    pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     try:
         from process import checkstack
@@ -1224,22 +1223,8 @@ def editor(interrogation,
     
     output = Interrogation(results = df, totals = total, query = locs, concordance = lns)
 
-    #print '\nResult (sample)\n'
     if print_info:
-        #if merge_entries or merge_subcorpora or span_subcorpora or just_subcorpora or \
-           #just_entries or skip_entries or skip_subcorpora or printed_th or projection:
         print('***Done!***\n========================\n')
-    #print df.head().T
-    #print ''
-    if operation.startswith('k') or just_totals or df1_istotals:
-        pd.set_option('display.max_rows', 30)
-    else:
-        pd.set_option('display.max_rows', 15)
-    pd.set_option('display.max_columns', 8)
-    pd.set_option('max_colwidth',70)
-    pd.set_option('display.width', 800)
-    pd.set_option('expand_frame_repr', False)
-    pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
     return output
 
