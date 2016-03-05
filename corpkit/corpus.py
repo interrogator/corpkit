@@ -163,8 +163,22 @@ class Corpus(object):
             04       20066    6354   5366                3587              2767     1775
 
         """
+        import os
+        from os.path import isfile, isdir, join
         from interrogator import interrogator
-        return interrogator(self, 's', 'any').results
+        from other import load
+
+        savedir = 'saved_interrogations'
+        if isfile(join(savedir, self.name + '-features.p')):
+            return load(self.name + '-features')
+        else:
+            feat = interrogator(self, 's', 'any').results
+            if isdir(savedir):
+                feat.save(corpus.name + '-features')
+            return feat
+
+    def save_features(self):
+        corpus.features.save(corpus.name + '-features')
 
     def configurations(self, search, **kwargs):
         """
@@ -664,3 +678,8 @@ class Corpora(Datalist):
                 from process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
+
+    @lazyprop
+    def features(self):
+        for corpus in self:
+            corpus.features
