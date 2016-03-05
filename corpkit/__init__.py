@@ -75,7 +75,7 @@ import pandas as pd
 
 def _plot(self, *args, **kwargs):
     from corpkit import plotter
-    plotter(self, *args, **kwargs)
+    return plotter(self, *args, **kwargs)
 
 def _edit(self, *args, **kwargs):
     from corpkit import editor

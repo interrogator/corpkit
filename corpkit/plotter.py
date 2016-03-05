@@ -123,6 +123,11 @@ def plotter(df,
         from mpld3 import plugins, utils
         from plugins import InteractiveLegendPlugin, HighlightLines
 
+    try:
+        from mpldatacursor import datacursor, HighlightingDataCursor
+    except ImportError:
+        pass
+
     # check what environment we're in
     tk = checkstack('tkinter')
     running_python_tex = checkstack('pythontex')
@@ -229,8 +234,11 @@ def plotter(df,
             sbplt = True
     kwargs['subplots'] = sbplt
 
-    if colours is True:
-        colours = 'Paired'
+    if colours is True or colours == 'default':
+        colours = 'Accent'
+
+    show_grid = kwargs.get('grid', False)
+    kwargs.pop('grid', None)
 
     # todo: get this dynamically instead.
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
@@ -341,17 +349,24 @@ def plotter(df,
         pass
 
     # remove totals and tkinter order
-    if all(type(x) in [str, unicode] for x in list(df.columns)):
-        if not was_series and not all(x.lower() == 'total' for x in list(dataframe.columns)):
-            for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
-                try:
-                    dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
-                except:
-                    pass
-        else:
-            dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
-            dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
-            
+    if not was_series:
+        if all(type(x) in [str, unicode] for x in list(df.columns)):
+            if not all(x.lower() == 'total' for x in list(dataframe.columns)):
+                for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+                    try:
+                        dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+                    except:
+                        pass
+    
+    try:
+        dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
+    except:
+        pass
+    try:
+        dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
+    except:
+        pass
+
     # look at columns to see if all can be ints, in which case, set up figure
     # for depnumming
     if not was_series:
@@ -479,42 +494,45 @@ def plotter(df,
         if not all([s.is_integer() for s in dataframe.values]):        
             absolutes = False
 
+    # determine if using color or colormap
+    cmap_or_c = 'color'
+    if colours:
+        if type(colours) == str:
+            cmap_or_c = 'colormap'
+
     #  use colormap if need be:
     if num_to_plot > 0:
         if not was_series:
             if kind in ['pie', 'line', 'area']:
                 if colours:
                     if not plotting_a_totals_column:
-                        if colours == 'Default':
-                            colours = 'Paired'
-                        kwargs['colormap'] = colours
+                        kwargs[cmap_or_c] = colours
         #else:
             if colours:
                 if colours == 'Default':
                     colours = 'Paired'
-                kwargs['colormap'] = colours
+                kwargs[cmap_or_c] = colours
 
     if piemode:
         if num_to_plot > 0:
-            if colours == 'Default':
-                colours = 'Paired'
-            kwargs['colormap'] = colours
+            kwargs[cmap_or_c] = colours
         else:
             if num_to_plot > 0:
-                if colours == 'Default':
-                    colours = 'Paired'
-                kwargs['colormap'] = colours
+                kwargs[cmap_or_c] = colours
     
     # multicoloured bar charts
-    if colours:
+    if colours and cmap_or_c == 'colormap':
         if kind.startswith('bar'):
             if len(list(dataframe.columns)) == 1:
                 if not black_and_white:
                     import numpy as np
                     the_range = np.linspace(0, 1, num_to_plot)
                     middle = len(the_range) / 2
-                    cmap = plt.get_cmap(colours)
-                    kwargs['color'] = [cmap(n) for n in the_range][middle]
+                    try:
+                        cmap = plt.get_cmap(colours)
+                        kwargs[cmap_or_c] = [cmap(n) for n in the_range][middle]
+                    except ValueError:
+                        kwargs[cmap_or_c] = colours
                 # make a bar width ... ? ...
                 #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
 
@@ -730,7 +748,7 @@ def plotter(df,
             # darker if just one entry
             if len(dataframe.columns) == 1:
                 new_cmap = truncate_colormap(cmap, 0.70, 0.90)
-        kwargs['colormap'] = new_cmap
+        kwargs[cmap_or_c] = new_cmap
 
     class dummy_context_mgr():
         """a fake context for plotting without style
@@ -755,7 +773,8 @@ def plotter(df,
                 del handles
                 del labels
         else:
-            plt.gcf().set_tight_layout(False)
+            if not kwargs.get('layout'):
+                plt.gcf().set_tight_layout(False)
             if not piemode:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
             else:
@@ -766,12 +785,27 @@ def plotter(df,
 
                 # this line allows layouts with missing plots
                 # i.e. layout = (5, 2) with only nine plots
-                plt.gcf().set_tight_layout(False)
+                if not kwargs.get('layout'):
+                    plt.gcf().set_tight_layout(False)
                 
-        if 'rot' in kwargs:
+        if kwargs.get('rot', False) is not False:
             if kwargs['rot'] != 0 and kwargs['rot'] != 90:
-                labels = [item.get_text() for item in ax.get_xticklabels()]
-                ax.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
+                if sbplt:
+                    if 'layout' not in kwargs:
+                        axes = [l for index, l in enumerate(ax)]
+                    else:
+                        axes = []
+                        cols = [l for index, l in enumerate(ax)]
+                        for col in cols:
+                            for bit in col:
+                                axes.append(bit)
+
+                    for index, a in enumerate(axes):
+                        labels = [item.get_text() for item in a.get_xticklabels()]
+                        a.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
+                else:
+                    labels = [item.get_text() for item in ax.get_xticklabels()]
+                    ax.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
 
         if transparent:
             plt.gcf().patch.set_facecolor('white')
@@ -993,9 +1027,8 @@ def plotter(df,
                 a.axes.get_yaxis().set_visible(False)
                 a.axis('equal')
 
-            # show grid
-            a.grid(b=kwargs.get('grid', False))
-            kwargs.pop('grid', None)
+            a.grid(b=show_grid)
+        
     
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
@@ -1005,8 +1038,7 @@ def plotter(df,
             width = ax.containers[0][0].get_width()
 
         # show grid
-        ax.grid(b=kwargs.get('grid', False))
-        kwargs.pop('grid', None)
+        ax.grid(b=show_grid)
 
     if was_series:
         the_y_limit = plt.ylim()[1]
@@ -1078,17 +1110,26 @@ def plotter(df,
     if dragmode:
         plt.legend().draggable()
 
-
     if sbplt:
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(left=.1)
 
-    if not interactive and not running_python_tex and not running_spider \
-        and not tk:
-        plt.gcf().show()
-        return
-    elif running_spider or tk:
-        return plt
+    try:
+        if kind == 'line':
+            HighlightingDataCursor(plt.gca().get_lines(), highlight_width = 4,
+                    formatter=lambda **kwargs: '%s: %s' % (kwargs['label'], "{0:.3f}".format(kwargs['y'])))
+        else:
+            datacursor(formatter=lambda **kwargs: '%s: %s' % (kwargs['label'], "{0:.3f}".format(kwargs['height'])))
+    except:
+        pass
+
+    return plt
+    #if not interactive and not running_python_tex and not running_spider \
+    #    and not tk:
+    #    plt.gcf().show()
+    #    return plt
+    #elif running_spider or tk:
+    #    return plt
 
     if interactive:
         plt.subplots_adjust(right=.8)
