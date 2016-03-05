@@ -535,6 +535,9 @@ def plotter(df,
                         kwargs[cmap_or_c] = colours
                 # make a bar width ... ? ...
                 #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
+    elif colours and cmap_or_c == 'color':
+        if kind.startswith('bar'):
+            kwargs[cmap_or_c] = colours
 
 
     # reversing legend option

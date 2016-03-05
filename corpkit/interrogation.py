@@ -289,9 +289,9 @@ class Interrogation(object):
         from plotter import plotter
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
-            plotter(self.results, **locs)
+            return plotter(self.results, **locs)
         elif branch.lower().startswith('t'):
-            plotter(self.totals, **locs)   
+            return plotter(self.totals, **locs)   
 
     def save(self, savename, savedir = 'saved_interrogations', **kwargs):
         """
