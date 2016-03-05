@@ -26,7 +26,7 @@ def keywords(data,
     from collections import Counter
 
     try:
-        from IPython.display import display, clear_output
+        from IPython.display import display
     except ImportError:
         pass
 
@@ -176,11 +176,6 @@ def keywords(data,
     out = out.fillna(0.0)
     
     # print and return
-    if clear:
-        try:
-            clear_output()
-        except:
-            pass
     if printstatus and not editing:
         time = strftime("%H:%M:%S", localtime())
         print('%s: Done! %d results.\n' % (time, len(list(out.index))))
@@ -213,7 +208,7 @@ def ngrams(data,
     from time import localtime, strftime
 
     try:
-        from IPython.display import display, clear_output
+        from IPython.display import display
     except ImportError:
         pass
 
@@ -274,11 +269,6 @@ def ngrams(data,
     out.name = 'ngrams'
 
     # print and return
-    if clear:
-        try:
-            clear_output()
-        except:
-            pass
     if printstatus:
         time = strftime("%H:%M:%S", localtime())
         print('%s: Done! %d results.\n' % (time, len(list(out.index))))
