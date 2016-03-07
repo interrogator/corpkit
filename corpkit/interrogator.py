@@ -244,7 +244,10 @@ def interrogator(corpus,
                 animator(p, numdone, tot_string, **par_args)
             if kwargs.get('note', False):
                 kwargs['note'].progvar.set((numdone * 100.0 / total_files / denom) + startnum)
-        os.remove(to_open)
+        try:
+            os.remove(to_open)
+        except OSError:
+            pass
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes, middle_column_result, 
@@ -305,7 +308,8 @@ def interrogator(corpus,
         """
         Find tag for WordNet lemmatisation
         """
-        import re
+        if lemmatag:
+            return lemmatag
 
         tagdict = {'N': 'n',
                    'A': 'a',
@@ -315,18 +319,9 @@ def interrogator(corpus,
                    '': False,
                    'Off': False}
 
-        if lemmatag is False:
-            tag = 'n' # same default as wordnet
-            # attempt to find tag from tregex query
-            tagfinder = re.compile(r'^[^A-Za-z]*([A-Za-z]*)')
-            tagchecker = re.compile(r'^[A-Z]{1,4}$')
-            qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
-            treebank_tag = re.findall(tagfinder, qr)
-            if re.match(tagchecker, treebank_tag[0]):
-                tag = tagdict.get(treebank_tag[0], 'n')
-        elif lemmatag:
-            tag = lemmatag
-        return tag
+        qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
+        firstletter = next(c for c in query if c.isalpha())
+        return tagdict.get(firstletter.upper(), 'n')
 
     def format_tregex(results, whole = False):
         """format tregex by show list"""
