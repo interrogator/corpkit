@@ -12,7 +12,7 @@ def plotter(df,
             reverse_legend = 'guess',
             num_to_plot = 7,
             tex = 'try',
-            colours = 'Accent',
+            colours = 'default',
             cumulative = False,
             pie_legend = True,
             partial_pie = False,
@@ -234,9 +234,6 @@ def plotter(df,
             sbplt = True
     kwargs['subplots'] = sbplt
 
-    if colours is True or colours == 'default':
-        colours = 'Accent'
-
     show_grid = kwargs.get('grid', False)
     kwargs.pop('grid', None)
 
@@ -251,9 +248,6 @@ def plotter(df,
         except:
             pass
         style = 'matplotlib'
-
-    if style is not False and style.startswith('seaborn'):
-        colours = False
 
     # use 'draggable = True' to make a draggable legend
     dragmode = kwargs.pop('draggable', False)
@@ -494,51 +488,76 @@ def plotter(df,
         if not all([s.is_integer() for s in dataframe.values]):        
             absolutes = False
 
-    # determine if using color or colormap
-    cmap_or_c = 'color'
-    if colours:
-        if type(colours) == str:
-            cmap_or_c = 'colormap'
+    ##########################################
+    ################ COLOURS #################
+    ##########################################
 
-    #  use colormap if need be:
-    if num_to_plot > 0:
-        if not was_series:
-            if kind in ['pie', 'line', 'area']:
-                if colours:
-                    if not plotting_a_totals_column:
-                        kwargs[cmap_or_c] = colours
-        #else:
-            if colours:
-                if colours == 'Default':
-                    colours = 'Paired'
-                kwargs[cmap_or_c] = colours
-
-    if piemode:
-        if num_to_plot > 0:
-            kwargs[cmap_or_c] = colours
+    # set defaults, with nothing for heatmap yet
+    if colours is True or colours == 'default':
+        if kind != 'heatmap':
+            colours = 'Accent'
         else:
-            if num_to_plot > 0:
-                kwargs[cmap_or_c] = colours
+            colours == 'default'
+    
+    # seaborn styles have their own colours
+    if style is not False and style.startswith('seaborn'):
+        colours = False
+
+    # assume it's a single color, unless string denoting map
+    cmap_or_c = 'color'
+    if colours is not False and type(colours) == str:
+        cmap_or_c = 'colormap'
+
+    # for heatmaps, it's always a colormap
+    if kind == 'heatmap':
+        cmap_or_c = 'cmap'
+        # if it's a defaulty string, set accordingly
+        if type(colours) == str:
+            if colours.lower().startswith('diverg'):
+                colours = sns.diverging_palette(10, 133, as_cmap=True)
+
+            # if default not set, do diverge for any df with a number < 0
+            elif colours.lower().startswith('default'):
+                mn = dataframe.min()
+                if type(mn) == pandas.core.series.Series:
+                    mn = mn.min()
+                if mn < 0:
+                    colours = sns.diverging_palette(10, 133, as_cmap=True)
+                else:
+                    colours = sns.light_palette("green", as_cmap=True)
+
+    # needing revision
+    kwargs[cmap_or_c] = colours
+    #if not was_series:
+    #    if kind in ['pie', 'line', 'area']:
+    #        if colours and not plotting_a_totals_column:
+    #            kwargs[cmap_or_c] = colours
+    #    else:
+    #        if colours:
+    #            kwargs[cmap_or_c] = colours
+    #if piemode:
+    #    if num_to_plot > 0:
+    #        kwargs[cmap_or_c] = colours
+    #    else:
+    #        if num_to_plot > 0:
+    #            kwargs[cmap_or_c] = colours
     
     # multicoloured bar charts
-    if colours and cmap_or_c == 'colormap':
-        if kind.startswith('bar'):
-            if len(list(dataframe.columns)) == 1:
-                if not black_and_white:
-                    import numpy as np
-                    the_range = np.linspace(0, 1, num_to_plot)
-                    middle = len(the_range) / 2
-                    try:
-                        cmap = plt.get_cmap(colours)
-                        kwargs[cmap_or_c] = [cmap(n) for n in the_range][middle]
-                    except ValueError:
-                        kwargs[cmap_or_c] = colours
-                # make a bar width ... ? ...
-                #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
-    elif colours and cmap_or_c == 'color':
-        if kind.startswith('bar'):
-            kwargs[cmap_or_c] = colours
-
+    #if colours and cmap_or_c == 'colormap':
+    #    if kind.startswith('bar'):
+    #        if len(list(dataframe.columns)) == 1:
+    #            if not black_and_white:
+    #                import numpy as np
+    #                the_range = np.linspace(0, 1, num_to_plot)
+    #                middle = len(the_range) / 2
+    #                try:
+    #                    cmap = plt.get_cmap(colours)
+    #                    kwargs[cmap_or_c] = [cmap(n) for n in the_range][middle]
+    #                except ValueError:
+    #                    kwargs[cmap_or_c] = colours
+    #            # make a bar width ... ? ...
+    #            #kwargs['width'] = (figsize[0] / float(num_to_plot)) / 1.5
+    
 
     # reversing legend option
     if reverse_legend is True:
@@ -573,15 +592,15 @@ def plotter(df,
         pass
     
     # rotate automatically
-    if 'rot' not in kwargs:
+    if not kwargs.get('rot', False):
         if not was_series:
-            xvals = [str(i) for i in list(dataframe.index)[:num_to_plot]]
+            xvals = [len(str(i)) for i in list(dataframe.index)[:num_to_plot]]
             #if 'kind' in kwargs:
                 #if kwargs['kind'] in ['barh', 'area']:
-                    #xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
+                    #xvals = [len(str(i)) for i in list(dataframe.columns)[:num_to_plot]]
         else:
-            xvals = [str(i) for i in list(dataframe.columns)[:num_to_plot]]
-        if len(max(xvals, key=len)) > 6:
+            xvals = [len(str(i)) for i in list(dataframe.columns)[:num_to_plot]]
+        if max(xvals) > 6:
             if not piemode:
                 kwargs['rot'] = 45
         else:
@@ -753,6 +772,19 @@ def plotter(df,
                 new_cmap = truncate_colormap(cmap, 0.70, 0.90)
         kwargs[cmap_or_c] = new_cmap
 
+    # remove things from kwargs if heatmap
+    if kind == 'heatmap':
+        hmargs = {'annot': kwargs.pop('annot', True),
+              cmap_or_c: kwargs.pop(cmap_or_c, None),
+              'fmt': kwargs.pop('fmt', ".2f"),
+              'cbar': kwargs.pop('cbar', False)}
+
+        for i in ['vmin', 'vmax', 'linewidths', 'linecolor',
+                  'robust', 'center', 'cbar_kws', 'cbar_ax',
+                  'square', 'mask']:
+            if i in kwargs.keys():
+                hmargs[i] = kwargs.pop(i, None)
+
     class dummy_context_mgr():
         """a fake context for plotting without style
         perhaps made obsolete by 'classic' style in new mpl"""
@@ -770,7 +802,15 @@ def plotter(df,
                 if dataframe.applymap(lambda x: x < 0.0).any().any():
                     kwargs['stacked'] = False
                     rev_leg = False
-            ax = dataframe.plot(figsize = figsize, **kwargs)
+            if kind != 'heatmap':
+                ax = dataframe.plot(figsize = figsize, **kwargs)
+            else:
+                plt.figure(figsize = figsize)
+                if title:
+                    plt.title(title)
+                ax = plt.axes()
+                sns.heatmap(dataframe, ax = ax, **hmargs)
+
             if areamode:
                 handles, labels = plt.gca().get_legend_handles_labels()
                 del handles
@@ -779,7 +819,14 @@ def plotter(df,
             if not kwargs.get('layout'):
                 plt.gcf().set_tight_layout(False)
             if not piemode:
-                ax = dataframe.plot(figsize = figsize, **kwargs)
+                if kind != 'heatmap':
+                    ax = dataframe.plot(figsize = figsize, **kwargs)
+                else:
+                    ax = plt.axes()
+                    plt.figure(figsize = figsize)
+                    sns.heatmap(dataframe, ax = ax, **kwargs)
+                    if title:
+                        plt.title(title)
             else:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
                 handles, labels = plt.gca().get_legend_handles_labels()
