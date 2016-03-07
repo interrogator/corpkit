@@ -3638,7 +3638,7 @@ def corpkit_gui():
         Label(plot_option_frame, text='Kind of chart').grid(row = 6, column = 0, sticky = W)
         charttype = StringVar(root)
         charttype.set('line')
-        kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area')
+        kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area', 'heatmap')
         chart_kind = OptionMenu(plot_option_frame, charttype, *kinds_of_chart)
         chart_kind.grid(row = 6, column = 1, sticky = E)
         charttype.trace("w", pie_callback)
