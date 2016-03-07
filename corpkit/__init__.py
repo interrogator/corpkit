@@ -8,7 +8,7 @@ from __future__ import print_function
 
 # quicker access to search, exclude, show types
 letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
-           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'ANY',
+           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'S', 'ANY',
            'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL', 'ANYWORD']
 
 # asterisk import
@@ -159,6 +159,7 @@ N = 'n'
 K = 'k'
 M = 'm'
 V = 'v'
+S = 's'
 GL = 'gl'
 DL = 'dl'
 GF = 'gf'
