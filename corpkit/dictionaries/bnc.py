@@ -7,7 +7,9 @@ def _get_bnc():
         import pickle
     import os
     fullpaths = [os.path.join(os.path.dirname(corpkit.__file__), 'corpkit', 'dictionaries', 'bnc.p'),
-                 os.path.join(os.path.dirname(corpkit.__file__), 'dictionaries', 'bnc.p')]
+                 os.path.join(os.path.dirname(corpkit.__file__), 'dictionaries', 'bnc.p'),
+                 os.path.join(os.path.dirname(corpkit.__file__), 'bnc.p'),
+                 os.path.join(os.path.dirname(os.path.dirname(corpkit.__file__)), 'bnc.p')]
     fullpath = next(x for x in fullpaths if os.path.isfile(x))
     with open(fullpath, 'rb') as fo:
         data = pickle.load(fo)

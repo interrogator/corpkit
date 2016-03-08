@@ -315,7 +315,7 @@ def corpkit_gui():
         import sys
         import os
         import corpkit
-        from process import get_gui_resource_dir, get_fullpath_to_jars
+        from corpkit.process import get_gui_resource_dir, get_fullpath_to_jars
         from tkintertable import TableCanvas, TableModel
         from nltk.draw.table import MultiListbox, Table
         from collections import OrderedDict
@@ -540,7 +540,7 @@ def corpkit_gui():
 
         # for the 'stats' option: define a series of queries
         from dictionaries.process_types import processes
-        from other import as_regex
+        from corpkit.other import as_regex
         tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< /VB(D|G|Z|N)/ !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/ !<< (/(?i)^thank/ . /(?i)^you/)',
                          'Unmodalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                          'Modalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
@@ -753,7 +753,7 @@ def corpkit_gui():
                 from dictionaries.process_types import processes
                 from dictionaries.roles import roles
                 from dictionaries.wordlists import wordlists
-                from other import as_regex
+                from corpkit.other import as_regex
 
                 customs = convert(custom_special_dict)
 
@@ -1186,7 +1186,7 @@ def corpkit_gui():
             
             timestring('Updated spreadsheet display in edit window.')
 
-        from process import is_number
+        from corpkit.process import is_number
 
         ###################     ###################     ###################     ###################
         #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#     #PREFERENCES POPUP#
@@ -1321,7 +1321,7 @@ def corpkit_gui():
             """the main function: calls interrogator()"""
             import pandas
             import corpkit
-            from interrogator import interrogator
+            from corpkit.interrogator import interrogator
             doing_concondancing = True
             # no pressing while running
             #if not conc:
@@ -1484,7 +1484,7 @@ def corpkit_gui():
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
 
-            from interrogation import Interrogation, Interrodict
+            from corpkit.interrogation import Interrogation, Interrodict
             # update spreadsheets
             if type(interrodata) not in [Interrogation, Interrodict]:
                 update_spreadsheet(interro_results, df_to_show = None, height = 340)
@@ -1610,7 +1610,7 @@ def corpkit_gui():
             corpus_fullpath.set(fp)
 
             # find out what kind of corpus it is
-            from process import determine_datatype
+            from corpkit.process import determine_datatype
             datat, singlef = determine_datatype(fp)
             datatype.set(datat)
             singlefile.set(singlef)
@@ -2540,7 +2540,7 @@ def corpkit_gui():
             import os
             edbut.config(state = DISABLED)
             import pandas
-            from corpkit import editor
+            from corpkit.editor import editor
             
             # translate operation into interrogator input
             operation_text = opp.get()
@@ -3090,7 +3090,7 @@ def corpkit_gui():
             # implement the default mpl key bindings
             from matplotlib.backend_bases import key_press_handler
             from matplotlib.figure import Figure
-            from corpkit import plotter
+            from corpkit.plotter import plotter
 
             if data_to_plot.get() == 'None':
                 timestring('No data selected to plot.')            
@@ -3219,7 +3219,7 @@ def corpkit_gui():
                 d['show_totals'] = 'both'
 
             d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
-            f = plotter(plotnametext.get(), what_to_plot, **d)
+            f = plotter(what_to_plot, plotnametext.get(), **d)
             
             # latex error
             #except RuntimeError as e:
@@ -3640,6 +3640,7 @@ def corpkit_gui():
         charttype.set('line')
         kinds_of_chart = ('line', 'bar', 'barh', 'pie', 'area', 'heatmap')
         chart_kind = OptionMenu(plot_option_frame, charttype, *kinds_of_chart)
+        chart_kind.config(width = 10)
         chart_kind.grid(row = 6, column = 1, sticky = E)
         charttype.trace("w", pie_callback)
 
@@ -3733,7 +3734,7 @@ def corpkit_gui():
         # chart type
         Label(plot_option_frame, text='Colour scheme:').grid(row = 16, column = 0, sticky = W)
         chart_cols = StringVar(root)
-        chart_cols.set('Set2')
+        chart_cols.set('default')
         schemes = tuple(sorted(('Paired', 'Spectral', 'summer', 'Set1', 'Set2', 'Set3', 
                     'Dark2', 'prism', 'RdPu', 'YlGnBu', 'RdYlBu', 'gist_stern', 'cool', 'coolwarm',
                     'gray', 'GnBu', 'gist_ncar', 'gist_rainbow', 'Wistia', 'CMRmap', 'bone', 
@@ -3744,7 +3745,7 @@ def corpkit_gui():
                     'BrBG', 'Reds', 'RdGy', 'PuRd', 'Blues', 'autumn', 'ocean', 'pink', 'binary', 
                     'winter', 'gnuplot', 'hot', 'YlOrBr', 'seismic', 'Purples', 'RdBu', 'Greys', 
                     'YlOrRd', 'PuOr', 'PuBuGn', 'nipy_spectral', 'afmhot', 
-                    'viridis', 'magma', 'plasma', 'inferno')))
+                    'viridis', 'magma', 'plasma', 'inferno', 'diverge', 'default')))
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
         ch_col.config(width = 17)
         ch_col.grid(row = 16, column = 1, sticky = E)
@@ -3837,7 +3838,7 @@ def corpkit_gui():
             #pd.set_option('display.width', 1000)
             pd.set_option('display.max_colwidth', 200)
             import corpkit
-            from interrogation import Concordance
+            from corpkit.interrogation import Concordance
             if data.__class__ == Concordance:
                 current_conc[0] = data
 
@@ -4139,7 +4140,7 @@ def corpkit_gui():
             if pos == 'v':
                 expanded = add_verb_inflections(lst)
             if pos == 'n':
-                from inflect import pluralize
+                from corpkit.inflect import pluralize
                 expanded = []
                 for w in lst:
                     expanded.append(w)
@@ -4147,7 +4148,7 @@ def corpkit_gui():
                     if pl != w:
                         expanded.append(pl)
             if pos == 'a':
-                from inflect import grade
+                from corpkit.inflect import grade
                 expanded = []
                 for w in lst:
                     expanded.append(w)
@@ -4173,7 +4174,7 @@ def corpkit_gui():
             from dictionaries.process_types import processes
             from dictionaries.roles import roles
             from dictionaries.wordlists import wordlists
-            from corpkit import as_regex
+            from corpkit.other import as_regex
             customs = convert(custom_special_dict)
             special_qs = [processes, roles, wordlists]
             for kind in special_qs:
@@ -4962,7 +4963,7 @@ def corpkit_gui():
 
         def make_new_project():
             import os
-            from corpkit import new_project
+            from corpkit.other import new_project
             reset_everything()
             name = simpledialog.askstring('New project', 'Choose a name for your project:')
             if not name:
@@ -5000,7 +5001,7 @@ def corpkit_gui():
             update_available_corpora()
 
         def get_saved_results(kind = 'interrogation', add_to = False):
-            from corpkit import load_all_results
+            from corpkit.other import load_all_results
             if kind == 'interrogation':
                 datad = savedinterro_fullpath.get()
             elif kind == 'concordance':
@@ -5115,7 +5116,7 @@ def corpkit_gui():
             if len(sel_vals) == 0:
                 timestring('Nothing selected to save.')
                 return
-            from corpkit import save
+            from corpkit.other import save
             import os
             saved = 0
             existing = 0
@@ -5781,7 +5782,7 @@ def corpkit_gui():
         # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
         ##############     ##############     ##############     ##############     ############## 
         
-        from build import download_large_file, extract_cnlp, get_corpus_filepaths, \
+        from corpkit.build import download_large_file, extract_cnlp, get_corpus_filepaths, \
             check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
         def create_tokenised_text():
@@ -5824,11 +5825,12 @@ def corpkit_gui():
             note.progvar.set(0)
             import os
             import re
+            import corpkit
             unparsed_corpus_path = corpus_fullpath.get()
 
             if speakseg.get():
                 timestring('Processing speaker names ... ')
-                from build import make_no_id_corpus, get_speaker_names_from_xml_corpus, add_ids_to_xml
+                from corpkit.build import make_no_id_corpus, get_speaker_names_from_xml_corpus, add_ids_to_xml
 
                 make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
                 unparsed_corpus_path = unparsed_corpus_path + '-stripped'
@@ -5901,7 +5903,7 @@ def corpkit_gui():
                     save_config()
                 timestring('Names found: %s' %', '.join(corpus_names))
             
-            from build import rename_all_files
+            from corpkit.build import rename_all_files
             rename_all_files(dirs_to_rename)
 
             os.remove(filelist)
@@ -6510,7 +6512,8 @@ def corpkit_gui():
             import sys
             import os
             import inspect
-            from build import download_large_file
+            import corpkit
+            from corpkit.build import download_large_file
             # get path to this script
             corpath = rd
             #corpath = inspect.getfile(inspect.currentframe())

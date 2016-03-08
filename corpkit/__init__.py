@@ -61,6 +61,7 @@ from editor import editor
 from plotter import plotter
 from other import save
 from other import load
+from lazyprop import lazyprop
 from other import load_all_results
 from other import quickview
 from other import as_regex

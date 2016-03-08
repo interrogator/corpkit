@@ -4,8 +4,12 @@
 #   Author: Daniel McDonald
 
 # make regular expressions and lists of inflected words from word lists
-import corpkit
-from lazyprop import lazyprop
+try:
+    from corpkit.lazyprop import lazyprop
+except:
+    import corpkit
+    from lazyprop import lazyprop
+
 
 def load_verb_data():
     """load the verb lexicon"""

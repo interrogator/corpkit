@@ -1,5 +1,9 @@
-import corpkit
-from lazyprop import lazyprop
+
+try:
+    from corpkit.lazyprop import lazyprop
+except:
+    import corpkit
+    from lazyprop import lazyprop
 
 class Queries(object):
 
