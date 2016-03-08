@@ -227,15 +227,11 @@ def plotter(df,
                 output[index] = 0.1
         return output
 
-    # check if we're doing subplots
-    sbplt = False
-    if 'subplots' in kwargs:
-        if kwargs['subplots'] is True:
-            sbplt = True
-    kwargs['subplots'] = sbplt
-
-    show_grid = kwargs.get('grid', False)
-    kwargs.pop('grid', None)
+    # get a few options from kwargs
+    sbplt = kwargs.get('subplots', False)
+    show_grid = kwargs.pop('grid', False)
+    rotation = kwargs.pop('rot', None)
+    dragmode = kwargs.pop('draggable', False)
 
     # todo: get this dynamically instead.
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
@@ -248,9 +244,6 @@ def plotter(df,
         except:
             pass
         style = 'matplotlib'
-
-    # use 'draggable = True' to make a draggable legend
-    dragmode = kwargs.pop('draggable', False)
 
     if kwargs.get('savepath'):
         mpl.rcParams['savefig.directory'] = kwargs.get('savepath')
@@ -810,6 +803,8 @@ def plotter(df,
                     plt.title(title)
                 ax = plt.axes()
                 sns.heatmap(dataframe, ax = ax, **hmargs)
+                plt.xticks(rotation=0)
+                plt.yticks(rotation=0)
 
             if areamode:
                 handles, labels = plt.gca().get_legend_handles_labels()
@@ -822,11 +817,13 @@ def plotter(df,
                 if kind != 'heatmap':
                     ax = dataframe.plot(figsize = figsize, **kwargs)
                 else:
-                    ax = plt.axes()
                     plt.figure(figsize = figsize)
-                    sns.heatmap(dataframe, ax = ax, **kwargs)
                     if title:
                         plt.title(title)
+                    ax = plt.axes()
+                    sns.heatmap(dataframe, ax = ax, **hmargs)
+                    plt.xticks(rotation=0)
+                    plt.yticks(rotation=0)
             else:
                 ax = dataframe.plot(figsize = figsize, **kwargs)
                 handles, labels = plt.gca().get_legend_handles_labels()
@@ -837,25 +834,37 @@ def plotter(df,
                 # i.e. layout = (5, 2) with only nine plots
                 if not kwargs.get('layout'):
                     plt.gcf().set_tight_layout(False)
-                
-        if kwargs.get('rot', False) is not False:
-            if kwargs['rot'] != 0 and kwargs['rot'] != 90:
-                if sbplt:
-                    if 'layout' not in kwargs:
-                        axes = [l for index, l in enumerate(ax)]
-                    else:
-                        axes = []
-                        cols = [l for index, l in enumerate(ax)]
-                        for col in cols:
-                            for bit in col:
-                                axes.append(bit)
 
-                    for index, a in enumerate(axes):
-                        labels = [item.get_text() for item in a.get_xticklabels()]
-                        a.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
-                else:
-                    labels = [item.get_text() for item in ax.get_xticklabels()]
-                    ax.set_xticklabels(labels, rotation = kwargs['rot'], ha='right')
+
+        def rotate_degrees(rotation, labels):
+            if rotation is None:
+                if max(labels, key=len) > 6:
+                    return 45
+            elif rotation is False:
+                return 0
+            elif rotation is True:
+                return 45
+            else:
+                return rotation
+        
+        if sbplt:
+            if 'layout' not in kwargs:
+                axes = [l for index, l in enumerate(ax)]
+            else:
+                axes = []
+                cols = [l for index, l in enumerate(ax)]
+                for col in cols:
+                    for bit in col:
+                        axes.append(bit)
+
+            for index, a in enumerate(axes):
+                labels = [item.get_text() for item in a.get_xticklabels()]
+                rotation = rotate_degrees(rotation, labels)                
+                a.set_xticklabels(labels, rotation = rotation, ha='right')
+        else:
+            labels = [item.get_text() for item in ax.get_xticklabels()]
+            rotation = rotate_degrees(rotation, labels)
+            ax.set_xticklabels(labels, rotation = rotation, ha='right')
 
         if transparent:
             plt.gcf().patch.set_facecolor('white')

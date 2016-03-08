@@ -362,35 +362,25 @@ def editor(interrogation,
                         dx.index = list(dx['index'])
                         df = dx.drop('index', axis = 1).T
 
-                for index, entry in enumerate(list(df.columns)):
-                    #p.animate(index)
-                    if operation == '%':
-                        try:
-                            df[entry] = df[entry] * 100.0 / df2[entry]
-                        except:
-                            continue
-                        #df.drop(entry, axis = 1, inplace = True)
-                        #df[entry] = maths_done
-                    elif operation == '+':
-                        try:
-                            df[entry] = df[entry] + df2[entry]
-                        except:
-                            continue
-                    elif operation == '-':
-                        try:
-                            df[entry] = df[entry] - df2[entry]
-                        except:
-                            continue
-                    elif operation == '*':
-                        try:
-                            df[entry] = df[entry] * df2[entry]
-                        except:
-                            continue
-                    elif operation == '/':
-                        try:
-                            df[entry] = df[entry] / df2[entry]
-                        except:
-                            continue
+                def editf(datum):
+                    meth = {'%': datum.div,
+                            '*': datum.mul,
+                            '/': datum.div,
+                            '+': datum.add,
+                            '-': datum.sub}
+
+                    if datum.name in list(df2.columns):
+
+                        method = meth[operation]
+                        mathed = method(df2[datum.name], fill_value = 0.0)
+                        if operation == '%':
+                            return mathed * 100.0
+                        else:
+                            return mathed
+                    else:
+                        return datum * 0.0
+
+                df = df.apply(editf)
 
             else:
                 for c in [c for c in list(df.columns) if int(c) > 1]:

@@ -406,6 +406,11 @@ def load_all_results(data_dir = 'saved_interrogations', **kwargs):
     
     datafiles = [f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f)) \
                  and f.endswith('.p')]
+
+    # just load first n (for testing)
+    if kwargs.get('n', False):
+        datafiles = datafiles[:kwargs['n']]
+
     output = {}
 
     l = 0
