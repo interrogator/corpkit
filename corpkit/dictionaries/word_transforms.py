@@ -27,22 +27,19 @@ wordlist = {u"felt": u"feel",
             u"me": u"i",
             u"her": u"she",
             u"him": u"he",
-            u"pdocs": "pdoc"}
-            #u"would": u"would/will",
-            #u"will": u"would/will",
-            #u"wo": u"would/will",
-            #u"'ll": u"would/will",
-            #u"could": u"could/can",
-            #u"ca": u"could/can",
-            #u"can": u"could/can",
-            #u"might": u"might/may/must",
-            #u"may": u"might/may/must",
-            #u"must": u"might/may/must",
-            #u"mighta": u"might/may/must",
-            #u"shalt": u"should/shall",
-            #u"shalt": u"should/shall",            
-            #u"shall": u"should/shall",
-            #u"shal": u"should/shall"}
+            u"pdocs": u"pdoc",
+            u'can': u'can',
+            u'will': u'will',
+            u'would': u'will',
+            u'could': u'can',
+            u'ca': u'can',
+            u'may': u'may',
+            u'should': u'shall',
+            u"'ll": u'will',
+            u'might': u'may',
+            u'wo': u'will',
+            u'shall': u'shall',
+            u'mighta': u'may'}
 
 # lemmatisation for treebank tags
 
@@ -88,8 +85,46 @@ taglemma = {u"cc": u"Coordinating conjunction",
            u"-lrb-": u"Bracket",
            u"-rsb-": u"Bracket",
            u"-lsb-": u"Bracket",
-           u"to": u"To"
+           u"to": u"To",
+           u'$': u'Symbol',
+           u'x': u'Other'
            }
+
+# the below produced with:
+#
+# from corpkit import *
+# from dictionaries import *
+# out = {}
+# for wordclass in tagtoclass.values():
+#     criteria = [tag for tag, clas in tagtoclass.items() if clas == wordclass]
+#     reg = as_regex(criteria, boundaries = 'l')
+#     out[wordclass] = reg
+# out
+
+mergetags = {u'Adjective': r'(?i)^(jj|jjr|jjs)$',
+             u'Adverb': r'(?i)^(rb|rbr|rbs)$',
+             u'Bracket': r'(?i)^(\-lrb\-|\-lsb\-|\-rrb\-|\-rsb\-)$',
+             u'Cardinal number': r'(?i)^(cd)$',
+             u'Coordinating conjunction': r'(?i)^(cc)$',
+             u'Determiner': r'(?i)^(dt)$',
+             u'Ex. there': r'(?i)^(ex)$',
+             u'Foreign word': r'(?i)^(fw)$',
+             u'Interjection': r'(?i)^(uh)$',
+             u'List item marker': r'(?i)^(ls)$',
+             u'Modal': r'(?i)^(md)$',
+             u'Noun': r'(?i)^(nn|nnp|nnps|nns)$',
+             U'Other': r'(?i)^(x)$',
+             u'Particle': r'(?i)^(rp)$',
+             u'Possessive ending': r'(?i)^(pos)$',
+             u'Predeterminer': r'(?i)^(pdt)$',
+             u'Preposition': r'(?i)^(in)$',
+             u'Pronoun': r'(?i)^(prp|prp\$)$',
+             u'Symbol': r'(?i)^(\$|sym)$',
+             u'To': r'(?i)^(to)$',
+             u'Verb': r'(?i)^(vb|vbd|vbg|vbn|vbp|vbz)$',
+             u'Wh- pronoun': r'(?i)^(wp|wp\$)$',
+             u'Wh-adverb': r'(?i)^(wrb)$',
+             u'Wh-determiner': r'(?i)^(wdt)$'}
 
 usa_convert = {u"accessorise": u"accessorize",
         u"accessorised": u"accessorized",
