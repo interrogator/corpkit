@@ -50,21 +50,24 @@ def interrogator(corpus,
             locs[k] = v
         locs.pop('kwargs', None)
 
-    import corpkit
-    from interrogation import Interrogation
-    from corpus import Datalist, Corpora, Corpus, File
-    from process import tregex_engine, get_deps
+
+    import codecs
+    import signal
+    from time import localtime, strftime
+    from collections import Counter
+
+    import corenlp_xml
     import pandas as pd
     from pandas import DataFrame, Series
-    from collections import Counter
+
+    import corpkit
+    from interrogation import Interrogation
+    from corpus import Datalist, Corpora, Corpus, File, Subcorpus
+    from process import tregex_engine, get_deps
     from other import as_regex
-    from time import localtime, strftime
     from textprogressbar import TextProgressBar
     from process import animator
     from dictionaries.word_transforms import wordlist, taglemma
-    import corenlp_xml
-    import codecs
-    import signal
 
     original_sigint = signal.getsignal(signal.SIGINT)
 
@@ -93,13 +96,18 @@ def interrogator(corpus,
     note = kwargs.get('note')
 
     # convert path to corpus object
-    if corpus.__class__ not in [Corpus, Corpora, File]:
+    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File]:
         if not multiprocess and not kwargs.get('outname'):
             corpus = Corpus(corpus, print_info = False)
 
     # figure out how the user has entered the query and normalise
     from process import searchfixer
     search = searchfixer(search, query)
+
+    if type(show) == list:
+        show = [i.lower() for i in show]
+    elif type(show) == str:
+        show = show.lower()
     
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -291,16 +299,12 @@ def interrogator(corpus,
         output = []
         for word in list_of_words:
             if translated_option.startswith('u'):
-                if word.lower() in list(taglemma.keys()):
-                    word = taglemma[word.lower()]
-                else:
-                    if word == 'x':
-                        word = 'Other'
-            # only use wordnet lemmatiser when appropriate
+                word = taglemma.get(word.lower(), 'Other')
             else:
                 if word in wordlist:
                     word = wordlist[word]
-                word = lmtzr.lemmatize(word, tag)
+                else:
+                    word = lmtzr.lemmatize(word, tag)
             output.append(word)
         return output
 
@@ -1024,7 +1028,7 @@ def interrogator(corpus,
         output = Concordance(conc_df)
         if only_conc:
             output.query = locs
-            if save:
+            if save and not kwargs.get('outname'):
                 output.save(save)
 
             if kwargs.get('printstatus', True):
@@ -1095,7 +1099,7 @@ def interrogator(corpus,
         else:
             interro = Interrogation(results = df, totals = tot, query = locs)
 
-        if save:
+        if save and not kwargs.get('outname'):
             interro.save(save)
         signal.signal(signal.SIGINT, original_sigint)
         return interro
