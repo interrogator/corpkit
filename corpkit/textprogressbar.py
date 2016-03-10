@@ -6,20 +6,9 @@ class TextProgressBar:
     """a text progress bar for CLI operations
        no need for user to call"""
     from time import localtime, strftime
-    try:
-        from IPython.display import display, clear_output
-        have_ipython = True
-    except ImportError:
-        have_ipython = False
         
     def __init__(self, iterations, dirname = False):
         from time import localtime, strftime
-        try:
-            from IPython.display import display, clear_output
-            have_ipython = True
-        except ImportError:
-            have_ipython = False
-
         self.iterations = iterations
         self.prog_bar = '[]'
         self.fill_char = '*'
@@ -28,19 +17,13 @@ class TextProgressBar:
         self.animate = self.animate_ipython
 
     def animate_ipython(self, iter, dirname = None):
-        try:
-            from IPython.display import display, clear_output
-            have_ipython = True
-        except ImportError:
-            have_ipython = False
         from time import localtime, strftime
         import sys
         print(str(self) + '\r', end='')
-        if have_ipython:
-            try:
-                sys.stdout.flush()
-            except:
-                pass
+        try:
+            sys.stdout.flush()
+        except:
+            pass
         self.update_iteration(iter + 1, dirname)
 
     def update_iteration(self, elapsed_iter, dirname = None):
