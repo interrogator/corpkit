@@ -688,22 +688,21 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     if init:
         from textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)
-    if type(linenum) == int:
         # this try is for sublime text nosetests, which don't take terminal object
-        try:
-            with terminal.location(0, terminal.height - (linenum + 1)):
-                if tot_string:
-                    progbar.animate(count, tot_string)
-                else:
-                    progbar.animate(count)
-        except:
-            pass
-    else:
+    try:
+        with terminal.location(0, terminal.height - (linenum + 1)):
+            if tot_string:
+                progbar.animate(count, tot_string)
+            else:
+                progbar.animate(count)
+    # typeerror for nose
+    except:
         if tot_string:
             progbar.animate(count, tot_string)
         else:
-            progbar.animate(count) 
-            
+            progbar.animate(count)
+
+
 def parse_just_speakers(just_speakers, path):
     if just_speakers is True:
         just_speakers = ['each']
