@@ -215,25 +215,30 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
         import pickle as pickle
     import os
     from time import localtime, strftime
+    import corpkit
+    from process import makesafe
 
     print_info = kwargs.get('print_info', True)
-
-    def urlify(s):
-        "Turn savename into filename"
-        import re
-        #s = s.lower()
-        s = re.sub(r"[^\w\s-]", '', s)
-        s = re.sub(r"\s+", '-', s)
-        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-        return s
 
     if savename.endswith('.p'):
         savename = savename[:-2]
         
-    savename = urlify(savename)
+    savename = makesafe(savename)
     
     if not savename.endswith('.p'):
         savename = savename + '.p'
+
+    # add corpus name to front
+    if interrogation.__dict__.get('query'):
+        corp = interrogation.query.get('corpus', False)
+        corpname = corp.name + '-'
+        if not corp:
+            try:
+                corp = interrogation.query.get('interrogation').query.get('corpus', False)
+                corpname = corp.name + '-'
+            except:
+                corpname = ''
+        savename = corpname + savename
 
     if savedir:
         if not os.path.exists(savedir):
@@ -301,6 +306,36 @@ def load(savename, loaddir = 'saved_interrogations'):
     with open(fullpath, 'rb') as fo:
         data = pickle.load(fo)
     return data
+
+def loader(savedir = 'saved_interrogations'):
+    """Show a list of data that can be loaded, and then load by user input of index"""
+    import glob
+    import os
+    import corpkit
+    from other import load
+    fs = [i for i in glob.glob(r'%s/*' % savedir) if not os.path.basename(i).startswith('.')]
+    string_to_show = '\nFiles in %s:\n' % savedir
+    most_digits = max([len(str(i)) for i, j in enumerate(fs)])
+    for index, fname in enumerate(fs):
+        string_to_show += str(index).rjust(most_digits) + ':\t' + os.path.basename(fname) + '\n'
+    print(string_to_show)
+    try:
+        index = raw_input('Enter index of item to load: ')
+    except:
+        index = input('Enter index of item to load: ')
+    if ' ' in index or '=' in index:
+        if '=' in index:
+            index = index.replace(' = ', ' ')
+            index = index.replace('=', ' ')
+        varname, ind = index.split(' ', 1)
+        globals()[varname] = load(os.path.basename(fs[int(ind)]))
+        print("%s = %s. Don't do this again." % (varname, os.path.basename(fs[int(ind)])))
+        return
+    try:
+        index = int(index)
+    except:
+        raise ValueError('Selection not recognised.')
+    return load(os.path.basename(fs[index]))
 
 def new_project(name, loc = '.', **kwargs):
     """Make a new project in ``loc``.
