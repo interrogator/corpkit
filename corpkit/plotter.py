@@ -229,8 +229,9 @@ def plotter(df,
 
     # get a few options from kwargs
     sbplt = kwargs.get('subplots', False)
-    show_grid = kwargs.pop('grid', False)
-    rotation = kwargs.pop('rot', None)
+    show_grid = kwargs.pop('grid', True)
+    the_rotation = kwargs.pop('rot', None)
+    kwargs['rot'] = False
     dragmode = kwargs.pop('draggable', False)
 
     # todo: get this dynamically instead.
@@ -583,21 +584,6 @@ def plotter(df,
         dataframe = dataframe.head(num_to_plot)
     except:
         pass
-    
-    # rotate automatically
-    if not kwargs.get('rot', False):
-        if not was_series:
-            xvals = [len(str(i)) for i in list(dataframe.index)[:num_to_plot]]
-            #if 'kind' in kwargs:
-                #if kwargs['kind'] in ['barh', 'area']:
-                    #xvals = [len(str(i)) for i in list(dataframe.columns)[:num_to_plot]]
-        else:
-            xvals = [len(str(i)) for i in list(dataframe.columns)[:num_to_plot]]
-        if max(xvals) > 6:
-            if not piemode:
-                kwargs['rot'] = 45
-        else:
-            kwargs['rot'] = False
 
     # no title for subplots because ugly,
     if title and not sbplt:
@@ -840,6 +826,8 @@ def plotter(df,
             if rotation is None:
                 if max(labels, key=len) > 6:
                     return 45
+                else:
+                    return 0
             elif rotation is False:
                 return 0
             elif rotation is True:
@@ -859,11 +847,11 @@ def plotter(df,
 
             for index, a in enumerate(axes):
                 labels = [item.get_text() for item in a.get_xticklabels()]
-                rotation = rotate_degrees(rotation, labels)                
+                rotation = rotate_degrees(the_rotation, labels)                
                 a.set_xticklabels(labels, rotation = rotation, ha='right')
         else:
             labels = [item.get_text() for item in ax.get_xticklabels()]
-            rotation = rotate_degrees(rotation, labels)
+            rotation = rotate_degrees(the_rotation, labels)
             ax.set_xticklabels(labels, rotation = rotation, ha='right')
 
         if transparent:
@@ -941,26 +929,6 @@ def plotter(df,
     # if time series period, it's year for now
     if type(dataframe.index) == pandas.tseries.period.PeriodIndex:
         x_label = 'Year'
-
-    if x_label is not False:
-        if type(x_label) == str:
-            plt.xlabel(x_label)
-        else:
-            check_x_axis = list(dataframe.index)[0] # get first entry# get second entry of first entry (year, count)
-            try:
-                if type(dataframe.index) == pandas.tseries.period.PeriodIndex:
-                    x_label = 'Year'
-                check_x_axis = int(check_x_axis)
-                if 1500 < check_x_axis < 2050:
-                    x_label = 'Year'
-                else:
-                    x_label = 'Group'
-            except:
-                x_label = 'Group'
-
-        if not sbplt:
-            if not piemode:
-                plt.xlabel(x_label)
 
     def is_number(s):
         """check if str can be can be made into float/int"""
