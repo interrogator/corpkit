@@ -12,7 +12,6 @@ def editor(interrogation,
             skip_entries = False,
             merge_entries = False,
             newname = 'combine',
-            multiple_merge = False,
             just_subcorpora = False,
             skip_subcorpora = False,
             span_subcorpora = False,
@@ -23,7 +22,7 @@ def editor(interrogation,
             remove_above_p = False,
             p = 0.05, 
             revert_year = True,
-            print_info = True,
+            print_info = False,
             spelling = False,
             selfdrop = True,
             calc_all = True,
@@ -402,13 +401,10 @@ def editor(interrogation,
             except:
                 pass
             the_input = [the_input]
-        elif type(the_input) == str or type(the_input) == str:
-            try:
-                regex = re.compile(the_input)
-                parsed_input = [w for w in list(df) if re.search(regex, w)]
-                return parsed_input
-            except:
-                the_input = [the_input]
+        elif type(the_input) == str or type(the_input) == unicode:
+            regex = re.compile(the_input)
+            parsed_input = [w for w in list(df) if re.search(regex, w)]
+            return parsed_input
         if type(the_input) == list:
             if type(the_input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
@@ -520,7 +516,7 @@ def editor(interrogation,
                 newname = 'combine'
         if type(newname) == int:
             the_newname = list(df.columns)[newname]
-        elif type(newname) == str:
+        elif type(newname) == str or type(newname) == unicode:
             if newname == 'combine':
                 if len(parsed_input) <= 3:
                     the_newname = '/'.join(parsed_input)
@@ -536,7 +532,7 @@ def editor(interrogation,
                 summed = sum(list(df[item]))
                 sumdict[item] = summed
             the_newname = max(iter(sumdict.items()), key=operator.itemgetter(1))[0]
-        if type(the_newname) != str:
+        if type(the_newname) not in [str, unicode]:
             the_newname = str(the_newname, errors = 'ignore')
         return the_newname
 
@@ -554,12 +550,19 @@ def editor(interrogation,
                     print('')
         # remove old entries
         temp = sum([df[i] for i in parsed_input])
-        if not multiple_merge:
-            if type(df) == pandas.core.series.Series:
-                df = df.drop(parsed_input)
-            else:
-                df = df.drop(parsed_input, axis = 1)
-        df[the_newname] = temp
+
+        #if type(merge_entries) == dict and len(merge_entries.keys() > 1):
+
+        if type(df) == pandas.core.series.Series:
+            df = df.drop(parsed_input, errors = 'ignore')
+            nms = list(df.index)
+        else:
+            df = df.drop(parsed_input, axis = 1, errors = 'ignore')
+            nms = list(df.columns)
+        if the_newname in nms:
+            df[the_newname] = df[the_newname] + temp
+        else:
+            df[the_newname] = temp
         return df
 
     def just_these_subcorpora(df, lst_of_subcorpora, prinf = True):        
