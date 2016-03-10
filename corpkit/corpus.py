@@ -16,6 +16,7 @@ class Corpus(object):
         from os.path import join, isfile, isdir, abspath, dirname, basename
         import re
         import operator
+        import glob
         from process import determine_datatype
         from corpus import Datalist
 
@@ -68,6 +69,29 @@ class Corpus(object):
             level = 'f'
 
         self.level = level
+
+        # load each interrogation as an attribute
+        if kwargs.get('load_saved', False):
+            from other import load
+            from process import makesafe
+            if os.path.isdir('saved_interrogations'):
+                saved_files = glob.glob(r'saved_interrogations/*')
+                for f in saved_files:
+                    filename = os.path.basename(f)
+                    if not filename.startswith(self.name):
+                        continue
+                    not_filename = filename.replace(self.name + '-', '')
+                    not_filename = os.path.splitext(not_filename)[0]
+                    if not_filename in ['features', 'wordclasses', 'postags']:
+                        continue
+                    variable_safe = makesafe(not_filename)
+                    try:
+                        setattr(self, variable_safe, load(filename))
+                        if print_info:
+                            print('\tLoaded %s as %s attribute.' % (filename, variable_safe))
+                    except AttributeError:
+                        if print_info:
+                            print('\tFailed to load %s as %s attribute. Name conflict?' % (filename, variable_safe))
 
     @lazyprop
     def subcorpora(self):
@@ -167,18 +191,92 @@ class Corpus(object):
         from os.path import isfile, isdir, join
         from interrogator import interrogator
         from other import load
+        from dictionaries import mergetags
 
         savedir = 'saved_interrogations'
         if isfile(join(savedir, self.name + '-features.p')):
-            return load(self.name + '-features')
+            try:
+                return load(self.name + '-features').results
+            except AttributeError:
+                return load(self.name + '-features')
         else:
             feat = interrogator(self, 's', 'any').results
             if isdir(savedir):
-                feat.save(corpus.name + '-features')
+                feat.save(self.name + '-features')
             return feat
 
-    def save_features(self):
-        corpus.features.save(corpus.name + '-features')
+    @lazyprop
+    def wordclasses(self):
+        """
+        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+
+        :Example:
+
+        >>> corpus.wordclasses
+            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            01       26873    8513   7308                4809              3704     2212   
+            02       25844    7933   6920                4313              3620     2270   
+            03       18376    5683   4877                3067              2616     1640   
+            04       20066    6354   5366                3587              2767     1775
+
+        """
+        import os
+        from os.path import isfile, isdir, join
+        from interrogator import interrogator
+        from other import load
+        from dictionaries import mergetags
+
+        savedir = 'saved_interrogations'
+        if isfile(join(savedir, self.name + '-wordclasses.p')):
+            try:
+                return load(self.name + '-wordclasses').results
+            except AttributeError:
+                return load(self.name + '-wordclasses')
+        elif isfile(join(savedir, self.name + '-postags.p')):
+            try:
+                posdata = load(self.name + '-postags').results
+            except AttributeError:
+                posdata = load(self.name + '-postags')  
+            return posdata.edit(merge_entries = mergetags, sort_by = 'total').results
+        else:
+            feat = interrogator(self, 't', 'any', show = 'pl').results
+            if isdir(savedir):
+                feat.save(self.name + '-wordclasses')
+            return feat
+
+    @lazyprop
+    def postags(self):
+        """
+        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+
+        :Example:
+
+        >>> corpus.postags
+            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            01       26873    8513   7308                4809              3704     2212   
+            02       25844    7933   6920                4313              3620     2270   
+            03       18376    5683   4877                3067              2616     1640   
+            04       20066    6354   5366                3587              2767     1775
+
+        """
+        import os
+        from os.path import isfile, isdir, join
+        from interrogator import interrogator
+        from other import load
+
+        savedir = 'saved_interrogations'
+        if isfile(join(savedir, self.name + '-postags.p')):
+            try:
+                return load(self.name + '-postags').results
+            except AttributeError:
+                return load(self.name + '-postags')
+        else:
+            feat = interrogator(self, 't', 'any', show = 'p').results
+            if isdir(savedir):
+                feat.save(self.name + '-postags')
+                wc = feat.edit(merge_entries = mergetags, sort_by = 'total').results
+                wc.save(self.name + '-wordclasses')
+            return feat
 
     def configurations(self, search, **kwargs):
         """
@@ -642,7 +740,7 @@ class Corpora(Datalist):
     :type data: str (path containing corpora), list (of corpus paths/:class:`corpkit.corpus.Corpus` objects)
     """
 
-    def __init__(self, data):
+    def __init__(self, data, **kwargs):
         from corpus import Corpus
         # handle a folder containing corpora
         if type(data) == str or type(data) == str:
@@ -655,7 +753,7 @@ class Corpora(Datalist):
         # otherwise, make a list of Corpus objects
         for index, i in enumerate(data):
             if type(i) == str:
-                data[index] = Corpus(i)
+                data[index] = Corpus(i, **kwargs)
 
         # now turn it into a Datalist
         Datalist.__init__(self, data)
@@ -683,3 +781,13 @@ class Corpora(Datalist):
     def features(self):
         for corpus in self:
             corpus.features
+
+    @lazyprop
+    def postags(self):
+        for corpus in self:
+            corpus.postags
+
+    @lazyprop
+    def wordclasses(self):
+        for corpus in self:
+            corpus.wordclasses
