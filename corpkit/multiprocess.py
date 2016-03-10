@@ -5,7 +5,7 @@ def pmultiquery(corpus,
     show = 'words',
     query = 'any', 
     sort_by = 'total', 
-    quicksave = False,
+    save = False,
     multiprocess = 'default', 
     just_speakers = False,
     root = False,
@@ -27,7 +27,6 @@ def pmultiquery(corpus,
     import corpkit
     from interrogator import interrogator
     from editor import editor
-    from other import save
     from interrogation import Interrogation
     try:
         from joblib import Parallel, delayed
@@ -118,9 +117,9 @@ def pmultiquery(corpus,
     if multiprocess is False:
         num_cores = 1
 
-    # make sure quicksaves are right type
-    if quicksave is True:
-        raise ValueError('quicksave must be string when using pmultiquery.')
+    # make sure saves are right type
+    if save is True:
+        raise ValueError('save must be string when multiprocessing.')
     
     # the options that don't change
     d = {
@@ -313,14 +312,29 @@ def pmultiquery(corpus,
     #for job in jobs: job.join()
     #results = [result_queue.get() for mc in funs]
 
+    def urlify(s):
+        "Turn savename into filename"
+        import re
+        #s = s.lower()
+        s = re.sub(r"[^\w\s-]", '', s)
+        s = re.sub(r"\s+", '-', s)
+        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+        return s
+
     import corpkit
     from interrogation import Concordance
     if kwargs.get('do_concordancing') == 'only':
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
+        lines = Concordance(concs)
+        
+        if save:
+            lines.save(save, print_info = print_info)
+
         if print_info:
             print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
-        return Concordance(concs)
+
+        return lines
 
     from collections import OrderedDict
     if not all(type(i.results) == pd.core.series.Series for i in res):
@@ -332,29 +346,16 @@ def pmultiquery(corpus,
                 out[interrog.query['outname']] = interrog
             except KeyError:
                 out[d['outname']] = interrog
-    
-        if quicksave:
-            fullpath = os.path.join('saved_interrogations', quicksave)
-            while os.path.isdir(fullpath):
-                selection = input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (quicksave, 'saved_interrogations'))
-                if selection == 'o' or selection == 'O':
-                    import shutil
-                    shutil.rmtree(fullpath)
-                else:
-                    import os
-                    fullpath = os.path.join('saved_interrogations', selection)
 
-            for k, v in list(out.items()):
-                save(v, k, savedir = fullpath, print_info = False)
-        
-            time = strftime("%H:%M:%S", localtime())
-            print("\n%s: %d files saved to %s" % ( time, len(list(out.keys())), fullpath))
-
-        time = strftime("%H:%M:%S", localtime())
-        if print_info:
-            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         from interrogation import Interrodict
         idict = Interrodict(out)
+        
+
+
+        if print_info:
+            time = strftime("%H:%M:%S", localtime())
+            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
+        
 
         # remove unpicklable bits from query
         from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
@@ -363,6 +364,10 @@ def pmultiquery(corpus,
                                              and not isinstance(v, BuiltinFunctionType) \
                                              and not isinstance(v, BuiltinMethodType)}
         idict.query = locs
+
+        if save:
+            idict.save(save, print_info = print_info)
+
         return idict
     # make query and total branch, save, return
     else:
@@ -413,9 +418,9 @@ def pmultiquery(corpus,
                 print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
         #if used_joblib:
             
-        if quicksave:
-            from other import save
-            save(out, quicksave)
+        if save:
+            out.save(save, print_info = print_info)
+
         return out
 
 if __name__ == '__main__':
@@ -424,7 +429,7 @@ if __name__ == '__main__':
     query = False,
     show = 'words', 
     sort_by = False, 
-    quicksave = False,
+    save = False,
     multiprocess = False, 
     just_speakers = False,
     root = False,
