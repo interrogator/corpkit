@@ -61,7 +61,7 @@ def interrogator(corpus,
     from pandas import DataFrame, Series
 
     import corpkit
-    from interrogation import Interrogation
+    from interrogation import Interrogation, Interrodict
     from corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from process import tregex_engine, get_deps
     from other import as_regex
@@ -95,6 +95,14 @@ def interrogator(corpus,
     root = kwargs.get('root')
     note = kwargs.get('note')
 
+    # wipe non essential class attributes to not bloat query attrib
+    if corpus.__class__ == Corpus:
+        import copy
+        corpus = copy.copy(corpus)
+        for k, v in corpus.__dict__.items():
+            if type(v) in [Interrogation, Interrodict]:
+                corpus.__dict__.pop(k, None)
+
     # convert path to corpus object
     if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File]:
         if not multiprocess and not kwargs.get('outname'):
@@ -104,17 +112,17 @@ def interrogator(corpus,
     from process import searchfixer
     search = searchfixer(search, query)
 
+    # lowercase anything in show
     if type(show) == list:
         show = [i.lower() for i in show]
     elif type(show) == str:
         show = show.lower()
+        show = [show]
     
+    # instantiate lemmatiser if need be
     if 'l' in show and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr=WordNetLemmatizer()
-
-    if type(show) == str:
-        show = [show]
 
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
@@ -226,8 +234,8 @@ def interrogator(corpus,
                      'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
                      'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                      'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                     'Open class words': r'/^(NN|JJ|VB|RB)/ < __',
-                     'Closed class words': r'__ !< __ !> /^(NN|JJ|VB|RB)/',
+                     'Open class': r'/^(NN|JJ|VB|RB)/ < __',
+                     'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/',
                      'Clauses': r'/^S/ < __',
                      'Interrogative': r'ROOT << (/\?/ !< __)',
                      'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.mental, boundaries = 'w'),
