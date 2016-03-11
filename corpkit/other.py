@@ -231,13 +231,14 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     # add corpus name to front
     if interrogation.__dict__.get('query'):
         corp = interrogation.query.get('corpus', False)
-        corpname = corp.name + '-'
         if not corp:
             try:
                 corp = interrogation.query.get('interrogation').query.get('corpus', False)
                 corpname = corp.name + '-'
             except:
                 corpname = ''
+        else:
+            corpname = corp.name + '-'
         savename = corpname + savename
 
     if savedir:
