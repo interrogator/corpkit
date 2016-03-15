@@ -149,7 +149,10 @@ def add_verb_inflections(verb_list):
     # ensure unicode
     t = []
     for w in verbforms:
-        t.append(w)
+        try:
+            t.append(unicode(w, errors = 'ignore'))
+        except:
+            t.append(w)
     return t
 
 # using 'list' keeps compatibility---change to object with no super call soon
@@ -452,3 +455,10 @@ class Processes(object):
       self.mental = Wordlist(mental)
 
 processes = Processes()
+
+def _verbs():
+    from nltk.corpus import verbnet
+    verblist = [i for i in verbnet.lemmas() if '_' not in i]
+    return Wordlist(verblist)
+
+verbs = _verbs()
