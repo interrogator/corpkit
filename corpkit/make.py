@@ -43,6 +43,11 @@ def make_corpus(unparsed_corpus_path,
     import sys
     import os    
     import shutil
+    pyver = sys.version_info.major
+    if pyver == 2:
+        inputfunc = raw_input
+    elif pyver == 3:
+        inputfunc = input
     from build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
@@ -88,11 +93,12 @@ def make_corpus(unparsed_corpus_path,
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
+
     if parse:
         if speaker_segmentation:
             newpath = unparsed_corpus_path + '-stripped-parsed'
             if os.path.isdir(newpath) and not root:
-                ans = input('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
+                ans = inputfunc('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                 if ans.lower().strip()[0] == 'y':
                     shutil.rmtree(newpath)
                 else:
