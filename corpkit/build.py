@@ -530,11 +530,13 @@ def get_corpus_filepaths(projpath = False, corpuspath = False):
     if projpath is False:
         projpath = os.path.dirname(os.path.abspath(corpuspath.rstrip('/')))
 
-    fp = os.path.join(projpath, 'data', 'corpus-filelist.txt')
+    corpname = os.path.basename(corpuspath)
+
+    fp = os.path.join(projpath, 'data', corpname + '-filelist.txt')
     if os.path.join('data', 'data') in fp:
         fp = fp.replace(os.path.join('data', 'data'), 'data')
     with open(fp, "w") as f:
-        f.write(matchstring)
+        f.write(matchstring + '\n')
     return fp
 
 def check_jdk():
