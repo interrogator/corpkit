@@ -457,8 +457,9 @@ class Processes(object):
 processes = Processes()
 
 def _verbs():
-    from nltk.corpus import verbnet
-    verblist = [i for i in verbnet.lemmas() if '_' not in i]
+    import corpkit
+    from dictionaries.verblist import allverbs
+    verblist = [i for i in allverbs if '_' not in i]
     return Wordlist(verblist)
 
 verbs = _verbs()
