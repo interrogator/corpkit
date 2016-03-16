@@ -49,7 +49,7 @@ def test_parse_speakseg(skipassert = False):
         shutil.rmtree(parsed_path)
     except:
         pass
-    parsed = unparsed.parse(speaker_segmentation = True, multiprocess = 2)
+    parsed = unparsed.parse(speaker_segmentation = True)
     fnames = []
     for subc in parsed.subcorpora:
         for f in subc.files:
@@ -62,6 +62,7 @@ if os.path.isdir(parsed_path):
     corp = Corpus('data/test-stripped-parsed')
 else:
     test_parse_speakseg(skipassert = True)
+    corp = Corpus('data/test-stripped-parsed')
 
 def test_interro1():
     print('Testing interrogation 1')

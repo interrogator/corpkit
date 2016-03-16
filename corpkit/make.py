@@ -161,7 +161,7 @@ def make_corpus(unparsed_corpus_path,
                     'multiprocessing': True}
                 ds.append(d)
 
-            res = Parallel(n_jobs=num_cores)(delayed(parse_corpus)(**x) for x in ds)
+            res = Parallel(n_jobs=multiprocess)(delayed(parse_corpus)(**x) for x in ds)
             if len(res) > 0:
                 new_parsed_corpus_path = res[0]
             else:
