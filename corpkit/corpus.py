@@ -403,7 +403,8 @@ class Corpus(object):
             return interrogator(self, search, *args, **kwargs)
 
     def parse(self, corenlppath = False, operations = False, copula_head = True,
-              speaker_segmentation = False, memory_mb = False, *args, **kwargs):
+              speaker_segmentation = False, memory_mb = False, multiprocess = False, 
+              *args, **kwargs):
         """
         Parse an unparsed corpus, saving to disk
 
@@ -421,6 +422,9 @@ class Corpus(object):
 
         :param copula_head: Make copula head in dependency parse
         :type copula_head: bool
+
+        :param multiprocess: Split parsing across n cores (for high-performance computers)
+        :type multiprocess: int
 
         :Example:
 

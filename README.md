@@ -433,8 +433,10 @@ which creates the parsed/tokenised corpora, and returns `Corpus()` objects repre
 
 ```python
 >>> ans = 'tokenize,ssplit,pos'
-### you can also set memory and turn off copula head parsing
->>> corpus = unparsed.parse(operations = ans, memory_mb = 3000, copula_head = False)
+### you can also set memory and turn off copula head parsing,
+### or multiprocess the parsing job (though you'll want a big machine)
+>>> corpus = unparsed.parse(operations = ans, memory_mb = 3000, 
+...                         copula_head = False, multiprocess = 4)
 ```
 
 <a name="speaker-ids"></a>
