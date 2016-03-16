@@ -515,8 +515,8 @@ def plotter(df,
                 else:
                     colours = sns.light_palette("green", as_cmap=True)
 
-    # needing revision
-    kwargs[cmap_or_c] = colours
+    if 'seaborn' not in style:
+        kwargs[cmap_or_c] = colours
     #if not was_series:
     #    if kind in ['pie', 'line', 'area']:
     #        if colours and not plotting_a_totals_column:
