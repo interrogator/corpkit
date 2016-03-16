@@ -562,6 +562,7 @@ def parse_corpus(proj_path = False,
                 nltk_data_path = False, 
                 memory_mb = 2000,
                 copula_head = True,
+                multiprocessing = False,
                 **kwargs):
     """
     Create a CoreNLP-parsed and/or NLTK tokenised corpus
@@ -613,14 +614,15 @@ def parse_corpus(proj_path = False,
         os.makedirs(new_corpus_path)
     else:
         fs = os.listdir(new_corpus_path)
-        if not only_tokenise:
-            if any([f.endswith('.xml') for f in fs]):
-                print('Folder containing xml already exists: "%s-parsed"' % basecp)
-                return False
-        else:
-            if any([f.endswith('.txt') for f in fs]):
-                print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
-                return False          
+        if not multiprocessing:
+            if not only_tokenise:
+                if any([f.endswith('.xml') for f in fs]):
+                    print('Folder containing xml already exists: "%s-parsed"' % basecp)
+                    return False
+            else:
+                if any([f.endswith('.txt') for f in fs]):
+                    print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
+                    return False          
     #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     cwd = os.getcwd()
     if corenlppath is False:
@@ -651,7 +653,8 @@ def parse_corpus(proj_path = False,
         if operations is False:
             operations = 'tokenize,ssplit,pos,lemma,parse'# 'ner,dcoref'
         if type(operations) == list:
-            operations = ','.join(operations)
+            operations = ','.join([i.lower() for i in operations])
+
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
         # get corenlp version number
         import re
@@ -697,7 +700,6 @@ def parse_corpus(proj_path = False,
             if root:
                 root.update()
     else:
-
 
         from nltk import word_tokenize as tokenise
         # tokenise each file

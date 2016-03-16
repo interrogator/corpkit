@@ -49,7 +49,7 @@ def test_parse_speakseg(skipassert = False):
         shutil.rmtree(parsed_path)
     except:
         pass
-    parsed = unparsed.parse(speaker_segmentation = True)
+    parsed = unparsed.parse(speaker_segmentation = True, multiprocess = 2)
     fnames = []
     for subc in parsed.subcorpora:
         for f in subc.files:

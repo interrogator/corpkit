@@ -8,6 +8,7 @@ def make_corpus(unparsed_corpus_path,
                 operations = False,
                 speaker_segmentation = False,
                 root = False,
+                multiprocess = False,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -119,7 +120,63 @@ def make_corpus(unparsed_corpus_path,
 
         cop_head = kwargs.get('copula_head', True)
 
-        new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
+        if multiprocess is not False:
+            def chunks(l, n):
+                """Yield successive n-sized chunks from l."""
+                for i in range(0, len(l), n):
+                    yield l[i:i+n]
+
+            if multiprocess is True:
+                import multiprocessing
+                multiprocess = multiprocessing.cpu_count()
+            import codecs
+            from joblib import Parallel, delayed
+            # split old file into n parts
+            with codecs.open(filelist, 'r', encoding='utf-8') as fo:
+                fs = [i for i in fo.read().splitlines() if i]
+            # make generator with list of lists
+            fgen = chunks(fs, multiprocess)
+            filelists = []
+            # for each list, make new file
+            for index, flist in enumerate(fgen):
+                as_str = '\n'.join(flist) + '\n'
+                new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
+                filelists.append(new_fpath)
+                with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
+                    fo.write(as_str)
+            try:
+                os.remove(filelist)
+            except:
+                pass
+
+            ds = []
+            for listpath in filelists:
+                d = {'proj_path': project_path, 
+                    'corpuspath': to_parse,
+                    'filelist': listpath,
+                    'corenlppath': corenlppath,
+                    'nltk_data_path': nltk_data_path,
+                    'operations': operations,
+                    'copula_head': cop_head,
+                    'multiprocessing': True}
+                ds.append(d)
+
+            res = Parallel(n_jobs=num_cores)(delayed(parse_corpus)(**x) for x in ds)
+            if len(res) > 0:
+                new_parsed_corpus_path = res[0]
+            else:
+                return
+            if all(r is False for r in res):
+                return
+
+            for i in filelists:
+                try:
+                    os.remove(i)
+                except:
+                    pass
+
+        else:
+            new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
                                    corpuspath = to_parse,
                                    filelist = filelist,
                                    corenlppath = corenlppath,
@@ -131,11 +188,14 @@ def make_corpus(unparsed_corpus_path,
             return 
         
         move_parsed_files(project_path, to_parse, new_parsed_corpus_path)
-
         outpath = new_parsed_corpus_path
-
         if speaker_segmentation:
             add_ids_to_xml(new_parsed_corpus_path)
+        try:
+            os.remove(filelist)
+        except:
+            pass
+
     else:
         filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                 corpuspath = unparsed_corpus_path)
