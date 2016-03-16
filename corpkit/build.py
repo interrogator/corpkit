@@ -649,7 +649,7 @@ def parse_corpus(proj_path = False,
         if memory_mb is False:
             memory_mb = 2024
         if operations is False:
-            operations = 'tokenize,ssplit,pos,lemma,ner,parse,dcoref'
+            operations = 'tokenize,ssplit,pos,lemma,parse'# 'ner,dcoref'
         if type(operations) == list:
             operations = ','.join(operations)
         num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])

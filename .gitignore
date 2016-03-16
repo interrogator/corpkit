@@ -72,3 +72,5 @@ corpkit/custom_wordlists.txt
 corpkit/tool_settings.ini
 _build/
 *.bak
+data/test-filelist.txt
+data/test-stripped-filelist.txt
