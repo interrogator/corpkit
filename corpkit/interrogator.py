@@ -50,7 +50,6 @@ def interrogator(corpus,
             locs[k] = v
         locs.pop('kwargs', None)
 
-
     import codecs
     import signal
     from time import localtime, strftime
@@ -240,8 +239,8 @@ def interrogator(corpus,
                      'Interrogative': r'ROOT << (/\?/ !< __)',
                      'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.mental, boundaries = 'w'),
                      'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.verbal, boundaries = 'w'),
-                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w')
-                     }
+                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % as_regex(processes.relational, boundaries = 'w'),
+                     'Verbless clause': r'/^S/ !<< /^VB.?/'}
 
         for name, q in sorted(tregex_qs.items()):
             res = tregex_engine(query = q, 
@@ -801,7 +800,7 @@ def interrogator(corpus,
         total_files = len(list(to_iterate_over.keys()))
     else:
         if search.get('s'):
-            total_files = sum([len(x) for x in list(to_iterate_over.values())]) * 12
+            total_files = sum([len(x) for x in list(to_iterate_over.values())]) * 13
         else:
             total_files = sum([len(x) for x in list(to_iterate_over.values())])
 

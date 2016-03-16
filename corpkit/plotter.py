@@ -102,7 +102,7 @@ def plotter(df,
     # prefer seaborn plotting
     try:
         import seaborn as sns
-    except:
+    except ImportError:
         pass   
     
     if interactive:
@@ -230,8 +230,7 @@ def plotter(df,
     # get a few options from kwargs
     sbplt = kwargs.get('subplots', False)
     show_grid = kwargs.pop('grid', True)
-    the_rotation = kwargs.pop('rot', None)
-    kwargs['rot'] = False
+    the_rotation = kwargs.get('rot', False)
     dragmode = kwargs.pop('draggable', False)
 
     # todo: get this dynamically instead.
@@ -331,20 +330,18 @@ def plotter(df,
             was_series = True
     
     # attempt to convert x axis to ints:
-    try:
-        dataframe.index = [int(i) for i in list(dataframe.index)]
-    except:
-        pass
+    #try:
+    #    dataframe.index = [int(i) for i in list(dataframe.index)]
+    #except:
+    #    pass
 
     # remove totals and tkinter order
     if not was_series:
-        if all(type(x) in [str, unicode] for x in list(df.columns)):
-            if not all(x.lower() == 'total' for x in list(dataframe.columns)):
-                for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
-                    try:
-                        dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
-                    except:
-                        pass
+        for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
+            try:
+                dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+            except:
+                pass
     
     try:
         dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
@@ -511,7 +508,7 @@ def plotter(df,
                 colours = sns.diverging_palette(10, 133, as_cmap=True)
 
             # if default not set, do diverge for any df with a number < 0
-            elif colours.lower().startswith('default'):
+            elif colours.lower() == 'default':
                 mn = dataframe.min()
                 if type(mn) == pandas.core.series.Series:
                     mn = mn.min()
@@ -783,19 +780,26 @@ def plotter(df,
                     rev_leg = False
             if kind != 'heatmap':
                 ax = dataframe.plot(figsize = figsize, **kwargs)
+                from matplotlib.ticker import MaxNLocator
+                ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
             else:
                 plt.figure(figsize = figsize)
                 if title:
                     plt.title(title)
                 ax = plt.axes()
                 sns.heatmap(dataframe, ax = ax, **hmargs)
-                plt.xticks(rotation=0)
                 plt.yticks(rotation=0)
 
             if areamode:
                 handles, labels = plt.gca().get_legend_handles_labels()
                 del handles
                 del labels
+
+            if x_label:
+                ax.set_xlabel(x_label)
+            if y_label:
+                ax.set_ylabel(y_label)
+
         else:
             if not kwargs.get('layout'):
                 plt.gcf().set_tight_layout(False)
@@ -850,9 +854,10 @@ def plotter(df,
                 rotation = rotate_degrees(the_rotation, labels)                
                 a.set_xticklabels(labels, rotation = rotation, ha='right')
         else:
-            labels = [item.get_text() for item in ax.get_xticklabels()]
-            rotation = rotate_degrees(the_rotation, labels)
-            ax.set_xticklabels(labels, rotation = rotation, ha='right')
+            if kind == 'heatmap':
+                labels = [item.get_text() for item in ax.get_xticklabels()]
+                rotation = rotate_degrees(the_rotation, labels)
+                ax.set_xticklabels(labels, rotation = rotation, ha='right')
 
         if transparent:
             plt.gcf().patch.set_facecolor('white')
@@ -875,7 +880,7 @@ def plotter(df,
 
         # draw legend with proper placement etc
         if legend:
-            if not piemode and not sbplt:
+            if not piemode and not sbplt and kind != 'heatmap':
                 if 3 not in interactive_types:
                     handles, labels = plt.gca().get_legend_handles_labels()
                     # area doubles the handles and labels. this removes half:
@@ -930,30 +935,19 @@ def plotter(df,
     if type(dataframe.index) == pandas.tseries.period.PeriodIndex:
         x_label = 'Year'
 
-    def is_number(s):
-        """check if str can be can be made into float/int"""
-        try:
-            float(s) # for int, long and float
-        except ValueError:
-            try:
-                complex(s) # for complex
-            except ValueError:
-                return False
-        return True
-
-    # for now, always turn off sci notation
-    from matplotlib.ticker import ScalarFormatter
-    if type(dataframe.index) != pandas.tseries.period.PeriodIndex:
-        try:
-            if all(is_number(s) for s in list(dataframe.index)):
-                plt.gca().xaxis.set_major_formatter(ScalarFormatter()) 
-        except:
-            pass
-    try:
-        if all(is_number(s) for s in list(dataframe.columns)):
-            plt.gca().yaxis.set_major_formatter(ScalarFormatter()) 
-    except:
-        pass
+    # scientific notation
+    #plt.ticklabel_format(axis='both', style='plain')
+    #if kwargs.get('scientific_notion', False):
+    #    if kwargs.get('log') or kwargs.get('logx') or kwargs.get('logy'):
+    #        pass
+    #    else:
+    #        if kwargs['scientific_notion'].lower().startswith('x'):
+    #            plt.ticklabel_format(axis='x', style='sci')
+    #        if kwargs['scientific_notion'].lower().startswith('y'):
+    #            plt.ticklabel_format(axis='y', style='sci')
+    #        if kwargs['scientific_notion'].lower().startswith('b'):
+    #            plt.ticklabel_format(axis='y', style='sci')
+    #            plt.ticklabel_format(axis='x', style='sci')
 
     # y labelling
     y_l = False
@@ -1000,19 +994,13 @@ def plotter(df,
                    **label_prop)
 
     if y_label is not False:
-        if not sbplt:
-            if not piemode:
-                if type(y_label) == str:
-                    plt.ylabel(y_label)
-                else:
-                    plt.ylabel(y_l)
-        else:
+        if sbplt:
             if type(y_label) == str:
                 the_y = y_label
             else:
                 the_y = y_l
-            #suplabel('y', the_y, labelpad = 1.5)
-            plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
+            suplabel('y', the_y, labelpad = 0)
+            #plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
             #plt.subplots_adjust(left=0.5)
         
         #    if not piemode:
@@ -1046,6 +1034,11 @@ def plotter(df,
             a.set_title(titletext)
             try:
                 a.legend_.remove()
+            except:
+                pass
+            try:
+                from matplotlib.ticker import MaxNLocator
+                a.get_xaxis().set_major_locator(MaxNLocator(integer=True))
             except:
                 pass
             # remove axis labels for pie plots
@@ -1104,12 +1097,8 @@ def plotter(df,
                 else:
                     plt.annotate(score, (i, score), ha = 'center', va = 'bottom')        
 
-    plt.subplots_adjust(left=0.1)
-    plt.subplots_adjust(bottom=0.18)
-
-    if 'layout' not in kwargs:
-        if not sbplt:
-            plt.tight_layout()
+    if not kwargs.get('layout') and not sbplt:
+        plt.tight_layout()
 
     if save:
         import os
@@ -1124,7 +1113,7 @@ def plotter(df,
             os.makedirs(imagefolder)
 
         # save image and get on with our lives
-        if legend_pos.startswith('o'):
+        if legend_pos.startswith('o') and not sbplt:
             plt.gcf().savefig(savename, dpi=150, bbox_extra_artists=(lgd,), bbox_inches='tight', format = output_format)
         else:
             plt.gcf().savefig(savename, dpi=150, format = output_format)

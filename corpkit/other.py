@@ -223,7 +223,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     if savename.endswith('.p'):
         savename = savename[:-2]
         
-    savename = makesafe(savename)
+    savename = makesafe(savename, drop_datatype = False)
     
     if not savename.endswith('.p'):
         savename = savename + '.p'
@@ -703,7 +703,7 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
         if relative:
             data = data * 100.0 / data.sum()
         else:
-            data = data.astype(int)
+            data = data.astype(float)
         if df:
             data.index.name = name
             df1 = pd.DataFrame({'Result': list(data.index)[:n], operation: list(data)[:n]})

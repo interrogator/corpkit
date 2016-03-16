@@ -26,7 +26,6 @@ def pmultiquery(corpus,
     from time import strftime, localtime
     import corpkit
     from interrogator import interrogator
-    from editor import editor
     from interrogation import Interrogation
     try:
         from joblib import Parallel, delayed
@@ -321,6 +320,13 @@ def pmultiquery(corpus,
         s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
         return s
 
+    # remove unpicklable bits from query
+    from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
+    qlocs = {k: v for k, v in locs.items() if not isinstance(v, ModuleType) \
+            and not isinstance(v, FunctionType) \
+            and not isinstance(v, BuiltinFunctionType) \
+            and not isinstance(v, BuiltinMethodType)}
+
     import corpkit
     from interrogation import Concordance
     if kwargs.get('do_concordancing') == 'only':
@@ -336,6 +342,8 @@ def pmultiquery(corpus,
 
         return lines
 
+
+
     from collections import OrderedDict
     if not all(type(i.results) == pd.core.series.Series for i in res):
         out = OrderedDict()
@@ -350,20 +358,11 @@ def pmultiquery(corpus,
         from interrogation import Interrodict
         idict = Interrodict(out)
         
-
-
         if print_info:
             time = strftime("%H:%M:%S", localtime())
             print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
         
-
-        # remove unpicklable bits from query
-        from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
-        locs = {k: v for k, v in locs.items() if not isinstance(v, ModuleType) \
-                                             and not isinstance(v, FunctionType) \
-                                             and not isinstance(v, BuiltinFunctionType) \
-                                             and not isinstance(v, BuiltinMethodType)}
-        idict.query = locs
+        idict.query = qlocs
 
         if save:
             idict.save(save, print_info = print_info)
@@ -371,8 +370,6 @@ def pmultiquery(corpus,
         return idict
     # make query and total branch, save, return
     else:
-        #print sers
-        #print ds
         if multiple_corpora and not mult_corp_are_subs:
             sers = [i.results for i in res]
             out = pd.DataFrame(sers, index = [i.query['outname'] for i in res])
@@ -383,10 +380,15 @@ def pmultiquery(corpus,
         else:
             try:
                 out = pd.concat([r.results for r in res], axis = 1)
+                # fix later
+                out = out.T
+                out.index = [i.query['outname'] for i in res]
             except ValueError:
                 return None
             # format like normal
+            # this sorts subcorpora, which are cls
             out = out[sorted(list(out.columns))]
+            # puts subcorpora in the right place
             out = out.T
             out = out.fillna(0) # nan to zero
             out = out.astype(int)
@@ -402,6 +404,8 @@ def pmultiquery(corpus,
             out = out.drop('Total-tmp', axis = 0)
         out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False, \
                       df1_always_df = kwargs.get('df1_always_df'))
+        out.query = qlocs
+
         if len(out.results.columns) == 1:
             out.results = out.results.sort_index()   
         if kwargs.get('do_concordancing') is True:
@@ -416,23 +420,6 @@ def pmultiquery(corpus,
         else:
             if print_info:
                 print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
-        #if used_joblib:
-            
         if save:
             out.save(save, print_info = print_info)
-
         return out
-
-if __name__ == '__main__':
-    pmultiquery(corpus,
-    search,
-    query = False,
-    show = 'words', 
-    sort_by = False, 
-    save = False,
-    multiprocess = False, 
-    just_speakers = False,
-    root = False,
-    note = False,
-    print_info = True,
-    **kwargs)

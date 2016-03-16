@@ -156,6 +156,11 @@ def tregex_engine(corpus = False,
     from dictionaries.word_transforms import wordlist
     import os
     import sys
+    pyver = sys.version_info.major
+    if pyver == 2:
+        inputfunc = raw_input
+    elif pyver == 3:
+        inputfunc = input
 
     on_cloud = checkstack('/opt/python/lib')
 
@@ -265,11 +270,12 @@ def tregex_engine(corpus = False,
                     print('%s: Error parsing Tregex query.' % time)
                     return False
                 time = strftime("%H:%M:%S", localtime())
-                selection = input('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
+
+                selection = inputfunc('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
                 if 'a' in selection:
-                    query = input('\nNew Tregex query: ')
+                    query = inputfunc('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print('')
                     return False
@@ -287,12 +293,12 @@ def tregex_engine(corpus = False,
                 remove_start = query.split('/', 1)
                 remove_end = remove_start[1].split('/', -1)
                 time = strftime("%H:%M:%S", localtime())
-                selection = input('\n%s: Error parsing regex inside Tregex query: %s'\
+                selection = inputfunc('\n%s: Error parsing regex inside Tregex query: %s'\
                 '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
                 '              a) rewrite it now\n' \
                 '              b) exit\n\nYour selection: ' % (time, str(info[1]), str(remove_end[0]), spaces))
                 if 'a' in selection:
-                    query = input('\nNew Tregex query: ')
+                    query = inputfunc('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print('')
                     return                
@@ -731,14 +737,17 @@ def timestring(input):
     thetime = strftime("%H:%M:%S", localtime())
     print('%s: %s' % (thetime, input.lstrip()))
 
-def makesafe(variabletext):
+def makesafe(variabletext, drop_datatype = True):
     import re
     from process import is_number
     variable_safe_r = re.compile(r'[^A-Za-z0-9_]+', re.UNICODE)
     try:
-        txt = variabletext.name.split('.')[0].replace('-parsed', '')
+        txt = variabletext.name.split('.')[0]
     except AttributeError:
-        txt = variabletext.split('.')[0].replace('-parsed', '')
+        txt = variabletext.split('.')[0]
+    if drop_datatype:
+        txt = txt.replace('-parsed', '')
+
     txt = txt.replace(' ', '_')
     variable_safe = re.sub(variable_safe_r, '', txt)
     if is_number(variable_safe):
