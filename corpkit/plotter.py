@@ -492,10 +492,6 @@ def plotter(df,
         else:
             colours == 'default'
     
-    # seaborn styles have their own colours
-    if style is not False and style.startswith('seaborn'):
-        colours = False
-
     # assume it's a single color, unless string denoting map
     cmap_or_c = 'color'
     if colours is not False and type(colours) == str:
