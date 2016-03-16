@@ -208,7 +208,7 @@ def plotter(df,
             dataframe.columns = ['Total']
         return dataframe
 
-    def auto_explode(dataframe, input, was_series = False, num_to_plot = 7):
+    def auto_explode(dataframe, tinput, was_series = False, num_to_plot = 7):
         """give me a list of strings and i'll output explode option"""
         output = [0 for s in range(num_to_plot)]
         if was_series:
@@ -216,10 +216,10 @@ def plotter(df,
         else:
             l = list(dataframe.columns)
 
-        if type(input) == str or type(input) == int:
-            input = [input]
-        if type(input) == list:
-            for i in input:
+        if type(tinput) == str or type(tinput) == int:
+            tinput = [tinput]
+        if type(tinput) == list:
+            for i in tinput:
                 if type(i) == str:
                     index = l.index(i)
                 else:
@@ -232,6 +232,8 @@ def plotter(df,
     show_grid = kwargs.pop('grid', True)
     the_rotation = kwargs.get('rot', False)
     dragmode = kwargs.pop('draggable', False)
+    leg_frame = kwargs.pop('legend_frame', True)
+    leg_alpha = kwargs.pop('legend_alpha', 0.8)
 
     # todo: get this dynamically instead.
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
@@ -602,7 +604,7 @@ def plotter(df,
             if not kwargs.get('ncol'):
                 kwargs['ncol'] = num_to_plot / 7
         # kwarg options go in leg_options
-        leg_options = {'framealpha': .8,
+        leg_options = {'framealpha': leg_alpha,
                        'shadow': kwargs.get('shadow', False),
                        'ncol': kwargs.pop('ncol', 1)}    
 
@@ -891,6 +893,7 @@ def plotter(df,
                         handles = handles[::-1]
                         labels = labels[::-1]
                     lgd = plt.legend(handles, labels, **leg_options)
+                    lgd.draw_frame(leg_frame)
 
     if interactive:
         # 1 = highlight lines
@@ -948,7 +951,6 @@ def plotter(df,
     #        if kwargs['scientific_notion'].lower().startswith('b'):
     #            plt.ticklabel_format(axis='y', style='sci')
     #            plt.ticklabel_format(axis='x', style='sci')
-
     # y labelling
     y_l = False
     if not absolutes:

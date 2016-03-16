@@ -465,7 +465,7 @@ When interrogating or concordancing, you can then pass in a keyword argument to 
 
 ```python
 >>> s = ['BRISCOE', 'LOGAN']
->>> npheads = interrogate('trees', r'/NN.?/ >># NP', just_speakers = s)
+>>> npheads = interrogate(T, r'/NN.?/ >># NP', just_speakers = s)
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
@@ -714,7 +714,7 @@ So, what to do? Well, first, don't use 'general reference corpora' unless you re
 ```python
 ### just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
->>> p = corpus.interrogate('trees', part, show = L)
+>>> p = corpus.interrogate(T, part, show = L)
 ```
 
 When using `edit()` to calculate keywords, there are a few default parameters that can be easily changed:
@@ -876,11 +876,8 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 3. A single path string that contains corpora
 
 ```python
->>> import glob
 >>> from corpkit.corpus import Corpora
-
->>> corpus_list = glob.glob('data/*')
->>> corpora = Corpora(corpus_list)
+>>> corpora = Corpora('./data') # path containing corpora
 >>> corpora
 ### <corpkit.corpus.Corpora instance: 6 items>
 
@@ -912,7 +909,7 @@ You can also run a number of queries over the same corpus in parallel. There are
 ```python
 ### method one
 >>> query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}
->>> phrases = corpus.interrogate('trees', query, show = C)
+>>> phrases = corpus.interrogate(T, query, show = C)
 
 ### method two
 >>> query = {'-ing words': {W: r'ing$'}, '-ed verbs': {P: r'^V', W: r'ed$'}}
@@ -929,7 +926,7 @@ Let's try multiprocessing with multiple queries, showing count (i.e. returning a
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
 # show = 'count' will collapse results from each search into single dataframe
->>> processes = corpus.interrogate('trees', q, show = 'count')
+>>> processes = corpus.interrogate(T, q, show = 'count')
 >>> proc_rel = processes.edit('%', processes.totals)
 >>> proc_rel.visualise('Risk processes')
 ```
@@ -949,7 +946,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
->>> noun_riskers = c.interrogate('trees', query, show = L)
+>>> noun_riskers = c.interrogate(T, query, show = L)
  
 >>> noun_riskers.quickview(10)
 ```
@@ -999,7 +996,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```python
 ### find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
->>> noun_lemmata = corpus.interrogate('trees', query, show = L)
+>>> noun_lemmata = corpus.interrogate(T, query, show = L)
 
 ### get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
@@ -1023,7 +1020,7 @@ Output:
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
->>> modals = corpus.interrogate('trees', 'MD < __', show = L)
+>>> modals = corpus.interrogate(T, 'MD < __', show = L)
 ### simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = modals.edit('%', modals.totals)
 
