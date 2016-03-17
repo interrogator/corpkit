@@ -223,7 +223,7 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     if savename.endswith('.p'):
         savename = savename[:-2]
         
-    savename = makesafe(savename, drop_datatype = False)
+    savename = makesafe(savename, drop_datatype = False, hyphens_ok = True)
     
     if not savename.endswith('.p'):
         savename = savename + '.p'
