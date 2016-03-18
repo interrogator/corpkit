@@ -1,5 +1,5 @@
-git+git://github.com/interrogator/corenlp-xml-lib.git
-git+git://github.com/interrogator/tkintertable.git
+-e git+https://github.com/interrogator/corenlp-xml-lib.git@26f126f33fbf67a17f9a5d5913b17fe99742c8c3#egg=corenlp_xml
+tkintertable==1.2
 matplotlib >= 1.4.3
 nltk >= 3.0.0
 joblib
