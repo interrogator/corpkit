@@ -44,6 +44,7 @@ def make_corpus(unparsed_corpus_path,
     import sys
     import os    
     import shutil
+    import codecs
     pyver = sys.version_info.major
     if pyver == 2:
         inputfunc = raw_input
@@ -94,8 +95,32 @@ def make_corpus(unparsed_corpus_path,
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
-
     if parse:
+
+        def chunks(l, n):
+            for i in range(0, len(l), n):
+                yield l[i:i+n]
+
+        # this loop shortens files containing more than 500 lines, for corenlp memory sake
+        # maybe user needs a warning or something in case s/he is doing coref
+        for root, dirs, fs in os.walk(unparsed_corpus_path):
+            for f in fs:
+                if f.startswith('.'):
+                    continue
+                fp = os.path.join(root, f)
+                with codecs.open(fp, 'r', encoding='utf-8') as fo:
+                    data = fo.read().splitlines()
+                if len(data) > 499:
+                    chk = chunks(data, 500)
+                    for index, c in enumerate(chk):
+                        newname = fp.replace('.txt', '-%s.txt' % str(index + 1).zfill(3))
+                        with codecs.open(newname, 'w', encoding='utf-8') as fo:
+                            fo.write('\n'.join(c) + '\n')
+                    os.remove(fp)
+                else:
+                    newname = fp.replace('.txt', '-000.txt')
+                    os.rename(fp, newname)
+
         if speaker_segmentation:
             newpath = unparsed_corpus_path + '-stripped-parsed'
             if os.path.isdir(newpath) and not root:
@@ -121,21 +146,17 @@ def make_corpus(unparsed_corpus_path,
         cop_head = kwargs.get('copula_head', True)
 
         if multiprocess is not False:
-            def chunks(l, n):
-                """Yield successive n-sized chunks from l."""
-                for i in range(0, len(l), n):
-                    yield l[i:i+n]
 
             if multiprocess is True:
                 import multiprocessing
                 multiprocess = multiprocessing.cpu_count()
-            import codecs
             from joblib import Parallel, delayed
             # split old file into n parts
             with codecs.open(filelist, 'r', encoding='utf-8') as fo:
                 fs = [i for i in fo.read().splitlines() if i]
             # make generator with list of lists
-            fgen = chunks(fs, multiprocess)
+            divl = len(fs) / multiprocess
+            fgen = chunks(fs, divl)
             filelists = []
             # for each list, make new file
             for index, flist in enumerate(fgen):
