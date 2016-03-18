@@ -252,7 +252,7 @@ class Corpus(object):
         :Example:
 
         >>> corpus.postags
-            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            SB  NN  VB  JJ  IN DT wo Open class words  Clauses
             01       26873    8513   7308                4809              3704     2212   
             02       25844    7933   6920                4313              3620     2270   
             03       18376    5683   4877                3067              2616     1640   
@@ -263,6 +263,7 @@ class Corpus(object):
         from os.path import isfile, isdir, join
         from interrogator import interrogator
         from other import load
+        from dictionaries import mergetags
 
         savedir = 'saved_interrogations'
         if isfile(join(savedir, self.name + '-postags.p')):

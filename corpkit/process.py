@@ -741,9 +741,9 @@ def makesafe(variabletext, drop_datatype = True, hyphens_ok = False):
     import re
     from process import is_number
     if hyphens_ok:
-        variable_safe_r = re.compile(r'[^A-Za-z0-9_]+', re.UNICODE)
-    else:
         variable_safe_r = re.compile(r'[^A-Za-z0-9_-]+', re.UNICODE)
+    else:
+        variable_safe_r = re.compile(r'[^A-Za-z0-9_]+', re.UNICODE)
     try:
         txt = variabletext.name.split('.')[0]
     except AttributeError:
