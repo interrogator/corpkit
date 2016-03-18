@@ -118,8 +118,9 @@ def make_corpus(unparsed_corpus_path,
                             fo.write('\n'.join(c) + '\n')
                     os.remove(fp)
                 else:
-                    newname = fp.replace('.txt', '-000.txt')
-                    os.rename(fp, newname)
+                    pass
+                    #newname = fp.replace('.txt', '-000.txt')
+                    #os.rename(fp, newname)
 
         if speaker_segmentation:
             newpath = unparsed_corpus_path + '-stripped-parsed'
