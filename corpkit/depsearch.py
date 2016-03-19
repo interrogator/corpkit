@@ -210,7 +210,13 @@ def dep_searcher(sents,
                         lks.append(tok)
             elif opt == 'l':
                 for tok in tokens:
-                    if re.search(pat, tok.lemma):
+                    if tok.lemma:
+                        se = tok.lemma
+                    elif tok.word:
+                        se = tok.word
+                    else:
+                        continue
+                    if re.search(pat, se):
                         lks.append(tok)
             elif opt == 'w':
                 for tok in tokens:

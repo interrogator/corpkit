@@ -29,7 +29,10 @@ class Interrogation(object):
         return st
 
     def __repr__(self):
-        return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
+        try:
+            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
+        except AttributeError:
+            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals
 
     def edit(self, *args, **kwargs):
         """Manipulate results of interrogations.

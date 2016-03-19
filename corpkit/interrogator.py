@@ -103,7 +103,7 @@ def interrogator(corpus,
                 corpus.__dict__.pop(k, None)
 
     # convert path to corpus object
-    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File]:
+    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File, Datalist]:
         if not multiprocess and not kwargs.get('outname'):
             corpus = Corpus(corpus, print_info = False)
 
@@ -757,22 +757,40 @@ def interrogator(corpus,
 
     if corpus.__class__ == Datalist:
         to_iterate_over = {}
-        for subcorpus in corpus:
-            to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+        # it could be files or subcorpus objects
+        if corpus[0].level == 's':
+            for subcorpus in corpus:
+                to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+        elif corpus[0].level == 'f':
+            for fl in corpus:
+                to_iterate_over[(fl.name, fl.path)] = [fl]
     elif singlefile:
         to_iterate_over = {(corpus.name, corpus.path): [corpus]}
     elif not subcorpora:
-        to_iterate_over = {(corpus.name, corpus.path): corpus.files}
+        if files_as_subcorpora:
+            to_iterate_over = {}
+            for fl in corpus.files:
+                to_iterate_over[(fl.name, fl.path)] = [fl]
+        else:
+            to_iterate_over = {(corpus.name, corpus.path): corpus.files}
     else:
         to_iterate_over = {}
-        for subcorpus in subcorpora:
-            to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+        if files_as_subcorpora:
+            for f in corpus.files:
+                to_iterate_over[(f.name, f.path)] = [f]
+        else:
+            if corpus[0].level == 's':
+                for subcorpus in corpus:
+                    to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+            elif corpus[0].level == 'f':
+                for fl in corpus:
+                    to_iterate_over[(fl.name, fl.path)] = [fl]
+            else:
+                for subcorpus in subcorpora:
+                    to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         #for k, v in sorted(corpus.structure.items(), key=lambda obj: obj[0].name):
         #    to_iterate_over[(k.name, k.path)] = v
-    if files_as_subcorpora:
-        to_iterate_over = {}
-        for f in corpus.files:
-            to_iterate_over[(f.name, f.path)] = [f]
+
 
     ############################################
     #           Print welcome message          #

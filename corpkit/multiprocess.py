@@ -402,6 +402,11 @@ def pmultiquery(corpus,
             tot = out.ix['Total-tmp']
             out = out[tot.argsort()[::-1]]
             out = out.drop('Total-tmp', axis = 0)
+
+            # really need to figure out the deal with tranposing!
+            if all(x.endswith('.xml') for x in list(out.columns)) \
+            or all(x.endswith('.txt') for x in list(out.columns)):
+                out = out.T
         out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False, \
                       df1_always_df = kwargs.get('df1_always_df'))
         out.query = qlocs
