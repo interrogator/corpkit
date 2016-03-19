@@ -941,9 +941,17 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
                 s.append(new_tag)
                 new_tag.string = speakerid
         html = str(soup.root)
+        try:
+            html = unicode(html, errors='ignore')
+        except:
+            pass
         # make changes
         with open(f, "wb") as fopen:
-            fopen.write(bytes(html.encode('utf-8')))
+            try:
+                fopen.write(bytes(html.encode('utf-8')))
+            except UnicodeDecodeError:
+                fopen.write(bytes(html.encode('utf-8')))
+
     if note:
         note.progvar.set(100)
 
