@@ -234,6 +234,10 @@ def plotter(df,
     dragmode = kwargs.pop('draggable', False)
     leg_frame = kwargs.pop('legend_frame', True)
     leg_alpha = kwargs.pop('legend_alpha', 0.8)
+    # auto set num to plot based on layout
+    lo = kwargs.get('layout', None)
+    if lo:
+        num_to_plot = lo[0] * lo[1]
 
     # todo: get this dynamically instead.
     styles = ['dark_background', 'bmh', 'grayscale', 'ggplot', 'fivethirtyeight', 'matplotlib', False, 'mpl-white']
@@ -464,7 +468,7 @@ def plotter(df,
             dataframe.columns = newnames
             dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
         else:
-            warnings.warn('No p-values calculated to show.\n\nUse sort_by and keep_stats in editor() to generate these values.')
+            warnings.warn('No p-values calculated to show.\n\nUse keep_stats kwarg while editing to generate these values.')
     else:
         if there_are_p_vals:
             dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
@@ -882,9 +886,9 @@ def plotter(df,
                 if 3 not in interactive_types:
                     handles, labels = plt.gca().get_legend_handles_labels()
                     # area doubles the handles and labels. this removes half:
-                    if areamode:
-                        handles = handles[-len(handles) / 2:]
-                        labels = labels[-len(labels) / 2:]
+                    #if areamode:
+                    #    handles = handles[-len(handles) / 2:]
+                    #    labels = labels[-len(labels) / 2:]
                     if rev_leg:
                         handles = handles[::-1]
                         labels = labels[::-1]
