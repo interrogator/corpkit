@@ -85,7 +85,7 @@ def dep_searcher(sents,
         if not deps:
             deps = get_deps(s, dep_type)
         if not tokens:
-            tokens = s.tokens
+            tokens = [i for i in s.tokens if i.word is not None]
 
         for opt, pat in list(search.items()):
             if type(pat) == dict:
@@ -138,7 +138,13 @@ def dep_searcher(sents,
             elif opt == 'gl':
                 got = []
                 for tok in tokens:
-                    if re.search(pat, tok.lemma):
+                    if tok.lemma:
+                        se = tok.lemma
+                    elif tok.word:
+                        se = tok.word
+                    else:
+                        continue
+                    if re.search(pat, se):
                         for i in deps.links:
                             if i.governor.idx == tok.id:
                                 got.append(s.get_token_by_id(i.dependent.idx))
@@ -252,7 +258,7 @@ def dep_searcher(sents,
     for s in sents:
         numdone += 1
         deps = get_deps(s, dep_type)
-        tokens = s.tokens
+        tokens = [i for i in s.tokens if i.word is not None]
         lks = get_matches_from_sent(s, search, deps, tokens, dep_type, mode = searchmode)
 
         #if not concordancing:
