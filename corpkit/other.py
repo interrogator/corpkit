@@ -229,8 +229,11 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
         savename = savename + '.p'
 
     # add corpus name to front
+    # fix this, it's ridiculous
+    from corpus import Corpus, Datalist
     if interrogation.__dict__.get('query'):
         corp = interrogation.query.get('corpus', False)
+        
         if not corp:
             try:
                 corp = interrogation.query.get('interrogation').query.get('corpus', False)
@@ -238,7 +241,12 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
             except:
                 corpname = ''
         else:
-            corpname = corp.name + '-'
+            if corp.__class__ == corpkit.corpus.Datalist:
+                corp = Corpus(corp)
+            try:
+                corpname = corp.name + '-'
+            except:
+                corpname = ''
         savename = corpname + savename
 
     if savedir:
