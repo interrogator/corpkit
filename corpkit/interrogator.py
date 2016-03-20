@@ -221,7 +221,7 @@ def interrogator(corpus,
                 numpass = len([x for x in deps.links if x.type.endswith('pass')])
                 statsmode_results['Passives'] += numpass
                 statsmode_results['Tokens'] += len(sent.tokens)
-                words = [w.word for w in sent.tokens if w.word.isalnum()]
+                words = [w.word for w in sent.tokens if w.word is not None and w.word.isalnum()]
                 statsmode_results['Words'] += len(words)
                 statsmode_results['Characters'] += len(''.join(words))
 
@@ -1029,6 +1029,8 @@ def interrogator(corpus,
             from random import shuffle
             shuffle(all_conc_lines)
 
+        # TODO: allow zero results from subcorpus
+        # this is where we get an error for no objects...
         conc_df = pd.concat(all_conc_lines, axis = 1).T
 
         # not doing anything yet --- this is for multimodal concordancing
