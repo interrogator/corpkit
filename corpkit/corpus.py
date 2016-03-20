@@ -18,6 +18,7 @@ class Corpus(object):
         import operator
         import glob
         from process import determine_datatype
+        import corpkit
         from corpus import Datalist
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which 
@@ -30,7 +31,7 @@ class Corpus(object):
         self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
-        if path.__class__ == Datalist or type(path) == list:
+        if path.__class__ == corpkit.corpus.Datalist or type(path) == list:
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
