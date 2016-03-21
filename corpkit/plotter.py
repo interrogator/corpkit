@@ -958,50 +958,50 @@ def plotter(df,
     else:
         y_l = 'Absolute frequency'
     
-    def suplabel(axis,label,label_prop=None,
-                 labelpad=5,
-                 ha='center',va='center'):
-        ''' Add super ylabel or xlabel to the figure
-        Similar to matplotlib.suptitle
-        axis       - string: "x" or "y"
-        label      - string
-        label_prop - keyword dictionary for Text
-        labelpad   - padding from the axis (default: 5)
-        ha         - horizontal alignment (default: "center")
-        va         - vertical alignment (default: "center")
-        '''
-        fig = plt.gcf()
-        xmin = []
-        ymin = []
-        for ax in fig.axes:
-            xmin.append(ax.get_position().xmin)
-            ymin.append(ax.get_position().ymin)
-        xmin,ymin = min(xmin),min(ymin)
-        dpi = fig.dpi
-        if axis.lower() == "y":
-            rotation=90.
-            x = xmin-float(labelpad)/dpi
-            y = 0.5
-        elif axis.lower() == 'x':
-            rotation = 0.
-            x = 0.5
-            y = ymin - float(labelpad)/dpi
-        else:
-            raise Exception("Unexpected axis: x or y")
-        if label_prop is None: 
-            label_prop = dict()
-        plt.gcf().text(x,y,label,rotation=rotation,
-                   transform=fig.transFigure,
-                   ha=ha,va=va,
-                   **label_prop)
+    #def suplabel(axis,label,label_prop=None,
+    #             labelpad=5,
+    #             ha='center',va='center'):
+    #    ''' Add super ylabel or xlabel to the figure
+    #    Similar to matplotlib.suptitle
+    #    axis       - string: "x" or "y"
+    #    label      - string
+    #    label_prop - keyword dictionary for Text
+    #    labelpad   - padding from the axis (default: 5)
+    #    ha         - horizontal alignment (default: "center")
+    #    va         - vertical alignment (default: "center")
+    #    '''
+    #    fig = plt.gcf()
+    #    xmin = []
+    #    ymin = []
+    #    for ax in fig.axes:
+    #        xmin.append(ax.get_position().xmin)
+    #        ymin.append(ax.get_position().ymin)
+    #    xmin,ymin = min(xmin),min(ymin)
+    #    dpi = fig.dpi
+    #    if axis.lower() == "y":
+    #        rotation=90.
+    #        x = xmin-float(labelpad)/dpi
+    #        y = 0.5
+    #    elif axis.lower() == 'x':
+    #        rotation = 0.
+    #        x = 0.5
+    #        y = ymin - float(labelpad)/dpi
+    #    else:
+    #        raise Exception("Unexpected axis: x or y")
+    #    if label_prop is None: 
+    #        label_prop = dict()
+    #    plt.gcf().text(x,y,label,rotation=rotation,
+    #               transform=fig.transFigure,
+    #               ha=ha,va=va,
+    #               **label_prop)
 
-    if y_label is not False:
-        if sbplt:
-            if type(y_label) == str:
-                the_y = y_label
-            else:
-                the_y = y_l
-            suplabel('y', the_y, labelpad = 0)
+    #if y_label is not False:
+    #    if sbplt:
+    #        if type(y_label) == str:
+    #            the_y = y_label
+    #        else:
+    #            the_y = y_l
+    #        suplabel('y', the_y, labelpad = 0)
             #plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
             #plt.subplots_adjust(left=0.5)
         

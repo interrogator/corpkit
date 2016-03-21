@@ -28,16 +28,20 @@ def configurations(corpus, search, **kwargs):
 
                 {'left_participant_in':             
                   {dep_word_or_lemma: word_or_token,
-                   'df': r'^.subj.*',
+                   'df': roles.participant1,
                    'f': roles.event},
 
                 'right_participant_in':
                   {dep_word_or_lemma: word_or_token,
-                   'df': r'^[di]obj',
+                   'df': roles.participant2,
                    'f': roles.event},
 
-                'modified_by':
-                  {'f': r'^amod', 
+                'premodified':
+                  {'f': roles.premodifier, 
+                   gov_word_or_lemma: word_or_token},
+
+                'postmodified':
+                  {'f': roles.postmodifier, 
                    gov_word_or_lemma: word_or_token},
 
                  'and_or':

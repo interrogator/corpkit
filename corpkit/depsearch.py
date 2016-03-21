@@ -561,7 +561,7 @@ def dep_searcher(sents,
                 for i in show:
                     out.append(single_result[i])
 
-                out = [i.replace('/', '-slash-') for i in out]
+                out = [i.replace('/', '-slash-') for i in out if i]
                 result.append('/'.join(out))
     
     if 'c' in show:
