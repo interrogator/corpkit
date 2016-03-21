@@ -1031,39 +1031,47 @@ def interrogator(corpus,
 
         # TODO: allow zero results from subcorpus
         # this is where we get an error for no objects...
-        conc_df = pd.concat(all_conc_lines, axis = 1).T
+        try:
+            conc_df = pd.concat(all_conc_lines, axis = 1).T
+        except ValueError:
+            conc_df = None
+            output = None
+            if only_conc:
+                return conc_df
+            
+        if conc_df is not None:
 
-        # not doing anything yet --- this is for multimodal concordancing
-        add_links = False
-        if not add_links:
-            conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r']
-        else:
-            conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
+            # not doing anything yet --- this is for multimodal concordancing
+            add_links = False
+            if not add_links:
+                conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r']
+            else:
+                conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
 
-        if all(x == '' for x in list(conc_df['s'].values)):
-            conc_df.drop('s', axis = 1, inplace = True)
+            if all(x == '' for x in list(conc_df['s'].values)):
+                conc_df.drop('s', axis = 1, inplace = True)
 
-        #if kwargs.get('note'):
-        #    kwargs['note'].progvar.set(100)
+            #if kwargs.get('note'):
+            #    kwargs['note'].progvar.set(100)
 
-        #if kwargs.get('printstatus', True):
-        #    thetime = strftime("%H:%M:%S", localtime())
-        #    finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(conc_df.index))
-        #    print(finalstring)
+            #if kwargs.get('printstatus', True):
+            #    thetime = strftime("%H:%M:%S", localtime())
+            #    finalstring = '\n\n%s: Concordancing finished! %d matches.\n' % (thetime, len(conc_df.index))
+            #    print(finalstring)
 
-        from interrogation import Concordance
-        output = Concordance(conc_df)
-        if only_conc:
-            output.query = locs
-            if save and not kwargs.get('outname'):
-                output.save(save)
+            from interrogation import Concordance
+            output = Concordance(conc_df)
+            if only_conc:
+                output.query = locs
+                if save and not kwargs.get('outname'):
+                    output.save(save)
 
-            if kwargs.get('printstatus', True):
-                thetime = strftime("%H:%M:%S", localtime())
-                finalstring = '\n\n%s: Concordancing finished! %d results.' % (thetime, len(conc_df))
-                print(finalstring)
-            signal.signal(signal.SIGINT, original_sigint)
-            return output
+                if kwargs.get('printstatus', True):
+                    thetime = strftime("%H:%M:%S", localtime())
+                    finalstring = '\n\n%s: Concordancing finished! %d results.' % (thetime, len(conc_df))
+                    print(finalstring)
+                signal.signal(signal.SIGINT, original_sigint)
+                return output
 
         #output.query = locs
 
