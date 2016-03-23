@@ -85,7 +85,7 @@ def dep_searcher(sents,
         if not deps:
             deps = get_deps(s, dep_type)
         if not tokens:
-            tokens = [i for i in s.tokens if i.word is not None]
+            tokens = s.tokens
 
         for opt, pat in list(search.items()):
             if type(pat) == dict:
@@ -110,7 +110,7 @@ def dep_searcher(sents,
                     pat = re.compile(pat, re.IGNORECASE)
             if opt == 'g':
                 got = []
-                for l in [i for i in deps.links if i.governor.text is not None]:
+                for l in deps.links:
                     if re.search(pat, l.governor.text):
                         got.append(s.get_token_by_id(l.dependent.idx))
                 got = set(got)
@@ -118,7 +118,7 @@ def dep_searcher(sents,
                     lks.append(i)
             elif opt == 'gf':
                 got = []
-                for l in [i for i in deps.links if i.type is not None]:
+                for l in deps.links:
                     if re.search(pat, l.type):
                         gov_index = l.dependent.idx
                         for l2 in deps.links:
@@ -129,7 +129,7 @@ def dep_searcher(sents,
                     lks.append(i)
             elif opt == 'df':
                 got = []
-                for l in [i for i in deps.links if i.type is not None]:
+                for l in deps.links:
                     if re.search(pat, l.type):
                         got.append(s.get_token_by_id(l.governor.idx))
                 got = set(got)
@@ -145,7 +145,7 @@ def dep_searcher(sents,
                     else:
                         continue
                     if re.search(pat, se):
-                        for i in [i for i in deps.links if i.governor.idx is not None]:
+                        for i in deps.links:
                             if i.governor.idx == tok.id:
                                 got.append(s.get_token_by_id(i.dependent.idx))
                 got = set(got)
@@ -258,7 +258,7 @@ def dep_searcher(sents,
     for s in sents:
         numdone += 1
         deps = get_deps(s, dep_type)
-        tokens = [i for i in s.tokens if i.word is not None]
+        tokens = s.tokens
         lks = get_matches_from_sent(s, search, deps, tokens, dep_type, mode = searchmode)
 
         #if not concordancing:
