@@ -752,6 +752,8 @@ def makesafe(variabletext, drop_datatype = True, hyphens_ok = False):
         txt = txt.replace('-parsed', '')
 
     txt = txt.replace(' ', '_')
+    if not hyphens_ok:
+        txt = txt.replace('-', '_')
     variable_safe = re.sub(variable_safe_r, '', txt)
     if is_number(variable_safe):
         variable_safe = 'c' + variable_safe

@@ -131,7 +131,17 @@ def dep_searcher(sents,
                 got = []
                 for l in deps.links:
                     if re.search(pat, l.type):
-                        got.append(s.get_token_by_id(l.governor.idx))
+                        extra_crit = search.get('d2f')
+                        if extra_crit:
+                            if type(extra_crit) == list:
+                                from other import as_regex
+                                extra_crit = as_regex(extra_crit, case_sensitive = case_sensitive)                            
+                            for b in deps.links:
+                                if re.search(extra_crit, b.type):
+                                    if l.governor.idx == b.governor.idx:
+                                        got.append(s.get_token_by_id(l.governor.idx))
+                        else:
+                            got.append(s.get_token_by_id(l.governor.idx))
                 got = set(got)
                 for i in got:
                     lks.append(i)
@@ -167,7 +177,19 @@ def dep_searcher(sents,
                     if re.search(pat, tok.lemma):
                         for i in deps.links:
                             if i.dependent.idx == tok.id:
-                                got.append(s.get_token_by_id(i.governor.idx))
+                                extra_crit = search.get('d2l')
+                                if extra_crit:
+                                    if type(extra_crit) == list:
+                                        from other import as_regex
+                                        extra_crit = as_regex(extra_crit, case_sensitive = case_sensitive)                            
+                                    for b in tokens:
+                                        if not re.search(extra_crit, b.lemma):
+                                            continue
+                                        thelink = next(x for x in deps.links if x.dependent.idx == b.id)
+                                        if thelink.governor.idx == i.governor.idx:
+                                            got.append(s.get_token_by_id(i.governor.idx))
+                                else:
+                                    got.append(s.get_token_by_id(i.governor.idx))
                 got = set(got)
                 for i in got:
                     lks.append(i)
@@ -248,7 +270,9 @@ def dep_searcher(sents,
         if mode == 'all':
             from collections import Counter
             counted = Counter(lks)
-            lks = [k for k, v in counted.items() if v >= len(list(search.keys()))]
+            must_contain = len(list(search.keys()))
+            must_contain -= len([n for n in search.keys() if '2' in n])
+            lks = [k for k, v in counted.items() if v >= must_contain]
         return lks
 
     result = []
