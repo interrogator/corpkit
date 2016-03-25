@@ -664,7 +664,7 @@ def make_multi(interrogation, indexnames = None):
         conco = None
     return Interrogation(newdf, totals, query, conco)
 
-def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
+def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
 
     """Show top n results in each corpus alongside absolute or relative frequencies.
 
@@ -672,6 +672,12 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
     :type relative: bool
     :param n: number of result to show
     :type n: int
+    :param df: return a DataFrame instead of a string
+    :type df: bool
+    :param sort: sort or leave as is
+    :type sort: bool, 'reverse'
+    :param precision: float precision
+    :type precision: int
 
     :Example:
 
@@ -690,27 +696,34 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
     import pandas as pd
     pd.set_option('display.float_format', lambda x: format(x, '.%df' % precision))
     strings = []
-
-    if relative:
-        operation = '%'
+    if sort == 'reverse':
+        ascend = True
+        sort = True
     else:
+        ascend = False
+
+    if datatype.lower().startswith('n'):
         operation = 'n'
+    if datatype.lower().startswith('k'):
+        operation = 'k'
+    else:
+        operation = '%'
     if type(self) == corpkit.interrogation.Interrodict:
         to_iterate = self.items()
     else:
-        if sort:
-            to_iterate = [(x, self.results.ix[x].sort_values(ascending = False)) for x in list(self.results.index)]
+        if sort is True:
+            to_iterate = [(x, self.results.ix[x].sort_values(ascending = ascend)) for x in list(self.results.index)]
         else:
             to_iterate = [(x, self.results.ix[x]) for x in list(self.results.index)]
     for name, data in to_iterate:
         if type(self) == corpkit.interrogation.Interrodict:
-            if sort:
-                data = data.results.sum().sort_values(ascending = False)
+            if sort is True:
+                data = data.results.sum().sort_values(ascending = ascend)
             else:
                 data = data.results.sum()
-        if relative:
+        if operation == '%':
             data = data * 100.0 / data.sum()
-        else:
+        if operation == 'n':
             data = data.astype(float)
         if df:
             data.index.name = name
@@ -727,6 +740,7 @@ def topwords(self, relative = True, n = 10, df = False, sort = True, precision =
             as_str = data[:n].to_string(header = False)
             linelen = len(as_str.splitlines()[1])
             strings.append(name.ljust(linelen - 1) + '%s\n' % operation + as_str)
+
 
     # strings is a list of series as strings
     if df:
