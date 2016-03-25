@@ -434,7 +434,10 @@ def plotter(df,
                 legend = False
             num_to_plot = len(dataframe)
     else:
-        dataframe = dataframe.T.head(num_to_plot).T
+        if transpose:
+            dataframe = dataframe.head(num_to_plot)
+        else:
+            dataframe = dataframe.T.head(num_to_plot).T
 
     # remove stats fields, put p in entry text, etc.
     statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
@@ -492,9 +495,9 @@ def plotter(df,
     # set defaults, with nothing for heatmap yet
     if colours is True or colours == 'default':
         if kind != 'heatmap':
-            colours = 'Accent'
+            colours = 'viridis'
         else:
-            colours == 'default'
+            colours = 'default'
     
     # assume it's a single color, unless string denoting map
     cmap_or_c = 'color'
