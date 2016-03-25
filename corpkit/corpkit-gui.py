@@ -549,6 +549,24 @@ def corpkit_gui():
                          'Verbal processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.verbal, boundaries = 'w'),
                          'Relational processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.relational, boundaries = 'w')}
 
+
+        convert_name_to_query = {'Trees': 't',
+                                'Words': 'w',
+                                'POS': 'p',
+                                'Lemmata': 'l',
+                                'Governor lemmata': 'gl',
+                                'Governor functions': 'gf',
+                                'Governor POS': 'gp',
+                                'Dependent lemmata': 'gl',
+                                'Dependent functions': 'gf',
+                                'Dependent POS': 'gp',
+                                'Functions': 'f',
+                                'Governors': 'g',
+                                'Dependents': 'd',
+                                'N-grams': 'n',
+                                'Stats': 's',
+                                'Index': 'i'}
+
         # dependency search names
         depdict = {'Basic': 'basic-dependencies', 
                    'Collapsed': 'collapsed-dependencies', 
@@ -1479,6 +1497,7 @@ def corpkit_gui():
                 corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
 
             # do interrogation
+            print(interrogator_args['search'])
             interrodata = interrogator(corp_to_search, **interrogator_args)
             
             # make sure we're redirecting stdout again
@@ -1918,13 +1937,14 @@ def corpkit_gui():
             
             def quit_q(total, *args):
                 """exit popup, saving entries"""
+                poss_keys = []
                 for index, (option, optvar, entbox, entstring) in enumerate(list(objs.values())[:total]):
                     if index == 0:
                         enttext.set(entstring.get())
                         optvar.set(optvar.get())
                         datatype_picked.set(optvar.get())
                     if optvar is not None:
-                        o = optvar.get().lower()[0]
+                        o = convert_name_to_query[optvar.get()]
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
                         output_dict[o] = q
@@ -1943,18 +1963,27 @@ def corpkit_gui():
 
             def remove_prev():
                 """delete last added criteria line"""
-                ans = 0
-                for k, (a, b, c, d) in reversed(list(objs.items())):
-                    if a is not None:
-                        ans = k
-                        break
-                if objs[ans][0] is not None:
-                    objs[ans][0].destroy()
-                objs[ans][1] = StringVar()
-                if objs[ans][2] is not None:
-                    objs[ans][2].destroy()
-                objs[ans][3] = StringVar()
-                del objs[ans]
+                if len([k for k, v in objs.items() if v[0] is not None]) < 2:
+                    pass
+                else:
+                    ans = 0
+                    for k, (a, b, c, d) in reversed(list(objs.items())):
+                        if a is not None:
+                            ans = k
+                            break
+                    if objs[ans][0] is not None:
+                        objs[ans][0].destroy()
+                    optvar = objs[ans][1].get()
+                    try:
+                        del output_dict[convert_name_to_query[optvar]]
+                    except:
+                        pass
+                    objs[ans][1] = StringVar()
+                    if objs[ans][2] is not None:
+                        objs[ans][2].destroy()
+                    objs[ans][3] = StringVar()
+                    objs.pop(ans, None)
+                
 
             def clear_q():
                 """clear the popup"""
@@ -1985,10 +2014,10 @@ def corpkit_gui():
                 all_text_widgets.append(text)
                 text.grid(row = total, column = 1)  
                 objs[total] = [opt, chosen, text, text_str]
-                plusser = Button(more_criteria, text = '+', command = lambda : new_item(t, optvar, enttext))
-                plusser.grid(row = total + 2, column = 0, sticky = W)
                 minuser = Button(more_criteria, text = '-', command = remove_prev)
                 minuser.grid(row = total + 2, column = 0, sticky = W, padx = (38,0))
+                plusser = Button(more_criteria, text = '+', command = lambda : new_item(t, optvar, enttext))
+                plusser.grid(row = total + 2, column = 0, sticky = W)
                 stopbut = Button(more_criteria, text = 'Done', command=lambda : quit_q(t))
                 stopbut.grid(row = total + 2, column = 1, sticky = E)
                 clearbut = Button(more_criteria, text = 'Clear', command=clear_q)
@@ -2232,12 +2261,12 @@ def corpkit_gui():
                     pass
 
         datatype_picked = StringVar(root)
-        datatype_picked.set('Words')
         Label(interro_opt, text = 'Search: ').grid(row = 1, column = 0, sticky = W, pady = 10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
                             'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
                              'Stats', 'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
         pick_a_datatype.configure(width = 30, justify = CENTER)
+        datatype_picked.set('Words')
         pick_a_datatype.grid(row = 1, column = 0, columnspan = 2, sticky = W, padx = (136,0))
         datatype_picked.trace("w", callback)
         
@@ -2426,7 +2455,7 @@ def corpkit_gui():
         #datatype_chosen_option.set('w')
         #x = datatype_listbox.bind('<<ListboxSelect>>', onselect)
         # hack: change it now to populate below 
-        datatype_picked.set('Trees')
+        #datatype_picked.set('Trees')
         #datatype_listbox.select_set(0)
 
         def q_callback(*args):
@@ -3734,7 +3763,6 @@ def corpkit_gui():
         # chart type
         Label(plot_option_frame, text='Colour scheme:').grid(row = 16, column = 0, sticky = W)
         chart_cols = StringVar(root)
-        chart_cols.set('default')
         schemes = tuple(sorted(('Paired', 'Spectral', 'summer', 'Set1', 'Set2', 'Set3', 
                     'Dark2', 'prism', 'RdPu', 'YlGnBu', 'RdYlBu', 'gist_stern', 'cool', 'coolwarm',
                     'gray', 'GnBu', 'gist_ncar', 'gist_rainbow', 'Wistia', 'CMRmap', 'bone', 
@@ -3749,7 +3777,7 @@ def corpkit_gui():
         ch_col = OptionMenu(plot_option_frame, chart_cols, *schemes)
         ch_col.config(width = 17)
         ch_col.grid(row = 16, column = 1, sticky = E)
-
+        chart_cols.set('viridis')
         # style
         if not py_script:
             mplsty_path = os.path.join(rd, 'matplotlib', 'mpl-data', 'stylelib')
@@ -4936,7 +4964,7 @@ def corpkit_gui():
         # possible sort
         sort_vals = ('Index', 'Subcorpus', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
         sortval = StringVar()
-        sortval.set('Index')
+        sortval.set('Sort')
         prev_sortval = ['None']
         srtkind = OptionMenu(editbuts, sortval, *sort_vals)
         srtkind.config(width = 10)
