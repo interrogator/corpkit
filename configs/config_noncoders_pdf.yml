@@ -4,7 +4,7 @@ baseurl: "/doc_writers"
 port: 4004
 print: true
 print_title: corpkit for non-coders
-print_subtitle: version 1.xx
+print_subtitle: version 2.xx
 defaults:
   -
     scope:

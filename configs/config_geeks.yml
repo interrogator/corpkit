@@ -14,7 +14,7 @@ google_analytics:
 # variables
 
 sidebar_tagline: geeks
-sidebar_version: version 1.xx
+sidebar_version: version 2.xx
 theme_file: theme-green.css
 project_file_name: doc
 
