@@ -786,7 +786,10 @@ def plotter(df,
             if kind != 'heatmap':
                 ax = dataframe.plot(figsize = figsize, **kwargs)
                 from matplotlib.ticker import MaxNLocator
-                ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+                from process import is_number
+                indx = list(dataframe.index)
+                if all([is_number(qq) for qq in indx]):
+                    ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
             else:
                 plt.figure(figsize = figsize)
                 if title:
