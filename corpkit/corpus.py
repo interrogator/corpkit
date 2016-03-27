@@ -397,6 +397,7 @@ class Corpus(object):
         """
         from interrogator import interrogator
         par = kwargs.pop('multiprocess', None)
+        kwargs.pop('corpus', None)
         if par and self.subcorpora:
             if type(par) == int:
                 kwargs['multiprocess'] = par
@@ -510,6 +511,7 @@ class Corpus(object):
         from interrogator import interrogator
         kwargs.pop('do_concordancing', None)
         kwargs.pop('conc', None)
+        kwargs.pop('corpus', None)
         return interrogator(self, do_concordancing = 'only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):

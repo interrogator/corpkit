@@ -826,9 +826,9 @@ def get_filepaths(a_path, ext = 'txt'):
             and 'unknown' not in f \
             and not f.startswith('.'):
                 files.append(os.path.join(root, f))
-            if ext:
-                if not f.endswith('.' + ext):
-                    os.remove(os.path.join(root, f))
+            #if ext:
+            #    if not f.endswith('.' + ext):
+            #        os.remove(os.path.join(root, f))
     return files
 
 def make_no_id_corpus(pth, newpth):
@@ -881,9 +881,9 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
     to -cleaned"""
     import os
     import re
-    from bs4 import BeautifulSoup, SoupStrainer
     from build import get_filepaths
     from time import strftime, localtime
+    from lxml import etree as ET
 
     files = get_filepaths(corpuspath, ext = 'xml')
     if note:
@@ -900,30 +900,33 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         print('%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files)))
         if root:
             root.update()
-        xmlf = open(f)
-        data = xmlf.read()
-        xmlf.close()
+
+        with open(f, 'r') as xmlf:
+            head = [next(xmlf) for x in range(1000)]
+        if '<speakername>' in '\n'.join(head):
+            continue
+        
+        tree = ET.parse(f)
+        xmlroot = tree.getroot()
+        sents = xmlroot[0][0]
 
         # open the unparsed version of the file, read into memory
         stripped_txtfile = f.replace('.xml', '').replace('-parsed', '')
-        old_txt = open(stripped_txtfile)
+        old_txt = open(stripped_txtfile, 'r')
         stripped_txtdata = old_txt.read()
         old_txt.close()
 
         # open the unparsed version with speaker ids
         id_txtfile = f.replace('.xml', '').replace('-stripped-parsed', '')
-        idttxt = open(id_txtfile)
+        idttxt = open(id_txtfile, 'r')
         id_txtdata = idttxt.read()
         idttxt.close()
 
-        # todo: do this with lxml
-        soup = BeautifulSoup(data, 'lxml')
-        for s in soup.find_all('sentence'):
+        for s in sents:
             # don't get corefs
-            if s.parent.name == 'sentences':
-                tokens = s.find_all('token')
-                start = int(tokens[0].find_all('characteroffsetbegin', limit = 1)[0].text)
-                end = int(tokens[-1].find_all('characteroffsetend', limit = 1)[0].text)
+                tokens = [x for x in s.iter('token')]
+                start = int(tokens[0][2].text)
+                end = int(tokens[-1][3].text)
                 # extract this sentence from the unparsed version
                 sent = stripped_txtdata[start:end]
                 # find out line number
@@ -937,20 +940,17 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
                     speakerid = split_line[0]
                 else:
                     speakerid = 'UNIDENTIFIED'
-                new_tag = soup.new_tag("speakername")
-                s.append(new_tag)
-                new_tag.string = speakerid
-        html = str(soup.root)
-        try:
-            html = unicode(html, errors='ignore')
-        except:
-            pass
+                newtag = ET.Element('speakername')
+                newtag.text=speakerid
+                newtag.tail='\n    '
+                s.append(newtag)
+        tree.write(f, pretty_print=True)
         # make changes
-        with open(f, "wb") as fopen:
-            try:
-                fopen.write(bytes(html.encode('utf-8')))
-            except UnicodeDecodeError:
-                fopen.write(bytes(html.encode('utf-8')))
+        #with open(f, "wb") as fopen:
+        #    try:
+        #        fopen.write(bytes(html.encode('utf-8')))
+        #    except UnicodeDecodeError:
+        #        fopen.write(bytes(html))
 
     if note:
         note.progvar.set(100)

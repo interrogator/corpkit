@@ -5,7 +5,6 @@ nltk >= 3.0.0
 joblib
 pandas >= 0.16.1
 mpld3 >= 0.2 
-beautifulsoup4>=4.3.2
 lxml>=3.4.4
 requests
 chardet
