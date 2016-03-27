@@ -901,8 +901,10 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
         if root:
             root.update()
 
+        # quick check for speakernames already existing
+        from itertools import islice
         with open(f, 'r') as xmlf:
-            head = [next(xmlf) for x in range(1000)]
+            head = list(islice(xmlf, 1000))
         if '<speakername>' in '\n'.join(head):
             continue
         
