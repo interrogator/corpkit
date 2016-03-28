@@ -67,6 +67,7 @@ def interrogator(corpus,
     from textprogressbar import TextProgressBar
     from process import animator
     from dictionaries.word_transforms import wordlist, taglemma
+    from dictionaries.process_types import Wordlist
 
     original_sigint = signal.getsignal(signal.SIGINT)
 
@@ -131,12 +132,16 @@ def interrogator(corpus,
         #if hasattr(corpus, '__iter__'):
         #    im = True
         # so we can do search = 't', query = ['NP', 'VP']:
+        from dictionaries.process_types import Wordlist
+        if type(query) == Wordlist:
+            query = list(query)
         if type(query) == list:
             if query != list(search.values())[0] or len(list(search.keys())) > 1:
                 query = {c.title(): c for c in query}
         if type(query) == dict or type(query) == OrderedDict:
             im = True
         if just_speakers:
+
             if just_speakers == 'each':
                 im = True
                 just_speakers = ['each']
@@ -670,7 +675,8 @@ def interrogator(corpus,
                     searcher = tok_by_reg
                 else:
                     searcher = tok_by_list
-                if type(search.get('w')) == list:
+                from dictionaries.process_types import Wordlist
+                if type(search.get('w')) == list or type(search.get('w')) == Wordlist:
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
         only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
@@ -700,7 +706,10 @@ def interrogator(corpus,
 
     if search.get('t'):
         translated_option = 't'
+        if type(search['t']) == Wordlist:
+            search['t'] = list(search['t'])
         query = search.get('t')
+
 
         # check the query
         q = tregex_engine(corpus = False, query = search.get('t'), 
@@ -714,6 +723,7 @@ def interrogator(corpus,
         optiontext = 'Searching parse trees'
         if 'p' in show or 'pl' in show:
             translated_option = 'u'
+
             if type(search['t']) == list:
                 search['t'] = r'__ < (/%s/ !< __)' % as_regex(search['t'], boundaries = 'line', 
                                             case_sensitive = case_sensitive)
