@@ -10,6 +10,11 @@ except:
     import corpkit
     from lazyprop import lazyprop
 
+def _verbs():
+    import corpkit
+    from dictionaries.verblist import allverbs
+    verblist = [i for i in allverbs if '_' not in i]
+    return Wordlist(verblist)
 
 def load_verb_data():
     """load the verb lexicon"""
@@ -264,6 +269,7 @@ class Processes(object):
                     "preach",
                     "predicate",
                     "preordain",
+                    "prescribe",
                     "proclaim",
                     "profess",
                     "prohibit",
@@ -300,7 +306,67 @@ class Processes(object):
                     "reemphasize",
                     "rumor",
                     "rumour",
-                    "yell"]
+                    "yell",
+                    # added manually:
+                    'tell',
+                     'say',
+                     'call',
+                     'vent',
+                     'talk',
+                     'ask',
+                     'prescribe',
+                     'diagnose',
+                     'speak',
+                     'suggest',
+                     'mention',
+                     'recommend',
+                     'add',
+                     'discuss',
+                     'agree',
+                     'contact',
+                     'refer',
+                     'explain',
+                     'write',
+                     'consult',
+                     'advise',
+                     'insist',
+                     'perscribe',
+                     'warn',
+                     'offer',
+                     'inform',
+                     'question',
+                     'describe',
+                     'convince',
+                     'order',
+                     'report',
+                     'lie',
+                     'address',
+                     'ring',
+                     'state',
+                     "pray",
+                     'phone',
+                     'share',
+                     'beg',
+                     'blame',
+                     'instruct',
+                     'chat',
+                     'email',
+                     'assure',
+                     'dx',
+                     'recomend',
+                     'prescibe',
+                     'promise',
+                     'communicate',
+                     'notify',
+                     'claim',
+                     'convince',
+                     'page',
+                     'wish',
+                     'post',
+                     'complain',
+                     'swear']
+
+      behavioural = ['laugh', 'cry', 'listen', 'look', 'hear', 'wake', 'awaken', ]
 
       mental =      ["choose",
                      "feel",
@@ -448,18 +514,76 @@ class Processes(object):
                      "justify", 
                      "figure", 
                      "smell", 
-                     "worry"]
+                     "worry",
+                      'know',
+                     'think',
+                     'feel',
+                     'want',
+                     'hope',
+                     'find',
+                     'guess',
+                     'love',
+                     'wish',
+                     'like',
+                     'understand',
+                     'wonder',
+                     'believe',
+                     'hate',
+                     'remember',
+                     'agree',
+                     'notice',
+                     'learn',
+                     'realize',
+                     'miss',
+                     'appreciate',
+                     'decide',
+                     'suffer',
+                     'deal',
+                     'forget',
+                     'care',
+                     'imagine',
+                     'relate',
+                     'worry',
+                     'figure',
+                     'handle',
+                     'struggle',
+                     'pray',
+                     'consider',
+                     'enjoy',
+                     'expect',
+                     'plan',
+                     'suppose',
+                     'trust',
+                     'bother',
+                     'blame',
+                     'accept',
+                     'admit',
+                     'assume',
+                     'remind',
+                     'seek',
+                     'bet',
+                     'refuse',
+                     'cope',
+                     'choose',
+                     'freak',
+                     'fear',
+                     'question',
+                     'recall',
+                     'doubt',
+                     'suspect',
+                     'focus',
+                     'calm']
+ 
+      can_be_material = ['bother', 'find']
 
       self.relational = Wordlist(relational)
       self.verbal = Wordlist(verbal)
       self.mental = Wordlist(mental)
+      self.behavioural = Wordlist(behavioural)
+      from dictionaries.verblist import allverbs
+      nonmat=set(self.relational + self.verbal + self.behavioural + self.mental)
+      self.material = Wordlist([i for i in allverbs if i not in nonmat and '_' not in i] + can_be_material)
 
 processes = Processes()
-
-def _verbs():
-    import corpkit
-    from dictionaries.verblist import allverbs
-    verblist = [i for i in allverbs if '_' not in i]
-    return Wordlist(verblist)
 
 verbs = _verbs()
