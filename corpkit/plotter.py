@@ -662,19 +662,6 @@ def plotter(df,
     if piemode:
         if not sbplt:
             kwargs['y'] = list(dataframe.columns)[0]
-            if pie_legend:
-                kwargs['legend'] = False
-                if was_series:
-                    leg_options['labels'] = list(dataframe.index)
-                else:
-                    leg_options['labels'] = list(dataframe.columns)
-        else:
-            if pie_legend:
-                kwargs['legend'] = False
-                if was_series:
-                    leg_options['labels'] = list(dataframe.index)
-                else:
-                    leg_options['labels'] = list(dataframe.index)   
     
     def filler(df):
         pby = df.T.copy()
@@ -811,28 +798,17 @@ def plotter(df,
         else:
             if not kwargs.get('layout'):
                 plt.gcf().set_tight_layout(False)
-            if not piemode:
-                if kind != 'heatmap':
-                    ax = dataframe.plot(figsize = figsize, **kwargs)
-                else:
-                    plt.figure(figsize = figsize)
-                    if title:
-                        plt.title(title)
-                    ax = plt.axes()
-                    sns.heatmap(dataframe, ax = ax, **hmargs)
-                    plt.xticks(rotation=0)
-                    plt.yticks(rotation=0)
-            else:
+
+            if kind != 'heatmap':
                 ax = dataframe.plot(figsize = figsize, **kwargs)
-                handles, labels = plt.gca().get_legend_handles_labels()
-                plt.legend( handles, labels, loc = leg_options['loc'], bbox_to_anchor = (0,-0.1,1,1),
-                bbox_transform = plt.gcf().transFigure )
-
-                # this line allows layouts with missing plots
-                # i.e. layout = (5, 2) with only nine plots
-                if not kwargs.get('layout'):
-                    plt.gcf().set_tight_layout(False)
-
+            else:
+                plt.figure(figsize = figsize)
+                if title:
+                    plt.title(title)
+                ax = plt.axes()
+                sns.heatmap(dataframe, ax = ax, **hmargs)
+                plt.xticks(rotation=0)
+                plt.yticks(rotation=0)
 
         def rotate_degrees(rotation, labels):
             if rotation is None:
@@ -1046,7 +1022,10 @@ def plotter(df,
                 pass
             try:
                 from matplotlib.ticker import MaxNLocator
-                a.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+                from process import is_number
+                indx = list(dataframe.index)
+                if all([is_number(qq) for qq in indx]):
+                    ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
             except:
                 pass
             # remove axis labels for pie plots
