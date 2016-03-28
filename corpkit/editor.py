@@ -144,7 +144,6 @@ def editor(interrogation,
 
     import corpkit
     import pandas
-    import signal
     import re
     import collections
     import pandas as pd
@@ -405,6 +404,9 @@ def editor(interrogation,
             regex = re.compile(the_input)
             parsed_input = [w for w in list(df) if re.search(regex, w)]
             return parsed_input
+        from dictionaries.process_types import Wordlist
+        if type(the_input) == Wordlist:
+            the_input = list(the_input)
         if type(the_input) == list:
             if type(the_input[0]) == int:
                 parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
