@@ -80,6 +80,7 @@ def dep_searcher(sents,
         dep_type = 'basic-dependencies', mode = 'all'):
         """process a sentence object, returning matching tok ids"""
         from process import get_deps
+        from dictionaries.process_types import Wordlist
         import re
         lks = []
         if not deps:
@@ -97,6 +98,8 @@ def dep_searcher(sents,
                         search[opt] = v
 
         for opt, pat in list(search.items()):
+            if type(pat) == Wordlist:
+                pat = list(pat)
             if pat == 'any':
                 pat = re.compile(r'.*')
             elif type(pat) == list:
@@ -133,6 +136,8 @@ def dep_searcher(sents,
                     if re.search(pat, l.type):
                         extra_crit = search.get('d2f')
                         if extra_crit:
+                            if type(extra_crit) == Wordlist:
+                                extra_crit = list(extra_crit)
                             if type(extra_crit) == list:
                                 from other import as_regex
                                 extra_crit = as_regex(extra_crit, case_sensitive = case_sensitive)                            
@@ -179,6 +184,8 @@ def dep_searcher(sents,
                             if i.dependent.idx == tok.id:
                                 extra_crit = search.get('d2l')
                                 if extra_crit:
+                                    if type(extra_crit) == Wordlist:
+                                        extra_crit = list(extra_crit)
                                     if type(extra_crit) == list:
                                         from other import as_regex
                                         extra_crit = as_regex(extra_crit, case_sensitive = case_sensitive)                            
