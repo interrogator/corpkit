@@ -420,7 +420,6 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     """download something to proj_path"""
     import corpkit
     import os
-    import urllib.request, urllib.error, urllib.parse
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
     import shutil

@@ -401,8 +401,12 @@ def new_project(name, loc = '.', **kwargs):
     try:
         shutil.copy(os.path.join(dicpath, 'bnc.p'), os.path.join(fullpath, 'dictionaries'))
     except:
+        # find out why bnc not found!
         if root:
-            shutil.copy(resource_path(os.path.join('dictionaries', 'bnc.p')), os.path.join(fullpath, 'dictionaries'))
+            try:
+                shutil.copy(resource_path(os.path.join('dictionaries', 'bnc.p')), os.path.join(fullpath, 'dictionaries'))
+            except:
+                pass
 
     if not root:
         thetime = strftime("%H:%M:%S", localtime())

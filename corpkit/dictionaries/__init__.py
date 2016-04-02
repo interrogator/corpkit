@@ -1,4 +1,5 @@
-__all__ = ["wordlists", "roles", "bnc", "processes"]
+__all__ = ["wordlists", "roles", "bnc", "processes", "verbs", 
+           "uktous", "tagtoclass", "queries", "mergetags"]
 
 import corpkit
 from dictionaries.bnc import _get_bnc
