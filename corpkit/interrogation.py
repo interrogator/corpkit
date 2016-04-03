@@ -366,7 +366,7 @@ class Interrogation(object):
         from other import make_multi
         return make_multi(self, indexnames = indexnames)
 
-    def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
+    def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param relative: show abs/rel frequencies
@@ -389,9 +389,9 @@ class Interrogation(object):
         import pandas as pd
         from other import topwords
         if df:
-            return topwords(self, relative = relative, n = n, df = True, sort = sort)
+            return topwords(self, datatype=datatype, n = n, df = True, sort = sort)
         else:
-            topwords(self, relative = relative, n = n, sort = sort)
+            topwords(self, datatype=datatype, n = n, sort = sort)
 
 import pandas as pd
 
