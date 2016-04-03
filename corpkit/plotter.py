@@ -771,6 +771,10 @@ def plotter(df,
                     kwargs['stacked'] = False
                     rev_leg = False
             if kind != 'heatmap':
+                # turn off pie labels at the last minute
+                if kind=='pie' and pie_legend:
+                    kwargs['labels'] = None
+                    kwargs['autopct'] = '%.2f'
                 ax = dataframe.plot(figsize = figsize, **kwargs)
                 from matplotlib.ticker import MaxNLocator
                 from process import is_number
