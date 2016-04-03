@@ -663,12 +663,15 @@ def is_number(s):
     """check if str can be can be made into float/int"""
     try:
         float(s) # for int, long and float
+        return True
     except ValueError:
         try:
             complex(s) # for complex
+            return True
         except ValueError:
             return False
-    return True
+    except TypeError:
+        return False
 
 def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
              init = False, length = False, **kwargs):
