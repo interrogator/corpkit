@@ -302,7 +302,7 @@ class Interrogation(object):
 
         :Example:
         
-        >>> o = corpus.interrogate('w', 'any')
+        >>> o = corpus.interrogate(W, 'any')
         ### create ./saved_interrogations/savename.p
         >>> o.save('savename')
         
@@ -369,10 +369,16 @@ class Interrogation(object):
     def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
-        :param relative: show abs/rel frequencies
-        :type relative: bool
+        :param datatype: show abs/rel frequencies, or keyness
+        :type datatype: str (n/k/%)
         :param n: number of result to show
         :type n: int
+        :param df: return a DataFrame
+        :type df: bool
+        :param sort: Sort results, or show as is
+        :type sort: bool
+        :param precision: float precision to show
+        :type precision: int
 
         :Example:
 
@@ -409,7 +415,7 @@ class Concordance(pd.core.frame.DataFrame):
         """
         Print concordance lines nicely, to string, LaTeX or CSV
 
-        :param kind: output format: `'string'`/`'latex'`/`'csv'`
+        :param kind: output format: `string`/`latex`/`csv`
         :type kind: str
         :param n: Print first `n` lines only
         :type n: int/`'all'`
@@ -422,7 +428,7 @@ class Concordance(pd.core.frame.DataFrame):
 
         >>> lines = corpus.concordance({T: r'/NN.?/ >># NP'}, show = L)
         ### show 25 characters either side, 4 lines, just text columns
-        >>> lines.format(window = 25, n = 4, columns = ['l', 'm', 'r'])
+        >>> lines.format(window = 25, n = 4, columns = [L, M, R])
             0                  we 're in  tucson     , then up north to flagst
             1  e 're in tucson , then up  north      to flagstaff , then we we
             2  tucson , then up north to  flagstaff  , then we went through th
@@ -597,7 +603,7 @@ class Interrodict(OrderedDict):
         
         :Example: 
 
-        >>> o = corpus.interrogate('w', 'any')
+        >>> o = corpus.interrogate(W, 'any')
         ### create ``saved_interrogations/savename.p``
         >>> o.save('savename')
 
@@ -611,7 +617,7 @@ class Interrodict(OrderedDict):
         Collapse Interrodict on an axis or along interrogation name.
 
         :param axis: collapse along x, y or name axis
-        :type axis: str ('x'/'y'/'n')
+        :type axis: str: x/y/n
 
         :Example:
 
@@ -672,14 +678,19 @@ class Interrodict(OrderedDict):
             df.results[col] = df.results[col].astype(int)
         return df
 
-    def topwords(self, relative = True, n = 10, df = False, sort = True, precision = 2):
+    def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
-        :param relative: show abs/rel frequencies
-        :type relative: bool
+        :param datatype: show abs/rel frequencies, or keyness
+        :type datatype: str (n/k/%)
         :param n: number of result to show
         :type n: int
-
+        :param df: return a DataFrame
+        :type df: bool
+        :param sort: Sort results, or show as is
+        :type sort: bool
+        :param precision: float precision to show
+        :type precision: int
         :Example:
 
         >>> data.topwords(n = 5)
@@ -695,9 +706,11 @@ class Interrodict(OrderedDict):
         import pandas as pd
         from other import topwords
         if df:
-            return topwords(self, relative = relative, n = n, df = True, sort = sort)
+            return topwords(self, datatype = datatype, n = n, df = True,
+                            sort = sort, precision = precision)
         else:
-            topwords(self, relative = relative, n = n, sort = sort)
+            topwords(self, datatype = datatype, n = n,
+                            sort = sort, precision = precision)
 
     def get_totals(self):
         """Helper function to concatenate all totals"""
@@ -707,7 +720,7 @@ class Interrodict(OrderedDict):
         for k, v in self.items():
             # get the totals
             tot = v.totals
-            # name the totals with the newspaper
+            # name the totals with the corpus name
             tot.name = k
             # add to a list
             lst.append(tot)

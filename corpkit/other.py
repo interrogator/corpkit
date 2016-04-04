@@ -725,6 +725,7 @@ def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 
                 data = data.results.sum().sort_values(ascending = ascend)
             else:
                 data = data.results.sum()
+        # todo: if already float, don't do this operation...
         if operation == '%':
             data = data * 100.0 / data.sum()
         if operation == 'n':
