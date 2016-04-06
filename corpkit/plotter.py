@@ -503,6 +503,9 @@ def plotter(df,
     cmap_or_c = 'color'
     if colours is not False and type(colours) == str:
         cmap_or_c = 'colormap'
+    from matplotlib.colors import LinearSegmentedColormap
+    if type(colours)==LinearSegmentedColormap:
+        cmap_or_c = 'colormap'
 
     # for heatmaps, it's always a colormap
     if kind == 'heatmap':
