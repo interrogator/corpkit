@@ -405,7 +405,7 @@ def editor(interrogation,
             parsed_input = [w for w in list(df) if re.search(regex, w)]
             return parsed_input
         from dictionaries.process_types import Wordlist
-        if type(the_input) == Wordlist:
+        if type(the_input) == Wordlist or the_input.__class__ == Wordlist:
             the_input = list(the_input)
         if type(the_input) == list:
             if type(the_input[0]) == int:
