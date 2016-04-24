@@ -31,7 +31,7 @@ class Corpus(object):
         self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
-        if path.__class__ == corpkit.corpus.Datalist or type(path) == list:
+        if type(path) == Datalist or type(path) == list:
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
@@ -94,6 +94,32 @@ class Corpus(object):
                         if print_info:
                             print('\tFailed to load %s as %s attribute. Name conflict?' % (filename, variable_safe))
 
+    # these two are duplicated from the file object. not good.
+    @lazyprop
+    def document(self):
+        """Return the parsed XML of a parsed file"""
+        if self.level != 'f':
+            raise ValueError('Can only access document for File')
+        from corenlp_xml.document import Document
+        return Document(self.read())
+
+    def read(self, *args, **kwargs):
+        """Read file data. If data is pickled, unpickle first
+
+        :returns: str/unpickled data
+        """
+        if self.level != 'f':
+            raise ValueError('Can only call read method on File')
+        if self.datatype == 'tokens':
+            import pickle
+            with open(self.path, "rb") as fo:
+                data = pickle.load(fo)
+                return data
+        else:
+            with open(self.path, 'r') as fo:
+                data = fo.read()
+                return data
+
     @lazyprop
     def subcorpora(self):
         """A list-like object containing a corpus' subcorpora."""
@@ -112,6 +138,12 @@ class Corpus(object):
                     subcorpus.name.lower().split(',')[0])
                 setattr(self, variable_safe, subcorpus)
             return sbs
+
+    @lazyprop
+    def speakerlist(self):
+        """A list of speakers in the corpus"""
+        from corpkit.build import get_speaker_names_from_xml_corpus
+        return get_speaker_names_from_xml_corpus(self.path)
 
     @lazyprop
     def files(self):
@@ -616,22 +648,6 @@ class File(Corpus):
         """Return the parsed XML of a parsed file"""
         from corenlp_xml.document import Document
         return Document(self.read())
-
-    def __getitem__(self, key):
-        from process import makesafe
-
-        if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(*key.indices(len(self.subcorpora)))])
-        elif type(key) == int:
-            return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
-        else:
-            try:
-                return self.subcorpora.__getattribute__(key)
-            except:
-                from process import is_number
-                if is_number(key):
-                    return self.__getattribute__('c' + key)
 
     def read(self, *args, **kwargs):
         """Read file data. If data is pickled, unpickle first
