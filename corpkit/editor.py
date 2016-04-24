@@ -169,22 +169,32 @@ def editor(interrogation,
         locs.pop('interrogation', None)
         from collections import OrderedDict
         outdict = OrderedDict()
-        from editor import editor
         for i, (k, v) in enumerate(interrogation.items()):
             # only print the first time around
             if i != 0:
                 locs['print_info'] = False
+
+            if type(denominator) == str and denominator.lower() == 'self':
+                denominator = interrogation
+
             # if df2 is also a dict, get the relevant entry
             if type(denominator) == dict or denominator.__class__ == Interrodict:
                 #if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
                 #   sorted(set([i.lower() for i in list(denominator.keys())])):
                 #   locs['denominator'] = denominator[k]
-                    if kwargs.get('denominator_totals'):
-                        locs['denominator'] = denominator[k].totals
-                    else:
-                        locs['denominator'] = denominator[k].results
 
-            outdict[k] = editor(v.results, **locs)
+                # fix: this repeats itself for every key, when it doesn't need to
+                if kwargs.get('denominator_sum'):
+                    denominator = denominator.collapse(axis = 'key')
+                    locs['denominator'] = denominator
+
+                if kwargs.get('denominator_totals'):
+                    locs['denominator'] = denominator[k].totals
+                else:
+                    locs['denominator'] = denominator[k].results
+
+
+            outdict[k] = v.results.edit(**locs)
         if print_info:
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
