@@ -32,7 +32,7 @@ __all__ = ["interrogator",
     "Corpora"] + letters
 
 #metadata
-__version__ = "2.0.5"
+__version__ = "2.0.6"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
