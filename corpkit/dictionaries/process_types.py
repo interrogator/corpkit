@@ -164,17 +164,32 @@ def add_verb_inflections(verb_list):
 
 class Wordlist(list):
     """A list of words, containing a `words` attribute and a `lemmata` attribute"""
-    def __init__(self, data):
+    
+    def __init__(self, data, **kwargs):
         self.data = get_both_spellings(data)
+        self.kwargs = kwargs
         super(Wordlist, self).__init__(self.data)
 
     @lazyprop
     def words(self):
-        return add_verb_inflections(get_both_spellings(self.data))
+        if not self.kwargs.get('single'):
+            return Wordlist(add_verb_inflections(get_both_spellings(self.data)), single=True)
+        else:
+            return
 
     @lazyprop
     def lemmata(self):
-        return get_both_spellings(self.data)
+        if not self.kwargs.get('single'):
+            return Wordlist(get_both_spellings(self.data), single=True)
+        else:
+            return
+
+    def as_regex(self, **kwargs):
+        if self.kwargs.get('single'):
+            from corpkit import as_regex
+            return as_regex(self, **kwargs)
+        else:
+            return
 
 class Processes(object):
     """Process types: relational, verbal and mental"""
