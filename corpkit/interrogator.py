@@ -651,6 +651,8 @@ def interrogator(corpus,
     # simple tregex is tregex over whole dirs
     simple_tregex_mode = False
     statsmode = False
+    turning_trees_into_plaintext = False
+
     if not just_speakers and 't' in list(search.keys()):
         simple_tregex_mode = True
     else:
@@ -680,6 +682,7 @@ def interrogator(corpus,
                     searcher = tok_by_list
                 optiontext = 'Searching tokens'
         only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf', 'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
+        
         if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
             raise ValueError('Need parsed corpus to search with "%s" option(s).' % ', '.join([i for i in list(search.keys()) if i in only_parse]))
 
@@ -695,10 +698,20 @@ def interrogator(corpus,
                 no_conc = True
                 only_conc = False
                 do_concordancing = False
+            elif search.get('r'):
+                turning_trees_into_plaintext = True
+                searcher = plaintext_regex_search
+            elif search.get('n'):
+                turning_trees_into_plaintext = True
+                searcher = tok_by_reg
             else:
                 from depsearch import dep_searcher
                 searcher = dep_searcher
                 optiontext = 'Dependency querying'
+        #if turning_trees_into_plaintext:
+        #    #search['t'] = r'ROOT < __'
+        #    show = ['w']
+        #    translated_option = 't'
 
     ############################################
     #      Set some Tregex-related values      #
@@ -863,11 +876,15 @@ def interrogator(corpus,
         conc_results[subcorpus_name] = []
         count_results[subcorpus_name] = []
         results[subcorpus_name] = Counter()
+
+        if turning_trees_into_plaintext and not just_speakers:
+            res = tregex_engine(query = r'ROOT << __', options = ['-o', '-t', '-w'], 
+                                     corpus = subcorpus_path, root = root, preserve_case = preserve_case)
         
         # tregex over subcorpora, not files
         if simple_tregex_mode:
 
-            op = ['-o', '-' + translated_option]                
+            op = ['-o', '-' + translated_option]            
             result = tregex_engine(query = search['t'], options = op, 
                                    corpus = subcorpus_path, root = root, preserve_case = preserve_case)
 
@@ -904,10 +921,10 @@ def interrogator(corpus,
             animator(p, current_iter, tstr, **par_args)
 
         # dependencies, plaintext, tokens or slow_tregex
-        else:
+        if not simple_tregex_mode:
             for f in files:
                 slow_treg_speaker_guess = kwargs.get('outname', False)
-                if datatype == 'parse':
+                if datatype == 'parse' and not turning_trees_into_plaintext:
                     with open(f.path, 'r') as data:
                         data = data.read()
                         from corenlp_xml.document import Document
@@ -939,32 +956,40 @@ def interrogator(corpus,
                         if res == 'Bad query':
                             return 'Bad query'
 
-                elif datatype == 'tokens':
-                    import pickle
-                    with codecs.open(f.path, "rb") as fo:
-                        data = pickle.load(fo)
+                if datatype == 'tokens':
+                    if turning_trees_into_plaintext:
+                        data = '\n'.join(res).split()
+                    else:
+                        import pickle
+                        with codecs.open(f.path, "rb") as fo:
+                            data = pickle.load(fo)
                     if not only_conc:
-                        res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
-                        concordancing = False)
+                        res = searcher(list(search.values())[0], data,
+                            split_contractions = split_contractions, 
+                            concordancing = False)
                     if not no_conc:
-                        conc_res = searcher(list(search.values())[0], data, split_contractions = split_contractions, 
-                        concordancing = True)
+                        conc_res = searcher(list(search.values())[0], data,
+                            split_contractions = split_contractions, 
+                            concordancing = True)
                     if not no_conc:
                         for index, line in enumerate(conc_res):
                             line.insert(0, '')
 
-                elif datatype == 'plaintext':
-                    with codecs.open(f.path, 'rb', encoding = 'utf-8') as data:
-                        data = data.read()
-                        if not only_conc:
-                            res = searcher(list(search.values())[0], data, 
-                            concordancing = False)
-                        if not no_conc:
-                            conc_res = searcher(list(search.values())[0], data, 
-                            concordancing = True)
-                        if not no_conc:
-                            for index, line in enumerate(conc_res):
-                                line.insert(0, '')
+                if datatype == 'plaintext' or turning_trees_into_plaintext:
+                    if turning_trees_into_plaintext:
+                        data = '\n'.join(res)
+                    else:
+                        with codecs.open(f.path, 'rb', encoding = 'utf-8') as data:
+                            data = data.read()
+                    if not only_conc:
+                        res = searcher(list(search.values())[0], data, 
+                        concordancing = False)
+                    if not no_conc:
+                        conc_res = searcher(list(search.values())[0], data, 
+                        concordancing = True)
+                    if not no_conc:
+                        for index, line in enumerate(conc_res):
+                            line.insert(0, '')
 
                 if countmode:
                     count_results[subcorpus_name] += [res]
