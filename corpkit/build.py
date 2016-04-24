@@ -959,7 +959,6 @@ def add_ids_to_xml(corpuspath, root = False, note = False):
 def get_speaker_names_from_xml_corpus(path):
     import os
     import re
-    from bs4 import BeautifulSoup
     
     list_of_files = []
     names = []
