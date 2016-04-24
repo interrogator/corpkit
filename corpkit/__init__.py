@@ -9,7 +9,8 @@ from __future__ import print_function
 # quicker access to search, exclude, show types
 letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
            'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'S', 'ANY',
-           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL', 'ANYWORD']
+           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL',
+           'NL', 'NP', 'NW', 'ANYWORD']
 
 # asterisk import
 __all__ = ["interrogator",
@@ -168,6 +169,9 @@ DF = 'df'
 GP = 'gp'
 DP = 'dp'
 PL = 'pl'
+NW = 'nw'
+NL = 'nl'
+NP = 'np'
 SELF = 'self'
 ANY = 'any'
 ANYWORD = r'[A-Za-z0-9:_]'

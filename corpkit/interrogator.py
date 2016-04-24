@@ -449,11 +449,8 @@ def interrogator(corpus,
         return unsplit
 
     def tok_ngrams(pattern, list_of_toks, concordancing = False, split_contractions = True):
-        from collections import Counter
         import re
-        ngrams = Counter()
         result = []
-        # if it's not a compiled regex
         list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
         if pattern.lower() == 'any':
             pattern = r'.*'
@@ -465,20 +462,16 @@ def interrogator(corpus,
         for index, w in enumerate(list_of_toks):
             try:
                 the_gram = [list_of_toks[index+x] for x in range(gramsize)]
-                if not any(re.search(pattern, x) for x in the_gram):
-                    continue
-                ngrams[' '.join(the_gram)] += 1
+                if any(re.search(pattern, x) for x in the_gram):
+                    result.append(' '.join(the_gram))
             except IndexError:
                 pass
 
-        # turn counter into list of results
-        for k, v in list(ngrams.items()):
-            if v > 1:
-                for i in range(v):
-                    result.append(k)
         if countmode:
             return(len(result))
+
         else:
+            result = [i for i in result if result.count(i) > 1]
             return result
 
     def compiler(pattern):
@@ -701,17 +694,16 @@ def interrogator(corpus,
             elif search.get('r'):
                 turning_trees_into_plaintext = True
                 searcher = plaintext_regex_search
-            elif search.get('n'):
-                turning_trees_into_plaintext = True
-                searcher = tok_by_reg
+                optiontext = 'Regular expression via parsed data (slow!)'
             else:
                 from depsearch import dep_searcher
                 searcher = dep_searcher
                 optiontext = 'Dependency querying'
-        #if turning_trees_into_plaintext:
-        #    #search['t'] = r'ROOT < __'
-        #    show = ['w']
-        #    translated_option = 't'
+            
+            # ngram mode for parsed data
+            if any(x.startswith('n') for x in show):
+                optiontext = 'N-grams from parsed data'
+                searcher = dep_searcher
 
     ############################################
     #      Set some Tregex-related values      #
@@ -951,18 +943,16 @@ def interrogator(corpus,
                             case_sensitive = case_sensitive,
                             do_concordancing = do_concordancing,
                             only_format_match = only_format_match,
-                            speaker = slow_treg_speaker_guess)
+                            speaker = slow_treg_speaker_guess,
+                            gramsize = gramsize)
                         
                         if res == 'Bad query':
                             return 'Bad query'
 
                 if datatype == 'tokens':
-                    if turning_trees_into_plaintext:
-                        data = '\n'.join(res).split()
-                    else:
-                        import pickle
-                        with codecs.open(f.path, "rb") as fo:
-                            data = pickle.load(fo)
+                    import pickle
+                    with codecs.open(f.path, "rb") as fo:
+                        data = pickle.load(fo)
                     if not only_conc:
                         res = searcher(list(search.values())[0], data,
                             split_contractions = split_contractions, 
