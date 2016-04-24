@@ -13,7 +13,8 @@ def dep_searcher(sents,
                  case_sensitive = False,
                  progbar = False,
                  only_format_match = False,
-                 speaker = False):
+                 speaker = False,
+                 gramsize = 2):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -367,6 +368,10 @@ def dep_searcher(sents,
                             if tok.id == lin.dependent.idx:
                                 single_wd['f'] = lin.type
                                 break
+
+
+
+
                     if 'i' in show:
                         single_wd['i'] = str(tok.id)
 
@@ -585,15 +590,40 @@ def dep_searcher(sents,
             if 'i' in show:
                 single_result['i'] = str(lk.id)
 
-            if 'c' not in show:
-                
-                # add them in order
-                out = []
-                for i in show:
-                    out.append(single_result[i])
+            # ngramming
+            if any(i.startswith('n') for i in show):
+                pystart = int(lk.id) - 1
+                for i in range(gramsize):
+                    try:
+                        gram = [s.tokens[pystart+x-i] for x in range(gramsize) if pystart+x-i >= 0]
+                        if len(gram) != gramsize:
+                            continue
+                        if 'n' in show or 'nw' in show:
+                            form_gram = [t.word for t in gram]
+                        elif 'nl' in show:
+                            form_gram = [t.lemma for t in gram]
+                        elif 'np' in show:
+                            form_gram = [t.pos for t in gram]
+                        elif 'npl' in show:
+                            from dictionaries.word_transforms import taglemma
+                            import string
+                            form_gram = [taglemma.get(t.pos.lower(), t.pos) for t in gram]
+                            #for index, t in enumerate(form_gram):
+                            #    if all(b in string.punctuation for b in t):
+                            #        form_gram[index] = 'punctuation'
 
-                out = [i.replace('/', '-slash-') for i in out if i]
-                result.append('/'.join(out))
+                        result.append(' '.join(form_gram))
+                    except:
+                        pass
+            else:
+                if 'c' not in show:
+                    # add them in order
+                    out = []
+                    for i in show:
+                        out.append(single_result[i])
+
+                    out = [i.replace('/', '-slash-') for i in out if i]
+                    result.append('/'.join(out))
     
     if 'c' in show:
         result = sum(result)
