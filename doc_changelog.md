@@ -5,7 +5,6 @@ keywords: interrogation, gui, corpkit, CHANGELOG
 summary: "A changelog for the GUI."
 last_updated: 2016-04-26
 ---
-{% include linkrefs.html %}
 
 # Change log
 
