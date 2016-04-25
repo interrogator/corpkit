@@ -1,7 +1,7 @@
 Interrogating corpora
 =====================
 
-Once you've built a corpus, you can search it for linguistic phenomena.
+Once you've built a corpus, you can search it for linguistic phenomena. This is done with the :class:`corpkit.corpus.Interrogate` method.
 
 .. contents::
    :local:
@@ -13,45 +13,45 @@ Parsed corpora contain many different kinds of annotation we might like to searc
 
 .. note::
 
-   Single capital letter variables represent lowercase strings ``(GL = 'gl')``. These variables are made available by doing `from corpkit import *`. They are used here for readability.
+   Single capital letter variables represent lowercase strings ``(GL = 'gl')``. These variables are made available by doing ``from corpkit import *``. They are used here for readability.
 
-+------------+-----------------------+
-| Search     | Gloss                 |
-+============+=======================+
-| W          |  Word                 |
-+------------+-----------------------+
-| L          |  Lemma                |
-+------------+-----------------------+
-| F          |  Function             |
-+------------+-----------------------+
-| P          |  POS tag              |
-+------------+-----------------------+
-| G/GW       |  Governor word        |
-+------------+-----------------------+
-| GL         |  Governor lemma       |
-+------------+-----------------------+
-| GF         |   Governor function   |
-+------------+-----------------------+
-| GP         |   Governor POS        |
-+------------+-----------------------+
-| D/DW       |  Dependent word       |
-+------------+-----------------------+
-| DL         |  Dependent lemma      |
-+------------+-----------------------+
-| DF         |   Dependent function  |
-+------------+-----------------------+
-| DP         |   Dependent POS       |
-+------------+-----------------------+
-| PL         |   Word class          |
-+------------+-----------------------+
-| N          |  Ngram                |
-+------------+-----------------------+
-| R          |  Distance from root   |
-+------------+-----------------------+
-| I          |  Index in sentence    |
-+------------+-----------------------+
-| T          | Tregex tree           |
-+------------+-----------------------+
++--------+-----------------------+
+| Search | Gloss                 |
++========+=======================+
+| W      |  Word                 |
++--------+-----------------------+
+| L      |  Lemma                |
++--------+-----------------------+
+| F      |  Function             |
++--------+-----------------------+
+| P      |  POS tag              |
++--------+-----------------------+
+| G/GW   |  Governor word        |
++--------+-----------------------+
+| GL     |  Governor lemma       |
++--------+-----------------------+
+| GF     |   Governor function   |
++--------+-----------------------+
+| GP     |   Governor POS        |
++--------+-----------------------+
+| D/DW   |  Dependent word       |
++--------+-----------------------+
+| DL     |  Dependent lemma      |
++--------+-----------------------+
+| DF     |   Dependent function  |
++--------+-----------------------+
+| DP     |   Dependent POS       |
++--------+-----------------------+
+| PL     |   Word class          |
++--------+-----------------------+
+| N      |  Ngram                |
++--------+-----------------------+
+| R      |  Distance from root   |
++--------+-----------------------+
+| I      |  Index in sentence    |
++--------+-----------------------+
+| T      | Tregex tree           |
++--------+-----------------------+
 
 The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries.
 
@@ -90,19 +90,19 @@ What to show
 
 Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value, plus a few extra values for n-gramming:
 
-+------------+-----------------------+----------------------+
-| Show       | Gloss                 | Example              |
-+============+=======================+======================+
-| NW          |  Word                | The women were       |
-+------------+-----------------------+----------------------+
-| NL          |  Lemma               | The woman be         |
-+------------+-----------------------+----------------------+
-| NF          |  Function            | det nsubj root       |
-+------------+-----------------------+----------------------+
-| NP          |  POS tag             | DT NNS VBN           |
-+------------+-----------------------+----------------------+
-| NPL          |  Word class         | determiner noun verb |
-+------------+-----------------------+----------------------+
++------+-------------+------------------------+
+| Show | Gloss       | Example                |
++======+=============+========================+
+| NW   |  Word       | `The women were`       |
++------+-------------+------------------------+
+| NL   |  Lemma      | `The woman be`         |
++------+-------------+------------------------+
+| NF   |  Function   | `det nsubj root`       |
++------+-------------+------------------------+
+| NP   |  POS tag    | `DT NNS VBN`           |
++------+-------------+------------------------+
+| NPL  |  Word class | `determiner noun verb` |
++------+-------------+------------------------+
 
 Show can be either a single string or a list of strings. If a list is provided, each value is returned in a slash separated form.
 
@@ -176,6 +176,7 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 Tree return values
 -------------------
+
 Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value. For the following sentence:
 
 .. code-block:: none
@@ -202,8 +203,9 @@ Which would return:
 | C          |  Count      | `1` (added to total) |
 +------------+-------------+----------------------+
 
-### Tree searching options
- 
+Tree searching options
+----------------------
+
 When searching with trees, there are a few extra options available.
 
 `Multiword results` informs *corpkit* that you expect your results to be more than one word long (if you are searching for VPs, for example). This causes *corpkit* to do tokenisation of results, leading to overall better processing.
@@ -218,14 +220,14 @@ Interrogating the corpus can be slow. To speed it up, you can pass an integer as
 
 .. code-block:: python
 
-   >>> corpus.interrogate({T, r'MD << __', multiprocess=4)
+   >>> corpus.interrogate({T, r'__ > MD', multiprocess = 4)
 
 Note that too many parallel processes may slow your computer down. If you pass in ``multiprocessing = True``, the number of processes will equal the number of cores on your machine. This is usually a fairly sensible number.
 
 N-grams
 ---------------------
 
-N-gramming can be done simply by using an n-gram string (`N`, `NL`, `NP` or `NPL`) as the `show` value. Two options for n-gramming are ``gramsize = 2``, which determines the number of tokens in the n-gram, and ``split_contractions = True``, which controls whether or not words like *doesn't* are treated as one token or two.
+N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` or ``NPL``) as the `show` value. Two options for n-gramming are ``gramsize = n``, where ``n`` determines the number of tokens in the n-gram, and ``split_contractions = True``, which controls whether or not words like *doesn't* are treated as one token or two.
 
 .. code-block:: python
 
@@ -246,5 +248,16 @@ You can also quicksave interrogations:
 
    >>> corpus.interrogate(T, r'/NN.?/', save='savename')
 
+Exporting interrogations
+-------------------------
+
+If you want to quickly export a result to CSV, LaTeX, etc., you can use Pandas' DataFrame methods:
+
+.. code-block:: python
+
+   >>> print(nouns.results.to_csv())
+   >>> print(nouns.results.to_latex())
+
+That said, there's a lot more that can be done with them in `corpkit`. Head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, Hit `Next` to learn about concordancing.
 
 .. _here: http://nlp.stanford.edu/~manning/courses/ling289/Tregex.htm

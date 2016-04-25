@@ -1,3 +1,5 @@
+.. _editing-page:
+
 Editing results
 =====================
 
