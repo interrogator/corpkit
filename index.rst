@@ -21,7 +21,7 @@ Example
 
 Here's a basic workflow, using a corpus of news articles published between 1987 and 2014, structured like this:
 
-.. code-block:: bash
+.. code-block:: none
    
    ./data/NYT:
 
@@ -106,7 +106,7 @@ Much of corpkit's command line functionality is also available in the *corpkit* 
 
    python -m corpkit.corpkit-gui
 
-Alternatively, it's available as a standalone OSX app here_.
+Alternatively, it's available (alongside documentation) as a standalone OSX app here_.
 
 .. toctree::
    :maxdepth: 1
@@ -118,6 +118,7 @@ Alternatively, it's available as a standalone OSX app here_.
    rst_docs/corpkit.editing.rst
    rst_docs/corpkit.visualising.rst
    rst_docs/corpkit.managing.rst
+   rst_docs/corpkit.about.rst
 
 .. toctree::
    :maxdepth: 2
@@ -127,14 +128,24 @@ Alternatively, it's available as a standalone OSX app here_.
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
-   rst_docs/corpkit.about.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: External links
+   :hidden:
 
    Graphical interface <http://interrogator.github.io/corpkit>
-   GitHub <https://github.com/interrogator/corpkit/blob/master/README.md>
+   GitHub <https://github.com/interrogator/corpkit>
+
+
+Cite
+--------------------
+If you'd like to cite *corpkit*, you can use:
+
+.. code-block:: none
+
+   McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
+
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
