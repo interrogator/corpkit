@@ -132,3 +132,18 @@ Calculating trends, P values
 
 ``keep_stats = True`` will cause slopes, p values and stderr to be calculated for each result.
 
+Saving results
+----------------
+
+You can save edited results to disk.
+
+.. code-block:: python
+   >>> edited.save('savename')
+
+Exporting results
+------------------
+
+You can generate CSV data very easily using Pandas:
+
+.. code-block:: python
+   >>> result.results.to_csv()
