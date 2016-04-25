@@ -110,7 +110,7 @@ Alternatively, it's available as a standalone OSX app here_.
 
 .. toctree::
    :maxdepth: 1
-   :caption: User Guide
+   :caption: User guide
 
    rst_docs/corpkit.building.rst
    rst_docs/corpkit.interrogating.rst
@@ -131,9 +131,9 @@ Alternatively, it's available as a standalone OSX app here_.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Links
+   :caption: External links
 
-   GUI <http://interrogator.github.io/corpkit>
+   Graphical interface <http://interrogator.github.io/corpkit>
    GitHub <https://github.com/interrogator/corpkit/blob/master/README.md>
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
