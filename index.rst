@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+========================================
 corpkit documentation
 ========================================
 
@@ -16,8 +17,7 @@ Concordancing is extended to allow the user to query and display grammatical fea
 
 *corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via `joblib`, and Python 2 and 3 are both supported.
 
-Example
-----------------------
+.. rubric:: Example
 
 Here's a basic workflow, using a corpus of news articles published between 1987 and 2014, structured like this:
 
@@ -76,10 +76,9 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
 
 Output:
 
-.. figure:: https://raw.githubusercontent.com/interrogator/risk/master/images/sayers-increasing.png
+.. figure:: rst_docs/sayers-increasing.png
 
-Installation
-----------------------
+.. rubric:: Installation
 
 Via pip:
 
@@ -97,8 +96,7 @@ via Git:
 
 Parsing and interrogation of parse trees will also require *Stanford CoreNLP*.
 
-Graphical interface
----------------------
+.. rubric:: Graphical interface
 
 Much of corpkit's command line functionality is also available in the *corpkit* GUI. After installation, it can be started with:
 
@@ -137,9 +135,8 @@ Alternatively, it's available (alongside documentation) as a standalone OSX app 
    Graphical interface <http://interrogator.github.io/corpkit>
    GitHub <https://github.com/interrogator/corpkit>
 
+.. rubric:: Cite
 
-Cite
---------------------
 If you'd like to cite *corpkit*, you can use:
 
 .. code-block:: none

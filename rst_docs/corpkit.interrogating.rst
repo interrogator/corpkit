@@ -130,7 +130,7 @@ To match any adjective, you can simply write:
 
    JJ
 
-with `JJ` representing adjective as per the [Penn Treebank tagset](https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html). If you want to get NPs containing adjectives, you might use:
+with `JJ` representing adjective as per the `Penn Treebank tagset`_. If you want to get NPs containing adjectives, you might use:
 
 .. code-block:: none
 
@@ -261,3 +261,4 @@ If you want to quickly export a result to CSV, LaTeX, etc., you can use Pandas' 
 That said, there's a lot more that can be done with them in `corpkit`. Head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, Hit `Next` to learn about concordancing.
 
 .. _here: http://nlp.stanford.edu/~manning/courses/ling289/Tregex.htm
+.. _Penn Treebank tagset: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
