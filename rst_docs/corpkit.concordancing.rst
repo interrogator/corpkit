@@ -9,7 +9,7 @@ Any interrogation is also optionally a concordance. If you use the ``do_concorda
    >>> withconc = corpus.interrogate(T, r'/JJ.?/ > (NP <<# /man/)',
                                      do_concordancing=True, maxconc = 500)
 
-If you don't want or need the interrgation data, you can use the :func:`~corpkit.interrogation.Interrogation.concordance` method:
+If you don't want or need the interrgation data, you can use the :func:`~corpkit.corpus.Corpus.concordance` method:
 
 .. code-block:: python
 
@@ -20,7 +20,7 @@ Working with concordance lines
 
 Like interrogation results, concordances are stored as Pandas DataFrames.
 
-You can edit concordance lines using the func:`~corpkit.interrogation.Concordance.edit` method. You can use this method to keep or remove entries or subcorpora matching regular expressions or lists.
+You can edit concordance lines using the :func:`~corpkit.interrogation.Concordance.edit` method. You can use this method to keep or remove entries or subcorpora matching regular expressions or lists.
 
 .. code-block:: python
 
@@ -40,7 +40,7 @@ You can also easily turn them into CSV data, or into LaTeX:
 
 .. code-block:: python
 
-   # pandas methods
+   ### pandas methods
    >>> concs.to_csv()
    >>> concs.to_latex()
 
