@@ -134,20 +134,6 @@ entries:
           product: all
           version: all
 
-    - title: Examples
-      audience: writers, designers
-      platform: all
-      product: all
-      version: all
-      print: true
-      items:
-        - title: Risk Semantics
-          url: /doc_risk.html
-          audience: writers, designers
-          platform: all
-          product: all
-          version: all
-
     - title: Resources
       audience: writers, designers
       platform: all
@@ -156,7 +142,14 @@ entries:
       print: true
       items:
 
-        - title: Command line documentation
+        - title: ReadTheDocs
+          external_url: http://corpkit.readthedocs.org/en/latest/
+          audience: writers, designers
+          platform: all
+          product: all
+          version: all
+
+        - title: Changelog
           external_url: http://corpkit.readthedocs.org/en/latest/
           audience: writers, designers
           platform: all
