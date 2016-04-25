@@ -77,7 +77,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
 
 Output:
 
-.. figure:: rst_docs/sayers-increasing.png
+.. figure:: images/sayers-increasing.png
 
 .. rubric:: Installation
 
