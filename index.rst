@@ -44,7 +44,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    >>> from corpkit import *
    >>> from dictionaries.process_types import processes
    
-   ### parse corpus of NYT articles containing annual subcorpoa
+   ### parse corpus of NYT articles containing annual subcorpora
    >>> unparsed = Corpus('data/NYT')
    >>> parsed = unparsed.parse()
    
@@ -108,18 +108,29 @@ Much of corpkit's command line functionality is also available in the *corpkit* 
 
 Alternatively, it's available as a standalone OSX app here_.
 
-Contents
+User Guide
 ---------------------
 .. toctree::
    :maxdepth: 2
 
-   User guide (Via GitHub) <https://github.com/interrogator/corpkit/blob/master/README.md>
+   rst_docs/corpkit.building.rst
+   rst_docs/corpkit.interrogating.rst
+   rst_docs/corpkit.editing.rst
+   rst_docs/corpkit.visualising.rst
+   rst_docs/corpkit.managing.rst
+   GUI documentation <http://interrogator.github.io/corpkit>
+
+API documentation
+---------------------
+.. toctree::
+   :maxdepth: 2
+
    rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
    rst_docs/corpkit.about.rst
-   GUI documentation <http://interrogator.github.io/corpkit>
+   GitHub documentation <https://github.com/interrogator/corpkit/blob/master/README.md>
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
