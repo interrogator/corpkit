@@ -1,3 +1,12 @@
+---
+title: "Changelog"
+tags: [changelog]
+keywords: interrogation, gui, corpkit, CHANGELOG
+summary: "A changelog for the GUI."
+last_updated: 2016-04-26
+---
+{% include linkrefs.html %}
+
 # Change log
 
 All notable changes to the *corpkit* GUI will be documented in this file.
