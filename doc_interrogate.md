@@ -157,7 +157,7 @@ Your data has actually been annotated with three slightly different dependency g
 2. Collapsed dependencies
 3. Collapsed dependencies with conjunctions collapsed too
 
-For more information on the dependency grammars, you can look at section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
+For more information on the dependency grammars, you can look at Section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
 ### Dependency return values
 
