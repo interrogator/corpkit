@@ -348,16 +348,16 @@ class Corpus(object):
 
         :Example:
 
-           >>> corpus = Corpus('data/conversations-parsed')
-           ### show lemma form of nouns ending in 'ing'
-           >>> q = {W: r'ing$', P: r'^N'}
-           >>> data = corpus.interrogate(q, show = L)
-           >>> data.results
-               ..  something  anything  thing  feeling  everything  nothing  morning
-               01         14        11     12        1           6        0        1   
-               02         10        20      4        4           8        3        0   
-               03         14         5      5        3           1        0        0
-               ...                                                               ...   
+        >>> corpus = Corpus('data/conversations-parsed')
+        ### show lemma form of nouns ending in 'ing'
+        >>> q = {W: r'ing$', P: r'^N'}
+        >>> data = corpus.interrogate(q, show = L)
+        >>> data.results
+            ..  something  anything  thing  feeling  everything  nothing  morning
+            01         14        11     12        1           6        0        1   
+            02         10        20      4        4           8        3        0   
+            03         14         5      5        3           1        0        0
+            ...                                                               ...   
         
         :param search: What the query should be matching.
            - t: tree
@@ -380,8 +380,8 @@ class Corpus(object):
 
         :Example:
 
-           >>> corpus.interrogate(T, r'/NN.?/')
-           >>> corpus.interrogate({T: r'/NN.?/'})
+        >>> corpus.interrogate(T, r'/NN.?/')
+        >>> corpus.interrogate({T: r'/NN.?/'})
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: str -- `'any'`/`'all'`
@@ -399,12 +399,11 @@ class Corpus(object):
 
         :Example:
 
-           ### multiple Tregex queries
-           >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
-           ### return an :class:`corpkit.interrogation.Interrodict` object:
-           >>> corpus.interrogate(T, q)
-           ### return an :class:`corpkit.interrogation.Interrogation` object:
-           >>> corpus.interrogate(T, q, show = C)
+        >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
+        ### return an :class:`corpkit.interrogation.Interrodict` object:
+        >>> corpus.interrogate(T, q)
+        ### return an :class:`corpkit.interrogation.Interrogation` object:
+        >>> corpus.interrogate(T, q, show = C)
 
         :type query: 
            - str -- regex/Tregex pattern (use when `search` is a `str`)
