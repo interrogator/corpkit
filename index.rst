@@ -111,10 +111,11 @@ Alternatively, it's available as a standalone OSX app here_.
 User Guide
 ---------------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    rst_docs/corpkit.building.rst
    rst_docs/corpkit.interrogating.rst
+   rst_docs/corpkit.concordancing.rst
    rst_docs/corpkit.editing.rst
    rst_docs/corpkit.visualising.rst
    rst_docs/corpkit.managing.rst

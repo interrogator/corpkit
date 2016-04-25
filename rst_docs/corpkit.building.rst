@@ -3,18 +3,23 @@ Creating projects and building corpora
 
 Doing corpus linguistics involves building and interrogating corpora, and exploring interrogation results. ``corpkit`` helps with all of these things. This page will explain how to create a new project and build a corpus.
 
+.. contents::
+   :local:
+
 Creating a new project
 -----------------------
 
 The simplest way to begin using corpkit is to import it and to create a new project. Projects are simply folders containing subfolders where corpora, saved results, images and dictionaries will be stored. 
 
 .. code-block:: python
+
    >>> import corpkit
    >>> corpkit.new_project('psyc')
 
 This creates a new folder in the current directory called `psyc`. We can then move there:
 
 .. code-block:: python
+
    >>> import os
    >>> os.chdir('psyc')
    >>> os.listdir('.')
@@ -35,6 +40,7 @@ Now that we have a project, we need to add some plain-text data to the `data` fo
 You can add your corpus to the `data` folder from the command line, or using Finder/Explorer if you prefer. Using `shutil`:
 
 .. code-block:: python
+
    >>> import shutil
    >>> shutil.copytree('/Users/me/Documents/transcripts', '.')
 
@@ -44,6 +50,7 @@ Creating a Corpus object
 Once we have a corpus of text files, we need to turn it into a Corpus object.
 
 .. code-block:: python
+
    >>> from corpkit import Corpus
    >>> unparsed = Corpus('data/psyc')
    >>> unparsed
@@ -52,6 +59,7 @@ Once we have a corpus of text files, we need to turn it into a Corpus object.
 This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.interrogate` method:
 
 .. code-block:: python
+
    >>> th_words = unparsed.interrogate(W, r'th[a-z-]+')
    ### show 5x5 (Pandas syntax)
    >>> th_words.results.iloc[:5,:5]
@@ -69,17 +77,20 @@ Parsing a corpus
 Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser. It can take a long time to run.
 
 .. code-block:: python
+
    >>> corpus = unparsed.parse()
 
 ``corpkit`` can also work with speaker IDs. If lines in your file contain capitalised alphanumeric names, followed by a colon (as per the example below), these IDs can be stripped out and turned into metadata features in the XML.
 
-.. code-block:: bash
+.. code-block:: none
+
     JOHN: Why did they change the signs above all the bins?
     SPEAKER23: I know why. But I'm not telling.
 
 To use this option, use the ``speaker_segmentation`` keyword argument:
 
 .. code-block:: python
+
    >>> corpus = unparsed.parse(speaker_segmentation = True)
 
 Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on.
@@ -87,6 +98,7 @@ Parsing creates a corpus that is structurally identical to the original, but wit
 Once you have a parsed corpus, you're ready to start interrogating. Before constructing your own query, however, you may want to use two predefined methods for counting key features in the corpus:
 
 .. code-block:: python
+
    >>> corpus.features
    >>> corpus.postags
 
