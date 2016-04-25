@@ -8,7 +8,8 @@ class Corpus(object):
     A class representing a linguistic text corpus, which contains files,
     optionally within subcorpus folders.
 
-    Methods for concordancing, interrogating, getting general stats, getting behaviour of particular word, etc.
+    Methods for concordancing, interrogating, getting general stats, getting
+    behaviour of particular word, etc.
     """
 
     def __init__(self, path, **kwargs):
@@ -336,7 +337,14 @@ class Corpus(object):
         return configurations(self, search, **kwargs)
 
     def interrogate(self, search, *args, **kwargs):
-        """Interrogate a corpus of texts for a lexicogrammatical phenomenon
+        """
+        Interrogate a corpus of texts for a lexicogrammatical phenomenon.
+
+        This method iterates over the files/folders in a corpus, searching the 
+        texts, and returning a :class:`corpkit.interrogation.Interrogation` 
+        object containing the results. The main options are `search`, where you
+        specify search criteria, and `show`, where you specify what you want to 
+        appear in the output.
 
         :Example:
 
@@ -351,18 +359,29 @@ class Corpus(object):
             03         14         5      5        3           1        0        0
             ...                                                               ...   
         
-        :param search: What query should be matching
-           - t/tregex
-           - w/word
-           - l/lemma
-           - f/function
-           - g/governor
+        :param search: What the query should be matching.
+           - t: tree
+           - w: word
+           - l: lemma
+           - p: pos
+           - f: function
+           - g/gw: governor
+           - gl: governor's lemma form
+           - gp: governor's pos
+           - gf: governor's function
            - d/dependent
-           - p/pos
            - i/index
            - n/ngrams
            - s/general stats
-        :type search: str, or, for dependencies, a dict like `{W: 'help', P: r'^V'}`
+        :type search: str or dict. dict is used when you have multiple criteria.
+        Keys are what to search as `str`, and values are the criteria, which is 
+        a Tregex query, a regex, or a list of words to match. Therefore, the two
+        syntaxes below do the same thing:
+
+        :Example:
+
+        >>> corpus.interrogate(T, r'/NN.?/')
+        >>> corpus.interrogate({T: r'/NN.?/'})
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: str -- `'any'`/`'all'`
@@ -373,13 +392,28 @@ class Corpus(object):
         :param excludemode: Exclude results matching any/all criteria
         :type excludemode: str -- `'any'`/`'all'`
         
-        :param query: A search query for the interrogation
+        :param query: A search query for the interrogation. This is only used 
+        when `search` is a string, or when multiprocessing. If `search` is a 
+        `dict`, the query/queries are stored there as the values instead. When 
+        multiprocessing, the following is possible:
+
+        :Example:
+
+        ### multiple Tregex queries
+        >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
+        ### return an :class:`corpkit.interrogation.Interrodict` object:
+        >>> corpus.interrogate(T, q)
+        ### return an :class:`corpkit.interrogation.Interrogation` object:
+        >>> corpus.interrogate(T, q, show = C)
+
         :type query: 
-           - str -- regex/Tregex pattern
-           - dict -- `{name: pattern}`
+           - str -- regex/Tregex pattern (use when `search` is a `str`)
+           - dict -- `{name: pattern}` (as per example above)
            - list -- word list to match
         
-        :param show: What to output. If multiple strings are passed, results will be colon-separated, in order
+        :param show: What to output. If multiple strings are passed, results
+        will be colon-separated, in order. If you want to show ngrams, you can't
+        have multiple values.
            - t/tree
            - w/word
            - l/lemma
@@ -389,9 +423,12 @@ class Corpus(object):
            - p/pos
            - i/index
            - a/distance from root
+           - n/ngram
+           - n/
         :type show: list of strings
 
-        :param lemmatise: Force lemmatisation on results
+        :param lemmatise: Force lemmatisation on results. Mostly obsolete: 
+        instead, output a lemma form with the `show` argument
         :type lemmatise: bool
            
         :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
