@@ -72,7 +72,8 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    >>> rel_say = sayers.edit('%', SELF, sort_by = 'increase')
 
    ### plot via matplotlib, using tex if possible
-   >>> rel_say.visualise('Sayers, increasing', kind = 'area', y_label = 'Percentage of all sayers')
+   >>> rel_say.visualise('Sayers, increasing', kind = 'area',
+   ...                  y_label = 'Percentage of all sayers')
 
 Output:
 

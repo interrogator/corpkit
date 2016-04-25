@@ -12,6 +12,16 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from sphinx.highlighting import PygmentsBridge
+from pygments.formatters.latex import LatexFormatter
+
+class CustomLatexFormatter(LatexFormatter):
+    def __init__(self, **options):
+        super(CustomLatexFormatter, self).__init__(**options)
+        self.verboptions = r"formatcom=\footnotesize"
+
+PygmentsBridge.latex_formatter = CustomLatexFormatter
+
 import sys
 import os
 import shlex
@@ -237,7 +247,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\setcounter{tocdepth}{3}',
+'preamble': '\setcounter{tocdepth}{3} \usepackage{pmboxdraw}',
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',

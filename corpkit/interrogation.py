@@ -562,7 +562,7 @@ class Interrodict(OrderedDict):
 
         :Example:
 
-        >>> d = corpora.interrogate({F: 'compound', GL: r'\brisk'}, show = L)
+        >>> d = corpora.interrogate({F: 'compound', GL: '^risk'}, show = L)
         >>> d.keys()
             ['CHT', 'WAP', 'WSJ']
         >>> d['CHT'].results
@@ -621,7 +621,7 @@ class Interrodict(OrderedDict):
 
         :Example:
 
-        >>> d = corpora.interrogate({F: 'compound', GL: r'\brisk'}, show = L)
+        >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show = L)
         >>> d.keys()
             ['CHT', 'WAP', 'WSJ']
         >>> d['CHT'].results
