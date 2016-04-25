@@ -144,7 +144,8 @@ If you'd like to cite *corpkit*, you can use:
 
 .. code-block:: none
 
-   McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
+   McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from
+   https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361
 
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
