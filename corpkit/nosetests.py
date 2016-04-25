@@ -1,15 +1,27 @@
-# full suite: must delete some corpora
-# nosetests corpkit/nosetests.py
+"""
+This file contains tests for the corpkit API, to be run by Nose.
 
-# skip parsing
-# nosetests corpkit/nosetests.py -a '!slow'
+There are fast and slow tests. Slow tests include those that test the parser.
+These should be run before anything goes into master. Fast tests are just corpus
+interrogations. These are done on commit.
+
+The tests don't systematically cover everything in the module yet.
+
+To run all tests:
+
+    nosetests corpkit/nosetests.py
+
+Just fast tests:
+
+    nosetests corpkit/nosetests.py -a '!slow'
+
+"""
 
 import os
 import nose
 from nose.tools import assert_equals
 import corpkit
 from corpus import Corpus
-
 
 unparsed_path = 'data/test'
 parsed_path = 'data/test-stripped-parsed'
@@ -21,12 +33,13 @@ def test_import():
     assert_equals(wordlists.articles, ['a', 'an', 'the', 'teh'])
 
 def test_corpus_class():
+    """Test that Corpus can be created"""
     unparsed = Corpus(unparsed_path)
     assert_equals(os.path.basename(unparsed_path), unparsed.name)
  
 def test_parse():
+    """Test CoreNLP parsing"""
     import shutil
-    print('Testing parser')
     unparsed = Corpus(unparsed_path)
     try:
         shutil.rmtree('data/test-parsed')
@@ -39,10 +52,11 @@ def test_parse():
             fnames.append(f.name)
     assert_equals(fnames, ['intro.txt.xml', 'body.txt.xml'])
 
+# this is how you define a slow test
 test_parse.slow = 1
 
 def test_parse_speakseg(skipassert = False):
-    print('Testing parser with speaker segmentation')
+    """Testing parser with speaker segmentation"""
     unparsed = Corpus(unparsed_path)
     import shutil
     try:
@@ -65,17 +79,17 @@ else:
     corp = Corpus('data/test-stripped-parsed')
 
 def test_interro1():
-    print('Testing interrogation 1')
+    """Testing interrogation 1"""
     data = corp.interrogate('t', r'__ < /JJ.?/')
     assert_equals(data.results.shape, (2, 6))
 
 def test_interro2():
-    print('Testing interrogation 2')
+    """Testing interrogation 2"""
     data = corp.interrogate({'t': r'__ < /JJ.?/'})
     assert_equals(data.results.shape, (2, 6))
 
 def test_interro3():
-    print('Testing interrogation 3')
+    """Testing interrogation 3"""
     data = corp.interrogate({'w': r'^c'}, exclude = {'l': r'check'}, show = ['l', 'f'])
     st = set(['corpus/nsubjpass',
              'corpus/compound',
@@ -90,7 +104,7 @@ def test_interro3():
     assert_equals(set(list(data.results.columns)), st)
 
 def test_interro4():
-    print('Testing interrogation 4')
+    """Testing interrogation 4"""
     corp = Corpus('data/test-stripped-tokenised')
     data = corp.interrogate({'n': 'any'})
     d = {'and interrogating': {'first': 0, 'second': 2},
@@ -98,28 +112,28 @@ def test_interro4():
     assert_equals(data.results.to_dict(), d)
 
 def test_interro5():
-    print('Testing interrogation 5')
+    """Testing interrogation 5"""
     corp = Corpus('data/test-stripped')
     data = corp.interrogate({'w': r'\bl[a-z]+?\s'})
     assert_equals(data.results.sum().sum(), 4)
   
 def test_interro_multiindex_tregex_justspeakers():
-    print('Testing multiindex')
+    """Testing interrogation 6"""
     import pandas as pd
     data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers = ['each'])
-    assert_equals(all(data.multiindex().results.index), all(pd.MultiIndex(levels=[['ANONYMOUS', 
-           'NEWCOMER', 'TESTER', 'UNIDENTIFIED', 'Total'], ['first', 'second', 'Total']],
+    assert_equals(all(data.multiindex().results.index), 
+                  all(pd.MultiIndex(levels=[['ANONYMOUS', 'NEWCOMER', 'TESTER', 
+                      'UNIDENTIFIED', 'Total'], ['first', 'second', 'Total']],
            labels=[[3, 3, 1, 1, 0, 0, 2, 2], [0, 1, 0, 1, 0, 1, 0, 1]],
            names=['corpus', 'subcorpus'])))
 
 def test_conc():
-    print('Testing concordancer')
+    """Testing concordancer"""
     data = corp.concordance({'f': 'amod'})
     assert_equals(data.ix[0]['m'], 'small')
 
 def test_edit():
-    print('Testing simple edit')
+    """Testing edit function"""
     data = corp.interrogate({'t': r'__ !< __'})
     data = data.edit('%', 'self')
     assert_equals(data.results.iloc[0,0], 11.627906976744185)
-
