@@ -108,8 +108,6 @@ Much of corpkit's command line functionality is also available in the *corpkit* 
 
 Alternatively, it's available as a standalone OSX app here_.
 
-User Guide (Under construction)
----------------------
 .. toctree::
    :maxdepth: 1
    :caption: User Guide
@@ -121,8 +119,6 @@ User Guide (Under construction)
    rst_docs/corpkit.visualising.rst
    rst_docs/corpkit.managing.rst
 
-API documentation
----------------------
 .. toctree::
    :maxdepth: 2
    :caption: API documentation
@@ -133,8 +129,6 @@ API documentation
    rst_docs/corpkit.dictionaries.rst
    rst_docs/corpkit.about.rst
 
-Links
----------------------
 .. toctree::
    :maxdepth: 2
    :caption: Links
