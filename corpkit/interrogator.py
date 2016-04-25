@@ -654,12 +654,14 @@ def interrogator(corpus,
                 raise NotImplementedError('Use a tokenised corpus for n-gramming.')
                 #searcher = plaintext_ngram
                 optiontext = 'n-grams via plaintext'
-            if search.get('w'):
+            elif search.get('w'):
                 if kwargs.get('regex', True):
                     searcher = plaintext_regex_search
                 else:
                     searcher = plaintext_simple_search
                 optiontext = 'Searching plaintext'
+            else:
+                raise ValueError("Plaintext search must be 'w' or 'n'.")
 
         elif datatype == 'tokens':
             if search.get('n'):
