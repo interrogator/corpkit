@@ -150,7 +150,7 @@ entries:
           version: all
 
         - title: Changelog
-          external_url: http://corpkit.readthedocs.org/en/latest/
+          url: /doc_changelog.html
           audience: writers, designers
           platform: all
           product: all
