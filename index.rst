@@ -112,6 +112,7 @@ User Guide (Under construction)
 ---------------------
 .. toctree::
    :maxdepth: 1
+   :caption: User Guide
 
    rst_docs/corpkit.building.rst
    rst_docs/corpkit.interrogating.rst
@@ -119,19 +120,27 @@ User Guide (Under construction)
    rst_docs/corpkit.editing.rst
    rst_docs/corpkit.visualising.rst
    rst_docs/corpkit.managing.rst
-   GUI documentation <http://interrogator.github.io/corpkit>
 
 API documentation
 ---------------------
 .. toctree::
    :maxdepth: 2
+   :caption: API documentation
 
    rst_docs/corpkit.corpus.rst
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
    rst_docs/corpkit.about.rst
-   GitHub documentation <https://github.com/interrogator/corpkit/blob/master/README.md>
+
+Links
+---------------------
+.. toctree::
+   :maxdepth: 2
+   :caption: Links
+
+   GUI <http://interrogator.github.io/corpkit>
+   GitHub <https://github.com/interrogator/corpkit/blob/master/README.md>
 
 .. _Stanford CoreNLP: http://stanfordnlp.github.io/CoreNLP/
 .. _NLTK: http://www.nltk.org/
