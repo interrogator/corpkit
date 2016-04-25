@@ -610,17 +610,20 @@ def editor(interrogation,
         return df
 
     def span_these_subcorpora(df, lst_of_subcorpora, prinf = True):
-        """select only a span of numerical suborpora (first, last)"""
-        non_totals = [subcorpus for subcorpus in list(df.index)]
-        good_years = [subcorpus for subcorpus in non_totals if int(subcorpus) >= int(lst_of_subcorpora[0]) and int(subcorpus) <= int(lst_of_subcorpora[-1])]
+        """select only a span of suborpora (first, last)"""
+
+        fir, sec = lst_of_subcorpora
+
         if len(lst_of_subcorpora) == 0:
             import warnings
             warnings.warn('Span not identified.\n')
         else:        
             if prinf:        
-                print('Keeping subcorpora:\n    %d--%d\n' % (int(lst_of_subcorpora[0]), int(lst_of_subcorpora[-1])))
-        df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis = 0)
-        # retotal needed here
+                print('Keeping subcorpora:\n    %d--%d\n' % (int(fir), int(sec)))
+
+        sbs = list(df.index)
+        df = df.ix[sbs.index(fir):sbs.index(sec) + 1]
+
         return df
 
     def projector(df, list_of_tuples, prinf = True):

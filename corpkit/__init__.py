@@ -7,10 +7,9 @@ from __future__ import print_function
 """
 
 # quicker access to search, exclude, show types
-letters = ['T', 'W', 'L', 'F', 'G', 'D', 'P', 'I', 'SELF',
-           'R', 'N', 'K', 'V', 'M', 'C', 'D', 'A', 'S', 'ANY',
-           'GL', 'DL', 'GF', 'DF', 'GP', 'DP', 'PL',
-           'NL', 'NP', 'NW', 'ANYWORD']
+letters = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
+           'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NW', 'P',
+           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W']
 
 # asterisk import
 __all__ = ["interrogator",
@@ -145,33 +144,34 @@ pd.DataFrame.shuffle = _shuffle
 
 pd.DataFrame.top = _top
 
+# Defining globals
 A = 'a'
-D = 'd'
-T = 't'
-W = 'w'
-C = 'c'
-L = 'l'
-F = 'f'
-G = 'g'
-D = 'd'
-P = 'p'
-I = 'i'
-R = 'r'
-N = 'n'
-K = 'k'
-M = 'm'
-V = 'v'
-S = 's'
-GL = 'gl'
-DL = 'dl'
-GF = 'gf'
-DF = 'df'
-GP = 'gp'
-DP = 'dp'
-PL = 'pl'
-NW = 'nw'
-NL = 'nl'
-NP = 'np'
-SELF = 'self'
 ANY = 'any'
 ANYWORD = r'[A-Za-z0-9:_]'
+C = 'c'
+D = 'd'
+D = 'd'
+DF = 'df'
+DL = 'dl'
+DP = 'dp'
+F = 'f'
+G = 'g'
+GF = 'gf'
+GL = 'gl'
+GP = 'gp'
+I = 'i'
+K = 'k'
+L = 'l'
+M = 'm'
+N = 'n'
+NL = 'nl'
+NP = 'np'
+NW = 'nw'
+P = 'p'
+PL = 'pl'
+R = 'r'
+S = 's'
+SELF = 'self'
+T = 't'
+V = 'v'
+W = 'w'
