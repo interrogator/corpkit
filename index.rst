@@ -108,7 +108,7 @@ Much of corpkit's command line functionality is also available in the *corpkit* 
 
 Alternatively, it's available as a standalone OSX app here_.
 
-User Guide
+User Guide (Under construction)
 ---------------------
 .. toctree::
    :maxdepth: 1

@@ -88,8 +88,6 @@ The best denominator, however, may not simply be the totals for the results bein
 
 .. code-block:: python
 
-.. code-block:: python
-
    >>> rel = result.edit('%', corpus.features.Words)
 
 Or by some other result you have generated:
@@ -98,6 +96,14 @@ Or by some other result you have generated:
 
    >>> words_with_oo = corpus.interrogate(W, 'oo')
    >>> rel = result.edit('%', words_with_oo.totals)
+
+There is a more complex kind of relative frequency making, where a ``.results`` attribute is used as the denominator. In the example below, we calculate the percentage of the time each verb occurs as the `root` of the parse.
+
+.. code-block:: python
+
+   >>> verbs = corpus.interrogate(P, r'^vb', show=L)
+   >>> roots = corpus.interrogate(F, 'root', show=L)
+   >>> relv = verbs.edit('%', roots.results)
 
 Keywording
 ---------------------------------
@@ -134,7 +140,7 @@ You can sort results using the ``sort_by`` keyword. Possible values are:
 
    >>> inc = result.edit(sort_by = 'increase', keep_stats = False)
 
-Many of these rely on Scipy's ``linregress` calculator. If you want to keep the generated statistics, use ``keep_stats = True``. 
+Many of these rely on Scipy's ``linregress`` function. If you want to keep the generated statistics, use ``keep_stats = True``. 
 
 Calculating trends, P values
 ---------------------------------
