@@ -624,46 +624,54 @@ def parse_corpus(proj_path = False,
                     return False          
     
     def get_corenlp_path(corenlppath):
+        """Find a working CoreNLP path"""
         import os
-        home = os.path.expanduser("~")
-        f = 'jollyday.jar'
+        import sys
+        import re
+        import glob
+        
+        cnlp_regex = re.compile('stanford-corenlp-[0-9\.]+\.jar')
+
+        # if something has been passed in, find that first
         if corenlppath:
             if os.path.isfile(corenlppath):
-                return os.path.dirname(corenlppath)
-            elif os.path.isdir(corenlppath):
-                if f in os.listdir(corenlppath):
+                corenlppath = os.path.dirname(corenlppath)
+                if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
                     return corenlppath
-                else:
-                    try:
-                        return next(os.path.join(corenlppath, d) for d in os.listdir(corenlppath) \
-                            if os.path.isdir(os.path.join(corenlppath, d)) \
-                            and os.path.isfile(os.path.join(corenlppath, d, f)))
-                    except StopIteration:
-                        pass
-        # check for ~/corenlp/stanford-corenlp-xx
-        corenlppath = os.path.join(home, 'corenlp')
-        try:
-            return next(os.path.join(corenlppath, d) for d in os.listdir(corenlppath) \
-                if os.path.isdir(os.path.join(corenlppath, d)) \
-                and os.path.isfile(os.path.join(corenlppath, d, f)))
-        except StopIteration:
-            # check for home/stanford-corenlp-xx
-            import glob
-            dirs = glob.glob(os.path.join(home, 'stanford-corenlp*'))
-            if dirs:
-                return dirs[-1]
-            else:
-                # check for ./stanford-corenlp-xx
-                dirs = glob.glob(os.path.join('.', 'stanford-corenlp*'))
-                if dirs:
-                    return dirs[-1]
+            elif os.path.isdir(corenlppath):
+                if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
+                    return corenlppath
+                globpath = os.path.join(corenlppath, 'stanford-corenlp*')
+                poss = [i for i in glob.glob(globpath) if os.path.isdir(i)]
+                if any(re.search(cnlp_regex, f) for f in os.listdir(poss)):
+                    return corenlppath
+            possible_paths.append(corenlp_path)
 
-        print('No parser found. Try using the keyword arg "corenlppath = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
+        # put possisble paths into list
+        pths = ['.', 'corenlp',
+                os.path.expanduser("~"),
+                os.path.join(os.path.expanduser("~"), 'corenlp')]
+        possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
+        # remove empty strings
+        possible_paths = [i for i in possible_paths if os.path.isdir(i)]
+
+        # check each possible path
+        for path in possible_paths:
+            if any(re.search(cnlp_regex, f) for f in os.listdir(path)):
+                return path
+        # check if it's a parent
+        for path in possible_paths:
+            globpath = os.path.join(path, 'stanford-corenlp*')
+            cnlp_dirs = [d for d in glob.glob(globpath)
+                         if os.path.isdir(d)]
+            for cnlp_dir in cnlp_dirs:
+                if any(re.search(cnlp_regex, f) for f in os.listdir(cnlp_dir)):
+                    return cnlp_dir
         return
 
-    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
     corenlppath = get_corenlp_path(corenlppath)
     if not corenlppath:
+        print('No parser found. Try using the keyword arg "corenlppath = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
         return
 
     # if not gui, don't mess with stdout
