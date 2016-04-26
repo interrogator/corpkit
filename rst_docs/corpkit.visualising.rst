@@ -153,13 +153,11 @@ There is an extra argument, ``black_and_white``, which can be set to ``True`` to
 Saving figures
 ---------------------
 
-To save a figure to a project's `images` directory, simply use:
+To save a figure to a project's `images` directory, you can use the ``save`` argument. ``output_format = 'png'/'pdf`` can be used to change the file format.
 
 .. code-block:: python
 
-   >>> data.visualise(save='name')
-
-You can use ``output_format = 'png'/'pdf`` to change the file format.
+   >>> data.visualise(save='name', output_format = 'png')
 
 Other options
 --------------------
