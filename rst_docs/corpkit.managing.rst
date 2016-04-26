@@ -1,6 +1,8 @@
 Managing projects
 =================
 
+``corpkit`` has a few other bits and pieces designed to make life easier when doing corpus linguistic work. This includes methods for loading saved data, for working with multiple corpora at the same time, and for switching between command line and graphical interfaces. Those things are covered here.
+
 .. contents::
    :local:
 
@@ -9,7 +11,7 @@ Loading saved data
 
 When you're starting a new session, you probably don't want to start totally from scratch. It's handy to be able to load your previous work. You can load data in a few ways.
 
-First, you can use ``corpkit.load()``:
+First, you can use ``corpkit.load()``, using the name of the filename you'd like to load. By default, ``corpkit`` looks in the ``saved_interrogations`` directory, but you can pass in an absolute path instead if you like.
 
 .. code-block:: python
 
@@ -20,7 +22,6 @@ Second, you can use ``corpkit.loader()``, which provides a list of items to load
 
 .. code-block:: python
 
-   >>> import corpkit
    >>> nouns = corpkit.loader()
 
 Third, when instantiating a ``Corpus`` object, you can add ``load_saved = True`` keyword argument to load any saved data belonging to this corpus as an attribute.
@@ -33,7 +34,6 @@ A final alternative approach stores all interrogations within an :class:`corpkit
 
 .. code-block:: python
 
-   >>> import corpkit
    >>> r = corpkit.load_all_results()
 
 Managing multiple corpora
@@ -70,7 +70,7 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
    >>> multiple_res.multiinedx()
 
-:func:`~corpkit.interrogation.Interrodict.collapse` will collapse one dimension of the ``Interrodict``. You can collapse the x axis (``'x'``), the y axis (``'y'``), or the Interrodict keys (``'k'``).
+:func:`~corpkit.interrogation.Interrodict.collapse` will collapse one dimension of the ``Interrodict``. You can collapse the x axis (``'x'``), the y axis (``'y'``), or the Interrodict keys (``'k'``). In the example below, an ``Interrodict`` is collapsed along each axis in turn.
 
 .. code-block:: python
 
@@ -104,7 +104,9 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
    >>> data.topwords(n = 5)
 
-.. code-block:: none:
+Output:
+
+.. code-block:: none
 
    TBT            %   UST            %   WAP            %   WSJ            %
    health     25.70   health     15.25   health     19.64   credit      9.22
@@ -117,4 +119,10 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 Using the GUI
 -------------
 
-Your project can also be understood by the corpkit GUI. If you open it, you can simply select your project via ``Open Project`` and resume work in a graphical environment.
+``corpkit`` is also designed to work as a GUI. It can be started in ``bash`` with:
+
+.. code-block:: bash
+
+   $ python -m corpkit.corpkit-gui
+
+The GUI can understand any projects you have defined. If you open it, you can simply select your project via ``Open Project`` and resume work in a graphical environment.
