@@ -1,19 +1,36 @@
 Interrogating corpora
 =====================
 
-Once you've built a corpus, you can search it for linguistic phenomena. This is done with the :class:`corpkit.corpus.Interrogate` method.
+Once you've built a corpus, you can search it for linguistic phenomena. This is done with the :func:`~corpkit.corpus.Corpus.interrogate` method.
 
 .. contents::
    :local:
+
+Introduction
+--------------
+
+Interrogations can be performed on any :class:`corpkit.corpus.Corpus` object, but also, on :class:`corpkit.corpus.Subcorpus` objects, :class:`corpkit.corpus.File` objects and :class:`corpkit.corpus.Datalist`s (slices of ``Corpus`` objects). You can search plaintext corpora, tokenised corpora or fully parsed corpora using the same method. We'll focus on parsed corpora in this guide.
+
+.. code-block:: python
+   
+   >>> from corpkit import *
+   ### words matching 'woman', 'women', 'man', 'men'
+   >>> query = {W: r'/(^wo)m.n/'}
+   ### interrogate corpus
+   >>> corpus.interrogate(query)
+   ### interrogate parts of corpus
+   >>> corpus[2:4].interrogate(query)
+   >>> corpus.files[:10].interrogate(query)
+   >>> corpus.subcorpora.abstract.interrogate(query)
+
+.. note::
+
+   Single capital letter variables in code examples represent lowercase strings ``(W = 'w')``. These variables are made available by doing ``from corpkit import *``. They are used here for readability.
 
 Search types
 ---------------------
 
 Parsed corpora contain many different kinds of annotation we might like to search. The annotation types, and how to specify them, are given in the table below:
-
-.. note::
-
-   Single capital letter variables represent lowercase strings ``(GL = 'gl')``. These variables are made available by doing ``from corpkit import *``. They are used here for readability.
 
 +--------+-----------------------+
 | Search | Gloss                 |
@@ -30,19 +47,19 @@ Parsed corpora contain many different kinds of annotation we might like to searc
 +--------+-----------------------+
 | GL     |  Governor lemma       |
 +--------+-----------------------+
-| GF     |   Governor function   |
+| GF     |  Governor function    |
 +--------+-----------------------+
-| GP     |   Governor POS        |
+| GP     |  Governor POS         |
 +--------+-----------------------+
 | D/DW   |  Dependent word       |
 +--------+-----------------------+
 | DL     |  Dependent lemma      |
 +--------+-----------------------+
-| DF     |   Dependent function  |
+| DF     |  Dependent function   |
 +--------+-----------------------+
-| DP     |   Dependent POS       |
+| DP     |  Dependent POS        |
 +--------+-----------------------+
-| PL     |   Word class          |
+| PL     |  Word class           |
 +--------+-----------------------+
 | N      |  Ngram                |
 +--------+-----------------------+
@@ -50,10 +67,10 @@ Parsed corpora contain many different kinds of annotation we might like to searc
 +--------+-----------------------+
 | I      |  Index in sentence    |
 +--------+-----------------------+
-| T      | Tregex tree           |
+| T      |  Tregex tree          |
 +--------+-----------------------+
 
-The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries.
+The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries. Because it comes first, and because it's always needed, you can pass it in as an argument, rather than a keyword argument.
 
 .. code-block:: python
 
@@ -81,6 +98,8 @@ You may also wish to exclude particular phenomena from the results. The ``exclud
 
    >>> from dictionaries import wordlists
    ### get any noun, but exclude closed class words
+   >>> corpus.interrogate({P: r'^n'}, exclude = {W: wordlists.closedclass})
+   ### when there's only one search criterion, you can also write:
    >>> corpus.interrogate(P, r'^n', exclude = {W: wordlists.closedclass})
 
 In many cases, rather than using ``exclude``, you could also remove results later, during editing.
@@ -108,7 +127,7 @@ Show can be either a single string or a list of strings. If a list is provided, 
 
 .. code-block:: python
 
-   >>> example = corpus.interrogate(W, r'fr?iends?', show=[W, L, P])
+   >>> example = corpus.interrogate({W: r'fr?iends?'}, show=[W, L, P])
    >>> list(example.results)
 
    ['friend/friend/nn', 'friends/friend/nns', 'fiend/fiend/nn', 'fiends/fiend/nns']
@@ -203,15 +222,27 @@ Which would return:
 | C    |  Count   | `1` (added to total) |
 +------+----------+----------------------+
 
-Tree searching options
-----------------------
+Working with dependencies
+--------------------------
 
-When searching with trees, there are a few extra options available.
+When working with dependencies, you can use any of the long list of search and return values. It's possible to construct very elaborate queries:
 
-`Multiword results` informs *corpkit* that you expect your results to be more than one word long (if you are searching for VPs, for example). This causes *corpkit* to do tokenisation of results, leading to overall better processing.
+.. code-block:: python
 
-When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`, `Dr`, etc. to help normalise and count references to specific people.
+   >>> from dictionaries import process_types, roles
+   ### nominal nsubj with verbal process as governor
+   >>> crit = {F: r'^nsubj$',
+   ...         GL: processes.verbal.lemmata,
+               GF: roles.event,
+   ...         P: r'^N'}
+   ### interrogate corpus, outputting the nsubj lemma
+   >>> sayers = parsed.interrogate(crit, show = L)
 
+You can also select from the three dependency grammars used by CoreNLP: one of ``'basic-dependencies'``, ``'collapsed-dependencies'``, or ``'collapsed-ccprocessed-dependencies'`` can be passed in as ``dep_type``:
+
+.. code-block:: python
+
+   >>> corpus.interrogate(query, dep_type = 'collapsed-ccprocessed-dependencies')
 
 Multiprocessing
 ---------------------
@@ -258,7 +289,12 @@ If you want to quickly export a result to CSV, LaTeX, etc., you can use Pandas' 
    >>> print(nouns.results.to_csv())
    >>> print(nouns.results.to_latex())
 
-That said, there's a lot more that can be done with them in `corpkit`. Head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, Hit `Next` to learn about concordancing.
+Other options
+---------------
+
+:func:`~corpkit.corpus.Corpus.interrogate` takes a number of other arguments, each of which is documented in the API documentation.
+
+If you're done interrogating, you can head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, Hit `Next` to learn about concordancing.
 
 .. _here: http://nlp.stanford.edu/~manning/courses/ling289/Tregex.htm
 .. _Penn Treebank tagset: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
