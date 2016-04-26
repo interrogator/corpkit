@@ -53,7 +53,7 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
    ...                x_label = 'Subcorpus', y_label = 'Event').show()
 
 .. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/event-heatmap.png
-   :width: 60%
+   :width: 50%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/event-heatmap.png
    :align: center
 
@@ -63,14 +63,14 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
 Stacked area/line plots can be made with ``stacked = True``. You can also use ``filled = True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative = True``.
 
 .. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
-   :width: 60%
+   :width: 45%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
    :align: center
 
    Area plot using viridis colourmap
 
 .. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
-   :width: 60%
+   :width: 45%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
    :align: center
    
@@ -108,7 +108,7 @@ Subplots
    :width: 60%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/subplots.png
    :align: center
-   
+
    Line charts using subplots and layout specification
 
 
