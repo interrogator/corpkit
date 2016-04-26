@@ -176,10 +176,11 @@ There are a number of further keyword arguments for customising figures:
 +--------------------+------------+---------------------------------+
 | ``show_p_val``     | ``bool``   | Try to show p value in legend   |
 +--------------------+------------+---------------------------------+
-| ``interactive``    | ``bool``   | Experimental mpld3 use          |
+| ``interactive``    | ``bool``   | Experimental mpld3_ use          |
 +--------------------+------------+---------------------------------+
 
 A number of these and other options for customising figures are also described in the :class:`corpkit.interrogation.Interrogation.visualise` method documentation.
 
 .. _plot: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.plot.html
-.. _docs: .. https://stanford.edu/~mwaskom/software/seaborn/generated/seaborn.heatmap.html
+.. _docs: https://stanford.edu/~mwaskom/software/seaborn/generated/seaborn.heatmap.html
+.. _mpld3: http://mpld3.github.io/
