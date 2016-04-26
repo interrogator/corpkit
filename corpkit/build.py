@@ -574,6 +574,8 @@ def parse_corpus(proj_path = False,
     import chardet
     from time import localtime, strftime
     import time
+
+    url = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'
     
     if not only_tokenise:
         if not check_jdk():
@@ -653,7 +655,7 @@ def parse_corpus(proj_path = False,
                 os.path.join(os.path.expanduser("~"), 'corenlp')]
         possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
         # remove empty strings
-        possible_paths = [i for i in possible_paths if os.path.isdir(i)]
+        possible_paths = set([i for i in possible_paths if os.path.isdir(i)])
 
         # check each possible path
         for path in possible_paths:
@@ -670,9 +672,30 @@ def parse_corpus(proj_path = False,
         return
 
     corenlppath = get_corenlp_path(corenlppath)
-    if not corenlppath:
-        print('No parser found. Try using the keyword arg "corenlppath = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
-        return
+
+    if not corenlppath and not root:
+        txt = 'CoreNLP not found. Download? (y/n) '
+        if sys.version_info.major == 3:
+            selection = input(txt)
+        else:
+            selection = raw_input(txt)
+        if 'n' in selection.lower():
+            raise ValueError('CoreNLP needed to parse texts.')
+        else:
+            print('Downloading CoreNLP...')
+            from build import download_large_file, extract_cnlp
+            cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
+            if not os.path.isdir(cnlp_dir):
+                os.makedirs(cnlp_dir)
+            corenlppath, fpath = download_large_file(cnlp_dir, url)
+            extract_cnlp(fpath)
+            import glob
+            globpath = os.path.join(corenlppath, 'stanford-corenlp*')
+            corenlppath = [i for i in glob.glob(globpath) if os.path.isdir(i)]
+            if corenlppath:
+                corenlppath = corenlppath[-1]
+            else:
+                raise ValueError('CoreNLP installation failed for some reason. Try manual download.')
 
     # if not gui, don't mess with stdout
     if stdout is False:
