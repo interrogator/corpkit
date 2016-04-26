@@ -99,25 +99,25 @@ To use this option, use the ``speaker_segmentation`` keyword argument:
 
 Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on:
 
-+--------------------------+--------------+---------------------------------------+
-| ``parse()`` argument     | Type         | Purpose                               |
-+==========================+==============+=======================================+
-| ``corenlppath``          | ``str``      | Path to CoreNLP                       |
-+--------------------------+--------------+---------------------------------------+
-| ``nltk_data_path``       | ``str``      | Path to ``punkt`` tokeniser           |
-+--------------------------+--------------+---------------------------------------+
-| ``operations``           | ``str``      | `List of annotations`_                |
-+--------------------------+--------------+---------------------------------------+
-| ``copula_head``          | ``bool``     | Make copula head of dependency parse  |
-+--------------------------+--------------+---------------------------------------+
-| ``speaker_segmentation`` | ``bool``     | Do speaker segmentation               |
-+--------------------------+--------------+---------------------------------------+
-| ``memory_mb``            | ``int``      | Amount of memory to allocate          |
-+--------------------------+--------------+---------------------------------------+
-| ``multiprocess``         | ``int/bool`` | Process in ``n`` parallel jobs        |
-+--------------------------+--------------+---------------------------------------+
++--------------------------+------------+---------------------------------------+
+| `parse()` argument       | Type       | Purpose                               |
++==========================+============+=======================================+
+| `corenlppath`            | `str`      | Path to CoreNLP                       |
++--------------------------+------------+---------------------------------------+
+| `nltk_data_path`         | `str`      | Path to `punkt` tokeniser             |
++--------------------------+------------+---------------------------------------+
+| `operations`             | `str`      | `List of annotations`_                |
++--------------------------+------------+---------------------------------------+
+| `copula_head`            | `bool`     | Make copula head of dependency parse  |
++--------------------------+------------+---------------------------------------+
+| `speaker_segmentation`   | `bool`     | Do speaker segmentation               |
++--------------------------+------------+---------------------------------------+
+| `memory_mb`              | `int`      | Amount of memory to allocate          |
++--------------------------+------------+---------------------------------------+
+| `multiprocess`           | `int/bool` | Process in `n` parallel jobs          |
++--------------------------+------------+---------------------------------------+
 
-Maniulating a parsed corpus
+Manipulating a parsed corpus
 -----------------------------
 
 Once you have a parsed corpus, you're ready to analyse it. :class:`corpkit.corpus.Corpus` objects can be navigated in a number of ways. *CoreNLP XML* is used to navigte the internal structure of XML files within the corpus.

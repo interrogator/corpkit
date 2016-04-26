@@ -59,8 +59,7 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
 
    Heatmap example
 
-
-Stacked area/line plots can be made with ``stacked = True``. You can also use ``filled = True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative = True``.
+Stacked area/line plots can be made with ``stacked = True``. You can also use ``filled = True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative = True``. Below is an area plot beside an area plot where ``filled = True``. Both use the ``vidiris`` colour scheme.
 
 .. image:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
    :width: 45%
@@ -149,7 +148,7 @@ There is an extra argument, ``black_and_white``, which can be set to ``True`` to
 Saving figures
 ---------------------
 
-To save a figure to a project's `images` directory, you can use the ``save`` argument. ``output_format = 'png'/'pdf`` can be used to change the file format.
+To save a figure to a project's `images` directory, you can use the ``save`` argument. ``output_format = 'png'/'pdf'`` can be used to change the file format.
 
 .. code-block:: python
 
