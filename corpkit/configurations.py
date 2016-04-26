@@ -1,5 +1,9 @@
 def configurations(corpus, search, **kwargs):
-    """Get behaviour of a word---see corpkit.corpus.Corpus.configurations() for docs"""
+    """
+    Get summary of behaviour of a word
+
+    see corpkit.corpus.Corpus.configurations() for docs
+    """
 
     import corpkit
     from dictionaries.wordlists import wordlists
@@ -8,12 +12,14 @@ def configurations(corpus, search, **kwargs):
     from interrogator import interrogator
     from collections import OrderedDict
 
+    # check if in gui
     root = kwargs.get('root')
     note = kwargs.get('note')
 
     if search.get('l') and search.get('w'):
         raise ValueError('Search only for a word or a lemma, not both.')
 
+    # are we searching words or lemmata?
     if search.get('l'):
         dep_word_or_lemma = 'dl'
         gov_word_or_lemma = 'gl'
@@ -24,6 +30,7 @@ def configurations(corpus, search, **kwargs):
             gov_word_or_lemma = 'g'
             word_or_token = search.get('w')
 
+    # make nested query dicts for each semantic role
     queries = {'participant': 
 
                 {'left_participant_in':             
@@ -96,6 +103,7 @@ def configurations(corpus, search, **kwargs):
                 }
             }
 
+    # allow passing in of single function
     if search.get('f'):
         if search.get('f').lower().startswith('part'):
             queries = queries['participant']
@@ -111,13 +119,18 @@ def configurations(corpus, search, **kwargs):
         queries = newqueries
         queries['and_or'] = {'f': 'conj:(and|or)', gov_word_or_lemma: word_or_token},
 
+    # count all queries to be done
     total_queries = 0
     for k, v in queries.items():
         for subk, subv in v.items():
             total_queries += 1
-
+    
     kwargs['search'] = queries
-    data = interrogator(corpus, **kwargs)
+    
+    # do interrogation
+    data = corpus.interrogate(**kwargs)
+    
+    # remove result itself
     for k, v in data.items():
         v.results = v.results.drop(word_or_token, axis = 1, errors = 'ignore')
         v.totals = v.results.sum(axis = 1)
