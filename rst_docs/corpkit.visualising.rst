@@ -172,7 +172,7 @@ There are a number of further keyword arguments for customising figures:
 +--------------------+------------+---------------------------------+
 | ``transpose``      | ``bool``   | Flip axes of DataFrame          |
 +--------------------+------------+---------------------------------+
-| ``log_x/log_y``    | ``bool``   | Log scales                      |
+| ``logx/logy``      | ``bool``   | Log scales                      |
 +--------------------+------------+---------------------------------+
 | ``show_p_val``     | ``bool``   | Try to show p value in legend   |
 +--------------------+------------+---------------------------------+
