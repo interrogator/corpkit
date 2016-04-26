@@ -1124,6 +1124,7 @@ def plotter(df,
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(left=.1)
 
+    # add DataCursor to notebook backend if possible
     try:
         if kind == 'line':
             HighlightingDataCursor(plt.gca().get_lines(), highlight_width = 4,
@@ -1133,7 +1134,6 @@ def plotter(df,
     except:
         pass
 
-    return plt
     #if not interactive and not running_python_tex and not running_spider \
     #    and not tk:
     #    plt.gcf().show()
@@ -1149,6 +1149,8 @@ def plotter(df,
         except:
             pass
         return mpld3.display()
+    else:
+        return plt
 
 
 
