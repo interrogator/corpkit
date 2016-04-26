@@ -308,7 +308,10 @@ def load(savename, loaddir = 'saved_interrogations'):
         savename = savename + '.p'
 
     if loaddir:
-        fullpath = os.path.join(loaddir, savename)
+        if '/' not in savename:
+            fullpath = os.path.join(loaddir, savename)
+        else:
+            fullpath = savename
     else:
         fullpath = savename
 
