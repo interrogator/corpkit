@@ -65,14 +65,14 @@ Stacked area/line plots can be made with ``stacked = True``. You can also use ``
 .. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
    :width: 45%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
-   :align: center
+   :align: left
 
    Area plot using viridis colourmap
 
 .. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
    :width: 45%
    :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
-   :align: center
+   :align: right
    
    Filled area plot using viridis colourmap
 
