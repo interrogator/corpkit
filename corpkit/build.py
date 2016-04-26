@@ -622,19 +622,49 @@ def parse_corpus(proj_path = False,
                 if any([f.endswith('.txt') for f in fs]):
                     print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
                     return False          
-    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
-    cwd = os.getcwd()
-    if corenlppath is False:
+    
+    def get_corenlp_path(corenlppath):
+        import os
         home = os.path.expanduser("~")
+        f = 'jollyday.jar'
+        if corenlppath:
+            if os.path.isfile(corenlppath):
+                return os.path.dirname(corenlppath)
+            elif os.path.isdir(corenlppath):
+                if f in os.listdir(corenlppath):
+                    return corenlppath
+                else:
+                    try:
+                        return next(os.path.join(corenlppath, d) for d in os.listdir(corenlppath) \
+                            if os.path.isdir(os.path.join(corenlppath, d)) \
+                            and os.path.isfile(os.path.join(corenlppath, d, f)))
+                    except StopIteration:
+                        pass
+        # check for ~/corenlp/stanford-corenlp-xx
         corenlppath = os.path.join(home, 'corenlp')
-        find_install = [d for d in os.listdir(corenlppath) \
-                   if os.path.isdir(os.path.join(corenlppath, d)) \
-                   and os.path.isfile(os.path.join(corenlppath, d, 'jollyday.jar'))]
-        if len(find_install) > 0:
-            corenlppath = os.path.join(corenlppath, find_install[0])
-        else:
-            print('No parser found. Try using the keyword arg "corenlp = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
-            return
+        try:
+            return next(os.path.join(corenlppath, d) for d in os.listdir(corenlppath) \
+                if os.path.isdir(os.path.join(corenlppath, d)) \
+                and os.path.isfile(os.path.join(corenlppath, d, f)))
+        except StopIteration:
+            # check for home/stanford-corenlp-xx
+            import glob
+            dirs = glob.glob(os.path.join(home, 'stanford-corenlp*'))
+            if dirs:
+                return dirs[-1]
+            else:
+                # check for ./stanford-corenlp-xx
+                dirs = glob.glob(os.path.join('.', 'stanford-corenlp*'))
+                if dirs:
+                    return dirs[-1]
+
+        print('No parser found. Try using the keyword arg "corenlppath = <path>", or moving your corenlp folder to ~/corenlp/stanford-corenlp-full ...')
+        return
+
+    #javaloc = os.path.join(proj_path, 'corenlp', 'stanford-corenlp-3.6.0.jar:stanford-corenlp-3.6.0-models.jar:xom.jar:joda-time.jar:jollyday.jar:ejml-0.23.jar')
+    corenlppath = get_corenlp_path(corenlppath)
+    if not corenlppath:
+        return
 
     # if not gui, don't mess with stdout
     if stdout is False:
