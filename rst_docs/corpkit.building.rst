@@ -60,7 +60,7 @@ This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.inte
 
 .. code-block:: python
 
-   >>> th_words = unparsed.interrogate(W, r'th[a-z-]+')
+   >>> th_words = unparsed.interrogate({W: r'th[a-z-]+'})
    ### show 5x5 (Pandas syntax)
    >>> th_words.results.iloc[:5,:5]
 
@@ -74,11 +74,15 @@ This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.inte
 Parsing a corpus
 -----------------
 
-Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser. It can take a long time to run.
+Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser, and therefore, you must have the parser and Java installed. ``corpkit`` will look around in your PATH for the parser, but you can also pass in its location manually with (e.g.) ``corenlppath = 'users/you/corenlp'``.
 
 .. code-block:: python
 
    >>> corpus = unparsed.parse()
+
+.. note::
+
+    Remember that parsing is a computationally intensive task, and can take a long time!
 
 ``corpkit`` can also work with speaker IDs. If lines in your file contain capitalised alphanumeric names, followed by a colon (as per the example below), these IDs can be stripped out and turned into metadata features in the XML.
 
@@ -93,7 +97,25 @@ To use this option, use the ``speaker_segmentation`` keyword argument:
 
    >>> corpus = unparsed.parse(speaker_segmentation = True)
 
-Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on.
+Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on:
+
++--------------------------+--------------+---------------------------------------+
+| ``parse()`` argument     | Type         | Purpose                               |
++==========================+==============+=======================================+
+| ``corenlppath``          | ``str``      | Path to CoreNLP                       |
++--------------------------+--------------+---------------------------------------+
+| ``nltk_data_path``       | ``str``      | Path to ``punkt`` tokeniser           |
++--------------------------+--------------+---------------------------------------+
+| ``operations``           | ``str``      | `List of annotations`_                |
++--------------------------+--------------+---------------------------------------+
+| ``copula_head``          | ``bool``     | Make copula head of dependency parse  |
++--------------------------+--------------+---------------------------------------+
+| ``speaker_segmentation`` | ``bool``     | Do speaker segmentation               |
++--------------------------+--------------+---------------------------------------+
+| ``memory_mb``            | ``int``      | Amount of memory to allocate          |
++--------------------------+--------------+---------------------------------------+
+| ``multiprocess``         | ``int/bool`` | Process in ``n`` parallel jobs        |
++--------------------------+--------------+---------------------------------------+
 
 Once you have a parsed corpus, you're ready to start interrogating. Before constructing your own query, however, you may want to use two predefined methods for counting key features in the corpus:
 
@@ -102,7 +124,6 @@ Once you have a parsed corpus, you're ready to start interrogating. Before const
    >>> corpus.features
    >>> corpus.postags
 
-The first of these can long time, as it counts a number of complex features.
+The first of these can long time, as it counts a number of complex features. Once it's done, however, it saves automatically, so you don't need to do it again.
 
-
-
+.. _List of annotations: http://nlp.stanford.edu/index.shtml

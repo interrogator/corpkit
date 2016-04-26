@@ -2,7 +2,7 @@
 Concordancing
 ==============
 
-Any interrogation is also optionally a concordance. If you use the ``do_concordancing`` keyword argument, your interrogation will have a ``concordance`` attribute containing concordance lines.
+Any interrogation is also optionally a concordance. If you use the ``do_concordancing`` keyword argument, your interrogation will have a ``concordance`` attribute containing concordance lines. Like interrogation results, concordances are stored as Pandas DataFrames. ``maxconc`` controls the number of lines produced.
 
 .. code-block:: python
 
@@ -15,12 +15,26 @@ If you don't want or need the interrgation data, you can use the :func:`~corpkit
 
    >>> conc = corpus.concordance(T, r'/JJ.?/ > (NP <<# /man/)')
 
+Displaying concordance lines
+------------------------------
+
+How concordance lines will be displayed really depends on your interpreter and environment. For the most part, though, you'll want to use the :func:`~corpkit.interrogation.Concordance.format` method.
+
+.. code-block:: python
+
+   >>> lines.format(kind = 's'
+                    n = 100
+                    window = 50,
+                    columns = [L, M, R])
+
+``kind`` allows you to print as CSV (``'c'``), as LaTeX (``'l'``), or simple string (``'s'``). ``n`` controls the number of results shown. ``window`` controls how much context to show in the left and right columns. ``columns`` accepts a list of column names to show.
+
+Pandas' set_option_ can be used to customise some visualisation defaults.
+
 Working with concordance lines
 -------------------------------
 
-Like interrogation results, concordances are stored as Pandas DataFrames.
-
-You can edit concordance lines using the :func:`~corpkit.interrogation.Concordance.edit` method. You can use this method to keep or remove entries or subcorpora matching regular expressions or lists.
+You can edit concordance lines using the :func:`~corpkit.interrogation.Concordance.edit` method. You can use this method to keep or remove entries or subcorpora matching regular expressions or lists. Keep in mind that because concordance lines are DataFrames, you can use Pandas' dedicated methods for working with text data.
 
 .. code-block:: python
 
@@ -28,7 +42,6 @@ You can edit concordance lines using the :func:`~corpkit.interrogation.Concordan
    >>> from dictionaries import usa_convert
    >>> concs = result.concordance.edit(just_entries = usa_convert.keys())
 
-Because concordance lines are DataFrames, you can use Pandas' dedicated methods for working with text data.
 
 Concordance objects can be saved just like any other ``corpkit`` object:
 
@@ -45,13 +58,15 @@ You can also easily turn them into CSV data, or into LaTeX:
    >>> concs.to_latex()
 
    ### corpkit method: csv and latex
-   >>> concs.shuffle().format('c', window = 20, n = 10)
-   >>> concs.shuffle().format('l', window = 20, n = 10)
+   >>> concs.format('c', window = 20, n = 10)
+   >>> concs.format('l', window = 20, n = 10)
 
-You can use the func:`~corpkit.interrogation.Concordance.calculate` method to generate a frequency count of the middle column of the concordance. Therefore, one method for ensuring accuracy is to:
+You can use the :func:`~corpkit.interrogation.Concordance.calculate` method to generate a frequency count of the middle column of the concordance. Therefore, one method for ensuring accuracy is to:
 
    1. Run an interrogation, using ``do_concordance = True`` 
    2. Remove false positives from the concordance result
    3. Use the calculate method to regenerate the overall frequency
 
+If you'd like to randomise the order of your results, you can use ``lines.shuffle()``
 
+.. _set_option: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.set_option.html
