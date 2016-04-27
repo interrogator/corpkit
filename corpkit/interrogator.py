@@ -1,10 +1,14 @@
+"""
+corpkit: Interrogate a parsed corpus
+"""
+
 #!/usr/bin/python
 
 from __future__ import print_function
 
 def interrogator(corpus, 
                  search, 
-                 query='any', 
+                 query='any',
                  show='w',
                  exclude=False,
                  excludemode='any',
@@ -35,21 +39,18 @@ def interrogator(corpus,
     no_conc = False
     if do_concordancing is False:
         no_conc = True
-    if type(do_concordancing) == str and do_concordancing.lower() == 'only':
+    if isinstance(do_concordancing, str) and do_concordancing.lower() == 'only':
         only_conc = True
         no_conc = False
 
     # iteratively count conc lines
     numconc = 0
 
-    # store kwargs
-    locs = locals()
-    
-    if kwargs:
-        for k, v in kwargs.items():
-            locs[k] = v
-        locs.pop('kwargs', None)
-
+    # store kwargs and locs
+    locs = locals().copy()
+    locs.update(kwargs)
+    locs.pop('kwargs', None)
+        
     import codecs
     import signal
     from time import localtime, strftime
@@ -59,22 +60,20 @@ def interrogator(corpus,
     import pandas as pd
     from pandas import DataFrame, Series
 
-    import corpkit
-    from interrogation import Interrogation, Interrodict
-    from corpus import Datalist, Corpora, Corpus, File, Subcorpus
-    from process import tregex_engine, get_deps
-    from other import as_regex
-    from textprogressbar import TextProgressBar
-    from process import animator
-    from dictionaries.word_transforms import wordlist, taglemma
-    from dictionaries.process_types import Wordlist
+    from corpkit.interrogation import Interrogation, Interrodict
+    from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
+    from corpkit.process import tregex_engine, get_deps
+    from corpkit.other import as_regex
+    from corpkit.process import animator
+    from corpkit.dictionaries.word_transforms import wordlist, taglemma
+    from corpkit.dictionaries.process_types import Wordlist
 
     original_sigint = signal.getsignal(signal.SIGINT)
 
     if kwargs.get('paralleling', None) is None:
         original_sigint = signal.getsignal(signal.SIGINT)
         
-        def signal_handler(signal, frame):
+        def signal_handler(signal, _):
             """pause on ctrl+c, rather than just stop loop"""   
             import signal
             import sys
@@ -82,9 +81,9 @@ def interrogator(corpus,
             signal.signal(signal.SIGINT, original_sigint)
             thetime = strftime("%H:%M:%S", localtime())
             try:
-                sel = raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+                raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
             except NameError:
-                sel = input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+                input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
             time = strftime("%H:%M:%S", localtime())
             print('%s: Interrogation resumed.\n' % time)
             signal.signal(signal.SIGINT, signal_handler)
@@ -106,10 +105,10 @@ def interrogator(corpus,
     # convert path to corpus object
     if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File, Datalist]:
         if not multiprocess and not kwargs.get('outname'):
-            corpus = Corpus(corpus, print_info = False)
+            corpus = Corpus(corpus, print_info=False)
 
     # figure out how the user has entered the query and normalise
-    from process import searchfixer
+    from corpkit.process import searchfixer
     search = searchfixer(search, query)
 
     # lowercase anything in show
@@ -127,53 +126,45 @@ def interrogator(corpus,
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
         do some retyping if need be as well"""
-        im = False
+        is_mul = False
         from collections import OrderedDict
         #if hasattr(corpus, '__iter__'):
-        #    im = True
+        #    is_mul = True
         # so we can do search = 't', query = ['NP', 'VP']:
-        from dictionaries.process_types import Wordlist
-        if type(query) == Wordlist:
+        from corpkit.dictionaries.process_types import Wordlist
+        if isinstance(query, Wordlist):
             query = list(query)
-        if type(query) == list:
+        if isinstance(query, list):
             if query != list(search.values())[0] or len(list(search.keys())) > 1:
                 query = {c.title(): c for c in query}
-        if type(query) == dict or type(query) == OrderedDict:
-            im = True
+        if isinstance(query, dict) or isinstance(query, OrderedDict):
+            is_mul = True
         if just_speakers:
 
             if just_speakers == 'each':
-                im = True
+                is_mul = True
                 just_speakers = ['each']
             if just_speakers == ['each']:
-                im = True
-            if type(just_speakers) == str:
-                im = False
+                is_mul = True
+            if isinstance(just_speakers, str):
+                is_mul = False
                 just_speakers = [just_speakers]
-            if type(just_speakers) == list:
+            if isinstance(just_speakers, list):
                 if len(just_speakers) > 1:
-                    im = True
-        if type(search) == dict:
-            if all(type(i) == dict for i in list(search.values())):
-                im = True
-        return im, corpus, search, query, just_speakers
+                    is_mul = True
+        if isinstance(search, dict):
+            if all(isinstance(i, dict) for i in list(search.values())):
+                is_mul = True
+        return is_mul, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
         speakr = dummy_args.get('speaker', False)
         import os
-        from process import tregex_engine
+        from corpkit.process import tregex_engine
         # first, put the relevant trees into temp file
-        if kwargs.get('outname'):
-            to_open = 'tmp-%s.txt' % kwargs['outname']
-        else:
-            to_open = 'tmp.txt'
-        to_write = '\n'.join([sent._parse_string.strip() for sent in sents \
+        to_open = '\n'.join([sent.parse_string.strip() for sent in sents \
                               if sent.parse_string is not None])
-        to_write.encode('utf-8', errors = 'ignore')
-        with open(to_open, "w") as fo:
-            encd = to_write.encode('utf-8', errors = 'ignore') + '\n'
-            fo.write(encd)
         q = list(search.values())[0]
         ops = ['-o', '-%s' % translated_option]
         concs = []
@@ -196,10 +187,7 @@ def interrogator(corpus,
 
         if root:
             root.update()
-        try:
-            os.remove(to_open)
-        except OSError:
-            pass
+
         if countmode:
             return(len(res))
         else:
@@ -212,23 +200,18 @@ def interrogator(corpus,
         from collections import Counter
         statsmode_results = Counter()  
         # first, put the relevant trees into temp file
-        if kwargs.get('outname'):
-            to_open = 'tmp-%s.txt' % kwargs['outname']
-        else:
-            to_open = 'tmp.txt'
-        with open(to_open, "w") as fo:
-            for sent in sents:
-                statsmode_results['Sentences'] += 1
-                sts = sent.parse_string.rstrip()
-                encd = sts.encode('utf-8', errors = 'ignore') + '\n'
-                fo.write(encd)
-                deps = get_deps(sent, dep_type)
-                numpass = len([x for x in deps.links if x.type.endswith('pass')])
-                statsmode_results['Passives'] += numpass
-                statsmode_results['Tokens'] += len(sent.tokens)
-                words = [w.word for w in sent.tokens if w.word is not None and w.word.isalnum()]
-                statsmode_results['Words'] += len(words)
-                statsmode_results['Characters'] += len(''.join(words))
+
+        for sent in sents:
+            statsmode_results['Sentences'] += 1
+            deps = get_deps(sent, dep_type)
+            numpass = len([x for x in deps.links if x.type.endswith('pass')])
+            statsmode_results['Passives'] += numpass
+            statsmode_results['Tokens'] += len(sent.tokens)
+            words = [w.word for w in sent.tokens if w.word is not None and w.word.isalnum()]
+            statsmode_results['Words'] += len(words)
+            statsmode_results['Characters'] += len(''.join(words))
+
+        to_open = '\n'.join([s.parse_string.strip() for s in sents])
 
         # count moods via trees          (/\?/ !< __)
         from dictionaries.process_types import processes
@@ -264,10 +247,7 @@ def interrogator(corpus,
                 animator(p, numdone, tot_string, **par_args)
             if kwargs.get('note', False):
                 kwargs['note'].progvar.set((numdone * 100.0 / total_files / denom) + startnum)
-        try:
-            os.remove(to_open)
-        except OSError:
-            pass
+
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes, middle_column_result, 
@@ -1021,11 +1001,6 @@ def interrogator(corpus,
                     else:
                         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
                     animator(p, current_iter, tstr, **par_args)
-
-    # delete temp file if there
-    import os
-    if os.path.isfile('tmp.txt'):
-        os.remove('tmp.txt')
 
     ############################################
     #     Get concordances into DataFrame      #

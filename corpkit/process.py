@@ -150,17 +150,34 @@ def tregex_engine(corpus = False,
     add_corpkit_to_path()
     import subprocess 
     from subprocess import Popen, PIPE, STDOUT
+
     import re
     from time import localtime, strftime
     from process import checkstack
     from dictionaries.word_transforms import wordlist
     import os
     import sys
+
+    DEVNULL = open(os.devnull, 'w')
+
+    if check_query or check_for_trees:
+        send_stderr_to = subprocess.STDOUT
+        send_stdout_to = DEVNULL
+    else:
+        send_stderr_to = DEVNULL
+        send_stdout_to = subprocess.STDOUT
+
     pyver = sys.version_info.major
     if pyver == 2:
         inputfunc = raw_input
     elif pyver == 3:
         inputfunc = input
+
+    filtermode = False
+    if isinstance(options, list):
+        filtermode = '-filter' in options
+    if filtermode:
+        options.pop(options.index('-filter'))
 
     on_cloud = checkstack('/opt/python/lib')
 
@@ -211,11 +228,9 @@ def tregex_engine(corpus = False,
             options = ['-o', '-T']
 
         filenaming = False
-        try:
+        if isinstance(options, list):
             if '-f' in options:
                 filenaming = True
-        except:
-            pass
 
         if return_tuples or lemmatise:
             options = ['-o']
@@ -223,41 +238,40 @@ def tregex_engine(corpus = False,
         if options:
             if '-s' not in options and '-t' not in options:
                 options.append('-s')
-            [tregex_command.append(o) for o in options]
-        # dummy option
         else:
             options = ['-o', '-t']
+        for opt in options:
+            tregex_command.append(opt)       
         if query:
             tregex_command.append(query)
-        if corpus:
-            if os.path.isdir(corpus) or os.path.isfile(corpus):
-                if '-filter' not in options:
-                    tregex_command.append(corpus)
-        # do query
-        #try:
         
-        if type(options) != bool:
-            if not '-filter' in options:
-                res = subprocess.check_output(tregex_command, stderr=subprocess.STDOUT).decode(encoding='UTF-8').splitlines()
-            else:
-                p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
-                res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
-                p.stdin.close()
-                print(res)
-        else:
-            p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-            p.stdin.write(corpus.encode('utf-8', errors = 'ignore'))
-            res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
-            print(type(res))
-            p.stdin.close()
-        # exception handling for regex error
-        #except Exception, e:
-        #    try:
-        #        res = str(e.output).split('\n')
-        #    except:
-        #        raise e
+        # if corpus is string or unicode, and is path, add that
+        # if it's not string or unicode, it's some kind of corpus obj
+        # in which case, add its path var
 
+        if corpus:
+            if isinstance(corpus, basestring):
+                if os.path.isdir(corpus) or os.path.isfile(corpus):
+                    tregex_command.append(corpus)
+                else:
+                    filtermode = True
+            elif hasattr(corpus, 'path'):
+                    tregex_command.append(corpus.path)
+        
+        if filtermode:
+            tregex_command.append('-filter')
+
+        if not filtermode:
+            res = subprocess.check_output(tregex_command, stderr=send_stderr_to)
+            res = res.decode(encoding='UTF-8').splitlines()
+        else:
+            p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=send_stderr_to)
+            p.stdin.write(corpus.encode('UTF-8', errors = 'ignore'))
+            res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
+            p.stdin.close()
+        
+        # TODO:
+        # Fix up the stderr stdout rubbish
         if check_query:
             # define error searches 
             tregex_error = re.compile(r'^Error parsing expression')
@@ -313,21 +327,7 @@ def tregex_engine(corpus = False,
     if '-C' in options:
         return int(res[-1])
 
-    # remove errors and blank lines
-    res = [s for s in res if not s.startswith('PennTreeReader:') and s]
-
-    # find and remove stderr lines
-    if '-filter' not in options:
-        n = 1
-        std_last_index = res.index(next(s for s in res \
-                        if s.startswith('Reading trees from file') \
-                        or s.startswith('using default tree')))
-    else:
-        n = 2
-        std_last_index = res.index(next(s for s in res \
-                        if s.startswith('Parsed representation:')))
-    res = res[std_last_index + n:]
-    res = [r.lstrip().rstrip() for r in res]
+    res = [r.strip() for r in res if r.strip()]
 
     # this is way slower than it needs to be, because it searches a whole subcorpus!
     if check_for_trees:
@@ -336,10 +336,9 @@ def tregex_engine(corpus = False,
         else:
             return False
     # return if no matches
-    if res[-1] == 'There were 0 matches in total.':
+    if not res:
         return []
-    # remove total
-    res = res[:-1]
+
     # make unicode and lowercase
     make_tuples = []
 
@@ -356,7 +355,7 @@ def tregex_engine(corpus = False,
             res = [w.lower().replace('/', '-slash-') for w in res]
     else:
         if preserve_case:
-            pass # res = [(str(t, 'utf-8', errors = 'ignore'), str(w, 'utf-8', errors = 'ignore')) for t, w in res]
+            pass
         else:
             res = [(t, w.lower().replace('/', '-slash-')) for t, w in res]
 
@@ -396,66 +395,6 @@ def tregex_engine(corpus = False,
     if return_tuples:
         res = [(w, t.upper()) for w, t in res]
     return res
-
-
-def make_nltk_text(directory, 
-                   collapse_dirs = True, 
-                   tagged = False, 
-                   lemmatise = False, 
-                   just_content_words = False):
-    """
-    Turn a lot of trees into an nltk style text"""
-    import nltk
-    import os
-    from process import tregex_engine
-    if type(directory) == str:
-        dirs = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
-        if len(dirs) == 0:
-            dirs = [directory]
-    elif type(directory) == list:
-        dirs = directory
-
-    return_tuples = False
-    if tagged:
-        return_tuples = True
-
-    if just_content_words:
-        lemmatise = True
-
-    query = r'__ < (/.?[A-Za-z0-9].?/ !< __)'
-    if not return_tuples and not lemmatise:
-        options = ['-o', '-t']
-    else:
-        options = ['-o']
-
-    # filthy code.
-    all_out = []
-
-    for d in dirs:
-        print("Flattening %s ... " % str(d))
-        res = tregex_engine(corpus = d, 
-                            query = query, 
-                            options = options,
-                            lemmatise = lemmatise,
-                            just_content_words = just_content_words,
-                            return_tuples = return_tuples)
-        all_out.append(res)
-
-    if collapse_dirs:
-        tmp = []
-        for res in all_out:
-            for w in res:
-                tmp.append(w)
-        all_out = tmp
-        textx = nltk.Text(all_out)
-    else:
-        textx = {}
-        for name, text in zip(dirs, all_out):
-            t = nltk.Text(all_out)
-            textx[os.path.basename(name)] = t
-    return textx
-
-
 
 def show(lines, index, show = 'thread'):
     """show lines.ix[index][link] as frame"""
