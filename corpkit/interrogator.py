@@ -53,6 +53,7 @@ def interrogator(corpus,
         
     import codecs
     import signal
+    import os
     from time import localtime, strftime
     from collections import Counter
 
