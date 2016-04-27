@@ -24,10 +24,10 @@ A common workflow is to interrogate a corpus, relative results, and visualise:
 .. code-block:: python
 
    >>> from corpkit import *
-   >>> corpus = Corpus('data/P-parsed', load_saved = True)
+   >>> corpus = Corpus('data/P-parsed', load_saved=True)
    >>> counts = corpus.interrogate({T: r'MD < __'})
    >>> reldat = counts.edit('%', SELF)
-   >>> reldat.visualise('Modals', kind = 'line', num_to_plot = ALL).show()
+   >>> reldat.visualise('Modals', kind='line', num_to_plot=ALL).show()
    ### the visualise method can also attach to the df:
    >>> reldat.results.visualise(...).show()
 
@@ -45,12 +45,12 @@ The current behaviour of ``visualise()`` is to return the ``pyplot`` module. Thi
 Plot type
 ---------------------
 
-The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area``, and ``pie`` charts. Those with `seaborn` can also use ``'heatmap'`` (docs_). Just pass in the type as a string with the ``kind`` keyword argument. Arguments such as ``robust = True`` can then be used.
+The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area``, and ``pie`` charts. Those with `seaborn` can also use ``'heatmap'`` (docs_). Just pass in the type as a string with the ``kind`` keyword argument. Arguments such as ``robust=True`` can then be used.
 
 .. code-block:: python
 
-   >>> data.visualise(kind='heatmap', robust=True, figsize = (4, 12),
-   ...                x_label = 'Subcorpus', y_label = 'Event').show()
+   >>> data.visualise(kind='heatmap', robust=True, figsize=(4,12),
+   ...                x_label='Subcorpus', y_label='Event').show()
 
 .. figure:: ../images/event-heatmap.png
    :width: 50%
@@ -59,7 +59,7 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
 
    Heatmap example
 
-Stacked area/line plots can be made with ``stacked = True``. You can also use ``filled = True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative = True``. Below is an area plot beside an area plot where ``filled = True``. Both use the ``vidiris`` colour scheme.
+Stacked area/line plots can be made with ``stacked=True``. You can also use ``filled=True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative=True``. Below is an area plot beside an area plot where ``filled=True``. Both use the ``vidiris`` colour scheme.
 
 .. image:: ../images/area.png
    :width: 45%
@@ -88,16 +88,16 @@ You can label your plot with `title`, `x_label` and `y_label`:
 
 .. code-block:: python
 
-   >>> data.visualise('Modals', x_label = 'Subcorpus', y_label = 'Relative frequency')
+   >>> data.visualise('Modals', x_label='Subcorpus', y_label='Relative frequency')
 
 Subplots
 ---------------------
 
-``subplots = True`` makes a separate plot for every entry in the data. If using it, you'll probably also want to use ``layout = (rows, columns)`` to specify how you'd like the plots arranged.
+``subplots=True`` makes a separate plot for every entry in the data. If using it, you'll probably also want to use ``layout=(rows,columns)`` to specify how you'd like the plots arranged.
 
 .. code-block:: python
 
-   >>> data.visualise(subplots = True, layout = (2, 3)).show()
+   >>> data.visualise(subplots=True, layout=(2,3)).show()
 
 .. figure:: ../images/subplots.png
    :width: 60%
@@ -110,12 +110,12 @@ Subplots
 TeX
 ---------------------
 
-If you have LaTeX installed, you can use ``tex = True`` to render text with LaTeX. By default, ``visualise()`` tries to use LaTeX if it can.
+If you have LaTeX installed, you can use ``tex=True`` to render text with LaTeX. By default, ``visualise()`` tries to use LaTeX if it can.
 
 Legend
 ---------------------
 
-You can turn the legend off with ``legend = False``. Legend placement can be controlled with ``legend_pos``, which can be:
+You can turn the legend off with ``legend=False``. Legend placement can be controlled with ``legend_pos``, which can be:
 
 .. table:: 
     :column-dividers: single double double single
@@ -132,7 +132,7 @@ You can turn the legend off with ``legend = False``. Legend placement can be con
 
 The default value, ``'best'``, tries to find the best place automatically (without leaving the figure boundaries).
 
-If you pass in ``draggable = True``, you should be able to drag the legend around the figure.
+If you pass in ``draggable=True``, you should be able to drag the legend around the figure.
 
 Colours
 ---------------------
@@ -148,11 +148,11 @@ There is an extra argument, ``black_and_white``, which can be set to ``True`` to
 Saving figures
 ---------------------
 
-To save a figure to a project's `images` directory, you can use the ``save`` argument. ``output_format = 'png'/'pdf'`` can be used to change the file format.
+To save a figure to a project's `images` directory, you can use the ``save`` argument. ``output_format='png'/'pdf'`` can be used to change the file format.
 
 .. code-block:: python
 
-   >>> data.visualise(save='name', output_format = 'png')
+   >>> data.visualise(save='name', output_format='png')
 
 Other options
 --------------------
@@ -162,31 +162,31 @@ There are a number of further keyword arguments for customising figures:
 +--------------------+------------+---------------------------------+
 | Argument           | Type       | Action                          |
 +====================+============+=================================+
-| ``grid``           | ``bool``   | Show grid in background         |
+|  `grid`            |  `bool`    | Show grid in background         |
 +--------------------+------------+---------------------------------+
-| ``rot``            | ``int``    | Rotate x axis labels n degrees  |
+|  `rot`             |  `int`     | Rotate x axis labels n degrees  |
 +--------------------+------------+---------------------------------+
-| ``shadow``         | ``bool``   | Shadows for some parts of plot  |
+|  `shadow`          |  `bool`    | Shadows for some parts of plot  |
 +--------------------+------------+---------------------------------+
-| ``ncol``           | ``int``    | n columns for legend entries    |
+|  `ncol`            |  `int`     | n columns for legend entries    |
 +--------------------+------------+---------------------------------+
-| ``explode``        | ``list``   | Explode these entries in pie    |
+|  `explode`         |  `list`    | Explode these entries in pie    |
 +--------------------+------------+---------------------------------+
-| ``partial_pie``    | ``bool``   | Allow plotting of pie slices    |
+|  `partial_pie`     |  `bool`    | Allow plotting of pie slices    |
 +--------------------+------------+---------------------------------+
-| ``legend_frame``   | ``bool``   | Show frame around legend        |
+|  `legend_frame`    |  `bool`    | Show frame around legend        |
 +--------------------+------------+---------------------------------+
-| ``legend_alpha``   | ``float``  | Opacity of legend               |
+|  `legend_alpha`    |  `float`   | Opacity of legend               |
 +--------------------+------------+---------------------------------+
-| ``reverse_legend`` | ``bool``   | Reverse legend entry order      |
+|  `reverse_legend`  |  `bool`    | Reverse legend entry order      |
 +--------------------+------------+---------------------------------+
-| ``transpose``      | ``bool``   | Flip axes of DataFrame          |
+|  `transpose`       |  `bool`    | Flip axes of DataFrame          |
 +--------------------+------------+---------------------------------+
-| ``logx/logy``      | ``bool``   | Log scales                      |
+|  `logx/logy`       |  `bool`    | Log scales                      |
 +--------------------+------------+---------------------------------+
-| ``show_p_val``     | ``bool``   | Try to show p value in legend   |
+|  `show_p_val`      |  `bool`    | Try to show p value in legend   |
 +--------------------+------------+---------------------------------+
-| ``interactive``    | ``bool``   | Experimental mpld3_ use          |
+|  `interactive`     |  `bool`    | Experimental mpld3_ use          |
 +--------------------+------------+---------------------------------+
 
 A number of these and other options for customising figures are also described in the :class:`corpkit.interrogation.Interrogation.visualise` method documentation.

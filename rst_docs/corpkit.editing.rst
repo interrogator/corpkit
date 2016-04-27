@@ -38,7 +38,7 @@ You can also span subcorpora, using a tuple of ``(first_subcorpus, second_subcor
 
 .. code-block:: python
 
-   >>> just_span = result.edit(span_subcorpora = (3, 10))
+   >>> just_span = result.edit(span_subcorpora=(3, 10))
 
 Editing result names
 --------------------
@@ -47,13 +47,14 @@ You can use the ``replace_names`` keyword argument to edit the text of each resu
 
 .. code-block:: python
 
-   >>> ingdel = result.edit(replace_names = r'ing$')
+   >>> ingdel = result.edit(replace_names=r'ing$')
 
 You can also pass in a ``dict`` with the structure of ``{newname: criteria}``:
 
 .. code-block:: python
 
-   >>> replaced = result.edit(replace_names = {'-ing words': r'ing$', '-ed words': r'ed$'})
+   >>> rep = {'-ing words': r'ing$', '-ed words': r'ed$'}
+   >>> replaced = result.edit(replace_names=rep)
 
 If you wanted to see how commonly words start with a particular letter, you could do something creative:
 
@@ -61,7 +62,7 @@ If you wanted to see how commonly words start with a particular letter, you coul
 
    >>> from string import lowercase
    >>> crit = {k.upper() + ' words': r'(?i)^%s.*' % k for k in lowercase}
-   >>> firstletter = result.edit(replace_names = crit, sort_by = 'total')
+   >>> firstletter = result.edit(replace_names=crit, sort_by='total')
 
 Spelling normalisation
 -----------------------
@@ -70,7 +71,7 @@ When results are single words, you can normalise to UK/US spelling:
 
 .. code-block:: python
 
-   >>> spelled = result.edit(spelling = 'UK')
+   >>> spelled = result.edit(spelling='UK')
 
 You can also perform this step when interrogating a corpus.
 
@@ -140,14 +141,14 @@ You can sort results using the ``sort_by`` keyword. Possible values are:
 
 .. code-block:: python
 
-   >>> inc = result.edit(sort_by = 'increase', keep_stats = False)
+   >>> inc = result.edit(sort_by='increase', keep_stats=False)
 
-Many of these rely on Scipy's ``linregress`` function. If you want to keep the generated statistics, use ``keep_stats = True``. 
+Many of these rely on Scipy's ``linregress`` function. If you want to keep the generated statistics, use ``keep_stats=True``. 
 
 Calculating trends, P values
 ---------------------------------
 
-``keep_stats = True`` will cause slopes, p values and stderr to be calculated for each result.
+``keep_stats=True`` will cause slopes, p values and stderr to be calculated for each result.
 
 Saving results
 ----------------

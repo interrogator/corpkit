@@ -79,28 +79,28 @@ The ``search`` argument is generally a ``dict`` object, whose keys specify the a
    ### get words in 'nsubj' position
    >>> corpus.interrogate({F: 'nsubj'})
 
-Multiple key/value pairs can be supplied. By default, all must match for the result to be counted, though this can be changed with ``searchmode = ANY`` or ``searchmode = ALL``:
+Multiple key/value pairs can be supplied. By default, all must match for the result to be counted, though this can be changed with ``searchmode=ANY`` or ``searchmode=ALL``:
 
 .. code-block:: python
 
    >>> goverb = {P: r'^v', L: r'^go'}
    ### get all variants of 'go' as verb
-   >>> corpus.interrogate(goverb, searchmode = 'all')
+   >>> corpus.interrogate(goverb, searchmode=ALL)
    ### get all verbs and any word starting with 'go':
-   >>> corpus.interrogate(goverb, searchmode = 'any')
+   >>> corpus.interrogate(goverb, searchmode=ANY)
 
 Excluding results
 ---------------------
 
-You may also wish to exclude particular phenomena from the results. The ``exclude`` argument takes a ``dict`` in the same form a ``search``. By default, if any key/value pair in the ``exclude`` argument matches, it will be excluded. This is controlled by ``excludemode = ANY`` or ``excludemode=ALL``.
+You may also wish to exclude particular phenomena from the results. The ``exclude`` argument takes a ``dict`` in the same form a ``search``. By default, if any key/value pair in the ``exclude`` argument matches, it will be excluded. This is controlled by ``excludemode=ANY`` or ``excludemode=ALL``.
 
 .. code-block:: python
 
    >>> from dictionaries import wordlists
    ### get any noun, but exclude closed class words
-   >>> corpus.interrogate({P: r'^n'}, exclude = {W: wordlists.closedclass})
+   >>> corpus.interrogate({P: r'^n'}, exclude={W: wordlists.closedclass})
    ### when there's only one search criterion, you can also write:
-   >>> corpus.interrogate(P, r'^n', exclude = {W: wordlists.closedclass})
+   >>> corpus.interrogate(P, r'^n', exclude={W: wordlists.closedclass})
 
 In many cases, rather than using ``exclude``, you could also remove results later, during editing.
 
@@ -236,13 +236,13 @@ When working with dependencies, you can use any of the long list of search and r
                GF: roles.event,
    ...         P: r'^N'}
    ### interrogate corpus, outputting the nsubj lemma
-   >>> sayers = parsed.interrogate(crit, show = L)
+   >>> sayers = parsed.interrogate(crit, show=L)
 
 You can also select from the three dependency grammars used by CoreNLP: one of ``'basic-dependencies'``, ``'collapsed-dependencies'``, or ``'collapsed-ccprocessed-dependencies'`` can be passed in as ``dep_type``:
 
 .. code-block:: python
 
-   >>> corpus.interrogate(query, dep_type = 'collapsed-ccprocessed-dependencies')
+   >>> corpus.interrogate(query, dep_type='collapsed-ccprocessed-dependencies')
 
 Multiprocessing
 ---------------------
@@ -251,18 +251,18 @@ Interrogating the corpus can be slow. To speed it up, you can pass an integer as
 
 .. code-block:: python
 
-   >>> corpus.interrogate({T, r'__ > MD', multiprocess = 4)
+   >>> corpus.interrogate({T: r'__ > MD'}, multiprocess=4)
 
-Note that too many parallel processes may slow your computer down. If you pass in ``multiprocessing = True``, the number of processes will equal the number of cores on your machine. This is usually a fairly sensible number.
+Note that too many parallel processes may slow your computer down. If you pass in ``multiprocessing=True``, the number of processes will equal the number of cores on your machine. This is usually a fairly sensible number.
 
 N-grams
 ---------------------
 
-N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` or ``NPL``) as the `show` value. Two options for n-gramming are ``gramsize = n``, where ``n`` determines the number of tokens in the n-gram, and ``split_contractions = True``, which controls whether or not words like *doesn't* are treated as one token or two.
+N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` or ``NPL``) as the `show` value. Two options for n-gramming are ``gramsize=n``, where ``n`` determines the number of tokens in the n-gram, and ``split_contractions=True``, which controls whether or not words like *doesn't* are treated as one token or two.
 
 .. code-block:: python
 
-   >>> corpus.interrogate({W: 'father'}, show='NL', gramsize = 3, split_contractions = False)
+   >>> corpus.interrogate({W: 'father'}, show='NL', gramsize=3, split_contractions=False)
 
 Saving interrogations
 ----------------------

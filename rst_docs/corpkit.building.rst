@@ -74,7 +74,7 @@ This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.inte
 Parsing a corpus
 -----------------
 
-Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser, and therefore, you must have the parser and Java installed. ``corpkit`` will look around in your PATH for the parser, but you can also pass in its location manually with (e.g.) ``corenlppath = 'users/you/corenlp'``. If it can't be found, you'll be asked if you want to download and install it automatically.
+Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser, and therefore, you must have the parser and Java installed. ``corpkit`` will look around in your PATH for the parser, but you can also pass in its location manually with (e.g.) ``corenlppath='users/you/corenlp'``. If it can't be found, you'll be asked if you want to download and install it automatically.
 
 .. code-block:: python
 
@@ -95,7 +95,7 @@ To use this option, use the ``speaker_segmentation`` keyword argument:
 
 .. code-block:: python
 
-   >>> corpus = unparsed.parse(speaker_segmentation = True)
+   >>> corpus = unparsed.parse(speaker_segmentation=True)
 
 Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on:
 

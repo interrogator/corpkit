@@ -7,7 +7,7 @@ Any interrogation is also optionally a concordance. If you use the ``do_concorda
 .. code-block:: python
 
    >>> withconc = corpus.interrogate(T, r'/JJ.?/ > (NP <<# /man/)',
-                                     do_concordancing=True, maxconc = 500)
+                                     do_concordancing=True, maxconc=500)
 
 If you don't want or need the interrgation data, you can use the :func:`~corpkit.corpus.Corpus.concordance` method:
 
@@ -22,10 +22,10 @@ How concordance lines will be displayed really depends on your interpreter and e
 
 .. code-block:: python
 
-   >>> lines.format(kind = 's'
-                    n = 100
-                    window = 50,
-                    columns = [L, M, R])
+   >>> lines.format(kind='s'
+                    n=100
+                    window=50,
+                    columns=[L, M, R])
 
 ``kind`` allows you to print as CSV (``'c'``), as LaTeX (``'l'``), or simple string (``'s'``). ``n`` controls the number of results shown. ``window`` controls how much context to show in the left and right columns. ``columns`` accepts a list of column names to show.
 
@@ -40,7 +40,7 @@ You can edit concordance lines using the :func:`~corpkit.interrogation.Concordan
 
    ### get just uk variants of words with variant spellings
    >>> from dictionaries import usa_convert
-   >>> concs = result.concordance.edit(just_entries = usa_convert.keys())
+   >>> concs = result.concordance.edit(just_entries=usa_convert.keys())
 
 
 Concordance objects can be saved just like any other ``corpkit`` object:
@@ -58,12 +58,12 @@ You can also easily turn them into CSV data, or into LaTeX:
    >>> concs.to_latex()
 
    ### corpkit method: csv and latex
-   >>> concs.format('c', window = 20, n = 10)
-   >>> concs.format('l', window = 20, n = 10)
+   >>> concs.format('c', window=20, n=10)
+   >>> concs.format('l', window=20, n=10)
 
 You can use the :func:`~corpkit.interrogation.Concordance.calculate` method to generate a frequency count of the middle column of the concordance. Therefore, one method for ensuring accuracy is to:
 
-   1. Run an interrogation, using ``do_concordance = True`` 
+   1. Run an interrogation, using ``do_concordance=True`` 
    2. Remove false positives from the concordance result
    3. Use the calculate method to regenerate the overall frequency
 

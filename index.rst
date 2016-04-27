@@ -54,7 +54,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
    ...         P: r'^N'}
 
    ### interrogate corpus, outputting lemma forms
-   >>> sayers = parsed.interrogate(crit, show = L)
+   >>> sayers = parsed.interrogate(crit, show=L)
    >>> sayers.quickview(10)
 
       0: official    (n=4348)
@@ -69,11 +69,11 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
       9: person      (n=802)
 
    ### get relative frequency and sort by increasing
-   >>> rel_say = sayers.edit('%', SELF, sort_by = 'increase')
+   >>> rel_say = sayers.edit('%', SELF, sort_by='increase')
 
    ### plot via matplotlib, using tex if possible
-   >>> rel_say.visualise('Sayers, increasing', kind = 'area',
-   ...                  y_label = 'Percentage of all sayers')
+   >>> rel_say.visualise('Sayers, increasing', kind='area',
+   ...                   y_label = 'Percentage of all sayers')
 
 Output:
 

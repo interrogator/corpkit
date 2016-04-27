@@ -24,11 +24,11 @@ Second, you can use ``corpkit.loader()``, which provides a list of items to load
 
    >>> nouns = corpkit.loader()
 
-Third, when instantiating a ``Corpus`` object, you can add ``load_saved = True`` keyword argument to load any saved data belonging to this corpus as an attribute.
+Third, when instantiating a ``Corpus`` object, you can add ``load_saved=True`` keyword argument to load any saved data belonging to this corpus as an attribute.
 
 .. code-block:: python
 
-   >>> corpus = Corpus('data/psyc-parsed', load_saved = True)
+   >>> corpus = Corpus('data/psyc-parsed', load_saved=True)
 
 A final alternative approach stores all interrogations within an :class:`corpkit.interrogation.Interrodict` object object:
 
@@ -74,7 +74,7 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
 .. code-block:: python
 
-    >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show = L)
+    >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show=L)
     >>> d.keys()
         ['CHT', 'WAP', 'WSJ']
     >>> d['CHT'].results
@@ -82,17 +82,17 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
         1987      87      25        28      13       7       6      4
         1988      72      24        20      15       7       4      9
         1989     137      61        23      10       5       5      6
-    >>> d.collapse().results
+    >>> d.collapse(axis=Y).results
         ...  health  cancer  credit  security
         CHT    3174    1156     566       697
         WAP    2799     933     582      1127
         WSJ    1812     680    2009       537
-    >>> d.collapse(axis = 'x').results
+    >>> d.collapse(axis=X).results
         ...  1987  1988  1989
         CHT   384   328   464
         WAP   389   355   435
         WSJ   428   410   473
-    >>> d.collapse(axis = 'k').results
+    >>> d.collapse(axis=K).results
         ...   health  cancer  credit  security
         1987     282     127      65        93
         1988     277     100      70       107
@@ -102,7 +102,7 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
 .. code-block:: python
 
-   >>> data.topwords(n = 5)
+   >>> data.topwords(n=5)
 
 Output:
 
