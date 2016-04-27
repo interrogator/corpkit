@@ -5862,7 +5862,9 @@ def corpkit_gui():
 
                 make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
                 unparsed_corpus_path = unparsed_corpus_path + '-stripped'
-                
+            
+            # todo:
+            # some of this code is redundant, because detection is handled in build funcs
             if not get_fullpath_to_jars(corenlppath):
                 downstall_nlp = messagebox.askyesno("CoreNLP not found.", 
                               "CoreNLP parser not found. Download/install it?")

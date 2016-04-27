@@ -819,3 +819,59 @@ def check_tex(have_ipython = True):
         except subprocess.CalledProcessError:
             have_tex = False
     return have_tex
+
+
+    
+def get_corenlp_path(corenlppath):
+    """
+    Find a working CoreNLP path.
+    Return a dir containing jars
+    """
+    import os
+    import sys
+    import re
+    import glob
+    
+    cnlp_regex = re.compile('stanford-corenlp-[0-9\.]+\.jar')
+
+    # if something has been passed in, find that first
+    if corenlppath:
+        # if it's a file, get the parent dir
+        if os.path.isfile(corenlppath):
+            corenlppath = os.path.dirname(corenlppath)
+            if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
+                return corenlppath
+        # if it's a dir, check if dir contains jar
+        elif os.path.isdir(corenlppath):
+            if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
+                return corenlppath
+            # if it doesn't contain jar, get subdir by glob
+            globpath = os.path.join(corenlppath, 'stanford-corenlp*')
+            poss = [i for i in glob.glob(globpath) if os.path.isdir(i)]
+            if poss:
+                poss = poss[-1]
+            if any(re.search(cnlp_regex, f) for f in os.listdir(poss)):
+                return poss
+        possible_paths.append(corenlp_path)
+
+    # put possisble paths into list
+    pths = ['.', 'corenlp',
+            os.path.expanduser("~"),
+            os.path.join(os.path.expanduser("~"), 'corenlp')]
+    possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
+    # remove empty strings
+    possible_paths = set([i for i in possible_paths if os.path.isdir(i)])
+
+    # check each possible path
+    for path in possible_paths:
+        if any(re.search(cnlp_regex, f) for f in os.listdir(path)):
+            return path
+    # check if it's a parent
+    for path in possible_paths:
+        globpath = os.path.join(path, 'stanford-corenlp*')
+        cnlp_dirs = [d for d in glob.glob(globpath)
+                     if os.path.isdir(d)]
+        for cnlp_dir in cnlp_dirs:
+            if any(re.search(cnlp_regex, f) for f in os.listdir(cnlp_dir)):
+                return cnlp_dir
+    return
