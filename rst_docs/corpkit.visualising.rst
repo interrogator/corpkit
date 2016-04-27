@@ -52,23 +52,23 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
    >>> data.visualise(kind='heatmap', robust=True, figsize = (4, 12),
    ...                x_label = 'Subcorpus', y_label = 'Event').show()
 
-.. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/event-heatmap.png
+.. figure:: ../images/event-heatmap.png
    :width: 50%
-   :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/event-heatmap.png
+   :target: ../images/event-heatmap.png
    :align: center
 
    Heatmap example
 
 Stacked area/line plots can be made with ``stacked = True``. You can also use ``filled = True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative = True``. Below is an area plot beside an area plot where ``filled = True``. Both use the ``vidiris`` colour scheme.
 
-.. image:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
+.. image:: ../images/area.png
    :width: 45%
-   :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area.png
+   :target: ../images/area.png
    :align: left
 
-.. image:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
+.. image:: ../images/area-filled.png
    :width: 45%
-   :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/area-filled.png
+   :target: ../images/area-filled.png
    :align: right
    
 Plot style
@@ -99,9 +99,9 @@ Subplots
 
    >>> data.visualise(subplots = True, layout = (2, 3)).show()
 
-.. figure:: https://raw.githubusercontent.com/interrogator/corpkit/master/images/subplots.png
+.. figure:: ../images/subplots.png
    :width: 60%
-   :target: https://raw.githubusercontent.com/interrogator/corpkit/master/images/subplots.png
+   :target: ../images/subplots.png
    :align: center
 
    Line charts using subplots and layout specification
