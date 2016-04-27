@@ -1,34 +1,23 @@
 from __future__ import print_function
 
-"""A toolkit for corpus linguistics
-
-.. moduleauthor:: Daniel McDonald <mcdonaldd@unimelb.edu.au>
-
+"""
+A toolkit for corpus linguistics
 """
 
 # quicker access to search, exclude, show types
-letters = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
+LETTERS = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
            'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NW', 'P',
            'PL', 'R', 'S', 'SELF', 'T', 'V', 'W']
 
 # asterisk import
-__all__ = ["interrogator",
-    "editor",
-    "plotter",
-    "save",
-    "quickview",
+__all__ = [
     "load",
+    "loader",
     "load_all_results",
     "as_regex",
-    "Interrogation",
-    "Interrodict",
-    "Concordance",
     "new_project",
-    "make_corpus",
-    "flatten_treestring",
-    "interroplot",
     "Corpus",
-    "Corpora"] + letters
+    "Corpora"] + LETTERS
 
 #metadata
 __version__ = "2.0.6"
@@ -50,40 +39,30 @@ for p in [corpath, baspat]:
         os.environ["PATH"] += os.pathsep + p
 
 # import classes
-from corpus import Corpus
-from corpus import Corpora
+from corpkit.corpus import Corpus
+from corpkit.corpus import Corpora
 
-import dictionaries as dictionaries
+import corpkit.dictionaries as dictionaries
 
 # import functions, though most are now class methods
-from interrogator import interrogator
-from editor import editor
-from plotter import plotter
-from other import save
-from other import load
-from lazyprop import lazyprop
+from corpkit.other import load, loader, load_all_results
+from corpkit.lazyprop import lazyprop
 from other import load_all_results
-from other import quickview
-from other import as_regex
-from other import new_project
-from other import interroplot
-from make import make_corpus
-from build import flatten_treestring
-from interrogation import Interrogation, Interrodict, Concordance
+from other import quickview, as_regex, new_project
 
 # monkeypatch editing and plotting to pandas objects
 import pandas as pd
 
 def _plot(self, *args, **kwargs):
-    from corpkit import plotter
+    from corpkit.plotter import plotter
     return plotter(self, *args, **kwargs)
 
 def _edit(self, *args, **kwargs):
-    from corpkit import editor
+    from corpkit.editor import editor
     return editor(self, *args, **kwargs)
 
 def _save(self, savename, **kwargs):
-    from corpkit import save
+    from corpkit.other import save
     save(self, savename, **kwargs)
 
 def _quickview(self, n = 25):

@@ -1,3 +1,6 @@
+"""
+corpkit: edit Interrogation, Concordance and Interrodict objects
+"""
 from __future__ import print_function
 
 def editor(interrogation, 
@@ -21,13 +24,12 @@ def editor(interrogation,
            projection=False,
            remove_above_p=False,
            p=0.05, 
-           revert_year=True,
            print_info=False,
            spelling=False,
            selfdrop=True,
            calc_all=True,
-            **kwargs
-            ):
+           **kwargs
+          ):
     """Edit results of interrogations, do keywording, sort, etc.
 
     ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
@@ -105,7 +107,8 @@ def editor(interrogation,
     :type just_subcorpora: see above
     :param skip_subcorpora: Skip matching subcorpora
     :type skip_subcorpora: see above
-    :param span_subcorpora: If subcorpora are numerically named, span all from *int* to *int2*, inclusive
+    :param span_subcorpora: If subcorpora are numerically named, span all from 
+    *int* to *int2*, inclusive
     :type span_subcorpora: tuple -- ``(int, int2)``
     :param merge_subcorpora: Merge matching subcorpora
     :type merge_subcorpora: see above
@@ -113,7 +116,8 @@ def editor(interrogation,
     :type new_subcorpus_name: str/``'combine'``
 
     :param replace_names: Edit result names and then merge duplicate names.
-    :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a regex to delete from names
+    :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a 
+    regex to delete from names
     :param projection:         a  to multiply results in subcorpus by n
     :type projection: tuple -- ``(subcorpus_name, n)``
     :param remove_above_p: Delete any result over p
@@ -121,7 +125,8 @@ def editor(interrogation,
     :param p:                  set the p value
     :type p: float
     
-    :param revert_year:        when doing linear regression on years, turn annual subcorpora into 1, 2 ...
+    :param revert_year:        when doing linear regression on years, 
+    turn annual subcorpora into 1, 2 ...
     :type revert_year: bool
     
     :param print_info: Print stuff to console showing what's being edited
@@ -130,10 +135,12 @@ def editor(interrogation,
     :param spelling: Convert/normalise spelling:
     :type spelling: str -- ``'US'``/``'UK'``
     
-    :param selfdrop: When keywording, try to remove target corpus from reference corpus
+    :param selfdrop: When keywording, try to remove target corpus from reference
+    corpus
     :type selfdrop: bool
     
-    :param calc_all: When keywording, calculate words that appear in either corpus
+    :param calc_all: When keywording, calculate words that appear in either
+    corpus
     :type calc_all: bool
 
     :returns: corpkit.interrogation.Interrogation

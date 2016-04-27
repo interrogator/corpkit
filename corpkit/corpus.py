@@ -1,6 +1,9 @@
+"""
+corpkit: Corpus and Corpus-like objects
+"""
+
 from __future__ import print_function
-import corpkit
-from functools import wraps
+
 from lazyprop import lazyprop
 
 class Corpus(object):
@@ -13,17 +16,16 @@ class Corpus(object):
     """
 
     def __init__(self, path, **kwargs):
-        import os
-        from os.path import join, isfile, isdir, abspath, dirname, basename
         import re
         import operator
         import glob
-        from process import determine_datatype
-        import corpkit
-        from corpus import Datalist
+        import os
+        from os.path import join, isfile, isdir, abspath, dirname, basename
 
-        # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which 
-        # one is determined automatically below, and processed accordingly. We 
+        from corpkit.process import determine_datatype
+
+        # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which
+        # one is determined automatically below, and processed accordingly. We
         # assume it is a full corpus to begin with.
 
         self.data = None
@@ -32,7 +34,7 @@ class Corpus(object):
         self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
-        if type(path) == Datalist or type(path) == list:
+        if isinstance(path, Datalist) or isinstance(path, list):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
@@ -40,9 +42,9 @@ class Corpus(object):
             self.path = abspath(path)
             self.name = basename(path)
 
-        # this messy code figures out as quickly as possible what the datatype 
-        # and singlefile status of the path is. it's messy because it shortcuts 
-        # full checking where possible some of the shortcutting could maybe be 
+        # this messy code figures out as quickly as possible what the datatype
+        # and singlefile status of the path is. it's messy because it shortcuts
+        # full checking where possible some of the shortcutting could maybe be
         # moved into the determine_datatype() funct.
 
         if print_info:
@@ -55,17 +57,21 @@ class Corpus(object):
             self.singlefile = True
         elif self.path.endswith('-parsed'):
             self.datatype = 'parse'
-            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) > 0:
+            if len([d for d in os.listdir(self.path)
+                    if isdir(join(self.path, d))]) > 0:
                 self.singlefile = False
-            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) == 0:
+            if len([d for d in os.listdir(self.path)
+                    if isdir(join(self.path, d))]) == 0:
                 level = 's'
         else:
             if level == 'c':
                 if not self.datatype:
-                    self.datatype, self.singlefile = determine_datatype(self.path)
-            if len([d for d in os.listdir(self.path) if isdir(join(self.path, d))]) == 0:
+                    self.datatype, self.singlefile = determine_datatype(
+                        self.path)
+            if len([d for d in os.listdir(self.path)
+                    if isdir(join(self.path, d))]) == 0:
                 level = 's'
-        
+
         # if initialised on a file, process as file
         if self.singlefile and level == 'c':
             level = 'f'
@@ -74,12 +80,12 @@ class Corpus(object):
 
         # load each interrogation as an attribute
         if kwargs.get('load_saved', False):
-            from other import load
-            from process import makesafe
+            from corpkit.other import load
+            from corpkit.process import makesafe
             if os.path.isdir('saved_interrogations'):
                 saved_files = glob.glob(r'saved_interrogations/*')
-                for f in saved_files:
-                    filename = os.path.basename(f)
+                for filepath in saved_files:
+                    filename = os.path.basename(filepath)
                     if not filename.startswith(self.name):
                         continue
                     not_filename = filename.replace(self.name + '-', '')
@@ -90,10 +96,14 @@ class Corpus(object):
                     try:
                         setattr(self, variable_safe, load(filename))
                         if print_info:
-                            print('\tLoaded %s as %s attribute.' % (filename, variable_safe))
+                            print(
+                                '\tLoaded %s as %s attribute.' %
+                                (filename, variable_safe))
                     except AttributeError:
                         if print_info:
-                            print('\tFailed to load %s as %s attribute. Name conflict?' % (filename, variable_safe))
+                            print(
+                                '\tFailed to load %s as %s attribute. Name conflict?' %
+                                (filename, variable_safe))
 
     # these two are duplicated from the file object. not good.
     @lazyprop
@@ -104,7 +114,7 @@ class Corpus(object):
         from corenlp_xml.document import Document
         return Document(self.read())
 
-    def read(self, *args, **kwargs):
+    def read(self, **kwargs):
         """Read file data. If data is pickled, unpickle first
 
         :returns: str/unpickled data
@@ -113,30 +123,32 @@ class Corpus(object):
             raise ValueError('Can only call read method on File')
         if self.datatype == 'tokens':
             import pickle
-            with open(self.path, "rb") as fo:
-                data = pickle.load(fo)
+            with open(self.path, "rb", **kwargs) as openfile:
+                data = pickle.load(openfile)
                 return data
         else:
-            with open(self.path, 'r') as fo:
-                data = fo.read()
+            with open(self.path, 'r', **kwargs) as openfile:
+                data = openfile.read()
                 return data
 
     @lazyprop
     def subcorpora(self):
         """A list-like object containing a corpus' subcorpora."""
-        import re, os, operator
+        import re
+        import os
+        import operator
         from os.path import join, isdir
-        if self.data.__class__ == Datalist or type(self.data) == list:
+        if self.data.__class__ == Datalist or isinstance(self.data, list):
             return self.data
         if self.level == 'c':
             variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
-            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype) \
-                                       for d in os.listdir(self.path) \
-                                       if isdir(join(self.path, d))], \
-                                       key=operator.attrgetter('name')))
+            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype)
+                                   for d in os.listdir(self.path)
+                                   if isdir(join(self.path, d))],
+                                  key=operator.attrgetter('name')))
             for subcorpus in sbs:
-                variable_safe = re.sub(variable_safe_r, '', \
-                    subcorpus.name.lower().split(',')[0])
+                variable_safe = re.sub(variable_safe_r, '',
+                                       subcorpus.name.lower().split(',')[0])
                 setattr(self, variable_safe, subcorpus)
             return sbs
 
@@ -153,33 +165,34 @@ class Corpus(object):
         >>> corpus.subcorpora[0].files
 
         """
-        import re, os, operator
+        import re
+        import os
+        import operator
         from os.path import join, isdir
         if self.level == 's':
 
-            #variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
-            fs = sorted([File(f, self.path, self.datatype) for f in os.listdir(self.path) \
-                        if not f.startswith('.')], key=operator.attrgetter('name'))
-            fs = Datalist(fs)
-            #for f in fs:
-            #    variable_safe = re.sub(variable_safe_r, '', f.name.lower().split('.')[0])
-            #    setattr(self, variable_safe, f)
-            return fs
+            fls = [f for f in os.listdir(self.path) if not f.startswith('.')]
+            fls = [File(f, self.path, self.datatype) for f in fls]
+            fls = sorted(fls, key=operator.attrgetter('name'))
+            return Datalist(fls)
 
     def __str__(self):
         """String representation of corpus"""
-        st = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (self.path, self.datatype, len(self.subcorpora))
+        show = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (
+            self.path, self.datatype, len(self.subcorpora))
         if self.singlefile:
-            st = st + '\nCorpus is a single file.\n'
+            show += '\nCorpus is a single file.\n'
         if 'features' in self.__dict__.keys():
             if not self.singlefile:
                 cols = list(self.features.columns)[:10]
-                st = st + '\nFeatures:\n\n' + self.features.head(10).to_string(columns = cols)
+                show += '\nFeatures:\n\n' + \
+                    self.features.head(10).to_string(columns=cols)
             else:
-                st = st + '\nFeatures:\n\n' + self.features.head(10).to_string()
+                show += '\nFeatures:\n\n' + \
+                    self.features.head(10).to_string()
         else:
-            st = st + '\nFeatures not analysed yet. Use .features to calculate them.\n'
-        return st
+            show += '\nFeatures not analysed yet. Use .features to calculate them.\n'
+        return show
 
     def __repr__(self):
         """object representation of corpus"""
@@ -188,20 +201,22 @@ class Corpus(object):
             ssubcorpora = ''
         else:
             ssubcorpora = self.subcorpora
-        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (os.path.basename(self.path), len(ssubcorpora))
+        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (
+            os.path.basename(self.path), len(ssubcorpora))
 
     def __getitem__(self, key):
-        from process import makesafe
-        if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(*key.indices(len(self.subcorpora)))])
-        elif type(key) == int:
+        from corpkit.process import makesafe
+        if isinstance(key, slice):
+            # Get the start, stop, and step from the slice
+            return Datalist([self[ii] for ii in range(
+                *key.indices(len(self.subcorpora)))])
+        elif isinstance(key, int):
             return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
         else:
             try:
                 return self.subcorpora.__getattribute__(key)
             except:
-                from process import is_number
+                from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
@@ -209,23 +224,24 @@ class Corpus(object):
     @lazyprop
     def features(self):
         """
-        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
 
         :Example:
 
         >>> corpus.features
             SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
-            01       26873    8513   7308                4809              3704     2212   
-            02       25844    7933   6920                4313              3620     2270   
-            03       18376    5683   4877                3067              2616     1640   
+            01       26873    8513   7308                4809              3704     2212
+            02       25844    7933   6920                4313              3620     2270
+            03       18376    5683   4877                3067              2616     1640
             04       20066    6354   5366                3587              2767     1775
 
         """
         import os
         from os.path import isfile, isdir, join
-        from interrogator import interrogator
-        from other import load
-        from dictionaries import mergetags
+        from corpkit.interrogator import interrogator
+        from corpkit.other import load
+        from corpkit.dictionaries import mergetags
 
         savedir = 'saved_interrogations'
         if isfile(join(savedir, self.name + '-features.p')):
@@ -242,23 +258,24 @@ class Corpus(object):
     @lazyprop
     def wordclasses(self):
         """
-        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
 
         :Example:
 
         >>> corpus.wordclasses
             SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
-            01       26873    8513   7308                4809              3704     2212   
-            02       25844    7933   6920                4313              3620     2270   
-            03       18376    5683   4877                3067              2616     1640   
+            01       26873    8513   7308                4809              3704     2212
+            02       25844    7933   6920                4313              3620     2270
+            03       18376    5683   4877                3067              2616     1640
             04       20066    6354   5366                3587              2767     1775
 
         """
         import os
         from os.path import isfile, isdir, join
-        from interrogator import interrogator
-        from other import load
-        from dictionaries import mergetags
+        from corpkit.interrogator import interrogator
+        from corpkit.other import load
+        from corpkit.dictionaries import mergetags
 
         savedir = 'saved_interrogations'
         if isfile(join(savedir, self.name + '-wordclasses.p')):
@@ -270,10 +287,12 @@ class Corpus(object):
             try:
                 posdata = load(self.name + '-postags').results
             except AttributeError:
-                posdata = load(self.name + '-postags')  
-            return posdata.edit(merge_entries = mergetags, sort_by = 'total').results
+                posdata = load(self.name + '-postags')
+            return posdata.edit(
+                merge_entries=mergetags,
+                sort_by='total').results
         else:
-            feat = interrogator(self, 't', 'any', show = 'pl').results
+            feat = interrogator(self, 't', 'any', show='pl').results
             if isdir(savedir):
                 feat.save(self.name + '-wordclasses')
             return feat
@@ -281,23 +300,24 @@ class Corpus(object):
     @lazyprop
     def postags(self):
         """
-        Generate and show basic stats from the corpus, including number of sentences, clauses, process types, etc.
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
 
         :Example:
 
         >>> corpus.postags
             SB  NN  VB  JJ  IN DT wo Open class words  Clauses
-            01       26873    8513   7308                4809              3704     2212   
-            02       25844    7933   6920                4313              3620     2270   
-            03       18376    5683   4877                3067              2616     1640   
+            01       26873    8513   7308                4809              3704     2212
+            02       25844    7933   6920                4313              3620     2270
+            03       18376    5683   4877                3067              2616     1640
             04       20066    6354   5366                3587              2767     1775
 
         """
         import os
         from os.path import isfile, isdir, join
-        from interrogator import interrogator
-        from other import load
-        from dictionaries import mergetags
+        from corpkit.interrogator import interrogator
+        from corpkit.other import load
+        from corpkit.dictionaries import mergetags
 
         savedir = 'saved_interrogations'
         if isfile(join(savedir, self.name + '-postags.p')):
@@ -306,22 +326,29 @@ class Corpus(object):
             except AttributeError:
                 return load(self.name + '-postags')
         else:
-            feat = interrogator(self, 't', 'any', show = 'p').results
+            feat = interrogator(self, 't', 'any', show='p').results
             if isdir(savedir):
                 feat.save(self.name + '-postags')
-                wc = feat.edit(merge_entries = mergetags, sort_by = 'total').results
-                wc.save(self.name + '-wordclasses')
+                wordclss = feat.edit(
+                    merge_entries=mergetags,
+                    sort_by='total').results
+                wordclss.save(self.name + '-wordclasses')
             return feat
 
     def configurations(self, search, **kwargs):
         """
-        Get the overall behaviour of tokens or lemmas matching a regular expression. The search below makes DataFrames containing the most common subjects, objects, modifiers (etc.) of 'see':
-        
-        :param search: Similar to `search` in the `interrogate()` / `concordance() methods. `W`/`L keys match word or lemma; `F`: key specifies semantic role (`'participant'`, `'process'` or `'modifier'`. If `F` not specified, each role will be searched for. 
+        Get the overall behaviour of tokens or lemmas matching a regular 
+        expression. The search below makes DataFrames containing the most 
+        common subjects, objects, modifiers (etc.) of 'see':
+
+        :param search: Similar to `search` in the `interrogate()` / 
+        `concordance() methods. `W`/`L keys match word or lemma; `F`: key 
+        specifies semantic role (`'participant'`, `'process'` or `'modifier'`. 
+        If `F` not specified, each role will be searched for.
         :type search: dict
 
         :Example:
-        
+
         >>> see = corpus.configurations({L: 'see', F: 'process'}, show = L)
         >>> see.has_subject.results.sum()
             i           452
@@ -333,17 +360,17 @@ class Corpus(object):
         :returns: :class:`corpkit.interrogation.Interrodict`
         """
 
-        from configurations import configurations
+        from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
     def interrogate(self, search, *args, **kwargs):
         """
         Interrogate a corpus of texts for a lexicogrammatical phenomenon.
 
-        This method iterates over the files/folders in a corpus, searching the 
-        texts, and returning a :class:`corpkit.interrogation.Interrogation` 
+        This method iterates over the files/folders in a corpus, searching the
+        texts, and returning a :class:`corpkit.interrogation.Interrogation`
         object containing the results. The main options are `search`, where you
-        specify search criteria, and `show`, where you specify what you want to 
+        specify search criteria, and `show`, where you specify what you want to
         appear in the output.
 
         :Example:
@@ -354,11 +381,11 @@ class Corpus(object):
         >>> data = corpus.interrogate(q, show = L)
         >>> data.results
             ..  something  anything  thing  feeling  everything  nothing  morning
-            01         14        11     12        1           6        0        1   
-            02         10        20      4        4           8        3        0   
+            01         14        11     12        1           6        0        1
+            02         10        20      4        4           8        3        0
             03         14         5      5        3           1        0        0
-            ...                                                               ...   
-        
+            ...                                                               ...
+
         :param search: What the query should be matching.
            - t: tree
            - w: word
@@ -374,7 +401,7 @@ class Corpus(object):
            - n/ngrams
            - s/general stats
         :type search: str or dict. dict is used when you have multiple criteria.
-        Keys are what to search as `str`, and values are the criteria, which is 
+        Keys are what to search as `str`, and values are the criteria, which is
         a Tregex query, a regex, or a list of words to match. Therefore, the two
         syntaxes below do the same thing:
 
@@ -391,10 +418,10 @@ class Corpus(object):
 
         :param excludemode: Exclude results matching any/all criteria
         :type excludemode: str -- `'any'`/`'all'`
-        
-        :param query: A search query for the interrogation. This is only used 
-        when `search` is a string, or when multiprocessing. If `search` is a 
-        `dict`, the query/queries are stored there as the values instead. When 
+
+        :param query: A search query for the interrogation. This is only used
+        when `search` is a string, or when multiprocessing. If `search` is a
+        `dict`, the query/queries are stored there as the values instead. When
         multiprocessing, the following is possible:
 
         :Example:
@@ -405,11 +432,11 @@ class Corpus(object):
         ### return an :class:`corpkit.interrogation.Interrogation` object:
         >>> corpus.interrogate(T, q, show = C)
 
-        :type query: 
+        :type query:
            - str -- regex/Tregex pattern (use when `search` is a `str`)
            - dict -- `{name: pattern}` (as per example above)
            - list -- word list to match
-        
+
         :param show: What to output. If multiple strings are passed, results
         will be colon-separated, in order. If you want to show ngrams, you can't
         have multiple values.
@@ -426,22 +453,23 @@ class Corpus(object):
            - n/
         :type show: list of strings
 
-        :param lemmatise: Force lemmatisation on results. Mostly obsolete: 
+        :param lemmatise: Force lemmatisation on results. Mostly obsolete:
         instead, output a lemma form with the `show` argument
         :type lemmatise: bool
-           
+
         :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
         :type lemmatag: False/'n'/'v'/'a'/'r'
-        
+
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: False/'US'/'UK'
-           
+
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
-        :type dep_type: str -- 'basic-dependencies'/'a', 'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
-        
+        :type dep_type: str -- 'basic-dependencies'/'a',
+        'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
+
         :param save: Save result as pickle to `saved_interrogations/<save>` on completion
         :type save: str
-        
+
         :param gramsize: size of ngrams (default 2)
         :type gramsize: int
 
@@ -460,32 +488,35 @@ class Corpus(object):
         :param maxconc: Maximum number of concordance lines
         :type maxcond: int
 
-        :returns: A :class:`corpkit.interrogation.Interrogation` object, with `.query`, `.results`, `.totals` attributes. If multiprocessing is \
-        invoked, result may be a :class:`corpkit.interrogation.Interrodict` containing corpus names, queries or speakers as keys.
+        :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
+        `.query`, `.results`, `.totals` attributes. If multiprocessing is 
+        invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
+        containing corpus names, queries or speakers as keys.
         """
-        from interrogator import interrogator
+        from corpkit.interrogator import interrogator
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
         if par and self.subcorpora:
-            if type(par) == int:
+            if isinstance(par, int):
                 kwargs['multiprocess'] = par
             return interrogator(self.subcorpora, search, *args, **kwargs)
         else:
             return interrogator(self, search, *args, **kwargs)
 
-    def parse(self, corenlppath = False, operations = False, copula_head = True,
-              speaker_segmentation = False, memory_mb = False, multiprocess = False, 
+    def parse(self, corenlppath=False, operations=False, copula_head=True,
+              speaker_segmentation=False, memory_mb=False, multiprocess=False,
               *args, **kwargs):
         """
         Parse an unparsed corpus, saving to disk
 
         :param corenlppath: folder containing corenlp jar files
         :type corenlppath: str
-                
+
         :param operations: which kinds of annotations to do
         :type operations: str
-        
-        :param speaker_segmentation: add speaker name to parser output if your corpus is script-like:
+
+        :param speaker_segmentation: add speaker name to parser output if your 
+        corpus is script-like:
         :type speaker_segmentation: bool
 
         :param memory_mb: Amount of memory in MB for parser
@@ -506,17 +537,27 @@ class Corpus(object):
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
-        from make import make_corpus
-        from corpus import Corpus
-        #from process import determine_datatype
+        from corpkit.make import make_corpus
+        #from corpkit.process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
         if self.datatype != 'plaintext':
-            raise ValueError('parse method can only be used on plaintext corpora.')
+            raise ValueError(
+                'parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
-        return Corpus(make_corpus(self.path, parse = True, tokenise = False, 
-              corenlppath = corenlppath, operations = operations, copula_head = copula_head,
-              speaker_segmentation = speaker_segmentation, memory_mb = memory_mb, *args, **kwargs))
+        return Corpus(
+            make_corpus(
+                self.path,
+                parse=True,
+                tokenise=False,
+                corenlppath=corenlppath,
+                operations=operations,
+                copula_head=copula_head,
+                speaker_segmentation=speaker_segmentation,
+                memory_mb=memory_mb,
+                multiprocess=multiprocess,
+                *args,
+                **kwargs))
 
     def tokenise(self, *args, **kwargs):
         """
@@ -533,21 +574,27 @@ class Corpus(object):
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
-        
-        from corpkit import make_corpus
-        from corpus import Corpus
-        #from process import determine_datatype
+
+        from corpkit.make import make_corpus
+        #from corpkit.process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
         if self.datatype != 'plaintext':
-            raise ValueError('parse method can only be used on plaintext corpora.')
+            raise ValueError(
+                'parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
 
-        return Corpus(make_corpus(self.path, parse = False, tokenise = True, *args, **kwargs))
+        return Corpus(
+            make_corpus(
+                self.path,
+                parse=False,
+                tokenise=True,
+                *args,
+                **kwargs))
 
-    def concordance(self, *args, **kwargs): 
+    def concordance(self, *args, **kwargs):
         """
-        A concordance method for Tregex queries, CoreNLP dependencies, 
+        A concordance method for Tregex queries, CoreNLP dependencies,
         tokenised data or plaintext.
 
         :Example:
@@ -556,14 +603,15 @@ class Corpus(object):
         >>> corpus.concordance({L: wv, F: 'root'})
            0   01  1-01.txt.xml                But , so I  feel     like i do that for w
            1   01  1-01.txt.xml                         I  felt     a little like oh , i
-           2   01  1-01.txt.xml   he 's a difficult man I  feel     like his work ethic 
+           2   01  1-01.txt.xml   he 's a difficult man I  feel     like his work ethic
            3   01  1-01.txt.xml                      So I  felt     like i recognized li
            ...                                                                       ...
 
 
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
-        :param only_format_match: if True, left and right window will just be words, regardless of what is in 'show'
+        :param only_format_match: if True, left and right window will just be
+        words, regardless of what is in 'show'
         :type only_format_match: bool
 
         :param random: randomise lines
@@ -576,11 +624,11 @@ class Corpus(object):
 
         """
 
-        from interrogator import interrogator
+        from corpkit.interrogator import interrogator
         kwargs.pop('do_concordancing', None)
         kwargs.pop('conc', None)
         kwargs.pop('corpus', None)
-        return interrogator(self, do_concordancing = 'only', *args, **kwargs)
+        return interrogator(self, do_concordancing='only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
         """Interrogate, relativise, then plot, with very little customisability. A demo function.
@@ -592,18 +640,20 @@ class Corpus(object):
 
         :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: dict
-        :param kwargs: extra arguments to pass to :func:`~corpkit.corpus.Corpus.interrogate`/:func:`~corpkit.corpus.Corpus.plot`
+        :param kwargs: extra arguments to pass to 
+        :func:`~corpkit.corpus.Corpus.interrogate`/
+        :func:`~corpkit.corpus.Corpus.plot`
         :type kwargs: keyword arguments
 
         :returns: None (but show a plot)
         """
-        if type(search) == str:
+        if isinstance(search, str):
             search = {'t': search}
-        quickstart = self.interrogate(search = search, **kwargs)
-        edited = quickstart.edit('%', 'self', print_info = False)
+        quickstart = self.interrogate(search=search, **kwargs)
+        edited = quickstart.edit('%', 'self', print_info=False)
         edited.plot(str(self.path), **kwargs)
 
-    def save(self, savename = False, **kwargs):
+    def save(self, savename=False, **kwargs):
         """Save corpus class to file
 
            >>> corpus.save(filename)
@@ -616,23 +666,18 @@ class Corpus(object):
         from corpkit import save
         if not savename:
             savename = self.name
-        save(self, savename, savedir = 'data', **kwargs)
+        save(self, savename, savedir='data', **kwargs)
 
-from corpus import Corpus
 class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
 
-    Methods for interrogating, concordancing and configurations are the same as 
+    Methods for interrogating, concordancing and configurations are the same as
     :class:`corpkit.corpus.Corpus`."""
-    
+
     def __init__(self, path, datatype):
         self.path = path
         kwargs = {'print_info': False, 'level': 's', 'datatype': datatype}
         Corpus.__init__(self, self.path, **kwargs)
-
-    def __repr__(self):
-        return "<corpkit.corpus.Subcorpus instance: %s; %d files>" % (self.name, \
-            len(self.files))
 
     def __str__(self):
         return self.path
@@ -642,24 +687,26 @@ class Subcorpus(Corpus):
 
     def __getitem__(self, key):
 
-        from process import makesafe
+        from corpkit.process import makesafe
 
-        if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(*key.indices(len(self.files)))])
-        elif type(key) == int:
+        if isinstance(key, slice):
+            # Get the start, stop, and step from the slice
+            return Datalist([self[ii]
+                             for ii in range(*key.indices(len(self.files)))])
+        elif isinstance(key, int):
             return self.files.__getitem__(makesafe(self.files[key]))
         else:
             try:
                 return self.files.__getattribute__(key)
             except:
-                from process import is_number
+                from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
+
 class File(Corpus):
     """Models a corpus file for reading, interrogating, concordancing"""
-    
+
     def __init__(self, path, dirname, datatype):
         import os
         from os.path import join, isfile, isdir
@@ -685,7 +732,7 @@ class File(Corpus):
         from corenlp_xml.document import Document
         return Document(self.read())
 
-    def read(self, *args, **kwargs):
+    def read(self, **kwargs):
         """Read file data. If data is pickled, unpickle first
 
         :returns: str/unpickled data
@@ -693,13 +740,14 @@ class File(Corpus):
 
         if self.datatype == 'tokens':
             import pickle
-            with open(self.path, "rb") as fo:
-                data = pickle.load(fo)
+            with open(self.path, "rb", **kwargs) as openfile:
+                data = pickle.load(openfile)
                 return data
         else:
-            with open(self.path, 'r') as fo:
-                data = fo.read()
+            with open(self.path, 'r', **kwargs) as openfile:
+                data = openfile.read()
                 return data
+
 
 class Datalist(object):
     """
@@ -707,14 +755,15 @@ class Datalist(object):
 
     Objects can be accessed as attributes, dict keys or by indexing/slicing.
 
-    Methods for interrogating, concordancing and getting configurations are the same as for :class:`corpkit.corpus.Corpus`
+    Methods for interrogating, concordancing and getting configurations are the 
+    same as for :class:`corpkit.corpus.Corpus`
     """
 
     def __init__(self, data):
         import re
         import os
         from os.path import join, isfile, isdir
-        from process import makesafe
+        from corpkit.process import makesafe
         self.current = 0
         if data:
             self.high = len(data)
@@ -727,10 +776,10 @@ class Datalist(object):
                 setattr(self, safe_var, subcorpus)
 
     def __str__(self):
-        st = []
+        stringform = []
         for i in self.data:
-            st.append(i.name)
-        return '\n'.join(st)
+            stringform.append(i.name)
+        return '\n'.join(stringform)
 
     def __repr__(self):
         return "<corpkit.corpus.Datalist instance: %d items>" % len(self)
@@ -740,24 +789,26 @@ class Datalist(object):
 
     def __getitem__(self, key):
 
-        from process import makesafe
+        from corpkit.process import makesafe
 
-        if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(*key.indices(len(self)))])
-        elif type(key) == int:
+        if isinstance(key, slice):
+            # Get the start, stop, and step from the slice
+            return Datalist([self[ii]
+                             for ii in range(*key.indices(len(self)))])
+        elif isinstance(key, int):
             return self.__getitem__(makesafe(self.data[key]))
         else:
             try:
                 return self.__getattribute__(key)
             except:
-                from process import is_number
+                from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
     def __setitem__(self, key, value):
-        from process import makesafe, is_number
-        if key.startswith('c') and len(key) > 1 and all(is_number(x) for x in key[1:]):
+        from corpkit.process import makesafe, is_number
+        if key.startswith('c') and len(key) > 1 and all(
+                is_number(x) for x in key[1:]):
             self.__setattr__(key.lstrip('c'), value)
         else:
             self.__setattr__(key, value)
@@ -769,7 +820,7 @@ class Datalist(object):
     def __len__(self):
         return len(self.data)
 
-    def __next__(self): # Python 3: def __next__(self)
+    def __next__(self):  # Python 3: def __next__(self)
         if self.current > self.high:
             raise StopIteration
         else:
@@ -778,41 +829,44 @@ class Datalist(object):
 
     def interrogate(self, *args, **kwargs):
         """Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
-        from interrogator import interrogator
+        from corpkit.interrogator import interrogator
         return interrogator(self, *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
         """Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
-        from interrogator import interrogator
-        return interrogator(self, do_concordancing = 'only', *args, **kwargs)
+        from corpkit.interrogator import interrogator
+        return interrogator(self, do_concordancing='only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
         """Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`"""
-        from configurations import configurations
+        from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
-from corpus import Datalist
+
 class Corpora(Datalist):
     """
-    Models a collection of Corpus objects. Methods are available for interrogating and plotting the entire collection. This is the highest level of abstraction available.
+    Models a collection of Corpus objects. Methods are available for 
+    interrogating and plotting the entire collection. This is the highest level 
+    of abstraction available.
 
     :param data: Corpora to model
-    :type data: str (path containing corpora), list (of corpus paths/:class:`corpkit.corpus.Corpus` objects)
+    :type data: str (path containing corpora), list (of corpus paths/
+    :class:`corpkit.corpus.Corpus` objects)
     """
 
     def __init__(self, data, **kwargs):
-        from corpus import Corpus
+
         # handle a folder containing corpora
-        if type(data) == str or type(data) == str:
+        if isinstance(data, str) or isinstance(data, str):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):
                 raise ValueError('Corpora(str) needs to point to a directory.')
-            data = sorted([join(data, d) for d in os.listdir(data) \
-                          if isdir(join(data, d))])
+            data = sorted([join(data, d) for d in os.listdir(data)
+                           if isdir(join(data, d))])
         # otherwise, make a list of Corpus objects
         for index, i in enumerate(data):
-            if type(i) == str:
+            if isinstance(i, str):
                 data[index] = Corpus(i, **kwargs)
 
         # now turn it into a Datalist
@@ -823,31 +877,34 @@ class Corpora(Datalist):
 
     def __getitem__(self, key):
         """allow slicing, indexing"""
-        from process import makesafe
-        if isinstance( key, slice ) :
-            #Get the start, stop, and step from the slice
+        from corpkit.process import makesafe
+        if isinstance(key, slice):
+            # Get the start, stop, and step from the slice
             return Corpora([self[ii] for ii in range(*key.indices(len(self)))])
-        elif type(key) == int:
+        elif isinstance(key, int):
             return self.__getitem__(makesafe(self.data[key]))
         else:
             try:
                 return self.__getattribute__(key)
             except:
-                from process import is_number
+                from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
     @lazyprop
     def features(self):
+        """Generate features attribute for all corpora"""
         for corpus in self:
             corpus.features
 
     @lazyprop
     def postags(self):
+        """Generate postags attribute for all corpora"""
         for corpus in self:
             corpus.postags
 
     @lazyprop
     def wordclasses(self):
+        """Generate wordclasses attribute for all corpora"""
         for corpus in self:
             corpus.wordclasses
