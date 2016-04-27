@@ -422,6 +422,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     import os
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
+    from process import animator
     import shutil
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
@@ -430,8 +431,12 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
         try:
             os.makedirs(downloaded_dir)
         except OSError:
+            import glob
             if os.path.isdir(downloaded_dir):
-                if 'stanford-corenlp-full-2015-04-20.zip' in os.listdir(downloaded_dir):
+                poss_zips = [i for i in glob.glob(downloaded_dir) if 'stanford-corenlp' in i \
+                             and i.endswith('.zip')]
+                if poss_zips:
+                    fullfile = poss_zips[-1]
                     import zipfile
                     the_zip_file = zipfile.ZipFile(fullfile)
                     ret = the_zip_file.testzip()
@@ -439,7 +444,8 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
                         return downloaded_dir, fullfile
                     else:
                         os.remove(fullfile)
-                shutil.rmtree(downloaded_dir)
+                #else:
+                #    shutil.rmtree(downloaded_dir)
     else:
         downloaded_dir = os.path.join(proj_path, 'temp')
         try:
@@ -447,7 +453,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
         except OSError:
             pass
     fullfile = os.path.join(downloaded_dir, file_name)
-    
+
     if actually_download:
         try:
             import requests
@@ -456,9 +462,16 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             file_size = int(r.headers['content-length'])
             file_size_dl = 0
             block_sz = 8192
+            showlength = file_size / block_sz
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print('%s: Downloading ... ' % thetime)
+            par_args = {'printstatus': kwargs.get('printstatus', True),
+                        'length': showlength}
+            tstr = '%d/%d' % (file_size_dl + 1 / block_sz, showlength)
+            p = animator(None, None, init = True, tot_string = tstr, **par_args)
+            animator(p, file_size_dl + 1, tstr)
+
             with open(fullfile, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=block_sz): 
                     if chunk: # filter out keep-alive new chunks
@@ -468,7 +481,8 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
                         if 'note' in list(kwargs.keys()):
                             kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
                         else:
-                            p.animate(file_size_dl)
+                            tstr = '%d/%d' % (file_size_dl / block_sz, showlength)
+                            animator(p, file_size_dl / block_sz, tstr, **par_args)
                         if root:
                             root.update()
         except Exception as err:
@@ -488,7 +502,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
         else:    
             p.animate(int(file_size))
         thetime = strftime("%H:%M:%S", localtime())
-        print('%s: Downloaded successully.' % thetime)
+        print('\n%s: Downloaded successully.' % thetime)
         try:
             f.close()
         except:
@@ -682,11 +696,8 @@ def parse_corpus(proj_path = False,
         if 'n' in selection.lower():
             raise ValueError('CoreNLP needed to parse texts.')
         else:
-            print('Downloading CoreNLP...')
             from build import download_large_file, extract_cnlp
             cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
-            if not os.path.isdir(cnlp_dir):
-                os.makedirs(cnlp_dir)
             corenlppath, fpath = download_large_file(cnlp_dir, url)
             extract_cnlp(fpath)
             import glob

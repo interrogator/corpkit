@@ -15,7 +15,7 @@ You can interrogate parse trees, CoreNLP dependencies, lists of tokens or plain 
 
 Concordancing is extended to allow the user to query and display grammatical features alongside tokens. Keywording can be restricted to certain word classes or positions within the clause. If your corpus contains multiple documents or subcorpora, you can identify keywords in each, compared to the corpus as a whole.
 
-*corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via `joblib`, and Python 2 and 3 are both supported.
+*corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via joblib_, and Python 2 and 3 are both supported.
 
 .. rubric:: Example
 
@@ -42,7 +42,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
 .. code-block:: python
 
    >>> from corpkit import *
-   >>> from dictionaries.process_types import processes
+   >>> from dictionaries import processes
    
    ### parse corpus of NYT articles containing annual subcorpora
    >>> unparsed = Corpus('data/NYT')
@@ -152,3 +152,4 @@ If you'd like to cite *corpkit*, you can use:
 .. _here: http://interrogator.github.io/corpkit/
 .. _pattern: http://www.clips.ua.ac.be/pages/pattern-en/
 .. _matplotlib: http://matplotlib.org/
+.. _joblib: http://pythonhosted.org/joblib/
