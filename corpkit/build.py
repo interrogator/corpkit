@@ -420,32 +420,36 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     """download something to proj_path"""
     import corpkit
     import os
+    import shutil
+    import glob
+    import sys
+    import zipfile
     from time import localtime, strftime
     from textprogressbar import TextProgressBar
     from process import animator
-    import shutil
+
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
+    # if it's corenlp, put it in home/corenlp
+    # if that dir exists, check if for a zip file
+    # if there's a zipfile and it works, move on
+    # if there's a zipfile and it's broken, delete it
     if 'stanford' in url:
         downloaded_dir = os.path.join(home, 'corenlp')
-        try:
+        if not os.path.isdir(downloaded_dir):
             os.makedirs(downloaded_dir)
-        except OSError:
-            import glob
-            if os.path.isdir(downloaded_dir):
-                poss_zips = [i for i in glob.glob(downloaded_dir) if 'stanford-corenlp' in i \
-                             and i.endswith('.zip')]
-                if poss_zips:
-                    fullfile = poss_zips[-1]
-                    import zipfile
-                    the_zip_file = zipfile.ZipFile(fullfile)
-                    ret = the_zip_file.testzip()
-                    if ret is None:
-                        return downloaded_dir, fullfile
-                    else:
-                        os.remove(fullfile)
-                #else:
-                #    shutil.rmtree(downloaded_dir)
+        else:
+            poss_zips = glob.glob(os.path.join(downloaded_dir, 'stanford-corenlp-full*.zip'))
+            if poss_zips:
+                fullfile = poss_zips[-1]   
+                the_zip_file = zipfile.ZipFile(fullfile)
+                ret = the_zip_file.testzip()
+                if ret is None:
+                    return downloaded_dir, fullfile
+                else:
+                    os.remove(fullfile)
+            #else:
+            #    shutil.rmtree(downloaded_dir)
     else:
         downloaded_dir = os.path.join(proj_path, 'temp')
         try:
@@ -455,6 +459,14 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     fullfile = os.path.join(downloaded_dir, file_name)
 
     if actually_download:
+        if not root:
+            txt = 'CoreNLP not found. Download latest version (%s)? (y/n) ' % url
+            if sys.version_info.major == 3:
+                selection = input(txt)
+            else:
+                selection = raw_input(txt)
+            if 'n' in selection.lower():
+                return None, None
         try:
             import requests
             # NOTE the stream=True parameter
@@ -465,7 +477,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             showlength = file_size / block_sz
             from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
-            print('%s: Downloading ... ' % thetime)
+            print('\n%s: Downloading ... \n' % thetime)
             par_args = {'printstatus': kwargs.get('printstatus', True),
                         'length': showlength}
             tstr = '%d/%d' % (file_size_dl + 1 / block_sz, showlength)
@@ -489,7 +501,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             import traceback
             print(traceback.format_exc())
             thetime = strftime("%H:%M:%S", localtime())
-            print('%s: Downloaded failed' % thetime)
+            print('%s: Download failed' % thetime)
             try:
                 f.close()
             except:
@@ -583,8 +595,10 @@ def parse_corpus(proj_path = False,
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
+    from corpkit.process import get_corenlp_path
     import os
     import sys
+    import re
     import chardet
     from time import localtime, strftime
     import time
@@ -622,6 +636,8 @@ def parse_corpus(proj_path = False,
     else:
         new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
 
+    # todo:
+    # this is not stable
     if os.path.join('data', 'data') in new_corpus_path:
         new_corpus_path = new_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
@@ -638,75 +654,28 @@ def parse_corpus(proj_path = False,
                 if any([f.endswith('.txt') for f in fs]):
                     print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
                     return False          
-    
-    def get_corenlp_path(corenlppath):
-        """Find a working CoreNLP path"""
-        import os
-        import sys
-        import re
-        import glob
-        
-        cnlp_regex = re.compile('stanford-corenlp-[0-9\.]+\.jar')
-
-        # if something has been passed in, find that first
-        if corenlppath:
-            if os.path.isfile(corenlppath):
-                corenlppath = os.path.dirname(corenlppath)
-                if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
-                    return corenlppath
-            elif os.path.isdir(corenlppath):
-                if any(re.search(cnlp_regex, f) for f in os.listdir(corenlppath)):
-                    return corenlppath
-                globpath = os.path.join(corenlppath, 'stanford-corenlp*')
-                poss = [i for i in glob.glob(globpath) if os.path.isdir(i)]
-                if any(re.search(cnlp_regex, f) for f in os.listdir(poss)):
-                    return corenlppath
-            possible_paths.append(corenlp_path)
-
-        # put possisble paths into list
-        pths = ['.', 'corenlp',
-                os.path.expanduser("~"),
-                os.path.join(os.path.expanduser("~"), 'corenlp')]
-        possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
-        # remove empty strings
-        possible_paths = set([i for i in possible_paths if os.path.isdir(i)])
-
-        # check each possible path
-        for path in possible_paths:
-            if any(re.search(cnlp_regex, f) for f in os.listdir(path)):
-                return path
-        # check if it's a parent
-        for path in possible_paths:
-            globpath = os.path.join(path, 'stanford-corenlp*')
-            cnlp_dirs = [d for d in glob.glob(globpath)
-                         if os.path.isdir(d)]
-            for cnlp_dir in cnlp_dirs:
-                if any(re.search(cnlp_regex, f) for f in os.listdir(cnlp_dir)):
-                    return cnlp_dir
-        return
 
     corenlppath = get_corenlp_path(corenlppath)
+    print(corenlppath)
 
     if not corenlppath and not root:
-        txt = 'CoreNLP not found. Download? (y/n) '
-        if sys.version_info.major == 3:
-            selection = input(txt)
-        else:
-            selection = raw_input(txt)
-        if 'n' in selection.lower():
+        cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
+        from build import download_large_file, extract_cnlp
+        corenlppath, fpath = download_large_file(cnlp_dir, url)
+        if corenlppath is None and fpath is None:
+            import shutil
+            shutil.rmtree(new_corpus_path)
+            shutil.rmtree(new_corpus_path.replace('-parsed', ''))
+            os.remove(new_corpus_path.replace('-parsed', '-filelist.txt'))
             raise ValueError('CoreNLP needed to parse texts.')
+        extract_cnlp(fpath)
+        import glob
+        globpath = os.path.join(corenlppath, 'stanford-corenlp*')
+        corenlppath = [i for i in glob.glob(globpath) if os.path.isdir(i)]
+        if corenlppath:
+            corenlppath = corenlppath[-1]
         else:
-            from build import download_large_file, extract_cnlp
-            cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
-            corenlppath, fpath = download_large_file(cnlp_dir, url)
-            extract_cnlp(fpath)
-            import glob
-            globpath = os.path.join(corenlppath, 'stanford-corenlp*')
-            corenlppath = [i for i in glob.glob(globpath) if os.path.isdir(i)]
-            if corenlppath:
-                corenlppath = corenlppath[-1]
-            else:
-                raise ValueError('CoreNLP installation failed for some reason. Try manual download.')
+            raise ValueError('CoreNLP installation failed for some reason. Try manual download.')
 
     # if not gui, don't mess with stdout
     if stdout is False:
