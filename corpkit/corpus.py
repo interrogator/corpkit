@@ -141,7 +141,7 @@ class Corpus(object):
         if self.data.__class__ == Datalist or isinstance(self.data, list):
             return self.data
         if self.level == 'c':
-            variable_safe_r = re.compile('[\W0-9_]+', re.UNICODE)
+            variable_safe_r = re.compile(r'[\W0-9_]+', re.UNICODE)
             sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype)
                                    for d in os.listdir(self.path)
                                    if isdir(join(self.path, d))],

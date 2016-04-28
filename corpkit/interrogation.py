@@ -90,9 +90,9 @@ class Interrogation(object):
 
         :Example:
 
-        >>> data.edit(just_entries = r'^fr', 
-        ...           skip_entries = ['free', 'freedom'],
-        ...           skip_subcorpora = r'[0-9]')
+        >>> data.edit(just_entries=r'^fr', 
+        ...           skip_entries=['free','freedom'],
+        ...           skip_subcorpora=r'[0-9]')
 
         :Merging data:
 
@@ -107,7 +107,7 @@ class Interrogation(object):
         
         >>> from dictionaries.wordlists import wordlists
         >>> mer = {'Articles': ['the', 'an', 'a'], 'Modals': wordlists.modals}
-        >>> data.edit(merge_entries = mer)
+        >>> data.edit(merge_entries=mer)
 
         :Sorting:
 
@@ -123,7 +123,7 @@ class Interrogation(object):
 
         :Example:
 
-        >>> data.edit(sort_by = 'increase')
+        >>> data.edit(sort_by='increase')
 
         :Editing entry text:
         
@@ -136,7 +136,7 @@ class Interrogation(object):
 
         :Example:
 
-        >>> data.edit(replace_names = {r'object': r'[di]obj'})
+        >>> data.edit(replace_names={r'object': r'[di]obj'})
 
         :Other options:
 
@@ -194,34 +194,35 @@ class Interrogation(object):
         return editor(self, *args, **kwargs)
 
     def visualise(self,
-            title = '',
-            x_label = None,
-            y_label = None,
-            style = 'ggplot',
-            figsize = (8, 4),
-            save = False,
-            legend_pos = 'best',
-            reverse_legend = 'guess',
-            num_to_plot = 7,
-            tex = 'try',
-            colours = 'Accent',
-            cumulative = False,
-            pie_legend = True,
-            partial_pie = False,
-            show_totals = False,
-            transparent = False,
-            output_format = 'png',
-            interactive = False,
-            black_and_white = False,
-            show_p_val = False,
-            indices = False,
-            transpose = False,
-            **kwargs):
+                  title='',
+                  x_label=None,
+                  y_label=None,
+                  style='ggplot',
+                  figsize=(8, 4),
+                  save=False,
+                  legend_pos='best',
+                  reverse_legend='guess',
+                  num_to_plot=7,
+                  tex='try',
+                  colours='Accent',
+                  cumulative=False,
+                  pie_legend=True,
+                  partial_pie=False,
+                  show_totals=False,
+                  transparent=False,
+                  output_format='png',
+                  interactive=False,
+                  black_and_white=False,
+                  show_p_val=False,
+                  indices=False,
+                  transpose=False,
+                  **kwargs
+                 ):
         """Visualise corpus interrogations using `matplotlib`.
 
         :Example:
 
-        >>> data.visualise('An example plot', kind = 'bar', save = True)
+        >>> data.visualise('An example plot', kind='bar', save=True)
         <matplotlib figure>
 
         :param title: A title for the plot
@@ -282,11 +283,8 @@ class Interrogation(object):
         :type interactive: list -- [1, 2, 3]
         :returns: matplotlib figure
         """
-        locs = locals()
-        locs.pop('self', None)
-        if kwargs:
-            for k, v in kwargs.items():
-                locs[k] = v
+        locs = locals().copy()
+        locs.update(kwargs)
         locs.pop('kwargs', None)
 
         from plotter import plotter
@@ -296,7 +294,7 @@ class Interrogation(object):
         elif branch.lower().startswith('t'):
             return plotter(self.totals, **locs)   
 
-    def save(self, savename, savedir = 'saved_interrogations', **kwargs):
+    def save(self, savename, savedir='saved_interrogations', **kwargs):
         """
         Save an interrogation as pickle to ``savedir``.
 
@@ -318,14 +316,14 @@ class Interrogation(object):
         :returns: None
         """
         from other import save
-        save(self, savename, savedir = savedir, **kwargs)
+        save(self, savename, savedir=savedir, **kwargs)
 
-    def quickview(self, n = 25):
+    def quickview(self, n=25):
         """view top n results as painlessly as possible.
 
         :Example:
         
-        >>> data.quickview(n = 5)
+        >>> data.quickview(n=5)
             0: to    (n=2227)
             1: that  (n=2026)
             2: the   (n=1302)
@@ -337,14 +335,14 @@ class Interrogation(object):
         :returns: None
         """
         from other import quickview
-        quickview(self, n = n)
+        quickview(self, n=n)
 
-    def multiindex(self, indexnames = None):
+    def multiindex(self, indexnames=None):
         """Create a `pandas.MultiIndex` object from slash-separated results.
 
         :Example:
 
-        >>> data = corpus.interrogate({W: 'st$'}, show = [L, F])
+        >>> data = corpus.interrogate({W: 'st$'}, show=[L, F])
         >>> data.results
             ..  just/advmod  almost/advmod  last/amod 
             01           79             12          6 
@@ -364,9 +362,9 @@ class Interrogation(object):
         """
 
         from other import make_multi
-        return make_multi(self, indexnames = indexnames)
+        return make_multi(self, indexnames=indexnames)
 
-    def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
+    def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param datatype: show abs/rel frequencies, or keyness
@@ -382,7 +380,7 @@ class Interrogation(object):
 
         :Example:
 
-        >>> data.topwords(n = 5)
+        >>> data.topwords(n=5)
             1987           %   1988           %   1989           %   1990           %
             health     25.70   health     15.25   health     19.64   credit      9.22
             security    6.48   cancer     10.85   security    7.91   health      8.31
@@ -395,9 +393,9 @@ class Interrogation(object):
         import pandas as pd
         from other import topwords
         if df:
-            return topwords(self, datatype=datatype, n = n, df = True, sort = sort)
+            return topwords(self, datatype=datatype, n=n, df=True, sort=sort)
         else:
-            topwords(self, datatype=datatype, n = n, sort = sort)
+            topwords(self, datatype=datatype, n=n, sort=sort)
 
 import pandas as pd
 
@@ -411,7 +409,7 @@ class Concordance(pd.core.frame.DataFrame):
         pd.core.frame.DataFrame.__init__(self, data)
         self.results = data
 
-    def format(self, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
+    def format(self, kind='string', n=100, window=35, columns='all', **kwargs):
         """
         Print concordance lines nicely, to string, LaTeX or CSV
 
@@ -426,9 +424,9 @@ class Concordance(pd.core.frame.DataFrame):
 
         :Example:
 
-        >>> lines = corpus.concordance({T: r'/NN.?/ >># NP'}, show = L)
+        >>> lines = corpus.concordance({T: r'/NN.?/ >># NP'}, show=L)
         ### show 25 characters either side, 4 lines, just text columns
-        >>> lines.format(window = 25, n = 4, columns = [L, M, R])
+        >>> lines.format(window=25, n=4, columns=[L,M,R])
             0                  we 're in  tucson     , then up north to flagst
             1  e 're in tucson , then up  north      to flagstaff , then we we
             2  tucson , then up north to  flagstaff  , then we went through th
@@ -437,10 +435,10 @@ class Concordance(pd.core.frame.DataFrame):
         :returns: None
         """
         from other import concprinter
-        return concprinter(self, kind = kind, n = n, window = window, columns = columns, **kwargs)
+        return concprinter(self, kind=kind, n=n, window=window, columns=columns, **kwargs)
 
     def __repr__(self):
-        return self.format(return_it = True)
+        return self.format(return_it=True)
 
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""
@@ -448,7 +446,7 @@ class Concordance(pd.core.frame.DataFrame):
         newdata = interrogation_from_conclines(self)
         return newdata
 
-    def shuffle(self, inplace = False):
+    def shuffle(self, inplace=False):
         """Shuffle concordance lines
 
         :param inplace: Modify current object, or create a new one
@@ -476,7 +474,7 @@ class Concordance(pd.core.frame.DataFrame):
     def edit(self, *args, **kwargs):
         """Delete or keep rows by subcorpus or by middle column text.
 
-        >>> skipped = conc.edit(skip_entries = r'to_?match')"""
+        >>> skipped = conc.edit(skip_entries=r'to_?match')"""
 
         from editor import editor
         return editor(self, *args, **kwargs)
@@ -557,12 +555,12 @@ class Interrodict(OrderedDict):
         from editor import editor
         return editor(self, *args, **kwargs)
 
-    def multiindex(self, indexnames = None):
+    def multiindex(self, indexnames=None):
         """Create a `pandas.MultiIndex` version of results.
 
         :Example:
 
-        >>> d = corpora.interrogate({F: 'compound', GL: '^risk'}, show = L)
+        >>> d = corpora.interrogate({F: 'compound', GL: '^risk'}, show=L)
         >>> d.keys()
             ['CHT', 'WAP', 'WSJ']
         >>> d['CHT'].results
@@ -586,9 +584,9 @@ class Interrodict(OrderedDict):
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         from other import make_multi
-        return make_multi(self, indexnames = indexnames)
+        return make_multi(self, indexnames=indexnames)
 
-    def save(self, savename, savedir = 'saved_interrogations', **kwargs):
+    def save(self, savename, savedir='saved_interrogations', **kwargs):
         """
         Save an interrogation as pickle to `savedir`.
 
@@ -612,7 +610,7 @@ class Interrodict(OrderedDict):
         from other import save
         save(self, savename, savedir = savedir, **kwargs)
 
-    def collapse(self, axis = 'y'):
+    def collapse(self, axis='y'):
         """
         Collapse Interrodict on an axis or along interrogation name.
 
@@ -621,7 +619,7 @@ class Interrodict(OrderedDict):
 
         :Example:
 
-        >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show = L)
+        >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show=L)
         >>> d.keys()
             ['CHT', 'WAP', 'WSJ']
         >>> d['CHT'].results
@@ -634,12 +632,12 @@ class Interrodict(OrderedDict):
             CHT    3174    1156     566       697
             WAP    2799     933     582      1127
             WSJ    1812     680    2009       537
-        >>> d.collapse(axis = 'x').results
+        >>> d.collapse(axis='x').results
             ...  1987  1988  1989
             CHT   384   328   464
             WAP   389   355   435
             WSJ   428   410   473
-        >>> d.collapse(axis = 'key').results
+        >>> d.collapse(axis='key').results
             ...   health  cancer  credit  security
             1987     282     127      65        93
             1988     277     100      70       107
@@ -652,7 +650,7 @@ class Interrodict(OrderedDict):
             order = list(self.values()[0].results.columns)
             df = self.values()[0].results
             for i in self.values()[1:]:
-                df = df.add(i.results, fill_value = 0)
+                df = df.add(i.results, fill_value=0)
         else:
             out = []
             for corpus_name, interro in self.items():
@@ -660,25 +658,25 @@ class Interrodict(OrderedDict):
                     ax = 0
                 elif axis.lower().startswith('x'):
                     ax = 1
-                data = interro.results.sum(axis = ax)
+                data = interro.results.sum(axis=ax)
                 data.name = corpus_name
                 out.append(data)
             # concatenate and transpose
-            df = pd.concat(out, axis = 1).T
+            df = pd.concat(out, axis=1).T
             # turn NaN to 0, sort
             df = df.fillna(0)
         
         #make interrogation object from df
         if not axis.lower().startswith('x'):
-            df = df.edit(sort_by = 'total', print_info = False)
+            df = df.edit(sort_by='total', print_info=False)
         else:
-            df = df.edit(print_info = False)
+            df = df.edit(print_info=False)
         # make sure everything is int, not float
         for col in list(df.results.columns):
             df.results[col] = df.results[col].astype(int)
         return df
 
-    def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
+    def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param datatype: show abs/rel frequencies, or keyness
@@ -693,7 +691,7 @@ class Interrodict(OrderedDict):
         :type precision: int
         :Example:
 
-        >>> data.topwords(n = 5)
+        >>> data.topwords(n=5)
             TBT            %   UST            %   WAP            %   WSJ            %
             health     25.70   health     15.25   health     19.64   credit      9.22
             security    6.48   cancer     10.85   security    7.91   health      8.31
@@ -706,11 +704,11 @@ class Interrodict(OrderedDict):
         import pandas as pd
         from other import topwords
         if df:
-            return topwords(self, datatype = datatype, n = n, df = True,
-                            sort = sort, precision = precision)
+            return topwords(self, datatype=datatype, n=n, df=True,
+                            sort=sort, precision=precision)
         else:
-            topwords(self, datatype = datatype, n = n,
-                            sort = sort, precision = precision)
+            topwords(self, datatype=datatype, n=n,
+                            sort=sort, precision=precision)
 
     def get_totals(self):
         """Helper function to concatenate all totals"""
@@ -725,4 +723,4 @@ class Interrodict(OrderedDict):
             # add to a list
             lst.append(tot)
         # turn the list into a dataframe
-        return pd.concat(lst, axis = 1)
+        return pd.concat(lst, axis=1)
