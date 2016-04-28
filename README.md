@@ -6,8 +6,6 @@
 > 
 > A comprehensive graphical interface is included. After [pip/Git installation](#installation), you can open it from the command line with `python -m corpkit.corpkit-gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/). 
 
-<!-- MarkdownTOC -->
-
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)
     - [Navigating `Corpus` objects](#navigating-corpus-objects)
@@ -41,8 +39,6 @@
   - [Visualisation options](#visualisation-options)
 - [Contact](#contact)
 - [Cite](#cite)
-
-<!-- /MarkdownTOC -->
 
 <a name="whats-in-here"></a>
 ## What's in here?
@@ -146,11 +142,11 @@ The code below demonstrates the complex kinds of queries that can be handled by 
 >>> exc = {P: r'^V', W: wordlists.pronouns}
 
 # interrogate, returning slash-delimited function/lemma
->>> data = corpus.interrogate(criteria, exclude = exc, show = [F, L])
->>> lines = corpus.concordance(criteria, exclude = exc, show = [F, L])
+>>> data = corpus.interrogate(criteria, exclude=exc, show=[F,L])
+>>> lines = corpus.concordance(criteria, exclude=exc, show=[F,L])
 
 ### show results
->>> print data, lines.format(n = 10, window = 40, columns = [L, M, R])
+>>> print data, lines.format(n=10, window=40, columns=[L,M,R])
 ```
 
 Output sample:
@@ -312,16 +308,16 @@ Here's an example of the three methods at work:
 >>> q = r'/NN.?/ >># (NP > (PP <<# /(?i)of/ > (NP <<# (/NN.?/ < /(?i).?\brisk.?/))))'
 
 ### search trees, exclude 'risk of rain', output lemma
->>> risk_of = corpus.interrogate({T: q}, exclude = {W: '^rain$'}, show = [L])
+>>> risk_of = corpus.interrogate({T: q}, exclude={W: '^rain$'}, show=L)
 ### alternative syntax which may be easier when there's only a single search criterion:
-# >>> risk_of = corpus.interrogate(T, q, exclude = {W: '^rain$'}, show = [L])
+# >>> risk_of = corpus.interrogate(T, q, exclude={W: '^rain$'}, show=L)
 
 ### use edit() to turn absolute into relative frequencies
 >>> to_plot = risk_of.edit('%', risk_of.totals)
 
 ### plot the results
->>> to_plot.visualise('Risk of (noun)', y_label = 'Percentage of all results',
-...    style = 'fivethirtyeight')
+>>> to_plot.visualise('Risk of (noun)', y_label='Percentage of all results',
+...    style='fivethirtyeight')
 ```
 
 Output: 
@@ -388,9 +384,9 @@ By default, all `search` criteria must match, but any `exclude` criterion is eno
 
 ```python
 ### get words that end in 'ing' OR are nominal:
->>> out = interrogator({W: 'ing$', P: r'^N'}, searchmode = 'any')
+>>> out = interrogator({W: 'ing$', P: r'^N'}, searchmode='any')
 ### get any word, but exclude words that end in 'ing' AND are nominal:
->>> out = interrogator({W: 'any'}, exclude = {W: 'ing$', P: N}, excludemode = 'all')
+>>> out = interrogator({W: 'any'}, exclude={W: 'ing$', P: N}, excludemode='all')
 ```
 
 The `show` argument wants a list of keys you'd like to return for each result. The order will be respected. If you only want one thing, a `str` is OK. One additional possibility is `C`, which returns the number of occurrences only.
@@ -423,10 +419,10 @@ Again, common sense dictates what is possible. When searching trees, only trees,
 >>> unparsed = Corpus('path/to/unparsed/files')
 
 ### to parse, you can set a path to corenlp
->>> corpus = unparsed.parse(corenlppath = 'Downloads/corenlp')
+>>> corpus = unparsed.parse(corenlppath='Downloads/corenlp')
 
 ### to tokenise, point to nltk:
-# >>> corpus = unparsed.tokenise(nltk_data_path = 'Downloads/nltk_data')
+# >>> corpus = unparsed.tokenise(nltk_data_path='Downloads/nltk_data')
 ```
 
 which creates the parsed/tokenised corpora, and returns `Corpus()` objects representing them. When parsing, you can also optionally pass in a string of annotators, as per the [CoreNLP documentation](http://nlp.stanford.edu/software/corenlp.shtml):
@@ -435,8 +431,8 @@ which creates the parsed/tokenised corpora, and returns `Corpus()` objects repre
 >>> ans = 'tokenize,ssplit,pos'
 ### you can also set memory and turn off copula head parsing,
 ### or multiprocess the parsing job (though you'll want a big machine)
->>> corpus = unparsed.parse(operations = ans, memory_mb = 3000, 
-...                         copula_head = False, multiprocess = 4)
+>>> corpus = unparsed.parse(operations=ans, memory_mb=3000, 
+...                         copula_head=False, multiprocess=4)
 ```
 
 <a name="speaker-ids"></a>
@@ -450,7 +446,7 @@ Something novel about *corpkit* is that it can work with corpora containing spea
 If you use:
 
 ```python
->>> corpus = unparsed.parse(speaker_segmentation = True)
+>>> corpus = unparsed.parse(speaker_segmentation=True)
 ```
 
 This will:
@@ -465,7 +461,7 @@ When interrogating or concordancing, you can then pass in a keyword argument to 
 
 ```python
 >>> s = ['BRISCOE', 'LOGAN']
->>> npheads = interrogate(T, r'/NN.?/ >># NP', just_speakers = s)
+>>> npheads = interrogate(T, r'/NN.?/ >># NP', just_speakers=s)
 ```
 
 This makes it possible to not only investigate individual speakers, but to form an understanding of the overall tenor/tone of the text as well: *Who does most of the talking? Who is asking the questions? Who issues commands?*
@@ -526,7 +522,7 @@ Unlike most concordancers, which are based on plaintext corpora, *corpkit* can c
 ### or corpus.subcorpora[index]
 >>> query = r'/JJ.?/ > (NP <<# (/NN.?/ < /\brisk/))'
 ### T option for tree searching
->>> lines = subcorpus.concordance(T, query, window = 50, n = 10, random = True)
+>>> lines = subcorpus.concordance(T, query, window=50, n=10, random=True)
 ```
 
 Output (a `Pandas DataFrame`):
@@ -550,8 +546,8 @@ You can also concordance via dependencies:
 ### match words starting with 'st' filling function of nsubj
 >>> criteria = {W: r'^st', F: r'nsubj$'}
 ### show function, pos and lemma (in that order)
->>> lines = subcorpus.concordance(criteria, show = [F, P, L])
->>> lines.format(window = 30, n = 10, columns = [L, M, R])
+>>> lines = subcorpus.concordance(criteria, show =[F,P,L])
+>>> lines.format(window=30, n=10, columns=[L,M,R])
 ```
 
 Output:
@@ -591,10 +587,10 @@ Because I mostly use systemic functional grammar, there is also a simple tool fo
 ### match nsubj with verbal process as governor
 >>> crit = {F: '^nsubj$', G: processes.verbal}
 ### return lemma of the nsubj
->>> sayers = corpus.interrogate(crit, show = [L])
+>>> sayers = corpus.interrogate(crit, show=L)
 
 ### have a look at the top results
->>> sayers.quickview(n = 20)
+>>> sayers.quickview(n=20)
 ```
 
 Output:
@@ -633,13 +629,13 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # alternative approaches:
 # >>> prps = [0, 1, 2, 4, 5, 6, 7, 10, 13, 14, 24]
 # >>> prps = ['he', 'she', 'you']
-# >>> prps = as_regex(wl.pronouns, boundaries = 'line')
+# >>> prps = as_regex(wl.pronouns, boundaries='line')
 # or, by re-interrogating:
-# >>> sayers = corpus.interrogate(crit, show = [L], exclude = {W: wordlists.pronouns})
+# >>> sayers = corpus.interrogate(crit, show =L, exclude={W: wordlists.pronouns})
 
 ### give edit() indices, words, wordlists or regexes to keep remove or merge
->>> sayers_no_prp = sayers.edit(skip_entries = prps, skip_subcorpora = [1963])
->>> sayers_no_prp.quickview(n = 10)
+>>> sayers_no_prp = sayers.edit(skip_entries=prps, skip_subcorpora=[1963])
+>>> sayers_no_prp.quickview(n=10)
 ```
 
 Output:
@@ -663,10 +659,10 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 ### sort with edit()
 ### use scipy.linregress to sort by 'increase', 'decrease', 'static', 'turbulent' or P
 ### other sort_by options: 'name', 'total', 'infreq'
->>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by = 'increase')
+>>> sayers_no_prp = sayers_no_prp.edit('%', sayers.totals, sort_by='increase')
 
 ### make an area chart with custom y label
->>> sayers_no_prp.visualise('Sayers, increasing', kind = 'area', 
+>>> sayers_no_prp.visualise('Sayers, increasing', kind='area', 
 ...    y_label = 'Percentage of all sayers')
 ```
 
@@ -684,17 +680,17 @@ We can also merge subcorpora. Let's look for changes in gendered pronouns:
 ...           '2000s': r'^200',
 ...           '2010s': r'^201'}
 
->>> sayers = sayers.edit(merge_subcorpora = merges)
+>>> sayers = sayers.edit(merge_subcorpora=merges)
 
 ### now, get relative frequencies for he and she
 ### SELF calculates percentage after merging/removing etc has been performed,
 ### so that he and she will sum to 100%. Pass in `sayers.totals` to calculate 
 ### he/she as percentage of all sayers
->>> genders = sayers.edit('%', SELF, just_entries = ['he', 'she'])
+>>> genders = sayers.edit('%', SELF, just_entries=['he','she'])
 
 ### and plot it as a series of pie charts, showing totals on the slices:
->>> genders.visualise('Pronominal sayers in the NYT', kind = 'pie',
-...    subplots = True, figsize = (15, 2.75), show_totals = 'plot')
+>>> genders.visualise('Pronominal sayers in the NYT', kind='pie',
+...    subplots=True, figsize=(15,2.75), show_totals='plot')
 ```
 
 Output:
@@ -714,7 +710,7 @@ So, what to do? Well, first, don't use 'general reference corpora' unless you re
 ```python
 ### just heads of participants' lemma form (no pronouns, though!)
 >>> part = r'/(NN|JJ).?/ >># (/(NP|ADJP)/ $ VP | > VP)'
->>> p = corpus.interrogate(T, part, show = L)
+>>> p = corpus.interrogate(T, part, show=L)
 ```
 
 When using `edit()` to calculate keywords, there are a few default parameters that can be easily changed:
@@ -734,8 +730,8 @@ Let's have a look at how these options change the output:
 ...            'threshold': False}
 
 >>> for k, v in options.items():
-...    key = p.edit('keywords', SELF, k = v)
-...    print key.results.ix['2011'].order(ascending = False)
+...    key = p.edit('keywords', SELF, k=v)
+...    print key.results.ix['2011'].order(ascending=False)
 
 ```
 Output:
@@ -789,7 +785,7 @@ adoboli        161.30
 
 ```python
 >>> terror = ['terror', 'terrorism', 'terrorist']
->>> terr = p.edit(K, SELF, merge_entries = terror, newname = 'terror')
+>>> terr = p.edit(K, SELF, merge_entries=terror, newname='terror')
 >>> print terr.results.terror
 ```
 
@@ -831,8 +827,8 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 ```python
 ### arbitrary list of common/boring words
 >>> from dictionaries.stopwords import stopwords
->>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries = stopwords).results
->>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all = False).results
+>>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries=stopwords).results
+>>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all=False).results
 ```
 
 Output (not so useful):
@@ -859,9 +855,9 @@ yeah          -3179.90            will      -679.06
 
 ```python
 ### set num of parallel processes manually
->>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = 3)
+>>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess=3)
 ### set num of parallel processes automatically
->>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess = True)
+>>> data = corpus.interrogate({T: r'/NN.?/ >># NP'}, multiprocess=True)
 ```
 
 Multiprocessing is particularly useful, however, when you are interested in multiple corpora, speaker IDs, or search queries. The sections below explain how.
@@ -882,7 +878,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 ### <corpkit.corpus.Corpora instance: 6 items>
 
 ### interrogate by parallel processing, 4 at a time
->>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show = L, multiprocess = 4)
+>>> output = corpora.interrogate(T, r'/NN.?/ < /(?i)^h/', show=L, multiprocess=4)
 
 ```
 
@@ -896,7 +892,7 @@ Passing in a list of speaker names will also trigger multiprocessing:
 ```python
 >>> from dictionary.wordlists import wordlists
 >>> spkrs = ['MEYER', 'JAY']
->>> each_speaker = corpus.interrogate(W, wordlists.closedclass, just_speakers = spkrs)
+>>> each_speaker = corpus.interrogate(W, wordlists.closedclass, just_speakers=spkrs)
 ```
 
 There is also `just_speakers = 'each'`, which will be automatically expanded to include every speaker name found in the corpus.
@@ -909,11 +905,11 @@ You can also run a number of queries over the same corpus in parallel. There are
 ```python
 ### method one
 >>> query = {'Noun phrases': r'NP', 'Verb phrases': r'VP'}
->>> phrases = corpus.interrogate(T, query, show = C)
+>>> phrases = corpus.interrogate(T, query, show=C)
 
 ### method two
 >>> query = {'-ing words': {W: r'ing$'}, '-ed verbs': {P: r'^V', W: r'ed$'}}
->>> patterns = corpus.interrogate(query, show = L)
+>>> patterns = corpus.interrogate(query, show=L)
 ```
 
 Let's try multiprocessing with multiple queries, showing count (i.e. returning a single results DataFrame). We can look at different risk processes (e.g. *risk*, *take risk*, *run risk*, *pose risk*, *put at risk*) using constituency parses:
@@ -926,7 +922,7 @@ Let's try multiprocessing with multiple queries, showing count (i.e. returning a
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
 # show = 'count' will collapse results from each search into single dataframe
->>> processes = corpus.interrogate(T, q, show = 'count')
+>>> processes = corpus.interrogate(T, q, show=C)
 >>> proc_rel = processes.edit('%', processes.totals)
 >>> proc_rel.visualise('Risk processes')
 ```
@@ -946,7 +942,7 @@ Next, let's find out what kinds of noun lemmas are subjects of any of these risk
 >>> query = r'/^NN(S|)$/ !< /(?i).?\brisk.?/ >># (@NP $ (VP <+(VP) (VP ( <<# (/VB.?/ < /(?i).?\brisk.?/) ' \
 ...    r'| <<# (/VB.?/ < /(?i)\b(take|taking|takes|taken|took|run|running|runs|ran|put|putting|puts)/) < ' \
 ...    r'(NP <<# (/NN.?/ < /(?i).?\brisk.?/))))))'
->>> noun_riskers = c.interrogate(T, query, show = L)
+>>> noun_riskers = c.interrogate(T, query, show=L)
  
 >>> noun_riskers.quickview(10)
 ```
@@ -972,18 +968,18 @@ We can use `edit()` to make some thematic categories:
 ### get everyday people
 >>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
 
->>> them_cat = noun_riskers.edit(merge_entries = p, newname = 'Everyday people')
+>>> them_cat = noun_riskers.edit(merge_entries={'Everyday people': p)
 
 ### get business, gov, institutions
 >>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
 ...      'politician', 'institution', 'agency', 'candidate', 'firm']
 
->>> them_cat = them_cat.edit('%', noun_riskers.totals, merge_entries = i, 
-...    newname = 'Institutions', sort_by = 'total', skip_subcorpora = 1963,
-...    just_entries = ['Everyday people', 'Institutions'])
+>>> them_cat = them_cat.edit('%', noun_riskers.totals, merge_entries={'Institutions': i},
+...                          sort_by='total', skip_subcorpora=1963,
+...                          just_entries=['Everyday people', 'Institutions'])
 
 ### plot result
->>> them_cat.visualise('Types of riskers', y_label = 'Percentage of all riskers')
+>>> them_cat.visualise('Types of riskers', y_label='Percentage of all riskers')
 ```
 
 Output:
@@ -996,7 +992,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ```python
 ### find any head of an np not containing risk
 >>> query = r'/NN.?/ >># NP !< /(?i).?\brisk.?/'
->>> noun_lemmata = corpus.interrogate(T, query, show = L)
+>>> noun_lemmata = corpus.interrogate(T, query, show=L)
 
 ### get some key terms
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
@@ -1005,8 +1001,8 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 ...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
 
 ### make a bar chart:
->>> selected.visualise('Risk and power', num_to_plot = 'all', kind = 'bar', 
-...    x_label = 'Word', y_label = 'Risker percentage', fontsize = 15)
+>>> selected.visualise('Risk and power', num_to_plot='all', kind='bar', 
+...                    x_label='Word', y_label='Risker percentage', fontsize=15)
 ```
 
 Output:
@@ -1020,18 +1016,18 @@ Output:
 With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pandas* and *Matplotlib*. The following plots require only one interrogation:
 
 ```python
->>> modals = corpus.interrogate(T, 'MD < __', show = L)
+>>> modals = corpus.interrogate(T, 'MD < __', show=L)
 ### simple stuff: make relative frequencies for individual or total results
 >>> rel_modals = modals.edit('%', modals.totals)
 
 ### trickier: make an 'others' result from low-total entries
 >>> low_indices = range(7, modals.results.shape[1])
->>> each_md = modals.edit('%', modals.totals, merge_entries = low_indices, 
-...    newname = 'other', sort_by = 'total', just_totals = True, keep_top = 7)
+>>> each_md = modals.edit('%', modals.totals, merge_entries={'other': low_indices}, 
+...                       sort_by='total', just_totals=True, keep_top=7)
 
 ### complex stuff: merge results
 >>> entries_to_merge = [r'(^w|\'ll|\'d)', r'^c', r'^m', r'^sh']
->>> modals = modals.edit(merge_entries = entries_to_merge)
+>>> modals = modals.edit(merge_entries=entries_to_merge)
     
 ### complex stuff: merge subcorpora
 >>> merges = {'1960s': r'^196', 
@@ -1040,11 +1036,11 @@ With a bit of creativity, you can do some pretty awesome data-viz, thanks to *Pa
 ...           '2000s': r'^200',
 ...           '2010s': r'^201'}
 
->>> modals = sayers.edit(merge_subcorpora = merges)
+>>> modals = sayers.edit(merge_subcorpora=merges)
     
 ### make relative, sort, remove what we don't want
->>> modals = modals.edit('%', modals.totals, keep_stats = False,
-...    just_subcorpora = merges.keys(), sort_by = 'total', keep_top = 4)
+>>> modals = modals.edit('%', modals.totals, keep_stats=False,
+...    just_subcorpora=merges.keys(), sort_by='total', keep_top=4)
 
 ### show results
 >>> print rel_modals.results, each_md.results, modals.results
@@ -1083,17 +1079,17 @@ Now, some intense plotting:
 
 ```python
 ### exploded pie chart
->>> each_md.visualise('Pie chart of common modals in the NYT', explode = ['other'],
-...    num_to_plot = 'all', kind = 'pie', colours = 'Accent', figsize = (11, 11))
+>>> each_md.visualise('Pie chart of common modals in the NYT', explode=['other'],
+...    num_to_plot='all', kind='pie', colours='Accent', figsize=(11,11))
 
 ### bar chart, transposing and reversing the data
->>> modals.results.iloc[::-1].T.iloc[::-1].visualise('Modals use by decade', kind = 'barh',
-...    x_label = 'Percentage of all modals', y_label = 'Modal group')
+>>> modals.results.iloc[::-1].T.iloc[::-1].visualise('Modals use by decade', kind='barh',
+...    x_label='Percentage of all modals', y_label='Modal group')
 
 ### stacked area chart
->>> rel_modals.results.drop('1963').visualise('An ocean of modals', kind = 'area', 
-...    stacked = True, colours = 'summer', figsize = (8, 10), num_to_plot = 'all', 
-...    legend_pos = 'lower right', y_label = 'Percentage of all modals')
+>>> rel_modals.results.drop('1963').visualise('An ocean of modals', kind='area', 
+...    stacked=True, colours='summer', figsize =(8,10), num_to_plot='all', 
+...    legend_pos='lower right', y_label='Percentage of all modals')
 ```
 
 Output:
