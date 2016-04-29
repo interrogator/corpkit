@@ -742,7 +742,12 @@ def interrogator(corpus,
             conc_df = pd.concat(all_conc_lines, axis=1).T
             if all(x == '' for x in list(conc_df['s'].values)):
                 conc_df.drop('s', axis=1, inplace=True)
-            return Concordance(conc_df)
+            
+            locs['corpus'] = corpus.name
+            cl = Concordance(conc_df)
+            cl.query = locs
+            return cl
+
         except ValueError:
             return
 
@@ -1077,6 +1082,7 @@ def interrogator(corpus,
         if only_conc:
             conc_df.query = locs
             if save and not kwargs.get('outname'):
+                print('\n')
                 conc_df.save(savename)
             goodbye_printer(only_conc=True)
             signal.signal(signal.SIGINT, original_sigint)            
@@ -1118,10 +1124,12 @@ def interrogator(corpus,
             df = df[list(df.sum().sort_values(ascending=False).index)]
 
     # make interrogation object
+    locs['corpus'] = corpus.name
     interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 
     # save it
     if save and not kwargs.get('outname'):
+        print('\n')
         interro.save(savename)
     
     goodbye_printer()
