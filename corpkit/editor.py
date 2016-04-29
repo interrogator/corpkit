@@ -995,11 +995,11 @@ def editor(interrogation,
             the_newname = newname_getter(df.T, pin, newname=name, \
                 merging_subcorpora=True, prinf=print_info)
             df = merge_these_entries(df.T, pin, the_newname, merging='subcorpora', 
-                prinf=print_info).T
+                                     prinf=print_info).T
             if using_totals:
                 pin2 = parse_input(df2.T, the_input)
                 df2 = merge_these_entries(df2.T, pin2, the_newname, merging='subcorpora', 
-                    prinf=False).T
+                                          prinf=False).T
 
     if just_subcorpora:
         df = just_these_subcorpora(df, just_subcorpora, prinf=print_info)
@@ -1062,31 +1062,22 @@ def editor(interrogation,
     
     # if doing keywording...
     if operation.startswith('k'):
-        from corpkit.keys import keywords
 
-        # allow saved dicts to be df2, etc
-        try:
+        if isinstance(denominator, basestring):
             if denominator == 'self':
                 df2 = df.copy()
-        except TypeError:
-            pass
-        if isinstance(denominator, basestring):
-            if denominator != 'self':
+            else:
                 df2 = denominator
-    
-        else:
-            tshld = False
 
+        from corpkit.keys import keywords
         df = keywords(df, df2, 
                       selfdrop=selfdrop, 
                       threshold=threshold, 
-                      printstatus=print_info,
+                      print_info=print_info,
                       editing=True,
                       calc_all=calc_all,
+                      sort_by=sort_by,
                       **kwargs)
-
-        # eh?
-        df = df.T
     
     # drop infinites and nans
     if operation != 'd':
