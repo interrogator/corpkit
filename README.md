@@ -413,7 +413,7 @@ Again, common sense dictates what is possible. When searching trees, only trees,
 <a name="building-corpora"></a>
 ## Building corpora
 
-*corpkit*'s `Corpus()` class contains `parse()` and `tokenise()`, modest methods for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. If you want to parse the corpus, you'll also need to have downloaded and unzipped [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml). If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
+*corpkit*'s `Corpus()` class contains `parse()` and `tokenise()`, methods for created parsed and/or tokenised corpora. The main thing you need is **a folder, containing either text files, or subfolders that contain text files**. [Stanford CoreNLP](http://nlp.stanford.edu/software/corenlp.shtml) is required to parse corpora. If you don't have it, *corpkit* can download and install it for you. If you're tokenising, you'll need to make sure you have NLTK's tokeniser data. You can then run:
 
 ```python
 >>> unparsed = Corpus('path/to/unparsed/files')

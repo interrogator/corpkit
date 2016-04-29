@@ -95,7 +95,7 @@ via Git:
    cd corpkit
    python setup.py install
 
-Parsing and interrogation of parse trees will also require *Stanford CoreNLP*.
+Parsing and interrogation of parse trees will also require *Stanford CoreNLP*. *corpkit* can download and install it for you automatically.
 
 .. rubric:: Graphical interface
 
