@@ -880,7 +880,7 @@ def interrogator(corpus,
         count_results[subcorpus_name] = []
         results[subcorpus_name] = Counter()
 
-        if tree_to_text or search.get('t'):
+        if tree_to_text or simple_tregex_mode:
 
             result = tregex_engine(query=treg_q,
                                    options=op,
@@ -928,9 +928,6 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens or slow_tregex
         if not simple_tregex_mode:
             for f in files:
-
-
-
 
                 slow_treg_speaker_guess = kwargs.get('outname', False)
                 if datatype == 'parse' and not tree_to_text:
