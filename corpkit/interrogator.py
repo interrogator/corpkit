@@ -35,17 +35,6 @@ def interrogator(corpus,
 
     see corpkit.interrogation.interrogate() for docstring"""
 
-    only_conc = False
-    no_conc = False
-    if do_concordancing is False:
-        no_conc = True
-    if isinstance(do_concordancing, str) and do_concordancing.lower() == 'only':
-        only_conc = True
-        no_conc = False
-
-    # iteratively count conc lines
-    numconc = 0
-
     # store kwargs and locs
     locs = locals().copy()
     locs.update(kwargs)
@@ -69,60 +58,29 @@ def interrogator(corpus,
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
 
-    original_sigint = signal.getsignal(signal.SIGINT)
-
-    if kwargs.get('paralleling', None) is None:
-        original_sigint = signal.getsignal(signal.SIGINT)
-        
-        def signal_handler(signal, _):
-            """pause on ctrl+c, rather than just stop loop"""   
-            import signal
-            import sys
-            from time import localtime, strftime
-            signal.signal(signal.SIGINT, original_sigint)
-            thetime = strftime("%H:%M:%S", localtime())
-            try:
-                raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
-            except NameError:
-                input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
-            time = strftime("%H:%M:%S", localtime())
-            print('%s: Interrogation resumed.\n' % time)
-            signal.signal(signal.SIGINT, signal_handler)
-
+    def signal_handler(signal, _):
+        """pause on ctrl+c, rather than just stop loop"""   
+        import signal
+        import sys
+        from time import localtime, strftime
+        signal.signal(signal.SIGINT, original_sigint)
+        thetime = strftime("%H:%M:%S", localtime())
+        try:
+            raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+        except NameError:
+            input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+        time = strftime("%H:%M:%S", localtime())
+        print('%s: Interrogation resumed.\n' % time)
         signal.signal(signal.SIGINT, signal_handler)
 
-    # find out if using gui
-    root = kwargs.get('root')
-    note = kwargs.get('note')
-
-    # wipe non essential class attributes to not bloat query attrib
-    if corpus.__class__ == Corpus:
-        import copy
-        corpus = copy.copy(corpus)
-        for k, v in corpus.__dict__.items():
-            if isinstance(v, Interrogation) or isinstance(v, Interrodict):
-                corpus.__dict__.pop(k, None)
-
-    # convert path to corpus object
-    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File, Datalist]:
-        if not multiprocess and not kwargs.get('outname'):
-            corpus = Corpus(corpus, print_info=False)
-
-    # figure out how the user has entered the query and normalise
-    from corpkit.process import searchfixer
-    search = searchfixer(search, query)
-
-    # lowercase anything in show
-    if isinstance(show, list):
-        show = [i.lower() for i in show]
-    elif isinstance(show, basestring):
-        show = show.lower()
-        show = [show]
-    
-    # instantiate lemmatiser if need be
-    if 'l' in show and search.get('t'):
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr = WordNetLemmatizer()
+    def fix_show(show):
+        """lowercase anything in show and turn into list"""
+        if isinstance(show, list):
+            show = [i.lower() for i in show]
+        elif isinstance(show, basestring):
+            show = show.lower()
+            show = [show]
+        return show
 
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
@@ -190,7 +148,6 @@ def interrogator(corpus,
 
         if root:
             root.update()
-
         if countmode:
             return len(res)
         else:
@@ -214,7 +171,6 @@ def interrogator(corpus,
 
         to_open = '\n'.join([s.parse_string.strip() for s in sents])
 
-        # count moods via trees          (/\?/ !< __)
         from corpkit.dictionaries.process_types import processes
         from corpkit.other import as_regex
         tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
@@ -256,7 +212,7 @@ def interrogator(corpus,
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes,
-                                       middle_column_result, 
+                                       middle_column_result,
                                        speakr=False
                                       ):
         """Create concordance line output from tregex output"""
@@ -392,10 +348,8 @@ def interrogator(corpus,
                     bits.append(lemma)
             joined = '/'.join(bits)
             done.append(joined)
-
         if whole:
             done = zip(fnames, done)
-
         return done
 
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
@@ -579,7 +533,6 @@ def interrogator(corpus,
 
         return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
 
-
     def get_tregex_values():
         """If using Tregex, set appropriate values
 
@@ -623,7 +576,6 @@ def interrogator(corpus,
         elif search['t'] == 'any':   
             search['t'] = anyq
         return search['t'], translated_option
-
 
     def plaintext_regex_search(pattern, plaintext_data, concordancing=False, **kwargs):
         """search for regex in plaintext corpora
@@ -745,6 +697,55 @@ def interrogator(corpus,
                       (thetime, message, cname, optiontext, sformat, message))
             print(welcome)
 
+    def goodbye_printer(only_conc=False):
+        """Say goodbye before exiting"""
+        if not kwargs.get('printstatus', True):
+            return
+        thetime = strftime("%H:%M:%S", localtime())
+        if only_conc:
+            
+            show_me = (thetime, len(conc_df))
+            finalstring = '\n\n%s: Concordancing finished! %d results.' % show_me
+        else:
+            finalstring = '\n\n%s: Interrogation finished!' % thetime
+            if countmode:
+                finalstring += ' %d matches.' % tot
+            else:
+                dat = (numentries, total_total)
+                finalstring += ' %d unique results, %d total occurrences.' % dat
+        
+        print(finalstring)
+
+
+    def make_conc_obj_from_conclines(conc_results):
+        """turn conclines into dataframe"""
+        from corpkit.interrogation import Concordance
+        all_conc_lines = []
+        for sc_name, resu in sorted(conc_results.items()):
+            if only_unique:
+                unique_results = uniquify(resu)
+            else:
+                unique_results = resu
+            #make into series
+            pindex = 'c f s l m r'.encode('utf-8').split()
+            for fname, spkr, start, word, end in unique_results:
+                #spkr = str(spkr, errors = 'ignore')
+                fname = os.path.basename(fname)
+                ser = [sc_name, fname, spkr, start, word, end]
+                all_conc_lines.append(Series(ser, index=pindex))
+
+        if random:
+            from random import shuffle
+            shuffle(all_conc_lines)
+
+        try:
+            conc_df = pd.concat(all_conc_lines, axis=1).T
+            if all(x == '' for x in list(conc_df['s'].values)):
+                conc_df.drop('s', axis=1, inplace=True)
+            return Concordance(conc_df)
+        except ValueError:
+            return
+
     def make_progress_bar():
         """generate a progress bar"""
 
@@ -779,9 +780,53 @@ def interrogator(corpus,
         animator(p, current_iter, tstr, **par_args)
         return p, outn, total_files, par_args
 
+    # find out if using gui
+    root = kwargs.get('root')
+    note = kwargs.get('note')
+
+    # set up pause method
+    original_sigint = signal.getsignal(signal.SIGINT)
+    if kwargs.get('paralleling', None) is None:
+        original_sigint = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, signal_handler)
+
+    # find out about concordancing
+    only_conc = False
+    no_conc = False
+    if do_concordancing is False:
+        no_conc = True
+    if isinstance(do_concordancing, str) and do_concordancing.lower() == 'only':
+        only_conc = True
+        no_conc = False
+    numconc = 0
+
+    # wipe non essential class attributes to not bloat query attrib
+    if corpus.__class__ == Corpus:
+        import copy
+        corpus = copy.copy(corpus)
+        for k, v in corpus.__dict__.items():
+            if isinstance(v, Interrogation) or isinstance(v, Interrodict):
+                corpus.__dict__.pop(k, None)
+
+    # convert path to corpus object
+    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File, Datalist]:
+        if not multiprocess and not kwargs.get('outname'):
+            corpus = Corpus(corpus, print_info=False)
+
+    # figure out how the user has entered the query and show, and normalise
+    from corpkit.process import searchfixer
+    search = searchfixer(search, query)
+    show = fix_show(show)
+
+    # instantiate lemmatiser if need be
+    if 'l' in show and search.get('t'):
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lmtzr = WordNetLemmatizer()
+
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
 
+    # figure out if we can multiprocess the corpus
     if hasattr(corpus, '__iter__') and im:
         corpus = Corpus(corpus)
     if hasattr(corpus, '__iter__') and not im:
@@ -789,11 +834,12 @@ def interrogator(corpus,
     if corpus.__class__ == Corpora:
         im = True
 
+    # split corpus if the user wants multiprocessing but no other iterable
     if not im and multiprocess:
         im = True
         corpus = corpus[:]
+
     # if it's already been through pmultiquery, don't do it again
-    
     locs['search'] = search
     locs['query'] = query
     locs['just_speakers'] = just_speakers
@@ -801,14 +847,20 @@ def interrogator(corpus,
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
 
+    # send to multiprocess function
     if im:
         signal.signal(signal.SIGINT, original_sigint)
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
 
-    cname = corpus.name
+    # get corpus metadata
     subcorpora = corpus.subcorpora
-    
+    cname = corpus.name
+    if isinstance(save, basestring):
+        savename = corpus.name + '-' + save
+    if save is True:
+        raise ValueError('save must be str, not bool.')
+
     try:
         datatype = corpus.datatype
         singlefile = corpus.singlefile
@@ -820,7 +872,8 @@ def interrogator(corpus,
     results = {}
     count_results = {}
     conc_results = {}
-    # check if just counting
+
+    # check if just counting, turn off conc if so
     countmode = 'c' in show
     if countmode:
         no_conc = True
@@ -832,41 +885,24 @@ def interrogator(corpus,
     denom = kwargs.get('denominator', 1)
     startnum = kwargs.get('startnum', 0)
 
-    ############################################
     # Determine the search function to be used #
-    ############################################
-
     searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text = determine_search_func()
     
-    if searcher == get_stats:
+    # no conc for statsmode
+    if statsmode:
         no_conc = True
         only_conc = False
         do_concordancing = False
 
-    ############################################
-    #      Set some Tregex-related values      #
-    ############################################
-
+    # Set some Tregex-related values
     if search.get('t'):
-
         query, translated_option = get_tregex_values()
-        
         if query == 'Bad query' and translated_option is None:
             if root:
                 return 'Bad query'
             else:
                 return
-
-    to_iterate_over = make_search_iterable(corpus)
-
-    welcome_printer()
-
-    p, outn, total_files, par_args = make_progress_bar()
-
-    ############################################
-    # Iterate over data, doing interrogations  #
-    ############################################
-
+    # more tregex options
     if tree_to_text:
         treg_q = r'ROOT << __'
         op = ['-o', '-t', '-w']
@@ -874,14 +910,25 @@ def interrogator(corpus,
         treg_q = search['t']
         op = ['-o', '-' + translated_option]
 
+    # make iterable object for corpus interrogation
+    to_iterate_over = make_search_iterable(corpus)
+
+    # print welcome message
+    welcome_printer()
+
+    # create a progress bar
+    p, outn, total_files, par_args = make_progress_bar()
+
+    # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
 
+        # results for subcorpus go here
         conc_results[subcorpus_name] = []
         count_results[subcorpus_name] = []
         results[subcorpus_name] = Counter()
 
+        # get either everything (tree_to_text) or the search['t'] query
         if tree_to_text or simple_tregex_mode:
-
             result = tregex_engine(query=treg_q,
                                    options=op,
                                    corpus=subcorpus_path,
@@ -889,9 +936,11 @@ def interrogator(corpus,
                                    preserve_case=preserve_case
                                   )
 
+            # format search results with slashes etc
             if not countmode and not tree_to_text:
                 result = format_tregex(result)
 
+            # if concordancing, do the query again with 'whole' sent and fname
             if not no_conc:
                 op += ['-w', '-f']
                 whole_result = tregex_engine(query=search['t'],
@@ -901,34 +950,32 @@ def interrogator(corpus,
                                              preserve_case=preserve_case
                                             )
             
+                # format match too depending on option
                 if not only_format_match:
                     whole_result = format_tregex(whole_result, whole=True)
 
+                # make conc lines from conc results
                 conc_result = make_conc_lines_from_whole_mid(whole_result, result, speakr=False)
+                for lin in conc_result:
+                    if numconc < maxconc or not maxconc:
+                        conc_results[subcorpus_name].append(lin)
+                    numconc += 1
 
+            # add matches to ongoing counts
             if countmode:
                 count_results[subcorpus_name] += [result]            
             else:
                 result = Counter(result)
                 results[subcorpus_name] += result
-                if not no_conc:
-                    for lin in conc_result:
-                        if numconc < maxconc or not maxconc:
-                            conc_results[subcorpus_name].append(lin)
-                        numconc += 1
 
+            # update progress bar
             current_iter += 1
-            if kwargs.get('paralleling', None) is not None:
-                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-            else:
-                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-
+            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
             animator(p, current_iter, tstr, **par_args)
 
-        # dependencies, plaintext, tokens or slow_tregex
+        # dependencies, plaintext, tokens, slow_tregex and tree_to_text
         if not simple_tregex_mode:
             for f in files:
-
                 slow_treg_speaker_guess = kwargs.get('outname', False)
                 if datatype == 'parse' and not tree_to_text:
                     corenlp_xml = f.document
@@ -1018,135 +1065,65 @@ def interrogator(corpus,
                         #else:
                         #results[subcorpus_name] += res
 
+                # update progress bar
                 if not statsmode:
                     current_iter += 1
-                    if kwargs.get('paralleling', None) is not None:
-                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                    else:
-                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
                     animator(p, current_iter, tstr, **par_args)
 
-    ############################################
-    #     Get concordances into DataFrame      #
-    ############################################
-
+    # Get concordances into DataFrame, return if just conc
     if not no_conc:
-        all_conc_lines = []
-        for sc_name, resu in sorted(conc_results.items()):
-            if only_unique:
-                unique_results = uniquify(resu)
-            else:
-                unique_results = resu
-            #make into series
-            pindex = 'c f s l m r'.encode('utf-8').split()
-            for fname, spkr, start, word, end in unique_results:
-                #spkr = str(spkr, errors = 'ignore')
-                fname = os.path.basename(fname)
-                ser = [sc_name, fname, spkr, start, word, end]
-                all_conc_lines.append(Series(ser, index=pindex))
+        conc_df = make_conc_obj_from_conclines(conc_results)
+        if only_conc:
+            conc_df.query = locs
+            if save and not kwargs.get('outname'):
+                conc_df.save(savename)
+            goodbye_printer(only_conc=True)
+            signal.signal(signal.SIGINT, original_sigint)            
+            return conc_df
+    else:
+        conc_df = None
 
-        # randomise results...
-        if random:
-            from random import shuffle
-            shuffle(all_conc_lines)
+    # Get interrogation into DataFrame
+    if countmode:
+        df = Series({k: sum(v) for k, v in sorted(count_results.items())})
+        tot = df.sum()
+    else:
+        the_big_dict = {}
+        unique_results = set([item for sublist in list(results.values()) for item in sublist])
+        for word in unique_results:
+            sortres = sorted(results.items(), key=lambda x: x[0])
+            the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
+        # turn master dict into dataframe, sorted
+        df = DataFrame(the_big_dict, index=sorted(results.keys()))
 
-        # TODO: allow zero results from subcorpus
-        # this is where we get an error for no objects...
-        try:
-            conc_df = pd.concat(all_conc_lines, axis=1).T
-        except ValueError:
-            conc_df = None
-            output = None
-            if only_conc:
-                return conc_df
-            
-        if conc_df is not None:
+        numentries = len(df.columns)
+        tot = df.sum(axis=1)
+        total_total = df.sum().sum()
 
-            # not doing anything yet --- this is for multimodal concordancing
-            add_links = False
-            if not add_links:
-                conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r']
-            else:
-                conc_df.columns = ['c', 'f', 's', 'l', 'm', 'r', 'link']
+    # turn df into series if all conditions met
+    if not countmode:
+        if not subcorpora or singlefile:
+            if not files_as_subcorpora:
+                if not kwargs.get('df1_always_df'):
+                    df = Series(df.ix[0])
+                    df.sort_values(ascending=False, inplace=True)
+                    tot = df.sum()
+                    numentries = len(df.index)
+                    total_total = tot
 
-            if all(x == '' for x in list(conc_df['s'].values)):
-                conc_df.drop('s', axis=1, inplace=True)
+    # sort by total
+    if isinstance(df, DataFrame):
+        if not df.empty:   
+            df = df[list(df.sum().sort_values(ascending=False).index)]
 
-            from corpkit.interrogation import Concordance
-            output = Concordance(conc_df)
-            if only_conc:
-                output.query = locs
-                if save and not kwargs.get('outname'):
-                    output.save(save)
+    # make interrogation object
+    interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 
-                if kwargs.get('printstatus', True):
-                    thetime = strftime("%H:%M:%S", localtime())
-                    show = (thetime, len(conc_df))
-                    finalstring = '\n\n%s: Concordancing finished! %d results.' % show
-                    print(finalstring)
-                signal.signal(signal.SIGINT, original_sigint)
-                return output
-
-    ############################################
-    #     Get interrogation into DataFrame     #
-    ############################################
-
-    if not only_conc:
-        if countmode:
-            df = Series({k: sum(v) for k, v in sorted(count_results.items())})
-            tot = df.sum()
-        else:
-            the_big_dict = {}
-            unique_results = set([item for sublist in list(results.values()) for item in sublist])
-            for word in unique_results:
-                sortres = sorted(results.items(), key=lambda x: x[0])
-                the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
-            # turn master dict into dataframe, sorted
-            df = DataFrame(the_big_dict, index=sorted(results.keys()))
-
-            numentries = len(df.columns)
-            tot = df.sum(axis=1)
-            total_total = df.sum().sum()
-
-        ############################################
-        # Format, output as Interrogation object   #
-        ############################################
-
-        if not countmode:
-            if not subcorpora or singlefile:
-                if not files_as_subcorpora:
-                    if not kwargs.get('df1_always_df'):
-                        df = Series(df.ix[0])
-                        df.sort_values(ascending=False, inplace=True)
-                        tot = df.sum()
-                        numentries = len(df.index)
-                        total_total = tot
-
-        # sort by total
-        if isinstance(df, DataFrame):
-            if not df.empty:   
-                df.ix['Total-tmp'] = df.sum()
-                the_tot = df.ix['Total-tmp']
-                df = df[the_tot.argsort()[::-1]]
-                df = df.drop('Total-tmp', axis=0)
-
-        # format final string
-        if kwargs.get('printstatus', True):
-            thetime = strftime("%H:%M:%S", localtime())
-            finalstring = '\n\n%s: Interrogation finished!' % thetime
-            if countmode:
-                finalstring += ' %d matches.' % tot
-            else:
-                dat = (numentries, total_total)
-                finalstring += ' %d unique results, %d total occurrences.' % dat
-            print(finalstring)
-
-        if not no_conc:
-            interro = Interrogation(results=df, totals=tot, query=locs, concordance=output)
-        else:
-            interro = Interrogation(results=df, totals=tot, query=locs)
-
-        if save and not kwargs.get('outname'):
-            interro.save(save)
-        signal.signal(signal.SIGINT, original_sigint)
-        return interro
+    # save it
+    if save and not kwargs.get('outname'):
+        interro.save(savename)
+    
+    goodbye_printer()
+    signal.signal(signal.SIGINT, original_sigint)
+    return interro
