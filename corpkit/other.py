@@ -179,13 +179,13 @@ def concprinter(dataframe, kind = 'string', n = 100, window = 35, columns = 'all
     return_it = kwargs.pop('return_it', False)
 
     if return_it:
-        return functi(to_show, header = False, **kwargs)
+        return functi(to_show, header=False, **kwargs)
     else:
         print('\n')
-        print(functi(to_show, header = False, **kwargs))
+        print(functi(to_show, header=False, **kwargs))
         print('\n')
 
-def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
+def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     """
     Save an interrogation as pickle to *savedir*.
 
@@ -216,40 +216,51 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
     import os
     from time import localtime, strftime
     import corpkit
-    from process import makesafe
+    from corpkit.process import makesafe
+
+    from corpkit.interrogation import Interrogation
+    from corpkit.corpus import Corpus, Datalist
 
     print_info = kwargs.get('print_info', True)
 
-    if savename.endswith('.p'):
-        savename = savename[:-2]
-        
-    savename = makesafe(savename, drop_datatype = False, hyphens_ok = True)
-    
-    if not savename.endswith('.p'):
-        savename = savename + '.p'
+    def make_filename(corpus, savename):
+        """create a filename"""
+        if '/' in savename:
+            return savename
 
-    # add corpus name to front
-    # fix this, it's ridiculous
-    from corpus import Corpus, Datalist
-    if interrogation.__dict__.get('query'):
-        corp = interrogation.query.get('corpus', False)
-        
-        if not corp:
-            try:
-                corp = interrogation.query.get('interrogation').query.get('corpus', False)
-                corpname = corp.name + '-'
-            except:
-                corpname = ''
-        else:
-            if corp.__class__ == corpkit.corpus.Datalist:
-                corp = Corpus(corp)
-            try:
-                corpname = corp.name + '-'
-            except:
-                corpname = ''
-        savename = corpname + savename
+        firstpart = ''
+        if savename.endswith('.p'):
+            savename = savename[:-2]    
+        savename = makesafe(savename, drop_datatype=False, hyphens_ok=True)
+        if not savename.endswith('.p'):
+            savename = savename + '.p'
+        if hasattr(interrogation, 'query'):
+            corpus = interrogation.query.get('corpus')
+            if corpus:
+                if isinstance(corpus, basestring):
+                    firstpart = corpus
+                else:
+                    if isinstance(corpus, Datalist):
+                        firstpart = Corpus(corpus).name
+                    if hasattr(corpus, 'name'):
+                        firstpart = corpus.name
+                    else:
+                        firstpart = ''
+        return firstpart + '-' + savename
 
-    if savedir:
+    savename = make_filename(interrogation, savename)
+
+    # delete unpicklable parts of query
+    if hasattr(interrogation, 'query'):
+        iq = interrogation.query
+        from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
+        interrogation.query = {k: v for k, v in iq.items() if not isinstance(v, ModuleType) \
+            and not isinstance(v, FunctionType) \
+            and not isinstance(v, BuiltinFunctionType) \
+            and not isinstance(v, BuiltinMethodType)}
+
+
+    if savedir and not '/' in savename:
         if not os.path.exists(savedir):
             os.makedirs(savedir)
         fullpath = os.path.join(savedir, savename)
@@ -257,15 +268,15 @@ def save(interrogation, savename, savedir = 'saved_interrogations', **kwargs):
         fullpath = savename
 
     while os.path.isfile(fullpath):
-
         import sys
         if sys.version_info.major == 3:
-            selection = input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+            selection = input(("\nSave error: %s already exists in %s.\n\n' \
+                'Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
         else:
-            selection = raw_input("\nSave error: %s already exists in %s.\n\nType 'o' to overwrite, or enter a new name: " % (savename, savedir))
+            selection = raw_input(("\nSave error: %s already exists in %s.\n\n' \
+                'Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
 
         if selection == 'o' or selection == 'O':
-            import os
             os.remove(fullpath)
         else:
             selection = selection.replace('.p', '')
