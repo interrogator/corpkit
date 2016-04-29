@@ -699,9 +699,6 @@ def editor(interrogation,
         options = stat_field + easy_sorts + stat_sorts
         sort_by_convert = {'most': 'total', True: 'total', 'least': 'infreq'}
         sort_by = sort_by_convert.get(sort_by, sort_by)
-        if sort_by not in options and sort_by:
-            raise ValueError("sort_by '%s' not recognised. Must be True, False, %s" % \
-                (sort_by, ', '.join(options)))
 
         # probably broken :(
         if just_totals:
@@ -738,7 +735,8 @@ def editor(interrogation,
                 df = df.T
             df = df[list(df.sum().sort_values(ascending=sort_by != 'total').index)]
         
-        if sort_by in stat_field:
+        # sort by slope etc., or search by subcorpus name
+        if sort_by in stat_field or sort_by not in options:
             asc = kwargs.get('reverse', False)
             df = df.T.sort_values(by=sort_by, ascending=asc).T
         

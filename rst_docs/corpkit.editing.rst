@@ -130,14 +130,19 @@ Sorting
 
 You can sort results using the ``sort_by`` keyword. Possible values are:
 
-   * 'total' (most common first)
-   * 'infreq' (inverse total)
-   * 'name' (alphabetical)
-   * 'increase' (most increasing)
-   * 'decrease' (most decreasing)
-   * 'turbulent' (by most change)
-   * 'static' (by least change)
-   * 'p' (by p value)
+   * `'name'` (alphabetical)
+   * `'total'` (most common first)
+   * `'infreq'` (inverse total)
+   * `'increase'` (most increasing)
+   * `'decrease'` (most decreasing)
+   * `'turbulent'` (by most change)
+   * `'static'` (by least change)
+   * `'p'` (by p value)
+   * `'slope'` (by slope)
+   * `'intercept'` (by intercept)
+   * `'r'` (by correlation coefficient)
+   * `'stderr'` (by standard error of the estimate)
+   * `'<subcorpus>'` by total in <subcorpus>
 
 .. code-block:: python
 
