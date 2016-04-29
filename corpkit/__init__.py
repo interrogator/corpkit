@@ -14,6 +14,7 @@ __all__ = [
     "load",
     "loader",
     "load_all_results",
+    "dictionaries",
     "as_regex",
     "new_project",
     "Corpus",
@@ -51,7 +52,7 @@ from other import load_all_results
 from other import quickview, as_regex, new_project
 
 # monkeypatch editing and plotting to pandas objects
-import pandas as pd
+from pandas import DataFrame, Series
 
 def _plot(self, *args, **kwargs):
     from corpkit.plotter import plotter
@@ -99,29 +100,29 @@ def _top(self):
     max_col = pd.options.display.max_columns
     return self.iloc[:max_row,:max_col]
 
-pd.DataFrame.edit = _edit
-pd.Series.edit = _edit
+DataFrame.edit = _edit
+Series.edit = _edit
 
-pd.DataFrame.visualise = _plot
-pd.Series.visualise = _plot
+DataFrame.visualise = _plot
+Series.visualise = _plot
 
-pd.DataFrame.save = _save
-pd.Series.save = _save
+DataFrame.save = _save
+Series.save = _save
 
-pd.DataFrame.quickview = _quickview
-pd.Series.quickview = _quickview
+DataFrame.quickview = _quickview
+Series.quickview = _quickview
 
-pd.DataFrame.format = _format
-pd.Series.format = _format
+DataFrame.format = _format
+Series.format = _format
 
-pd.Series.texify = _texify
+Series.texify = _texify
 
-pd.DataFrame.calculate = _calculate
-pd.Series.calculate = _calculate
+DataFrame.calculate = _calculate
+Series.calculate = _calculate
 
-pd.DataFrame.shuffle = _shuffle
+DataFrame.shuffle = _shuffle
 
-pd.DataFrame.top = _top
+DataFrame.top = _top
 
 # Defining globals
 A = 'a'

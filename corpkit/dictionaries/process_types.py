@@ -22,12 +22,12 @@ def load_verb_data():
     def resource_path(relative):
         """seemingly not working"""
         import os
-        return os.path.join(os.environ.get("_MEIPASS2", os.path.abspath(".")),relative)
+        return os.path.join(os.environ.get("_MEIPASS2", os.path.abspath(".")), relative)
 
     import os
     import corpkit
     import pickle
-    from process import get_gui_resource_dir
+    from corpkit.process import get_gui_resource_dir
     corpath = os.path.dirname(corpkit.__file__)
     baspat = os.path.dirname(corpath)
     dicpath = os.path.join(baspat, 'dictionaries')
@@ -80,7 +80,7 @@ def find_lexeme(verb):
 
 def get_both_spellings(verb_list):
     """add alternative spellings to verb_list"""
-    from dictionaries.word_transforms import usa_convert
+    from corpkit.dictionaries.word_transforms import usa_convert
     uk_convert = {v: k for k, v in usa_convert.items()}
     to_add_to_verb_list = []
     for w in verb_list:
@@ -94,10 +94,9 @@ def get_both_spellings(verb_list):
 
 def add_verb_inflections(verb_list):
     """add verb inflections to verb_list"""
-    from dictionaries.word_transforms import usa_convert
+    from corpkit.dictionaries.word_transforms import usa_convert
     uk_convert = {v: k for k, v in usa_convert.items()}
-    from dictionaries.process_types import find_lexeme
-    
+
     # get lexemes
     lexemes = load_verb_data()
     verbforms = []
@@ -145,17 +144,17 @@ def add_verb_inflections(verb_list):
     to_add = []
     for w in verbforms:
         if w in usa_convert.keys():
-          to_add.append(usa_convert[w])
+            to_add.append(usa_convert[w])
     for w in verbforms:
         if w in uk_convert.keys():
-          to_add.append(uk_convert[w])
+            to_add.append(uk_convert[w])
     verbforms = sorted(list(set(verbforms + to_add)))
 
     # ensure unicode
     t = []
     for w in verbforms:
         try:
-            t.append(unicode(w, errors = 'ignore'))
+            t.append(unicode(w, errors='ignore'))
         except:
             t.append(w)
     return t
@@ -166,12 +165,13 @@ class Wordlist(list):
     """A list of words, containing a `words` attribute and a `lemmata` attribute"""
     
     def __init__(self, data, **kwargs):
-        self.data = get_both_spellings(data)
+        self.data = data
         self.kwargs = kwargs
         super(Wordlist, self).__init__(self.data)
 
     @lazyprop
     def words(self):
+        """get inflections"""
         if not self.kwargs.get('single'):
             return Wordlist(add_verb_inflections(get_both_spellings(self.data)), single=True)
         else:
@@ -179,32 +179,37 @@ class Wordlist(list):
 
     @lazyprop
     def lemmata(self):
+        """show base forms of verbs"""
         if not self.kwargs.get('single'):
             return Wordlist(get_both_spellings(self.data), single=True)
         else:
             return
 
-    def as_regex(self, **kwargs):
+    def as_regex(self, boundaries='w', case_sensitive=False, inverse=False):
+        """turn list into regular expression matching any item in list"""
         if self.kwargs.get('single'):
             from corpkit import as_regex
-            return as_regex(self, **kwargs)
-        else:
-            return
+            return as_regex(get_both_spellings(self.data),
+                            boundaries=boundaries,
+                            case_sensitive=case_sensitive,
+                            inverse=inverse
+                           )
 
 class Processes(object):
-    """Process types: relational, verbal and mental"""
+    """Process types: relational, verbal, mental, material"""
     def __init__(self):
-      relational = ["become",
-                    "feel",
-                    "be",
-                    "have",
-                    "sound",
-                    "look",
-                    "seem",
-                    "appear",
-                    "smell"]
+        relational = ["become",
+                      "feel",
+                      "be",
+                      "have",
+                      "sound",
+                      "look",
+                      "seem",
+                      "appear",
+                      "smell"
+                     ]
 
-      verbal =     ["forbid",
+        verbal =     ["forbid",
                     "forswear",
                     "prophesy",
                     "say",
@@ -381,223 +386,225 @@ class Processes(object):
                      'complain',
                      'swear']
 
-      behavioural = ['laugh', 'cry', 'listen', 'look', 'hear', 'wake', 'awaken', ]
+        behavioural = ['laugh', 'cry', 'listen', 'look', 'hear', 'wake', 'awaken', ]
 
-      mental =      ["choose",
-                     "feel",
-                     "find",
-                     "forget",
-                     "hear",
-                     "know",
-                     "mean",
-                     "overhear",
-                     "prove",
-                     "read",
-                     "see",
-                     "think",
-                     "understand",
-                     "abide",
-                     "abominate",
-                     "accept",
-                     "acknowledge",
-                     "acquiesce",
-                     "adjudge",
-                     "adore",
-                     "affirm",
-                     "agree",
-                     "allow",
-                     "allure",
-                     "anticipate",
-                     "appreciate",
-                     "ascertain",
-                     "aspire",
-                     "assent",
-                     "assume",
-                     "begrudge",
-                     "believe",
-                     "calculate",
-                     "care",
-                     "conceal",
-                     "concede",
-                     "conceive",
-                     "concern",
-                     "conclude",
-                     "concur",
-                     "condone",
-                     "conjecture",
-                     "consent",
-                     "consider",
-                     "contemplate",
-                     "convince",
-                     "crave",
-                     "decide",
-                     "deduce",
-                     "deem",
-                     "delight",
-                     "desire",
-                     "determine",
-                     "detest",
-                     "discern",
-                     "discover",
-                     "dislike",
-                     "doubt",
-                     "dread",
-                     "enjoy",
-                     "envisage",
-                     "estimate",
-                     "excuse",
-                     "expect",
-                     "exult",
-                     "fear",
-                     "foreknow",
-                     "foresee",
-                     "gather",
-                     "grant",
-                     "grasp",
-                     "hate",
-                     "hope",
-                     "hurt",
-                     "hypothesise",
-                     "hypothesize",
-                     "imagine",
-                     "infer",
-                     "inspire",
-                     "intend",
-                     "intuit",
-                     "judge",
-                     "ken",
-                     "lament",
-                     "like",
-                     "loathe",
-                     "love",
-                     "marvel",
-                     "mind",
-                     "miss",
-                     "need",
-                     "neglect",
-                     "notice",
-                     "observe",
-                     "omit",
-                     "opine",
-                     "perceive",
-                     "plan",
-                     "please",
-                     "posit",
-                     "postulate",
-                     "pray",
-                     "preclude",
-                     "prefer",
-                     "presume",
-                     "presuppose",
-                     "pretend",
-                     "provoke",
-                     "realize",
-                     "realise",
-                     "reason",
-                     "recall",
-                     "reckon",
-                     "recognise",
-                     "recognize",
-                     "recollect",
-                     "reflect",
-                     "regret",
-                     "rejoice",
-                     "relish",
-                     "remember",
-                     "resent",
-                     "resolve",
-                     "rue",
-                     "scent",
-                     "scorn",
-                     "sense",
-                     "settle",
-                     "speculate",
-                     "suffer",
-                     "suppose",
-                     "surmise",
-                     "surprise",
-                     "suspect",
-                     "trust",
-                     "visualise",
-                     "visualize",
-                     "want",
-                     "wish",
-                     "wonder",
-                     "yearn",
-                     "rediscover",
-                     "dream",
-                     "justify", 
-                     "figure", 
-                     "smell", 
-                     "worry",
-                      'know',
-                     'think',
-                     'feel',
-                     'want',
-                     'hope',
-                     'find',
-                     'guess',
-                     'love',
-                     'wish',
-                     'like',
-                     'understand',
-                     'wonder',
-                     'believe',
-                     'hate',
-                     'remember',
-                     'agree',
-                     'notice',
-                     'learn',
-                     'realize',
-                     'miss',
-                     'appreciate',
-                     'decide',
-                     'suffer',
-                     'deal',
-                     'forget',
-                     'care',
-                     'imagine',
-                     'relate',
-                     'worry',
-                     'figure',
-                     'handle',
-                     'struggle',
-                     'pray',
-                     'consider',
-                     'enjoy',
-                     'expect',
-                     'plan',
-                     'suppose',
-                     'trust',
-                     'bother',
-                     'blame',
-                     'accept',
-                     'admit',
-                     'assume',
-                     'remind',
-                     'seek',
-                     'bet',
-                     'refuse',
-                     'cope',
-                     'choose',
-                     'freak',
-                     'fear',
-                     'question',
-                     'recall',
-                     'doubt',
-                     'suspect',
-                     'focus',
-                     'calm']
+        mental =      ["choose",
+                       "feel",
+                       "find",
+                       "forget",
+                       "hear",
+                       "know",
+                       "mean",
+                       "overhear",
+                       "prove",
+                       "read",
+                       "see",
+                       "think",
+                       "understand",
+                       "abide",
+                       "abominate",
+                       "accept",
+                       "acknowledge",
+                       "acquiesce",
+                       "adjudge",
+                       "adore",
+                       "affirm",
+                       "agree",
+                       "allow",
+                       "allure",
+                       "anticipate",
+                       "appreciate",
+                       "ascertain",
+                       "aspire",
+                       "assent",
+                       "assume",
+                       "begrudge",
+                       "believe",
+                       "calculate",
+                       "care",
+                       "conceal",
+                       "concede",
+                       "conceive",
+                       "concern",
+                       "conclude",
+                       "concur",
+                       "condone",
+                       "conjecture",
+                       "consent",
+                       "consider",
+                       "contemplate",
+                       "convince",
+                       "crave",
+                       "decide",
+                       "deduce",
+                       "deem",
+                       "delight",
+                       "desire",
+                       "determine",
+                       "detest",
+                       "discern",
+                       "discover",
+                       "dislike",
+                       "doubt",
+                       "dread",
+                       "enjoy",
+                       "envisage",
+                       "estimate",
+                       "excuse",
+                       "expect",
+                       "exult",
+                       "fear",
+                       "foreknow",
+                       "foresee",
+                       "gather",
+                       "grant",
+                       "grasp",
+                       "hate",
+                       "hope",
+                       "hurt",
+                       "hypothesise",
+                       "hypothesize",
+                       "imagine",
+                       "infer",
+                       "inspire",
+                       "intend",
+                       "intuit",
+                       "judge",
+                       "ken",
+                       "lament",
+                       "like",
+                       "loathe",
+                       "love",
+                       "marvel",
+                       "mind",
+                       "miss",
+                       "need",
+                       "neglect",
+                       "notice",
+                       "observe",
+                       "omit",
+                       "opine",
+                       "perceive",
+                       "plan",
+                       "please",
+                       "posit",
+                       "postulate",
+                       "pray",
+                       "preclude",
+                       "prefer",
+                       "presume",
+                       "presuppose",
+                       "pretend",
+                       "provoke",
+                       "realize",
+                       "realise",
+                       "reason",
+                       "recall",
+                       "reckon",
+                       "recognise",
+                       "recognize",
+                       "recollect",
+                       "reflect",
+                       "regret",
+                       "rejoice",
+                       "relish",
+                       "remember",
+                       "resent",
+                       "resolve",
+                       "rue",
+                       "scent",
+                       "scorn",
+                       "sense",
+                       "settle",
+                       "speculate",
+                       "suffer",
+                       "suppose",
+                       "surmise",
+                       "surprise",
+                       "suspect",
+                       "trust",
+                       "visualise",
+                       "visualize",
+                       "want",
+                       "wish",
+                       "wonder",
+                       "yearn",
+                       "rediscover",
+                       "dream",
+                       "justify", 
+                       "figure", 
+                       "smell", 
+                       "worry",
+                       'know',
+                       'think',
+                       'feel',
+                       'want',
+                       'hope',
+                       'find',
+                       'guess',
+                       'love',
+                       'wish',
+                       'like',
+                       'understand',
+                       'wonder',
+                       'believe',
+                       'hate',
+                       'remember',
+                       'agree',
+                       'notice',
+                       'learn',
+                       'realize',
+                       'miss',
+                       'appreciate',
+                       'decide',
+                       'suffer',
+                       'deal',
+                       'forget',
+                       'care',
+                       'imagine',
+                       'relate',
+                       'worry',
+                       'figure',
+                       'handle',
+                       'struggle',
+                       'pray',
+                       'consider',
+                       'enjoy',
+                       'expect',
+                       'plan',
+                       'suppose',
+                       'trust',
+                       'bother',
+                       'blame',
+                       'accept',
+                       'admit',
+                       'assume',
+                       'remind',
+                       'seek',
+                       'bet',
+                       'refuse',
+                       'cope',
+                       'choose',
+                       'freak',
+                       'fear',
+                       'question',
+                       'recall',
+                       'doubt',
+                       'suspect',
+                       'focus',
+                       'calm'
+                      ]
  
-      can_be_material = ['bother', 'find']
+        can_be_material = ['bother', 'find']
 
-      self.relational = Wordlist(relational)
-      self.verbal = Wordlist(verbal)
-      self.mental = Wordlist(mental)
-      self.behavioural = Wordlist(behavioural)
-      from dictionaries.verblist import allverbs
-      nonmat=set(self.relational + self.verbal + self.behavioural + self.mental)
-      self.material = Wordlist([i for i in allverbs if i not in nonmat and '_' not in i] + can_be_material)
+        self.relational = Wordlist(relational)
+        self.verbal = Wordlist(verbal)
+        self.mental = Wordlist(mental)
+        self.behavioural = Wordlist(behavioural)
+        from corpkit.dictionaries.verblist import allverbs
+        nonmat = set(self.relational + self.verbal + self.behavioural + self.mental)
+        vbs = [i for i in allverbs if i not in nonmat and '_' not in i]
+        self.material = Wordlist(vbs + can_be_material)
 
 processes = Processes()
 
