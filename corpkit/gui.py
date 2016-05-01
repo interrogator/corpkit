@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
+"""
 # corpkit GUI
 # Daniel McDonald
 
 # This file conains the frontend side of the corpkit gui.
-# You can use py2app or pyinstaller on it to make a .app
+# You can use py2app or pyinstaller on it to make a .app,
+# or just run it as a script.
 
 # Below is a string that is used to determine when minor
 # updates are available on github for automatic download:
@@ -14,6 +14,10 @@ from __future__ import print_function
 
 # Tabbed notebook template created by: 
 # Patrick T. Cossette <cold_soul79078@yahoo.com>
+"""
+
+from __future__ import print_function
+
 
 import sys
 import string
@@ -1038,10 +1042,15 @@ def corpkit_gui():
                 newdata = all_interrogations[newname]
                 name_of_interro_spreadsheet.set(newname)
                 i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
-                if newdata.results is not None:
-                    update_spreadsheet(interro_results, newdata.results, height = 340)
-                totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
-                update_spreadsheet(interro_totals, totals_as_df, height = 10)
+                if isinstance(newdata, pandas.DataFrame):
+                    toshow = newdata
+                    toshowt = newdata.sum()
+                elif hasattr(newdata, 'results') and newdata.results is not None:
+                    toshow = newdata.results
+                    if hasattr(newdata, 'totals') and newdata.results is not None:
+                        toshowt = pandas.DataFrame(newdata.totals, dtype = object)
+                update_spreadsheet(interro_results, toshow, height = 340)
+                update_spreadsheet(interro_totals, toshowt, height = 10)
                 refresh()
             else:
                 prev.configure(state=DISABLED)
@@ -1067,10 +1076,16 @@ def corpkit_gui():
                 newdata = all_interrogations[newname]
                 name_of_interro_spreadsheet.set(newname)
                 i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))
-                if newdata.results is not None:
-                    update_spreadsheet(interro_results, newdata.results, height = 340)
-                totals_as_df = pandas.DataFrame(newdata.totals, dtype = object)
-                update_spreadsheet(interro_totals, totals_as_df, height = 10)
+                if isinstance(newdata, pandas.DataFrame):
+                    toshow = newdata
+                    toshowt = newdata.sum()
+                elif hasattr(newdata, 'results') and newdata.results is not None:
+                    toshow = newdata.results
+                    if hasattr(newdata, 'totals') and newdata.results is not None:
+                        toshowt = newdata.totals
+                update_spreadsheet(interro_results, toshow, height = 340)
+                totals_as_df = pandas.DataFrame(toshowt, dtype = object)
+                update_spreadsheet(interro_totals, toshowt, height = 10)
                 refresh()
             else:
                 nex.configure(state=DISABLED)
@@ -1491,7 +1506,9 @@ def corpkit_gui():
             print(interrogator_args['search'])
             interrodata = interrogator(corp_to_search, **interrogator_args)
             if selected_option == 's':
-                interrodata.save('features', savedir = savedinterro_fullpath.get())
+                featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
+                if not os.path.isfile(featfile):
+                    interrodata.save('features', savedir = savedinterro_fullpath.get())
             
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
@@ -1731,6 +1748,11 @@ def corpkit_gui():
             else:
                 ck4.config(state=DISABLED)
                 c_ck4.config(state=DISABLED)
+
+            featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
+            shortname = current_corpus.get() + '-' + 'features'
+            if os.path.isfile(featfile) and shortname not in all_interrogations.keys():
+                all_interrogations[shortname] = load(featfile)
 
         Label(interro_opt, text = 'Corpus:').grid(row = 0, column = 0, sticky = W)
         current_corpus = StringVar()
