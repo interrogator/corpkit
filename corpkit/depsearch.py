@@ -2,24 +2,32 @@ from __future__ import print_function
 
 def dep_searcher(sents,
                  search,
-                 show = 'w',
-                 dep_type = 'collapsed-ccprocessed-dependencies',
-                 regex_nonword_filter = r'[A-Za-z0-9:_]',
-                 do_concordancing = False,
-                 exclude = False,
-                 excludemode = 'any',
-                 searchmode = 'all',
-                 lemmatise = False,
-                 case_sensitive = False,
-                 progbar = False,
-                 only_format_match = False,
-                 speaker = False,
-                 gramsize = 2):
+                 show='w',
+                 dep_type='collapsed-ccprocessed-dependencies',
+                 regex_nonword_filter=r'[A-Za-z0-9:_]',
+                 do_concordancing=False,
+                 exclude=False,
+                 excludemode='any',
+                 searchmode='all',
+                 lemmatise=False,
+                 case_sensitive=False,
+                 progbar=False,
+                 only_format_match=False,
+                 speaker=False,
+                 gramsize=2,
+                 nopunct=True,
+                 split_contractions=False):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
     from build import flatten_treestring
     from process import filtermaker, animator, get_deps
+
+    nonword = re.compile(regex_nonword_filter)
+
+
+    if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
+        raise ValueError("Can't mix n-gram and non-ngram show values.")
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -185,15 +193,16 @@ def dep_searcher(sents,
                             if i.dependent.idx == tok.id:
                                 extra_crit = search.get('d2l')
                                 if extra_crit:
-                                    if type(extra_crit) == Wordlist:
+                                    if isinstance(extra_crit, Wordlist):
                                         extra_crit = list(extra_crit)
-                                    if type(extra_crit) == list:
-                                        from other import as_regex
+                                    if isinstance(extra_crit, list):
+                                        from corpkit.other import as_regex
                                         extra_crit = as_regex(extra_crit, case_sensitive = case_sensitive)                            
                                     for b in tokens:
                                         if not re.search(extra_crit, b.lemma):
                                             continue
-                                        thelink = next(x for x in deps.links if x.dependent.idx == b.id)
+                                        thelink = next(x for x in deps.links \
+                                                       if x.dependent.idx == b.id)
                                         if thelink.governor.idx == i.governor.idx:
                                             got.append(s.get_token_by_id(i.governor.idx))
                                 else:
@@ -236,7 +245,7 @@ def dep_searcher(sents,
                         lks.append(tok)
             elif opt == 'pl':
                 for tok in tokens:
-                    from dictionaries.word_transforms import taglemma
+                    from corpkit.dictionaries.word_transforms import taglemma
                     postag = tok.pos
                     if postag.lower() in list(taglemma.keys()):
                         stemmedtag = taglemma[postag.lower()]
@@ -313,144 +322,200 @@ def dep_searcher(sents,
             result.append(len(lks))
             continue
 
+        # if ngramming, repeat by gramsize
+        #morelks = []
+        #if any(x.startswith('n') for x in show):
+        #    for i in range(gramsize):
+        #        for l in lks:
+        #            morelks.append(l)
+        #lks = morelks
+        repeats = 1
+        if any(x.startswith('n') for x in show):
+            repeats = gramsize
+
         if do_concordancing:
+            if split_contractions is False and 'n' in show:
+                import warnings
+                warnings.warn("Concordancer cannot unsplit contractions for n-grams yet, sorry.")
             for lk in lks: # for each concordance middle part
-                one_result = []
-                if not lk:
-                    continue
-                # get the index of the match
-                windex = int(lk.id) - 1
-                speakr = s.speakername
-                if not speakr:
-                    speakr = ''
-                # begin building line with speaker first
-                conc_line = [speakr]
-                # format a single word correctly
-                if only_format_match:
-                    start = ' '.join([t.word for index, t in enumerate(s.tokens) if index < windex])
-                    end = ' '.join([t.word for index, t in enumerate(s.tokens) if index > windex])
-                    s.tokens = [s.get_token_by_id(lk.id)]
-                for tok in s.tokens:
-                    single_wd = {}
-                    intermediate_result = []
-                    if 'w' in show:
-                        single_wd['w'] = tok.word
-                    if 'l' in show:
-                        from dictionaries.word_transforms import wordlist
-                        if tok.lemma in list(wordlist.keys()):
-                            lem = wordlist[tok.lemma]
-                        else:
-                            lem = tok.lemma
-                        single_wd['l'] = lem
-                    if 'p' in show:
-                        single_wd['p'] = tok.pos
+                # this loop is for ngramming
+                for repeat in range(repeats):
+                    if nopunct:
+                        stokens = [i for i in s.tokens if re.search(nonword, i.word)]
+                    else:
+                        stokens = s.tokens         
+                    one_result = []
+                    if not lk:
+                        continue
+                    # get the index of the match
+                    windex = (int(lk.id) - 1) - repeat
+                    if any(x.startswith('n') for x in show):
+                        windex2 = windex + gramsize
+                    else:
+                        windex2 = windex + 1
+                    if windex < 0:
+                        continue
+                    if windex2 > len(s.tokens):
+                        continue
+                    speakr = s.speakername
+                    if not speakr:
+                        speakr = ''
+                    # begin building line with speaker first
+                    conc_line = [speakr]
+                    # format a single word correctly
+                    if only_format_match:
+                        start = ' '.join([t.word for index, t in enumerate(s.tokens) \
+                            if index < windex])
+                        end = ' '.join([t.word for index, t in enumerate(s.tokens) \
+                            if index > windex2 - 1])
+                        s.tokens = [s.get_token_by_id(lk.id)]
+                    for tok in stokens:
 
-                    if 'pl' in show:
-                        single_wd['pl'] = lk.pos
-                        from dictionaries.word_transforms import taglemma
-                        if postag.lower() in list(taglemma.keys()):
-                            single_wd['pl'] = taglemma[postag.lower()]
-                        else:
-                            single_wd['pl'] = postag.lower()
-                        if not single_wd['pl']:
-                            single_wd['pl'] == 'none'
-
-                    if 'r' in show:
-                        all_lks = [l for l in deps.links]
-                        distance = distancer(all_lks, tok)
-                        if distance:
-                            single_wd['r'] = str(distance)
-                        else:
-                            single_wd['r'] = '0'
-                    if 'f' in show:
-                        for lin in deps.links:
-                            single_wd['f'] = '.'
-                            if tok.id == lin.dependent.idx:
-                                single_wd['f'] = lin.type
-                                break
-
-
-
-
-                    if 'i' in show:
-                        single_wd['i'] = str(tok.id)
-
-                    if any(x.startswith('g') for x in show):
-                        thegovid = next((q.governor.idx for q in deps.links \
-                                        if q.dependent.idx == tok.id), False)
-                        govtok = False
-                        if thegovid is not False:
-                            govtok = s.get_token_by_id(thegovid)
-                            
-                        if 'g' in show:
-                            if govtok:
-                                single_wd['g'] = govtok.word
+                        single_wd = {}
+                        intermediate_result = []
+                        if 'w' in show:
+                            single_wd['w'] = tok.word
+                        if 'l' in show:
+                            from dictionaries.word_transforms import wordlist
+                            if tok.lemma in list(wordlist.keys()):
+                                lem = wordlist[tok.lemma]
                             else:
-                                single_wd['g'] = 'none'
-                        if 'gl' in show:
-                            if govtok:
-                                single_wd['gl'] = govtok.lemma
-                            else: 
-                                single_wd['gl'] = 'none'
-                        if 'gp' in show:
-                            if govtok:
-                                single_wd['gp'] = govtok.pos
-                            else: 
-                                single_wd['gp'] = 'none'
+                                lem = tok.lemma
+                            single_wd['l'] = lem
+                        if 'p' in show:
+                            single_wd['p'] = tok.pos
 
-                        if 'gf' in show:
-                            if govtok:
-                                single_wd['gf'] = next(x.type for x in deps.links \
-                                            if x.dependent.idx == thegovid)
-                            else: 
-                                single_wd['gf'] = 'none'
+                        if 'pl' in show:
+                            single_wd['pl'] = lk.pos
+                            from dictionaries.word_transforms import taglemma
+                            if postag.lower() in list(taglemma.keys()):
+                                single_wd['pl'] = taglemma[postag.lower()]
+                            else:
+                                single_wd['pl'] = postag.lower()
+                            if not single_wd['pl']:
+                                single_wd['pl'] == 'none'
 
-                    if any(x.startswith('d') for x in show):
-                        thedepid = next((q.dependent.idx for q in deps.links \
-                                        if q.governor.idx == tok.id), False)
+                        if 'r' in show:
+                            all_lks = [l for l in deps.links]
+                            distance = distancer(all_lks, tok)
+                            if distance:
+                                single_wd['r'] = str(distance)
+                            else:
+                                single_wd['r'] = '0'
+                        if 'f' in show:
+                            for lin in deps.links:
+                                single_wd['f'] = '.'
+                                if tok.id == lin.dependent.idx:
+                                    single_wd['f'] = lin.type
+                                    break
 
-                        deptok = False
-                        if thedepid is not False:
-                            deptok = s.get_token_by_id(thedepid)
+                        if 'i' in show:
+                            single_wd['i'] = str(tok.id)
 
-                        if 'd' in show:
-                            if thedepid:
-                                single_wd['d'] = deptok.word
-                            else: 
-                                single_wd['d'] = 'none'
+                        if any(x.startswith('g') for x in show):
+                            thegovid = next((q.governor.idx for q in deps.links \
+                                            if q.dependent.idx == tok.id), False)
+                            govtok = False
+                            if thegovid is not False:
+                                govtok = s.get_token_by_id(thegovid)
+                                
+                            if 'g' in show:
+                                if govtok:
+                                    single_wd['g'] = govtok.word
+                                else:
+                                    single_wd['g'] = 'none'
+                            if 'gl' in show:
+                                if govtok:
+                                    single_wd['gl'] = govtok.lemma
+                                else: 
+                                    single_wd['gl'] = 'none'
+                            if 'gp' in show:
+                                if govtok:
+                                    single_wd['gp'] = govtok.pos
+                                else: 
+                                    single_wd['gp'] = 'none'
 
-                        if 'dl' in show:
-                            if thedepid:
-                                single_wd['dl'] = deptok.lemma
-                            else: 
-                                single_wd['dl'] = 'none'
-                        if 'dp' in show:
-                            if thedepid:
-                                single_wd['dp'] = deptok.pos
-                            else: 
-                                single_wd['dp'] = 'none'
-                        if 'df' in show:
-                            if thedepid:
-                                single_wd['df'] = next(x.type for x in deps.links \
-                                if x.dependent.idx == thedepid)
-                            else: 
-                                single_wd['df'] = 'none'
-                    for i in show:
-                        intermediate_result.append(single_wd[i])
-                    intermediate_result = [i.replace('/', '-slash-').encode('utf-8', errors = 'ignore') for i in intermediate_result]
-                    one_result.append('/'.join(intermediate_result))
-                # now we have formatted tokens as a list. we need to split
-                # it into start, middle and end
-                if not only_format_match:
-                    start = ' '.join([w for index, w in enumerate(one_result) if index < windex])
-                    end = ' '.join([w for index, w in enumerate(one_result) if index > windex])
-                    middle = one_result[windex]
-                else:
-                    middle = one_result[0]
+                            if 'gf' in show:
+                                if govtok:
+                                    single_wd['gf'] = next(x.type for x in deps.links \
+                                                if x.dependent.idx == thegovid)
+                                else: 
+                                    single_wd['gf'] = 'none'
 
-                for bit in start, middle, end:
-                    conc_line.append(bit)
-                conc_result.append(conc_line)
+                        if any(x.startswith('d') for x in show):
+                            thedepid = next((q.dependent.idx for q in deps.links \
+                                            if q.governor.idx == tok.id), False)
+
+                            deptok = False
+                            if thedepid is not False:
+                                deptok = s.get_token_by_id(thedepid)
+
+                            if 'd' in show:
+                                if thedepid:
+                                    single_wd['d'] = deptok.word
+                                else: 
+                                    single_wd['d'] = 'none'
+
+                            if 'dl' in show:
+                                if thedepid:
+                                    single_wd['dl'] = deptok.lemma
+                                else: 
+                                    single_wd['dl'] = 'none'
+                            if 'dp' in show:
+                                if thedepid:
+                                    single_wd['dp'] = deptok.pos
+                                else: 
+                                    single_wd['dp'] = 'none'
+                            if 'df' in show:
+                                if thedepid:
+                                    single_wd['df'] = next(x.type for x in deps.links \
+                                    if x.dependent.idx == thedepid)
+                                else: 
+                                    single_wd['df'] = 'none'
+                        
+                        if any(x.startswith('n') for x in show):
+                            if 'n' in show:
+                                single_wd['n'] = tok.word
+                            if 'nl' in show:
+                                from dictionaries.word_transforms import wordlist
+                                if tok.lemma in list(wordlist.keys()):
+                                    lem = wordlist[tok.lemma]
+                                else:
+                                    lem = tok.lemma
+                                single_wd['nl'] = lem
+                            if 'np' in show:
+                                single_wd['np'] = tok.pos
+
+                            if 'npl' in show:
+                                single_wd['npl'] = lk.pos
+                                from dictionaries.word_transforms import taglemma
+                                if postag.lower() in list(taglemma.keys()):
+                                    single_wd['npl'] = taglemma[postag.lower()]
+                                else:
+                                    single_wd['npl'] = postag.lower()
+                                if not single_wd['npl']:
+                                    single_wd['npl'] == 'none'
+
+
+
+                        for i in show:
+                            intermediate_result.append(single_wd[i])
+                        intermediate_result = [i.replace('/', '-slash-').encode('utf-8', errors = 'ignore') for i in intermediate_result]
+                        one_result.append('/'.join(intermediate_result))
+
+                    # now we have formatted tokens as a list. we need to split
+                    # it into start, middle and end
+                    if not only_format_match:
+                        start = ' '.join([w for index, w in enumerate(one_result) if index < windex])
+                        end = ' '.join([w for index, w in enumerate(one_result) if index > windex2  - 1])
+                        middle = ' '.join([w for index, w in enumerate(one_result[windex:windex2])])
+                    else:
+                        #?
+                        middle = one_result[0]
+
+                    for bit in start, middle, end:
+                        conc_line.append(bit)
+                    conc_result.append(conc_line)
 
         # figure out what to show
         for lk in lks:
@@ -590,31 +655,59 @@ def dep_searcher(sents,
             if 'i' in show:
                 single_result['i'] = str(lk.id)
 
-            # ngramming
+            # ngram showing
             if any(i.startswith('n') for i in show):
+                import string
                 pystart = int(lk.id) - 1
+                # iterate gramsize times over each match
                 for i in range(gramsize):
-                    try:
-                        gram = [s.tokens[pystart+x-i] for x in range(gramsize) if pystart+x-i >= 0]
-                        if len(gram) != gramsize:
+                    single_result = {}
+                    out = []
+                    # start of gram to end of sent
+                    tillend = [i for i in s.tokens[pystart-i:]]
+                    # remove punct tokens
+                    if nopunct:
+                        tillend = [i for i in tillend if re.search(nonword, i.word)]
+                    
+                    # if words, we need to be able to unsplit
+                    if 'n' in show or 'nw' in show:
+                        if not split_contractions and len(show) > 1:
+                            cant = "Can't have unsplit contractions with multiple show values."
+                            raise ValueError(cant)
+                        tld = [t.word.replace('/', '-slash-') for t in tillend]
+                        if not split_contractions:
+                            from corpkit.process import unsplitter
+                            tld = unsplitter(tld)
+                        tld = tld[:gramsize]
+                        if len(tld) != gramsize:
                             continue
-                        if 'n' in show or 'nw' in show:
-                            form_gram = [t.word for t in gram]
-                        elif 'nl' in show:
-                            form_gram = [t.lemma for t in gram]
-                        elif 'np' in show:
-                            form_gram = [t.pos for t in gram]
-                        elif 'npl' in show:
-                            from dictionaries.word_transforms import taglemma
-                            import string
-                            form_gram = [taglemma.get(t.pos.lower(), t.pos) for t in gram]
-                            #for index, t in enumerate(form_gram):
-                            #    if all(b in string.punctuation for b in t):
-                            #        form_gram[index] = 'punctuation'
+                        single_result['n'] = tld 
+                    if 'nl' in show:
+                        tld = [t.lemma.replace('/', '-slash-') for t in tillend[:gramsize]]
+                        if len(tld) != gramsize:
+                            continue
+                        single_result['nl'] = tld
+                    if 'np' in show:
+                        tld = [t.pos for t in tillend[:gramsize]]
+                        if len(tld) != gramsize:
+                            continue
+                        single_result['np'] = tld
+                    if 'npl' in show:
+                        from corpkit.dictionaries.word_transforms import taglemma
+                        tld = [taglemma.get(t.pos.lower(), t.pos) for t in tillend[:gramsize]]
+                        if len(tld) != gramsize:
+                            continue
+                        single_result['npl'] = tld
+                    
+                    lst_of_tokenlists = [single_result[i] for i in show]
+                    # now we have
+                    # show = [W, L]
+                    # [['houses', 'of', 'friends'], ['house', 'of', 'friend']]
+                    zipped = zip(*lst_of_tokenlists)
+                    # [('houses', 'house'), ('of', 'of'), ('friends', 'friend')]
+                    out = ' '.join(['/'.join(i) for i in zipped])
+                    result.append(out)
 
-                        result.append(' '.join(form_gram))
-                    except:
-                        pass
             else:
                 if 'c' not in show:
                     # add them in order

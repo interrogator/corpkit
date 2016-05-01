@@ -52,7 +52,7 @@ def interrogator(corpus,
 
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
-    from corpkit.process import tregex_engine, get_deps
+    from corpkit.process import tregex_engine, get_deps, unsplitter
     from corpkit.other import as_regex
     from corpkit.process import animator
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
@@ -80,6 +80,9 @@ def interrogator(corpus,
         elif isinstance(show, basestring):
             show = show.lower()
             show = [show]
+        for index, val in enumerate(show):
+            if len(val) == 2 and val.endswith('w'):
+                show[index] = val[0]
         return show
 
     def is_multiquery(corpus, search, query, just_speakers):
@@ -197,18 +200,9 @@ def interrogator(corpus,
                                 root=root
                                )
             statsmode_results[name] += int(res)
-            statsmode_results['numdone'] += 1
+            #statsmode_results['numdone'] += 1
             if root:
                 root.update()
-            else:
-                tot_string = str(statsmode_results['numdone'] + 1) + '/' + str(total_files)
-                if kwargs.get('outname'):
-                    tot_string = '%s: %s' % (kwargs['outname'], tot_string)
-                animator(p, statsmode_results['numdone'], tot_string, **par_args)
-            if kwargs.get('note', False):
-                donepart = (statsmode_results['numdone'] * 100.0 / total_files / denom)
-                kwargs['note'].progvar.set(donepart + startnum)
-
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes,
@@ -368,31 +362,21 @@ def interrogator(corpus,
             matches = []
             for index, token in enumerate(list_of_toks):
                 if token in pattern:
-                    match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    if not split_contractions:
+                        match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    else:
+                        match = [' '.join([t for t in list_of_toks[:index]])[-140:]]
                     match.append(token)
-                    match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    if not split_contractions:
+                        match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    else:
+                        match.append(' '.join([t for t in list_of_toks[index + 1:]])[:140])
+
                     matches.append(match)
         if countmode:
             return len(matches)
         else:
             return matches
-
-    def unsplitter(lst):
-        """unsplit contractions and apostophes from tokenised text"""
-        if split_contractions:
-            return lst
-        unsplit = []
-        for index, t in enumerate(lst):
-            if index == 0 or index == len(lst) - 1:
-                unsplit.append(t)
-                continue
-            if "'" in t and not t.endswith("'"):
-                rejoined = ''.join([lst[index - 1], t])
-                unsplit.append(rejoined)
-            else:
-                if not "'" in lst[index + 1]:
-                    unsplit.append(t)
-        return unsplit
 
     def tok_ngrams(pattern, list_of_toks, concordancing=False, split_contractions=True):
         import re
@@ -454,9 +438,15 @@ def interrogator(corpus,
             matches = []
             for index, token in enumerate(list_of_toks):
                 if re.search(comped, token):
-                    match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    if not split_contractions:
+                        match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                    else:
+                        match = [' '.join([t for t in list_of_toks[:index]])[-140:]]
                     match.append(re.search(comped, token).group(0))
-                    match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    if not split_contractions:
+                        match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                    else:
+                        match.append(' '.join([t for t in list_of_toks[index + 1:]])[:140])
                     matches.append(match)
         if countmode:
             return len(matches)
@@ -464,7 +454,7 @@ def interrogator(corpus,
             return matches
 
 
-    def determine_search_func():
+    def determine_search_func(show):
         """Figure out what search function we're using"""
 
         simple_tregex_mode = False
@@ -479,7 +469,7 @@ def interrogator(corpus,
             if datatype == 'plaintext':
                 if search.get('n'):
                     optiontext = 'n-grams via plaintext'
-                    raise NotImplementedError('Use a tokenised corpus for n-gramming.')
+                    raise NotImplementedError('Use a tokenised or parsed corpus for n-gramming.')
                     #searcher = plaintext_ngram
                 elif search.get('w'):
                     if kwargs.get('regex', True):
@@ -510,6 +500,10 @@ def interrogator(corpus,
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
             elif datatype == 'parse':
+                if search.get('n'):
+                    search['w'] = search.pop('n')
+                    if not any(x.startswith('n') for x in show):
+                        show = ['n']
                 if search.get('t'):
                     searcher = slow_tregex
                     optiontext = 'Searching parse trees'
@@ -757,10 +751,7 @@ def interrogator(corpus,
         if simple_tregex_mode:
             total_files = len(list(to_iterate_over.keys()))
         else:
-            if search.get('s'):
-                total_files = sum([len(x) for x in list(to_iterate_over.values())]) * 13
-            else:
-                total_files = sum([len(x) for x in list(to_iterate_over.values())])
+            total_files = sum([len(x) for x in list(to_iterate_over.values())])
 
         par_args = {'printstatus': kwargs.get('printstatus', True),
                     'root': root, 
@@ -891,7 +882,7 @@ def interrogator(corpus,
     startnum = kwargs.get('startnum', 0)
 
     # Determine the search function to be used #
-    searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text = determine_search_func()
+    searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text = determine_search_func(show)
     
     # no conc for statsmode
     if statsmode:
@@ -1003,7 +994,9 @@ def interrogator(corpus,
                                              do_concordancing=do_concordancing,
                                              only_format_match=only_format_match,
                                              speaker=slow_treg_speaker_guess,
-                                             gramsize=gramsize
+                                             gramsize=gramsize,
+                                             nopunct=kwargs.get('nopunct', True),
+                                             split_contractions=split_contractions
                                             )
                         
                     if res == 'Bad query':
@@ -1016,6 +1009,8 @@ def interrogator(corpus,
                 elif datatype == 'plaintext' or tree_to_text:
                     if tree_to_text:
                         data = '\n'.join(result)
+                        if not split_contractions:
+                            data = unsplitter(data)
                     else:
                         with codecs.open(f.path, 'rb', encoding='utf-8') as data:
                             data = data.read()
@@ -1071,10 +1066,9 @@ def interrogator(corpus,
                         #results[subcorpus_name] += res
 
                 # update progress bar
-                if not statsmode:
-                    current_iter += 1
-                    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                    animator(p, current_iter, tstr, **par_args)
+                current_iter += 1
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                animator(p, current_iter, tstr, **par_args)
 
     # Get concordances into DataFrame, return if just conc
     if not no_conc:
@@ -1097,11 +1091,18 @@ def interrogator(corpus,
     else:
         the_big_dict = {}
         unique_results = set([item for sublist in list(results.values()) for item in sublist])
+        sortres = sorted(results.items(), key=lambda x: x[0])
         for word in unique_results:
-            sortres = sorted(results.items(), key=lambda x: x[0])
             the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
         # turn master dict into dataframe, sorted
         df = DataFrame(the_big_dict, index=sorted(results.keys()))
+        
+        # for ngrams, remove hapaxes
+        if any(i.startswith('n') for i in show):
+            df = df.loc[:, (df > 1).any(axis=0)]
+        # drop numdone from statsmode
+        #if statsmode:
+        #    df = df.drop('numdone', axis=1)
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)
