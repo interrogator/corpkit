@@ -11,6 +11,10 @@ last_updated: 2016-04-26
 All notable changes to the *corpkit* GUI will be documented in this file.
 This project does not yet adhere to strict [Semantic Versioning](http://semver.org/). It will once the first major release is a bit more stable.
 
+## 2016-05-01
+
+### Updated backend for speed, efficiency, simplicity.
+
 ## 2016-04-01
 
 ### Fixed
@@ -292,7 +296,7 @@ The app is failing to load on many other machines at the moment. I can't reprodu
 
 ### Added
 
-* Minor versioning system: if corpkit-gui.py is updated in the corpkit-app submodule, user can quickly patch the tool. Major updates will be those where re-download of the .tar.gz is necessary. This will allow quick patching.
+* Minor versioning system: if gui.py is updated in the corpkit-app submodule, user can quickly patch the tool. Major updates will be those where re-download of the .tar.gz is necessary. This will allow quick patching.
 * There's a nice splash screen, but it may not work inside the .app. Low priority.
 * Ability to select certain CoreNLP annotators
 

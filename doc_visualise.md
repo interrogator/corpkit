@@ -26,7 +26,7 @@ Plot only the top `n` entries from the results of interest. If you don't want th
 
 ### Kind of chart
 
-You can choose between line, area, pie and bar charts.
+You can choose between line, area, pie, bar or heat charts.
 
 ### Axis labels
 

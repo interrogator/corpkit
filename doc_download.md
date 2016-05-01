@@ -11,7 +11,7 @@ Currently, *corpkit* works for Mac, and probably Linux. Windows support is comin
 <br>
 <center>
 <td align="center" valign="bottom">
-<a href="https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.0.5.tar.gz"><i class="fa fa-download fa-5x"></i></a>
+<a href="https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.0.8.tar.gz"><i class="fa fa-download fa-5x"></i></a>
 </td>
 </center>
 <br>
