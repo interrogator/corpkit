@@ -123,6 +123,6 @@ Using the GUI
 
 .. code-block:: bash
 
-   $ python -m corpkit.corpkit-gui
+   $ python -m corpkit.gui
 
 The GUI can understand any projects you have defined. If you open it, you can simply select your project via ``Open Project`` and resume work in a graphical environment.

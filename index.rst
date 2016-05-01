@@ -103,7 +103,7 @@ Much of corpkit's command line functionality is also available in the *corpkit* 
 
 .. code-block:: bash
 
-   python -m corpkit.corpkit-gui
+   python -m corpkit.gui
 
 Alternatively, it's available (alongside documentation) as a standalone OSX app here_.
 

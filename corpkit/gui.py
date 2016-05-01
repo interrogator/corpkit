@@ -37,8 +37,6 @@ except ImportError:
     from tkinter import * 
     from tkinter.ttk import Progressbar, Style
     from tkinter import _setit
-from PIL import Image
-from PIL import ImageTk
 
 # determine path to gui resources:
 py_script = False
@@ -57,22 +55,25 @@ if '.py' in rd:
 
 ########################################################################
 
-class SplashScreen( object ):
+class SplashScreen(object):
     """A simple splash screen to display before corpkit is loaded"""
-    def __init__( self, tkRoot, imageFilename, minSplashTime=0 ):
+    
+    def __init__( self, tkRoot, imageFilename, minSplashTime=0):
         import os
+        from PIL import Image
+        from PIL import ImageTk
         self._root              = tkRoot
-        self._image             = ImageTk.PhotoImage(file = os.path.join(rd, imageFilename))
+        self._image             = ImageTk.PhotoImage(file=os.path.join(rd, imageFilename))
         self._splash            = None
         self._minSplashTime     = time.time() + minSplashTime
       
-    def __enter__( self ):
+    def __enter__(self):
         # Remove the app window from the display
         #self._root.withdraw( )
         
         # Calculate the geometry to center the splash image
-        scrnWt = self._root.winfo_screenwidth( )
-        scrnHt = self._root.winfo_screenheight( )
+        scrnWt = self._root.winfo_screenwidth()
+        scrnHt = self._root.winfo_screenheight()
         
         imgWt = self._image.width()
         imgHt = self._image.height()
@@ -83,10 +84,10 @@ class SplashScreen( object ):
         # Create the splash screen      
         self._splash = Toplevel()
         self._splash.overrideredirect(1)
-        self._splash.geometry( '+%d+%d' % (imgXPos, imgYPos) )
+        self._splash.geometry('+%d+%d' % (imgXPos, imgYPos))
 
         background_label = Label(self._splash, image=self._image)
-        background_label.grid(row = 1, column = 1, sticky = W)
+        background_label.grid(row=1, column=1, sticky=W)
         import corpkit
         oldstver = str(corpkit.__version__)
         txt = 'Loading corpkit v%s ...' % oldstver
@@ -538,18 +539,6 @@ def corpkit_gui():
                                'Subjects':     'w',
                                'Entities':     'w'}
 
-        # for the 'stats' option: define a series of queries
-        from dictionaries.process_types import processes
-        from corpkit.other import as_regex
-        tregex_qs = {'Imperatives': r'ROOT < (/(S|SBAR)/ < (VP !< /VB(D|G|Z|N)/ !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/ !<< (/(?i)^thank/ . /(?i)^you/)',
-                         'Unmodalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                         'Modalised declaratives': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                         'Interrogatives': r'ROOT << (/\?/ !< __)',
-                         'Mental processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.mental, boundaries = 'w'),
-                         'Verbal processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.verbal, boundaries = 'w'),
-                         'Relational processes': r'/^(S|ROOT)/ < (VP <+(VP) (VP <<# /%s/))' % as_regex(processes.relational, boundaries = 'w')}
-
-
         convert_name_to_query = {'Trees': 't',
                                 'Words': 'w',
                                 'POS': 'p',
@@ -903,7 +892,11 @@ def corpkit_gui():
                         issaved = False
                 # for lists, check if permanently stored
                 else:
-                    issaved = item in list(saved_special_dict.keys())
+                    issaved = False
+                    if item in list(saved_special_dict.keys()):
+                        issaved = True
+                    if current_corpus.get() + '-' + item in list(saved_special_dict.keys()):
+                        issaved = True
                 if issaved:
                     lb.itemconfig(index, {'bg':colour1})
                 else:
@@ -1405,7 +1398,8 @@ def corpkit_gui():
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
                             return_gov, return_dep, return_tree, return_index, return_distance, \
                             return_count, return_gov_lemma, return_gov_pos, return_gov_func, \
-                            return_dep_lemma, return_dep_pos, return_dep_func]
+                            return_dep_lemma, return_dep_pos, return_dep_func, \
+                            return_ngm_lemma, return_ngm_pos, return_ngm_func, return_ngm]
 
             to_show = [i.get() for i in poss_returns if i.get() != '']
             if not to_show:
@@ -1480,16 +1474,13 @@ def corpkit_gui():
                 interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
-            if selected_option.startswith('n'):
+            if selected_option.startswith('n') or any(x.startswith('n') for x in to_show):
                 global ngmsize
                 if (ngmsize.var).get() != 'Size':
                     interrogator_args['gramsize'] = int((ngmsize.var).get())
 
                 global split_contract
-                if (split_contract.var).get() == 'No':
-                    interrogator_args['split_contractions'] = False
-                elif (split_contract.var).get() == 'Yes':
-                    interrogator_args['split_contractions'] = True
+                interrogator_args['split_contractions'] = split_contract.get()
 
             if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or selected_corpus_has_no_subcorpora.get() == 1:
                 corp_to_search = corpus_fullpath.get()
@@ -1499,6 +1490,8 @@ def corpkit_gui():
             # do interrogation
             print(interrogator_args['search'])
             interrodata = interrogator(corp_to_search, **interrogator_args)
+            if selected_option == 's':
+                interrodata.save('features', savedir = savedinterro_fullpath.get())
             
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
@@ -2146,11 +2139,10 @@ def corpkit_gui():
         ngmsize.grid(row = 7, column = 0, sticky = W, padx = (60, 0))
         ngmsize.config(state=DISABLED)
         global split_contract
-        Label(interro_opt, text = 'Split contractions:').grid(row = 7, column = 1, sticky = E, padx = (0, 75)) 
-        split_contract = MyOptionMenu(interro_opt, 'No', 'Yes')
-        split_contract.configure(width = 7)
-        split_contract.grid(row = 7, column = 1, sticky = E, padx = (2, 0))
-        split_contract.config(state=DISABLED)
+        split_contract = IntVar(root)
+        split_contract.set(False)
+        split_contract_but = Checkbutton(interro_opt, text='Split contractions', variable = split_contract, onvalue = True, offvalue = False)
+        split_contract_but.grid(row = 7, column = 1, sticky = E) 
 
         Label(interro_opt, text = 'Spelling:').grid(row = 6, column = 1, sticky = E, padx = (0, 75))
         spl = MyOptionMenu(interro_opt, 'Off','UK','US')
@@ -2223,6 +2215,13 @@ def corpkit_gui():
             #else:
                 #ck9.config(state=NORMAL)
 
+            if chosen == 'Stats':
+                nametext.set('features')
+                nametexter.config(state=DISABLED)
+            else:
+                nametexter.config(state=NORMAL)
+                nametext.set('untitled')
+
             if chosen == 'Stats' or chosen == 'N-grams':
                 for but in [ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, \
                                 ck11, ck12, ck13, ck14, ck15, ck16, c_ck2, \
@@ -2233,10 +2232,11 @@ def corpkit_gui():
                 turnon(c_ck1)
                 ck1.select()
                 c_ck1.select()
-                if chosen == 'N-grams':
+                ngmshows = [return_ngm, return_ngm_lemma, return_ngm_func, return_ngm_pos]
+                if chosen == 'N-grams' or any(ngmshow.get() for ngmshow in ngmshows):
                     #lbut.config(state = DISABLED)
                     ngmsize.config(state = NORMAL)
-                    split_contract.config(state = NORMAL)
+                    split_contract_but.config(state = NORMAL)
                 else:
                     if chosen != 'Stats' not in value:
                         #lbut.config(state = NORMAL)
@@ -2245,7 +2245,7 @@ def corpkit_gui():
                         #lbut.config(state = DISABLED)
                         pass
                     ngmsize.config(state = DISABLED)
-                    split_contract.config(state = DISABLED)
+                    split_contract_but.config(state = DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
             clean_query = qa.get(1.0, END).strip('\n').strip()
@@ -2283,12 +2283,12 @@ def corpkit_gui():
         Label(interro_return_frm, text = '    Match', font = ("Courier New", 13)).grid(row = 1, column = 0, sticky = E)
         Label(interro_return_frm, text = ' Governor', font = ("Courier New", 13)).grid(row = 2, column = 0, sticky = E)
         Label(interro_return_frm, text = 'Dependent', font = ("Courier New", 13)).grid(row = 3, column = 0, sticky = E)
-        Label(interro_return_frm, text = '    Other', font = ("Courier New", 13)).grid(row = 4, column = 0, sticky = E)
-        Label(interro_return_frm, text = '    Count', font = ("Courier New", 13)).grid(row = 4, column = 1, sticky = E)
-        Label(interro_return_frm, text = '    Index', font = ("Courier New", 13)).grid(row = 4, column = 2, sticky = E)
-        Label(interro_return_frm, text = ' Distance', font = ("Courier New", 13)).grid(row = 4, column = 3, sticky = E)
-        Label(interro_return_frm, text = '     Tree', font = ("Courier New", 13)).grid(row = 4, column = 4, sticky = E)
-
+        Label(interro_return_frm, text =    'N-gram', font = ("Courier New", 13)).grid(row = 4, column = 0, sticky = E)
+        Label(interro_return_frm, text = '    Other', font = ("Courier New", 13)).grid(row = 5, column = 0, sticky = E)
+        Label(interro_return_frm, text = '    Count', font = ("Courier New", 13)).grid(row = 5, column = 1, sticky = E)
+        Label(interro_return_frm, text = '    Index', font = ("Courier New", 13)).grid(row = 5, column = 2, sticky = E)
+        Label(interro_return_frm, text = ' Distance', font = ("Courier New", 13)).grid(row = 5, column = 3, sticky = E)
+        Label(interro_return_frm, text = '     Tree', font = ("Courier New", 13)).grid(row = 5, column = 4, sticky = E)
         return_token = StringVar()
         return_token.set('')
         ck1 = Checkbutton(interro_return_frm, variable = return_token, onvalue = 'w', offvalue = '')
@@ -2340,7 +2340,7 @@ def corpkit_gui():
         return_tree = StringVar()
         return_tree.set('')
         ck4 = Checkbutton(interro_return_frm, anchor = E, variable = return_tree, onvalue = 't', offvalue = '')
-        ck4.grid(row = 5, column = 4, sticky = E)
+        ck4.grid(row = 6, column = 4, sticky = E)
 
         def return_tree_callback(*args):
             if datatype_picked.get() == 'Trees':
@@ -2350,20 +2350,22 @@ def corpkit_gui():
                         but.deselect()
         return_tree.trace("w", return_tree_callback)
 
+        return_tree.trace("w", return_tree_callback)
+
         return_index = StringVar()
         return_index.set('')
         ck5 = Checkbutton(interro_return_frm, anchor = E, variable = return_index, onvalue = 'i', offvalue = '')
-        ck5.grid(row = 5, column = 2, sticky = E)
+        ck5.grid(row = 6, column = 2, sticky = E)
 
         return_distance = StringVar()
         return_distance.set('')
         ck6 = Checkbutton(interro_return_frm, anchor = E, variable = return_distance, onvalue = 'r', offvalue = '')
-        ck6.grid(row = 5, column = 3, sticky = E)
+        ck6.grid(row = 6, column = 3, sticky = E)
 
         return_count = StringVar()
         return_count.set('')
         ck8 = Checkbutton(interro_return_frm, variable = return_count, onvalue = 'c', offvalue = '')
-        ck8.grid(row = 5, column = 1, sticky = E)
+        ck8.grid(row = 6, column = 1, sticky = E)
 
         def countmode(*args):
             if datatype_picked.get() != 'Trees':
@@ -2434,6 +2436,47 @@ def corpkit_gui():
                           onvalue = 'df', offvalue = '')
         ck16.grid(row = 3, column = 4, sticky = E)
 
+
+        def return_ngm_callback(*args):
+            ngm_opts = [return_ngm_lemma, return_ngm_pos, return_ngm_func, return_ngm]
+            oth_opts = [ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]
+            if any(ngm_opt.get() for ngm_opt in ngm_opts):
+                split_contract_but.config(state=NORMAL)
+                ngmsize.config(state = NORMAL)
+                #todo: turn others off when ngramming
+                #for but in oth_opts:
+                #    but.deselect()
+                #    but.config(state=DISABLED)
+
+        return_ngm = StringVar()
+        return_ngm.set('')
+        ck17 = Checkbutton(interro_return_frm, variable = return_ngm, 
+                          onvalue = 'n', offvalue = '')
+        ck17.grid(row = 4, column = 1, sticky = E)
+
+        return_ngm_lemma = StringVar()
+        return_ngm_lemma.set('')
+        ck18 = Checkbutton(interro_return_frm, variable = return_ngm_lemma, 
+                          onvalue = 'nl', offvalue = '')
+        ck18.grid(row = 4, column = 2, sticky = E)
+
+        return_ngm_pos = StringVar()
+        return_ngm_pos.set('')
+        ck19 = Checkbutton(interro_return_frm, variable = return_ngm_pos, 
+                          onvalue = 'np', offvalue = '')
+        ck19.grid(row = 4, column = 3, sticky = E)
+
+        return_ngm_func = StringVar()
+        return_ngm_func.set('')
+        ck20 = Checkbutton(interro_return_frm, variable = return_ngm_func, 
+                          onvalue = 'npl', offvalue = '', state=DISABLED)
+        ck20.grid(row = 4, column = 4, sticky = E)
+
+        return_ngm.trace("w", return_ngm_callback)
+        return_ngm_lemma.trace("w", return_ngm_callback)
+        return_ngm_pos.trace("w", return_ngm_callback)
+        return_ngm_func.trace("w", return_ngm_callback)
+
         #def return_dep_callback(*args):
         #    if return_gov.get():
         #        ck9.config(state=NORMAL)
@@ -2488,9 +2531,9 @@ def corpkit_gui():
         nametext = StringVar()
         nametext.set('untitled')
         Label(interro_opt, text = 'Interrogation name:').grid(row = 17, column = 0, sticky = W)
-        tmp = Entry(interro_opt, textvariable = nametext, width = 15)
-        tmp.grid(row = 17, column = 1, sticky = E)
-        all_text_widgets.append(tmp)
+        nametexter = Entry(interro_opt, textvariable = nametext, width = 15)
+        nametexter.grid(row = 17, column = 1, sticky = E)
+        all_text_widgets.append(nametexter)
 
         def show_help(kind):
             kindict = {'h': 'http://interrogator.github.io/corpkit/doc_help.html',
@@ -2540,20 +2583,20 @@ def corpkit_gui():
 
         #global prev
         prev = Button(tab1, text = 'Previous', command = show_prev)
-        prev.grid(row = 3, column = 2, sticky = W, padx = (120, 0))
+        prev.grid(row = 0, column = 2, sticky = W, padx = (120, 0), pady = (607,0))
         #global nex
         nex = Button(tab1, text = 'Next', command = show_next)
-        nex.grid(row = 3, column = 2, sticky = W, padx = (220, 0))
+        nex.grid(row = 0, column = 2, sticky = W, padx = (220, 0), pady = (607,0))
         if len(list(all_interrogations.keys())) < 2:
             nex.configure(state = DISABLED)
             prev.configure(state = DISABLED)
 
         savdict = Button(tab1, text = 'Save as dictionary', command = save_as_dictionary)
         savdict.config(state = DISABLED)
-        savdict.grid(row = 3, column = 2, sticky = W, padx = (500,0))
+        savdict.grid(row = 0, column = 2, sticky = W, padx = (500,0), pady = (607,0))
 
         updbut = Button(tab1, text = 'Update interrogation', command = lambda: update_all_interrogations(pane = 'interrogate'))
-        updbut.grid(row = 3, column = 2, sticky = W, padx = (650,0))
+        updbut.grid(row = 0, column = 2, sticky = W, padx = (650,0), pady = (607,0))
         updbut.config(state = DISABLED)
 
         ##############    ##############     ##############     ##############     ############## 
@@ -5181,7 +5224,7 @@ def corpkit_gui():
             manage_callback()
 
 
-        def remove_one_or_more(window = False, kind = 'interrogation'):
+        def remove_one_or_more(window=False, kind ='interrogation'):
             sel_vals = manage_listbox_vals
             if window is not False:
                 toget = prev_conc_listbox.curselection()
@@ -5451,7 +5494,7 @@ def corpkit_gui():
             import os
             try:
                 import configparser
-            except:
+            except ImportError:
                 import ConfigParser as configparser
             Config = configparser.ConfigParser()
             f = os.path.join(project_fullpath.get(), 'settings.ini')
@@ -5476,7 +5519,7 @@ def corpkit_gui():
             #conc_kind_of_dep.set(conmap(Config, "Concordance")['dependency type'])
             cods = conmap(Config, "Concordance")['coding scheme']
             if cods is None:
-                for box, val in list(entryboxes.items()):
+                for _, val in list(entryboxes.items()):
                     val.set('')
             else:
                 codsep = cods.split(',')
@@ -5487,14 +5530,14 @@ def corpkit_gui():
                 charttype.set('bar')
             refresh()
 
-        def load_project(path = False):
+        def load_project(path=False):
             import os
             if path is False:
                 if sys.platform == 'darwin':
                     the_kwargs = {'message': 'Choose project directory'}
                 else:
                     the_kwargs = {}
-                fp = filedialog.askdirectory(title = 'Open project',
+                fp = filedialog.askdirectory(title='Open project',
                                            **the_kwargs)
             else:
                 fp = path
@@ -5523,9 +5566,9 @@ def corpkit_gui():
             list_of_corpora = update_available_corpora()
             addbut.config(state=NORMAL) 
             
-            get_saved_results(kind = 'interrogation')
-            get_saved_results(kind = 'concordance')
-            get_saved_results(kind = 'image')
+            get_saved_results(kind='interrogation')
+            get_saved_results(kind='concordance')
+            get_saved_results(kind='image')
             open_proj_basepath.set('Loaded: "%s"' % os.path.basename(fp))
 
             # reset tool:
@@ -6700,9 +6743,9 @@ def corpkit_gui():
                 timereg = re.compile(r'# <updated>(.*)<.updated>')
 
                 #if '.py' in sys.argv[0] and sys.platform == 'darwin':
-                    #oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
+                    #oldd = open(os.path.join(rd, 'gui.py'), 'r').read()
                 #elif '.app' in sys.argv[0]:
-                oldd = open(os.path.join(rd, 'corpkit-gui.py'), 'r').read()
+                oldd = open(os.path.join(rd, 'gui.py'), 'r').read()
 
                 dateline = next(l for l in oldd.split('\n') if l.startswith('# <updated>'))
                 dat = re.search(timereg, dateline).group(1)
@@ -6712,7 +6755,7 @@ def corpkit_gui():
                     olddate = modification_date(sys.argv[0])
 
                 try:
-                    script_response = requests.get('https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py', verify=False)
+                    script_response = requests.get('https://raw.githubusercontent.com/interrogator/corpkit-app/master/gui.py', verify=False)
                     newscript = script_response.text
                     dateline = next(l for l in newscript.split('\n') if l.startswith('# <updated>'))
 
@@ -6743,10 +6786,10 @@ def corpkit_gui():
                         url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-%s' % oldstver
                         
                         # update script
-                        if not sys.argv[0].endswith('corpkit-gui.py'):
-                            script_url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/corpkit-gui.py'
+                        if not sys.argv[0].endswith('gui.py'):
+                            script_url = 'https://raw.githubusercontent.com/interrogator/corpkit-app/master/gui.py'
                             response = requests.get(script_url, verify=False)
-                            with open(os.path.join(rd, 'corpkit-gui.py'), "w") as fo:
+                            with open(os.path.join(rd, 'gui.py'), "w") as fo:
                                 fo.write(response.text)
                         else:
                             timestring("Can't replace developer copy, sorry.")
@@ -6759,7 +6802,7 @@ def corpkit_gui():
                         import os
                         os.chmod(execut, 0o777)
 
-                        if not sys.argv[0].endswith('corpkit-gui.py'):
+                        if not sys.argv[0].endswith('gui.py'):
                             os.remove(os.path.join(rd, 'corpkit-%s' % oldstver))
                             shutil.move(execut, os.path.join(rd, 'corpkit-%s' % oldstver))
                             shutil.rmtree(dir_containing_ex)
@@ -7013,8 +7056,25 @@ def corpkit_gui():
 
 if __name__ == "__main__":
     # the traceback is mostly for debugging pyinstaller errors
-    import traceback
     import sys
+    import pip
+    import importlib
+    import traceback
+
+    def install(name, loc):
+
+        try:
+            importlib.import_module(name)
+        except ImportError:
+            pip.main(['install', loc])
+
+    tkintertablecode = ('tkintertable', 'git+https://github.com/interrogator/tkintertable.git')
+    pilcode = ('PIL', 'http://effbot.org/media/downloads/Imaging-1.1.7.tar.gz')
+
+    if not any(arg.lower() == 'noinstall' for arg in sys.argv):
+        install(*tkintertablecode)
+        install(*pilcode)
+
     try:
         corpkit_gui()
     except:
