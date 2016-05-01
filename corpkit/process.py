@@ -814,3 +814,36 @@ def get_corenlp_path(corenlppath):
             if any(re.search(cnlp_regex, f) for f in os.listdir(cnlp_dir)):
                 return cnlp_dir
     return
+
+def unsplitter(data):
+    """unsplit contractions and apostophes from tokenised text"""
+    if isinstance(data, basestring):
+        replaces = [("$ ", "$"),
+                    ("`` ", "``"),
+                    (" ,", ","),
+                    (" .", "."),
+                    ("'' ", "''"),
+                    (" n't", "n't"),
+                    (" 're", "'re"),
+                    (" 'm", "'m"),
+                    (" 's", "'s"),
+                    (" 'd", "'d"),
+                    (" 'll", "'ll"),
+                    ('  ', ' ')
+                   ]
+        for find, replace in replaces:
+            data = data.replace(find, replace)
+        return data
+    else:
+        unsplit = []
+        for index, t in enumerate(data):
+            if index == 0 or index == len(data) - 1:
+                unsplit.append(t)
+                continue
+            if "'" in t and not t.endswith("'"):
+                rejoined = ''.join([data[index - 1], t])
+                unsplit.append(rejoined)
+            else:
+                if not "'" in data[index + 1]:
+                    unsplit.append(t)
+    return unsplit
