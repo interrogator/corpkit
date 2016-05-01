@@ -647,11 +647,11 @@ class Corpus(object):
 
         :returns: None (but show a plot)
         """
-        if isinstance(search, str):
+        if isinstance(search, basestring):
             search = {'t': search}
-        quickstart = self.interrogate(search=search, **kwargs)
-        edited = quickstart.edit('%', 'self', print_info=False)
-        edited.plot(str(self.path), **kwargs)
+        interro = self.interrogate(search=search, show=kwargs.pop('show', 'w'))
+        edited = interro.edit('%', 'self', print_info=False)
+        edited.visualise(self.name, **kwargs).show()
 
     def save(self, savename=False, **kwargs):
         """Save corpus class to file
@@ -663,7 +663,7 @@ class Corpus(object):
 
         :returns: None
         """
-        from corpkit import save
+        from corpkit.other import save
         if not savename:
             savename = self.name
         save(self, savename, savedir='data', **kwargs)

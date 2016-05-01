@@ -426,28 +426,7 @@ def new_project(name, loc = '.', **kwargs):
         thetime = strftime("%H:%M:%S", localtime())
         print('\n%s: New project created: "%s"\n' % (thetime, name))
         
-
-def interroplot(path, search, **kwargs):
-    """Demo function for interrogator/plotter.
-
-        1. Interrogates path with a query
-        2. Gets relative frequencies
-        3. Plots the top seven results
-
-    :param path: path to corpus
-    :type path: str
-    :param search: search
-    """
-    import corpkit
-    from corpkit import interrogator
-    if type(search) == str:
-        search = {'t': search}
-    kwargs['show'] = kwargs.pop('show', 'w')
-    quickstart = interrogator(path, search = search, **kwargs)
-    edited = quickstart.edit('%', 'self', print_info = False)
-    edited.plot(str(path))
-
-def load_all_results(data_dir = 'saved_interrogations', **kwargs):
+def load_all_results(data_dir='saved_interrogations', **kwargs):
     """
     Load every saved interrogation in data_dir into a dict:
 
