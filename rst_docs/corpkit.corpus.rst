@@ -13,6 +13,7 @@ Much of *corpkit*'s functionality comes from the ability to work with ``Corpus``
 
 `Corpora`
 ---------------------
+
 .. autoclass:: corpkit.corpus.Corpora
     :members:
     :undoc-members:
@@ -20,6 +21,7 @@ Much of *corpkit*'s functionality comes from the ability to work with ``Corpus``
 
 `Subcorpus`
 ---------------------
+
 .. autoclass:: corpkit.corpus.Subcorpus
     :members:
     :undoc-members:
@@ -27,6 +29,7 @@ Much of *corpkit*'s functionality comes from the ability to work with ``Corpus``
 
 `File`
 ---------------------
+
 .. autoclass:: corpkit.corpus.File
     :members:
     :undoc-members:
@@ -34,6 +37,7 @@ Much of *corpkit*'s functionality comes from the ability to work with ``Corpus``
 
 `Datalist`
 ---------------------
+
 .. autoclass:: corpkit.corpus.Datalist
     :members:
     :undoc-members:

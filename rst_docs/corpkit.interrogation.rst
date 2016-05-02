@@ -6,14 +6,10 @@ Once you have searched a ``Corpus`` object, you'll want to be able to edit, visu
 `Interrogation`
 ---------------------
 .. autoclass:: corpkit.interrogation.Interrogation
-   .. autoattribute: query
-      :annotation: `dict`
-   .. autoattribute: results
-      :annotation: Pandas `DataFrame`
-   .. autoattribute: totals
-      :annotation: Pandas `Series`
-   .. autoattribute: concordance
-      :annotation: :class:`corpkit.interrogation.Concordance`
+    .. autoinstanceattribute:: interrogation.Interrogation.query
+    .. autoinstanceattribute:: interrogation.Interrogation.results
+    .. autoinstanceattribute:: interrogation.Interrogation.totals
+    .. autoinstanceattribute:: interrogation.Interrogation.concordance
 
 `Interrodict`
 ---------------------
