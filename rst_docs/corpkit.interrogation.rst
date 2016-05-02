@@ -9,7 +9,6 @@ Once you have searched a ``Corpus`` object, you'll want to be able to edit, visu
     :members:
     :undoc-members:
     :show-inheritance:
-    :autoinstanceattribute:
 
 `Interrodict`
 ---------------------
