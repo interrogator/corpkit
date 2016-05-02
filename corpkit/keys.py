@@ -19,6 +19,11 @@ def keywords(target_corpus,
 
     def data_to_dict(target_corpus):
         """turn Series/DataFrame into Counter"""
+        if isinstance(target_corpus, Interrogation):
+            if hasattr(target_corpus, 'results'):
+                target_corpus = target_corpus.results
+            else:
+                target_corpus = target_corpus.totals
         if isinstance(target_corpus, Series):
             return Counter(target_corpus.to_dict())
         elif isinstance(target_corpus, DataFrame):

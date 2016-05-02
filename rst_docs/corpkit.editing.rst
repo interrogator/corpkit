@@ -111,7 +111,7 @@ There is a more complex kind of relative frequency making, where a ``.results`` 
 Keywording
 ---------------------------------
 
-``corpkit`` treats keywording as an editing task, rather than an interrogation task. This makes it easy to get key nouns, or key Agents, or key grammatical features. To do keywording, use the ``'k'`` operation:
+``corpkit`` treats keywording as an editing task, rather than an interrogation task. This makes it easy to get key nouns, or key Agents, or key grammatical features. To do keywording, use the ``K`` operation:
 
 .. code-block:: python
 
@@ -119,7 +119,14 @@ Keywording
    >>> from corpkit import *
    >>> keywords = result.edit(K, SELF)
 
-This finds out which words are key in each subcorpus, compared to the corpus as a whole. You could also pass in word frequency counts from some other source. A wordlist of the British National Corpus is included:
+This finds out which words are key in each subcorpus, compared to the corpus as a whole. You can compare subcorpora directly as well. Below, we compare the ``plays`` subcorpus to the ``novels`` subcorpus.
+
+. code-block:: python
+
+   >>> from corpkit import *
+   >>> keywords = result.edit(K, result.ix['novels'], just_subcorpora='plays')
+
+You could also pass in word frequency counts from some other source. A wordlist of the British National Corpus is included:
 
 .. code-block:: python
 

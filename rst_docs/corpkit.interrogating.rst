@@ -21,6 +21,7 @@ Interrogations can be performed on any :class:`corpkit.corpus.Corpus` object, bu
    ### interrogate parts of corpus
    >>> corpus[2:4].interrogate(query)
    >>> corpus.files[:10].interrogate(query)
+   ### if you have a subcorpus called 'abstract':
    >>> corpus.subcorpora.abstract.interrogate(query)
 
 .. note::
@@ -70,7 +71,7 @@ Parsed corpora contain many different kinds of annotation we might like to searc
 | T      |  Tregex tree          |
 +--------+-----------------------+
 
-The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries. Because it comes first, and because it's always needed, you can pass it in as an argument, rather than a keyword argument.
+The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries. Because it comes first, and because it's always needed, you can pass it in like an argument, rather than a keyword argument.
 
 .. code-block:: python
 
@@ -109,28 +110,37 @@ What to show
 
 Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value, plus a few extra values for n-gramming:
 
-+------+-------------+------------------------+
-| Show | Gloss       | Example                |
-+======+=============+========================+
-| NW   |  Word       | `The women were`       |
-+------+-------------+------------------------+
-| NL   |  Lemma      | `The woman be`         |
-+------+-------------+------------------------+
-| NF   |  Function   | `det nsubj root`       |
-+------+-------------+------------------------+
-| NP   |  POS tag    | `DT NNS VBN`           |
-+------+-------------+------------------------+
-| NPL  |  Word class | `determiner noun verb` |
-+------+-------------+------------------------+
++------+--------------------+------------------------+
+| Show | Gloss              | Example                |
++======+====================+========================+
+| N   |  N-gram word       | `The women were`       |
++------+--------------------+------------------------+
+| NL   |  N-gram lemma      | `The woman be`         |
++------+--------------------+------------------------+
+| NF   |  N-gram function   | `det nsubj root`       |
++------+--------------------+------------------------+
+| NP   |  N-gram POS tag    | `DT NNS VBN`           |
++------+--------------------+------------------------+
+| NPL  |  N-gram word class | `determiner noun verb` |
++------+--------------------+------------------------+
 
-Show can be either a single string or a list of strings. If a list is provided, each value is returned in a slash separated form.
+``show`` can be either a single string or a list of strings. If a list is provided, each value is returned with forward slashes as delimiters.
 
 .. code-block:: python
 
    >>> example = corpus.interrogate({W: r'fr?iends?'}, show=[W, L, P])
    >>> list(example.results)
 
-   ['friend/friend/nn', 'friends/friend/nns', 'fiend/fiend/nn', 'fiends/fiend/nns']
+   ['friend/friend/nn', 'friends/friend/nns', 'fiend/fiend/nn', 'fiends/fiend/nns', ... ]
+
+N-gramming is therefore as simple as:
+
+.. code-block:: python
+
+   >>> example = corpus.interrogate({W: r'wom[ae]n]'}, show=N, gramsize=2)
+   >>> list(example.results)
+
+   ['a woman', 'the woman', 'the women', 'women are', ... ]
 
 One further extra show value is ``'c'`` (count), which simply counts occurrences of a phenomenon. Rather than returning a DataFrame of results, it will result in a single Series. It cannot be combined with other values.
 

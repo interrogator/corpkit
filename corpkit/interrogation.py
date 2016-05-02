@@ -1,13 +1,18 @@
+"""corpkit: interrogation-like classes"""
+
 from __future__ import print_function
-import corpkit
+from collections import OrderedDict
+import pandas as pd
 
 class Interrogation(object):
     """
-    Stores results of a corpus interrogation, before or after editing.
+    Stores results of a corpus interrogation, before or after editing. The main 
+    attribute, :py:attr:`~corpkit.interrogation.Interrogation.results`, is a 
+    Pandas object, which can be edited or plotted.
     """
 
-    def __init__(self, results = None, totals = None, query = None, concordance = None):
-        """initialise the class"""
+    def __init__(self, results=None, totals=None, query=None, concordance=None):
+        """Initialise the class"""
         self.results = results
         """pandas `DataFrame` containing counts for each subcorpus"""
         self.totals = totals
@@ -37,11 +42,16 @@ class Interrogation(object):
     def edit(self, *args, **kwargs):
         """Manipulate results of interrogations.
 
-        There are a few overall kinds of edit, most of which can be combined into a single function call. It's useful to keep in mind that many are basic wrappers around `pandas` operations---if you're comfortable with `pandas` syntax, it may be faster at times to use its syntax instead.
+        There are a few overall kinds of edit, most of which can be combined 
+        into a single function call. It's useful to keep in mind that many are 
+        basic wrappers around `pandas` operations---if you're comfortable with 
+        `pandas` syntax, it may be faster at times to use its syntax instead.
 
         :Basic mathematical operations:
 
-        First, you can do basic maths on results, optionally passing in some data to serve as the denominator. Very commonly, you'll want to get relative frequencies:
+        First, you can do basic maths on results, optionally passing in some 
+        data to serve as the denominator. Very commonly, you'll want to get 
+        relative frequencies:
 
         :Example: 
 
@@ -53,7 +63,8 @@ class Interrogation(object):
             02 24.10 14.34 13.73  8.80 ...     0.00      0.00      0.00 0.00
             03 17.31 18.01  9.97  7.62 ...     0.00      0.00      0.00 0.00
 
-        For the operation, there are a number of possible values, each of which is to be passed in as a `str`:
+        For the operation, there are a number of possible values, each of 
+        which is to be passed in as a `str`:
 
            `+`, `-`, `/`, `*`, `%`: self explanatory
 
@@ -63,7 +74,11 @@ class Interrogation(object):
 
            `d`: get percent difference (alternative approach to keywording)
         
-        `SELF` is a very useful shorthand denominator. When used, all editing is performed on the data. The totals are then extracted from the edited data, and used as denominator. If this is not the desired behaviour, however, a more specific `interrogation.results` or `interrogation.totals` branch can be used.
+        `SELF` is a very useful shorthand denominator. When used, all editing 
+        is performed on the data. The totals are then extracted from the edited 
+        data, and used as denominator. If this is not the desired behaviour, 
+        however, a more specific `interrogation.results` or 
+        `interrogation.totals` attribute can be used.
 
         In the example above, `SELF` (or `'self'`) is equivalent to:
 
@@ -73,7 +88,8 @@ class Interrogation(object):
 
         :Keeping and skipping data:
 
-        There are four keyword arguments that can be used to keep or skip rows or columns in the data:
+        There are four keyword arguments that can be used to keep or skip rows 
+        or columns in the data:
 
         * `just_entries`
         * `just_subcorpora`
@@ -101,7 +117,8 @@ class Interrogation(object):
         * `merge_entries`
         * `merge_subcorpora`
 
-        These take a `dict`, with the new name as key and the criteria as value. The criteria can be a str (regex) or wordlist.
+        These take a `dict`, with the new name as key and the criteria as 
+        value. The criteria can be a str (regex) or wordlist.
 
         :Example:
         
@@ -111,7 +128,8 @@ class Interrogation(object):
 
         :Sorting:
 
-        The `sort_by` keyword argument takes a `str`, which represents the way the result columns should be ordered.
+        The `sort_by` keyword argument takes a `str`, which represents the way 
+        the result columns should be ordered.
 
         * `increase`: highest to lowest slope value
         * `decrease`: lowest to highest slope value
@@ -127,12 +145,15 @@ class Interrogation(object):
 
         :Editing entry text:
         
-        Column labels, corresponding to individual interrogation results, can also be edited with `replace_names`.
+        Column labels, corresponding to individual interrogation results, can 
+        also be edited with `replace_names`.
 
         :param replace_names: Edit result names, then merge duplicate entries
         :type replace_names: str/dict
 
-        If `replace_names` is a string, it is treated as a regex to delete from each name. If `replace_names` is a dict, the value is the regex, and the key is the replacement text:
+        If `replace_names` is a string, it is treated as a regex to delete from 
+        each name. If `replace_names` is a dict, the value is the regex, and 
+        the key is the replacement text:
 
         :Example:
 
@@ -151,7 +172,8 @@ class Interrogation(object):
         :param just_totals: Sum each column and work with sums
         :type just_totals: bool
         
-        :param threshold: When using results list as dataframe 2, drop values occurring fewer than n times. If not keywording, you can use:
+        :param threshold: When using results list as dataframe 2, drop values 
+        occurring fewer than n times. If not keywording, you can use:
                                 
            `'high'`: `denominator total / 2500`
            
@@ -163,7 +185,8 @@ class Interrogation(object):
 
         :type threshold: int/bool
 
-        :param span_subcorpora: If subcorpora are numerically named, span all from *int* to *int2*, inclusive
+        :param span_subcorpora: If subcorpora are numerically named, span all 
+        from *int* to *int2*, inclusive
         :type span_subcorpora: tuple -- `(int, int2)`
 
         :param projection:         a  to multiply results in subcorpus by n
@@ -173,7 +196,8 @@ class Interrogation(object):
         :param p:                  set the p value
         :type p: float
         
-        :param revert_year: When doing linear regression on years, turn annual subcorpora into 1, 2 ...
+        :param revert_year: When doing linear regression on years, turn annual 
+        subcorpora into 1, 2 ...
         :type revert_year: bool
         
         :param print_info: Print stuff to console showing what's being edited
@@ -182,15 +206,17 @@ class Interrogation(object):
         :param spelling: Convert/normalise spelling:
         :type spelling: str -- `'US'`/`'UK'`
         
-        :param selfdrop: When keywording, try to remove target corpus from reference corpus
+        :param selfdrop: When keywording, try to remove target corpus from 
+        reference corpus
         :type selfdrop: bool
         
-        :param calc_all: When keywording, calculate words that appear in either corpus
+        :param calc_all: When keywording, calculate words that appear in either 
+        corpus
         :type calc_all: bool
 
         :returns: :class:`corpkit.interrogation.Interrogation`
         """
-        from editor import editor
+        from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
     def visualise(self,
@@ -287,7 +313,7 @@ class Interrogation(object):
         locs.update(kwargs)
         locs.pop('kwargs', None)
 
-        from plotter import plotter
+        from corpkit.plotter import plotter
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
             return plotter(self.results, **locs)
@@ -315,7 +341,7 @@ class Interrogation(object):
         
         :returns: None
         """
-        from other import save
+        from corpkit.other import save
         save(self, savename, savedir=savedir, **kwargs)
 
     def quickview(self, n=25):
@@ -334,7 +360,7 @@ class Interrogation(object):
         :type n: int
         :returns: None
         """
-        from other import quickview
+        from corpkit.other import quickview
         quickview(self, n=n)
 
     def multiindex(self, indexnames=None):
@@ -358,10 +384,12 @@ class Interrogation(object):
         :param indexnames: provide custom names for the new index, or leave blank to guess.
         :type indexnames: list of strings
 
-        :returns: :class:`corpkit.interrogation.Interrogation`, with ``pandas.MultiIndex`` as :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
+        :returns: :class:`corpkit.interrogation.Interrogation`, with 
+        `pandas.MultiIndex` as 
+        :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
         """
 
-        from other import make_multi
+        from corpkit.other import make_multi
         return make_multi(self, indexnames=indexnames)
 
     def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
@@ -390,14 +418,14 @@ class Interrogation(object):
 
         :returns: None
         """
-        import pandas as pd
-        from other import topwords
+        from corpkit.other import topwords
         if df:
-            return topwords(self, datatype=datatype, n=n, df=True, sort=sort)
+            return topwords(self, datatype=datatype, n=n, df=True,
+                            sort=sort, precision=precision)
         else:
-            topwords(self, datatype=datatype, n=n, sort=sort)
+            topwords(self, datatype=datatype, n=n,
+                     sort=sort, precision=precision)
 
-import pandas as pd
 
 class Concordance(pd.core.frame.DataFrame):
     """
@@ -434,17 +462,17 @@ class Concordance(pd.core.frame.DataFrame):
 
         :returns: None
         """
-        from other import concprinter
-        return concprinter(self, kind=kind, n=n, window=window, columns=columns, **kwargs)
+        from corpkit.other import concprinter
+        return concprinter(self, kind=kind, n=n, window=window,
+                           columns=columns, **kwargs)
 
     def __repr__(self):
         return self.format(return_it=True)
 
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""
-        from process import interrogation_from_conclines
-        newdata = interrogation_from_conclines(self)
-        return newdata
+        from corpkit.process import interrogation_from_conclines
+        return interrogation_from_conclines(self)
 
     def shuffle(self, inplace=False):
         """Shuffle concordance lines
@@ -476,10 +504,9 @@ class Concordance(pd.core.frame.DataFrame):
 
         >>> skipped = conc.edit(skip_entries=r'to_?match')"""
 
-        from editor import editor
+        from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
-from collections import OrderedDict
 class Interrodict(OrderedDict):
     """
     A class for interrogations that do not fit in a single-indexed DataFrame.
@@ -492,33 +519,32 @@ class Interrodict(OrderedDict):
     >>> out_data.WSJ.results
     >>> out_data[3].results
 
-    Methods for saving, editing, etc. are similar to :class:`corpkit.corpus.Interrogation`. Additional methods are available for collapsing into single (multiindexed) DataFrames.
+    Methods for saving, editing, etc. are similar to 
+    :class:`corpkit.corpus.Interrogation`. Additional methods are available for 
+    collapsing into single (multiindexed) DataFrames.
     """
     
     def __init__(self, data):
-        from process import makesafe
-        if type(data) == list:
-            from collections import OrderedDict
+        from corpkit.process import makesafe
+        if isinstance(data, list):
             data = OrderedDict(data)
         # attribute access
-        for index, (k, v) in enumerate(data.items()):
+        for k, v in data.items():
             setattr(self, makesafe(k), v)
         self.query = None
         super(Interrodict, self).__init__(data)
 
     def __getitem__(self, key):
         """allow slicing, indexing"""
-        from collections import OrderedDict
-        from process import makesafe
+        from corpkit.process import makesafe
         # allow slicing
-        if isinstance( key, slice ) :
+        if isinstance(key, slice):
             n = OrderedDict()
             for ii in range(*key.indices(len(self))):
                 n[self.keys()[ii]] = self[ii]
-            return Interrodict(n) 
-            return Interrodict([self[ii] for ii in range(*key.indices(len(self)))])
+            return Interrodict(n)
         # allow integer index
-        elif type(key) == int:
+        elif isinstance(key, int):
             return next(v for i, (k, v) in enumerate(self.items()) if i == key)
             #return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
         # dict key access
@@ -526,12 +552,12 @@ class Interrodict(OrderedDict):
             try:
                 return OrderedDict.__getitem__(self, key)
             except:
-                from process import is_number
+                from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
     def __setitem__(self, key, value):
-        from process import makesafe
+        from corpkit.process import makesafe
         setattr(self, makesafe(key), value)
         super(Interrodict, self).__setitem__(key, value)
         
@@ -552,7 +578,7 @@ class Interrodict(OrderedDict):
         :returns: A :class:`corpkit.interrogation.Interrodict`
         """
 
-        from editor import editor
+        from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
     def multiindex(self, indexnames=None):
@@ -583,7 +609,7 @@ class Interrodict(OrderedDict):
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
-        from other import make_multi
+        from corpkit.other import make_multi
         return make_multi(self, indexnames=indexnames)
 
     def save(self, savename, savedir='saved_interrogations', **kwargs):
@@ -607,8 +633,8 @@ class Interrodict(OrderedDict):
 
         :returns: None
         """
-        from other import save
-        save(self, savename, savedir = savedir, **kwargs)
+        from corpkit.other import save
+        save(self, savename, savedir=savedir, **kwargs)
 
     def collapse(self, axis='y'):
         """
@@ -645,9 +671,7 @@ class Interrodict(OrderedDict):
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
-        import pandas as pd
         if axis.lower()[0] not in ['x', 'y']:
-            order = list(self.values()[0].results.columns)
             df = self.values()[0].results
             for i in self.values()[1:]:
                 df = df.add(i.results, fill_value=0)
@@ -701,18 +725,18 @@ class Interrodict(OrderedDict):
 
         :returns: None
         """
-        import pandas as pd
-        from other import topwords
+        from corpkit.other import topwords
         if df:
             return topwords(self, datatype=datatype, n=n, df=True,
                             sort=sort, precision=precision)
         else:
             topwords(self, datatype=datatype, n=n,
-                            sort=sort, precision=precision)
+                     sort=sort, precision=precision)
 
     def get_totals(self):
-        """Helper function to concatenate all totals"""
-        import pandas as pd
+        """
+        Helper function to concatenate all totals
+        """
         lst = []
         # for each interrogation name and data
         for k, v in self.items():

@@ -661,7 +661,7 @@ def make_multi(interrogation, indexnames = None):
         conco = None
     return Interrogation(newdf, totals, query, conco)
 
-def topwords(self, datatype = 'n', n = 10, df = False, sort = True, precision = 2):
+def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
 
     """Show top n results in each corpus alongside absolute or relative frequencies.
 

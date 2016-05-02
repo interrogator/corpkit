@@ -397,8 +397,11 @@ class Corpus(object):
            - gp: governor's pos
            - gf: governor's function
            - d/dependent
+           - dl: dependent's lemma form
+           - dp: dependent's pos
+           - df: dependent's function
            - i/index
-           - n/ngrams
+           - n/ngrams (deprecated, use ``show``)
            - s/general stats
         :type search: str or dict. dict is used when you have multiple criteria.
         Keys are what to search as `str`, and values are the criteria, which is
@@ -437,27 +440,24 @@ class Corpus(object):
            - dict -- `{name: pattern}` (as per example above)
            - list -- word list to match
 
-        :param show: What to output. If multiple strings are passed, results
-        will be colon-separated, in order. If you want to show ngrams, you can't
-        have multiple values.
-           - t/tree
-           - w/word
-           - l/lemma
-           - g/governor
-           - d/dependent
-           - f/function
-           - p/pos
-           - i/index
+        :param show: What to output. If multiple strings are passed in as a ``list``, results
+        will be colon-separated, in the suppled order. If you want to show ngrams, you can't
+        have multiple values. Possible values are the same as those for ``search``, plus:
+
            - a/distance from root
            - n/ngram
-           - n/
-        :type show: list of strings
+           - nl/ngram lemma
+           - np/ngram POS
+           - npl/ngram wordclass
 
-        :param lemmatise: Force lemmatisation on results. Mostly obsolete:
+        :type show: ``str``/``list`` of strings
+
+        :param lemmatise: Force lemmatisation on results. Deprecated:
         instead, output a lemma form with the `show` argument
         :type lemmatise: bool
 
-        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed)
+        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed),
+        or when tag cannot be recovered from Tregex query
         :type lemmatag: False/'n'/'v'/'a'/'r'
 
         :param spelling: Convert all to U.S. or U.K. English
@@ -470,7 +470,7 @@ class Corpus(object):
         :param save: Save result as pickle to `saved_interrogations/<save>` on completion
         :type save: str
 
-        :param gramsize: size of ngrams (default 2)
+        :param gramsize: size of n-grams (default 2)
         :type gramsize: int
 
         :param split_contractions: make `"don't"` et al into two tokens
@@ -486,7 +486,7 @@ class Corpus(object):
         :type do_concordancing: bool/'only'
 
         :param maxconc: Maximum number of concordance lines
-        :type maxcond: int
+        :type maxconc: int
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
         `.query`, `.results`, `.totals` attributes. If multiprocessing is 
@@ -509,14 +509,15 @@ class Corpus(object):
         """
         Parse an unparsed corpus, saving to disk
 
-        :param corenlppath: folder containing corenlp jar files
+        :param corenlppath: folder containing corenlp jar files (use if *corpkit* can't find
+        it automatically)
         :type corenlppath: str
 
         :param operations: which kinds of annotations to do
         :type operations: str
 
-        :param speaker_segmentation: add speaker name to parser output if your 
-        corpus is script-like:
+        :param speaker_segmentation: add speaker name to parser output if your corpus is 
+        script-like
         :type speaker_segmentation: bool
 
         :param memory_mb: Amount of memory in MB for parser
@@ -533,7 +534,6 @@ class Corpus(object):
         >>> parsed = corpus.parse(speaker_segmentation = True)
         >>> parsed
         <corpkit.corpus.Corpus instance: speeches-parsed; 9 subcorpora>
-
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
@@ -610,12 +610,9 @@ class Corpus(object):
 
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
-        :param only_format_match: if True, left and right window will just be
-        words, regardless of what is in 'show'
+        :param only_format_match: if True, left and right window will just be words, regardless of 
+        what is in ``show``
         :type only_format_match: bool
-
-        :param random: randomise lines
-        :type random: bool
 
         :param only_unique: only unique lines
         :type only_unique: bool
@@ -639,10 +636,8 @@ class Corpus(object):
         <matplotlib figure>
 
         :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
-        :type search: dict
-        :param kwargs: extra arguments to pass to 
-        :func:`~corpkit.corpus.Corpus.interrogate`/
-        :func:`~corpkit.corpus.Corpus.plot`
+        :type search: `dict`
+        :param kwargs: extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
         :type kwargs: keyword arguments
 
         :returns: None (but show a plot)
@@ -666,7 +661,7 @@ class Corpus(object):
         from corpkit.other import save
         if not savename:
             savename = self.name
-        save(self, savename, savedir='data', **kwargs)
+        save(self, savename, savedir=kwargs.pop('savedir', 'data'), **kwargs)
 
 class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
@@ -850,7 +845,8 @@ class Corpora(Datalist):
     of abstraction available.
 
     :param data: Corpora to model
-    :type data: str (path containing corpora), list (of corpus paths/
+    :type data: `str` (path containing corpora), `list` (of corpus paths/Corpus 
+    objects)
     :class:`corpkit.corpus.Corpus` objects)
     """
 
