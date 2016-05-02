@@ -6,10 +6,10 @@ Once you have searched a ``Corpus`` object, you'll want to be able to edit, visu
 `Interrogation`
 ---------------------
 .. autoclass:: corpkit.interrogation.Interrogation
-    .. autoinstanceattribute:: interrogation.Interrogation.query
-    .. autoinstanceattribute:: interrogation.Interrogation.results
-    .. autoinstanceattribute:: interrogation.Interrogation.totals
-    .. autoinstanceattribute:: interrogation.Interrogation.concordance
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :autoinstanceattribute:
 
 `Interrodict`
 ---------------------
