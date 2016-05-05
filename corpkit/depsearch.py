@@ -16,7 +16,8 @@ def dep_searcher(sents,
                  speaker=False,
                  gramsize=2,
                  nopunct=True,
-                 split_contractions=False):
+                 split_contractions=False,
+                 window=2):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -247,10 +248,7 @@ def dep_searcher(sents,
                 for tok in tokens:
                     from corpkit.dictionaries.word_transforms import taglemma
                     postag = tok.pos
-                    if postag.lower() in list(taglemma.keys()):
-                        stemmedtag = taglemma[postag.lower()]
-                    else:
-                        stemmedtag = postag.lower()
+                    stemmedtag = taglemma.get(postag.lower(), postag.lower())
                     if re.search(pat, stemmedtag):
                         lks.append(tok)
             elif opt == 'l':
@@ -287,7 +285,7 @@ def dep_searcher(sents,
         if mode == 'all':
             from collections import Counter
             counted = Counter(lks)
-            must_contain = len(list(search.keys()))
+            must_contain = len(search)
             must_contain -= len([n for n in search.keys() if '2' in n])
             lks = [k for k, v in counted.items() if v >= must_contain]
         return lks
@@ -364,10 +362,10 @@ def dep_searcher(sents,
                     conc_line = [speakr]
                     # format a single word correctly
                     if only_format_match:
-                        start = ' '.join([t.word for index, t in enumerate(s.tokens) \
-                            if index < windex])
-                        end = ' '.join([t.word for index, t in enumerate(s.tokens) \
-                            if index > windex2 - 1])
+                        start = ' '.join(t.word for index, t in enumerate(s.tokens) \
+                            if index < windex)
+                        end = ' '.join(t.word for index, t in enumerate(s.tokens) \
+                            if index > windex2 - 1)
                         s.tokens = [s.get_token_by_id(lk.id)]
                     for tok in stokens:
 
@@ -376,22 +374,17 @@ def dep_searcher(sents,
                         if 'w' in show:
                             single_wd['w'] = tok.word
                         if 'l' in show:
-                            from dictionaries.word_transforms import wordlist
-                            if tok.lemma in list(wordlist.keys()):
-                                lem = wordlist[tok.lemma]
-                            else:
-                                lem = tok.lemma
+                            from corpkit.dictionaries.word_transforms import wordlist
+                            lem = wordlist.get(tok.lemma, tok.lemma)
                             single_wd['l'] = lem
                         if 'p' in show:
                             single_wd['p'] = tok.pos
 
                         if 'pl' in show:
                             single_wd['pl'] = lk.pos
-                            from dictionaries.word_transforms import taglemma
-                            if postag.lower() in list(taglemma.keys()):
-                                single_wd['pl'] = taglemma[postag.lower()]
-                            else:
-                                single_wd['pl'] = postag.lower()
+                            from corpkit.dictionaries.word_transforms import taglemma
+                            single_wd['pl'] = taglemma.get(lk.pos.lower(), lk.pos.lower())
+                            # needed?
                             if not single_wd['pl']:
                                 single_wd['pl'] == 'none'
 
@@ -472,31 +465,26 @@ def dep_searcher(sents,
                                     if x.dependent.idx == thedepid)
                                 else: 
                                     single_wd['df'] = 'none'
+
                         
-                        if any(x.startswith('n') for x in show):
-                            if 'n' in show:
-                                single_wd['n'] = tok.word
-                            if 'nl' in show:
-                                from dictionaries.word_transforms import wordlist
-                                if tok.lemma in list(wordlist.keys()):
-                                    lem = wordlist[tok.lemma]
-                                else:
-                                    lem = tok.lemma
-                                single_wd['nl'] = lem
-                            if 'np' in show:
-                                single_wd['np'] = tok.pos
-
-                            if 'npl' in show:
-                                single_wd['npl'] = lk.pos
-                                from dictionaries.word_transforms import taglemma
-                                if postag.lower() in list(taglemma.keys()):
-                                    single_wd['npl'] = taglemma[postag.lower()]
-                                else:
-                                    single_wd['npl'] = postag.lower()
-                                if not single_wd['npl']:
-                                    single_wd['npl'] == 'none'
-
-
+                        if any(x.startswith('n') for x in show) or \
+                            any(x.startswith('b') for x in show):
+                            let = show[0][0]
+                            if let in show:
+                                single_wd[let] = tok.word
+                            if let + 'l' in show:
+                                from corpkit.dictionaries.word_transforms import wordlist
+                                lem = wordlist.get(tok.lemma, tok.lemma)
+                                single_wd[let + 'l'] = lem
+                            if let + 'p' in show:
+                                single_wd[let + 'p'] = tok.pos
+                            if let + 'pl' in show:
+                                single_wd[let + 'pl'] = lk.pos
+                                from corpkit.dictionaries.word_transforms import taglemma
+                                single_wd[let + 'pl'] = taglemma.get(lk.pos.lower(), lk.pos.lower())
+                                # ?
+                                if not single_wd[let + 'pl']:
+                                    single_wd[let + 'pl'] == 'none'
 
                         for i in show:
                             intermediate_result.append(single_wd[i])
@@ -506,9 +494,9 @@ def dep_searcher(sents,
                     # now we have formatted tokens as a list. we need to split
                     # it into start, middle and end
                     if not only_format_match:
-                        start = ' '.join([w for index, w in enumerate(one_result) if index < windex])
-                        end = ' '.join([w for index, w in enumerate(one_result) if index > windex2  - 1])
-                        middle = ' '.join([w for index, w in enumerate(one_result[windex:windex2])])
+                        start = ' '.join(w for index, w in enumerate(one_result) if index < windex)
+                        end = ' '.join(w for index, w in enumerate(one_result) if index > windex2  - 1)
+                        middle = ' '.join(w for index, w in enumerate(one_result[windex:windex2]))
                     else:
                         #?
                         middle = one_result[0]
@@ -529,21 +517,15 @@ def dep_searcher(sents,
                 else:
                     single_result['w'] = lk.word
             if 'l' in show:
-                from dictionaries.word_transforms import wordlist
-                if lk.lemma in list(wordlist.keys()):
-                    lem = wordlist[lk.lemma]
-                else:
-                    lem = lk.lemma
+                from corpkit.dictionaries.word_transforms import wordlist
+                lem = wordlist.get(lk.lemma, lk.lemma)
                 single_result['l'] = lem
             if 'p' in show:
                 single_result['p'] = 'none'
                 postag = lk.pos
                 if lemmatise:
-                    from dictionaries.word_transforms import taglemma
-                    if postag.lower() in list(taglemma.keys()):
-                        single_result['p'] = taglemma[postag.lower()]
-                    else:
-                        single_result['p'] = postag.lower()
+                    from corpkit.dictionaries.word_transforms import taglemma
+                    single_result['p'] = taglemma.get(postag.lower(), postag.lower())
                 else:
                     single_result['p'] = postag
                 if not single_result['p']:
@@ -553,12 +535,7 @@ def dep_searcher(sents,
                 single_result['pl'] = 'none'
                 postag = lk.pos
                 from dictionaries.word_transforms import taglemma
-                if postag.lower() in list(taglemma.keys()):
-                    single_result['pl'] = taglemma[postag.lower()]
-                else:
-                    single_result['pl'] = postag.lower()
-                if not single_result['pl']:
-                    single_result['pl'] == 'none'
+                single_result['pl'] = taglemma.get(postag.lower(), postag.lower())
 
             if 'f' in show:
                 single_result['f'] = 'none'
@@ -575,7 +552,7 @@ def dep_searcher(sents,
                     if i.dependent.idx == lk.id:
                         if s.get_token_by_id(i.governor.idx):
                             if lemmatise:                          
-                                    single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
+                                single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
                             else:
                                 single_result['g'] = i.governor.text
                         else:
@@ -628,7 +605,7 @@ def dep_searcher(sents,
                         break
 
             if 'df' in show:
-                single_result['df'] = 'none'
+                single_result['df'] = 'none'            
                 for i in deps.links:
                     if i.governor.idx == lk.id:
                         single_result['df'] = i.type
@@ -636,6 +613,7 @@ def dep_searcher(sents,
 
             if 'gf' in show:
                 single_result['gf'] = 'none'
+                
                 for i in deps.links:
                     # if the result is the dependent, get the governor, find where
                     # it is a dependent, then gt the type
@@ -655,8 +633,42 @@ def dep_searcher(sents,
             if 'i' in show:
                 single_result['i'] = str(lk.id)
 
+            if any(i.startswith('b') for i in show):
+                tok_index = int(lk.id) - 1
+                as_list = [w for w in s.tokens]
+                as_list.pop(tok_index)
+                if nopunct:
+                    as_list = [w for w in as_list if re.search(nonword, w.word)]
+                start = tok_index - window - 1
+                if start < 0:
+                    start = 0
+                end = tok_index + window + 1
+                sliced = as_list[start:end]
+                for ctok in sliced:
+                    single_result = {}
+                    if 'b' in show:
+                        single_result['b'] = ctok.word
+                    if 'bl' in show:
+                        single_result['bl'] = ctok.lemma
+                    if 'bf' in show:
+                        single_result['bf'] = 'none'
+                        for i in deps.links:
+                            if i.dependent.idx == lk.id:
+                                single_result['bf'] = i.type.strip(',')
+                                break
+                    if 'bp' in show:
+                        single_result['bp'] = ctok.pos
+                    if 'bpl' in show:
+                        from corpkit.dictionaries.word_transforms import taglemma
+                        single_result['bpl'] = taglemma.get(ctok.pos.lower(), ctok.pos.lower())
+
+                    lst = [single_result[i] for i in show]
+                    lst = [i.replace('/', '-slash-') for i in lst]
+                    joined = '/'.join(lst)
+                    result.append(joined)
+
             # ngram showing
-            if any(i.startswith('n') for i in show):
+            elif any(i.startswith('n') for i in show):
                 import string
                 pystart = int(lk.id) - 1
                 # iterate gramsize times over each match
@@ -705,7 +717,7 @@ def dep_searcher(sents,
                     # [['houses', 'of', 'friends'], ['house', 'of', 'friend']]
                     zipped = zip(*lst_of_tokenlists)
                     # [('houses', 'house'), ('of', 'of'), ('friends', 'friend')]
-                    out = ' '.join(['/'.join(i) for i in zipped])
+                    out = ' '.join('/'.join(i) for i in zipped)
                     result.append(out)
 
             else:
