@@ -490,7 +490,7 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
                         f.write(chunk)
                         file_size_dl += len(chunk)
                         #print file_size_dl * 100.0 / file_size
-                        if 'note' in list(kwargs.keys()):
+                        if kwargs.get('note'):
                             kwargs['note'].progvar.set(file_size_dl * 100.0 / int(file_size))
                         else:
                             tstr = '%d/%d' % (file_size_dl / block_sz, showlength)
@@ -509,7 +509,8 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             if root:
                 root.update()
             return
-        if 'note' in list(kwargs.keys()):  
+
+        if kwargs.get('note'):  
             kwargs['note'].progvar.set(100)
         else:    
             p.animate(int(file_size))
@@ -619,13 +620,6 @@ def parse_corpus(proj_path = False,
                 nltk.data.path.append(nltk_data_path)
             from nltk import word_tokenize as tokenise
 
-    # add nltk to path
-    #td = {}
-    #from other import add_nltk_data_to_nltk_path
-    #if 'note' in kwargs.keys():
-    #    td['note'] = kwargs['note']
-    #add_nltk_data_to_nltk_path(**td)
-
     if proj_path is False:
         proj_path = os.path.dirname(os.path.abspath(corpuspath.rstrip('/')))
 
@@ -733,7 +727,7 @@ def parse_corpus(proj_path = False,
             if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
                 if root:
                     print('%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse))
-                if 'note' in list(kwargs.keys()):
+                if kwargs.get('note'):
                     kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
                 #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
             time.sleep(1)
@@ -772,13 +766,13 @@ def parse_corpus(proj_path = False,
                 pth = os.path.join(new_corpus_path, thedir, newname)
             with open(pth, "wb") as fo:
                 pickle.dump(tokens, fo)
-            if 'note' in list(kwargs.keys()):
+            if kwargs.get('note'):
                 kwargs['note'].progvar.set((index + 1) * 100.0 / nfiles)
             if root:
                 root.update()
 
     #p.animate(num_files_to_parse)
-    if 'note' in list(kwargs.keys()):
+    if kwargs.get('note'):
         kwargs['note'].progvar.set(100)
     sys.stdout = stdout
     thetime = strftime("%H:%M:%S", localtime())
