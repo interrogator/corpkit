@@ -1,10 +1,13 @@
+from __future__ import print_function
+
 """
 corpkit: Corpus and Corpus-like objects
 """
 
-from __future__ import print_function
-
 from lazyprop import lazyprop
+
+def classname(cls):
+    return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
 
 class Corpus(object):
     """
@@ -201,8 +204,8 @@ class Corpus(object):
             ssubcorpora = ''
         else:
             ssubcorpora = self.subcorpora
-        return "<corpkit.corpus.Corpus instance: %s; %d subcorpora>" % (
-            os.path.basename(self.path), len(ssubcorpora))
+        return "<%s instance: %s; %d subcorpora>" % (
+            classname(self), os.path.basename(self.path), len(ssubcorpora))
 
     def __getitem__(self, key):
         from corpkit.process import makesafe
@@ -678,7 +681,7 @@ class Subcorpus(Corpus):
         return self.path
 
     def __repr__(self):
-        return "<corpkit.corpus.Subcorpus instance: %s>" % self.name
+        return "<%s instance: %s>" % (classname(self), self.name)
 
     def __getitem__(self, key):
 
@@ -716,7 +719,7 @@ class File(Corpus):
             self.datatype = 'plaintext'
 
     def __repr__(self):
-        return "<corpkit.corpus.File instance: %s>" % self.name
+        return "<%s instance: %s>" % (classname(self), self.name)
 
     def __str__(self):
         return self.path
@@ -777,7 +780,7 @@ class Datalist(object):
         return '\n'.join(stringform)
 
     def __repr__(self):
-        return "<corpkit.corpus.Datalist instance: %d items>" % len(self)
+        return "<%s instance: %d items>" % (classname(self), len(self))
 
     def __delitem__(self, key):
         self.__delattr__(key)
@@ -869,7 +872,7 @@ class Corpora(Datalist):
         Datalist.__init__(self, data)
 
     def __repr__(self):
-        return "<corpkit.corpus.Corpora instance: %d items>" % len(self)
+        return "<%s instance: %d items>" % (classname(self), len(self))
 
     def __getitem__(self, key):
         """allow slicing, indexing"""
