@@ -125,8 +125,8 @@ def interrogator(corpus,
         import os
         from corpkit.process import tregex_engine
         # first, put the relevant trees into temp file
-        to_open = '\n'.join([sent.parse_string.strip() for sent in sents \
-                              if sent.parse_string is not None])
+        to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
+                              if sent.parse_string is not None)
         q = list(search.values())[0]
         ops = ['-o', '-%s' % translated_option]
         concs = []
@@ -172,7 +172,7 @@ def interrogator(corpus,
             statsmode_results['Words'] += len(words)
             statsmode_results['Characters'] += len(''.join(words))
 
-        to_open = '\n'.join([s.parse_string.strip() for s in sents])
+        to_open = '\n'.join(s.parse_string.strip() for s in sents)
 
         from corpkit.dictionaries.process_types import processes
         from corpkit.other import as_regex
@@ -220,8 +220,9 @@ def interrogator(corpus,
         unique_middle_column_result = []
         duplicates = []
         for (f, whole), mid in zip(wholes, middle_column_result):
-            if '-join-'.join([f, whole, mid]) not in duplicates:
-                duplicates.append('-join-'.join([f, whole, mid]))
+            joined = '-join-'.join([f, whole, mid])
+            if joined not in duplicates:
+                duplicates.append(joined)
                 unique_wholes.append([f, whole])
                 unique_middle_column_result.append(mid)
 
@@ -255,10 +256,7 @@ def interrogator(corpus,
             if translated_option.startswith('u'):
                 word = taglemma.get(word.lower(), 'Other')
             else:
-                if word in wordlist:
-                    word = wordlist[word]
-                else:
-                    word = lmtzr.lemmatize(word, tag)
+                word = wordlist.get(word, lmtzr.lemmatize(word, tag))
             output.append(word)
         return output
 
@@ -278,7 +276,7 @@ def interrogator(corpus,
                    'Off': False}
 
         qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
-        firstletter = next(c for c in qr if c.isalpha())
+        firstletter = next((c for c in qr if c.isalpha()), 'n')
         return tagdict.get(firstletter.upper(), 'n')
 
     def format_tregex(results, whole=False):
@@ -363,14 +361,14 @@ def interrogator(corpus,
             for index, token in enumerate(list_of_toks):
                 if token in pattern:
                     if not split_contractions:
-                        match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                        match = [' '.join(t for t in unsplitter(list_of_toks[:index]))[-140:]]
                     else:
-                        match = [' '.join([t for t in list_of_toks[:index]])[-140:]]
+                        match = [' '.join(t for t in list_of_toks[:index])[-140:]]
                     match.append(token)
                     if not split_contractions:
-                        match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                        match.append(' '.join(t for t in unsplitter(list_of_toks[index + 1:]))[:140])
                     else:
-                        match.append(' '.join([t for t in list_of_toks[index + 1:]])[:140])
+                        match.append(' '.join(t for t in list_of_toks[index + 1:])[:140])
 
                     matches.append(match)
         if countmode:
@@ -439,14 +437,14 @@ def interrogator(corpus,
             for index, token in enumerate(list_of_toks):
                 if re.search(comped, token):
                     if not split_contractions:
-                        match = [' '.join([t for t in unsplitter(list_of_toks[:index])])[-140:]]
+                        match = [' '.join(t for t in unsplitter(list_of_toks[:index]))[-140:]]
                     else:
-                        match = [' '.join([t for t in list_of_toks[:index]])[-140:]]
+                        match = [' '.join(t for t in list_of_toks[:index])[-140:]]
                     match.append(re.search(comped, token).group(0))
                     if not split_contractions:
-                        match.append(' '.join([t for t in unsplitter(list_of_toks[index + 1:])])[:140])
+                        match.append(' '.join(t for t in unsplitter(list_of_toks[index + 1:]))[:140])
                     else:
-                        match.append(' '.join([t for t in list_of_toks[index + 1:]])[:140])
+                        match.append(' '.join(t for t in list_of_toks[index + 1:])[:140])
                     matches.append(match)
         if countmode:
             return len(matches)
@@ -496,7 +494,7 @@ def interrogator(corpus,
                           'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
             
             if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
-                form = ', '.join([i for i in list(search.keys()) if i in only_parse])
+                form = ', '.join(i for i in list(search.keys()) if i in only_parse)
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
             elif datatype == 'parse':
@@ -682,8 +680,8 @@ def interrogator(corpus,
         if kwargs.get('printstatus', True):
             thetime = strftime("%H:%M:%S", localtime())
 
-            sformat = '\n                 '.join(['%s: %s' % \
-                (k.rjust(3), v) for k, v in list(search.items())])
+            sformat = '\n                 '.join('%s: %s' % \
+                (k.rjust(3), v) for k, v in list(search.items()))
             if search == {'s': r'.*'}:
                 sformat = 'Features'
             welcome = ('\n%s: %s %s ...\n          %s\n          ' \
@@ -751,7 +749,7 @@ def interrogator(corpus,
         if simple_tregex_mode:
             total_files = len(list(to_iterate_over.keys()))
         else:
-            total_files = sum([len(x) for x in list(to_iterate_over.values())])
+            total_files = sum(len(x) for x in list(to_iterate_over.values()))
 
         par_args = {'printstatus': kwargs.get('printstatus', True),
                     'root': root, 
@@ -1090,7 +1088,7 @@ def interrogator(corpus,
         tot = df.sum()
     else:
         the_big_dict = {}
-        unique_results = set([item for sublist in list(results.values()) for item in sublist])
+        unique_results = set(item for sublist in list(results.values()) for item in sublist)
         sortres = sorted(results.items(), key=lambda x: x[0])
         for word in unique_results:
             the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
