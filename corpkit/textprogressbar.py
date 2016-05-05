@@ -48,10 +48,8 @@ class TextProgressBar:
         else:
             pct_string = '%d%%' % percent_done # could pass dirname here!
         # find out where the index of the first space in the middle string
-        try:
-            index_of_space = next(i for i, j in enumerate(pct_string) if j.isspace())
-        except StopIteration:
-            index_of_space = 0
+        index_of_space = next((i for i, j in enumerate(pct_string) if j.isspace()), 0)
+        
         # put middle string in centre, adjust so that spaces are always aligned
         pct_place = int(len(self.prog_bar) / float(2)) - index_of_space
         #if len(pct_string) < 20:
