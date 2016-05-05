@@ -5,9 +5,7 @@ corpkit: Corpus and Corpus-like objects
 """
 
 from lazyprop import lazyprop
-
-def classname(cls):
-    return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
+from corpkit.process import classname
 
 class Corpus(object):
     """

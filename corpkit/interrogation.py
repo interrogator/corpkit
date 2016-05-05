@@ -1,8 +1,12 @@
-"""corpkit: interrogation-like classes"""
-
 from __future__ import print_function
+
+"""
+corpkit: Interrogation and Interrogation-like classes
+"""
+
 from collections import OrderedDict
 import pandas as pd
+from corpkit.process import classname
 
 class Interrogation(object):
     """
@@ -35,9 +39,9 @@ class Interrogation(object):
 
     def __repr__(self):
         try:
-            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals.sum()
+            return "<%s instance: %d total>" % (classname(self), self.totals.sum())
         except AttributeError:
-            return "<corpkit.interrogation.Interrogation instance: %d total>" % self.totals
+            return "<%s instance: %d total>" % (classname(self), self.totals)
 
     def edit(self, *args, **kwargs):
         """Manipulate results of interrogations.
@@ -562,13 +566,10 @@ class Interrodict(OrderedDict):
         super(Interrodict, self).__setitem__(key, value)
         
     def __repr__(self):
-        return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
+        return "<%s instance: %d items>" % (classname(self), len(self))
 
     def __str__(self):
-        return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
-
-    #def __str__(self):
-    #    return "<corpkit.interrogation.Interrodict instance: %d items>" % (len(self.keys()))
+        return "<%s instance: %d items>" % (classname(self), len(self))
 
     def edit(self, *args, **kwargs):
         """Edit each value with :func:`~corpkit.interrogation.Interrogation.edit`.

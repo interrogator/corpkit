@@ -847,3 +847,7 @@ def unsplitter(data):
                 if not "'" in data[index + 1]:
                     unsplit.append(t)
     return unsplit
+
+def classname(cls):
+    """Create the class name str for __repr__"""
+    return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
