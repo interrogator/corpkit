@@ -151,11 +151,11 @@ The final key difference between *corpkit* and most current corpus linguistic so
 
 ## Download
 
-Currently, *corpkit* works for Mac, and presumably Linux. Windows support is coming soon.
+To download the most recent OSX version, use the link in the menu bar, or just [click here](https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.0.9.tar.gz). See the [Setup page](doc_setup.html) for (very simple) installation instructions.
 
-To download the most recent OSX version, use the link in the menu bar, or just [click here](https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.0.8.tar.gz). See the [Setup page](doc_setup.html) for (very simple) installation instructions.
+Linux users can run the graphical interface by installing *corpkit* with `pip install corpkit` and then open the GUI with `python -m corpkit.gui`.
 
-Programmers and Linux users might want to install *corpkit* with `pip install corpkit` and then open the GUI with `python -m corpkit.corpkit-gui`.
+Windows users will need to get a Python interpreter and *pip* installed, and then run `pip install corpit` and `python -m corpkit.gui`.
 
 ## Cite
 
