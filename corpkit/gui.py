@@ -5499,7 +5499,7 @@ def corpkit_gui():
             f = os.path.join(project_fullpath.get(), 'custom_wordlists.txt')
             if os.path.isfile(f):
                 data = json.loads(open(f).read())
-                for k, v in list(data.items()):
+                for k, v in data.items():
                     if k not in list(custom_special_dict.keys()):
                         custom_special_dict[k] = v
                     if k not in list(saved_special_dict.keys()):
