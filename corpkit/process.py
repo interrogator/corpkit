@@ -618,7 +618,45 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     Animates progress bar in unique position in terminal
     Multiple progress bars not supported in jupyter yet.
     """
-    
+
+    # if ipython?
+    welcome_message = kwargs.pop('welcome_message', '')
+    if welcome_message:
+        welcome_message = welcome_message.replace('Interrogating corpus ... \n', '')
+        welcome_message = welcome_message.replace('Concordancing corpus ... \n', '')
+        welcome_message = welcome_message.replace('\n', '<br>').replace(' ' * 17, '&nbsp;' * 17)
+    else:
+        welcome_message = ''
+    if init:
+        try:
+            from ipywidgets import IntProgress, HTML, VBox
+            from IPython.display import display
+            from traitlets import TraitError
+            progress = IntProgress(min=0, max=length, value=1)
+            using_notebook = True
+            progress.bar_style = 'info'
+            label = HTML()
+            label.font_family = 'monospace'
+            gblabel = HTML()
+            gblabel.font_family = 'monospace'
+            box = VBox(children=[label, progress, gblabel])
+            display(box)
+            return box
+        except TraitError:
+            pass
+        except ImportError:
+            pass
+    if not init:
+        from ipywidgets.widgets.widget_box import FlexBox
+        if isinstance(progbar, FlexBox):
+            label, progress, goodbye = progbar.children
+            progress.value = count
+            if count == length:
+                progress.bar_style = 'success'
+            else:
+                label.value = '%s\nInterrogating: %s ...' % (welcome_message, tot_string)
+            return
+
     # add startnum
     start_at = kwargs.get('startnum', 0)
     if start_at is None:
@@ -634,7 +672,7 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
         return
 
     if init:
-        from textprogressbar import TextProgressBar
+        from corpkit.textprogressbar import TextProgressBar
         return TextProgressBar(length, dirname = tot_string)
         # this try is for sublime text nosetests, which don't take terminal object
     try:
@@ -771,7 +809,7 @@ def get_corenlp_path(corenlppath):
     import re
     import glob
     
-    cnlp_regex = re.compile('stanford-corenlp-[0-9\.]+\.jar')
+    cnlp_regex = re.compile(r'stanford-corenlp-[0-9\.]+\.jar')
 
     # if something has been passed in, find that first
     if corenlppath:
@@ -791,7 +829,7 @@ def get_corenlp_path(corenlppath):
                 poss = poss[-1]
             if any(re.search(cnlp_regex, f) for f in os.listdir(poss)):
                 return poss
-        possible_paths.append(corenlp_path)
+        possible_paths.append(corenlppath)
 
     # put possisble paths into list
     pths = ['.', 'corenlp',
