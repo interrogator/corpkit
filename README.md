@@ -63,6 +63,8 @@ With the `Corpus()` class, the following attributes are available:
 |-----------|---------|
 | `corpus.subcorpora` | list of subcorpus objects with indexing/slicing methods |
 | `corpus.features` | Corpus features (characters, clauses, words, tokens, process types, passives, etc.)  |
+| `corpus.postags` | Distribution of parts of speech  |
+| `corpus.wordclasses` | Distribution of word classes  |
 
 as well as the following methods:
 
@@ -213,7 +215,6 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
 #### `visualise()` method
 
 * Plot using *Matplotlib*
-* Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
 * Create line charts, bar charts, pie charts, etc. with the `kind` argument
 * Use `subplots=True` to produce individual charts for each result
@@ -222,6 +223,7 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
 * Use log scales if you really want
 * Use a number of chart styles, such as `ggplot`, `fivethirtyeight` or `seaborn-talk` (if you've got `seaborn` installed)
 * Save images to file, as `.pdf` or `.png`
+* Experimental interactive plots (hover-over text, interactive legends) using *mpld3*
 
 <a name="functions-lists-etc"></a>
 ### Functions, lists, etc.
