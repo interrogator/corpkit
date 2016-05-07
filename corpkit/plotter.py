@@ -24,13 +24,14 @@ def plotter(df,
             show_p_val=False,
             indices=False,
             transpose=False,
+            rot=False,
             **kwargs):
     """Visualise corpus interrogations.
 
     :param title: A title for the plot
     :type title: str
     :param df: Data to be plotted
-    :type df: pandas.core.frame.DataFrame
+    :type df: Pandas DataFrame
     :param x_label: A label for the x axis
     :type x_label: str
     :param y_label: A label for the y axis
@@ -96,6 +97,8 @@ def plotter(df,
     except:
         pass
 
+    kwargs['rot'] = rot
+
     import matplotlib as mpl
     from matplotlib import rc
 
@@ -111,9 +114,8 @@ def plotter(df,
         import matplotlib.pyplot as plt
     
     import pandas
-    from pandas import DataFrame
+    from pandas import DataFrame, Series
 
-    import numpy
     from time import localtime, strftime
     from process import checkstack
 
@@ -123,8 +125,10 @@ def plotter(df,
         from mpld3 import plugins, utils
         from plugins import InteractiveLegendPlugin, HighlightLines
 
+    have_mpldc = False
     try:
         from mpldatacursor import datacursor, HighlightingDataCursor
+        have_mpldc = True
     except ImportError:
         pass
 
@@ -216,11 +220,11 @@ def plotter(df,
         else:
             l = list(dataframe.columns)
 
-        if type(tinput) == str or type(tinput) == int:
+        if isinstance(tinput, basestring) or isinstance(tinput, int):
             tinput = [tinput]
-        if type(tinput) == list:
+        if isinstance(tinput, list):
             for i in tinput:
-                if type(i) == str:
+                if isinstance(i, basestring):
                     index = l.index(i)
                 else:
                     index = i
@@ -320,7 +324,7 @@ def plotter(df,
     # copy data, make series into df
     dataframe = df.copy()
     was_series = False
-    if type(dataframe) == pandas.core.series.Series:
+    if type(dataframe) == Series:
         was_series = True
         if not cumulative:
             dataframe = DataFrame(dataframe)
@@ -478,7 +482,7 @@ def plotter(df,
 
     # make and set y label
     absolutes = True
-    if type(dataframe) == pandas.core.frame.DataFrame:
+    if type(dataframe) == DataFrame:
         try:
             if not all([s.is_integer() for s in dataframe.iloc[0,:].values]):
                 absolutes = False
@@ -518,7 +522,7 @@ def plotter(df,
             # if default not set, do diverge for any df with a number < 0
             elif colours.lower() == 'default':
                 mn = dataframe.min()
-                if type(mn) == pandas.core.series.Series:
+                if type(mn) == Series:
                     mn = mn.min()
                 if mn < 0:
                     colours = sns.diverging_palette(10, 133, as_cmap=True)
@@ -779,11 +783,6 @@ def plotter(df,
                     kwargs['labels'] = None
                     kwargs['autopct'] = '%.2f'
                 ax = dataframe.plot(figsize = figsize, **kwargs)
-                from matplotlib.ticker import MaxNLocator
-                from process import is_number
-                indx = list(dataframe.index)
-                if all([is_number(qq) for qq in indx]):
-                    ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
             else:
                 plt.figure(figsize = figsize)
                 if title:
@@ -927,79 +926,11 @@ def plotter(df,
     if type(dataframe.index) == pandas.tseries.period.PeriodIndex:
         x_label = 'Year'
 
-    # scientific notation
-    #plt.ticklabel_format(axis='both', style='plain')
-    #if kwargs.get('scientific_notion', False):
-    #    if kwargs.get('log') or kwargs.get('logx') or kwargs.get('logy'):
-    #        pass
-    #    else:
-    #        if kwargs['scientific_notion'].lower().startswith('x'):
-    #            plt.ticklabel_format(axis='x', style='sci')
-    #        if kwargs['scientific_notion'].lower().startswith('y'):
-    #            plt.ticklabel_format(axis='y', style='sci')
-    #        if kwargs['scientific_notion'].lower().startswith('b'):
-    #            plt.ticklabel_format(axis='y', style='sci')
-    #            plt.ticklabel_format(axis='x', style='sci')
-    # y labelling
     y_l = False
     if not absolutes:
         y_l = 'Percentage'
     else:
         y_l = 'Absolute frequency'
-    
-    #def suplabel(axis,label,label_prop=None,
-    #             labelpad=5,
-    #             ha='center',va='center'):
-    #    ''' Add super ylabel or xlabel to the figure
-    #    Similar to matplotlib.suptitle
-    #    axis       - string: "x" or "y"
-    #    label      - string
-    #    label_prop - keyword dictionary for Text
-    #    labelpad   - padding from the axis (default: 5)
-    #    ha         - horizontal alignment (default: "center")
-    #    va         - vertical alignment (default: "center")
-    #    '''
-    #    fig = plt.gcf()
-    #    xmin = []
-    #    ymin = []
-    #    for ax in fig.axes:
-    #        xmin.append(ax.get_position().xmin)
-    #        ymin.append(ax.get_position().ymin)
-    #    xmin,ymin = min(xmin),min(ymin)
-    #    dpi = fig.dpi
-    #    if axis.lower() == "y":
-    #        rotation=90.
-    #        x = xmin-float(labelpad)/dpi
-    #        y = 0.5
-    #    elif axis.lower() == 'x':
-    #        rotation = 0.
-    #        x = 0.5
-    #        y = ymin - float(labelpad)/dpi
-    #    else:
-    #        raise Exception("Unexpected axis: x or y")
-    #    if label_prop is None: 
-    #        label_prop = dict()
-    #    plt.gcf().text(x,y,label,rotation=rotation,
-    #               transform=fig.transFigure,
-    #               ha=ha,va=va,
-    #               **label_prop)
-
-    #if y_label is not False:
-    #    if sbplt:
-    #        if type(y_label) == str:
-    #            the_y = y_label
-    #        else:
-    #            the_y = y_l
-    #        suplabel('y', the_y, labelpad = 0)
-            #plt.gcf().text(0.04, 0.5, the_y, va='center', rotation='vertical')
-            #plt.subplots_adjust(left=0.5)
-        
-        #    if not piemode:
-        #        if type(y_label) == str:
-        #            plt.ylabel(y_label)
-        #        else:
-        #            plt.ylabel(y_l)
-
 
     # hacky: turn legend into subplot titles :)
     if sbplt:
@@ -1027,14 +958,14 @@ def plotter(df,
                 a.legend_.remove()
             except:
                 pass
-            try:
-                from matplotlib.ticker import MaxNLocator
-                from process import is_number
-                indx = list(dataframe.index)
-                if all([is_number(qq) for qq in indx]):
-                    ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-            except:
-                pass
+            #try:
+            #    from matplotlib.ticker import MaxNLocator
+            #    from corpkit.process import is_number
+            #    indx = list(dataframe.index)
+            #    if all([is_number(qq) for qq in indx]):
+            #        ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+            #except:
+            #    pass
             # remove axis labels for pie plots
             if piemode:
                 a.axes.get_xaxis().set_visible(False)
@@ -1043,16 +974,16 @@ def plotter(df,
 
             a.grid(b=show_grid)
         
-    
     # add sums to bar graphs and pie graphs
     # doubled right now, no matter
 
     if not sbplt:
-        if kind.startswith('bar'):
-            width = ax.containers[0][0].get_width()
-
+        
         # show grid
         ax.grid(b=show_grid)
+
+        if kind.startswith('bar'):
+            width = ax.containers[0][0].get_width()
 
     if was_series:
         the_y_limit = plt.ylim()[1]
@@ -1087,30 +1018,30 @@ def plotter(df,
                         #warnings.warn("It's not possible to determine total percentage from individual percentages.")
                         continue
                 if not absolutes:
-                    plt.annotate('%.2f' % score, (i, score), ha = 'center', va = 'bottom')
+                    plt.annotate('%.2f' % score, (i, score), ha='center', va='bottom')
                 else:
-                    plt.annotate(score, (i, score), ha = 'center', va = 'bottom')        
+                    plt.annotate(score, (i, score), ha='center', va='bottom')        
 
     if not kwargs.get('layout') and not sbplt:
         plt.tight_layout()
 
     if save:
-        import os
         if running_python_tex:
             imagefolder = '../images'
         else:
             imagefolder = 'images'
 
-        savename = get_savename(imagefolder, save = save, title = title, ext = output_format)
+        savename = get_savename(imagefolder, save=save, title=title, ext=output_format)
 
         if not os.path.isdir(imagefolder):
             os.makedirs(imagefolder)
 
         # save image and get on with our lives
         if legend_pos.startswith('o') and not sbplt:
-            plt.gcf().savefig(savename, dpi=150, bbox_extra_artists=(lgd,), bbox_inches='tight', format = output_format)
+            plt.gcf().savefig(savename, dpi=150, bbox_extra_artists=(lgd,), 
+                              bbox_inches='tight', format=output_format)
         else:
-            plt.gcf().savefig(savename, dpi=150, format = output_format)
+            plt.gcf().savefig(savename, dpi=150, format=output_format)
         time = strftime("%H:%M:%S", localtime())
         if os.path.isfile(savename):
             print('\n' + time + ": " + savename + " created.")
@@ -1125,14 +1056,12 @@ def plotter(df,
         plt.subplots_adjust(left=.1)
 
     # add DataCursor to notebook backend if possible
-    try:
+    if have_mpldc:
         if kind == 'line':
-            HighlightingDataCursor(plt.gca().get_lines(), highlight_width = 4,
+            HighlightingDataCursor(plt.gca().get_lines(), highlight_width=4, highlight_color = False,
                     formatter=lambda **kwargs: '%s: %s' % (kwargs['label'], "{0:.3f}".format(kwargs['y'])))
         else:
             datacursor(formatter=lambda **kwargs: '%s: %s' % (kwargs['label'], "{0:.3f}".format(kwargs['height'])))
-    except:
-        pass
 
     #if not interactive and not running_python_tex and not running_spider \
     #    and not tk:
