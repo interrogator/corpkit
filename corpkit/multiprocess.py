@@ -18,18 +18,18 @@ def pmultiquery(corpus,
     
     There's no reason to call this function yourself."""
     
-    import collections
     import os
+    from pandas import DataFrame, Series
     import pandas as pd
     import collections
-    from collections import namedtuple
+    from collections import namedtuple, OrderedDict
     from time import strftime, localtime
     import corpkit
-    from interrogator import interrogator
-    from interrogation import Interrogation
+    from corpkit.interrogator import interrogator
+    from corpkit.interrogation import Interrogation
     try:
         from joblib import Parallel, delayed
-    except:
+    except ImportError:
         pass
         #raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
         #                 'Install with:\n\n        pip install joblib')
@@ -38,12 +38,13 @@ def pmultiquery(corpus,
     locs = locals()
     for k, v in kwargs.items():
         locs[k] = v
+    in_notebook = locs.get('in_notebook')
 
     def best_num_parallel(num_cores, num_queries):
-        import corpkit
         """decide how many parallel processes to run
 
         the idea, more or less, is to balance the load when possible"""
+        import corpkit
         if num_queries <= num_cores:
             return num_queries
         if num_queries > num_cores:
@@ -51,7 +52,8 @@ def pmultiquery(corpus,
                 return int(num_cores)
             if num_queries % num_cores == 0:
                 try:
-                    return max([int(num_queries / n) for n in range(2, num_cores) if int(num_queries / n) <= num_cores])   
+                    return max([int(num_queries / n) for n in range(2, num_cores) \
+                               if int(num_queries / n) <= num_cores])   
                 except ValueError:
                     return num_cores
             else:
@@ -79,11 +81,11 @@ def pmultiquery(corpus,
         denom = len(corpus)
         if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
             mult_corp_are_subs = True
-    elif (type(query) == list or type(query) == dict) and not hasattr(search, '__iter__'):
+    elif (isinstance(query, list) or isinstance(query, dict)) and not hasattr(search, '__iter__'):
             multiple_queries = True
             num_cores = best_num_parallel(num_cores, len(query))
             denom = len(query)
-    elif hasattr(search, '__iter__') and all(type(i) == dict for i in list(search.values())):
+    elif hasattr(search, '__iter__') and all(isinstance(i, dict) for i in list(search.values())):
         multiple_search = True
         num_cores = best_num_parallel(num_cores, len(list(search.keys())))
         denom = len(list(search.keys()))
@@ -111,7 +113,7 @@ def pmultiquery(corpus,
         else:
             corpus = Corpus(corpus)
 
-    if type(multiprocess) == int:
+    if isinstance(multiprocess, int):
         num_cores = multiprocess
     if multiprocess is False:
         num_cores = 1
@@ -121,9 +123,7 @@ def pmultiquery(corpus,
         raise ValueError('save must be string when multiprocessing.')
     
     # the options that don't change
-    d = {
-         #'paralleling': True,
-         'function': 'interrogator',
+    d = {'function': 'interrogator',
          'root': root,
          'note': note,
          'denominator': denom}
@@ -289,28 +289,6 @@ def pmultiquery(corpus,
         except:
             pass
 
-    # multiprocessing way
-    #from multiprocessing import Process
-    #from interrogator import interrogator
-    #jobs = []
-    ##for d in ds:
-    ##    p = multiprocessing.Process(target=interrogator, kwargs=(**d,))
-    ##    jobs.append(p)
-    ##    p.start()
-    ##    while p.is_alive():
-    ##        import time
-    ##        time.sleep(2)
-    ##        if root:
-    ##            root.update()
-    #result_queue = multiprocessing.Queue()
-    #
-    #for d in ds:
-    #funs = [interrogator(result_queue, **kwargs) for kwargs in ds]
-    #jobs = [multiprocessing.Process(mc) for mc in funs]
-    #for job in jobs: job.start()
-    #for job in jobs: job.join()
-    #results = [result_queue.get() for mc in funs]
-
     def urlify(s):
         "Turn savename into filename"
         import re
@@ -342,10 +320,7 @@ def pmultiquery(corpus,
 
         return lines
 
-
-
-    from collections import OrderedDict
-    if not all(type(i.results) == pd.core.series.Series for i in res):
+    if not all(isinstance(i.results, Series) for i in res):
         out = OrderedDict()
         for interrog, d in zip(res, ds):
             for unpicklable in ['note', 'root']:
@@ -355,7 +330,7 @@ def pmultiquery(corpus,
             except KeyError:
                 out[d['outname']] = interrog
 
-        from interrogation import Interrodict
+        from corpkit.interrogation import Interrodict
         idict = Interrodict(out)
         
         if print_info:
@@ -368,19 +343,21 @@ def pmultiquery(corpus,
             idict.save(save, print_info = print_info)
 
         return idict
+    
+
     # make query and total branch, save, return
+    # todo: standardise this so we don't have to guess transposes
     else:
         if multiple_corpora and not mult_corp_are_subs:
             sers = [i.results for i in res]
-            out = pd.DataFrame(sers, index = [i.query['outname'] for i in res])
+            out = DataFrame(sers, index=[i.query['outname'] for i in res])
             out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
             out = out.fillna(0) # nan to zero
             out = out.astype(int) # float to int
             out = out.T            
         else:
             try:
-                out = pd.concat([r.results for r in res], axis = 1)
-                # fix later
+                out = pd.concat([r.results for r in res], axis=1)
                 out = out.T
                 out.index = [i.query['outname'] for i in res]
             except ValueError:
@@ -389,7 +366,8 @@ def pmultiquery(corpus,
             # this sorts subcorpora, which are cls
             out = out[sorted(list(out.columns))]
             # puts subcorpora in the right place
-            out = out.T
+            if not mult_corp_are_subs:
+                out = out.T
             out = out.fillna(0) # nan to zero
             out = out.astype(int)
             if 'c' in show and mult_corp_are_subs:
@@ -397,18 +375,15 @@ def pmultiquery(corpus,
                 out.index = sorted(list(out.index))
 
         # sort by total
-        if type(out) == pd.core.frame.DataFrame:
-            out.ix['Total-tmp'] = out.sum()
-            tot = out.ix['Total-tmp']
-            out = out[tot.argsort()[::-1]]
-            out = out.drop('Total-tmp', axis = 0)
+        if isinstance(out, DataFrame):
+            out = out[list(out.sum().sort_values(ascending=False).index)]
 
             # really need to figure out the deal with tranposing!
             if all(x.endswith('.xml') for x in list(out.columns)) \
             or all(x.endswith('.txt') for x in list(out.columns)):
                 out = out.T
-        out = out.edit(sort_by = sort_by, print_info = False, keep_stats = False, \
-                      df1_always_df = kwargs.get('df1_always_df'))
+        out = out.edit(sort_by=sort_by, print_info=False, keep_stats=False, \
+                      df1_always_df=kwargs.get('df1_always_df'))
         out.query = qlocs
 
         if len(out.results.columns) == 1:

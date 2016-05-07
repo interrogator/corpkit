@@ -671,7 +671,7 @@ def interrogator(corpus,
                         to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         return to_iterate_over
 
-    def welcome_printer():
+    def welcome_printer(return_it = False):
         """Print welcome message"""
         if no_conc:
             message = 'Interrogating'
@@ -687,9 +687,12 @@ def interrogator(corpus,
             welcome = ('\n%s: %s %s ...\n          %s\n          ' \
                         'Query: %s\n          %s corpus ... \n' % \
                       (thetime, message, cname, optiontext, sformat, message))
-            print(welcome)
+            if return_it:
+                return(welcome)
+            else:
+                print(welcome)
 
-    def goodbye_printer(only_conc=False):
+    def goodbye_printer(return_it = False, only_conc=False):
         """Say goodbye before exiting"""
         if not kwargs.get('printstatus', True):
             return
@@ -705,8 +708,10 @@ def interrogator(corpus,
             else:
                 dat = (numentries, total_total)
                 finalstring += ' %d unique results, %d total occurrences.' % dat
-        
-        print(finalstring)
+        if return_it:
+            return finalstring
+        else:
+            print(finalstring)
 
 
     def make_conc_obj_from_conclines(conc_results):
@@ -765,9 +770,13 @@ def interrogator(corpus,
             par_args['terminal'] = term
             par_args['linenum'] = kwargs.get('paralleling')
 
+        if in_notebook:
+            par_args['welcome_message'] = welcome_message
+
         outn = kwargs.get('outname', '')
         if outn:
             outn = outn + ': '
+
         tstr = '%s%d/%d' % (outn, current_iter, total_files)
         p = animator(None, None, init=True, tot_string=tstr, **par_args)
         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
@@ -906,9 +915,19 @@ def interrogator(corpus,
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
+    
+    try:
+        from ipywidgets import IntProgress
+        from traitlets import TraitError
+        progress = IntProgress(min=0, max=10, value=1)
+        in_notebook = True
+    except TraitError:
+        in_notebook = False
+    except ImportError:
+        in_notebook = False
 
     # print welcome message
-    welcome_printer()
+    welcome_message = welcome_printer(return_it = in_notebook)
 
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar()
@@ -1131,6 +1150,11 @@ def interrogator(corpus,
         print('\n')
         interro.save(savename)
     
-    goodbye_printer()
+    goodbye = goodbye_printer(return_it=in_notebook)
+    if in_notebook:
+        try:
+            p.children[2].value = goodbye.replace('\n', '')
+        except AttributeError:
+            pass
     signal.signal(signal.SIGINT, original_sigint)
     return interro
