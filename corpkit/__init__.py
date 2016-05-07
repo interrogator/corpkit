@@ -21,7 +21,7 @@ __all__ = [
     "Corpora"] + LETTERS
 
 #metadata
-__version__ = "2.0.9"
+__version__ = "2.0.10"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
