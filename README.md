@@ -631,7 +631,7 @@ First, let's try removing the pronouns using `edit()`. The quickest way is to us
 # >>> prps = ['he', 'she', 'you']
 # >>> prps = as_regex(wl.pronouns, boundaries='line')
 # or, by re-interrogating:
-# >>> sayers = corpus.interrogate(crit, show =L, exclude={W: wordlists.pronouns})
+# >>> sayers = corpus.interrogate(crit, show=L, exclude={W: wordlists.pronouns})
 
 ### give edit() indices, words, wordlists or regexes to keep remove or merge
 >>> sayers_no_prp = sayers.edit(skip_entries=prps, skip_subcorpora=[1963])
@@ -757,7 +757,7 @@ A key strength of *corpkit*'s approach to keywording is that you can generate ne
 ```python
 >>> yrs = ['2011', '2012', '2013', '2014']
 >>> keys = p.results.ix[yrs].sum().edit('keywords', p.results.drop(yrs),
-...    threshold = False)
+...    threshold=False)
 >>> print keys.results
 ```
 
@@ -784,8 +784,8 @@ adoboli        161.30
 ... or track the keyness of a set of words over time:
 
 ```python
->>> terror = ['terror', 'terrorism', 'terrorist']
->>> terr = p.edit(K, SELF, merge_entries=terror, newname='terror')
+>>> twords = ['terror', 'terrorism', 'terrorist']
+>>> terr = p.edit(K, SELF, merge_entries={'terror': twords})
 >>> print terr.results.terror
 ```
 
@@ -967,16 +967,16 @@ We can use `edit()` to make some thematic categories:
 ```python
 ### get everyday people
 >>> p = ['person', 'man', 'woman', 'child', 'consumer', 'baby', 'student', 'patient']
-
->>> them_cat = noun_riskers.edit(merge_entries={'Everyday people': p)
-
 ### get business, gov, institutions
 >>> i = ['company', 'bank', 'investor', 'government', 'leader', 'president', 'officer', 
 ...      'politician', 'institution', 'agency', 'candidate', 'firm']
+>>> merges = {'Everyday people': p, Institutions: i}
 
->>> them_cat = them_cat.edit('%', noun_riskers.totals, merge_entries={'Institutions': i},
-...                          sort_by='total', skip_subcorpora=1963,
-...                          just_entries=['Everyday people', 'Institutions'])
+>>> them_cat = them_cat.edit('%', noun_riskers.totals,
+...                          merge_entries=merges,
+...                          sort_by='total',
+...                          skip_subcorpora=1963,
+...                          just_entries=merges.keys())
 
 ### plot result
 >>> them_cat.visualise('Types of riskers', y_label='Percentage of all riskers')
@@ -998,7 +998,7 @@ Let's also find out what percentage of the time some nouns appear as riskers:
 >>> people = ['man', 'woman', 'child', 'baby', 'politician', 
 ...           'senator', 'obama', 'clinton', 'bush']
 >>> selected = noun_riskers.edit('%', noun_lemmata.results, 
-...    just_entries = people, just_totals = True, threshold = 0, sort_by = 'total')
+...    just_entries=people, just_totals=True, threshold=0, sort_by='total')
 
 ### make a bar chart:
 >>> selected.visualise('Risk and power', num_to_plot='all', kind='bar', 
