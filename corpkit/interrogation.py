@@ -237,6 +237,7 @@ class Interrogation(object):
                   colours='Accent',
                   cumulative=False,
                   pie_legend=True,
+                  rot=False,
                   partial_pie=False,
                   show_totals=False,
                   transparent=False,
@@ -313,16 +314,38 @@ class Interrogation(object):
         :type interactive: list -- [1, 2, 3]
         :returns: matplotlib figure
         """
-        locs = locals().copy()
-        locs.update(kwargs)
-        locs.pop('kwargs', None)
-
         from corpkit.plotter import plotter
         branch = kwargs.pop('branch', 'results')
         if branch.lower().startswith('r'):
-            return plotter(self.results, **locs)
+            to_plot = self.results
         elif branch.lower().startswith('t'):
-            return plotter(self.totals, **locs)   
+            to_plot = self.totals
+        return plotter(to_plot,
+                       title=title,
+                       x_label=x_label,
+                       y_label=y_label,
+                       style=style,
+                       figsize=figsize,
+                       save=save,
+                       legend_pos=legend_pos,
+                       reverse_legend=reverse_legend,
+                       num_to_plot=num_to_plot,
+                       tex=tex,
+                       rot=rot,
+                       colours=colours,
+                       cumulative=cumulative,
+                       pie_legend=pie_legend,
+                       partial_pie=partial_pie,
+                       show_totals=show_totals,
+                       transparent=transparent,
+                       output_format=output_format,
+                       interactive=interactive,
+                       black_and_white=black_and_white,
+                       show_p_val=show_p_val,
+                       indices=indices,
+                       transpose=transpose,
+                       **kwargs
+                      )
 
     def save(self, savename, savedir='saved_interrogations', **kwargs):
         """
