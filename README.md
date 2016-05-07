@@ -216,7 +216,7 @@ These methods have been monkey-patched to Pandas' DataFrame and Series objects, 
 * Interactive plots (hover-over text, interactive legends) using *mpld3* (examples in the [*Risk Semantics* notebook](https://github.com/interrogator/risk/blob/master/risk.ipynb))
 * Plot anything you like: words, tags, counts for grammatical features ...
 * Create line charts, bar charts, pie charts, etc. with the `kind` argument
-* Use `subplots = True` to produce individual charts for each result
+* Use `subplots=True` to produce individual charts for each result
 * Customisable figure titles, axes labels, legends, image size, colormaps, etc.
 * Use `TeX` if you have it
 * Use log scales if you really want
@@ -384,9 +384,9 @@ By default, all `search` criteria must match, but any `exclude` criterion is eno
 
 ```python
 ### get words that end in 'ing' OR are nominal:
->>> out = interrogator({W: 'ing$', P: r'^N'}, searchmode='any')
+>>> out = corpus.interrogate({W: 'ing$', P: r'^N'}, searchmode='any')
 ### get any word, but exclude words that end in 'ing' AND are nominal:
->>> out = interrogator({W: 'any'}, exclude={W: 'ing$', P: N}, excludemode='all')
+>>> out = corpus.interrogate({W: 'any'}, exclude={W: 'ing$', P: N}, excludemode='all')
 ```
 
 The `show` argument wants a list of keys you'd like to return for each result. The order will be respected. If you only want one thing, a `str` is OK. One additional possibility is `C`, which returns the number of occurrences only.
@@ -582,7 +582,7 @@ If you really wanted, you can then go on to use `concordance()` output as a dict
 Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, corpkit will get their inflections automatically.
 
 ```python
->>> from dictionaries.process_types import processes
+>>> from dictionaries import processes
 
 ### match nsubj with verbal process as governor
 >>> crit = {F: '^nsubj$', G: processes.verbal}
@@ -623,7 +623,7 @@ Output:
 First, let's try removing the pronouns using `edit()`. The quickest way is to use the editable wordlists stored in `dictionaries/wordlists`:
 
 ```python
->>> from dictionaries.wordlists import wordlists
+>>> from dictionaries import wordlists
 >>> prps = wordlists.pronouns
 
 # alternative approaches:
@@ -663,7 +663,7 @@ Great. Now, let's sort the entries by trajectory, and then plot:
 
 ### make an area chart with custom y label
 >>> sayers_no_prp.visualise('Sayers, increasing', kind='area', 
-...    y_label = 'Percentage of all sayers')
+...    y_label='Percentage of all sayers')
 ```
 
 Output:
@@ -808,11 +808,11 @@ Naturally, we can use `visualise()` for our keywords too:
 
 ```python
 >>> pols.results.terror.visualise('Terror* as Participant in the \emph{NYT}', 
-...    kind = 'area', stacked = False, y_label = 'L/L Keyness')
+...    kind='area', stacked=False, y_label='L/L Keyness')
 >>> politicians = ['bush', 'obama', 'gore', 'clinton', 'mccain', 
 ...                'romney', 'dole', 'reagan', 'gorbachev']
 >>> k.results[politicans].visualise('Keyness of politicians in the \emph{NYT}', 
-...    num_to_plot = 'all', y_label = 'L/L Keyness', kind = 'area', legend_pos = 'center left')
+...    num_to_plot='all', y_label='L/L Keyness', kind='area', legend_pos='center left')
 ```
 Output:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/risk/master/images/terror-as-participant-in-the-emphnyt.png" />
@@ -826,7 +826,7 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 
 ```python
 ### arbitrary list of common/boring words
->>> from dictionaries.stopwords import stopwords
+>>> from dictionaries import stopwords
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries=stopwords).results
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all=False).results
 ```
@@ -882,7 +882,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 
 ```
 
-The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The main exception to this is if you use `show = 'count'`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
+The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The main exception to this is if you use `show=C`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
 
 <a name="multiple-speakers"></a>
 #### Multiple speakers
@@ -895,7 +895,7 @@ Passing in a list of speaker names will also trigger multiprocessing:
 >>> each_speaker = corpus.interrogate(W, wordlists.closedclass, just_speakers=spkrs)
 ```
 
-There is also `just_speakers = 'each'`, which will be automatically expanded to include every speaker name found in the corpus.
+There is also `just_speakers='each'`, which will be automatically expanded to include every speaker name found in the corpus.
 
 <a name="multiple-queries"></a>
 #### Multiple queries
@@ -921,7 +921,7 @@ Let's try multiprocessing with multiple queries, showing count (i.e. returning a
 ...      'put at risk': r'VP <<# /(?i)(put|puts|putting)\b/ << (PP <<# /(?i)at/ < (NP <<# /(?i).?\brisk.?/))', 
 ...      'pose risk':   r'VP <<# (/VB.?/ < /(?i)\b(pose|poses|posed|posing)+\b/) < (NP <<# /(?i).?\brisk.?\b/)'}
 
-# show = 'count' will collapse results from each search into single dataframe
+# show=C will collapse results from each search into single dataframe
 >>> processes = corpus.interrogate(T, q, show=C)
 >>> proc_rel = processes.edit('%', processes.totals)
 >>> proc_rel.visualise('Risk processes')
