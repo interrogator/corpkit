@@ -475,7 +475,6 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
             file_size_dl = 0
             block_sz = 8192
             showlength = file_size / block_sz
-            from time import localtime, strftime
             thetime = strftime("%H:%M:%S", localtime())
             print('\n%s: Downloading ... \n' % thetime)
             par_args = {'printstatus': kwargs.get('printstatus', True),
@@ -650,11 +649,10 @@ def parse_corpus(proj_path = False,
                     return False          
 
     corenlppath = get_corenlp_path(corenlppath)
-    print(corenlppath)
 
     if not corenlppath and not root:
         cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
-        from build import download_large_file, extract_cnlp
+        from corpkit.build import download_large_file, extract_cnlp
         corenlppath, fpath = download_large_file(cnlp_dir, url)
         if corenlppath is None and fpath is None:
             import shutil
@@ -680,8 +678,6 @@ def parse_corpus(proj_path = False,
         if root:
             root.update_idletasks()
             reload(sys)
-        import os
-        import time
         if memory_mb is False:
             memory_mb = 2024
         if operations is False:
