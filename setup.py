@@ -7,7 +7,7 @@ class CustomInstallCommand(install):
     """Customized setuptools install command."""
     def run(self):
         install.run(self)
-        # since nltk may have just been install
+        # since nltk may have just been installed
         # we need to update our PYTHONPATH
         import site
         try:
@@ -16,7 +16,6 @@ class CustomInstallCommand(install):
             pass
         # Now we can import nltk
         import nltk
-        import os
         path_to_nltk_f = nltk.__file__
         nltkpath = os.path.dirname(path_to_nltk_f)
         punktpath = os.path.join(nltkpath, 'tokenizers')
@@ -35,6 +34,7 @@ setup(name='corpkit',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
     packages=['corpkit'],
+    scripts=['corpkit/new_project'],
     package_dir={'corpkit': 'corpkit'},
     package_data={'corpkit': ['*.jar', 'corpkit/*.jar', '*.sh', 'corpkit/*.sh', 
                                 '*.ipynb', 'corpkit/*.ipynb', '*.p', 'dictionaries/*.p', '*.py', 'dictionaries/*.py']},

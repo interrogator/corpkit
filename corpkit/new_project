@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+"""
+A shell script to create a new corpkit project
+"""
+
+import sys
+from corpkit.other import new_project
+if len(sys.argv) == 1:
+    raise ValueError('Please specify name of new project.')
+else:
+    name = sys.argv[1]
+    new_project(name)
+
