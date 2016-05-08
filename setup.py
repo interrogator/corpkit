@@ -29,7 +29,7 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-    version='2.0.10',
+    version='2.0.11',
     description='A toolkit for working with linguistic corpora',
     url='http://github.com/interrogator/corpkit',
     author='Daniel McDonald',
