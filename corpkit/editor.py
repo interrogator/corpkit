@@ -487,7 +487,7 @@ def editor(interrogation,
         # double or single nest if need be
         if isinstance(replace_names, basestring):
             replace_names = [(replace_names, '')]
-        if isinstance(replace_names) != dict:
+        if isinstance(replace_names, dict):
             if isinstance(replace_names[0], basestring):
                 replace_names = [replace_names]
         if isinstance(replace_names, dict):
