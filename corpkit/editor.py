@@ -21,6 +21,7 @@ def editor(interrogation,
            merge_subcorpora=False,
            new_subcorpus_name=False,
            replace_names=False,
+           replace_subcorpus_names=False,
            projection=False,
            remove_above_p=False,
            p=0.05, 
@@ -421,7 +422,7 @@ def editor(interrogation,
             regex = re.compile(the_input)
             parsed_input = [w for w in list(df) if re.search(regex, w)]
             return parsed_input
-        from dictionaries.process_types import Wordlist
+        from corpkit.dictionaries.process_types import Wordlist
         if isinstance(the_input, Wordlist) or the_input.__class__ == Wordlist:
             the_input = list(the_input)
         if isinstance(the_input, list):
@@ -483,25 +484,26 @@ def editor(interrogation,
 
     def name_replacer(df, replace_names, print_info=print_info):
         """replace entry names and merge"""
-        import re        
-        # double or single nest if need be
+        import re
+        # get input into list of tuples
+        # if it's a string, we want to delete it
         if isinstance(replace_names, basestring):
             replace_names = [(replace_names, '')]
-        if isinstance(replace_names, dict):
+        # this is for some malformed list
+        if not isinstance(replace_names, dict):
             if isinstance(replace_names[0], basestring):
                 replace_names = [replace_names]
+        # if dict, make into list of tupes
         if isinstance(replace_names, dict):
-            replace_names = [(v, k) for k, v in list(replace_names.items())]
+            replace_names = [(v, k) for k, v in replace_names.items()]
         for to_find, replacement in replace_names:
             if print_info:
-                try:
+                if replacement:
                     print('Replacing "%s" with "%s" ...\n' % (to_find, replacement))
-                except:
-                    print('Deleting "%s" from entry names ...\n' % (to_find))
+                else:
+                    print('Deleting "%s" from entry names ...\n' % to_find)
             to_find = re.compile(to_find)
-            try:
-                replacement = replacement
-            except:
+            if not replacement:
                 replacement = ''
             df.columns = [re.sub(to_find, replacement, l) for l in list(df.columns)]
         df = merge_duplicates(df, print_info=False)
@@ -924,6 +926,19 @@ def editor(interrogation,
         if not single_totals:
             df2 = name_replacer(df2, replace_names, print_info=False)
             df2 = merge_duplicates(df2, print_info=False)
+        if not sort_by:
+            sort_by = 'total'
+
+    if replace_subcorpus_names:
+        df = name_replacer(df.T, replace_names)
+        df = merge_duplicates(df).T
+        if not single_totals:
+            if isinstance(df2, DataFrame):
+                df2 = df2.T
+            df2 = name_replacer(df2, replace_names, print_info=False)
+            df2 = merge_duplicates(df2, print_info=False)
+            if isinstance(df2, DataFrame):
+                df2 = df2.T
         if not sort_by:
             sort_by = 'total'
 
