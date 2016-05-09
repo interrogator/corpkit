@@ -1,23 +1,25 @@
+"""corpkit: multiprocessing of interrogations"""
+
 from __future__ import print_function
 
 def pmultiquery(corpus, 
-    search,
-    show = 'words',
-    query = 'any', 
-    sort_by = 'total', 
-    save = False,
-    multiprocess = 'default', 
-    just_speakers = False,
-    root = False,
-    note = False,
-    print_info = True,
-    **kwargs):
-    """Parallel process multiple queries or corpora.
-
-    This function is used by interrogator() for multiprocessing.
-    
-    There's no reason to call this function yourself."""
-    
+                search,
+                show='words',
+                query='any', 
+                sort_by='total', 
+                save=False,
+                multiprocess='default', 
+                just_speakers=False,
+                root=False,
+                note=False,
+                print_info=True,
+                **kwargs
+               ):
+    """
+    - Parallel process multiple queries or corpora.
+    - This function is used by corpkit.interrogator.interrogator()
+    - for multiprocessing.
+    - There's no reason to call this function yourself."""
     import os
     from pandas import DataFrame, Series
     import pandas as pd
@@ -31,8 +33,6 @@ def pmultiquery(corpus,
         from joblib import Parallel, delayed
     except ImportError:
         pass
-        #raise ValueError('joblib, the module used for multiprocessing, cannot be found. ' \
-        #                 'Install with:\n\n        pip install joblib')
     import multiprocessing
 
     locs = locals()
@@ -101,14 +101,10 @@ def pmultiquery(corpus,
         num_cores = best_num_parallel(num_cores, len(just_speakers))
         denom = len(just_speakers)
 
-    # if this thing has already come through multiquery, don't multiprocess this time
-    #if kwargs.get('outname'):
-    #    multiprocess = False
-
     if multiple_corpora and any(x is True for x in [multiple_speakers, multiple_queries, 
                                                     multiple_search, multiple_option]):
-        from corpus import Corpus, Corpora
-        if corpus.__class__ == Corpora:
+        from corpkit.corpus import Corpus, Corpora
+        if isinstance(corpus, Corpora):
             multiprocess = False
         else:
             corpus = Corpus(corpus)
@@ -218,28 +214,34 @@ def pmultiquery(corpus,
             sformat += '\n                   '
 
     if print_info:
+        # proper printing for plurals
+        # in truth this needs to be revised, it's horrible.
+        if num_cores == 1:
+            add_es = ''
+        else:
+            add_es = 'es'
         if multiple_corpora and not multiple_option:
             corplist = "\n              ".join([i.name for i in corpus[:20]])
             if len(corpus) > 20:
                 corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes):\n              %s" \
-               "\n          Query: %s\n          %s corpus ... \n"  % (time, len(corpus), num_cores, corplist, sformat, message)))
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s):\n              %s" \
+               "\n          Query: %s\n          %s corpus ... \n"  % (time, len(corpus), num_cores, add_es, corplist, sformat, message)))
 
         elif multiple_queries:
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(query), num_cores, corpus.name, sformat, message) ))
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
+               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(query), num_cores,  add_es, corpus.name, sformat, message) ))
 
         elif multiple_search:
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel processes): %s" \
-               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, corpus.name, sformat, message)))
+            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
+               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, add_es, corpus.name, sformat, message)))
 
         elif multiple_option:
-            print(("\n%s: Beginning %d parallel corpus interrogations (multiple options): %s" \
-               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+            print(("\n%s: Beginning %d parallel corpus interrogation%s (multiple options): %s" \
+               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat,  message) ))
 
         elif multiple_speakers:
-            print(("\n%s: Beginning %d parallel corpus interrogations: %s" \
-               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, corpus.name, sformat, message) ))
+            print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
+               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -263,7 +265,6 @@ def pmultiquery(corpus,
                     thetime = strftime("%H:%M:%S", localtime())
                     num_spaces = 26 - len(dobj['outname'])
                     print('%s: QUEUED: %s' % (thetime, dobj['outname']))
-
             except:
                 pass
 
@@ -289,15 +290,6 @@ def pmultiquery(corpus,
         except:
             pass
 
-    def urlify(s):
-        "Turn savename into filename"
-        import re
-        #s = s.lower()
-        s = re.sub(r"[^\w\s-]", '', s)
-        s = re.sub(r"\s+", '-', s)
-        s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-        return s
-
     # remove unpicklable bits from query
     from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
     qlocs = {k: v for k, v in locs.items() if not isinstance(v, ModuleType) \
@@ -305,15 +297,19 @@ def pmultiquery(corpus,
             and not isinstance(v, BuiltinFunctionType) \
             and not isinstance(v, BuiltinMethodType)}
 
-    import corpkit
-    from interrogation import Concordance
+    if hasattr(qlocs['corpus'], 'name'):
+        qlocs['corpus'] = qlocs['corpus'].path
+    else:
+        qlocs['corpus'] = list([i.path for i in qlocs['corpus']])
+
+    from corpkit.interrogation import Concordance
     if kwargs.get('do_concordancing') == 'only':
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
         lines = Concordance(concs)
         
         if save:
-            lines.save(save, print_info = print_info)
+            lines.save(save, print_info=print_info)
 
         if print_info:
             print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
@@ -335,8 +331,9 @@ def pmultiquery(corpus,
         
         if print_info:
             time = strftime("%H:%M:%S", localtime())
-            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (time, "'\n         '".join(sorted(out.keys()))))
-        
+            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % \
+                (time, "'\n         '".join(sorted(out.keys()))))
+
         idict.query = qlocs
 
         if save:
