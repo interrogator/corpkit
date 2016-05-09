@@ -48,15 +48,15 @@ class Corpus(object):
         # full checking where possible some of the shortcutting could maybe be
         # moved into the determine_datatype() funct.
 
-        if print_info:
-            print('Corpus: %s' % self.path)
-
         self.singlefile = False
         if os.path.isfile(self.path):
             if self.path.endswith('.xml'):
                 self.datatype = 'parse'
             self.singlefile = True
         elif self.path.endswith('-parsed'):
+            if not isdir(self.path):
+                if isdir(join('data', path)):
+                    self.path = abspath(join('data', path))
             self.datatype = 'parse'
             if len([d for d in os.listdir(self.path)
                     if isdir(join(self.path, d))]) > 0:
@@ -105,6 +105,9 @@ class Corpus(object):
                             print(
                                 '\tFailed to load %s as %s attribute. Name conflict?' %
                                 (filename, variable_safe))
+
+        if print_info:
+            print('Corpus: %s' % self.path)
 
     # these two are duplicated from the file object. not good.
     @lazyprop
@@ -852,7 +855,11 @@ class Corpora(Datalist):
     :class:`corpkit.corpus.Corpus` objects)
     """
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data=False, **kwargs):
+
+        # if no arg, load every corpus in data dir
+        if not data:
+            data = 'data'
 
         # handle a folder containing corpora
         if isinstance(data, str) or isinstance(data, str):
