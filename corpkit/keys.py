@@ -135,10 +135,10 @@ def keywords(target_corpus,
     # figure out which measure we're using
     if measure == 'll':
         measure_func = log_likelihood_measure
-    elif measure == 'd':
+    elif measure == 'pd':
         measure_func = perc_diff_measure
     else:
-        raise NotImplementedError("Only 'll' and 'd' measures defined so far.")
+        raise NotImplementedError("Only 'll' and 'pd' measures defined so far.")
 
     for subcorpus in index_names:
         if selfdrop:
