@@ -43,6 +43,7 @@ def interrogator(corpus,
     import codecs
     import signal
     import os
+    import gc
     from time import localtime, strftime
     from collections import Counter
 
@@ -1003,8 +1004,15 @@ def interrogator(corpus,
             for f in files:
                 slow_treg_speaker_guess = kwargs.get('outname', False)
                 if datatype == 'parse' and not tree_to_text:
-                    corenlp_xml = f.document
-                    if just_speakers:  
+                    # right now, this is not using the File class's read() or document
+                    # methods. the reason is that there seem to be memory leaks. these
+                    # may have been fixed already though.
+                    from corenlp_xml import Document
+                    with codecs.open(f.path, 'r', 'utf-8') as fo:
+                        data = fo.read()
+                    corenlp_xml = Document(data)
+                    #corenlp_xml = f.document
+                    if just_speakers:
                         sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
                         if len(just_speakers) == 1:
                             slow_treg_speaker_guess = just_speakers[0]
@@ -1012,6 +1020,8 @@ def interrogator(corpus,
                             continue
                     else:
                         sents = corenlp_xml.sentences
+                    corenlp_xml = None
+                    gc.collect()
 
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
