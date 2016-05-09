@@ -72,11 +72,9 @@ class Interrogation(object):
 
            `+`, `-`, `/`, `*`, `%`: self explanatory
 
-           `k`: log likelihood (keywords)
+           `k`: calculate keywords
 
            `a`: get distance metric
-
-           `d`: get percent difference (alternative approach to keywording)
         
         `SELF` is a very useful shorthand denominator. When used, all editing 
         is performed on the data. The totals are then extracted from the edited 
@@ -102,8 +100,8 @@ class Interrogation(object):
 
         Each can accept different input types:
 
-        * str: treated as regular expression to match
-        * list: 
+        * `str`: treated as regular expression to match
+        * `list`: 
 
           * of integers: indices to match
           * of strings: entries/subcorpora to match
@@ -116,7 +114,7 @@ class Interrogation(object):
 
         :Merging data:
 
-        There are also keyword arguments for merging entries and subcorpora.
+        There are also keyword arguments for merging entries and subcorpora:
 
         * `merge_entries`
         * `merge_subcorpora`
@@ -147,34 +145,39 @@ class Interrogation(object):
 
         >>> data.edit(sort_by='increase')
 
-        :Editing entry text:
+        :Editing text:
         
         Column labels, corresponding to individual interrogation results, can 
         also be edited with `replace_names`.
 
         :param replace_names: Edit result names, then merge duplicate entries
-        :type replace_names: str/dict
+        :type replace_names: `str`/`list of tuples`/`dict`
 
         If `replace_names` is a string, it is treated as a regex to delete from 
         each name. If `replace_names` is a dict, the value is the regex, and 
-        the key is the replacement text:
+        the key is the replacement text. Using a list of tuples in the form 
+        `(find, replacement)` allows duplicate substitution values.
 
         :Example:
 
         >>> data.edit(replace_names={r'object': r'[di]obj'})
+
+        :param replace_subcorpus_names: Edit subcorpus names, then merge duplicates.
+        The same as `replace_names`, but on the other axis.
+        :type replace_subcorpus_names: `str`/`list of tuples`/`dict`
 
         :Other options:
 
         There are many other miscellaneous options.
 
         :param keep_stats: Keep/drop stats values from dataframe after sorting
-        :type keep_stats: bool
+        :type keep_stats: `bool`
         
         :param keep_top: After sorting, remove all but the top *keep_top* results
-        :type keep_top: int
+        :type keep_top: `int`
         
         :param just_totals: Sum each column and work with sums
-        :type just_totals: bool
+        :type just_totals: `bool`
         
         :param threshold: When using results list as dataframe 2, drop values 
         occurring fewer than n times. If not keywording, you can use:
@@ -187,32 +190,45 @@ class Interrogation(object):
                             
            If keywording, there are smaller default thresholds
 
-        :type threshold: int/bool
+        :type threshold: `int`/`bool`
 
         :param span_subcorpora: If subcorpora are numerically named, span all 
         from *int* to *int2*, inclusive
-        :type span_subcorpora: tuple -- `(int, int2)`
+        :type span_subcorpora: `tuple` -- `(int, int2)`
 
         :param projection:         a  to multiply results in subcorpus by n
         :type projection: tuple -- `(subcorpus_name, n)`
         :param remove_above_p: Delete any result over `p`
-        :type remove_above_p: bool
-        :param p:                  set the p value
-        :type p: float
+        :type remove_above_p: `bool`
+
+        :param p: set the p value
+        :type p: `float`
         
         :param revert_year: When doing linear regression on years, turn annual 
         subcorpora into 1, 2 ...
-        :type revert_year: bool
+        :type revert_year: `bool`
         
         :param print_info: Print stuff to console showing what's being edited
-        :type print_info: bool
+        :type print_info: `bool`
         
         :param spelling: Convert/normalise spelling:
-        :type spelling: str -- `'US'`/`'UK'`
+        :type spelling: `str` -- `'US'`/`'UK'`
+
+        :Keywording options:
+
+        If the operation is `k`, you're calculating keywords. In this case,
+        some other keyword arguments have an effect:
+
+        :param keyword_measure: what measure to use to calculate keywords:
+
+           `ll`: log-likelihood
+           `pd': percentage difference
+
+        type keyword_measure: `str`
         
         :param selfdrop: When keywording, try to remove target corpus from 
         reference corpus
-        :type selfdrop: bool
+        :type selfdrop: `bool`
         
         :param calc_all: When keywording, calculate words that appear in either 
         corpus
@@ -695,10 +711,12 @@ class Interrodict(OrderedDict):
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
+        # join on keys ... probably shouldn't transpose like this though!
         if axis.lower()[0] not in ['x', 'y']:
             df = self.values()[0].results
-            for i in self.values()[1:]:
-                df = df.add(i.results, fill_value=0)
+            others = [i.results.T for i in self.values()[1:]]
+            df = df.T.join(others).T
+            df = df.fillna(0)
         else:
             out = []
             for corpus_name, interro in self.items():
