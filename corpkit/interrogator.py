@@ -636,42 +636,55 @@ def interrogator(corpus,
 
     def make_search_iterable(corpus):
         """determine how to structure the corpus for interrogation"""
-        if corpus.__class__ == Datalist:
+        if isinstance(corpus, Datalist):
             to_iterate_over = {}
             # it could be files or subcorpus objects
             if corpus[0].level == 's':
-                for subcorpus in corpus:
-                    to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
+                if files_as_subcorpora:
+                    for subc in corpus:
+                        for f in subc.files:
+                            to_iterate_over[(f.name, f.path)] = [f]
+                else:
+                    for subc in corpus:
+                        to_iterate_over[(subc.name, subc.path)] = subc.files
             elif corpus[0].level == 'f':
-                for fl in corpus:
-                    to_iterate_over[(fl.name, fl.path)] = [fl]
+                for f in corpus:
+                    to_iterate_over[(f.name, f.path)] = [f]
         elif corpus.singlefile:
             to_iterate_over = {(corpus.name, corpus.path): [corpus]}
         elif not hasattr(corpus, 'subcorpora') or not corpus.subcorpora:
+            # just files in a directory
             if files_as_subcorpora:
                 to_iterate_over = {}
-                for fl in corpus.files:
-                    to_iterate_over[(fl.name, fl.path)] = [fl]
+                for f in corpus.files:
+                    to_iterate_over[(f.name, f.path)] = [f]
             else:
                 to_iterate_over = {(corpus.name, corpus.path): corpus.files}
         else:
             to_iterate_over = {}
             if files_as_subcorpora:
-                for f in corpus.files:
-                    to_iterate_over[(f.name, f.path)] = [f]
+                # don't know if possible: has subcorpora but also .files
+                if hasattr(corpus, 'files') and corpus.files is not None:
+                    for f in corpus.files:
+                        to_iterate_over[(f.name, f.path)] = [f]
+                # has subcorpora with files in those
+                elif hasattr(corpus, 'files') and corpus.files is None:
+                    for subc in corpus.subcorpora:
+                        for f in subc.files:
+                            to_iterate_over[(f.name, f.path)] = [f]
             else:
                 if corpus[0].level == 's':
                     for subcorpus in corpus:
                         to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
                 elif corpus[0].level == 'f':
-                    for fl in corpus:
-                        to_iterate_over[(fl.name, fl.path)] = [fl]
+                    for f in corpus:
+                        to_iterate_over[(f.name, f.path)] = [f]
                 else:
                     for subcorpus in subcorpora:
                         to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         return to_iterate_over
 
-    def welcome_printer(return_it = False):
+    def welcome_printer(return_it=False):
         """Print welcome message"""
         if no_conc:
             message = 'Interrogating'
@@ -688,11 +701,11 @@ def interrogator(corpus,
                         'Query: %s\n          %s corpus ... \n' % \
                       (thetime, message, cname, optiontext, sformat, message))
             if return_it:
-                return(welcome)
+                return welcome
             else:
                 print(welcome)
 
-    def goodbye_printer(return_it = False, only_conc=False):
+    def goodbye_printer(return_it=False, only_conc=False):
         """Say goodbye before exiting"""
         if not kwargs.get('printstatus', True):
             return
@@ -739,11 +752,10 @@ def interrogator(corpus,
             conc_df = pd.concat(all_conc_lines, axis=1).T
             if all(x == '' for x in list(conc_df['s'].values)):
                 conc_df.drop('s', axis=1, inplace=True)
-            
             locs['corpus'] = corpus.name
-            cl = Concordance(conc_df)
-            cl.query = locs
-            return cl
+            conc_df = Concordance(conc_df)
+            conc_df.query = locs
+            return conc_df
 
         except ValueError:
             return
@@ -919,7 +931,7 @@ def interrogator(corpus,
     try:
         from ipywidgets import IntProgress
         from traitlets import TraitError
-        progress = IntProgress(min=0, max=10, value=1)
+        _ = IntProgress(min=0, max=10, value=1)
         in_notebook = True
     except TraitError:
         in_notebook = False
