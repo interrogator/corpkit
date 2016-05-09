@@ -9,6 +9,7 @@ def make_corpus(unparsed_corpus_path,
                 speaker_segmentation = False,
                 root = False,
                 multiprocess = False,
+                split_texts=400,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -110,8 +111,8 @@ def make_corpus(unparsed_corpus_path,
                 fp = os.path.join(root, f)
                 with codecs.open(fp, 'r', encoding='utf-8') as fo:
                     data = fo.read().splitlines()
-                if len(data) > 499:
-                    chk = chunks(data, 500)
+                if len(data) > split_texts:
+                    chk = chunks(data, split_texts)
                     for index, c in enumerate(chk):
                         newname = fp.replace('.txt', '-%s.txt' % str(index + 1).zfill(3))
                         with codecs.open(newname, 'w', encoding='utf-8') as fo:

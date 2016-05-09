@@ -126,11 +126,11 @@ class Corpus(object):
             import pickle
             with open(self.path, "rb", **kwargs) as openfile:
                 data = pickle.load(openfile)
-                return data
+            return data
         else:
             with open(self.path, 'r', **kwargs) as openfile:
                 data = openfile.read()
-                return data
+            return data
 
     @lazyprop
     def subcorpora(self):
@@ -506,7 +506,7 @@ class Corpus(object):
 
     def parse(self, corenlppath=False, operations=False, copula_head=True,
               speaker_segmentation=False, memory_mb=False, multiprocess=False,
-              *args, **kwargs):
+              split_texts=400, *args, **kwargs):
         """
         Parse an unparsed corpus, saving to disk
 
@@ -557,6 +557,7 @@ class Corpus(object):
                 speaker_segmentation=speaker_segmentation,
                 memory_mb=memory_mb,
                 multiprocess=multiprocess,
+                split_texts=400,
                 *args,
                 **kwargs))
 
