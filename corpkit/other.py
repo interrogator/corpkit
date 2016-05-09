@@ -15,7 +15,7 @@ def quickview(results, n = 25):
     import numpy as np
     import os
     import corpkit
-    from interrogation import Interrogation, Results, Totals
+    from corpkit.interrogation import Interrogation, Results, Totals
 
     # handle dictionaries too:
     dictpath = 'dictionaries'
@@ -29,54 +29,30 @@ def quickview(results, n = 25):
 
     if type(results) == str:
         if os.path.isfile(os.path.join(dictpath, results)):
-            try:
-                import cPickle as pickle
-            except ImportError:
-                import pickle as pickle
-            from collections import Counter
-            unpickled = pickle.load(open(os.path.join(dictpath, results), 'rb'))
-            print('\nTop %d entries in %s:\n' % (n, os.path.join(dictpath, results)))
-            for index, (w, f) in enumerate(unpickled.most_common(n)):
-                fildex = '% 3d' % index
-                print('%s: %s (n=%d)' %(fildex, w, f))
-            return
+            from corpkit.other import load
+            results = load(results, loaddir = dictpath)
 
         elif os.path.isfile(os.path.join(savedpath, results)):
-            from corpkit import load
-            print('\n%s loaded temporarily from file:\n' % results)
+            from corpkit.other import load
             results = load(results)
         else:
-            raise ValueError('File %s not found in saved_interrogations or dictionaries')
+            raise OSError('File "%s" not found.' % os.path.abspath(results))
 
-    if results.__class__ == corpkit.interrogation.Results:
-        if results.iloc[0,0].dtype == 'int64':
-            option = 't'
-        else:
-            option = '%'
-        the_list = list(results.columns)[:n]
-        dtype = corpkit.interrogation.Results
-
-    elif results.__class__ == corpkit.interrogation.Totals:
-        if results.iloc[0].dtype == 'int64':
-            option = 't'
-        else:
-            option = '%'
-        the_list = list(results.index)[:n]
-        dtype = corpkit.interrogation.Totals
-
-    elif results.__class__ == corpkit.interrogation.Interrogation:
-        if 'results' in list(results.__dict__.keys()):
+    elif isinstance(results, Interrogation):
+        if getattr(results, 'results'):
             datatype = results.results.iloc[0,0].dtype
             if datatype == 'int64':
                 option = 't'
             else:
                 option = '%'
-            if 'operation' in results.query:
-                if results.query['operation'].lower().startswith('k'):
+            rq = results.query.get('operation', False)
+            if rq:
+                rq = rq.lower()
+                if rq.startswith('k'):
                     option = 'k'
-                if results.query['operation'].lower().startswith('%'):
+                if rq.startswith('%'):
                     option = '%'
-                if results.query['operation'].lower().startswith('/'):
+                if rq.startswith('/'):
                     option = '/'
             try:
                 the_list = list(results.results.columns)[:n]
@@ -93,17 +69,16 @@ def quickview(results, n = 25):
 
     for index, entry in enumerate(the_list):
         if option == 't':
-            if dtype == corpkit.interrogation.Interrogation:
-                to_get_from = results.results
-            elif dtype == corpkit.interrogation.Results:
-                to_get_from = results
-            elif dtype == corpkit.interrogation.Totals:
-                to_get_from = results
-
-            tot = to_get_from[entry].sum()
+            if isinstance(results, Interrogation):
+                if hasattr(results, 'results'):
+                    to_get_from = results.results
+                    tot = to_get_from[entry].sum()
+                else:
+                    to_get_from = results.totals
+                    tot = to_get_from[entry]
             print('%s: %s (n=%d)' %(str(index).rjust(3), entry.ljust(longest), tot))
         elif option == '%' or option == '/':
-            if dtype == corpkit.interrogation.Interrogation:
+            if isinstance(results, Interrogation):
                 to_get_from = results.totals
                 tot = to_get_from[entry]
                 totstr = "%.3f" % tot
@@ -246,7 +221,10 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
                         firstpart = corpus.name
                     else:
                         firstpart = ''
-        return firstpart + '-' + savename
+        if firstpart:
+            return firstpart + '-' + savename
+        else:
+            return savename
 
     savename = make_filename(interrogation, savename)
 
