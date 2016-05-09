@@ -9,17 +9,22 @@ Doing corpus linguistics involves building and interrogating corpora, and explor
 Creating a new project
 -----------------------
 
-The simplest way to begin using corpkit is to import it and to create a new project. Projects are simply folders containing subfolders where corpora, saved results, images and dictionaries will be stored. 
+The simplest way to begin using corpkit is to import it and to create a new project. Projects are simply folders containing subfolders where corpora, saved results, images and dictionaries will be stored. The simplest way is to do it from `bash`, passing in the name you'd like for the project:
+
+.. code-block:: bash
+
+   $ new_project psyc
+   # move there:
+   $ cd psyc
+   # now, enter python and begin ...
+
+Or, from Python:
 
 .. code-block:: python
 
    >>> import corpkit
    >>> corpkit.new_project('psyc')
-
-This creates a new folder in the current directory called `psyc`. We can then move there:
-
-.. code-block:: python
-
+   ### move there:
    >>> import os
    >>> os.chdir('psyc')
    >>> os.listdir('.')
@@ -35,26 +40,35 @@ This creates a new folder in the current directory called `psyc`. We can then mo
 Adding a corpus
 ----------------
 
-Now that we have a project, we need to add some plain-text data to the `data` folder. At the very least, this is simply a text file. Better than this is a folder containing a number of text files. Best, however, is a folder containing subfolders, with each subfolder containing one or more text files. These subfolders represent subcorpora.
+Now that we have a project, we need to add some plain-text data to the `data` folder. At the very least, this is simply a text file. Better than this is a folder containing a number of text files. Best, however, is a folder containing subfolders, with each subfolder containing one or more text files. These subfolders represent subcorpora. 
 
-You can add your corpus to the `data` folder from the command line, or using Finder/Explorer if you prefer. Using `shutil`:
+You can add your corpus to the `data` folder from the command line, or using Finder/Explorer if you prefer.
+
+.. code-block:: bash
+
+   $ cp -R /Users/me/Documents/transcripts ./data
+
+Or, in `Python`, using `shutil`:
 
 .. code-block:: python
 
    >>> import shutil
-   >>> shutil.copytree('/Users/me/Documents/transcripts', '.')
+   >>> shutil.copytree('/Users/me/Documents/transcripts', './data')
+
+If you've been using `bash` so far, this is the moment when you'd enter `Python` and `import corpkit`.
 
 Creating a Corpus object
 -------------------------
 
-Once we have a corpus of text files, we need to turn it into a Corpus object.
+Once we have a corpus of text files, we need to turn it into a `Corpus` object.
 
 .. code-block:: python
 
    >>> from corpkit import Corpus
-   >>> unparsed = Corpus('data/psyc')
+   ### you can leave out the 'data' if it's in there
+   >>> unparsed = Corpus('data/transcripts')
    >>> unparsed
-   <corpkit.corpus.Corpus instance: psyc; 13 subcorpora>
+   <corpkit.corpus.Corpus instance: transcripts; 13 subcorpora>
 
 This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.interrogate` method:
 
