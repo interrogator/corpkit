@@ -14,12 +14,10 @@ def editor(interrogation,
            just_entries=False,
            skip_entries=False,
            merge_entries=False,
-           newname='combine',
            just_subcorpora=False,
            skip_subcorpora=False,
            span_subcorpora=False,
            merge_subcorpora=False,
-           new_subcorpus_name=False,
            replace_names=False,
            replace_subcorpus_names=False,
            projection=False,
@@ -29,122 +27,11 @@ def editor(interrogation,
            spelling=False,
            selfdrop=True,
            calc_all=True,
+           keyword_measure='ll',
            **kwargs
           ):
-    """Edit results of interrogations, do keywording, sort, etc.
-
-    ``just/skip_entries`` and ``just/skip_subcorpora`` can take a few different kinds of input:
-
-    * str: treated as regular expression to match
-    * list: 
-
-      * of integers: indices to match
-      * of strings: entries/subcorpora to match
-
-    ``merge_entries`` and ``merge_subcorpora``, however, are best entered as dicts:
-
-    ``{newname: criteria, newname2: criteria2}```
-
-    where criteria is a string, list, etc.
-
-    :param interrogation: Results to edit
-    :type interrogation: pandas.core.frame.DataFrame
-    
-    :param operation: Kind of maths to do on inputted lists:
-
-        '+', '-', '/', '*', '%': self explanatory
-        'k': log likelihood (keywords)
-        'a': get distance metric (for use with interrogator 'a' option)
-        'd': get percent difference (alternative approach to keywording)
-
-    :type operation: str
-    
-    :param denominator: List of results or totals.
-
-        If list of results, for each entry in dataframe 1, locate
-        entry with same name in dataframe 2, and do maths there
-        if 'self', do all merging/keeping operations, then use
-        edited interrogation as denominator
-
-    :type denominator: pandas.core.series.Series/pandas.core.frame.DataFrame/dict/'self'
-    
-    :param sort_by: Calculate slope, stderr, r, p values, then sort by:
-
-        increase: highest to lowest slope value
-        decrease: lowest to highest slope value
-        turbulent: most change in y axis values
-        static: least change in y axis values
-        total/most: largest number first
-        infreq/least: smallest number first
-        name: alphabetically
-        
-    :type sort_by: str
-
-    :param keep_stats: Keep/drop stats values from dataframe after sorting
-    :type keep_stats: bool
-    
-    :param keep_top: After sorting, remove all but the top *keep_top* results
-    :type keep_top: int
-    
-    :param just_totals: Sum each column and work with sums
-    :type just_totals: bool
-    
-    :param threshold: When using results list as denominator, drop values occurring
-                        fewer than n times. If not keywording, you can use:
-                            ``'high'``: denominator total / 2500
-                            ``'medium'``: denominator total / 5000
-                            ``'low'``: denominator total / 10000
-                        Note: if keywording, there are smaller default thresholds
-    :type threshold: int/bool
-    :param just_entries: Keep matching entries
-    :type just_entries: see above
-    :param skip_entries: Skip matching entries
-    :type skip_entries: see above
-    :param merge_entries: Merge matching entries
-    :type merge_entries: see above
-    :param newname: New name for merged entries
-    :type newname: str/'combine'
-    :param just_subcorpora: Keep matching subcorpora
-    :type just_subcorpora: see above
-    :param skip_subcorpora: Skip matching subcorpora
-    :type skip_subcorpora: see above
-    :param span_subcorpora: If subcorpora are numerically named, span all from 
-    *int* to *int2*, inclusive
-    :type span_subcorpora: tuple -- ``(int, int2)``
-    :param merge_subcorpora: Merge matching subcorpora
-    :type merge_subcorpora: see above
-    :param new_subcorpus_name: Name for merged subcorpora
-    :type new_subcorpus_name: str/``'combine'``
-
-    :param replace_names: Edit result names and then merge duplicate names.
-    :type replace_names: dict -- ``{criteria: replacement_text}``; str -- a 
-    regex to delete from names
-    :param projection:         a  to multiply results in subcorpus by n
-    :type projection: tuple -- ``(subcorpus_name, n)``
-    :param remove_above_p: Delete any result over p
-    :type remove_above_p: bool
-    :param p:                  set the p value
-    :type p: float
-    
-    :param revert_year:        when doing linear regression on years, 
-    turn annual subcorpora into 1, 2 ...
-    :type revert_year: bool
-    
-    :param print_info: Print stuff to console showing what's being edited
-    :type print_info: bool
-    
-    :param spelling: Convert/normalise spelling:
-    :type spelling: str -- ``'US'``/``'UK'``
-    
-    :param selfdrop: When keywording, try to remove target corpus from reference
-    corpus
-    :type selfdrop: bool
-    
-    :param calc_all: When keywording, calculate words that appear in either
-    corpus
-    :type calc_all: bool
-
-    :returns: corpkit.interrogation.Interrogation
+    """
+    See corpkit.interrogation.Interrogation.edit() for docstring
     """
 
     # grab arguments, in case we get dict input and have to iterate
@@ -310,37 +197,6 @@ def editor(interrogation,
                     from time import localtime, strftime
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
-            elif operation == 'd':
-                #df.ix['Combined total'] = df.sum()
-                #to_drop = to_drop = list(df.T[df.T['Combined total'] < threshold].index)
-                to_drop = [n for n in list(df.columns) if df[n].sum() < threshold]
-                df = df.drop([e for e in to_drop if e in list(df.columns)], axis=1)
-                #df.drop('Combined total')
-                if prinf:
-                    to_show = []
-                    [to_show.append(w) for w in to_drop[:5]]
-                    if len(to_drop) > 10:
-                        to_show.append('...')
-                        [to_show.append(w) for w in to_drop[-5:]]
-                    if len(to_drop) > 0:
-                        print('Removing %d entries below threshold:\n    %s' % (len(to_drop), '\n    '.join(to_show)))
-                    if len(to_drop) > 10:
-                        print('... and %d more ... \n' % (len(to_drop) - len(to_show) + 1))
-                    else:
-                        print('')
-
-                # get normalised num in target corpus
-                norm_in_target = df.div(denom, axis=0)
-                # get normalised num in reference corpus, with or without selfdrop
-                tot_in_ref = df.copy()
-                for c in list(tot_in_ref.index):
-                    if selfdrop:
-                        tot_in_ref.ix[c] = df.sum() - tot_in_ref.ix[c]
-                    else:
-                        tot_in_ref.ix[c] = df.sum()
-                norm_in_ref = tot_in_ref.div(df.sum().sum())
-                df = (norm_in_target - norm_in_ref) / norm_in_ref * 100.0
-                df = df.replace(float(-100.00), np.nan)
 
             elif operation == 'a':
                 for c in [c for c in list(df.columns) if int(c) > 1]:
@@ -547,7 +403,7 @@ def editor(interrogation,
                     the_newname = '/'.join(parsed_input[:3]) + '...'
             else:
                 the_newname = newname
-        if newname is False:
+        if not newname:
             # revise this code
             import operator
             sumdict = {}
@@ -686,9 +542,8 @@ def editor(interrogation,
         df = df.append(sl)
         
         # drop infinites and nans
-        if operation != 'd':
-            df = df.replace([np.inf, -np.inf], np.nan)
-            df = df.fillna(0.0)
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0.0)
         return df
 
     def resort(df, sort_by = False, keep_stats = False):
@@ -882,9 +737,6 @@ def editor(interrogation,
                 single_totals = False
             else:
                 df2 = Series(df2)
-            if operation == 'd':
-                df2 = df2.sum(axis=1)
-                single_totals = True
         elif isinstance(df2, Series):
             single_totals = True
             #if operation == 'k':
@@ -892,7 +744,7 @@ def editor(interrogation,
         else:
             raise ValueError('Denominator not recognised.')
     else:
-        if operation in ['k', 'd', 'a', '%', '/', '*', '-', '+']:
+        if operation in ['k', 'a', '%', '/', '*', '-', '+']:
             denominator = 'self'         
         if denominator == 'self':
             outputmode = True
@@ -930,12 +782,12 @@ def editor(interrogation,
             sort_by = 'total'
 
     if replace_subcorpus_names:
-        df = name_replacer(df.T, replace_names)
+        df = name_replacer(df.T, replace_subcorpus_names)
         df = merge_duplicates(df).T
         if not single_totals:
             if isinstance(df2, DataFrame):
                 df2 = df2.T
-            df2 = name_replacer(df2, replace_names, print_info=False)
+            df2 = name_replacer(df2, replace_subcorpus_names, print_info=False)
             df2 = merge_duplicates(df2, print_info=False)
             if isinstance(df2, DataFrame):
                 df2 = df2.T
@@ -976,7 +828,7 @@ def editor(interrogation,
     if merge_entries:
         if not isinstance(merge_entries, list):
             if isinstance(merge_entries, basestring):
-                merge_entries = {newname: merge_entries}
+                merge_entries = {'combine': merge_entries}
             # for newname, criteria    
             for name, the_input in sorted(merge_entries.items()):
                 pin = parse_input(df, the_input)
@@ -1000,11 +852,11 @@ def editor(interrogation,
                 if isinstance(merge_subcorpora[0], tuple):
                     merge_subcorpora = {x: y for x, y in merge_subcorpora}
                 elif isinstance(merge_subcorpora[0], basestring):
-                    merge_subcorpora = {new_subcorpus_name: [x for x in merge_subcorpora]}
+                    merge_subcorpora = {'combine': [x for x in merge_subcorpora]}
                 elif isinstance(merge_subcorpora[0], int):
-                    merge_subcorpora = {new_subcorpus_name: [str(x) for x in merge_subcorpora]}
+                    merge_subcorpora = {'combine': [str(x) for x in merge_subcorpora]}
             else:
-                merge_subcorpora = {new_subcorpus_name: merge_subcorpora}
+                merge_subcorpora = {'combine': merge_subcorpora}
         for name, the_input in sorted(merge_subcorpora.items()):
             pin = parse_input(df.T, the_input)
             the_newname = newname_getter(df.T, pin, newname=name, \
@@ -1042,9 +894,8 @@ def editor(interrogation,
             df2 = skip_these_entries(df2, parse_input(df2, skip_entries), prinf=False)
 
     # drop infinites and nans
-    if operation != 'd':
-        df = df.replace([np.inf, -np.inf], np.nan)
-        df = df.fillna(0.0)
+    df = df.replace([np.inf, -np.inf], np.nan)
+    df = df.fillna(0.0)
 
     if just_totals:
         df = DataFrame(df.sum(), columns=['Combined total'])
@@ -1071,8 +922,6 @@ def editor(interrogation,
             if just_totals:
                 if not single_totals:
                     tshld = set_threshold(df2, threshold, prinf=print_info)
-            if operation == 'd':
-                tshld = set_threshold(df2, threshold, prinf=print_info) 
             df, tots = combiney(df, df2, operation=operation, threshold=tshld, prinf=print_info)
     
     # if doing keywording...
@@ -1092,12 +941,12 @@ def editor(interrogation,
                       editing=True,
                       calc_all=calc_all,
                       sort_by=sort_by,
+                      measure=keyword_measure,
                       **kwargs)
     
     # drop infinites and nans
-    if operation != 'd':
-        df = df.replace([np.inf, -np.inf], np.nan)
-        df = df.fillna(0.0)
+    df = df.replace([np.inf, -np.inf], np.nan)
+    df = df.fillna(0.0)
 
     # resort data
     if sort_by or keep_stats:
