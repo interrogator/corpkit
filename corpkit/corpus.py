@@ -1,8 +1,8 @@
-from __future__ import print_function
-
 """
 corpkit: Corpus and Corpus-like objects
 """
+
+from __future__ import print_function
 
 from lazyprop import lazyprop
 from corpkit.process import classname
@@ -268,11 +268,11 @@ class Corpus(object):
         :Example:
 
         >>> corpus.wordclasses
-            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
-            01       26873    8513   7308                4809              3704     2212
-            02       25844    7933   6920                4313              3620     2270
-            03       18376    5683   4877                3067              2616     1640
-            04       20066    6354   5366                3587              2767     1775
+            SB   Verb  Noun  Preposition   Determiner ...
+            01  26873  8513         7308         5508 ...
+            02  25844  7933         6920         3323 ...
+            03  18376  5683         4877         3137 ...
+            04  20066  6354         5366         4336 ...
 
         """
         import os
@@ -310,11 +310,11 @@ class Corpus(object):
         :Example:
 
         >>> corpus.postags
-            SB  NN  VB  JJ  IN DT wo Open class words  Clauses
-            01       26873    8513   7308                4809              3704     2212
-            02       25844    7933   6920                4313              3620     2270
-            03       18376    5683   4877                3067              2616     1640
-            04       20066    6354   5366                3587              2767     1775
+            SB      NN     VB     JJ     IN     DT 
+            01   26873   8513   7308   4809   3704  ...
+            02   25844   7933   6920   4313   3620  ...
+            03   18376   5683   4877   3067   2616  ...
+            04   20066   6354   5366   3587   2767  ...
 
         """
         import os
@@ -349,7 +349,7 @@ class Corpus(object):
         `concordance() methods. `W`/`L keys match word or lemma; `F`: key 
         specifies semantic role (`'participant'`, `'process'` or `'modifier'`. 
         If `F` not specified, each role will be searched for.
-        :type search: dict
+        :type search: `dict`
 
         :Example:
 
@@ -391,22 +391,22 @@ class Corpus(object):
             ...                                                               ...
 
         :param search: What the query should be matching.
-           - t: tree
-           - w: word
-           - l: lemma
-           - p: pos
-           - f: function
-           - g/gw: governor
-           - gl: governor's lemma form
-           - gp: governor's pos
-           - gf: governor's function
-           - d/dependent
-           - dl: dependent's lemma form
-           - dp: dependent's pos
-           - df: dependent's function
-           - i/index
-           - n/ngrams (deprecated, use ``show``)
-           - s/general stats
+           - `t`: tree
+           - `w`: word
+           - `l`: lemma
+           - `p`: pos
+           - `f`: function
+           - `g/gw`: governor
+           - `gl`: governor's lemma form
+           - `gp`: governor's pos
+           - `gf`: governor's function
+           - `d/dependent
+           - `d`l`: dependent's lemma form
+           - `d`p`: dependent's pos
+           - `d`f`: dependent's function
+           - `i`/index
+           - `n`/n-grams (deprecated, use `show`)
+           - `s`/general stats
         :type search: str or dict. dict is used when you have multiple criteria.
         Keys are what to search as `str`, and values are the criteria, which is
         a Tregex query, a regex, or a list of words to match. Therefore, the two
@@ -418,13 +418,13 @@ class Corpus(object):
         >>> corpus.interrogate({T: r'/NN.?/'})
 
         :param searchmode: Return results matching any/all criteria
-        :type searchmode: str -- `'any'`/`'all'`
+        :type searchmode: `str` -- `'any'`/`'all'`
 
         :param exclude: The inverse of `search`, removing results from search
-        :type exclude: dict -- `{L: 'be'}`
+        :type exclude: `dict` -- `{L: 'be'}`
 
         :param excludemode: Exclude results matching any/all criteria
-        :type excludemode: str -- `'any'`/`'all'`
+        :type excludemode: `str` -- `'any'`/`'all'`
 
         :param query: A search query for the interrogation. This is only used
         when `search` is a string, or when multiprocessing. If `search` is a
@@ -440,57 +440,61 @@ class Corpus(object):
         >>> corpus.interrogate(T, q, show = C)
 
         :type query:
-           - str -- regex/Tregex pattern (use when `search` is a `str`)
-           - dict -- `{name: pattern}` (as per example above)
-           - list -- word list to match
+           - `str` -- regex/Tregex pattern (use when `search` is a `str`)
+           - `dict` -- `{name: pattern}` (as per example above)
+           - `list` -- word list to match
 
         :param show: What to output. If multiple strings are passed in as a ``list``, results
         will be colon-separated, in the suppled order. If you want to show ngrams, you can't
         have multiple values. Possible values are the same as those for ``search``, plus:
 
-           - a/distance from root
-           - n/ngram
-           - nl/ngram lemma
-           - np/ngram POS
-           - npl/ngram wordclass
+           - `a`/distance from root
+           - `n`/ngram
+           - `nl`/ngram lemma
+           - `np`/ngram POS
+           - `npl`/ngram wordclass
 
-        :type show: ``str``/``list`` of strings
+        :type show: `str`/`list` of strings
 
         :param lemmatise: Force lemmatisation on results. Deprecated:
         instead, output a lemma form with the `show` argument
-        :type lemmatise: bool
+        :type lemmatise: `bool`
 
         :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed),
         or when tag cannot be recovered from Tregex query
-        :type lemmatag: False/'n'/'v'/'a'/'r'
+        :type lemmatag: False/`'n'`/`'v'`/`'a'`/`'r'`
 
         :param spelling: Convert all to U.S. or U.K. English
-        :type spelling: False/'US'/'UK'
+        :type spelling: `False`/`'US'`/`'UK'`
 
-        :param dep_type: The kind of Stanford CoreNLP dependency parses you want to use
-        :type dep_type: str -- 'basic-dependencies'/'a',
+        :param dep_type: The kind of Stanford CoreNLP dependency parses you want
+        to use
+        :type dep_type: `str` -- 'basic-dependencies'/'a',
         'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
 
-        :param save: Save result as pickle to `saved_interrogations/<save>` on completion
-        :type save: str
+        :param save: Save result as pickle to `saved_interrogations/<save>` on 
+        completion
+        :type save: `str`
 
         :param gramsize: size of n-grams (default 2)
-        :type gramsize: int
+        :type gramsize: `int`
 
         :param split_contractions: make `"don't"` et al into two tokens
-        :type split_contractions: bool
+        :type split_contractions: `bool`
 
         :param multiprocess: how many parallel processes to run
-        :type multiprocess: int / bool (to determine automatically)
+        :type multiprocess: `int`/`bool` (to determine automatically)
 
-        :param files_as_subcorpora: treat each file as a subcorpus
-        :type files_as_subcorpora: bool
+        :param files_as_subcorpora: treat each file as a subcorpus, ignoring 
+        actual subcorpora if present
+        :type files_as_subcorpora: `bool`
 
-        :param do_concordancing: Concordance while interrogating, store as `.concordance` attribute
-        :type do_concordancing: bool/'only'
+        :param do_concordancing: generate a concordance while interrogating, 
+        store as `.concordance` attribute
+        :type do_concordancing: `bool`/`'only'`
 
         :param maxconc: Maximum number of concordance lines
-        :type maxconc: int
+        :type maxconc: `int`
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
         `.query`, `.results`, `.totals` attributes. If multiprocessing is 
