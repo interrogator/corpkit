@@ -968,14 +968,14 @@ def interrogator(corpus,
 
             # if concordancing, do the query again with 'whole' sent and fname
             if not no_conc:
-                op += ['-w', '-f']
+                ops = ['-w', '-f'] + op
                 whole_result = tregex_engine(query=search['t'],
-                                             options=op,
+                                             options=ops,
                                              corpus=subcorpus_path,
                                              root=root,
                                              preserve_case=preserve_case
                                             )
-            
+
                 # format match too depending on option
                 if not only_format_match:
                     whole_result = format_tregex(whole_result, whole=True)
