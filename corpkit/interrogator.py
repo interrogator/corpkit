@@ -30,6 +30,7 @@ def interrogator(corpus,
                  split_contractions=False,
                  do_concordancing=False,
                  maxconc=9999,
+                 window=4,
                  **kwargs):
     """interrogate corpus, corpora, subcorpus and file objects
 
@@ -81,9 +82,17 @@ def interrogator(corpus,
         elif isinstance(show, basestring):
             show = show.lower()
             show = [show]
+        # this little 'n' business is a hack: when ngramming,
+        # n shows have their n stripped, so nw should be nw 
+        # so we know we're ngramming and so it's not empty.
         for index, val in enumerate(show):
-            if len(val) == 2 and val.endswith('w'):
-                show[index] = val[0]
+            if val == 'n' or val == 'nw':
+                show[index] = 'nw'
+            elif val == 'b' or val == 'bw':
+                show[index] = 'bw'
+            else:
+                if len(val) == 2 and val.endswith('w'):
+                    show[index] = val[0]
         return show
 
     def is_multiquery(corpus, search, query, just_speakers):
@@ -201,7 +210,6 @@ def interrogator(corpus,
                                 root=root
                                )
             statsmode_results[name] += int(res)
-            #statsmode_results['numdone'] += 1
             if root:
                 root.update()
         return statsmode_results, []
@@ -501,7 +509,7 @@ def interrogator(corpus,
             elif datatype == 'parse':
                 if search.get('n'):
                     search['w'] = search.pop('n')
-                    if not any(x.startswith('n') for x in show):
+                    if not show_ngram:
                         show = ['n']
                 if search.get('t'):
                     searcher = slow_tregex
@@ -520,7 +528,7 @@ def interrogator(corpus,
                     optiontext = 'Dependency querying'
                 
                 # ngram mode for parsed data
-                if any(x.startswith('n') for x in show):
+                if show_ngram:
                     optiontext = 'N-grams from parsed data'
                     searcher = dep_searcher
 
@@ -753,6 +761,13 @@ def interrogator(corpus,
             conc_df = pd.concat(all_conc_lines, axis=1).T
             if all(x == '' for x in list(conc_df['s'].values)):
                 conc_df.drop('s', axis=1, inplace=True)
+            
+            if show_ngram or show_collocates:
+                counted = Counter(conc_df['m'])
+                indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
+                conc_df = conc_df.ix[indices]
+                conc_df = conc_df.reset_index(drop=True)
+
             locs['corpus'] = corpus.name
             conc_df = Concordance(conc_df)
             conc_df.query = locs
@@ -833,6 +848,17 @@ def interrogator(corpus,
     from corpkit.process import searchfixer
     search = searchfixer(search, query)
     show = fix_show(show)
+    
+    if any(x.startswith('n') for x in show):
+        show_ngram = True
+    else:
+        show_ngram = False
+    
+    if any(x.startswith('b') for x in show):
+        show_collocates = True
+    else:
+        show_collocates = False
+
 
     # instantiate lemmatiser if need be
     if 'l' in show and search.get('t'):
@@ -912,6 +938,8 @@ def interrogator(corpus,
 
     # Set some Tregex-related values
     if search.get('t'):
+        if show_ngram:
+            raise ValueError("Can't search trees for n-grams---use a dependency search.")
         query, translated_option = get_tregex_values()
         if query == 'Bad query' and translated_option is None:
             if root:
@@ -928,10 +956,11 @@ def interrogator(corpus,
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
-    
+
+    from traitlets import TraitError
     try:
         from ipywidgets import IntProgress
-        from traitlets import TraitError
+
         _ = IntProgress(min=0, max=10, value=1)
         in_notebook = True
     except TraitError:
@@ -1035,7 +1064,8 @@ def interrogator(corpus,
                                              speaker=slow_treg_speaker_guess,
                                              gramsize=gramsize,
                                              nopunct=kwargs.get('nopunct', True),
-                                             split_contractions=split_contractions
+                                             split_contractions=split_contractions,
+                                             window=window
                                             )
                         
                     if res == 'Bad query':
@@ -1111,7 +1141,9 @@ def interrogator(corpus,
 
     # Get concordances into DataFrame, return if just conc
     if not no_conc:
+        # fail on this line with typeerror if no results?
         conc_df = make_conc_obj_from_conclines(conc_results)
+
         if only_conc:
             conc_df.query = locs
             if save and not kwargs.get('outname'):
@@ -1137,11 +1169,8 @@ def interrogator(corpus,
         df = DataFrame(the_big_dict, index=sorted(results.keys()))
         
         # for ngrams, remove hapaxes
-        if any(i.startswith('n') for i in show):
-            df = df.loc[:, (df > 1).any(axis=0)]
-        # drop numdone from statsmode
-        #if statsmode:
-        #    df = df.drop('numdone', axis=1)
+        if show_ngram or show_collocates:
+             df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)

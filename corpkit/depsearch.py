@@ -11,7 +11,6 @@ def dep_searcher(sents,
                  searchmode='all',
                  lemmatise=False,
                  case_sensitive=False,
-                 progbar=False,
                  only_format_match=False,
                  speaker=False,
                  gramsize=2,
@@ -29,8 +28,8 @@ def dep_searcher(sents,
     if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
         only_format_match = True
 
-    if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
-        raise ValueError("Can't mix n-gram and non-ngram show values.")
+    #if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
+    #    raise ValueError("Can't mix n-gram and non-ngram show values.")
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -292,22 +291,34 @@ def dep_searcher(sents,
         conclist = []
         for repeat in range(repeats):
             res, conc_res = process_a_submatch(match, repeat, tokens)
-            if res is False and conc_res is False:
+            if not res and not conc_res:
                 continue
+            #for r, c in zip(res, conc_res):
             resultlist.append(res)
             conclist.append(conc_res)
         return resultlist, conclist
 
     def get_indices(match, repeat, tokens):
         """get first and last index in token list for a token"""
-        py_index = tokens.index(match)
+        
+        py_index = tokens.index(match)        
         # first time around, start at the word
-        # second time, at the word - 1                    
-        first_in_gram = py_index - repeat
+        # second time, at the word - 1
+
         # if ngramming, we need an index of the last token in the ngram
         if any(x.startswith('n') for x in show):
+
+            first_in_gram = py_index - repeat
             last_in_gram = first_in_gram + (gramsize - 1)
+        
+        elif any(x.startswith('b') for x in show):
+            first_in_gram = py_index - window + repeat
+            last_in_gram = py_index - window + repeat
+            if first_in_gram == py_index:
+                return False, False
         else:
+            py_index = tokens.index(match)
+            first_in_gram = py_index - repeat
             last_in_gram = first_in_gram
         return first_in_gram, last_in_gram
 
@@ -315,66 +326,100 @@ def dep_searcher(sents,
         """for ngrams, etc., we have to repeat over results. so, this
         is for each repeat"""
 
-        # store a single result
-        one_result = []
-        # get the index of the match in python
-        first_in_gram, last_in_gram = get_indices(match, repeat, tokens)
-
-        if first_in_gram < 0:
-            return False, False
-        if last_in_gram >= len(tokens):
-            return False, False
-
+        # make a conc line with just speaker name so far
         speakr = s.speakername
         if not speakr:
             speakr = ''
         # begin building line with speaker first
         conc_line = [speakr]
 
+        # get the index of the match in python
+        first_in_gram, last_in_gram = get_indices(match, repeat, tokens)
+        if first_in_gram is False and last_in_gram is False:
+            return False, False
+
+        # maybe we can't repeat over it, because it's at the start or end
+        # in this case, return
+        if first_in_gram < 0:
+            return False, False
+        if last_in_gram >= len(tokens):
+            return False, False
+
         # by this point, we have the index of the start and end of the gram
-        if only_format_match or not do_concordancing:
-            start = ' '.join(t.word for index, t in enumerate(tokens) \
-                if index < first_in_gram)
-            end = ' '.join(t.word for index, t in enumerate(tokens) \
-                if index > last_in_gram)
-            tokens = [match]
-
-        # now, for each word in the matching sentence, format it
-        # note that if we're not doing concordancing, or if 
-        # only formatting match, len(tokens) == 1
-        toklist = []
-        for token in tokens:
-            # return a dict of show, data
-            single_result = process_a_token(token)
-            for bit in single_result:
-                toklist.append(bit)
-
-        # now we have formatted tokens as a list. we need to split
-        # it into start, middle and end
-        middle = toklist[0]
+        # now, if we don't need the whole sent, we discard it. if we don't
+        # need to format it, we format it now.
 
         if do_concordancing:
+            if only_format_match or show == ['n'] or show == ['b']:
+                start = ' '.join(t.word for index, t in enumerate(tokens) \
+                    if index < first_in_gram)
+                end = ' '.join(t.word for index, t in enumerate(tokens) \
+                    if index > last_in_gram)
+                # and only process the match itself
+                # redefine tokens to just be what we need        
+                tokens = tokens[first_in_gram:last_in_gram+1]
+                # add back the original token to left/right of collocate
+                if any(x.startswith('b') for x in show):
+                    if repeat == 0:
+                        tokens.append(match)
+                    elif repeats / repeat > 0:
+                        tokens.append(match)
+                    else:
+                        tokens.insert(0, match)
+
+        # if we are concordancing, here's a list of toks in the ngram
+        else:
+            tokens = tokens[first_in_gram:last_in_gram+1]
+
+        if any(x.startswith('b') for x in show):
+            separator = '_'
+        else:
+            separator = ' '
+
+        # now, for each word in the matching sentence, format it.
+        # note that if we're not doing concordancing, or if only formatting 
+        # the match (or not concordancing), len(tokens) == 1
+        processed_toklist = []
+        for token in tokens:
+            single_result = process_a_token(token, show)
+            for bit in single_result:
+                processed_toklist.append(bit)
+        
+        # if no conc at all, return the empty ish one and a string of token(s)
+        if not do_concordancing:
+            return conc_line, ' '.join(processed_toklist)
+
+        # if we're concordancing:
+        # now we have formatted tokens as a list. we need to split
+        # it into start, middle and end, unless only_format_match
+        else:
             if not only_format_match:
-                start = ' '.join(w for index, w in enumerate(toklist) if index < first_in_gram)
-                end = ' '.join(w for index, w in enumerate(toklist) if index > last_in_gram)
-                middle = ' '.join(w for index, w in enumerate(toklist) if index >= first_in_gram \
+                start = ' '.join(w for index, w in enumerate(processed_toklist) \
+                                 if index < first_in_gram)
+                end = ' '.join(w for index, w in enumerate(processed_toklist) \
+                                 if index > last_in_gram)
+                middle = separator.join(w for index, w in enumerate(processed_toklist) \
+                                 if index >= first_in_gram \
                     and index <= last_in_gram)
+            else:
+                middle = separator.join(processed_toklist)
 
             for bit in start, middle, end:
                 conc_line.append(bit)
 
         return middle, conc_line
 
-        # make this slash a list containing 1 item, a slash-sep string
-        return '/'.join(intermediate_result)
 
-
-    def process_a_token(token):
+    def process_a_token(token, show):
         # here is a dict of show type as key and data as v
         single_result = {}
         intermediate_result = []            
         # ugly code begins here. this is where we have a formatter for
         # every possible show value.
+
+        # treat ngrams just as words now
+        show = [i.lstrip('n').lstrip('b') for i in show]
+
         if 'w' in show:
             single_result['w'] = 'none'
             if lemmatise:
@@ -499,152 +544,62 @@ def dep_searcher(sents,
         if 'i' in show:
             single_result['i'] = str(token.id)
 
-        if any(i.startswith('b') for i in show):
-            out = []
-            py_index = tokens.index(match)
-            tokens.pop(py_index)
-            start = py_index - window - 1
-            if start < 0:
-                start = 0
-            end = py_index + window + 1
-            sliced = tokens[start:end]
-            for ctok in sliced:
-                word_in_coll = {}
-                if 'b' in show:
-                    word_in_coll['b'] = ctok.word
-                if 'bl' in show:
-                    word_in_coll['bl'] = ctok.lemma
-                if 'bf' in show:
-                    word_in_coll['bf'] = 'none'
-                    for i in deps.links:
-                        if i.dependent.idx == token.id:
-                            word_in_coll['bf'] = i.type.strip(',')
-                            break
-                if 'bp' in show:
-                    word_in_coll['bp'] = ctok.pos
-                if 'bpl' in show:
-                    from corpkit.dictionaries.word_transforms import taglemma
-                    word_in_coll['bpl'] = taglemma.get(ctok.pos.lower(), ctok.pos.lower())
-
-                bits = [word_in_coll[i] for i in show]
-                bits = [i.replace('/', '-slash-').encode('utf-8', errors='ignore') \
-                        for i in bits]
-                bits = '/'.join(bits)
-                out.append(bits)
-            return ' '.join(out)
-
-        # ngram showing
-        elif any(i.startswith('n') for i in show):
-            out = []
-            import string
-            pystart = tokens.index(match)
-            # iterate gramsize times over each match
-            for i in range(gramsize):
-                word_in_ngram = {}
-
-                # start of gram to end of sent
-                tillend = [i for i in tokens[pystart-i:]]
-                
-                # if words, we need to be able to unsplit
-                if 'n' in show or 'nw' in show:
-                    if not split_contractions and len(show) > 1:
-                        cant = "Can't have unsplit contractions with multiple show values."
-                        raise ValueError(cant)
-                    tld = [t.word.replace('/', '-slash-') for t in tillend]
-                    if not split_contractions:
-                        from corpkit.process import unsplitter
-                        tld = unsplitter(tld)
-                    tld = tld[:gramsize]
-                    if len(tld) != gramsize:
-                        continue
-                    word_in_ngram['n'] = tld 
-                if 'nl' in show:
-                    tld = [t.lemma.replace('/', '-slash-') for t in tillend[:gramsize]]
-                    if len(tld) != gramsize:
-                        continue
-                    word_in_ngram['nl'] = tld
-                if 'np' in show:
-                    tld = [t.pos for t in tillend[:gramsize]]
-                    if len(tld) != gramsize:
-                        continue
-                    word_in_ngram['np'] = tld
-                if 'npl' in show:
-                    from corpkit.dictionaries.word_transforms import taglemma
-                    tld = [taglemma.get(t.pos.lower(), t.pos) for t in tillend[:gramsize]]
-                    if len(tld) != gramsize:
-                        continue
-                    word_in_ngram['npl'] = tld
-
-                lst_of_tokenlists = [word_in_ngram[i] for i in show]
-                zipped = zip(*lst_of_tokenlists)
-                out = ' '.join('/'.join(i) for i in zipped)
-                intermediate_result.append(out)
-                
-            return intermediate_result
+        for i in show:
+            intermediate_result.append(single_result[i].replace('/', \
+                '-slash-').encode('utf-8', errors='ignore'))
+        return ['/'.join(intermediate_result)]
 
 
-        # make a list of the item in each 'show' representation
-        # ngrams are longer, remember!
-
-        else:
-            for i in show:
-                intermediate_result.append(single_result[i].replace('/', \
-                    '-slash-').encode('utf-8', errors='ignore'))
-            return ['/'.join(intermediate_result)]
+    ####################################################
+    ################# BEGIN WORKFLOW ###################
+    ####################################################
 
 
+    # if we're doing ngrams or collocations, we need to repeat over the data
+    # otherwise it's just once
+    repeats = 1
+    if any(x.startswith('n') for x in show):
+        repeats = gramsize
+    if any(x.startswith('b') for x in show):
+        repeats = (window * 2) + 1
 
-
-
-
-
+    # store data here
     result = []
     conc_result = []
-    numdone = 0
 
+    # iterate over sentences
     for s in sents:
-        numdone += 1
         deps = get_deps(s, dep_type)
         
+        # remove punctuation if need be
         if nopunct:
-            from corenlp_xml.document import TokenList
             tokens = [w for w in s.tokens if re.search(is_a_word, w.word)]
         else:
             tokens = s.tokens
 
+        # identify matching Token objects
         matching_tokens = get_matches_from_sent(s, search, deps, tokens, 
                                                 dep_type, mode=searchmode)
-
-        #if not concordancing:
-        #    matching_tokens = list(set([x for x in matching_tokens if x and re.search(regex_nonword_filter, x.word)]))
-
+        
+        # exclude in the same way if need be
         if exclude is not False:
             to_remove = get_matches_from_sent(s, exclude, deps, tokens, 
                                                dep_type, mode=excludemode)
-
+            # do removals
             for i in to_remove:
                 try:
                     matching_tokens.remove(i)
                 except ValueError:
                     pass
 
-        if progbar:
-            tstr = '%d/%d' % (numdone, len(sents))
-            animator(progbar, numdone, tstr)
-
+        # if counting, we're done already
         if 'c' in show:
             result.append(len(matching_tokens))
             continue
 
-        # if we're doing ngrams or collocations, we need to repeat over the data
-        # otherwise it's just once
-
-        repeats = 1
-        if any(x.startswith('n') for x in show):
-            repeats = gramsize
-
+        # iterate over results, entering processing loops
         for match in matching_tokens:
-
+            # they are returned as lists, so add those to final result
             res, conc_res = process_a_match(match, tokens)
             for r, c in zip(res, conc_res):
                 if r and c:
