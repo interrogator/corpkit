@@ -628,10 +628,10 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
     else:
         welcome_message = ''
     if init:
+        from traitlets import TraitError
         try:
             from ipywidgets import IntProgress, HTML, VBox
             from IPython.display import display
-            from traitlets import TraitError
             progress = IntProgress(min=0, max=length, value=1)
             using_notebook = True
             progress.bar_style = 'info'
@@ -647,15 +647,18 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
         except ImportError:
             pass
     if not init:
-        from ipywidgets.widgets.widget_box import FlexBox
-        if isinstance(progbar, FlexBox):
-            label, progress, goodbye = progbar.children
-            progress.value = count
-            if count == length:
-                progress.bar_style = 'success'
-            else:
-                label.value = '%s\nInterrogating: %s ...' % (welcome_message, tot_string)
-            return
+        try:
+            from ipywidgets.widgets.widget_box import FlexBox
+            if isinstance(progbar, FlexBox):
+                label, progress, goodbye = progbar.children
+                progress.value = count
+                if count == length:
+                    progress.bar_style = 'success'
+                else:
+                    label.value = '%s\nInterrogating: %s ...' % (welcome_message, tot_string)
+                return
+        except:
+            pass
 
     # add startnum
     start_at = kwargs.get('startnum', 0)
