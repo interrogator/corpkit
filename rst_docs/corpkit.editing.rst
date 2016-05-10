@@ -115,8 +115,8 @@ Keywording
 
 .. code-block:: python
 
-   ### use predefined global variables
    >>> from corpkit import *
+   ### * imports predefined global variables like K and SELF
    >>> keywords = result.edit(K, SELF)
 
 This finds out which words are key in each subcorpus, compared to the corpus as a whole. You can compare subcorpora directly as well. Below, we compare the ``plays`` subcorpus to the ``novels`` subcorpus.
@@ -126,11 +126,17 @@ This finds out which words are key in each subcorpus, compared to the corpus as 
    >>> from corpkit import *
    >>> keywords = result.edit(K, result.ix['novels'], just_subcorpora='plays')
 
-You could also pass in word frequency counts from some other source. A wordlist of the British National Corpus is included:
+You could also pass in word frequency counts from some other source. A wordlist of the *British National Corpus* is included:
 
 .. code-block:: python
 
    >>> keywords = result.edit(K, 'bnc')
+
+The default keywording metric is *log-likelihood*. If you'd like to use *percentage difference*, you can do:
+
+.. code-block:: python
+
+   >>> keywords = result.edit(K, 'bnc', keyword_measure='pd')
 
 Sorting
 ---------------------------------
