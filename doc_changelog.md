@@ -13,7 +13,12 @@ This project does not yet adhere to strict [Semantic Versioning](http://semver.o
 
 ## 2016-05-01
 
-### Updated backend for speed, efficiency, simplicity.
+### Updated
+
+* Updated backend for speed, efficiency, simplicity.
+* Added n-gram return options
+* Some work toward working with 'features'
+* Some little bugfixes here and there
 
 ## 2016-04-01
 

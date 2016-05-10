@@ -16,7 +16,6 @@ Once you have plain text files, ideally, you'll want to structure them: that is,
 
 If your corpus is unstructured, *corpkit* will still work, but you'll miss out on some really amazing features.
 
-
 ## Working with dialogue
 
 If your data is dialogue, don't make subfolders for each speaker. Instead, just make sure it's formatted like this:
