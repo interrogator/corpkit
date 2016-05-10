@@ -2179,9 +2179,13 @@ def corpkit_gui():
                     turnon(but)
                 for but in non_ngram:
                     desel_and_turn_off(but)
+                ngmsize.config(state=NORMAL)
+                split_contract_but.config(state=NORMAL)
             if all(not ngmshow.get() for ngmshow in ngmshows):
                 for but in non_ngram:
                     turnon(but)
+                ngmsize.config(state=DISABLED)
+                split_contract_but.config(state=DISABLED)
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
