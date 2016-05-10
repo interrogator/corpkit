@@ -387,7 +387,7 @@ def dep_searcher(sents,
         
         # if no conc at all, return the empty ish one and a string of token(s)
         if not do_concordancing:
-            return conc_line, ' '.join(processed_toklist)
+            return ' '.join(processed_toklist), conc_line
 
         # if we're concordancing:
         # now we have formatted tokens as a list. we need to split
@@ -611,5 +611,8 @@ def dep_searcher(sents,
 
     if isinstance(do_concordancing, basestring) and do_concordancing.lower() == 'only':
         result = []
+
+    if not do_concordancing:
+        conc_result = []
 
     return result, conc_result
