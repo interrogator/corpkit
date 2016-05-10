@@ -784,6 +784,7 @@ def editor(interrogation,
     if replace_subcorpus_names:
         df = name_replacer(df.T, replace_subcorpus_names)
         df = merge_duplicates(df).T
+        df = df.sort_index()
         if not single_totals:
             if isinstance(df2, DataFrame):
                 df2 = df2.T
@@ -791,6 +792,7 @@ def editor(interrogation,
             df2 = merge_duplicates(df2, print_info=False)
             if isinstance(df2, DataFrame):
                 df2 = df2.T
+            df2 = df2.sort_index()
         if not sort_by:
             sort_by = 'total'
 
