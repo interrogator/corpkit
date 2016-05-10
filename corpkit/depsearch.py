@@ -320,13 +320,9 @@ def dep_searcher(sents,
             result.append(len(lks))
             continue
 
-        # if ngramming, repeat by gramsize
-        #morelks = []
-        #if any(x.startswith('n') for x in show):
-        #    for i in range(gramsize):
-        #        for l in lks:
-        #            morelks.append(l)
-        #lks = morelks
+        # if we're doing ngrams or collocations, we need to repeat over the data
+        # otherwise it's just once
+
         repeats = 1
         if any(x.startswith('n') for x in show):
             repeats = gramsize
@@ -335,40 +331,44 @@ def dep_searcher(sents,
             if split_contractions is False and 'n' in show:
                 import warnings
                 warnings.warn("Concordancer cannot unsplit contractions for n-grams yet, sorry.")
-            for lk in lks: # for each concordance middle part
-                # this loop is for ngramming
+            # for each matching link
+            for lk in lks:
+                # this loop is for ngramming (i.e. for range(gramsize))
                 for repeat in range(repeats):
-                    if nopunct:
-                        stokens = [i for i in s.tokens if re.search(nonword, i.word)]
-                    else:
-                        stokens = s.tokens         
+                    # remove punctuation if need be
+                    # store a single result
                     one_result = []
-                    if not lk:
-                        continue
-                    # get the index of the match
-                    windex = (int(lk.id) - 1) - repeat
+                    # get the index of the match in python
+                    py_index = int(lk.id) - 1
+                    # first time around, start at the word
+                    # second time, at the word - 1                    
+                    first_in_gram = py_index - repeat
+
+                    # if ngramming, we need an index of the last token in the ngram
                     if any(x.startswith('n') for x in show):
-                        windex2 = windex + gramsize
+                        last_in_gram = first_in_gram + (gramsize - 1)
+                    # if not, it's the same index as the first
                     else:
-                        windex2 = windex + 1
-                    if windex < 0:
+                        last_in_gram = first_in_gram
+                    if first_in_gram < 0:
                         continue
-                    if windex2 > len(s.tokens):
-                        continue
+                    #if last_in_gram >= len(stokens):
+                    #    continue
                     speakr = s.speakername
                     if not speakr:
                         speakr = ''
                     # begin building line with speaker first
                     conc_line = [speakr]
                     # format a single word correctly
+                    # or show == ['n']
+                    stokens = s.tokens
                     if only_format_match:
-                        start = ' '.join(t.word for index, t in enumerate(s.tokens) \
-                            if index < windex)
-                        end = ' '.join(t.word for index, t in enumerate(s.tokens) \
-                            if index > windex2 - 1)
-                        s.tokens = [s.get_token_by_id(lk.id)]
+                        start = ' '.join(t.word for index, t in enumerate(stokens) \
+                            if index < first_in_gram)
+                        end = ' '.join(t.word for index, t in enumerate(stokens) \
+                            if index > last_in_gram)
+                        stokens = [s.get_token_by_id(lk.id)]
                     for tok in stokens:
-
                         single_wd = {}
                         intermediate_result = []
                         if 'w' in show:
@@ -486,21 +486,27 @@ def dep_searcher(sents,
                                 if not single_wd[let + 'pl']:
                                     single_wd[let + 'pl'] == 'none'
 
+                        # make a list of the item in each 'show' representation
                         for i in show:
-                            intermediate_result.append(single_wd[i])
-                        intermediate_result = [i.replace('/', '-slash-').encode('utf-8', errors = 'ignore') for i in intermediate_result]
+                            intermediate_result.append(single_wd[i].replace('/', \
+                                '-slash-').encode('utf-8', errors = 'ignore'))
+                        if nopunct:
+                            if not all(re.search(nonword, i) for i in intermediate_result):
+                                continue
+                        # make this slash a list containing 1 item, a slash-sep string
                         one_result.append('/'.join(intermediate_result))
 
                     # now we have formatted tokens as a list. we need to split
                     # it into start, middle and end
                     if not only_format_match:
-                        start = ' '.join(w for index, w in enumerate(one_result) if index < windex)
-                        end = ' '.join(w for index, w in enumerate(one_result) if index > windex2  - 1)
-                        middle = ' '.join(w for index, w in enumerate(one_result[windex:windex2]))
+                        start = ' '.join(w for index, w in enumerate(one_result) if index < first_in_gram)
+                        end = ' '.join(w for index, w in enumerate(one_result) if index > last_in_gram)
+                        middle = ' '.join(w for index, w in enumerate(one_result) if index >= first_in_gram \
+                            and index <= last_in_gram)
                     else:
-                        #?
+                        # get the only thing that's been processed
+                        # start and end were done before
                         middle = one_result[0]
-
                     for bit in start, middle, end:
                         conc_line.append(bit)
                     conc_result.append(conc_line)
@@ -733,6 +739,6 @@ def dep_searcher(sents,
     if 'c' in show:
         result = sum(result)
 
-    if type(do_concordancing) == str and do_concordancing.lower() == 'only':
+    if isinstance(do_concordancing, basestring) and do_concordancing.lower() == 'only':
         result = []
     return result, conc_result
