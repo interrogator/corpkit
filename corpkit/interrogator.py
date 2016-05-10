@@ -1187,6 +1187,12 @@ def interrogator(corpus,
                     numentries = len(df.index)
                     total_total = tot
 
+    # turn data into DF for GUI if need be
+    if isinstance(df, Series) and kwargs.get('df1_always_df'):
+        total_total = df.sum()
+        df = DataFrame(df)
+        tot = Series(total_total, index=['Total'])
+
     # sort by total
     if isinstance(df, DataFrame):
         if not df.empty:   
