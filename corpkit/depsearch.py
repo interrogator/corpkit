@@ -279,9 +279,6 @@ def dep_searcher(sents,
             show.append('w')
         return [lookup_show[i] for i in show]
 
-    def get_search_func(srch):
-        return lookup_search[srch[-1]]
-
     def fix_search(search):
         """if search has nested dicts, remove them"""
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
@@ -290,7 +287,8 @@ def dep_searcher(sents,
         newsearch = {}
         for srch, pat in search.items():
             if len(srch) == 1 and srch in ends:
-                srch = 'm' + srch
+                srch = 'm%s' % srch
+
             if isinstance(pat, dict):
                 for k, v in list(pat.items()):
                     if k != 'w':
@@ -304,7 +302,7 @@ def dep_searcher(sents,
     def do_single_search(srch, pat):
         """get results from single search criterion"""
         matching_tokens = set()
-        func = get_search_func(srch)
+        func = lookup_search[srch[-1]]
         matches = func(srch[0], pat)
         for i in matches:
             matching_tokens.add(i)
@@ -504,6 +502,14 @@ def dep_searcher(sents,
                 intermediate_result.append(t)
         return ['/'.join(intermediate_result)]
 
+    def remove_by_mode(matching_tokens, mode):
+        if mode == 'any':
+            return matching_tokens
+        from collections import Counter
+        counted = Counter(matching_tokens)
+        must_contain = len(search)
+        return [k for k, v in counted.items() if v >= must_contain]
+
     ####################################################
     ################## BEGIN WORKFLOW ##################
     ####################################################
@@ -542,12 +548,16 @@ def dep_searcher(sents,
             matches = do_single_search(srch, pat)
             matching_tokens += matches
 
+        matching_tokens = remove_by_mode(matching_tokens, searchmode)
+
         # exclude in the same way if need be
         removes =[]
         if exclude:
-            for excl, expat, in exclude:
+            for excl, expat in exclude.items():
                 for remove in do_single_search(excl, expat):
                     removes.append(remove)
+
+            removes = remove_by_mode(removes, excludemode)
                 
             # do removals
             for i in removes:
