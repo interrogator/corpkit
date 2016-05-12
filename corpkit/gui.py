@@ -1498,7 +1498,6 @@ def corpkit_gui():
                 corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
 
             # do interrogation
-            print(interrogator_args['search'])
             interrodata = interrogator(corp_to_search, **interrogator_args)
             if selected_option == 's':
                 featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
@@ -1556,14 +1555,16 @@ def corpkit_gui():
                 conc = False
             if doing_concondancing:
                 conc_to_show = recent_interrogation_data.concordance
-                numresults = len(conc_to_show.index)
-                if numresults > truncate_conc_after.get() - 1:
-                    truncate = messagebox.askyesno("Long results list", 
-                                 "%d unique concordance results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
-                    if truncate:
-                        conc_to_show = conc_to_show.head(truncate_conc_after.get())
-                add_conc_lines_to_window(conc_to_show, preserve_colour=False)
-            
+                if conc_to_show is not None:
+                    numresults = len(conc_to_show.index)
+                    if numresults > truncate_conc_after.get() - 1:
+                        truncate = messagebox.askyesno("Long results list", 
+                                     "%d unique concordance results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
+                        if truncate:
+                            conc_to_show = conc_to_show.head(truncate_conc_after.get())
+                    add_conc_lines_to_window(conc_to_show, preserve_colour=False)
+                else:
+                    timestring('No concordance results generated.')
                 global conc_saved
                 conc_saved = False
 
@@ -5328,7 +5329,10 @@ def corpkit_gui():
                 codsep = cods.split(',')
                 for (box, val), cod in zip(list(entryboxes.items()), codsep):
                     val.set(cod)
-            subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+            if corpus_fullpath.get():
+                subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
+            else:
+                subdrs = []
             if len(subdrs) == 0:
                 charttype.set('bar')
             refresh()
@@ -5685,7 +5689,11 @@ def corpkit_gui():
             import os
             import re
             import corpkit
+            from corpkit.corpus import Corpus
             from corpkit.process import get_corenlp_path
+
+            parser_options()
+            root.wait_window(poptions)
 
             unparsed_corpus_path = corpus_fullpath.get()
             unparsed = Corpus(unparsed_corpus_path)
@@ -5722,7 +5730,7 @@ def corpkit_gui():
                 else:
                     timestring('Cannot parse data without Java JDK 1.8.')
                     return
-            
+
             parsed = unparsed.parse(speaker_segmentation=speakseg.get(),
                                     proj_path=project_fullpath.get(),
                                     copula_head=True,
@@ -5734,6 +5742,8 @@ def corpkit_gui():
                                     note=note,
                                     memory_mb=parser_memory.get()
                                    )
+            if not parsed:
+                print('Error during parsing.')
 
             sys.stdout = note.redir
             current_corpus.set(parsed.name)

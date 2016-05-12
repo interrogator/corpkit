@@ -82,6 +82,7 @@ def interrogator(corpus,
         elif isinstance(show, basestring):
             show = show.lower()
             show = [show]
+
         # this little 'n' business is a hack: when ngramming,
         # n shows have their n stripped, so nw should be nw 
         # so we know we're ngramming and so it's not empty.
@@ -1037,7 +1038,7 @@ def interrogator(corpus,
                     # methods. the reason is that there seem to be memory leaks. these
                     # may have been fixed already though.
                     from corenlp_xml import Document
-                    with codecs.open(f.path, 'r', 'utf-8') as fo:
+                    with open(f.path, 'rb') as fo:
                         data = fo.read()
                     corenlp_xml = Document(data)
                     #corenlp_xml = f.document
@@ -1094,13 +1095,20 @@ def interrogator(corpus,
                                        split_contractions=split_contractions, 
                                        concordancing=False
                                       )
+                        if res == 'Bad query':
+                            if root:
+                                return 'Bad query'
                     if not no_conc:
                         conc_res = searcher(query,
                                             data,
                                             split_contractions=split_contractions, 
                                             concordancing=True
                                            )
-                        conc_res = [line.insert(0, '') for line in conc_res]
+                        if conc_res == 'Bad query':
+                            if root:
+                                return 'Bad query'
+                        for line in conc_res:
+                            line.insert(0, '')
 
                 if countmode:
                     count_results[subcorpus_name] += [res]

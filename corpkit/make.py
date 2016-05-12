@@ -1,14 +1,14 @@
 
 def make_corpus(unparsed_corpus_path,
-                project_path = None,
-                parse = True,
-                tokenise = False,
-                corenlppath = False,
-                nltk_data_path = False,
-                operations = False,
-                speaker_segmentation = False,
-                root = False,
-                multiprocess = False,
+                project_path=None,
+                parse=True,
+                tokenise=False,
+                corenlppath=False,
+                nltk_data_path=False,
+                operations=False,
+                speaker_segmentation=False,
+                root=False,
+                multiprocess=False,
                 split_texts=400,
                 **kwargs):
     """
@@ -51,7 +51,7 @@ def make_corpus(unparsed_corpus_path,
         inputfunc = raw_input
     elif pyver == 3:
         inputfunc = input
-    from build import (get_corpus_filepaths, 
+    from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
                                rename_all_files,
@@ -81,6 +81,10 @@ def make_corpus(unparsed_corpus_path,
         if not check_jdk():
             print("Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html")
 
+    cop_head = kwargs.get('copula_head', True)
+    note = kwargs.get('note', False)
+    stdout = kwargs.get('stdout', False)
+
     # make absolute path to corpus
     unparsed_corpus_path = os.path.abspath(unparsed_corpus_path)
 
@@ -88,8 +92,7 @@ def make_corpus(unparsed_corpus_path,
     if os.path.isdir(os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))):
         pass
     else:
-        if not root:
-            print('Copying files to project ...')
+        print('Copying files to project ...')
         shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
         unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
 
@@ -104,11 +107,11 @@ def make_corpus(unparsed_corpus_path,
 
         # this loop shortens files containing more than 500 lines, for corenlp memory sake
         # maybe user needs a warning or something in case s/he is doing coref
-        for root, dirs, fs in os.walk(unparsed_corpus_path):
+        for rootx, dirs, fs in os.walk(unparsed_corpus_path):
             for f in fs:
                 if f.startswith('.'):
                     continue
-                fp = os.path.join(root, f)
+                fp = os.path.join(rootx, f)
                 with codecs.open(fp, 'r', encoding='utf-8') as fo:
                     data = fo.read().splitlines()
                 if len(data) > split_texts:
@@ -139,13 +142,10 @@ def make_corpus(unparsed_corpus_path,
         else:
             to_parse = unparsed_corpus_path
 
-        if not root:
-            print('Making list of files ... ')
+        print('Making list of files ... ')
     
         filelist = get_corpus_filepaths(projpath = os.path.dirname(unparsed_corpus_path), 
                                 corpuspath = to_parse)
-
-        cop_head = kwargs.get('copula_head', True)
 
         if multiprocess is not False:
 
@@ -181,7 +181,10 @@ def make_corpus(unparsed_corpus_path,
                     'nltk_data_path': nltk_data_path,
                     'operations': operations,
                     'copula_head': cop_head,
-                    'multiprocessing': True}
+                    'multiprocessing': True,
+                    'root': root,
+                    'note': note,
+                    'stdout': stdout}
                 ds.append(d)
 
             res = Parallel(n_jobs=multiprocess)(delayed(parse_corpus)(**x) for x in ds)
@@ -199,13 +202,16 @@ def make_corpus(unparsed_corpus_path,
                     pass
 
         else:
-            new_parsed_corpus_path = parse_corpus(proj_path = project_path, 
-                                   corpuspath = to_parse,
-                                   filelist = filelist,
-                                   corenlppath = corenlppath,
-                                   nltk_data_path = nltk_data_path,
-                                   operations = operations,
-                                   copula_head = cop_head)
+            new_parsed_corpus_path = parse_corpus(proj_path=project_path, 
+                                   corpuspath=to_parse,
+                                   filelist=filelist,
+                                   corenlppath=corenlppath,
+                                   nltk_data_path=nltk_data_path,
+                                   operations=operations,
+                                   copula_head=cop_head,
+                                   root=root,
+                                   note=note,
+                                   stdout=stdout)
 
         if new_parsed_corpus_path is False:
             return 

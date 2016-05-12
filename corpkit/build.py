@@ -394,7 +394,7 @@ def correctspelling(path, newpath):
             fo.close()
     return
 
-def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
+def structure_corpus(path_to_files, new_corpus_name='structured_corpus'):
     import corpkit
     """structure a corpus in some kind of sequence"""
     import os
@@ -416,7 +416,7 @@ def structure_corpus(path_to_files, new_corpus_name = 'structured_corpus'):
         shutil.copy(filepath, subcorpus_path)
     print('Done!')
 
-def download_large_file(proj_path, url, actually_download = True, root = False, **kwargs):
+def download_large_file(proj_path, url, actually_download=True, root=False, **kwargs):
     """download something to proj_path"""
     import corpkit
     import os
@@ -425,8 +425,8 @@ def download_large_file(proj_path, url, actually_download = True, root = False, 
     import sys
     import zipfile
     from time import localtime, strftime
-    from textprogressbar import TextProgressBar
-    from process import animator
+    from corpkit.textprogressbar import TextProgressBar
+    from corpkit.process import animator
 
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
@@ -576,18 +576,18 @@ def check_jdk():
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
         return False
 
-def parse_corpus(proj_path = False, 
-                corpuspath = False, 
-                filelist = False, 
-                corenlppath = False, 
-                operations = False,
-                only_tokenise = False, 
-                root = False, 
-                stdout = False, 
-                nltk_data_path = False, 
-                memory_mb = 2000,
-                copula_head = True,
-                multiprocessing = False,
+def parse_corpus(proj_path=False, 
+                corpuspath=False, 
+                filelist=False, 
+                corenlppath=False, 
+                operations=False,
+                only_tokenise=False, 
+                root=False, 
+                stdout=False, 
+                nltk_data_path=False, 
+                memory_mb=2000,
+                copula_head=True,
+                multiprocessing=False,
                 **kwargs):
     """
     Create a CoreNLP-parsed and/or NLTK tokenised corpus

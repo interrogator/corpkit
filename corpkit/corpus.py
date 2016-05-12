@@ -53,10 +53,11 @@ class Corpus(object):
             if self.path.endswith('.xml'):
                 self.datatype = 'parse'
             self.singlefile = True
-        elif self.path.endswith('-parsed'):
+        else:
             if not isdir(self.path):
                 if isdir(join('data', path)):
                     self.path = abspath(join('data', path))
+        if self.path.endswith('-parsed'):
             self.datatype = 'parse'
             if len([d for d in os.listdir(self.path)
                     if isdir(join(self.path, d))]) > 0:
@@ -69,9 +70,10 @@ class Corpus(object):
                 if not self.datatype:
                     self.datatype, self.singlefile = determine_datatype(
                         self.path)
-            if len([d for d in os.listdir(self.path)
-                    if isdir(join(self.path, d))]) == 0:
-                level = 's'
+            if isdir(self.path):
+                if len([d for d in os.listdir(self.path)
+                        if isdir(join(self.path, d))]) == 0:
+                    level = 's'
 
         # if initialised on a file, process as file
         if self.singlefile and level == 'c':
@@ -555,7 +557,7 @@ class Corpus(object):
         kwargs.pop('tokenise', None)
         return Corpus(
             make_corpus(
-                self.path,
+                unparsed_corpus_path=self.path,
                 parse=True,
                 tokenise=False,
                 corenlppath=corenlppath,
