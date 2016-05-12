@@ -11,6 +11,18 @@ last_updated: 2016-04-26
 All notable changes to the *corpkit* GUI will be documented in this file.
 This project does not yet adhere to strict [Semantic Versioning](http://semver.org/). It will once the first major release is a bit more stable.
 
+## 2016-05-10
+
+### Fixed
+
+* A number of interrogation fixes, including a speed boost
+* Count mode
+* `show` buttons are selecting and deselecting properlrt
+
+### Improved
+
+* Under the hood, concordance and dependency search are done by the same code now. This means that they should now count the same things.
+
 ## 2016-05-01
 
 ### Updated
