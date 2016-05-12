@@ -2,7 +2,7 @@ from __future__ import print_function
 
 def dep_searcher(sents,
                  search,
-                 show='w',
+                 show=['w'],
                  dep_type='collapsed-ccprocessed-dependencies',
                  regex_nonword_filter=r'[A-Za-z0-9:_]',
                  do_concordancing=False,
@@ -17,19 +17,6 @@ def dep_searcher(sents,
                  nopunct=True,
                  split_contractions=False,
                  window=2):
-    import re
-    from corenlp_xml.document import Document
-    from collections import Counter
-    from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator, get_deps
-
-    is_a_word = re.compile(regex_nonword_filter)
-
-    if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
-        only_format_match = True
-
-    #if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
-    #    raise ValueError("Can't mix n-gram and non-ngram show values.")
     """
     search corenlp dependency parse
     1. search for 'search' keyword arg
@@ -45,8 +32,283 @@ def dep_searcher(sents,
     2. exclude entries if need be, using same method as search
 
     3. return results and conc lines, or just a count
-       
        """
+    import re
+    from corenlp_xml.document import Document
+    from collections import Counter
+    from corpkit.build import flatten_treestring
+    from corpkit.process import filtermaker, animator, get_deps
+
+    is_a_word = re.compile(regex_nonword_filter)
+
+    if any(x.startswith('n') for x in show) \
+    or any(x.startswith('b') for x in show):
+        only_format_match = True
+
+    ####################################################
+    ################ SEARCH FUNCTIONS ##################
+    ####################################################
+
+    def search_word(deprole, pattern):
+        matches = set()
+        if deprole == 'm':
+            for tok in tokens:
+                if re.search(pattern, tok.word):
+                    matches.add(tok)
+        elif deprole == 'd':
+            for link in deps.links:
+                if re.search(pattern, link.dependent.text):
+                    matches.add(s.get_token_by_id(link.governor.idx))
+        elif deprole == 'g':
+            for link in deps.links:
+                if re.search(pattern, link.governor.text):
+                    matches.add(s.get_token_by_id(link.dependent.idx))
+        return matches
+
+    mapshorts = {'d': 'dependents',
+                 'g': 'governors'}
+
+    def search_lemma(deprole, pattern):
+        matches = set()
+        for tok in tokens:
+            if not re.search(pattern, tok.lemma):
+                continue
+            if deprole == 'm':
+                matches.add(tok)
+                continue
+            else:
+                node = deps.get_node_by_idx(tok.id)
+                for subn in getattr(node, mapshorts[deprole]):
+                    matches.add(s.get_token_by_id(subn.idx))
+        return matches
+
+    def search_pos(deprole, pattern):
+        matches = set()
+        for tok in tokens:
+            if not re.search(pattern, tok.pos):
+                continue
+            if deprole == 'm':
+                matches.add(tok)
+                continue
+            else:
+                node = deps.get_node_by_idx(tok.id)
+                for subn in getattr(node, mapshorts[deprole]):
+                    matches.add(s.get_token_by_id(subn.idx))
+        return matches
+
+    def search_wordclass(deprole, pattern):
+        from corpkit.dictionaries.word_transforms import taglemma
+        matches = set()
+        for tok in tokens:
+            postag = tok.pos
+            wordclass = taglemma.get(postag.lower(), postag.lower())
+            if not re.search(pattern, tok.pos):
+                continue
+            if deprole == 'm':
+                matches.add(tok)
+                continue
+            else:
+                node = deps.get_node_by_idx(tok.id)
+                for subn in getattr(node, mapshorts[deprole]):
+                    matches.add(s.get_token_by_id(subn.idx))
+        return matches
+
+    def search_function(deprole, pattern):
+        matches = set()
+        if deprole == 'g':
+           for l in deps.links:
+                if not re.search(pat, l.type):
+                    continue
+                gov_index = l.dependent.idx
+                for l2 in deps.links:
+                    if not l2.governor.idx == gov_index:
+                        continue
+                    matches.add(s.get_token_by_id(l2.dependent.idx))
+        else:
+            for link in deps.links:
+                if not re.search(pat, link.type):
+                    continue
+                if deprole == 'd':
+                    matches.add(s.get_token_by_id(link.governor.idx))
+                if deprole == 'm':
+                    matches.add(s.get_token_by_id(link.dependent.idx))
+        return matches
+
+    def search_distance(deprole, pattern):
+        matches = set()
+        for tok in tokens:
+            if deprole == 'm':
+                tosearch = [tok]
+            else:
+                node = deps.get_node_by_idx(tok.id)
+                tosearch = []
+                for subn in getattr(node, mapshorts[deprole]):
+                    tosearch.append(s.get_token_by_id(subn.idx))
+            for t in tosearch:
+                dist = distancer(deps.links, tk)
+                if dist is None or dist is False:
+                    continue
+                try:
+                    if int(dist) == int(pat):
+                        matches.add(tok)
+                except TypeError:
+                    if re.search(pat, str(dist)):
+                        matches.add(tok)
+        return matches
+
+    def search_index(deprole, pattern):
+        matches = set()
+        for tok in tokens:
+            if not re.search(pattern, str(tok.id)):
+                continue
+            if deprole == 'm':
+                matches.add(tok)
+                continue
+            else:
+                node = deps.get_node_by_idx(tok.id)
+                for subn in getattr(node, mapshorts[deprole]):
+                    matches.add(s.get_token_by_id(subn.idx))
+        return matches
+
+
+    lookup_search = {'w': search_word,
+                     'l': search_lemma,
+                     'r': search_distance,
+                     'i': search_index,
+                     'p': search_pos,
+                     'f': search_function,
+                     'x': search_wordclass}
+
+    ####################################################
+    ################## SHOW FUNCTIONS ##################
+    ####################################################
+
+    # if show functions are terminal, they return the word
+    # if they aren't, they return token instances
+
+    def show_word(token_set):
+        return [tok.word for tok in token_set]
+
+    def show_lemma(token_set):
+        from corpkit.dictionaries.word_transforms import wordlist
+        return [wordlist.get(tok.lemma, tok.lemma) \
+                for tok in token_set]
+
+    def show_pos(token_set):
+        return [tok.pos for tok in token_set]
+
+    def show_wordclass(token_set):
+        from corpkit.dictionaries.word_transforms import taglemma
+        return [taglemma.get(tok.pos.lower(), tok.pos) \
+                for tok in token_set]
+
+    def show_function(token_set):
+        fs = []
+        for tok in token_set:
+            for i in deps.links:
+                if i.dependent.idx == tok.id:
+                    fs.append(i.type.rstrip(','))
+        return fs
+
+
+    def show_distance(token_set):
+        fs = set()
+        for tok in token_set:
+            all_matching_token_s = [l for l in deps.links]
+            distance = distancer(all_matching_tokens, tok)
+            if distance is not False and distance is not None:
+                fs.add(str(distance))
+        return fs
+
+    def show_index(token_set):
+        return set([str(tok.id) for tok in token_set])
+
+    def show_governor(token_set):
+        govs = set()
+        for tok in token_set:
+            for i in deps.links:
+                if i.dependent.idx == tok.id:
+                    gov = s.get_token_by_id(i.governor.idx)
+                    if gov:
+                        govs.add(gov)
+        return govs
+
+    def show_dependent(token_set):
+        dat = set()
+        for tok in token_set:
+            for i in deps.links:
+                if i.governor.idx == tok.id:
+                    dep = s.get_token_by_id(i.dependent.idx)
+                    if dep:
+                        dat.add(dep)
+        return dat
+
+    def show_next(token_set):
+        """get token to the right"""
+        nexts = set()
+        for tok in token_set:
+            current_index = tokens.index(tok)
+            try:
+                nexts.add(tokens[current_index + 1])
+            except IndexError:
+                pass
+        return nexts
+
+    lookup_show = {'w': show_word,
+                   'l': show_lemma,
+                   'g': show_governor,
+                   'd': show_dependent,
+                   'r': show_distance,
+                   'i': show_index,
+                   'p': show_pos,
+                   'f': show_function,
+                   'x': show_wordclass,
+                   'o': show_next
+                   }
+
+    ####################################################
+    ################ PROCESSING FUNCS ##################
+    ####################################################
+
+    def get_list_of_lookup_funcs(show):
+        """take a single search/show type, return match"""
+        #show = [i.lstrip('n').lstrip('b') for i in show]
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
+        show = list(show)
+        if show[-1] not in ends:
+            show.append('w')
+        return [lookup_show[i] for i in show]
+
+    def get_search_func(srch):
+        return lookup_search[srch[-1]]
+
+    def fix_search(search):
+        """if search has nested dicts, remove them"""
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
+        if not search:
+            return
+        newsearch = {}
+        for srch, pat in search.items():
+            if len(srch) == 1 and srch in ends:
+                srch = 'm' + srch
+            if isinstance(pat, dict):
+                for k, v in list(pat.items()):
+                    if k != 'w':
+                        newsearch[srch + k] = pat_format(v)
+                    else:
+                        newsearch[srch] = pat_format(v)
+            else:
+                newsearch[srch] = pat_format(pat)
+        return newsearch
+
+    def do_single_search(srch, pat):
+        """get results from single search criterion"""
+        matching_tokens = set()
+        func = get_search_func(srch)
+        matches = func(srch[0], pat)
+        for i in matches:
+            matching_tokens.add(i)
+        return matching_tokens
 
     def distancer(matching_tokens, token):
         "determine number of jumps to root"      
@@ -94,199 +356,10 @@ def dep_searcher(sents,
                 pat = re.compile(pat, re.IGNORECASE)
         return pat
 
-    def get_matches_from_sent(s,
-                              search,
-                              deps=False,
-                              tokens=False, 
-                              dep_type='basic-dependencies',
-                              mode='all'):
-        """process a sentence object, returning matching tok ids"""
-        from corpkit.process import get_deps
-        import re
-        matching_tokens = []
-        for opt, pat in list(search.items()):
-            if isinstance(pat, dict):
-                del search[opt]
-                for k, v in list(pat.items()):
-                    if k != 'w':
-                        search[opt + k] = v
-                    else:
-                        search[opt] = v
-
-        for opt, pat in list(search.items()):
-            pat = pat_format(pat)
-            if opt == 'g':
-                got = []
-                for l in deps.links:
-                    if re.search(pat, l.governor.text):
-                        got.append(s.get_token_by_id(l.dependent.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'gf':
-                got = []
-                for l in deps.links:
-                    if re.search(pat, l.type):
-                        gov_index = l.dependent.idx
-                        for l2 in deps.links:
-                            if l2.governor.idx == gov_index:
-                                got.append(s.get_token_by_id(l2.dependent.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'df':
-                got = []
-                for l in deps.links:
-                    if re.search(pat, l.type):
-                        extra_crit = search.get('d2f')
-                        if extra_crit:
-                            if isinstance(extra_crit, Wordlist):
-                                extra_crit = list(extra_crit)
-                            if isinstance(extra_crit, list):
-                                from corpkit.other import as_regex
-                                extra_crit = as_regex(extra_crit, case_sensitive=case_sensitive)                            
-                            for b in deps.links:
-                                if re.search(extra_crit, b.type):
-                                    if l.governor.idx == b.governor.idx:
-                                        got.append(s.get_token_by_id(l.governor.idx))
-                        else:
-                            got.append(s.get_token_by_id(l.governor.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'gl':
-                got = []
-                for tok in tokens:
-                    if tok.lemma:
-                        se = tok.lemma
-                    elif tok.word:
-                        se = tok.word
-                    else:
-                        continue
-                    if re.search(pat, se):
-                        for i in deps.links:
-                            if i.governor.idx == tok.id:
-                                got.append(s.get_token_by_id(i.dependent.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'gp':
-                got = []
-                for tok in tokens:
-                    if re.search(pat, tok.pos):
-                        for i in deps.links:
-                            if i.governor.idx == tok.id:
-                                got.append(s.get_token_by_id(i.dependent.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'dl':
-                got = []
-                for tok in tokens:
-                    if re.search(pat, tok.lemma):
-                        for i in deps.links:
-                            if i.dependent.idx == tok.id:
-                                extra_crit = search.get('d2l')
-                                if extra_crit:
-                                    if isinstance(extra_crit, Wordlist):
-                                        extra_crit = list(extra_crit)
-                                    if isinstance(extra_crit, list):
-                                        from corpkit.other import as_regex
-                                        extra_crit = as_regex(extra_crit, 
-                                            case_sensitive=case_sensitive)
-                                    for b in tokens:
-                                        if not re.search(extra_crit, b.lemma):
-                                            continue
-                                        thelink = next(x for x in deps.links \
-                                                       if x.dependent.idx == b.id)
-                                        if thelink.governor.idx == i.governor.idx:
-                                            got.append(s.get_token_by_id(i.governor.idx))
-                                else:
-                                    got.append(s.get_token_by_id(i.governor.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'dp':
-                got = []
-                for tok in tokens:
-                    if re.search(pat, tok.pos):
-                        for i in deps.links:
-                            if i.dependent.idx == tok.id:
-                                got.append(s.get_token_by_id(i.governor.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-
-            elif opt == 'd':
-                got = []
-                for l in deps.links:
-                    if re.search(pat, l.dependent.text):
-                        got.append(s.get_token_by_id(l.governor.idx))
-
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-
-            elif opt == 'f':
-                got = []
-                for l in deps.links:
-                    if re.search(pat, l.type):
-                        got.append(s.get_token_by_id(l.dependent.idx))
-                got = set(got)
-                for i in got:
-                    matching_tokens.append(i)
-            elif opt == 'p':
-                for tok in tokens:
-                    if re.search(pat, tok.pos):
-                        matching_tokens.append(tok)
-            elif opt == 'pl':
-                for tok in tokens:
-                    from corpkit.dictionaries.word_transforms import taglemma
-                    postag = tok.pos
-                    stemmedtag = taglemma.get(postag.lower(), postag.lower())
-                    if re.search(pat, stemmedtag):
-                        matching_tokens.append(tok)
-            elif opt == 'l':
-                for tok in tokens:
-                    if tok.lemma:
-                        se = tok.lemma
-                    elif tok.word:
-                        se = tok.word
-                    else:
-                        continue
-                    if re.search(pat, se):
-                        matching_tokens.append(tok)
-            elif opt == 'w':
-                for tok in tokens:
-                    if re.search(pat, tok.word):
-                        matching_tokens.append(tok)
-            elif opt == 'i':
-                for tok in tokens:
-                    if re.search(pat, str(tok.id)):
-                        matching_tokens.append(tok)
-            elif opt == 'r':
-                got = []
-                for tok in tokens:
-                    dist = distancer(deps.links, tok)
-                    if dist is not None and dist is not False:
-                        try:
-                            if int(dist) == int(pat):
-                                matching_tokens.append(tok)
-
-                        except TypeError:
-                            if re.search(pat, str(dist)):
-                                matching_tokens.append(tok)
-
-        if mode == 'all':
-            from collections import Counter
-            counted = Counter(matching_tokens)
-            must_contain = len(search)
-            must_contain -= len([n for n in search.keys() if '2' in n])
-            matching_tokens = [k for k, v in counted.items() if v >= must_contain]
-        return matching_tokens
-
     def process_a_match(match, tokens):
-        """take a single search match and return a list of results and conc lines"""
+        """
+        Take a single search match and return a list of results and conc lines
+        """
         resultlist = []
         conclist = []
         for repeat in range(repeats):
@@ -299,7 +372,9 @@ def dep_searcher(sents,
         return resultlist, conclist
 
     def get_indices(match, repeat, tokens):
-        """get first and last index in token list for a token"""
+        """
+        Get first and last index in token list for a token
+        """
         
         py_index = tokens.index(match)        
         # first time around, start at the word
@@ -323,8 +398,10 @@ def dep_searcher(sents,
         return first_in_gram, last_in_gram
 
     def process_a_submatch(match, repeat, tokens):
-        """for ngrams, etc., we have to repeat over results. so, this
-        is for each repeat"""
+        """
+        For ngrams, etc., we have to repeat over results. so, thisis for 
+        each repeat
+        """
 
         # make a conc line with just speaker name so far
         speakr = s.speakername
@@ -409,151 +486,27 @@ def dep_searcher(sents,
 
         return middle, conc_line
 
-
     def process_a_token(token, show):
-        # here is a dict of show type as key and data as v
-        single_result = {}
-        intermediate_result = []            
-        # ugly code begins here. this is where we have a formatter for
-        # every possible show value.
-
-        # treat ngrams just as words now
-        show = [i.lstrip('n').lstrip('b') for i in show]
-
-        if 'w' in show:
-            single_result['w'] = 'none'
-            if lemmatise:
-                single_result['w'] = token.lemma
-            else:
-                single_result['w'] = token.word
-        if 'l' in show:
-            from corpkit.dictionaries.word_transforms import wordlist
-            lem = wordlist.get(token.lemma, token.lemma)
-            single_result['l'] = lem
-        if 'p' in show:
-            single_result['p'] = 'none'
-            postag = token.pos
-            if lemmatise:
-                from corpkit.dictionaries.word_transforms import taglemma
-                single_result['p'] = taglemma.get(postag.lower(), postag.lower())
-            else:
-                single_result['p'] = postag
-            if not single_result['p']:
-                single_result['p'] == 'none'
-
-        if 'pl' in show:
-            single_result['pl'] = 'none'
-            postag = token.pos
-            from corpkit.dictionaries.word_transforms import taglemma
-            single_result['pl'] = taglemma.get(postag.lower(), postag.lower())
-
-        if 'f' in show:
-            single_result['f'] = 'none'
-            for i in deps.links:
-                if i.dependent.idx == token.id:
-                    single_result['f'] = i.type.rstrip(',')
-                    break
-            if single_result['f'] == '':
-                single_result['f'] = 'root'
-
-        if 'g' in show:
-            single_result['g'] = 'none'
-            for i in deps.links:
-                if i.dependent.idx == token.id:
-                    if s.get_token_by_id(i.governor.idx):
-                        if lemmatise:                          
-                            single_result['g'] = s.get_token_by_id(i.governor.idx).lemma
-                        else:
-                            single_result['g'] = i.governor.text
-                    else:
-                        single_result['g'] = 'root'
-                    break
-
-        if 'd' in show:
-            single_result['d'] = 'none'
-            for i in deps.links:
-                if i.governor.idx == token.id:
-                    if s.get_token_by_id(i.dependent.idx):       
-                        if lemmatise:
-                            r = s.get_token_by_id(i.dependent.idx).lemma
-                            single_result['d'] = r
-                        else:
-                            single_result['d'] = i.dependent.text
-                    break
-
-        if 'gl' in show:
-            single_result['gl'] = 'none'
-            for i in deps.links:
-                if i.dependent.idx == token.id:
-                    if s.get_token_by_id(i.governor.idx):
-                        single_result['gl'] = s.get_token_by_id(i.governor.idx).lemma
-                    else:
-                        single_result['gl'] = 'root'
-                    break
-
-        if 'dl' in show:
-            single_result['dl'] = 'none'
-            for i in deps.links:
-                if i.governor.idx == token.id:
-                    if s.get_token_by_id(i.dependent.idx):       
-                        single_result['dl'] = s.get_token_by_id(i.dependent.idx).lemma
-                    break
-
-        if 'gp' in show:
-            single_result['gp'] = 'none'
-            for i in deps.links:
-                if i.dependent.idx == token.id:
-                    if s.get_token_by_id(i.governor.idx):       
-                        single_result['gp'] = s.get_token_by_id(i.governor.idx).pos
-                    break
-
-        if 'dp' in show:
-            single_result['dp'] = 'none'
-            for i in deps.links:
-                if i.governor.idx == token.id:
-                    if s.get_token_by_id(i.dependent.idx):       
-                        single_result['dp'] = s.get_token_by_id(i.dependent.idx).pos
-                    break
-
-        if 'df' in show:
-            single_result['df'] = 'none'            
-            for i in deps.links:
-                if i.governor.idx == token.id:
-                    single_result['df'] = i.type
-                    break  
-
-        if 'gf' in show:
-            single_result['gf'] = 'none'
-            
-            for i in deps.links:
-                # if the result is the dependent, get the governor, find where
-                # it is a dependent, then gt the type
-                if i.dependent.idx == token.id:
-                    gv = next(x for x in deps.links if x.dependent.idx == i.governor.idx)
-                    single_result['gf'] = gv.type
-                    break                
-
-        if 'r' in show:
-            all_matching_tokens = [l for l in deps.links]
-            distance = distancer(all_matching_tokens, token)
-            if distance is not False and distance is not None:
-                single_result['r'] = str(distance)
-            else:
-                single_result['r'] = '-1'
-
-        if 'i' in show:
-            single_result['i'] = str(token.id)
-
-        for i in show:
-            intermediate_result.append(single_result[i].replace('/', \
-                '-slash-').encode('utf-8', errors='ignore'))
+        """
+        Take entire show argument, and a token of interest,
+        and return slash sep token
+        """
+        # make an iterable token, because this can generate more than one token
+        # if searching for dependent, for example
+        intermediate_result = []
+        # for each show value, add the correct representation to the list
+        for val in show:
+            tok = {token}
+            funcs = get_list_of_lookup_funcs(val)
+            for func in funcs:
+                tok = func(tok)
+            for t in tok:
+                intermediate_result.append(t)
         return ['/'.join(intermediate_result)]
 
-
     ####################################################
-    ################# BEGIN WORKFLOW ###################
+    ################## BEGIN WORKFLOW ##################
     ####################################################
-
 
     # if we're doing ngrams or collocations, we need to repeat over the data
     # otherwise it's just once
@@ -563,30 +516,41 @@ def dep_searcher(sents,
     if any(x.startswith('b') for x in show):
         repeats = (window * 2) + 1
 
-    # store data here
+    # store results here
     result = []
     conc_result = []
 
+    # fix search and excludes
+    search = fix_search(search)
+    exclude = fix_search(exclude)
+
     # iterate over sentences
     for s in sents:
+
+        # all search matches go here
+        matching_tokens = []
         deps = get_deps(s, dep_type)
-        
         # remove punctuation if need be
         if nopunct:
             tokens = [w for w in s.tokens if re.search(is_a_word, w.word)]
         else:
             tokens = s.tokens
-
         # identify matching Token objects
-        matching_tokens = get_matches_from_sent(s, search, deps, tokens, 
-                                                dep_type, mode=searchmode)
-        
+        #matching_tokens = get_matches_from_sent(s, search, deps, tokens, 
+        #                                        dep_type, mode=searchmode)
+        for srch, pat in search.items():
+            matches = do_single_search(srch, pat)
+            matching_tokens += matches
+
         # exclude in the same way if need be
-        if exclude is not False:
-            to_remove = get_matches_from_sent(s, exclude, deps, tokens, 
-                                               dep_type, mode=excludemode)
+        removes =[]
+        if exclude:
+            for excl, expat, in exclude:
+                for remove in do_single_search(excl, expat):
+                    removes.append(remove)
+                
             # do removals
-            for i in to_remove:
+            for i in removes:
                 try:
                     matching_tokens.remove(i)
                 except ValueError:
