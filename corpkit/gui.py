@@ -5700,19 +5700,10 @@ def corpkit_gui():
             note.progvar.set(0)
             unparsed_corpus_path = corpus_fullpath.get()
             corenlppath.set(get_corenlp_path(corenlppath.get()))
-
-            # make sure we have corenlp and jdk
-            if not corenlppath.get():
+            if not corenlppath.get() or corenlppath.get() == 'None':
                 downstall_nlp = messagebox.askyesno("CoreNLP not found.", 
                               "CoreNLP parser not found. Download/install it?")
-                if downstall_nlp:
-                    corenlpurl = "http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip"
-                    stanpath, cnlp_zipfile = download_large_file(project_fullpath.get(), url = corenlpurl, 
-                        root = root, note = note, actually_download = True, custom_corenlp_dir = corenlppath.get())
-                    extract_cnlp(cnlp_zipfile, corenlppath = corenlppath.get(), root = root)
-                    get_fullpath_to_jars(corenlppath)
-                    note.progvar.set(0)
-                else:
+                if not downstall_nlp:
                     timestring('Cannot parse data without Stanford CoreNLP.')
                     return
             jdk = check_jdk()

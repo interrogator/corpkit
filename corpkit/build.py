@@ -479,9 +479,10 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
             print('\n%s: Downloading ... \n' % thetime)
             par_args = {'printstatus': kwargs.get('printstatus', True),
                         'length': showlength}
-            tstr = '%d/%d' % (file_size_dl + 1 / block_sz, showlength)
-            p = animator(None, None, init = True, tot_string = tstr, **par_args)
-            animator(p, file_size_dl + 1, tstr)
+            if not root:
+                tstr = '%d/%d' % (file_size_dl + 1 / block_sz, showlength)
+                p = animator(None, None, init = True, tot_string = tstr, **par_args)
+                animator(p, file_size_dl + 1, tstr)
 
             with open(fullfile, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=block_sz): 
@@ -611,6 +612,7 @@ def parse_corpus(proj_path=False,
             return
 
     curdir = os.getcwd()
+    note = kwargs.get('note', False)
 
     if nltk_data_path:
         if only_tokenise:
@@ -650,10 +652,14 @@ def parse_corpus(proj_path=False,
 
     corenlppath = get_corenlp_path(corenlppath)
 
-    if not corenlppath and not root:
+    if not corenlppath:
         cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
         from corpkit.build import download_large_file, extract_cnlp
-        corenlppath, fpath = download_large_file(cnlp_dir, url)
+        corenlppath, fpath = download_large_file(cnlp_dir, url,
+                                                 root=root,
+                                                 note=note,
+                                                 actually_download=True,
+                                                 custom_corenlp_dir=corenlppath)
         if corenlppath is None and fpath is None:
             import shutil
             shutil.rmtree(new_corpus_path)

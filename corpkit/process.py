@@ -832,12 +832,13 @@ def get_corenlp_path(corenlppath):
                 poss = poss[-1]
             if any(re.search(cnlp_regex, f) for f in os.listdir(poss)):
                 return poss
-        possible_paths.append(corenlppath)
 
     # put possisble paths into list
     pths = ['.', 'corenlp',
             os.path.expanduser("~"),
             os.path.join(os.path.expanduser("~"), 'corenlp')]
+    if isinstance(corenlppath, basestring):
+        pths.append(corenlppath)
     possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
     # remove empty strings
     possible_paths = set([i for i in possible_paths if os.path.isdir(i)])
