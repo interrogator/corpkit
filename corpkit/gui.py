@@ -55,16 +55,18 @@ if '.py' in rd:
 ########################################################################
 
 class SplashScreen(object):
-    """A simple splash screen to display before corpkit is loaded"""
+    """
+    A simple splash screen to display before corpkit is loaded.
+    """
     
     def __init__( self, tkRoot, imageFilename, minSplashTime=0):
         import os
         from PIL import Image
         from PIL import ImageTk
-        self._root              = tkRoot
-        self._image             = ImageTk.PhotoImage(file=os.path.join(rd, imageFilename))
-        self._splash            = None
-        self._minSplashTime     = time.time() + minSplashTime
+        self._root = tkRoot
+        self._image = ImageTk.PhotoImage(file=os.path.join(rd, imageFilename))
+        self._splash = None
+        self._minSplashTime = time.time() + minSplashTime
       
     def __enter__(self):
         # Remove the app window from the display
@@ -87,12 +89,15 @@ class SplashScreen(object):
 
         background_label = Label(self._splash, image=self._image)
         background_label.grid(row=1, column=1, sticky=W)
-        import corpkit
-        oldstver = str(corpkit.__version__)
-        txt = 'Loading corpkit v%s ...' % oldstver
-        cnv = Canvas(self._splash, width=200, height=20)
-        cnv.create_text((100, 14), text=txt, font=("Helvetica", 14, "bold"))
-        cnv.grid(row=1, column=1, sticky='SW', padx=20, pady=20)
+
+        # this code shows the version number, but it's ugly.
+        #import corpkit
+        #oldstver = str(corpkit.__version__)
+        #txt = 'Loading corpkit v%s ...' % oldstver
+        #cnv = Canvas(self._splash, width=200, height=20)
+        #cnv.create_text((100, 14), text=txt, font=("Helvetica", 14, "bold"))
+        #cnv.grid(row=1, column=1, sticky='SW', padx=20, pady=20)
+        
         self._splash.lift()
         self._splash.update( )
    
@@ -301,7 +306,7 @@ class Notebook(Frame):
 def corpkit_gui():
     
     # make app
-    root = Tk()
+    root=Tk()
     #minimise it
     root.withdraw( )
     # generate splash
@@ -365,7 +370,7 @@ def corpkit_gui():
         root.imagewatched = StringVar()
         #root.overrideredirect(True)
         root.resizable(FALSE,FALSE)
-        note = Notebook(root, width= 1365, height=660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
+        note=Notebook(root, width= 1365, height=660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
         note.grid()
         tab0 = note.add_tab(text="Build")
         tab1 = note.add_tab(text="Interrogate")
@@ -1328,14 +1333,17 @@ def corpkit_gui():
             Label(pref_pop, textvariable=corenlppath, justify=LEFT).grid(row=8, column=0, sticky=W)
             #set_corenlp_path
 
-            tmp = Checkbutton(pref_pop, text='Only format middle concordance column', variable=only_format_match, onvalue=1, offvalue=0)
+            tmp = Checkbutton(pref_pop, text='Treat files as subcorpora', variable=files_as_subcorpora, onvalue=1, offvalue=0)
             tmp.grid(row=9, column=0, pady=(0,0), sticky=W)
 
-            tmp = Checkbutton(pref_pop, text='Treat files as subcorpora', variable=files_as_subcorpora, onvalue=1, offvalue=0)
-            tmp.grid(row=10, column=0, pady=(0,0), sticky=W)
+            tmp = Checkbutton(pref_pop, text='Disable regex for plaintext', variable=noregex, onvalue=1, offvalue=0)
+            tmp.grid(row=9, column=1, pady=(0,0), sticky=W)
 
             tmp = Checkbutton(pref_pop, text='Do concordancing', variable=do_concordancing, onvalue=1, offvalue=0)
-            tmp.grid(row=11, column=0, pady=(0,0), sticky=W)
+            tmp.grid(row=10, column=0, pady=(0,0), sticky=W)
+
+            tmp = Checkbutton(pref_pop, text='Format concordance context', variable=only_format_match, onvalue=1, offvalue=0)
+            tmp.grid(row=10, column=1, pady=(0,0), sticky=W)
 
             stopbut = Button(pref_pop, text='Done', command=quit_coding)
             stopbut.grid(row=12, column=0, columnspan=2, pady=15)        
@@ -1358,6 +1366,7 @@ def corpkit_gui():
             """the main function: calls interrogator()"""
             import pandas
             from corpkit.interrogator import interrogator
+            from corpkit.interrogation import Interrogation, Interrodict
             doing_concondancing = True
             # no pressing while running
             #if not conc:
@@ -1517,13 +1526,20 @@ def corpkit_gui():
                 global split_contract
                 interrogator_args['split_contractions'] = split_contract.get()
 
-            if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or selected_corpus_has_no_subcorpora.get() == 1:
+            if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or \
+                selected_corpus_has_no_subcorpora.get() == 1:
                 corp_to_search = corpus_fullpath.get()
             else:
                 corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
 
-            # do interrogation
+            # do interrogation, return if empty
             interrodata = interrogator(corp_to_search, **interrogator_args)
+            if isinstance(interrodata, Interrogation):
+                if hasattr(interrodata, 'results') and interrodata.results is not None:
+                    if interrodata.results.empty:
+                        timestring('No results found, sorry.')
+                        return 
+
             if selected_option == 's':
                 featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
                 if not os.path.isfile(featfile):
@@ -1532,9 +1548,8 @@ def corpkit_gui():
             # make sure we're redirecting stdout again
             sys.stdout = note.redir
 
-            from corpkit.interrogation import Interrogation, Interrodict
             # update spreadsheets
-            if type(interrodata) not in [Interrogation, Interrodict]:
+            if not isinstance(interrodata, (Interrogation, Interrodict)):
                 update_spreadsheet(interro_results, df_to_show=None, height=340)
                 update_spreadsheet(interro_totals, df_to_show=None, height=10)            
                 return
@@ -1543,7 +1558,7 @@ def corpkit_gui():
             # if there were multiple results or not
             interrogation_returned_dict = False
             from collections import OrderedDict
-            if type(interrodata) == Interrogation:
+            if isinstance(interrodata, Interrogation):
                 dict_of_results = OrderedDict({the_name: interrodata})
             else:
                 dict_of_results = interrodata
@@ -4880,7 +4895,7 @@ def corpkit_gui():
             if not fp:
                 return
             new_proj_basepath.set('New project: "%s"' % name)
-            new_project(name = name, loc = fp, root = root)
+            new_project(name = name, loc = fp, root=root)
             project_fullpath.set(os.path.join(fp, name))
             os.chdir(project_fullpath.get())
             image_fullpath.set(os.path.join(project_fullpath.get(), 'images'))
@@ -4919,9 +4934,9 @@ def corpkit_gui():
                     nbut.config(state=NORMAL)
             else:
                 if kind == 'interrogation':
-                    r = load_all_results(data_dir = datad, root = root, note = note)
+                    r = load_all_results(data_dir=datad, root=root, note=note)
                 else:
-                    r = load_all_results(data_dir = datad, root = root, note = note)
+                    r = load_all_results(data_dir=datad, root=root, note=note)
                 if r is not None:
                     for name, loaded in list(r.items()):
                         if kind == 'interrogation':
@@ -5684,6 +5699,7 @@ def corpkit_gui():
             check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
         def create_tokenised_text():
+            from corpkit.corpus import Corpus
             note.progvar.set(0)
             #tokbut.config(state=DISABLED)
             #tokbut = Button(tab0, textvariable=tokenise_button_text, command=ignore, width=33)
@@ -5694,12 +5710,13 @@ def corpkit_gui():
                 #unparsed_corpus_path = unparsed_corpus_path + '-stripped'
             filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
             corp = Corpus(unparsed_corpus_path)
-            parsed = corp.tokenise(root = root, 
+            parsed = corp.tokenise(root=root, 
                                   stdout = sys.stdout, 
-                                  note = note, 
+                                  note=note, 
                                   only_tokenise = True,
                                   nltk_data_path = nltk_data_path)
             #corpus_fullpath.set(outdir)
+            outdir = parsed.path
             current_corpus.set(parsed.name)
             subdrs = [d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))]
             if len(subdrs) == 0:
@@ -5845,6 +5862,14 @@ def corpkit_gui():
                     return
                 timestring('"%s" already exists in project.' % os.path.basename(fp)) 
                 return
+            from corpkit.build import folderise, can_folderise
+            if can_folderise(newc):
+                do_folderise = messagebox.askyesno("No subcorpora found", 
+                              "Your corpus contains multiple files, but no subfolders. " \
+                              "Would you like to treat each file as a subcorpus?")
+                if do_folderise:
+                    folderise(newc)
+                    timestring('Turned files into subcorpora.')
             # encode and rename files
             for (rootdir, d, fs) in os.walk(newc):
                 for f in fs:
@@ -5859,9 +5884,9 @@ def corpkit_gui():
                             enc = chardet.detect(data)
                             f.write(data.decode(enc['encoding'], 'ignore'))
                     # rename file
-                    dname = '-' + os.path.basename(rootdir)
-                    newname = fpath.replace('.txt', dname + '.txt')
-                    shutil.move(fpath, newname)
+                    #dname = '-' + os.path.basename(rootdir)
+                    #newname = fpath.replace('.txt', dname + '.txt')
+                    #shutil.move(fpath, newname)
             path_to_new_unparsed_corpus.set(newc)
             add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
             current_corpus.set(os.path.basename(fp))
@@ -6401,7 +6426,7 @@ def corpkit_gui():
                 path_to_app_parent = os.path.dirname(os.path.join(path_to_app_parent.split('.py', 1)[0]))
 
             downloaded_dir, corpkittarfile = download_large_file(path_to_app_parent, \
-                                                                  url, root = root, note = note, actually_download = True)
+                                                                  url, root=root, note=note, actually_download = True)
             
             timestring('Extracting update ...')
                     
@@ -6580,7 +6605,7 @@ def corpkit_gui():
                             return
 
                         dir_containing_ex, execut = download_large_file(project_fullpath.get(), 
-                                                     url = url, root = root, note = note)
+                                                     url = url, root=root, note=note)
 
                         # make sure we can execute the new script
                         import os
