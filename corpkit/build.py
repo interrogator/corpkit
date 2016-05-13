@@ -756,9 +756,10 @@ def parse_corpus(proj_path=False,
         thetime = strftime("%H:%M:%S", localtime())
         print('%s: Tokenising ... ' % (thetime))
         for index, f in enumerate(fs):
-            data = open(f).read()
+            with open(f, 'r') as fo:
+                data = fo.read()
             enc = chardet.detect(data)
-            enc_text = str(data, enc['encoding'], errors = 'ignore')
+            enc_text = data.decode(enc['encoding'], errors='ignore')
             tokens = tokenise(enc_text)
             thedir = os.path.basename(os.path.dirname(f))
             newname = os.path.basename(f).replace('.txt', '-tokenised.p')
@@ -1055,3 +1056,25 @@ def flatten_treestring(tree):
     tree = tree.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
     return tree
     
+
+def can_folderise(folder):
+    import os
+    from glob import glob
+    fs = glob(os.path.join(folder, '*.txt'))
+    if len(fs) > 1:
+        if not any(os.path.isdir(x) for x in glob(os.path.join(folder, '*'))):
+            return True
+    return False
+
+def folderise(folder):
+    import os
+    import shutil
+    from glob import glob
+    from corpkit.process import makesafe
+    fs = glob(os.path.join(folder, '*.txt'))
+    for f in fs:
+        newname = makesafe(os.path.splitext(os.path.basename(f))[0])
+        newpath = os.path.join(folder, newname)
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+        shutil.move(f, os.path.join(newpath))

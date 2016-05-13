@@ -119,7 +119,7 @@ def concprinter(dataframe, kind = 'string', n = 100, window = 35, columns = 'all
     # shitty thing to hardcode
     pd.set_option('display.max_colwidth', 100)
 
-    if type(n) == int:
+    if isinstance(n, int):
         to_show = df.head(n)
     elif n is False:
         to_show = df
@@ -191,7 +191,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     import os
     from time import localtime, strftime
     import corpkit
-    from corpkit.process import makesafe
+    from corpkit.process import makesafe, sanitise_dict
 
     from corpkit.interrogation import Interrogation
     from corpkit.corpus import Corpus, Datalist
@@ -262,6 +262,9 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
                 selection = selection + '.p'
                 fullpath = os.path.join(savedir, selection)
 
+    if hasattr(interrogation, 'query'):
+        interrogation.query = sanitise_dict(interrogation.query)
+
     with open(fullpath, 'wb') as fo:
         pickle.dump(interrogation, fo)
     
@@ -269,7 +272,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     if print_info:
         print('\n%s: Data saved: %s\n' % (time, fullpath))
 
-def load(savename, loaddir = 'saved_interrogations'):
+def load(savename, loaddir='saved_interrogations'):
     """
     Load saved data into memory:
 

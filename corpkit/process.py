@@ -113,16 +113,15 @@ def datareader(data, plaintext = False, **kwargs):
 
     return good
 
-def tregex_engine(corpus = False,  
-                  options = False, 
-                  query = False, 
-                  check_query = False,
-                  check_for_trees = False,
-                  lemmatise = False,
-                  just_content_words = False,
-                  return_tuples = False,
-                  root = False,
-                  preserve_case = False,
+def tregex_engine(corpus=False,  
+                  options=False, 
+                  query=False, 
+                  check_query=False,
+                  check_for_trees=False,
+                  lemmatise=False,
+                  just_content_words=False,
+                  root=False,
+                  preserve_case=False,
                   **kwargs):
     """
     Run a Java Tregex query
@@ -232,8 +231,6 @@ def tregex_engine(corpus = False,
             if '-f' in options:
                 filenaming = True
 
-        if return_tuples or lemmatise:
-            options = ['-o']
         # append list of options to query 
         if options:
             if '-s' not in options and '-t' not in options:
@@ -345,7 +342,7 @@ def tregex_engine(corpus = False,
     if filenaming:
         for index, r in enumerate(res):
             if r.startswith('# /'):
-                make_tuples.append((r, res[index + 1]))
+                make_tuples.append([r, res[index + 1]])
         res = make_tuples
                 
     if not filenaming:
@@ -357,43 +354,7 @@ def tregex_engine(corpus = False,
         if preserve_case:
             pass
         else:
-            res = [(t, w.lower().replace('/', '-slash-')) for t, w in res]
-
-    if lemmatise or return_tuples:
-        # CAN'T BE USED WITH ALMOST EVERY OPTION!
-        allwords = []
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr=WordNetLemmatizer()
-         # turn this into a list of words or lemmas, with or without closed words
-        for result in res:
-            # remove brackets and split on first space
-            result = result.lstrip('(')
-            result = result.rstrip(')')
-            tag, word = result.split(' ', 1)
-            # get wordnet tag from stanford tag
-            wordnet_tag = find_wordnet_tag(tag)
-            short_tag = tag[:2]
-            # do manual lemmatisation first
-            if lemmatise:
-                if word in wordlist:
-                    word = wordlist[word]
-                # do wordnet lemmatisation
-                if wordnet_tag:
-                    word = lmtzr.lemmatize(word, wordnet_tag)
-            if just_content_words:
-                if wordnet_tag:
-                    if return_tuples:
-                        allwords.append((word, tag))
-                    else:
-                        allwords.append(word)
-            else:
-                if return_tuples:
-                    allwords.append((word, tag))
-                else:
-                    allwords.append(word)
-        res = allwords
-    if return_tuples:
-        res = [(w, t.upper()) for w, t in res]
+            res = [[t, w.lower().replace('/', '-slash-')] for t, w in res]
     return res
 
 def show(lines, index, show = 'thread'):
@@ -543,14 +504,14 @@ def determine_datatype(path):
     else:
         return 'plaintext', singlefile
 
-def filtermaker(the_filter, case_sensitive = False, **kwargs):
+def filtermaker(the_filter, case_sensitive=False, **kwargs):
     import re
     from corpkit.dictionaries.process_types import Wordlist
     from time import localtime, strftime
     root = kwargs.get('root')
     if isinstance(the_filter, (list, Wordlist)):
         from other import as_regex
-        the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
+        the_filter = as_regex(the_filter, case_sensitive=case_sensitive)
     try:
         output = re.compile(the_filter)
         is_valid = True
@@ -574,11 +535,11 @@ def filtermaker(the_filter, case_sensitive = False, **kwargs):
             print('%s: Invalid the_filter regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
-        selection = input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+        selection = inputfunc('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
             '              a) rewrite it now\n' \
             '              b) exit\n\nYour selection: ' % (time, the_filter))
         if 'a' in selection:
-            the_filter = input('\nNew regular expression: ')
+            the_filter = inputfunc('\nNew regular expression: ')
             try:
                 output = re.compile(r'\b' + the_filter + r'\b')
                 is_valid = True
@@ -749,8 +710,7 @@ def interrogation_from_conclines(newdata):
     """make new interrogation result from its conc lines"""
     from collections import Counter
     from pandas import DataFrame
-    import corpkit
-    from corpkit import editor
+    from corpkit.editor import editor
     results = {}
     conc = newdata
     subcorpora = list(set(conc['c']))
@@ -763,11 +723,10 @@ def interrogation_from_conclines(newdata):
     for word in unique_results:
         the_big_dict[word] = [subcorp_result[word] for name, subcorp_result in sorted(results.items(), key=lambda x: x[0])]
     # turn master dict into dataframe, sorted
-    df = DataFrame(the_big_dict, index = sorted(results.keys())) 
-    df = editor(df, sort_by = 'total', print_info = False)
+    df = DataFrame(the_big_dict, index=sorted(results.keys())) 
+    df = editor(df, sort_by='total', print_info=False)
     df.concordance = conc
     return df
-
 
 def checkstack(the_string):
     """checks for pytex"""
@@ -896,3 +855,78 @@ def unsplitter(data):
 def classname(cls):
     """Create the class name str for __repr__"""
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
+
+
+def show_tree_as_per_option(show, tree, sent=False):
+    """
+    Turn a ParentedTree into shown output
+    """
+
+    tree_vals = {}
+    if 'whole' in show:
+        tree = tree.root()
+    if 't' in show:
+        return [str(tree).replace('/', '-slash')]
+        # show as bracketted
+    if 'w' in show:
+        tree_vals['w'] = [i.replace('/', '-slash-') for i in tree.leaves()]
+    if 'l' in show:
+        # long way, better lemmatisation
+        if 'whole' in show:
+            tree_vals['l'] = [sent.get_token_by_id(index + 1).lemma for index \
+                              in range(len(tree.leaves()))]
+        else:
+            lemmata = []
+            for word_tag_tup in tree.pos():
+                index = tree.root().pos().index(word_tag_tup)
+                lemmata.append(sent.get_token_by_id(index + 1).lemma)
+            tree_vals['l'] = lemmata
+    if 'p' in show:
+        tree_vals['p'] = [y for x, y in tree.pos()]
+    if 'pl' in show:
+        from corpkit.dictionaries import taglemma
+        tree_vals['pl'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
+
+    output = []
+    zipped = zip(*[tree_vals[i] for i in show if i != 'whole'])
+    for tup in zipped:
+        output.append('/'.join(tup))
+    return ' '.join(output)
+
+def tgrep(sent, search):
+    """
+    Uses tgrep to search a Sentence
+
+    :param sents: Sentences from CoreNLP XML
+    :type sents: `list` of `Sentence` objects
+
+    :param search: A search query
+    :type search: `str` -- Tgrep query
+    """
+    from nltk.tree import ParentedTree
+    from nltk.tgrep import tgrep_nodes, tgrep_positions
+    ps = sent.parse_string
+    pt = ParentedTree.fromstring(ps)
+    ptrees = [i for i in list(tgrep_nodes(search, [pt])) if i]
+    return [item for sublist in ptrees for item in sublist]
+
+def canpickle(obj):
+    """determine if object can be pickled"""
+    import os
+    from cPickle import UnpickleableError
+    import cPickle as pickle
+
+    with open(os.devnull, 'w') as fo:
+        try:
+            pickle.dump(obj, fo)
+            return True
+        except UnpickleableError:
+            return False
+
+def sanitise_dict(d):
+    """make a sanitised dict"""
+    newd = {}
+    for k, v in d.items():
+        if canpickle(v):
+            newd[k] = v
+    return newd

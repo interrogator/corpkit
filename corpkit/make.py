@@ -46,6 +46,7 @@ def make_corpus(unparsed_corpus_path,
     import os    
     import shutil
     import codecs
+    from corpkit.build import folderise, can_folderise
     pyver = sys.version_info.major
     if pyver == 2:
         inputfunc = raw_input
@@ -96,6 +97,15 @@ def make_corpus(unparsed_corpus_path,
         shutil.copytree(unparsed_corpus_path, os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path)))
         unparsed_corpus_path = os.path.join(project_path, 'data', os.path.basename(unparsed_corpus_path))
 
+
+    # ask to folderise?
+    if can_folderise(unparsed_corpus_path):
+        do_folderise = inputfunc("Your corpus has multiple files, but no subcorpora. "\
+                                 "Would you like each file to be treated as a subcorpus? (y/n)")
+        if do_folderise:
+            folderise(unparsed_corpus_path)
+            
+    # this is bad!    
     if os.path.join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
