@@ -543,9 +543,12 @@ def determine_datatype(path):
     else:
         return 'plaintext', singlefile
 
-def filtermaker(the_filter, case_sensitive = False):
+def filtermaker(the_filter, case_sensitive = False, **kwargs):
     import re
-    if type(the_filter) == list:
+    from corpkit.dictionaries.process_types import Wordlist
+    from time import localtime, strftime
+    root = kwargs.get('root')
+    if isinstance(the_filter, (list, Wordlist)):
         from other import as_regex
         the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
     try:

@@ -16,7 +16,9 @@ def dep_searcher(sents,
                  gramsize=2,
                  nopunct=True,
                  split_contractions=False,
-                 window=2):
+                 window=2,
+                 **kwargs
+                ):
     import re
     from corenlp_xml.document import Document
     from collections import Counter
@@ -86,7 +88,7 @@ def dep_searcher(sents,
         elif isinstance(pat, list):
             if all(isinstance(x, int) for x in pat):
                 pat = [str(x) for x in pat]
-            pat = filtermaker(pat, case_sensitive=case_sensitive)
+            pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
         else:
             if case_sensitive:
                 pat = re.compile(pat)

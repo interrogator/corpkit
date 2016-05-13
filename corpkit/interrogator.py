@@ -1066,7 +1066,8 @@ def interrogator(corpus,
                                              gramsize=gramsize,
                                              nopunct=kwargs.get('nopunct', True),
                                              split_contractions=split_contractions,
-                                             window=window
+                                             window=window,
+                                             root=kwargs.get('root')
                                             )
                         
                     if res == 'Bad query':
