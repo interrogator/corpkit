@@ -9,16 +9,16 @@ def dep_searcher(sents,
                  exclude=False,
                  excludemode='any',
                  searchmode='all',
-                 lemmatise=False,
                  case_sensitive=False,
                  only_format_match=False,
                  speaker=False,
                  gramsize=2,
                  nopunct=True,
-                 split_contractions=False,
-                 window=2):
+                 window=2,
+                 **kwargs
+                ):
     """
-    search corenlp dependency parse
+    Search corenlp dependency parse.
     1. search for 'search' keyword arg
        governor
        dependent
@@ -28,9 +28,7 @@ def dep_searcher(sents,
        word
        index
        etc
-
     2. exclude entries if need be, using same method as search
-
     3. return results and conc lines, or just a count
        """
     import re
@@ -177,7 +175,8 @@ def dep_searcher(sents,
                      'i': search_index,
                      'p': search_pos,
                      'f': search_function,
-                     'x': search_wordclass}
+                     'x': search_wordclass
+                    }
 
     ####################################################
     ################## SHOW FUNCTIONS ##################
@@ -203,13 +202,12 @@ def dep_searcher(sents,
                 for tok in token_set]
 
     def show_function(token_set):
-        fs = []
+        fs = set()
         for tok in token_set:
             for i in deps.links:
                 if i.dependent.idx == tok.id:
-                    fs.append(i.type.rstrip(','))
+                    fs.add(i.type.rstrip(','))
         return fs
-
 
     def show_distance(token_set):
         fs = set()
@@ -264,7 +262,7 @@ def dep_searcher(sents,
                    'f': show_function,
                    'x': show_wordclass,
                    'o': show_next
-                   }
+                  }
 
     ####################################################
     ################ PROCESSING FUNCS ##################
@@ -316,7 +314,8 @@ def dep_searcher(sents,
         while not root_found:
             if c == 0:
                 try:
-                    link_to_check = next(i for i in matching_tokens if i.dependent.idx == token.id)
+                    link_to_check = next(i for i in matching_tokens \
+                                         if i.dependent.idx == token.id)
                 except StopIteration:
                     root_found = True
                     break
@@ -328,7 +327,8 @@ def dep_searcher(sents,
                 if c > 29:
                     root_found = True
                     break
-                link_to_check = [l for l in matching_tokens if l.dependent.idx == gov_index]
+                link_to_check = [l for l in matching_tokens \
+                                 if l.dependent.idx == gov_index]
                 if len(link_to_check) > 0:
                     link_to_check = link_to_check[0]
                 else:
@@ -377,7 +377,6 @@ def dep_searcher(sents,
         py_index = tokens.index(match)        
         # first time around, start at the word
         # second time, at the word - 1
-
         # if ngramming, we need an index of the last token in the ngram
         if any(x.startswith('n') for x in show):
 
@@ -400,7 +399,6 @@ def dep_searcher(sents,
         For ngrams, etc., we have to repeat over results. so, thisis for 
         each repeat
         """
-
         # make a conc line with just speaker name so far
         speakr = s.speakername
         if not speakr:
@@ -503,6 +501,9 @@ def dep_searcher(sents,
         return ['/'.join(intermediate_result)]
 
     def remove_by_mode(matching_tokens, mode):
+        """
+        If search/excludemode is 'all', remove words that don't always appear.
+        """
         if mode == 'any':
             return matching_tokens
         from collections import Counter
@@ -551,7 +552,7 @@ def dep_searcher(sents,
         matching_tokens = remove_by_mode(matching_tokens, searchmode)
 
         # exclude in the same way if need be
-        removes =[]
+        removes = []
         if exclude:
             for excl, expat in exclude.items():
                 for remove in do_single_search(excl, expat):
@@ -583,7 +584,8 @@ def dep_searcher(sents,
     if 'c' in show:
         result = sum(result)
 
-    if isinstance(do_concordancing, basestring) and do_concordancing.lower() == 'only':
+    if isinstance(do_concordancing, basestring) and \
+        do_concordancing.lower() == 'only':
         result = []
 
     if not do_concordancing:
