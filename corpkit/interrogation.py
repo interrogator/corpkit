@@ -509,6 +509,9 @@ class Concordance(pd.core.frame.DataFrame):
         return concprinter(self, kind=kind, n=n, window=window,
                            columns=columns, **kwargs)
 
+    def __repr__(self):
+        return self.format(return_it=True)
+
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""
         from corpkit.process import interrogation_from_conclines

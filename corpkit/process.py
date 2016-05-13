@@ -746,8 +746,7 @@ def interrogation_from_conclines(newdata):
     """make new interrogation result from its conc lines"""
     from collections import Counter
     from pandas import DataFrame
-    import corpkit
-    from corpkit import editor
+    from corpkit.editor import editor
     results = {}
     conc = newdata
     subcorpora = list(set(conc['c']))
@@ -760,11 +759,10 @@ def interrogation_from_conclines(newdata):
     for word in unique_results:
         the_big_dict[word] = [subcorp_result[word] for name, subcorp_result in sorted(results.items(), key=lambda x: x[0])]
     # turn master dict into dataframe, sorted
-    df = DataFrame(the_big_dict, index = sorted(results.keys())) 
-    df = editor(df, sort_by = 'total', print_info = False)
+    df = DataFrame(the_big_dict, index=sorted(results.keys())) 
+    df = editor(df, sort_by='total', print_info=False)
     df.concordance = conc
     return df
-
 
 def checkstack(the_string):
     """checks for pytex"""
