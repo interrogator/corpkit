@@ -39,9 +39,9 @@ def dep_searcher(sents,
 
     is_a_word = re.compile(regex_nonword_filter)
 
-    if any(x.startswith('n') for x in show) \
-    or any(x.startswith('b') for x in show):
-        only_format_match = True
+    #if any(x.startswith('n') for x in show) \
+    #if any(x.startswith('b') for x in show):
+    #    only_format_match = True
 
     ####################################################
     ################ SEARCH FUNCTIONS ##################
@@ -272,6 +272,8 @@ def dep_searcher(sents,
         """take a single search/show type, return match"""
         #show = [i.lstrip('n').lstrip('b') for i in show]
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
+        show = show.lstrip('n')
+        show = show.lstrip('b')
         show = list(show)
         if show[-1] not in ends:
             show.append('w')
@@ -373,8 +375,10 @@ def dep_searcher(sents,
         """
         Get first and last index in token list for a token
         """
-        
-        py_index = tokens.index(match)        
+        try:
+            py_index = tokens.index(match)
+        except ValueError:
+            return False, False
         # first time around, start at the word
         # second time, at the word - 1
         # if ngramming, we need an index of the last token in the ngram
@@ -440,7 +444,7 @@ def dep_searcher(sents,
                     else:
                         tokens.insert(0, match)
 
-        # if we are concordancing, here's a list of toks in the ngram
+        # if we are not concordancing, here's a list of toks in the ngram
         else:
             tokens = tokens[first_in_gram:last_in_gram+1]
 
