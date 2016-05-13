@@ -31,16 +31,17 @@ def interrogator(corpus,
                  do_concordancing=False,
                  maxconc=9999,
                  window=4,
-                 **kwargs):
-    """interrogate corpus, corpora, subcorpus and file objects
-
-    see corpkit.interrogation.interrogate() for docstring"""
-
+                 **kwargs
+                ):
+    """
+    Interrogate corpus, corpora, subcorpus and file objects.
+    See corpkit.interrogation.interrogate() for docstring
+    """
     # store kwargs and locs
     locs = locals().copy()
     locs.update(kwargs)
     locs.pop('kwargs', None)
-        
+
     import codecs
     import signal
     import os
@@ -59,6 +60,9 @@ def interrogator(corpus,
     from corpkit.process import animator
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
+    from corpkit.build import check_jdk
+    
+    have_java = check_jdk()
 
     def signal_handler(signal, _):
         """pause on ctrl+c, rather than just stop loop"""   
@@ -260,7 +264,9 @@ def interrogator(corpus,
         return unique_lines
 
     def lemmatiser(list_of_words, tag):
-        """take a list of unicode words and a tag and return a lemmatised list."""
+        """
+        Take a list of unicode words and a tag and return a lemmatised list
+        """
         output = []
         for word in list_of_words:
             if translated_option.startswith('u'):
@@ -269,6 +275,25 @@ def interrogator(corpus,
                 word = wordlist.get(word, lmtzr.lemmatize(word, tag))
             output.append(word)
         return output
+
+    def tgrep_searcher(sents, search, show, do_concordancing, **kwargs):
+        """
+        Use tgrep for constituency grammar search
+        """
+        from corpkit.process import show_tree_as_per_option, tgrep
+        out = []
+        conc_output = []
+        conc_out = []
+        results = tgrep(sents, search['t'])
+        for res in results:
+            out.append(show_tree_as_per_option(show, res))
+            if do_concordancing:
+                conc_out.append(show_tree_as_per_option(show + ['whole'], res))
+
+        if do_concordancing:
+            sk = kwargs.get('speaker')
+            conc_output = make_conc_lines_from_whole_mid(conc_out, out, speakr = sk)
+        return out, conc_output
 
     def gettag(query, lemmatag=False):
         """
@@ -461,7 +486,6 @@ def interrogator(corpus,
         else:
             return matches
 
-
     def determine_search_func(show):
         """Figure out what search function we're using"""
 
@@ -469,9 +493,12 @@ def interrogator(corpus,
         statsmode = False
         tree_to_text = False
 
-        if search.get('t') and not just_speakers:
-            simple_tregex_mode = True
-            searcher = None
+        if search.get('t') and not just_speakers and not kwargs.get('tgrep'):
+            if have_java:
+                simple_tregex_mode = True
+                searcher = None
+            else:
+                searcher = tgrep_searcher
             optiontext = 'Searching parse trees'
         else:
             if datatype == 'plaintext':
@@ -513,7 +540,10 @@ def interrogator(corpus,
                     if not show_ngram:
                         show = ['n']
                 if search.get('t'):
-                    searcher = slow_tregex
+                    if have_java:
+                        searcher = slow_tregex
+                    else:
+                        searcher = tgrep_searcher
                     optiontext = 'Searching parse trees'
                 elif search.get('s'):
                     searcher = get_stats
@@ -1057,7 +1087,7 @@ def interrogator(corpus,
                                              dep_type=dep_type,
                                              exclude=exclude,
                                              excludemode=excludemode,
-                                             searchmode=searchmode,
+                                             searcqhmode=searchmode,
                                              lemmatise=False,
                                              case_sensitive=case_sensitive,
                                              do_concordancing=do_concordancing,

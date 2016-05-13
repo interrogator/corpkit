@@ -893,3 +893,65 @@ def unsplitter(data):
 def classname(cls):
     """Create the class name str for __repr__"""
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
+
+
+def show_tree_as_per_option(show, tree):
+    """
+    Turn a ParentedTree into shown output
+    """
+    
+    convert_tag = {'n': 'n',
+                   'j': 'a',
+                   'r': 'r',
+                   'v': 'v'}
+
+    tree_vals = {}
+    if 'whole' in show:
+        tree = tree.root()
+    if 't' in show:
+        return str(tree)
+        # show as bracketted
+    if 'w' in show:
+        tree_vals['w'] = tree.leaves()
+    if 'l' in show:
+        lemmata = []
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lmtzr = WordNetLemmatizer()
+        for word, tag in tree.pos():
+            tag = convert_tag.get(tag[0].lower(), False)
+            if tag:
+                lemmata.append(lmtzr.lemmatize(word, tag))
+            else:
+                lemmata.append(word)
+        tree_vals['l'] = lemmata
+    if 'p' in show:
+        tree_vals['p'] = [y for x, y in tree.pos()]
+
+    if 'pl' in show:
+        from corpkit.dictionaries import taglemma
+        tree_vals['pl'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
+
+    output = []
+    zipped = zip(*[tree_vals[i] for i in show])
+    for tup in zipped:
+        output.append('/'.join(tup))
+    return ' '.join(output)
+
+def tgrep(sents, search):
+    """
+    Uses tgrep to search a list of Sentences' trees
+
+    :param sents: Sentences from CoreNLP XML
+    :type sents: `list` of `Sentence` objects
+
+    :param search: A search query
+    :type search: `str` -- Tgrep query
+    """
+    from nltk.tree import ParentedTree
+    from nltk.tgrep import tgrep_nodes, tgrep_positions
+    trees = []
+    for sent in sents:
+        ps = sent.parse_string
+        trees.append(ParentedTree.fromstring(ps))
+    ptrees = [i for i in list(tgrep_nodes(search, trees)) if i]
+    return [item for sublist in ptrees for item in sublist]
