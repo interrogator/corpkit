@@ -1461,7 +1461,7 @@ def corpkit_gui():
                                  'note': note,
                                  'df1_always_df': True,
                                  'do_concordancing': doing_concondancing,
-                                 'only_format_match': bool(only_format_match.get()),
+                                 'only_format_match': not bool(only_format_match.get()),
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path,
                                  'regex': regex,
@@ -1472,7 +1472,7 @@ def corpkit_gui():
                 if k != 'None':
                     excludes[k.lower()[0]] = v
             if exclude_op.get() != 'None':
-                q = remake_special_query(exclude_str.get(), return_list = True)
+                q = remake_special_query(exclude_str.get(), return_list=True)
                 if q:
                     excludes[exclude_op.get().lower()[0]] = q
 
