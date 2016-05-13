@@ -15,8 +15,24 @@ def dep_searcher(sents,
                  gramsize=2,
                  nopunct=True,
                  window=2,
+                 split_contractions=False,
+                 window=2,
                  **kwargs
                 ):
+    import re
+    from corenlp_xml.document import Document
+    from collections import Counter
+    from corpkit.build import flatten_treestring
+    from corpkit.process import filtermaker, animator, get_deps
+
+    is_a_word = re.compile(regex_nonword_filter)
+
+    if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
+        only_format_match = True
+
+    #if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
+    #    raise ValueError("Can't mix n-gram and non-ngram show values.")
+
     """
     Search corenlp dependency parse.
     1. search for 'search' keyword arg
