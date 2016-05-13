@@ -558,9 +558,9 @@ def interrogator(corpus,
                     statsmode = True
                     optiontext = 'General statistics'
                 elif search.get('r'):
-                    tree_to_text = True
-                    searcher = plaintext_regex_search
-                    optiontext = 'Regular expression via parsed data (slow!)'
+                    from corpkit.depsearch import dep_searcher
+                    searcher = dep_searcher
+                    optiontext = 'Distance from root'
                 else:
                     from corpkit.depsearch import dep_searcher
                     searcher = dep_searcher
@@ -1099,7 +1099,7 @@ def interrogator(corpus,
                                              dep_type=dep_type,
                                              exclude=exclude,
                                              excludemode=excludemode,
-                                             searcqhmode=searchmode,
+                                             searchmode=searchmode,
                                              lemmatise=False,
                                              case_sensitive=case_sensitive,
                                              do_concordancing=do_concordancing,

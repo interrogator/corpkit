@@ -46,137 +46,74 @@ def dep_searcher(sents,
     ####################################################
     ################ SEARCH FUNCTIONS ##################
     ####################################################
+    
+    bmatch = {'d': 'governor',
+              'g': 'dependent'}
+    fmatch = {'g': 'governor',
+              'd': 'dependent'}
 
-    def search_word(deprole, pattern):
-        matches = set()
+    attr_trans = {'x': 'pos',
+                  'i': 'id',
+                  'w': 'word',
+                  'l': 'lemma'}
+
+    def locate_tokens(tok, deprole, attr):
+        ret = set()
         if deprole == 'm':
-            for tok in tokens:
-                if re.search(pattern, tok.word):
-                    matches.add(tok)
-        elif deprole == 'd':
-            for link in deps.links:
-                if re.search(pattern, link.dependent.text):
-                    matches.add(s.get_token_by_id(link.governor.idx))
-        elif deprole == 'g':
-            for link in deps.links:
-                if re.search(pattern, link.governor.text):
-                    matches.add(s.get_token_by_id(link.dependent.idx))
-        return matches
+            if attr == 'f':
+                return set([s.get_token_by_id(tok.id)])
+            else:
+                return set([tok])
+        else:
+            in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
+            for lnk in in_deps:
+                ret.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
+            return ret
 
-    mapshorts = {'d': 'dependents',
-                 'g': 'governors'}
-
-    def search_lemma(deprole, pattern):
+    def simple_searcher(deprole, pattern, attr):
+        if attr == 'f':
+            return search_function(deprole, pattern)
+        elif attr == 'r':
+            return distance_searcher(tokens, pattern)
+        else:
+            attrib = attr_trans[attr]
         matches = set()
         for tok in tokens:
-            if not re.search(pattern, tok.lemma):
+            tosearch = getattr(tok, attrib)
+            if attr == 'x':
+                from corpkit.dictionaries.word_transforms import taglemma
+                tosearch = taglemma.get(tosearch.lower(), tosearch.lower())
+            if not re.search(pattern, tosearch):
                 continue
-            if deprole == 'm':
-                matches.add(tok)
-                continue
-            else:
-                node = deps.get_node_by_idx(tok.id)
-                for subn in getattr(node, mapshorts[deprole]):
-                    matches.add(s.get_token_by_id(subn.idx))
-        return matches
-
-    def search_pos(deprole, pattern):
-        matches = set()
-        for tok in tokens:
-            if not re.search(pattern, tok.pos):
-                continue
-            if deprole == 'm':
-                matches.add(tok)
-                continue
-            else:
-                node = deps.get_node_by_idx(tok.id)
-                for subn in getattr(node, mapshorts[deprole]):
-                    matches.add(s.get_token_by_id(subn.idx))
-        return matches
-
-    def search_wordclass(deprole, pattern):
-        from corpkit.dictionaries.word_transforms import taglemma
-        matches = set()
-        for tok in tokens:
-            postag = tok.pos
-            wordclass = taglemma.get(postag.lower(), postag.lower())
-            if not re.search(pattern, tok.pos):
-                continue
-            if deprole == 'm':
-                matches.add(tok)
-                continue
-            else:
-                node = deps.get_node_by_idx(tok.id)
-                for subn in getattr(node, mapshorts[deprole]):
-                    matches.add(s.get_token_by_id(subn.idx))
+            matches |= locate_tokens(tok, deprole, attr)
         return matches
 
     def search_function(deprole, pattern):
         matches = set()
-        if deprole == 'g':
-           for l in deps.links:
-                if not re.search(pat, l.type):
-                    continue
-                gov_index = l.dependent.idx
-                for l2 in deps.links:
-                    if not l2.governor.idx == gov_index:
-                        continue
-                    matches.add(s.get_token_by_id(l2.dependent.idx))
-        else:
-            for link in deps.links:
-                if not re.search(pat, link.type):
-                    continue
-                if deprole == 'd':
-                    matches.add(s.get_token_by_id(link.governor.idx))
-                if deprole == 'm':
-                    matches.add(s.get_token_by_id(link.dependent.idx))
-        return matches
-
-    def search_distance(deprole, pattern):
-        matches = set()
-        for tok in tokens:
-            if deprole == 'm':
-                tosearch = [tok]
-            else:
-                node = deps.get_node_by_idx(tok.id)
-                tosearch = []
-                for subn in getattr(node, mapshorts[deprole]):
-                    tosearch.append(s.get_token_by_id(subn.idx))
-            for t in tosearch:
-                dist = distancer(deps.links, tk)
-                if dist is None or dist is False:
-                    continue
-                try:
-                    if int(dist) == int(pat):
-                        matches.add(tok)
-                except TypeError:
-                    if re.search(pat, str(dist)):
-                        matches.add(tok)
-        return matches
-
-    def search_index(deprole, pattern):
-        matches = set()
-        for tok in tokens:
-            if not re.search(pattern, str(tok.id)):
+        for l in deps.links:
+            if not re.search(pat, l.type):
                 continue
             if deprole == 'm':
-                matches.add(tok)
-                continue
+                matches.add(s.get_token_by_id(l.dependent.idx))
             else:
-                node = deps.get_node_by_idx(tok.id)
-                for subn in getattr(node, mapshorts[deprole]):
-                    matches.add(s.get_token_by_id(subn.idx))
+                in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
+                for lnk in in_deps:
+                    matches.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
         return matches
 
-
-    lookup_search = {'w': search_word,
-                     'l': search_lemma,
-                     'r': search_distance,
-                     'i': search_index,
-                     'p': search_pos,
-                     'f': search_function,
-                     'x': search_wordclass
-                    }
+    def distance_searcher(tosearch, pattern):
+        matches = set()
+        for t in tosearch:
+            dist = distancer(deps.links, t)
+            if dist is None or dist is False:
+                continue
+            try:
+                if int(dist) == int(pattern):
+                    matches.add(t)
+            except TypeError:
+                if re.search(pattern, str(dist)):
+                    matches.add(t)
+        return matches
 
     ####################################################
     ################## SHOW FUNCTIONS ##################
@@ -212,7 +149,7 @@ def dep_searcher(sents,
     def show_distance(token_set):
         fs = set()
         for tok in token_set:
-            all_matching_token_s = [l for l in deps.links]
+            all_matching_tokens = [l for l in deps.links]
             distance = distancer(all_matching_tokens, tok)
             if distance is not False and distance is not None:
                 fs.add(str(distance))
@@ -271,7 +208,7 @@ def dep_searcher(sents,
     def get_list_of_lookup_funcs(show):
         """take a single search/show type, return match"""
         #show = [i.lstrip('n').lstrip('b') for i in show]
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r']
         show = show.lstrip('n')
         show = show.lstrip('b')
         show = list(show)
@@ -299,13 +236,10 @@ def dep_searcher(sents,
                 newsearch[srch] = pat_format(pat)
         return newsearch
 
-    def do_single_search(srch, pat):
+    def do_single_search(srch, pattern):
         """get results from single search criterion"""
-        matching_tokens = set()
-        func = lookup_search[srch[-1]]
-        matches = func(srch[0], pat)
-        for i in matches:
-            matching_tokens.add(i)
+        deprole, attr = srch[0], srch[-1]
+        matching_tokens = simple_searcher(deprole, pattern, attr)
         return matching_tokens
 
     def distancer(matching_tokens, token):
@@ -350,6 +284,8 @@ def dep_searcher(sents,
                 pat = [str(x) for x in pat]
             pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
         else:
+            if isinstance(pat, int):
+                return pat
             if case_sensitive:
                 pat = re.compile(pat)
             else:
@@ -550,8 +486,8 @@ def dep_searcher(sents,
         #matching_tokens = get_matches_from_sent(s, search, deps, tokens, 
         #                                        dep_type, mode=searchmode)
         for srch, pat in search.items():
-            matches = do_single_search(srch, pat)
-            matching_tokens += matches
+            deprole, attr = srch[0], srch[-1]
+            matching_tokens += simple_searcher(deprole, pat, attr)
 
         matching_tokens = remove_by_mode(matching_tokens, searchmode)
 
@@ -559,7 +495,8 @@ def dep_searcher(sents,
         removes = []
         if exclude:
             for excl, expat in exclude.items():
-                for remove in do_single_search(excl, expat):
+                exclv, exattr = excl[0], excl[-1]
+                for remove in simple_searcher(exclv, expat, exattr):
                     removes.append(remove)
 
             removes = remove_by_mode(removes, excludemode)

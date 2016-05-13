@@ -504,18 +504,14 @@ def determine_datatype(path):
     else:
         return 'plaintext', singlefile
 
-def filtermaker(the_filter, case_sensitive = False, **kwargs):
+def filtermaker(the_filter, case_sensitive=False, **kwargs):
     import re
-    import sys
-    pyver = sys.version_info.major
-    if pyver == 2:
-        inputfunc = raw_input
-    elif pyver == 3:
-        inputfunc = input
-    root = kwargs.get('root', False)
-    if isinstance(the_filter, list):
+    from corpkit.dictionaries.process_types import Wordlist
+    from time import localtime, strftime
+    root = kwargs.get('root')
+    if isinstance(the_filter, (list, Wordlist)):
         from other import as_regex
-        the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
+        the_filter = as_regex(the_filter, case_sensitive=case_sensitive)
     try:
         output = re.compile(the_filter)
         is_valid = True
