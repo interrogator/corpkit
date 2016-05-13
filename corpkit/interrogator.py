@@ -540,7 +540,7 @@ def interrogator(corpus,
                     if not show_ngram:
                         show = ['n']
                 if search.get('t'):
-                    if have_java:
+                    if have_java and not kwargs.get('tgrep'):
                         searcher = slow_tregex
                     else:
                         searcher = tgrep_searcher
