@@ -14,7 +14,6 @@ def dep_searcher(sents,
                  speaker=False,
                  gramsize=2,
                  nopunct=True,
-                 window=2,
                  split_contractions=False,
                  window=2,
                  **kwargs

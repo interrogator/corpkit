@@ -9,7 +9,7 @@ Doing corpus linguistics involves building and interrogating corpora, and explor
 Creating a new project
 -----------------------
 
-The simplest way to begin using corpkit is to import it and to create a new project. Projects are simply folders containing subfolders where corpora, saved results, images and dictionaries will be stored. The simplest way is to do it from `bash`, passing in the name you'd like for the project:
+The simplest way to begin using corpkit is to import it and to create a new project. Projects are simply folders containing subfolders where corpora, saved results, images and dictionaries will be stored. The simplest way is to do it is to use the ``new_project`` command in `bash`, passing in the name you'd like for the project as the only argument:
 
 .. code-block:: bash
 
@@ -55,7 +55,7 @@ Or, in `Python`, using `shutil`:
    >>> import shutil
    >>> shutil.copytree('/Users/me/Documents/transcripts', './data')
 
-If you've been using `bash` so far, this is the moment when you'd enter `Python` and `import corpkit`.
+If you've been using `bash` so far, this is the moment when you'd enter `Python` and ``import corpkit``.
 
 Creating a Corpus object
 -------------------------
@@ -138,11 +138,11 @@ Once you have a parsed corpus, you're ready to analyse it. :class:`corpkit.corpu
 
 .. code-block:: python
 
-   >>> corpus[:3]                           # access first three subcorpora
-   >>> corpus.subcorpora.chapter1           # access subcorpus called chapter1
-   >>> f = corpus[5][20]                    # access 21st file in 6th subcorpus
-   >>> f.document.sentences[0].parse_string # get parse tree for first sentence
-   >>> f.document.sentences.tokens[0].word  # get first word
+   >>> corpus[:3]                                # access first three subcorpora
+   >>> corpus.subcorpora.chapter1                # access subcorpus called chapter1
+   >>> f = corpus[5][20]                         # access 21st file in 6th subcorpus
+   >>> f.document.sentences[0].parse_string      # get parse tree for first sentence
+   >>> f.document.sentences.tokens[0].word       # get first word
 
 
 Counting key features
@@ -170,12 +170,13 @@ Output:
    09     2908221   840803   725108        434839      405964   191851      47050               21807      8354              8413                  8720              3876           3147              2582         675                 554                   455  
    10     2868652   815101   708918        421403      393698   185677      43474               20763      8640              8067                  8947              4333           3181              2727         584                 596                   424
 
-This can long time, as it counts a number of complex features. Once it's done, however, it saves automatically, so you don't need to do it again. There are also `postags` and `wordclasses` attributes:
+This can take a while, as it counts a number of complex features. Once it's done, however, it saves automatically, so you don't need to do it again. There are also ``postags``, ``wordclasses`` and ``lexicon`` attributes, which behave similarly:
 
 .. code-block:: python
 
    >>> corpus.postags
    >>> corpus.wordclasses
+   >>> corpus.lexicon
 
 These results can be useful when generating relative frequencies later on. Right now, however, you're probably interested in searching the corpus yourself, however. Hit `Next` to learn about that.
 

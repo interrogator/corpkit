@@ -1110,8 +1110,7 @@ def interrogator(corpus,
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
-                                             root=root,
-                                             **kwargs
+                                             root=root
                                             )
                         
                     if res == 'Bad query':

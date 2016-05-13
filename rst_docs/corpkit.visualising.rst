@@ -186,7 +186,7 @@ There are a number of further keyword arguments for customising figures:
 +--------------------+------------+---------------------------------+
 |  `show_p_val`      |  `bool`    | Try to show p value in legend   |
 +--------------------+------------+---------------------------------+
-|  `interactive`     |  `bool`    | Experimental mpld3_ use          |
+|  `interactive`     |  `bool`    | Experimental mpld3_ use         |
 +--------------------+------------+---------------------------------+
 
 A number of these and other options for customising figures are also described in the :class:`corpkit.interrogation.Interrogation.visualise` method documentation.
