@@ -5,10 +5,10 @@
 # insert the word and what you want it to be turned into.
 
 wordlist = {u"felt": u"feel",
-            u"'s": u"is",
-            u"'re": u"are",
-            u"'m": u"am",
-            u"'d": u"had",
+            u"'s": u"be",
+            u"'re": u"be",
+            u"'m": u"be",
+            u"'d": u"have",
             u"'ve": u"have",
             u"n't": u"not",
             u"smelt": u"smell",
