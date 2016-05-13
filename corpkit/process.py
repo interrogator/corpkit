@@ -113,16 +113,15 @@ def datareader(data, plaintext = False, **kwargs):
 
     return good
 
-def tregex_engine(corpus = False,  
-                  options = False, 
-                  query = False, 
-                  check_query = False,
-                  check_for_trees = False,
-                  lemmatise = False,
-                  just_content_words = False,
-                  return_tuples = False,
-                  root = False,
-                  preserve_case = False,
+def tregex_engine(corpus=False,  
+                  options=False, 
+                  query=False, 
+                  check_query=False,
+                  check_for_trees=False,
+                  lemmatise=False,
+                  just_content_words=False,
+                  root=False,
+                  preserve_case=False,
                   **kwargs):
     """
     Run a Java Tregex query
@@ -232,8 +231,6 @@ def tregex_engine(corpus = False,
             if '-f' in options:
                 filenaming = True
 
-        if return_tuples or lemmatise:
-            options = ['-o']
         # append list of options to query 
         if options:
             if '-s' not in options and '-t' not in options:
@@ -345,7 +342,7 @@ def tregex_engine(corpus = False,
     if filenaming:
         for index, r in enumerate(res):
             if r.startswith('# /'):
-                make_tuples.append((r, res[index + 1]))
+                make_tuples.append([r, res[index + 1]])
         res = make_tuples
                 
     if not filenaming:
@@ -357,43 +354,7 @@ def tregex_engine(corpus = False,
         if preserve_case:
             pass
         else:
-            res = [(t, w.lower().replace('/', '-slash-')) for t, w in res]
-
-    if lemmatise or return_tuples:
-        # CAN'T BE USED WITH ALMOST EVERY OPTION!
-        allwords = []
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr=WordNetLemmatizer()
-         # turn this into a list of words or lemmas, with or without closed words
-        for result in res:
-            # remove brackets and split on first space
-            result = result.lstrip('(')
-            result = result.rstrip(')')
-            tag, word = result.split(' ', 1)
-            # get wordnet tag from stanford tag
-            wordnet_tag = find_wordnet_tag(tag)
-            short_tag = tag[:2]
-            # do manual lemmatisation first
-            if lemmatise:
-                if word in wordlist:
-                    word = wordlist[word]
-                # do wordnet lemmatisation
-                if wordnet_tag:
-                    word = lmtzr.lemmatize(word, wordnet_tag)
-            if just_content_words:
-                if wordnet_tag:
-                    if return_tuples:
-                        allwords.append((word, tag))
-                    else:
-                        allwords.append(word)
-            else:
-                if return_tuples:
-                    allwords.append((word, tag))
-                else:
-                    allwords.append(word)
-        res = allwords
-    if return_tuples:
-        res = [(w, t.upper()) for w, t in res]
+            res = [[t, w.lower().replace('/', '-slash-')] for t, w in res]
     return res
 
 def show(lines, index, show = 'thread'):
@@ -893,7 +854,7 @@ def classname(cls):
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
 
 
-def show_tree_as_per_option(show, tree):
+def show_tree_as_per_option(show, tree, sent=False):
     """
     Turn a ParentedTree into shown output
     """
@@ -907,37 +868,36 @@ def show_tree_as_per_option(show, tree):
     if 'whole' in show:
         tree = tree.root()
     if 't' in show:
-        return str(tree)
+        return [str(tree).replace('/', '-slash')]
         # show as bracketted
     if 'w' in show:
-        tree_vals['w'] = tree.leaves()
+        tree_vals['w'] = [i.replace('/', '-slash-') for i in tree.leaves()]
     if 'l' in show:
-        lemmata = []
-        from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr = WordNetLemmatizer()
-        for word, tag in tree.pos():
-            tag = convert_tag.get(tag[0].lower(), False)
-            if tag:
-                lemmata.append(lmtzr.lemmatize(word, tag))
-            else:
-                lemmata.append(word)
-        tree_vals['l'] = lemmata
+        # long way, better lemmatisation
+        if 'whole' in show:
+            tree_vals['l'] = [sent.get_token_by_id(index + 1).lemma for index \
+                              in range(len(tree.leaves()))]
+        else:
+            lemmata = []
+            for word_tag_tup in tree.pos():
+                index = tree.root().pos().index(word_tag_tup)
+                lemmata.append(sent.get_token_by_id(index + 1).lemma)
+            tree_vals['l'] = lemmata
     if 'p' in show:
         tree_vals['p'] = [y for x, y in tree.pos()]
-
     if 'pl' in show:
         from corpkit.dictionaries import taglemma
         tree_vals['pl'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
 
     output = []
-    zipped = zip(*[tree_vals[i] for i in show])
+    zipped = zip(*[tree_vals[i] for i in show if i != 'whole'])
     for tup in zipped:
         output.append('/'.join(tup))
     return ' '.join(output)
 
-def tgrep(sents, search):
+def tgrep(sent, search):
     """
-    Uses tgrep to search a list of Sentences' trees
+    Uses tgrep to search a Sentence
 
     :param sents: Sentences from CoreNLP XML
     :type sents: `list` of `Sentence` objects
@@ -947,13 +907,10 @@ def tgrep(sents, search):
     """
     from nltk.tree import ParentedTree
     from nltk.tgrep import tgrep_nodes, tgrep_positions
-    trees = []
-    for sent in sents:
-        ps = sent.parse_string
-        trees.append(ParentedTree.fromstring(ps))
-    ptrees = [i for i in list(tgrep_nodes(search, trees)) if i]
+    ps = sent.parse_string
+    pt = ParentedTree.fromstring(ps)
+    ptrees = [i for i in list(tgrep_nodes(search, [pt])) if i]
     return [item for sublist in ptrees for item in sublist]
-
 
 def canpickle(obj):
     """determine if object can be pickled"""

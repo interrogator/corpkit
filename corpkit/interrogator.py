@@ -136,7 +136,7 @@ def interrogator(corpus,
 
     def slow_tregex(sents, **dummy_args):
         """do the speaker-specific version of tregex queries"""
-        speakr = dummy_args.get('speaker', False)
+        speakr = dummy_args.get('speaker', '')
         import os
         from corpkit.process import tregex_engine
         # first, put the relevant trees into temp file
@@ -158,11 +158,13 @@ def interrogator(corpus,
                                       corpus=to_open,
                                       root=root,
                                       preserve_case=True
-                                     ) 
+                                     )
+            for line in whole_res:
+                line.insert(1, speakr) 
 
             res = format_tregex(res)
             whole_res = format_tregex(whole_res, whole=True)
-            concs = make_conc_lines_from_whole_mid(whole_res, res, speakr)
+            concs = make_conc_lines_from_whole_mid(whole_res, res)
 
         if root:
             root.update()
@@ -220,35 +222,34 @@ def interrogator(corpus,
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes,
-                                       middle_column_result,
-                                       speakr=False
+                                       middle_column_result
                                       ):
-        """Create concordance line output from tregex output"""
+        """
+        Create concordance line output from tregex output
+        """
         import re
         import os
-        if speakr is False:
-            speakr = ''
         conc_lines = []
         # remove duplicates from results
         unique_wholes = []
         unique_middle_column_result = []
         duplicates = []
-        for (f, whole), mid in zip(wholes, middle_column_result):
-            joined = '-join-'.join([f, whole, mid])
+        for (f, sk, whole), mid in zip(wholes, middle_column_result):
+            joined = '-join-'.join([f, sk, whole, mid])
             if joined not in duplicates:
                 duplicates.append(joined)
-                unique_wholes.append([f, whole])
+                unique_wholes.append([f, sk, whole])
                 unique_middle_column_result.append(mid)
 
         # split into start, middle and end, dealing with multiple occurrences
-        for (f, whole), mid in zip(unique_wholes, unique_middle_column_result):
+        for (f, sk, whole), mid in zip(unique_wholes, unique_middle_column_result):
             reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', \
                              re.IGNORECASE | re.UNICODE)
             offsets = [(m.start(), m.end()) for m in re.finditer(reg, whole)]
             for offstart, offend in offsets:
                 start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), \
                                      whole[offend:].strip()
-                conc_lines.append([os.path.basename(f), speakr, start, middle, end])
+                conc_lines.append([os.path.basename(f), sk, start, middle, end])
         return conc_lines
 
     def uniquify(conc_lines):
@@ -280,19 +281,27 @@ def interrogator(corpus,
         """
         Use tgrep for constituency grammar search
         """
+        f = kwargs.get('filename')
         from corpkit.process import show_tree_as_per_option, tgrep
         out = []
         conc_output = []
         conc_out = []
-        results = tgrep(sents, search['t'])
-        for res in results:
-            out.append(show_tree_as_per_option(show, res))
-            if do_concordancing:
-                conc_out.append(show_tree_as_per_option(show + ['whole'], res))
+        for sent in sents:
+            if hasattr(sent, 'speakername'):
+                sk = sent.speakername
+                if not sk:
+                    sk = ''
+            else:
+                sk = ''
+            results = tgrep(sent, search['t'])
+            for res in results:
+                out.append(show_tree_as_per_option(show, res, sent))
+                if do_concordancing:
+                    lin = [f, sk, show_tree_as_per_option(show + ['whole'], res, sent)]
+                    conc_out.append(lin)
 
         if do_concordancing:
-            sk = kwargs.get('speaker')
-            conc_output = make_conc_lines_from_whole_mid(conc_out, out, speakr = sk)
+            conc_output = make_conc_lines_from_whole_mid(conc_out, out)
         return out, conc_output
 
     def gettag(query, lemmatag=False):
@@ -322,8 +331,7 @@ def interrogator(corpus,
 
         done = []
         if whole:
-            fnames = [x for x, y in results]
-            results = [y for x, y in results]
+            fnames, snames, results = zip(*results)
 
         if 'l' in show or 'pl' in show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
@@ -376,7 +384,7 @@ def interrogator(corpus,
             joined = '/'.join(bits)
             done.append(joined)
         if whole:
-            done = zip(fnames, done)
+            done = zip(fnames, snames, done)
         return done
 
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
@@ -768,7 +776,9 @@ def interrogator(corpus,
 
 
     def make_conc_obj_from_conclines(conc_results):
-        """turn conclines into dataframe"""
+        """
+        Turn conclines into DataFrame
+        """
         from corpkit.interrogation import Concordance
         all_conc_lines = []
         for sc_name, resu in sorted(conc_results.items()):
@@ -1035,13 +1045,15 @@ def interrogator(corpus,
                                              root=root,
                                              preserve_case=preserve_case
                                             )
+                for line in whole_result:
+                    line.insert(1, '') 
 
                 # format match too depending on option
                 if not only_format_match:
                     whole_result = format_tregex(whole_result, whole=True)
 
                 # make conc lines from conc results
-                conc_result = make_conc_lines_from_whole_mid(whole_result, result, speakr=False)
+                conc_result = make_conc_lines_from_whole_mid(whole_result, result)
                 for lin in conc_result:
                     if numconc < maxconc or not maxconc:
                         conc_results[subcorpus_name].append(lin)
@@ -1068,7 +1080,7 @@ def interrogator(corpus,
                     # methods. the reason is that there seem to be memory leaks. these
                     # may have been fixed already though.
                     from corenlp_xml import Document
-                    with open(f.path, 'rb') as fo:
+                    with codecs.open(f.path, 'rb') as fo:
                         data = fo.read()
                     corenlp_xml = Document(data)
                     #corenlp_xml = f.document
@@ -1096,7 +1108,8 @@ def interrogator(corpus,
                                              gramsize=gramsize,
                                              nopunct=kwargs.get('nopunct', True),
                                              split_contractions=split_contractions,
-                                             window=window
+                                             window=window,
+                                             filename=f.name
                                             )
                         
                     if res == 'Bad query':
@@ -1147,7 +1160,7 @@ def interrogator(corpus,
                     # add filename and do lowercasing for conc
                     if not no_conc:
                         for line in conc_res:
-                            if searcher != slow_tregex:
+                            if searcher != slow_tregex and searcher != tgrep_searcher:
                                 line.insert(0, f.name)
                             else:
                                 line[0] = f.name
@@ -1183,6 +1196,7 @@ def interrogator(corpus,
         conc_df = make_conc_obj_from_conclines(conc_results)
 
         if only_conc:
+            locs = sanitise_dict(locs)
             conc_df.query = locs
             if save and not kwargs.get('outname'):
                 print('\n')
@@ -1205,10 +1219,10 @@ def interrogator(corpus,
             the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
         # turn master dict into dataframe, sorted
         df = DataFrame(the_big_dict, index=sorted(results.keys()))
-        
+
         # for ngrams, remove hapaxes
         if show_ngram or show_collocates:
-             df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
+            df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)
@@ -1246,7 +1260,7 @@ def interrogator(corpus,
 
     # make interrogation object
     locs['corpus'] = corpus.name
-    loc = sanitise_dict(locs)
+    locs = sanitise_dict(locs)
     interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 
     # save it

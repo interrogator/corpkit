@@ -477,7 +477,7 @@ class Concordance(pd.core.frame.DataFrame):
     
     def __init__(self, data):
 
-        pd.core.frame.DataFrame.__init__(self, data, dtype=object)
+        super(Concordance, self).__init__(data)
         self.results = data
 
     def format(self, kind='string', n=100, window=35, columns='all', **kwargs):
@@ -508,9 +508,6 @@ class Concordance(pd.core.frame.DataFrame):
         from corpkit.other import concprinter
         return concprinter(self, kind=kind, n=n, window=window,
                            columns=columns, **kwargs)
-
-    def __repr__(self):
-        return self.format(return_it=True)
 
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""
