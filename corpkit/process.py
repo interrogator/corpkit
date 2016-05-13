@@ -955,3 +955,25 @@ def tgrep(sents, search):
         trees.append(ParentedTree.fromstring(ps))
     ptrees = [i for i in list(tgrep_nodes(search, trees)) if i]
     return [item for sublist in ptrees for item in sublist]
+
+
+def canpickle(obj):
+    """determine if object can be pickled"""
+    import os
+    from cPickle import UnpickleableError
+    import cPickle as pickle
+
+    with open(os.devnull, 'w') as fo:
+        try:
+            pickle.dump(obj, fo)
+            return True
+        except UnpickleableError:
+            return False
+
+def sanitise_dict(d):
+    """make a sanitised dict"""
+    newd = {}
+    for k, v in d.items():
+        if canpickle(v):
+            newd[k] = v
+    return newd
