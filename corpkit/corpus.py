@@ -341,6 +341,31 @@ class Corpus(object):
                 wordclss.save(self.name + '-wordclasses')
             return feat
 
+    @lazyprop
+    def lexicon(self, **kwargs):
+        """
+        Get a lexicon/frequency distribution from a corpus,
+        and save to disk for next time.
+
+        :param kwargs: Arguments to pass to the 
+        :func:`~corpkit.interrogation.Interrogation.interrogate`` method
+        :type kwargs: keyword arguments
+
+        :returns: a `DataFrame` of tokens and counts
+        """
+        show = kwargs.get('show', ['w'])
+        savedir = 'saved_interrogations'
+        if isinstance(show, basestring):
+            show = [show]
+        if isfile(join(savedir, self.name + '-lexicon.p')):
+            try:
+                return load(self.name + '-lexicon')
+            except AttributeError:
+                pass
+        dat = self.interrogate(W, show=show, **kwargs).results
+        if isdir(savedir):
+            dat.save(self.name + '-lexicon')
+
     def configurations(self, search, **kwargs):
         """
         Get the overall behaviour of tokens or lemmas matching a regular 
