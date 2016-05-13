@@ -504,9 +504,16 @@ def determine_datatype(path):
     else:
         return 'plaintext', singlefile
 
-def filtermaker(the_filter, case_sensitive = False):
+def filtermaker(the_filter, case_sensitive = False, **kwargs):
     import re
-    if type(the_filter) == list:
+    import sys
+    pyver = sys.version_info.major
+    if pyver == 2:
+        inputfunc = raw_input
+    elif pyver == 3:
+        inputfunc = input
+    root = kwargs.get('root', False)
+    if isinstance(the_filter, list):
         from other import as_regex
         the_filter = as_regex(the_filter, case_sensitive = case_sensitive)
     try:
@@ -532,11 +539,11 @@ def filtermaker(the_filter, case_sensitive = False):
             print('%s: Invalid the_filter regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
-        selection = input('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+        selection = inputfunc('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
             '              a) rewrite it now\n' \
             '              b) exit\n\nYour selection: ' % (time, the_filter))
         if 'a' in selection:
-            the_filter = input('\nNew regular expression: ')
+            the_filter = inputfunc('\nNew regular expression: ')
             try:
                 output = re.compile(r'\b' + the_filter + r'\b')
                 is_valid = True
@@ -858,11 +865,6 @@ def show_tree_as_per_option(show, tree, sent=False):
     """
     Turn a ParentedTree into shown output
     """
-    
-    convert_tag = {'n': 'n',
-                   'j': 'a',
-                   'r': 'r',
-                   'v': 'v'}
 
     tree_vals = {}
     if 'whole' in show:

@@ -348,7 +348,7 @@ def dep_searcher(sents,
         elif isinstance(pat, list):
             if all(isinstance(x, int) for x in pat):
                 pat = [str(x) for x in pat]
-            pat = filtermaker(pat, case_sensitive=case_sensitive)
+            pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
         else:
             if case_sensitive:
                 pat = re.compile(pat)
