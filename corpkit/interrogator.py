@@ -55,7 +55,7 @@ def interrogator(corpus,
 
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
-    from corpkit.process import tregex_engine, get_deps, unsplitter
+    from corpkit.process import tregex_engine, get_deps, unsplitter, sanitise_dict
     from corpkit.other import as_regex
     from corpkit.process import animator
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
@@ -1231,6 +1231,14 @@ def interrogator(corpus,
         df = DataFrame(df)
         tot = Series(total_total, index=['Total'])
 
+    # if we're doing files as subcorpora,  we can remove the .txt.xml etc
+    if isinstance(df, DataFrame) and files_as_subcorpora:
+        cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
+        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.xml', ''),
+                 (r'-%s(-stripped)?(-parsed)?' % cname, '')]
+        from corpkit.editor import editor
+        df = editor(df, replace_subcorpus_names=edits).results
+
     # sort by total
     if isinstance(df, DataFrame):
         if not df.empty:   
@@ -1238,6 +1246,7 @@ def interrogator(corpus,
 
     # make interrogation object
     locs['corpus'] = corpus.name
+    loc = sanitise_dict(locs)
     interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 
     # save it
