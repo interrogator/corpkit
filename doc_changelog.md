@@ -11,12 +11,27 @@ last_updated: 2016-04-26
 All notable changes to the *corpkit* GUI will be documented in this file.
 This project does not yet adhere to strict [Semantic Versioning](http://semver.org/). It will once the first major release is a bit more stable.
 
+## 2016-05-13
+
+### Fixed
+
+* Tokeniser working again
+* Fail gracefully if no search results or concordance lines
+* Re-calculate had an import error
+
+### Added
+
+* Some user and tool settings added to preferences pane
+* Only format match works for n-grams
+* Auto-folderise corpus option
+
 ## 2016-05-12
 
 ### Fixed
 
 * Parsing was broken due to name error. This has been resolved.
 * Plaintext searching was broken due to concordance error. This has been resolved
+* Error when trying to locate CoreNLP corrected
 
 ## 2016-05-10
 

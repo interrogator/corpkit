@@ -39,9 +39,16 @@ If you do `File` &rarr; `Save project settings`, *corpkit* will remember your co
 
 {{note}} Concordance lines are Pandas DataFrames. If you want to work from the command line, you can quickly output them to <code>LaTeX</code> tables, and all kinds of other cool things. {{end}}
 
+## Recalculating
+
+The `Calculate` button will take the middle column of your concordance lines and produce an `interrogation` style spreadsheet. This allows you to use the concordancer as a way to remove false positives from interrogation results.
+
 ## Saving, loading and merging
 
 Unlike corpus interrogations, concordance lines aren't stored by default. Once you're happy with the data on screen, however, you can hit `Store as` and choose a name for the concordance. It will then appear in the list of items that you can reload, as well as in the `Manage Project` window, where you can save it permanently.
 
 You can use `Load` to show saved concordance lines, or `Merge` to combine multiple saved lines into the current window. If your current concordance is unsaved, don't worry, you'll be asked if you want to save it first.
 
+## Preferences
+
+In the `Preferences` popup, you can disable concordancing, which is faster. You can also elect to only format the middle column,

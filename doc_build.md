@@ -7,13 +7,13 @@ last_updated: 2015-09-01
 ---
 {% include linkrefs.html %}
 
-
 ## What *corpkit* needs from you
 
-All you need to start working with *corpkit* is some plain text. If your data isn't in plain text format (`.txt`), you should turn it into plain text. You can often do this from Microsoft Word, a text editor, or via any of dozens of websites, like [zamzar](http://www.zamzar.com/). It makes no real difference if you have many small text files or a few large large files.
+All you need to start working with *corpkit* is some plain text. If your data isn't in plain text format (`.txt`), you should turn it into plain text. You can often do this from Microsoft Word, a text editor, or via any of dozens of websites, like [zamzar](http://www.zamzar.com/). It doesn't make a big difference if you have many small text files or a few large large files.
 
 Once you have plain text files, ideally, you'll want to structure them: that is, put bits of text into subfolders representing something meaningful, like different timestamps, websites, books, chapters, etc. Give these subfolders useful names. 
 
+If your text files *are* your subcorpora
 If your corpus is unstructured, *corpkit* will still work, but you'll miss out on some really amazing features.
 
 ## Working with dialogue
@@ -67,6 +67,8 @@ This will allow you to restrict your interrogations and concordances to specific
 ## Pressing the button
 
 Once you hit parse, you'll be asked to select which kinds of annotation you want to perform. If you're not so sure what you're doing, it's best to perhaps leave these options as they are and hit `Done`. Currently, nothing in *corpkit* processes the `referent tracking` or `named entity recognition` tags. Therefore, they can safely be left unchecked, and this will bring the size of the parsed data down a little bit.
+
+{{note}} If you have very large files, you may notice that the tool will split them up. This is done to ensure that the parser doesn't run out of memory. Don't worry, your originals are safe! If you end up using the `Files as subcorpora` option, this splitting is automatically undone during calculation. {{end}}
 
 Parsing is a computationally intensive process. For long sentences, there are thousands of possible parses. The parser has to create them all, and decide which is the most likely. Sit tight and let the parsing happen. It's worth the wait.
 

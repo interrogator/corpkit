@@ -12,7 +12,7 @@ last_updated: 2015-09-01
 
 If you were working in the `Build` tab, *corpkit* will try to guess the corpus you want to interrogate. If a corpus hasn't been selected, or you'd like to interrogate a different corpus, you can select it now. Corpora can also be selected via the menu.
 
-Your choice will constrain the kinds of data that you can search.
+Your choice of an unparsed, tokenised or parsed corpus will restrict the kinds of searches that are available to you.
 
 ## Selecting something to search
 
@@ -25,28 +25,15 @@ Your choice will constrain the kinds of data that you can search.
 | `Lemma`      | Search lemmatised forms of each token      |
 | `POS`      |  Search by part-of-speech tag      |
 | `Function` | Find tokens by their dependency function |
-| `Index`      | Search by position in sentence (0 == leftmost, etc)       |
+| `Index`      | Search by position in sentence ('1' is the leftmost, etc)       |
 | `Governors`  | Match governor token (locating dependent) | 
 | `Dependents`  | Match dependent token (locating governor) | 
-| `N-grams`      | Find n-grams/clusters       |
+| `N-grams`      | Find n-grams/clusters (**deprecated!**)       |
 | `Stats` | Get general stats (number of tokens, clauses, etc.) | 
 
-## Choosing what to return
+### Adding criteria
 
-Once *corpkit* matches your search query, you can tell it what you'd like it to give you back. You may want the lexical items themselves, but you could also get their lemma form, index, POS, function, etc.
-
-In addition to the above options, you can also choose to return:
-
-| Search           | Description |
-|------------------------|---------------------------------------------------|
-| `Distance` | Number of links needed to get from *match* to *parse root* |
-| `Count` | Count occurrences only |
-
-Notice that you can choose to return multiple values. These are strung together using a colon as a separator. If you search for `'think`' as lemma, and select `POS`, `Lemma` and `Word`, you might get:
-
-> `vbz/think/thinks`
-
-You can then use the `Edit` tab to process these results in complex ways.
+You can use the `plus` button to search by multiple criteria. When you have multiple criteria, you need to decide between a search where every match is shown, or where only tokens matching all criteria are shown.
 
 ## Tree querying
 
@@ -96,25 +83,6 @@ Detailed documentation for Tregex usage (with more complex queries and operators
 
 {{tip}}If your searches aren't matching what you think they should, you might want to look at how your data has been parsed. Head to the <code>Build</code> tab and select your parsed corpus. You can then open up a file, and view its parse trees. These visualisations make it much easier to understand how Tregex queries work.{{end}}
 
-### Tree return values
-
-Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value. For the following sentence:
-
-> `These are prosperous times.`
-
-you could write a query:
-
-> "`JJ < __`"
-
-Which would return:
-
-| Search type       | Output      |
-|--------|--------|
-| Words       | `prosperous`       |
-| Tree       | `(JJ prosperous)`       |
-| Count       | `1` (added to total)       |
-| POS       |  `JJ`      |
-
 ### Tree searching options
  
 When searching with trees, there are a few extra options available.
@@ -125,7 +93,7 @@ When working with multiple word results, `Filter titles` will remove `Mr`, `Mrs`
 
 ### Dependencies
 
-When you search `Words`, `Lemma`, `Function`, `Index` or `POS`, *corpkit* will be interrogating dependency parses.
+When you search `Words`, `Lemma`, `Function`, `Index` or `POS`, 'Governor' *corpkit* will be interrogating dependency parses.
 
 In dependency grammar, words in sentences are connected in a series of governor--dependent relationships. The Predicator is typically the `root` of a sentence, which may have the head of the Subject as a dependent. The head of the subject may in turn have dependants, such as adjectival modifiers or determiners.
 
@@ -159,6 +127,42 @@ Your data has actually been annotated with three slightly different dependency g
 
 For more information on the dependency grammars, you can look at Section 4 of the [Stanford Dependencies manual](http://nlp.stanford.edu/software/dependencies_manual.pdf#page=12).
 
+
+## What to return
+
+In the middle of the `Interrogate` tab is daunting grid of *return values*. These are responsible for controlling how the search results are returned to you. Often, multiple values can be selected simultaneously.
+
+There are five rows of return types. Here, you specify **the relationship between the thing being searched for and the thing being shown**.
+
+The `Match` row simply gets the search result. The `Dependent` gets its Dependent (if it has one), and the `Governor` row gets the `Governor`. `N-grams` means that you want to get multiword units containing the match.
+
+For each of these rows, you can specify which of its attributes you would like displayed. You can show the token itself, its lemma form, its POS or its dependency function.
+
+The final row, `Other`, is a little different. `Count` simply returns the total number of results. `Index` returns its position within a sentence. `Distance` calculates the number of links between the token and the root of the dependency parse. `Tree` shows a bracketted syntax tree.
+
+Some options become disabled when they aren't possible. When searching trees, for example, you can't access governor and dependent information.
+
+### Tree return values
+
+When you're searching trees, a reduced set of return values are available. For the following sentence:
+
+> `These are prosperous times.`
+
+you could write a query:
+
+> "`JJ < __`"
+
+This would match the adjective `prosperous`. You could return it in the following ways:
+
+| Search type       | Output      |
+|--------|--------|
+| Match: Word       | `prosperous`       |
+| Match: Lemma       | `prosperous`       |
+| Match: POS       |  `JJ`      |
+| Match: Word, POS       | `prosperous/JJ`       |
+| Tree       | `(JJ prosperous)`       |
+| Count       | `1` (added to total)       |
+
 ### Dependency return values
 
 When searching dependencies, you can ask *corpkit* to return words, lemmata, parts of speech, and so on. You can also return *functions*, *governors*, *dependents*, *indexes* or *distances from root*. If you select multiple return options, you'll get them joined together with a slash.
@@ -175,16 +179,16 @@ So, to give some examples of output based on the sentence above:
 
 | Search  | Query  | Return | Exclude | Output |
 |---|---:|---:|---:|---:|---:|
-| <code>Function</code>  | `lead\b`  | |   |  <b>`dobj`</b>  |
-| <code>Function</code>  | `LIST:CLOSEDCLASS`  | | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
-| <code>Function</code> | `any`  | <code>Lemmata</code> | <code>Function: (aux&#124;root&#124;.comp)</code>   | <b>`would`, `try`, `follow`</b>  |
-| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Word</code> |   | <b>`I`</b>, <b>`lead`</b>  |
-| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Word</code> | `POS: ^[^P]`  | <b>`I`</b> |
+| <code>Function</code>  | `lead\b`  | <code>Match: Function</code> |   |  <b>`dobj`</b>  |
+| <code>Function</code>  | `LIST:CLOSEDCLASS`  | <code>Match: Function</code> | | <b>`nsubj`, `aux`, `mark`, `nmod:poss`</b>  |
+| <code>Function</code> | `any`  | <code>Match: Lemma</code> | <code>Function: (aux&#124;root&#124;.comp)</code>   | <b>`would`, `try`, `follow`</b>  |
+| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Match: Word</code> |   | <b>`I`</b>, <b>`lead`</b>  |
+| <code>Function</code>  | `LIST:PARTICIPANT_ROLE`  | <code>Match: Word</code> | `POS: ^[^P]`  | <b>`I`</b> |
 | <code>Words</code> | `^to$` | <code>Distance</code> |  | <b>2</b>  |
-| <code>Lemmata</code>  | `follow`  | <code>Function</code>, <code>Dependent</code> |  | <b>`to`, `lead`</b>  |
-| <code>Lemmata</code>  | `follow`  | <code>Dependent</code>  | `Words: LIST:CLOSEDCLASS`  | <b>`lead`</b>  |
-| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Function</code>, <code>Governor</code>   |  |  <b>`aux/try` </b>  |
-| <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor</code> | |  <b>`try`, `follow`</b>   |
+| <code>Lemmata</code>  | `follow`  | <code>Match: Function</code>, <code>Dependent: W ord</code> |  | <b>`to`, `lead`</b>  |
+| <code>Lemmata</code>  | `follow`  | <code>Dependent: Lemma</code>  | `Words: LIST:CLOSEDCLASS`  | <b>`lead`</b>  |
+| <code>Words</code> | <code>^(would&#124;will&#124;wo)</code> | <code>Match: Function</code>, <code>Governor: word</code>   |  |  <b>`aux/try` </b>  |
+| <code>Function</code> | <code>(dobj&#124;nsubj)</code>  | <code>Governor: Word</code> | |  <b>`try`, `follow`</b>   |
 
 Note that only one search criterion and exclude criterion are given here. You can use the plus buttons to add more, increasing the specificity with which you can interrogate the corpus.
 
@@ -197,6 +201,8 @@ When the selected corpus is plain text files, you have the option of searching f
 > `[cat,cats,dog,dogs,fish]`
 
 Plain text searching is language independent, but otherwise not very powerful. Lemmatisation, for example, will not work very well, because *corpkit* won't know the word classes of the words you're finding.
+
+In the `Preferences` pane, you can turn regular expression mode for plaintext corpora off. Then, you'll just be searching for string of characters.
 
 ### Tokenised corpora
 
@@ -215,12 +221,6 @@ Below the query box, there is a dropdown list of preset queries. `'Any'` will ma
 {{tip}} One of the first things you might like to do with your data is calculate the total number of tokens in each subcorpus. The easiest way to do this is to use the <code>Count tokens</code> option in the <code>Trees</code> search type, and to select <code>Any</code> as the preset query. You can then use this data, in combination with a different interrogation, to calculate the relative frequencies of specific words in the corpus. See <a href="doc_edit.html"><i>Edit</i></a> for more details.{{end}}
 
 `Stats` will get the absolute frequencies for general features (number of sentences, clauses, tokens) different moods (imperatives, declaratives, interrogatives) and process types (verbal, relational, mental). It involves many sub-interrogations, and may take a long time.
-
-## N-gramming
-
-You can also choose to search n-grams. If you choose the `N-grams` search type, the default query becomes `'any'`, which places no constraints on what kinds of n-grams are returned. You can change this to a regular expression or wordlist (see below) in order to return only n-grams matching the query.
-
-When n-gramming, two extra options are enabled. First, you can choose the size of the n-gram. Second, you can choose how to treat contractions: you can either split them, so that `I do n't` is a trigram, or leave them unsplit, so that `I don't` is a bigram. It's up to you to decide which options yield the most telling results.
 
 ## Wordlists
 
@@ -276,6 +276,11 @@ Be sure to name your interrogation, via the `Name interrogation` box. This makes
 
 {{tip}} Whenever you run an interrogation that produces results, all options used to generate the query are stored, and accessible via <code>Manage project</code> in the Menu. You can head there to access previous queries, or to save interrogations to disk. {{end}}
 
+Running an interrogation creates both a spreadsheet-style display of frequencies and a concordance, which can be viewed in the `Concordance` pane. If you don't need the concordances, you can turn them off in the `Preferences` pane. This may speed up slow interrogations.
+
+{{note}} Some types of interrogation do not produce concordance lines. Two examples of this are when you search for corpus stats, or when you return counts. {{end}}
+
+
 ## Editing spreadsheets
 
 Once results have been generated, the spreadsheets on the right are populated. Here, you can edit numbers, move columns, or delete particular results or subcorpora. You can flip back and forward between other interrogations with the `Previous` and `Next` buttons.
@@ -289,6 +294,10 @@ It's important to remember that the results and totals spreadsheets do not commu
 ## Making dictionaries
 
 If you want, you can use the `Save as dictionary` button to generate a reference corpus from an interrogation, comprised of each word and its total frequency. This will be stored in the `dictionaries/` folder of the project. Every dictionary file in this directory can be loaded when doing keywording in the `Edit` tab.
+
+## Treating files as subcorpora
+
+If you have a corpus with no subdirectories, but a number of files, you may wish to treat each file as a subcorpus. To do this, go to the `Preferences` window and select `Files as subcorpora`. If your corpus has subcorpora and files, and you use this option, the search will ignore the subcorpora.
 
 ## Next steps
 
