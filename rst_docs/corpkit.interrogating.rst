@@ -72,15 +72,15 @@ Corpus interrogations will output a :class:`corpkit.interrogation.Interrogation`
 
    >>> propnoun.concordance # (sample)
 
-   54 chapter1-gatsby.txt.xml             They had spent a year in  france      for no particular reason and then d
-   55 chapter1-gatsby.txt.xml   n't believe it I had no sight into  daisy       's heart but i felt that tom would 
-   56 chapter1-gatsby.txt.xml  into Daisy 's heart but I felt that  tom         would drift on forever seeking a li
-   57 chapter1-gatsby.txt.xml       This was a permanent move said  daisy       over the telephone but i did n't be
-   58 chapter1-gatsby.txt.xml   windy evening I drove over to East  egg         to see two old friends whom i scarc
-   59 chapter1-gatsby.txt.xml   warm windy evening I drove over to  east        egg to see two old friends whom i s
-   60 chapter1-gatsby.txt.xml  d a cheerful red and white Georgian  colonial    mansion overlooking the bay        
-   61 chapter1-gatsby.txt.xml  pen to the warm windy afternoon and  tom         buchanan in riding clothes was stan
-   62 chapter1-gatsby.txt.xml  to the warm windy afternoon and Tom  buchanan    in riding clothes was standing with
+   54 chapter1             They had spent a year in  france      for no particular reason and then d
+   55 chapter1   n't believe it I had no sight into  daisy       's heart but i felt that tom would 
+   56 chapter1  into Daisy 's heart but I felt that  tom         would drift on forever seeking a li
+   57 chapter1       This was a permanent move said  daisy       over the telephone but i did n't be
+   58 chapter1   windy evening I drove over to East  egg         to see two old friends whom i scarc
+   59 chapter1   warm windy evening I drove over to  east        egg to see two old friends whom i s
+   60 chapter1  d a cheerful red and white Georgian  colonial    mansion overlooking the bay        
+   61 chapter1  pen to the warm windy afternoon and  tom         buchanan in riding clothes was stan
+   62 chapter1  to the warm windy afternoon and Tom  buchanan    in riding clothes was standing with
 
 Cool, eh? We'll focus on what to do with these attributes later. Right now, we need to learn how to generate them.
 
