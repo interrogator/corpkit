@@ -705,14 +705,24 @@ class Corpus(object):
     def make_language_model(self, name, **kwargs):
         """
         Make a language model for the corpus
+
+        :param name: a name for the model
+        :type name: `str`
+
+        :param kwargs: keyword arguments for the interrogate() method
+        :type kwargs: `dict`
+
+        :returns: a :class:`corpkit.model.MultiModel`
         """
 
         search = kwargs.pop('search', {'w': r'any'})
         show = kwargs.pop('show', ['n'])
-        gramsize = kwargs.pop('gramsize', 3)
-        res = self.interrogate(search, show=show, gramsize=gramsize,
-                               language_model=True, **kwargs)
-        return res.language_model(name, just_totals=kwargs.get('just_totals'), **kwargs)
+        just_totals = kwargs.pop('just_totals', False)
+        res = self.interrogate(search,
+                               show=show,
+                               language_model=True,
+                               **kwargs)
+        return res.language_model(name, just_totals=just_totals, **kwargs)
 
 
 class Subcorpus(Corpus):

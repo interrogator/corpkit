@@ -9,26 +9,24 @@ import nltk
 
 class MultiModel(dict):
     
-    def __init__(self, data, name=False, **kwargs):
+    def __init__(self, data, name=False, gramsize=3, **kwargs):
         import os
         from corpkit.other import load
         if isinstance(data, basestring):
             name = data
+            if not name.endswith('.p'):
+                name = name + '.p'
         self.name = name
+        self.gramsize = gramsize
         pth = os.path.join('models', self.name)
-        if os.path.isdir(pth):
-            data = {}
-            from glob import glob
-            glb = glob(os.path.join(pth, '*.p'))
-            for f in glb:
-                fname = os.path.splitext(os.path.basename(f))[0]
-                data[fname] = load(f, loaddir='.')
+        if os.path.isfile(pth):
+            data = load(name, loaddir='models')
         super(MultiModel, self).__init__(data, **kwargs)
 
     def score_text(self, text):
         scores = {}
         for name, model in self.items():
-            scores[name] = score_text_with_model(model, text)
+            scores[name] = score_text_with_model(model, text, self.gramsize)
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 class LanguageModel(object):
@@ -50,6 +48,7 @@ class LanguageModel(object):
         # iterate over each ngram
         for ngram, count in token_counter.items():
             gram = tuple(ngram.split())
+            print(gram, count)
             self.ngramFD[gram] += 1 * count
             # add to lexicon
             if order == 1:
@@ -78,31 +77,38 @@ class LanguageModel(object):
             # laplace smoothing to handle unknown unigrams
             return ((self.ngramFD[ngram] + 1) / (self.n + self.v))
 
-def score_text_with_model(model, text):
+def score_text_with_model(model, text, gramsize):
     """
     Score text against a model
     """
     if isinstance(text, basestring):
         text = nltk.word_tokenize(text)
-    wordTrigrams = nltk.trigrams(text)
+    grams = nltk.ngrams(text, gramsize)
     slogprob = 0
-    for wordTrigram in wordTrigrams:
-        logprob = model.logprob(wordTrigram)
+    for gram in grams:
+        logprob = model.logprob(gram)
         slogprob += logprob
     return slogprob / len(text)
 
 def _make_model_from_interro(self, name, **kwargs):
+    import os
     from pandas import DataFrame, Series
     from collections import Counter
+    from corpkit.other import load
+    if not name.endswith('.p'):
+        name = name + '.p'
+    pth = os.path.join('models', name)
+    if os.path.isfile(pth):
+        return load(name, loaddir='models')
     scores = {}
     if not hasattr(self, 'results'):
         raise ValueError('Need results attribute to make language model.')
     # determine what we iterate over
     if kwargs.get('just_totals'):
-        to_iter_over = [self.results.sum()]
+        to_iter_over = [self.results.sum()[self.results.sum() > 0]]
     else:
-        to_iter_over = [self.results.ix[subc] for subc in list(self.results.index)]
-    print('')
+        to_iter_over = [self.results.ix[subc][self.results.ix[subc] > 0] 
+                        for subc in list(self.results.index)]
     for subc in list(to_iter_over):
         # get name for file
         if kwargs.get('just_totals'):
@@ -112,33 +118,18 @@ def _make_model_from_interro(self, name, **kwargs):
         dat = Counter(subc.to_dict())
         model = train(dat, subname, name)
         scores[subname] = model
-    print('\nDone!\n')
-    return MultiModel(scores, name=name)
+    if not os.path.isfile(os.path.join('models', name)):
+        from corpkit.other import save
+        save(scores, name, savedir = 'models')
+    print('Done!\n')
+    return MultiModel(scores, name=name, gramsize=kwargs.get('gramsize', 3))
 
     #scores[subc.name] = score_text_with_model(trained)
     #return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 def train(data, name, corpusname, **kwargs):
-    """
-    Load, make and save a model
-    """
-    ofile = '%s.p' % name
-    if not os.path.isdir('models'):
-        os.makedirs('models')
-    odir = os.path.join('models', corpusname)
-    if not os.path.isdir(odir):
-        os.makedirs(odir)
-    fp = os.path.join(odir, ofile)
-    if os.path.isfile(fp):
-        from corpkit.other import load
-        return load(fp, loaddir='.')
-    else:
-        print('Making model: %s ... ' % name)
-
-    size = kwargs.get('size', 3)
+    order = kwargs.get('order', 3)
     alpha = kwargs.get('alpha', 0.4)
-    lm = LanguageModel(size, alpha, data)
-    if not os.path.isfile(fp):
-        with open(fp, 'wb') as fo:
-            pickle.dump(lm, fo)
+    print('Making model: %s ... ' % name.replace('.p', ''))
+    lm = LanguageModel(order, alpha, data)
     return lm
