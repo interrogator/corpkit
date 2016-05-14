@@ -881,7 +881,7 @@ def interrogator(corpus,
                 corpus.__dict__.pop(k, None)
 
     # convert path to corpus object
-    if corpus.__class__ not in [Corpus, Corpora, Subcorpus, File, Datalist]:
+    if not isinstance(corpus, (Corpus, Corpora, Subcorpus, File, Datalist)):
         if not multiprocess and not kwargs.get('outname'):
             corpus = Corpus(corpus, print_info=False)
 
@@ -890,16 +890,8 @@ def interrogator(corpus,
     search = searchfixer(search, query)
     show = fix_show(show)
     
-    if any(x.startswith('n') for x in show):
-        show_ngram = True
-    else:
-        show_ngram = False
-    
-    if any(x.startswith('b') for x in show):
-        show_collocates = True
-    else:
-        show_collocates = False
-
+    show_ngram = any(x.startswith('n') for x in show)
+    show_collocates = any(x.startswith('b') for x in show)
 
     # instantiate lemmatiser if need be
     if 'l' in show and search.get('t'):
@@ -1253,6 +1245,8 @@ def interrogator(corpus,
                  (r'-%s(-stripped)?(-parsed)?' % cname, '')]
         from corpkit.editor import editor
         df = editor(df, replace_subcorpus_names=edits).results
+        tot = df.sum(axis=1)
+        total_total = df.sum().sum()
 
     # sort by total
     if isinstance(df, DataFrame):
@@ -1260,7 +1254,7 @@ def interrogator(corpus,
             df = df[list(df.sum().sort_values(ascending=False).index)]
 
     # make interrogation object
-    locs['corpus'] = corpus.name
+    locs['corpus'] = corpus.path
     locs = sanitise_dict(locs)
     interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 

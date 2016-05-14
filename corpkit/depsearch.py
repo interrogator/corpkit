@@ -67,7 +67,8 @@ def dep_searcher(sents,
     fmatch = {'g': 'governor',
               'd': 'dependent'}
 
-    attr_trans = {'x': 'pos',
+    attr_trans = {'p': 'pos',
+                  'x': 'pos',
                   'i': 'id',
                   'w': 'word',
                   'l': 'lemma'}
