@@ -360,12 +360,12 @@ When working with dependencies, you can use any of the long list of search and `
    ### nominal nsubj with verbal process as governor
    >>> crit = {F: r'^nsubj$',
    ...         GL: processes.verbal.lemmata,
-               GF: roles.event,
+   ...         GF: roles.event,
    ...         P: r'^N'}
    ### interrogate corpus, outputting the nsubj lemma
    >>> sayers = parsed.interrogate(crit, show=L)
 
-You can also select from the three dependency grammars used by CoreNLP: one of ``'basic-dependencies'``, ``'collapsed-dependencies'``, or ``'collapsed-ccprocessed-dependencies'`` can be passed in as ``dep_type``:
+You can also select from the three dependency grammars used by CoreNLP: one of `'basic-dependencies'`, `'collapsed-dependencies'`, or `'collapsed-ccprocessed-dependencies'` can be passed in as `dep_type`:
 
 .. code-block:: python
 
