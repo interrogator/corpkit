@@ -98,7 +98,7 @@ def editor(interrogation,
 
     elif isinstance(interrogation, DataFrame) or isinstance(interrogation, Series):
         dataframe1 = interrogation
-    elif interrogation.__class__ == Interrogation:
+    elif isinstance(interrogation, Interrogation):
         #if interrogation.__dict__.get('concordance', None) is not None:
         #    concordances = interrogation.concordance
         branch = kwargs.pop('branch', 'results')
@@ -112,10 +112,11 @@ def editor(interrogation,
         else:
             dataframe1 = interrogation.results
     
-    elif interrogation.__class__ == Concordance or \
-                        all(x in list(dataframe1.columns) for x in ['l', 'm', 'r']):
-            return_conc = True
-            dataframe1 = interrogation
+    elif isinstance(interrogation, Concordance) or \
+                        all(x in list(dataframe1.columns) for x in [ 'l', 'm', 'r']):
+        return_conc = True
+        print('heree')
+        dataframe1 = interrogation
     # hope for the best
     else:
         dataframe1 = interrogation
@@ -648,6 +649,8 @@ def editor(interrogation,
     if operation is None:
         operation = 'None'
 
+    if isinstance(interrogation, Concordance):
+        return_conc = True
     # do concordance work
     if return_conc:
         if just_entries:

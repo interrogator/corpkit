@@ -2,14 +2,59 @@
 Concordancing
 ==============
 
-Any interrogation is also optionally a concordance. If you use the ``do_concordancing`` keyword argument, your interrogation will have a ``concordance`` attribute containing concordance lines. Like interrogation results, concordances are stored as Pandas DataFrames. ``maxconc`` controls the number of lines produced.
+Concordancing is the task of getting an aligned list of *keywords in context*. Here's a very basic example, using *Industrial Society and Its Future* as a corpus:
 
 .. code-block:: python
 
-   >>> withconc = corpus.interrogate(T, r'/JJ.?/ > (NP <<# /man/)',
-   ...                               do_concordancing=True, maxconc=500)
+   >>> tech = corpus.concordance({W: r'techn*'})
+   >>> tech.format(n=10, columns=[L, M, R])
 
-If you don't want or need the interrgation data, you can use the :func:`~corpkit.corpus.Corpus.concordance` method:
+
+  0    The continued development of  technology     will worsen the situation     
+  1  vernments but the economic and  technological  basis of the present society  
+  2     They want to make him study  technical      subjects become an executive o
+  3   program to acquire some petty  technical      skill then come to work on tim
+  4  rom nature are consequences of  technological  progress                      
+  5  n them and modern agricultural  technology     has made it possible for the e
+  6                      -LRB- Also  technology     exacerbates the effects of cro
+  7   changes very rapidly owing to  technological  change                        
+  8   they enthusiastically support  technological  progress and economic growth  
+  9  e rapid drastic changes in the  technology     and the economy of a society w
+
+Generating a concordance
+-------------------------
+
+When using *corpkit*, any interrogation is also optionally a concordance. If you use the ``do_concordancing`` keyword argument, your interrogation will have a ``concordance`` attribute containing concordance lines. Like interrogation results, concordances are stored as *Pandas DataFrames*. ``maxconc`` controls the number of lines produced.
+
+.. code-block:: python
+
+   >>> withconc = corp.interrogate({L: ['man', 'woman', 'person']},
+   ...                             show=[W,P],
+   ...                             do_concordancing=True,
+   ...                             maxconc=500)
+
+   0   T Asian/JJ a/DT disabled/JJ  person/nn    or/cc a/dt woman/nn origin
+   1   led/JJ person/NN or/CC a/DT  woman/nn     originally/rb had/vbd no/d
+   2    woman/NN or/CC disabled/JJ  person/nn    but/cc a/dt minority/nn of
+   3   n/JJ immigrant/JJ abused/JJ  woman/nn     or/cc disabled/jj person/n
+   4   ing/VBG weak/JJ -LRB-/-LRB-  women/nns    -rrb-/-rrb- defeated/vbn -
+
+If you like, you can use ``only_format_match=True`` to keep the left and right context simple:
+
+   >>> withconc = corp.interrogate({L: ['man', 'woman', 'person']},
+   ...                             show=[W,P],
+   ...                             only_format_match=True,
+   ...                             do_concordancing=True,
+   ...                             maxconc=500)
+
+   0   African an Asian a disabled  person/nn    or a woman originally had 
+   1   sian a disabled person or a  woman/nn     originally had no derogato
+   2   nt abused woman or disabled  person/nn    but a minority of activist
+   3   ller Asian immigrant abused  woman/nn     or disabled person but a m
+   4   n image of being weak -LRB-  women/nns    -rrb- defeated -lrb- ameri
+
+
+If you don't want or need the interrogation data, you can use the :func:`~corpkit.corpus.Corpus.concordance` method:
 
 .. code-block:: python
 
@@ -61,11 +106,19 @@ You can also easily turn them into CSV data, or into LaTeX:
    >>> concs.format('c', window=20, n=10)
    >>> concs.format('l', window=20, n=10)
 
-You can use the :func:`~corpkit.interrogation.Concordance.calculate` method to generate a frequency count of the middle column of the concordance. Therefore, one method for ensuring accuracy is to:
+The *calculate* method
+------------------------
+
+You might have begun to notice that interrogating and concordancing aren't really very different tasks. If we drop the left and right context, and move the data around, we have all the data we get from an interrogation.
+
+For this reason, you can use the :func:`~corpkit.interrogation.Concordance.calculate` method to generate an :class:`corpus.interrogation.Interrogation` object containing a frequency count of the middle column of the concordance as the ``results`` attribute.
+
+Therefore, one method for ensuring accuracy is to:
 
    1. Run an interrogation, using ``do_concordance=True`` 
-   2. Remove false positives from the concordance result
-   3. Use the calculate method to regenerate the overall frequency
+   2. Remove false positives from the concordance result using :func:`~corpkit.interrogation.Concordance.edit`
+   3. Use the :func:`~corpkit.interrogation.Concordance.calculate` method to regenerate the overall frequencies
+   4. Edit, visualise or export the data
 
 If you'd like to randomise the order of your results, you can use ``lines.shuffle()``
 
