@@ -385,27 +385,30 @@ def dep_searcher(sents,
         # now, if we don't need the whole sent, we discard it. if we don't
         # need to format it, we format it now.
 
-        if do_concordancing:
-            if only_format_match or show == ['n'] or show == ['b']:
-                start = ' '.join(t.word for index, t in enumerate(tokens) \
-                    if index < first_in_gram)
-                end = ' '.join(t.word for index, t in enumerate(tokens) \
-                    if index > last_in_gram)
-                # and only process the match itself
-                # redefine tokens to just be what we need        
-                tokens = tokens[first_in_gram:last_in_gram+1]
-                # add back the original token to left/right of collocate
-                if any(x.startswith('b') for x in show):
-                    if repeat == 0:
-                        tokens.append(match)
-                    elif repeats / repeat > 0:
-                        tokens.append(match)
-                    else:
-                        tokens.insert(0, match)
-
-        # if we are not concordancing, here's a list of toks in the ngram
+        if language_model:
+            tokens = tokens
         else:
-            tokens = tokens[first_in_gram:last_in_gram+1]
+            if do_concordancing:
+                if only_format_match or show == ['n'] or show == ['b']:
+                    start = ' '.join(t.word for index, t in enumerate(tokens) \
+                        if index < first_in_gram)
+                    end = ' '.join(t.word for index, t in enumerate(tokens) \
+                        if index > last_in_gram)
+                    # and only process the match itself
+                    # redefine tokens to just be what we need        
+                    tokens = tokens[first_in_gram:last_in_gram+1]
+                    # add back the original token to left/right of collocate
+                    if any(x.startswith('b') for x in show):
+                        if repeat == 0:
+                            tokens.append(match)
+                        elif repeats / repeat > 0:
+                            tokens.append(match)
+                        else:
+                            tokens.insert(0, match)
+
+            # if we are not concordancing, here's a list of toks in the ngram
+            else:
+                tokens = tokens[first_in_gram:last_in_gram+1]
 
         if any(x.startswith('b') for x in show):
             separator = '_'
@@ -421,6 +424,9 @@ def dep_searcher(sents,
             for bit in single_result:
                 processed_toklist.append(bit)
         
+        if language_model:
+            return '-SPL-IT-'.join(processed_toklist), conc_line
+            #return tuple(processed_toklist), conc_line
         # if no conc at all, return the empty ish one and a string of token(s)
         if not do_concordancing:
             return ' '.join(processed_toklist), conc_line

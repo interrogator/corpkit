@@ -804,7 +804,7 @@ def interrogator(corpus,
                 conc_df.drop('s', axis=1, inplace=True)
             
             if show_ngram or show_collocates:
-                if not kwargs.get('language_model', False):
+                if not language_model:
                     counted = Counter(conc_df['m'])
                     indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
                     conc_df = conc_df.ix[indices]
@@ -856,6 +856,7 @@ def interrogator(corpus,
     # find out if using gui
     root = kwargs.get('root')
     note = kwargs.get('note')
+    language_model = kwargs.get('language_model')
 
     # set up pause method
     original_sigint = signal.getsignal(signal.SIGINT)
@@ -1104,7 +1105,7 @@ def interrogator(corpus,
                                              window=window,
                                              filename=f.name,
                                              root=root,
-                                             language_model=kwargs.get('language_model')
+                                             language_model=language_model
                                             )
                         
                     if res == 'Bad query':
@@ -1171,7 +1172,8 @@ def interrogator(corpus,
                     if not only_conc:
                         if not preserve_case:
                             if not statsmode:
-                                res = [i.lower() for i in res]
+                                if not language_model:
+                                    res = [i.lower() for i in res]
                         if spelling:
                             if not statsmode:
                                 res = [correct_spelling(r) for r in res]
@@ -1217,7 +1219,7 @@ def interrogator(corpus,
 
         # for ngrams, remove hapaxes
         if show_ngram or show_collocates:
-            if not kwargs.get('language_model'):
+            if not language_model:
                 df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
             else:
                 df = df / gramsize

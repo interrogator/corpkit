@@ -9,7 +9,7 @@ import nltk
 
 class MultiModel(dict):
     
-    def __init__(self, data, name=False, gramsize=3, **kwargs):
+    def __init__(self, data, name=False, order=3, **kwargs):
         import os
         from corpkit.other import load
         if isinstance(data, basestring):
@@ -17,7 +17,7 @@ class MultiModel(dict):
             if not name.endswith('.p'):
                 name = name + '.p'
         self.name = name
-        self.gramsize = gramsize
+        self.order = order
         pth = os.path.join('models', self.name)
         if os.path.isfile(pth):
             data = load(name, loaddir='models')
@@ -26,18 +26,17 @@ class MultiModel(dict):
     def score_text(self, text):
         scores = {}
         for name, model in self.items():
-            scores[name] = score_text_with_model(model, text, self.gramsize)
+            print(name, model)
+            scores[name] = score_text_with_model(model, text, model.order)
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
+
 class LanguageModel(object):
-    """
-    A Language Model class
-    """
-    def __init__(self, order, alpha, token_counter):
+    def __init__(self, order, alpha, sentences):
         self.order = order
         self.alpha = alpha
         if order > 1:
-            self.backoff = LanguageModel(order - 1, alpha, token_counter)
+            self.backoff = LanguageModel(order - 1, alpha, sentences)
             self.lexicon = None
         else:
             self.backoff = None
@@ -45,27 +44,23 @@ class LanguageModel(object):
         from collections import Counter
         self.ngramFD = Counter()
         lexicon = set()
-        # iterate over each ngram
-        for ngram, count in token_counter.items():
-            gram = tuple(ngram.split())
-            print(gram, count)
-            self.ngramFD[gram] += 1 * count
-            # add to lexicon
-            if order == 1:
-                lexicon.add(gram)
-                self.n += 1
+        for ngram, count in sentences.items():
+            # the issue is that this stays stable when it's supposed
+            # to change as per 'order'. to fix it, sent
+            gram = tuple(ngram.split('-SPL-IT-'))
+            wordNGrams = nltk.ngrams(gram, order)
+            for wordNGram in wordNGrams:
+                self.ngramFD[wordNGram] += count
+                # add to lexicon
+                if order == 1:
+                    lexicon.add(gram)
+                    self.n += 1
         self.v = len(lexicon)
 
     def logprob(self, ngram):
-        """
-        Log-probability for an n-gram
-        """
         return math.log(self.prob(ngram))
-  
+    
     def prob(self, ngram):
-        """
-        Calculate probability
-        """
         if self.backoff != None:
             freq = self.ngramFD[ngram]
             backoffFreq = self.backoff.ngramFD[ngram[1:]]
@@ -77,17 +72,17 @@ class LanguageModel(object):
             # laplace smoothing to handle unknown unigrams
             return ((self.ngramFD[ngram] + 1) / (self.n + self.v))
 
-def score_text_with_model(model, text, gramsize):
+def score_text_with_model(model, text, order):
     """
     Score text against a model
     """
     if isinstance(text, basestring):
         text = nltk.word_tokenize(text)
-    grams = nltk.ngrams(text, gramsize)
+    grams = [tuple(i) for i in nltk.ngrams(text, order)]
     slogprob = 0
     for gram in grams:
-        logprob = model.logprob(gram)
-        slogprob += logprob
+        lb = model.logprob(gram)
+        slogprob += lb
     return slogprob / len(text)
 
 def _make_model_from_interro(self, name, **kwargs):
@@ -116,20 +111,21 @@ def _make_model_from_interro(self, name, **kwargs):
         else:
             subname = subc.name
         dat = Counter(subc.to_dict())
-        model = train(dat, subname, name)
+        model = train(dat, subname, name, **kwargs)
         scores[subname] = model
     if not os.path.isfile(os.path.join('models', name)):
         from corpkit.other import save
         save(scores, name, savedir = 'models')
     print('Done!\n')
-    return MultiModel(scores, name=name, gramsize=kwargs.get('gramsize', 3))
+    return MultiModel(scores, name=name, order=kwargs.get('order', 3))
 
     #scores[subc.name] = score_text_with_model(trained)
     #return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 def train(data, name, corpusname, **kwargs):
-    order = kwargs.get('order', 3)
+    order = kwargs.get('gramsize', 3)
     alpha = kwargs.get('alpha', 0.4)
     print('Making model: %s ... ' % name.replace('.p', ''))
     lm = LanguageModel(order, alpha, data)
     return lm
+
