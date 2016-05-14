@@ -9,7 +9,7 @@ Once you've built a corpus, you can search it for linguistic phenomena. This is 
 Introduction
 --------------
 
-Interrogations can be performed on any :class:`corpkit.corpus.Corpus` object, but also, on :class:`corpkit.corpus.Subcorpus` objects, :class:`corpkit.corpus.File` objects and :class:`corpkit.corpus.Datalist`s (slices of ``Corpus`` objects). You can search plaintext corpora, tokenised corpora or fully parsed corpora using the same method. We'll focus on parsed corpora in this guide.
+Interrogations can be performed on any :class:`corpkit.corpus.Corpus` object, but also, on :class:`corpkit.corpus.Subcorpus` objects, :class:`corpkit.corpus.File` objects and :class:`corpkit.corpus.Datalist` objects (slices of ``Corpus`` objects). You can search plaintext corpora, tokenised corpora or fully parsed corpora using the same method. We'll focus on parsed corpora in this guide.
 
 .. code-block:: python
    
@@ -24,14 +24,74 @@ Interrogations can be performed on any :class:`corpkit.corpus.Corpus` object, bu
    ### if you have a subcorpus called 'abstract':
    >>> corpus.subcorpora.abstract.interrogate(query)
 
-.. note::
+Corpus interrogations will output a :class:`corpkit.interrogation.Interrogation` object, which stores a DataFrame of results, a Series of totals, a ``dict`` of values used in the query, and, optionally, a set of concordance lines. Let's search for proper nouns in *The Great Gatsby* and see what we get:
 
-   Single capital letter variables in code examples represent lowercase strings ``(W = 'w')``. These variables are made available by doing ``from corpkit import *``. They are used here for readability.
+.. code-block:: python
+
+   >>> corp = Corpus('gatsby-parsed')
+   ### turn on concordancing:
+   >>> propnoun = corp.interrogate({P: '^NNP'}, do_concordancing=True)
+   >>> propnoun.results
+
+             gatsby  tom  daisy  mr.  wilson  jordan  new  baker  york  miss  
+   chapter1      12   32     29    4       0       2   10     21     6    19   
+   chapter2       1   30      6    8      26       0    6      0     6     0   
+   chapter3      28    0      1    8       0      22    5      6     5     1   
+   chapter4      38   10     15   25       1       9    5      8     4     7   
+   chapter5      36    3     26    4       0       0    1      1     1     1   
+   chapter6      37   21     19   11       0       1    4      0     3     4   
+   chapter7      63   87     60    9      27      35    9      2     5     1   
+   chapter8      21    3     19    1      19       1    0      1     0     0   
+   chapter9      27    5      9   14       4       3    4      1     4     1   
+
+   >>> propnoun.totals
+
+   chapter1    232
+   chapter2    252
+   chapter3    171
+   chapter4    428
+   chapter5    128
+   chapter6    219
+   chapter7    438
+   chapter8    139
+   chapter9    208
+   dtype: int64
+
+   >>> propnoun.query
+
+   {'case_sensitive': False,
+    'corpus': 'gatsby-parsed',
+    'dep_type': 'collapsed-ccprocessed-dependencies',
+    'do_concordancing': True,
+    'exclude': False,
+    'excludemode': 'any',
+    'files_as_subcorpora': True,
+    'gramsize': 2,
+    'just_speakers': False,
+    ...}
+
+   >>> propnoun.concordance # (sample)
+
+   54 chapter1-gatsby.txt.xml             They had spent a year in  france      for no particular reason and then d
+   55 chapter1-gatsby.txt.xml   n't believe it I had no sight into  daisy       's heart but i felt that tom would 
+   56 chapter1-gatsby.txt.xml  into Daisy 's heart but I felt that  tom         would drift on forever seeking a li
+   57 chapter1-gatsby.txt.xml       This was a permanent move said  daisy       over the telephone but i did n't be
+   58 chapter1-gatsby.txt.xml   windy evening I drove over to East  egg         to see two old friends whom i scarc
+   59 chapter1-gatsby.txt.xml   warm windy evening I drove over to  east        egg to see two old friends whom i s
+   60 chapter1-gatsby.txt.xml  d a cheerful red and white Georgian  colonial    mansion overlooking the bay        
+   61 chapter1-gatsby.txt.xml  pen to the warm windy afternoon and  tom         buchanan in riding clothes was stan
+   62 chapter1-gatsby.txt.xml  to the warm windy afternoon and Tom  buchanan    in riding clothes was standing with
+
+Cool, eh? We'll focus on what to do with these attributes later. Right now, we need to learn how to generate them.
 
 Search types
 ---------------------
 
-Parsed corpora contain many different kinds of annotation we might like to search. The annotation types, and how to specify them, are given in the table below:
+Parsed corpora contain many different kinds of things we might like to search. There are word forms, lemma forms, POS tags, word classes, indices, and constituency and (three different) dependency grammar annotations. For this reason, the search query is a ``dict`` object passed to the ``interrogate()`` method, whose keys specify what to search, and whose values specify a query. The simplest ones are given in the table below.
+
+.. note::
+
+   Single capital letter variables in code examples represent lowercase strings ``(W = 'w')``. These variables are made available by doing ``from corpkit import *``. They are used here for readability.
 
 +--------+-----------------------+
 | Search | Gloss                 |
@@ -44,34 +104,15 @@ Parsed corpora contain many different kinds of annotation we might like to searc
 +--------+-----------------------+
 | P      |  POS tag              |
 +--------+-----------------------+
-| G/GW   |  Governor word        |
-+--------+-----------------------+
-| GL     |  Governor lemma       |
-+--------+-----------------------+
-| GF     |  Governor function    |
-+--------+-----------------------+
-| GP     |  Governor POS         |
-+--------+-----------------------+
-| D/DW   |  Dependent word       |
-+--------+-----------------------+
-| DL     |  Dependent lemma      |
-+--------+-----------------------+
-| DF     |  Dependent function   |
-+--------+-----------------------+
-| DP     |  Dependent POS        |
-+--------+-----------------------+
-| PL     |  Word class           |
-+--------+-----------------------+
-| N      |  Ngram                |
+| X      |  Word class           |
 +--------+-----------------------+
 | R      |  Distance from root   |
 +--------+-----------------------+
 | I      |  Index in sentence    |
 +--------+-----------------------+
-| T      |  Tregex tree          |
-+--------+-----------------------+
 
-The ``search`` argument is generally a ``dict`` object, whose keys specify the annotation to search (i.e. a string from the above table), and whose values are the regular-expression or wordlist based queries. Because it comes first, and because it's always needed, you can pass it in like an argument, rather than a keyword argument.
+
+Because it comes first, and because it's always needed, you can pass it in like an argument, rather than a keyword argument.
 
 .. code-block:: python
 
@@ -89,6 +130,49 @@ Multiple key/value pairs can be supplied. By default, all must match for the res
    >>> corpus.interrogate(goverb, searchmode=ALL)
    ### get all verbs and any word starting with 'go':
    >>> corpus.interrogate(goverb, searchmode=ANY)
+
+Grammatical searching
+----------------------
+
+In the examples above, we match attributes of tokens. The great thing about parsed data, is that we can search for relationships between words. So, other possible search keys are:
+
++--------+-----------------------+
+| Search | Gloss                 |
++========+=======================+
+| G      |  Governor             |
++--------+-----------------------+
+| D      |  Dependent            |
++--------+-----------------------+
+| T      |  Syntax tree          |
++--------+-----------------------+
+
+.. code-block:: python
+
+   >>> q = {G: r'^b'}
+   ### return any token with governor word starting with 'b'
+   >>> corpus.interrogate(q)
+
+`Governor` and `Dependent` can be combined with the earlier table, allowing a large array of search types:
+
++--------------------+-------+----------+-----------+
+|                    | Match | Governor | Dependent |
++====================+=======+==========+===========+
+| Word               | W     | G        | D         |
++--------------------+-------+----------+-----------+
+| Lemma              | L     | GL       | DL        |
++--------------------+-------+----------+-----------+
+| Function           | F     | GF       | DF        |
++--------------------+-------+----------+-----------+
+| POS tag            | P     | GP       | DP        |
++--------------------+-------+----------+-----------+
+| Word class         | X     | GX       | DX        |
++--------------------+-------+----------+-----------+
+| Distance from root | R     | GR       | DR        |
++--------------------+-------+----------+-----------+
+| Index              | I     | GI       | DI        |
++--------------------+-------+----------+-----------+
+
+Syntax tree searching can't be combined with other options. We'll return to them in a minute, however.
 
 Excluding results
 ---------------------
@@ -108,21 +192,31 @@ In many cases, rather than using ``exclude``, you could also remove results late
 What to show
 ---------------------
 
-Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value, plus a few extra values for n-gramming:
+Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value, plus a few extra values for n-gramming and collocation:
 
-+------+--------------------+------------------------+
-| Show | Gloss              | Example                |
-+======+====================+========================+
-| N   |  N-gram word       | `The women were`       |
-+------+--------------------+------------------------+
-| NL   |  N-gram lemma      | `The woman be`         |
-+------+--------------------+------------------------+
-| NF   |  N-gram function   | `det nsubj root`       |
-+------+--------------------+------------------------+
-| NP   |  N-gram POS tag    | `DT NNS VBN`           |
-+------+--------------------+------------------------+
-| NPL  |  N-gram word class | `determiner noun verb` |
-+------+--------------------+------------------------+
++------+-----------------------+------------------------+
+| Show | Gloss                 | Example                |
++======+=======================+========================+
+| N    |  N-gram word          | `The women were`       |
++------+-----------------------+------------------------+
+| NL   |  N-gram lemma         | `The woman be`         |
++------+-----------------------+------------------------+
+| NF   |  N-gram function      | `det nsubj root`       |
++------+-----------------------+------------------------+
+| NP   |  N-gram POS tag       | `DT NNS VBN`           |
++------+-----------------------+------------------------+
+| NX   |  N-gram word class    | `determiner noun verb` |
++------+-----------------------+------------------------+
+| B    |  Collocate word       | `The_were`             |
++------+-----------------------+------------------------+
+| BL   |  Collocate lemma      | `The_be`               |
++------+-----------------------+------------------------+
+| BF   |  Collocate function   | `det_root`             |
++------+-----------------------+------------------------+
+| BP   |  Collocate POS tag    | `DT_VBN`               |
++------+-----------------------+------------------------+
+| BX   |  Collocate word class | `determiner_verb`      |
++------+-----------------------+------------------------+
 
 ``show`` can be either a single string or a list of strings. If a list is provided, each value is returned with forward slashes as delimiters.
 
@@ -142,12 +236,35 @@ N-gramming is therefore as simple as:
 
    ['a woman', 'the woman', 'the women', 'women are', ... ]
 
+
+So, this leaves us with a huge array of possible things to show, all of which can be combined if need be:
+
++--------------------+-------+----------+-----------+--------+-----------+
+|                    | Match | Governor | Dependent | N-gram | Collocate |
++====================+=======+==========+===========+========+===========+
+| Word               | W     | G        | D         | N      | B         |
++--------------------+-------+----------+-----------+--------+-----------+
+| Lemma              | L     | GL       | DL        | NL     | BL        |
++--------------------+-------+----------+-----------+--------+-----------+
+| Function           | F     | GF       | DF        | NF     | BF        |
++--------------------+-------+----------+-----------+--------+-----------+
+| POS tag            | P     | GP       | DP        | NP     | BP        |
++--------------------+-------+----------+-----------+--------+-----------+
+| Word class         | X     | GX       | DX        | NX     | BX        |
++--------------------+-------+----------+-----------+--------+-----------+
+| Distance from root | R     | GR       | DR        | NR     | BR        |
++--------------------+-------+----------+-----------+--------+-----------+
+| Index              | I     | GI       | DI        | NI     | BI        |
++--------------------+-------+----------+-----------+--------+-----------+
+
 One further extra show value is ``'c'`` (count), which simply counts occurrences of a phenomenon. Rather than returning a DataFrame of results, it will result in a single Series. It cannot be combined with other values.
 
 Working with trees
 ---------------------
 
-If you have elected to search trees, you'll need to write a *Tregex query*. Tregex is a language for searching syntax trees like this one:
+If you have elected to search trees, by default, searching will be done with Java, using Tregex. If you don't have Java, or if you pass in ``tgrep=True``, searching will the more limited Tgrep2 syntax. Here, we'll concentrate on Tregex.
+
+Tregex is a language for searching syntax trees like this one:
 
 .. figure:: https://raw.githubusercontent.com/interrogator/sfl_corpling/master/images/const-grammar.png
 
@@ -185,7 +302,7 @@ In this way, you build more complex queries, which can extent all the way from a
 
    JJ > (NP <<# /book/)
 
-Notice that here, we have a different kind of operator. The `<<` operator means that the node on the right does not need to be a child, but can be a descendent. the `#` means `head`&mdash;that is, in SFL, it matches the `Thing` in a Nominal Group.
+Notice that here, we have a different kind of operator. The `<<` operator means that the node on the right does not need to be a child, but can be a descendant. the `#` means `head`&mdash;that is, in SFL, it matches the `Thing` in a Nominal Group.
 
 If we wanted to also match `magazine` or `newspaper`, there are a few different approaches. One way would be to use `|` as an operator meaning `or`:
 
@@ -199,14 +316,14 @@ This can be cumbersome, however. Instead, we could use a regular expression:
 
    JJ > (NP <<# /^(book|newspaper|magazine)s*$/)
 
-Though it is unfortunately beyond the scope of this guide to teach Regular Expressions, it is important to note that Regular Expressions are extremely powerful ways of searching text, and are invaluable for any linguist interested in digital datasets.
+Though it is beyond the scope of this guide to teach Regular Expressions, it is important to note that Regular Expressions are extremely powerful ways of searching text, and are invaluable for any linguist interested in digital datasets.
 
 Detailed documentation for Tregex usage (with more complex queries and operators) can be found here_.
 
-Tree return values
+Tree `show` values
 -------------------
 
-Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the `return` value. For the following sentence:
+Though you can use the same Tregex query for tree searches, the output changes depending on what you select as the ``show`` value. For the following sentence:
 
 .. code-block:: none
 
@@ -235,7 +352,7 @@ Which would return:
 Working with dependencies
 --------------------------
 
-When working with dependencies, you can use any of the long list of search and return values. It's possible to construct very elaborate queries:
+When working with dependencies, you can use any of the long list of search and `show` values. It's possible to construct very elaborate queries:
 
 .. code-block:: python
 
@@ -253,6 +370,17 @@ You can also select from the three dependency grammars used by CoreNLP: one of `
 .. code-block:: python
 
    >>> corpus.interrogate(query, dep_type='collapsed-ccprocessed-dependencies')
+
+Working with speaker segmentation
+----------------------------------
+
+If you've used speaker segmentation when building your corpus, you can tell the ``interrogate()`` to restrict searches to a particular speaker.
+
+.. code-block:: python
+
+   >>> corpus.interrogate(query, just_speakers=['JASON'])
+
+If you have only one speaker, other sentences will not be searched. If you have multiple speakers, or if you pass in ``just_speakers='each'``, the search will return a :class:`corpkit.interrogation.Interrodict`. This class is a `dict`-like container of multiple interrogations. In this case, the speaker names will be the keys, and the individual interrogations will be the values. These objects can be edited, collapsed and visualised too.
 
 Multiprocessing
 ---------------------
@@ -273,6 +401,12 @@ N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` o
 .. code-block:: python
 
    >>> corpus.interrogate({W: 'father'}, show='NL', gramsize=3, split_contractions=False)
+
+
+Collocation
+------------
+
+Collocations can be shown by using one of the ``B`` show values. You can use ``window=n`` to specify the size of the window to the left and right of the match.
 
 Saving interrogations
 ----------------------
