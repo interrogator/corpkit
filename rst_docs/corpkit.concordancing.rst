@@ -7,7 +7,7 @@ Any interrogation is also optionally a concordance. If you use the ``do_concorda
 .. code-block:: python
 
    >>> withconc = corpus.interrogate(T, r'/JJ.?/ > (NP <<# /man/)',
-                                     do_concordancing=True, maxconc=500)
+   ...                               do_concordancing=True, maxconc=500)
 
 If you don't want or need the interrgation data, you can use the :func:`~corpkit.corpus.Corpus.concordance` method:
 
@@ -22,12 +22,12 @@ How concordance lines will be displayed really depends on your interpreter and e
 
 .. code-block:: python
 
-   >>> lines.format(kind='s'
-                    n=100
-                    window=50,
-                    columns=[L, M, R])
+   >>> lines.format(kind='s',
+   ...              n=100,
+   ...              window=50,
+   ...              columns=[L, M, R])
 
-``kind`` allows you to print as CSV (``'c'``), as LaTeX (``'l'``), or simple string (``'s'``). ``n`` controls the number of results shown. ``window`` controls how much context to show in the left and right columns. ``columns`` accepts a list of column names to show.
+``kind='c'/'l'/'s'`` allows you to print as CSV, LaTeX, or simple string. ``n`` controls the number of results shown. ``window`` controls how much context to show in the left and right columns. ``columns`` accepts a list of column names to show.
 
 Pandas' set_option_ can be used to customise some visualisation defaults.
 

@@ -68,7 +68,7 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
 .. code-block:: python
 
-   >>> multiple_res.multiinedx()
+   >>> multiple_res.multiindex()
 
 :func:`~corpkit.interrogation.Interrodict.collapse` will collapse one dimension of the ``Interrodict``. You can collapse the x axis (``'x'``), the y axis (``'y'``), or the Interrodict keys (``'k'``). In the example below, an ``Interrodict`` is collapsed along each axis in turn.
 
@@ -76,23 +76,32 @@ Editing can be performed with :func:`~corpkit.interrogation.Interrodict.edit`. T
 
     >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show=L)
     >>> d.keys()
+        
         ['CHT', 'WAP', 'WSJ']
+    
     >>> d['CHT'].results
+
         ....  health  cancer  security  credit  flight  safety  heart
         1987      87      25        28      13       7       6      4
         1988      72      24        20      15       7       4      9
         1989     137      61        23      10       5       5      6
+    
     >>> d.collapse(axis=Y).results
+
         ...  health  cancer  credit  security
         CHT    3174    1156     566       697
         WAP    2799     933     582      1127
         WSJ    1812     680    2009       537
+    
     >>> d.collapse(axis=X).results
+
         ...  1987  1988  1989
         CHT   384   328   464
         WAP   389   355   435
         WSJ   428   410   473
+    
     >>> d.collapse(axis=K).results
+
         ...   health  cancer  credit  security
         1987     282     127      65        93
         1988     277     100      70       107
