@@ -18,6 +18,7 @@ This project does not yet adhere to strict [Semantic Versioning](http://semver.o
 * Tokeniser working again
 * Fail gracefully if no search results or concordance lines
 * Re-calculate had an import error
+* Backend fixes: dependency searches improving
 
 ### Added
 
