@@ -302,7 +302,7 @@ In this way, you build more complex queries, which can extent all the way from a
 
    JJ > (NP <<# /book/)
 
-Notice that here, we have a different kind of operator. The `<<` operator means that the node on the right does not need to be a child, but can be a descendant. the `#` means `head`&mdash;that is, in SFL, it matches the `Thing` in a Nominal Group.
+Notice that here, we have a different kind of operator. The `<<` operator means that the node on the right does not need to be a child, but can be a descendant. the `#` means `head`—that is, in SFL, it matches the `Thing` in a Nominal Group.
 
 If we wanted to also match `magazine` or `newspaper`, there are a few different approaches. One way would be to use `|` as an operator meaning `or`:
 
