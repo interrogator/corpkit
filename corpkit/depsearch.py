@@ -16,6 +16,7 @@ def dep_searcher(sents,
                  nopunct=True,
                  split_contractions=False,
                  window=2,
+                 language_model=False,
                  **kwargs
                 ):
     import re
@@ -96,6 +97,12 @@ def dep_searcher(sents,
         matches = set()
         for tok in tokens:
             tosearch = getattr(tok, attrib)
+            # deal with possible ints
+            if isinstance(pattern, int) and isinstance(tosearch, int):
+                if pattern != tosearch:
+                    continue
+            elif isinstance(tosearch, int) and not isinstance(pattern, int):
+                tosearch = str(tosearch)        
             if attr == 'x':
                 from corpkit.dictionaries.word_transforms import taglemma
                 tosearch = taglemma.get(tosearch.lower(), tosearch.lower())
@@ -291,11 +298,11 @@ def dep_searcher(sents,
 
     def pat_format(pat):
         from corpkit.dictionaries.process_types import Wordlist
+        if pat == 'any':
+            return re.compile(r'.*')
         if isinstance(pat, Wordlist):
             pat = list(pat)
-        if pat == 'any':
-            pat = re.compile(r'.*')
-        elif isinstance(pat, list):
+        if isinstance(pat, list):
             if all(isinstance(x, int) for x in pat):
                 pat = [str(x) for x in pat]
             pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
@@ -352,7 +359,7 @@ def dep_searcher(sents,
 
     def process_a_submatch(match, repeat, tokens):
         """
-        For ngrams, etc., we have to repeat over results. so, thisis for 
+        For ngrams, etc., we have to repeat over results. so, this is for 
         each repeat
         """
         # make a conc line with just speaker name so far

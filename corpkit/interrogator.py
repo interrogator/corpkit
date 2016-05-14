@@ -804,10 +804,11 @@ def interrogator(corpus,
                 conc_df.drop('s', axis=1, inplace=True)
             
             if show_ngram or show_collocates:
-                counted = Counter(conc_df['m'])
-                indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
-                conc_df = conc_df.ix[indices]
-                conc_df = conc_df.reset_index(drop=True)
+                if not kwargs.get('language_model', False):
+                    counted = Counter(conc_df['m'])
+                    indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
+                    conc_df = conc_df.ix[indices]
+                    conc_df = conc_df.reset_index(drop=True)
 
             locs['corpus'] = corpus.name
             conc_df = Concordance(conc_df)
@@ -1102,7 +1103,8 @@ def interrogator(corpus,
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
-                                             root=root
+                                             root=root,
+                                             language_model=kwargs.get('language_model')
                                             )
                         
                     if res == 'Bad query':
@@ -1215,7 +1217,10 @@ def interrogator(corpus,
 
         # for ngrams, remove hapaxes
         if show_ngram or show_collocates:
-            df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
+            if not kwargs.get('language_model'):
+                df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
+            else:
+                df = df / gramsize
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)

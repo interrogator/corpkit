@@ -363,6 +363,10 @@ class Interrogation(object):
                        **kwargs
                       )
 
+    def language_model(self, *args, **kwargs):
+        from corpkit.model import _make_model_from_interro
+        return _make_model_from_interro(self, *args, **kwargs)
+
     def save(self, savename, savedir='saved_interrogations', **kwargs):
         """
         Save an interrogation as pickle to ``savedir``.

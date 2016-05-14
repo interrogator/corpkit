@@ -248,11 +248,11 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     while os.path.isfile(fullpath):
         import sys
         if sys.version_info.major == 3:
-            selection = input(("\nSave error: %s already exists in %s.\n\n' \
-                'Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
+            selection = input(("\nSave error: %s already exists in %s.\n\n" \
+                "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
         else:
-            selection = raw_input(("\nSave error: %s already exists in %s.\n\n' \
-                'Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
+            selection = raw_input(("\nSave error: %s already exists in %s.\n\n" \
+                "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
 
         if selection == 'o' or selection == 'O':
             os.remove(fullpath)

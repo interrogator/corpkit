@@ -523,6 +523,9 @@ class Corpus(object):
         :param maxconc: Maximum number of concordance lines
         :type maxconc: `int`
 
+        :param tgrep: Use tgrep for tree querying
+        :type tgrep: `bool`
+
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
         `.query`, `.results`, `.totals` attributes. If multiprocessing is 
         invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
@@ -699,6 +702,19 @@ class Corpus(object):
             savename = self.name
         save(self, savename, savedir=kwargs.pop('savedir', 'data'), **kwargs)
 
+    def make_language_model(self, name, **kwargs):
+        """
+        Make a language model for the corpus
+        """
+
+        search = kwargs.pop('search', {'w': r'any'})
+        show = kwargs.pop('show', ['n'])
+        gramsize = kwargs.pop('gramsize', 3)
+        res = self.interrogate(search, show=show, gramsize=gramsize,
+                               language_model=True, **kwargs)
+        return res.language_model(name, just_totals=kwargs.get('just_totals'), **kwargs)
+
+
 class Subcorpus(Corpus):
     """Model a subcorpus, containing files but no subdirectories.
 
@@ -773,11 +789,18 @@ class File(Corpus):
             import pickle
             with open(self.path, "rb", **kwargs) as openfile:
                 data = pickle.load(openfile)
-                return data
+            return data
         else:
             with open(self.path, 'r', **kwargs) as openfile:
                 data = openfile.read()
-                return data
+            return data
+
+    @lazyprop
+    def plainview(self):
+        doc = self.document
+        for sent in doc.sentences:
+            s = ' '.join(i.word for i in sent.tokens)
+            print(s)
 
 
 class Datalist(object):
