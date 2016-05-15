@@ -116,7 +116,7 @@ Alternatively, it's available (alongside documentation) as a standalone OSX app 
    rst_docs/corpkit.concordancing.rst
    rst_docs/corpkit.editing.rst
    rst_docs/corpkit.visualising.rst
-   rst_docs/corpkit/langmodel.rst
+   rst_docs/corpkit.langmodel.rst
    rst_docs/corpkit.managing.rst
    rst_docs/corpkit.about.rst
 
