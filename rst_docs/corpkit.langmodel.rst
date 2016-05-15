@@ -1,5 +1,5 @@
-Language models 
-================
+Using language models 
+======================
 
 Language models are probability distributions over sequences of words. They are common in a number of natural language processing tasks. In corpus linguistics, they can be used to judge the similarity between texts.
 
@@ -16,8 +16,8 @@ One simple thing you can do with a language model is
 .. code-block:: python
 
    >>> text = ("We can compare an arbitrary string against the models "\
-               "created for each subcorpus, in order to find out how  "\
-               "similar the text is to the texts in each subcorpus... ")
+   ...         "created for each subcorpus, in order to find out how  "\
+   ...         "similar the text is to the texts in each subcorpus... ")
    >>> lm.score(text)
 
 Customising models
