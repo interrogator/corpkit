@@ -716,6 +716,7 @@ class Corpus(object):
         """
         import os
         from corpkit.other import load
+        from corpkit.model import MultiModel
         if not name.endswith('.p'):
             namep = name + '.p'
         else:
@@ -723,13 +724,12 @@ class Corpus(object):
         pth = os.path.join('models', namep)
         if os.path.isfile(pth):
             print('Returning saved model: %s' % pth)
-            return load(name, loaddir='models')
+            return MultiModel(load(name, loaddir='models'))
 
         # set some defaults if not passed in as kwargs
-        search = kwargs.pop('search', {'w': r'any'})
-        show = kwargs.pop('show', ['w'])
-        just_totals = kwargs.pop('just_totals', False)
-        kwargs['gramsize'] = kwargs.get('gramsize', 3)
+        search = kwargs.get('search', {'i': r'^1$'})
+        show = kwargs.get('show', ['w'])
+        just_totals = kwargs.get('just_totals', False)
 
         res = self.interrogate(search,
                                show=show,
@@ -824,6 +824,7 @@ class File(Corpus):
         for sent in doc.sentences:
             s = ' '.join(i.word for i in sent.tokens)
             print(s)
+        doc = None
 
 
 class Datalist(object):
