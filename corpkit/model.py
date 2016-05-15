@@ -6,14 +6,6 @@ import math
 import os
 import nltk
 
-"""
-TO DO:
-
-Store show value in the Language Model, so that a new file could automatically be 
-
-"""
-
-
 class MultiModel(dict):
     
     def __init__(self, data, name='', order=3, **kwargs):
@@ -29,7 +21,7 @@ class MultiModel(dict):
         pth = os.path.join('models', self.name)
         if os.path.isfile(pth):
             data = load(name, loaddir='models')
-        super(MultiModel, self).__init__(data, **kwargs)
+        super(MultiModel, self).__init__(data)
 
     def score_text(self, text):
         import pandas as pd
@@ -37,7 +29,7 @@ class MultiModel(dict):
         for name, model in self.items():
             tempscores[name] = score_text_with_model(model, text, model.order)
         ser = pd.Series(tempscores)
-        ser = ser.sort_values()
+        ser = ser.sort_values(ascending=False)
         ser['Corpus'] = ser.pop('Corpus')
         return ser
 
@@ -51,26 +43,34 @@ class MultiModel(dict):
                 continue
             tempscores[name] = score_subcorpus_with_model(model, subc, model.order)
         ser = pd.Series(tempscores)
-        ser = ser.sort_values()
+        ser = ser.sort_values(ascending=False)
         ser['Corpus'] = ser.pop('Corpus')
         return ser
 
     def score_file(self, f, **kwargs):
-        from collections import Counter
+        from collections import Counter, OrderedDict
+        import pandas as pd
+        tempscores = {}
         if f.datatype != 'parse':
             f = f.parse(**kwargs)
-        search = self.search
-        exclude = self.exclude
-        show = self.show
+        search = self.kwargs.pop('search', {'i': r'^1$'})
+        exclude = self.kwargs.pop('exclude', False)
+        show = self.kwargs.pop('show', ['w'])
         kwgs = self.kwargs
         # add kwargs
         res = f.interrogate(search, 
                             exclude=exclude, 
                             show=show, 
                             language_model=True, 
+                            #printstatus=False,
                             **kwgs)
         dat = Counter(res.results.to_dict())
-        return score_counter_with_model(self, dat)
+        for name, model in self.items():
+            tempscores[name] = score_counter_with_model(model, dat, model.order, **kwargs)
+        ser = pd.Series(tempscores)
+        ser = ser.sort_values(ascending=False)
+        ser['Corpus'] = ser.pop('Corpus')
+        return ser
 
     def score(self, data):
         """
@@ -95,6 +95,79 @@ class MultiModel(dict):
         else:
             pass
 
+
+
+
+    def score_anything(self, data, **kwargs):
+        """
+        Score text against a model
+        """
+        # get data into a list of ngram tuples
+        from collections import Counter, OrderedDict
+        import pandas as pd
+        from corpkit.corpus import Subcorpus, File
+
+        order = self.order
+
+        # get subcorpus
+        if isinstance(data, Subcorpus) or (isinstance(data, basestring) and \
+            hasattr(self, 'subcorpora') and data in [i.name for i in self.subcorpora]):
+            print('is subcorpus')
+            counts = self[data.name].counts
+        #get file
+        elif isinstance(data, File) or (isinstance(data, basestring) and \
+            os.path.isfile(data)):
+            print('is file')
+            counts = self.turn_file_obj_into_counts(data)
+        # get text
+        elif isinstance(data, basestring) and not \
+            os.path.exists(data):
+            print('is text')
+            counted_sents = Counter(nltk.sent_tokenize(data))
+            counts = LanguageModel(order, kwargs.get('alpha', 0.4), counted_sents).counts
+        # make ngrams
+        #grams = []
+        #for k, v in counts.items():
+        #    for gram in [tuple(i) for i in nltk.ngrams(k, order)]:
+        #        grams.append(gram)
+        tempscores = {}
+        for name, model in self.items():
+            tempscores[name] = self.score_counts_against_model(counts, model)
+        ser = pd.Series(tempscores)
+        ser = ser.sort_values(ascending=False)
+        ser['Corpus'] = ser.pop('Corpus')
+        return ser
+
+    def score_counts_against_model(self, counts, model):
+        grams = []
+        for k, v in counts.items():
+            for _ in range(v):
+                grams.append(k)
+        slogprob = 0
+        for gram in grams:
+            lb = model.logprob(gram)
+            slogprob += lb
+        return slogprob / len(counts)
+
+
+
+    def turn_file_obj_into_counts(self, data, *args, **kwargs):
+        if data.datatype != 'parse':
+            data = data.parse(**kwargs)
+        search = self.kwargs.pop('search', {'i': r'^1$'})
+        exclude = self.kwargs.pop('exclude', False)
+        show = self.kwargs.pop('show', ['w'])
+        kwgs = self.kwargs
+        # add kwargs
+        res = data.interrogate(search, 
+                            exclude=exclude, 
+                            show=show, 
+                            language_model=True, 
+                            #printstatus=False,
+                            **kwgs)
+        model = _make_model_from_interro(res, self.name, nosave=True,singlemod=True, *args, **kwargs)
+        return model.counts
+
     def score_subcorpora(self):
         import pandas as pd
         data = []
@@ -107,6 +180,8 @@ class MultiModel(dict):
 
 class LanguageModel(object):
     def __init__(self, order, alpha, sentences):
+        """
+        :param sentences: a Counter of unsplit sents"""
         self.order = order
         self.alpha = alpha
         if order > 1:
@@ -164,6 +239,7 @@ def score_subcorpus_with_model(model, subc, order):
     Score text against a model
     """
     grams = []
+    ngrams = []
     for gram, count in subc.counts.items():
         for _ in range(count):
             grams.append(tuple(gram))
@@ -171,48 +247,64 @@ def score_subcorpus_with_model(model, subc, order):
     for gram in grams:
         lb = model.logprob(gram)
         slogprob += lb
-    return slogprob / len(subc.counts) * order
+    return slogprob / len(subc.counts)
 
-# todo
-def score_counter_with_model(*args, **kwargs):
-    pass
+def score_counter_with_model(model, counts, order, **kwargs):
+    grams = []
+    ngrams = []
+    for gram, count in counts.items():
+        for _ in range(count):
+            grams.append(tuple(gram.split('-SPL-IT-')))
+    for gram in grams:
+        ns = [tuple(i) for i in nltk.ngrams(gram, order)]
+        for n in ns:
+            ngrams.append(n)
+    slogprob = 0
+    for gram in ngrams:
+        lb = model.logprob(gram)
+        slogprob += lb
+    return slogprob / len(counts)
 
 def _make_model_from_interro(self, name, **kwargs):
     import os
-    print('kwargs', kwargs)
     from pandas import DataFrame, Series
     from collections import Counter
     from corpkit.other import load
-    if not name.endswith('.p'):
-        name = name + '.p'
-    pth = os.path.join('models', name)
-    if os.path.isfile(pth):
-        return load(name, loaddir='models')
+    nosave = kwargs.get('nosave')
+    singlemod = kwargs.get('singlemod')
+    if not nosave:
+        if not name.endswith('.p'):
+            name = name + '.p'
+        pth = os.path.join('models', name)
+        if os.path.isfile(pth):
+            return load(name, loaddir='models')
     scores = {}
     if not hasattr(self, 'results'):
         raise ValueError('Need results attribute to make language model.')
     # determine what we iterate over
-    if kwargs.get('just_totals'):
-        to_iter_over = [self.results.sum()[self.results.sum() > 0]]
+    if not singlemod:
+        to_iter_over = [(name, self.results.ix[name]) for name in list(self.results.index)]
     else:
-        to_iter_over = [self.results.ix[subc][self.results.ix[subc] > 0] 
-                        for subc in list(self.results.index)]
-        tot = self.results.sum()[self.results.sum() > 0]
-        tot.name = 'Corpus'
-        to_iter_over.append(tot)
-    for subc in list(to_iter_over):
-        # get name for file
-        if kwargs.get('just_totals'):
-            subname = os.path.basename(self.query.get('corpus', 'untitled'))
+        if isinstance(self.results, Series):
+            to_iter_over = [(name, self.results)]
         else:
-            subname = subc.name
+            to_iter_over = [(name, self.results.sum())]
+    try:
+        tot = self.results.sum()[self.results.sum() > 0]
+        to_iter_over.append(('Corpus', tot))
+    except:
+        pass
+    for subname, subc in list(to_iter_over):
+        # get name for file
         dat = Counter(subc.to_dict())
         model = train(dat, subname, name, **kwargs)
         scores[subname] = model
+    if singlemod:
+        return scores.values()[0]
     mm = MultiModel(scores, name=name, order=kwargs.pop('order', 3), **kwargs)
     if not os.path.isfile(os.path.join('models', name)):
         from corpkit.other import save
-        save(scores, name, savedir = 'models')
+        save(scores, name, savedir='models')
     print('Done!\n')
     return mm
 
