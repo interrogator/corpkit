@@ -18,10 +18,11 @@ __all__ = [
     "as_regex",
     "new_project",
     "Corpus",
+    "File",
     "Corpora"] + LETTERS
 
 #metadata
-__version__ = "2.1.5"
+__version__ = "2.1.6"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -40,8 +41,8 @@ for p in [corpath, baspat]:
         os.environ["PATH"] += os.pathsep + p
 
 # import classes
-from corpkit.corpus import Corpus
-from corpkit.corpus import Corpora
+from corpkit.corpus import Corpus, File, Corpora
+from corpkit.model import MultiModel
 
 import corpkit.dictionaries as dictionaries
 
