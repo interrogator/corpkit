@@ -41,6 +41,8 @@ When using *corpkit*, any interrogation is also optionally a concordance. If you
 
 If you like, you can use ``only_format_match=True`` to keep the left and right context simple:
 
+.. code-block:: python
+
    >>> withconc = corp.interrogate({L: ['man', 'woman', 'person']},
    ...                             show=[W,P],
    ...                             only_format_match=True,
