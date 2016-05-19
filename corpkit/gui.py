@@ -1126,7 +1126,7 @@ def corpkit_gui():
             """replaces a namedtuple results/totals with newdata
                --- such a hack, should upgrade to recordtype"""
             namedtup = all_interrogations[namedtupname]
-            the_branch = namedtup.__dict__[branch]
+            the_branch = getattr(namedtup, branch)
             if branch == 'results':
                 the_branch.drop(the_branch.index, inplace = True)
                 the_branch.drop(the_branch.columns, axis = 1, inplace = True)
@@ -5233,7 +5233,7 @@ def corpkit_gui():
                                 tkdrop = data.totals.drop('tkintertable-order', errors = 'ignore')
                                 tkdrop.to_csv(os.path.join(exported_fullpath.get(), answer, 'totals.csv'), sep ='\t', encoding = 'utf-8')
                         if k == 'query':
-                            if data.__dict__.get('query') is not None:
+                            if getattr(data, 'query', None):
                                 pandas.DataFrame(list(data.query.values()), index = list(data.query.keys())).to_csv(os.path.join(exported_fullpath.get(), answer, 'query.csv'), sep ='\t', encoding = 'utf-8')
                         #if k == 'table':
                         #    if 'table' in list(data.__dict__.keys()) and data.table:
@@ -5843,6 +5843,7 @@ def corpkit_gui():
             """copy unparsed texts to project folder"""
             import shutil
             import os
+            from corpkit.process import saferead
             home = os.path.expanduser("~")
             docpath = os.path.join(home, 'Documents')
             if sys.platform == 'darwin':
@@ -5874,15 +5875,9 @@ def corpkit_gui():
             for (rootdir, d, fs) in os.walk(newc):
                 for f in fs:
                     fpath = os.path.join(rootdir, f)
-                    with open(fpath) as f:
-                        data = f.read()
+                    data, enc = saferead(fpath)
                     with open(fpath, "w") as f:
-                        try:
-                            f.write(data)
-                        except UnicodeEncodeError:
-                            import chardet
-                            enc = chardet.detect(data)
-                            f.write(data.decode(enc['encoding'], 'ignore'))
+                        f.write(data.encode('utf-8', errors='ignore'))
                     # rename file
                     #dname = '-' + os.path.basename(rootdir)
                     #newname = fpath.replace('.txt', dname + '.txt')

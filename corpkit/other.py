@@ -601,7 +601,7 @@ def make_multi(interrogation, indexnames = None):
             df = df.astype(int)
         except:
             pass
-        return Interrogation(df, df.sum(axis = 1), interrogation.__dict__.get('query', None))
+        return Interrogation(df, df.sum(axis = 1), getattr(interrogation, 'query', None))
     # determine datatype, get df and cols
     if type(interrogation) == pd.core.frame.DataFrame:
         df = interrogation
@@ -636,10 +636,7 @@ def make_multi(interrogation, indexnames = None):
     pd.set_option('display.multi_sparse', False)
     totals = newdf.sum(axis = 1)
     query = interrogation.query
-    try:
-        conco = interrogation.__dict__.get('concordance', None)
-    except:
-        conco = None
+    conco = getattr(interrogation, 'concordance', None)
     return Interrogation(newdf, totals, query, conco)
 
 def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
