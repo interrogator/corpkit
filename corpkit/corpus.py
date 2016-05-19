@@ -372,10 +372,11 @@ class Corpus(object):
         expression. The search below makes DataFrames containing the most 
         common subjects, objects, modifiers (etc.) of 'see':
 
-        :param search: Similar to `search` in the `interrogate()` / 
-        `concordance() methods. `W`/`L keys match word or lemma; `F`: key 
-        specifies semantic role (`'participant'`, `'process'` or `'modifier'`. 
-        If `F` not specified, each role will be searched for.
+        :param search: Similar to `search` in the `interrogate()`/`concordance()
+                       methods. `W`/`L keys match word or lemma; `F`: key 
+                       specifies semantic role (`'participant'`, `'process'` or 
+                       `'modifier'`. If `F` not specified, each role will be 
+                       searched for.
         :type search: `dict`
 
         :Example:
@@ -472,8 +473,8 @@ class Corpus(object):
            - `list` -- word list to match
 
         :param show: What to output. If multiple strings are passed in as a ``list``, results
-        will be colon-separated, in the suppled order. If you want to show ngrams, you can't
-        have multiple values. Possible values are the same as those for ``search``, plus:
+                     will be colon-separated, in the suppled order. If you want to show ngrams, you can't
+                     have multiple values. Possible values are the same as those for ``search``, plus:
 
            - `a`/distance from root
            - `n`/ngram
@@ -483,24 +484,24 @@ class Corpus(object):
 
         :type show: `str`/`list` of strings
 
-        :param lemmatise: Force lemmatisation on results. Deprecated:
-        instead, output a lemma form with the `show` argument
+        :param lemmatise: Force lemmatisation on results. **Deprecated:
+                          instead, output a lemma form with the `show` argument**
         :type lemmatise: `bool`
 
         :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed),
-        or when tag cannot be recovered from Tregex query
+                         or when tag cannot be recovered from Tregex query
         :type lemmatag: False/`'n'`/`'v'`/`'a'`/`'r'`
 
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: `False`/`'US'`/`'UK'`
 
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want
-        to use
+                         to use
         :type dep_type: `str` -- 'basic-dependencies'/'a',
         'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
 
         :param save: Save result as pickle to `saved_interrogations/<save>` on 
-        completion
+                     completion
         :type save: `str`
 
         :param gramsize: size of n-grams (default 2)
@@ -513,7 +514,7 @@ class Corpus(object):
         :type multiprocess: `int`/`bool` (to determine automatically)
 
         :param files_as_subcorpora: treat each file as a subcorpus, ignoring 
-        actual subcorpora if present
+               actual subcorpora if present
         :type files_as_subcorpora: `bool`
 
         :param do_concordancing: generate a concordance while interrogating, 
@@ -527,9 +528,9 @@ class Corpus(object):
         :type tgrep: `bool`
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
-        `.query`, `.results`, `.totals` attributes. If multiprocessing is 
-        invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
-        containing corpus names, queries or speakers as keys.
+                  `.query`, `.results`, `.totals` attributes. If multiprocessing is 
+                  invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
+                  containing corpus names, queries or speakers as keys.
         """
         from corpkit.interrogator import interrogator
         par = kwargs.pop('multiprocess', None)
@@ -555,8 +556,8 @@ class Corpus(object):
         :param operations: which kinds of annotations to do
         :type operations: str
 
-        :param speaker_segmentation: add speaker name to parser output if your corpus is 
-        script-like
+        :param speaker_segmentation: add speaker name to parser output if your
+                                     corpus is script-like
         :type speaker_segmentation: bool
 
         :param memory_mb: Amount of memory in MB for parser
@@ -565,7 +566,8 @@ class Corpus(object):
         :param copula_head: Make copula head in dependency parse
         :type copula_head: bool
 
-        :param multiprocess: Split parsing across n cores (for high-performance computers)
+        :param multiprocess: Split parsing across n cores (for high-performance 
+                             computers)
         :type multiprocess: int
 
         :Example:

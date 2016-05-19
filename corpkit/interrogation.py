@@ -163,7 +163,7 @@ class Interrogation(object):
         >>> data.edit(replace_names={r'object': r'[di]obj'})
 
         :param replace_subcorpus_names: Edit subcorpus names, then merge duplicates.
-        The same as `replace_names`, but on the other axis.
+                                        The same as `replace_names`, but on the other axis.
         :type replace_subcorpus_names: `str`/`list of tuples`/`dict`
 
         :Other options:
@@ -180,7 +180,8 @@ class Interrogation(object):
         :type just_totals: `bool`
         
         :param threshold: When using results list as dataframe 2, drop values 
-        occurring fewer than n times. If not keywording, you can use:
+                          occurring fewer than n times. If not keywording, you 
+                          can use:
                                 
            `'high'`: `denominator total / 2500`
            
@@ -193,10 +194,10 @@ class Interrogation(object):
         :type threshold: `int`/`bool`
 
         :param span_subcorpora: If subcorpora are numerically named, span all 
-        from *int* to *int2*, inclusive
+                                from *int* to *int2*, inclusive
         :type span_subcorpora: `tuple` -- `(int, int2)`
 
-        :param projection:         a  to multiply results in subcorpus by n
+        :param projection: multiply results in subcorpus by n
         :type projection: tuple -- `(subcorpus_name, n)`
         :param remove_above_p: Delete any result over `p`
         :type remove_above_p: `bool`
@@ -205,7 +206,7 @@ class Interrogation(object):
         :type p: `float`
         
         :param revert_year: When doing linear regression on years, turn annual 
-        subcorpora into 1, 2 ...
+                            subcorpora into 1, 2 ...
         :type revert_year: `bool`
         
         :param print_info: Print stuff to console showing what's being edited
@@ -227,11 +228,11 @@ class Interrogation(object):
         type keyword_measure: `str`
         
         :param selfdrop: When keywording, try to remove target corpus from 
-        reference corpus
+                         reference corpus
         :type selfdrop: `bool`
         
         :param calc_all: When keywording, calculate words that appear in either 
-        corpus
+                         corpus
         :type calc_all: bool
 
         :returns: :class:`corpkit.interrogation.Interrogation`
@@ -273,61 +274,61 @@ class Interrogation(object):
         <matplotlib figure>
 
         :param title: A title for the plot
-        :type title: str
+        :type title: `str`
         :param x_label: A label for the x axis
-        :type x_label: str
+        :type x_label: `str`
         :param y_label: A label for the y axis
-        :type y_label: str
+        :type y_label: `str`
         :param kind: The kind of chart to make
-        :type kind: str ('line'/'bar'/'barh'/'pie'/'area')
+        :type kind: `str` (`'line'`/`'bar'`/`'barh'`/`'pie'`/`'area'`/`'heatmap'`)
         :param style: Visual theme of plot
-        :type style: str ('ggplot'/'bmh'/'fivethirtyeight'/'seaborn-talk'/etc)
+        :type style: `str` ('ggplot'/'bmh'/'fivethirtyeight'/'seaborn-talk'/etc)
         :param figsize: Size of plot
-        :type figsize: tuple (int, int)
-        :param save: If bool, save with *title* as name; if str, use str as name
-        :type save: bool/str
+        :type figsize: `tuple` -- `(int, int)`
+        :param save: If `bool`, save with *title* as name; if `str`, use `str` as name
+        :type save: `bool`/`str`
         :param legend_pos: Where to place legend
-        :type legend_pos: str ('upper right'/'outside right'/etc)
+        :type legend_pos: `str` ('upper right'/'outside right'/etc)
         :param reverse_legend: Reverse the order of the legend
-        :type reverse_legend: bool
+        :type reverse_legend: `bool`
         :param num_to_plot: How many columns to plot
         :type num_to_plot: int/'all'
         :param tex: Use TeX to draw plot text
-        :type tex: bool
+        :type tex: `bool`
         :param colours: Colourmap for lines/bars/slices
-        :type colours: str
+        :type colours: `str`
         :param cumulative: Plot values cumulatively
-        :type cumulative: bool
+        :type cumulative: `bool`
         :param pie_legend: Show a legend for pie chart
-        :type pie_legend: bool
+        :type pie_legend: `bool`
         :param partial_pie: Allow plotting of pie slices only
-        :type partial_pie: bool
+        :type partial_pie: `bool`
         :param show_totals: Print sums in plot where possible
-        :type show_totals: str -- 'legend'/'plot'/'both'
+        :type show_totals: `str` -- 'legend'/'plot'/'both'
         :param transparent: Transparent .png background
-        :type transparent: bool
+        :type transparent: `bool`
         :param output_format: File format for saved image
-        :type output_format: str -- 'png'/'pdf'
+        :type output_format: `str` -- 'png'/'pdf'
         :param black_and_white: Create black and white line styles
-        :type black_and_white: bool
+        :type black_and_white: `bool`
         :param show_p_val: Attempt to print p values in legend if contained in df
-        :type show_p_val: bool
+        :type show_p_val: `bool`
         :param indices: To use when plotting "distance from root"
-        :type indices: bool
+        :type indices: `bool`
         :param stacked: When making bar chart, stack bars on top of one another
-        :type stacked: str
+        :type stacked: `str`
         :param filled: For area and bar charts, make every column sum to 100
-        :type filled: str
+        :type filled: `str`
         :param legend: Show a legend
-        :type legend: bool
+        :type legend: `bool`
         :param rot: Rotate x axis ticks by *rot* degrees
         :type rot: int
         :param subplots: Plot each column separately
-        :type subplots: bool
+        :type subplots: `bool`
         :param layout: Grid shape to use when *subplots* is True
-        :type layout: tuple -- (int, int)
+        :type layout: `tuple` -- `(int, int)`
         :param interactive: Experimental interactive options
-        :type interactive: list -- [1, 2, 3]
+        :type interactive: `list` -- `[1, 2, 3]`
         :returns: matplotlib figure
         """
         from corpkit.plotter import plotter
@@ -435,7 +436,7 @@ class Interrogation(object):
         :type indexnames: list of strings
 
         :returns: :class:`corpkit.interrogation.Interrogation`, with 
-        `pandas.MultiIndex` as 
+                  `pandas.MultiIndex` as 
         :py:attr:`~corpkit.interrogation.Interrogation.results` attribute
         """
 
@@ -722,7 +723,6 @@ class Interrodict(OrderedDict):
             try:
                 df = df.T.join(others).T
             except ValueError:
-                order = list(self.values()[0].results.columns)
                 for i in self.values()[1:]:
                     df = df.add(i.results, fill_value=0)
 
