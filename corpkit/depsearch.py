@@ -93,7 +93,7 @@ def dep_searcher(sents,
         elif attr == 'r':
             return distance_searcher(tokens, pattern)
         else:
-            attrib = attr_trans[attr]
+            attrib = attr_trans.get(attr, attr)
         matches = set()
         for tok in tokens:
             tosearch = getattr(tok, attrib)
@@ -113,15 +113,16 @@ def dep_searcher(sents,
 
     def search_function(deprole, pattern):
         matches = set()
-        for l in deps.links:
-            if not re.search(pat, l.type):
-                continue
-            if deprole == 'm':
-                matches.add(s.get_token_by_id(l.dependent.idx))
-            else:
-                in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
-                for lnk in in_deps:
-                    matches.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
+        for tok in tokens:
+            for l in deps.links:
+                if not re.search(pat, l.type):
+                    continue
+                if deprole == 'm':
+                    matches.add(s.get_token_by_id(l.dependent.idx))
+                else:
+                    in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
+                    for lnk in in_deps:
+                        matches.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
         return matches
 
     def distance_searcher(tosearch, pattern):
@@ -142,66 +143,81 @@ def dep_searcher(sents,
     ################## SHOW FUNCTIONS ##################
     ####################################################
 
-    # if show functions are terminal, they return the word
-    # if they aren't, they return token instances
+    lookup = {'w': 'word',
+              'l': 'lemma',
+              'p': 'pos',
+              'i': 'id'}
 
-    def show_word(token_set):
-        return [tok.word for tok in token_set]
+    def show_this(tokenx, this):
 
-    def show_lemma(token_set):
-        from corpkit.dictionaries.word_transforms import wordlist
-        return [wordlist.get(tok.lemma, tok.lemma) \
-                for tok in token_set]
+        if this == 'f':
+            return show_function(tokenx)
+        if this == 'r':
+            return show_distance(tokenx)
 
-    def show_pos(token_set):
-        return [tok.pos for tok in token_set]
+        t = lookup.get(this, this)
+        if t == 'x':
+            from corpkit.dictionaries.word_transforms import taglemma
+            postp = taglemma
+        elif t == 'i':
+            from corpkit.dictionaries.word_transforms import wordlist
+            postp = wordlist
+        else:
+            postp = {}
 
-    def show_wordclass(token_set):
-        from corpkit.dictionaries.word_transforms import taglemma
-        return [taglemma.get(tok.pos.lower(), tok.pos) \
-                for tok in token_set]
+        if hasattr(tokenx, t):
+            att = getattr(tokenx, t)
+            return postp.get(att, att)
+        else:
+            return tokenx
 
-    def show_function(token_set):
-        fs = set()
-        for tok in token_set:
-            for i in deps.links:
-                if i.dependent.idx == tok.id:
-                    fs.add(i.type.rstrip(','))
-        return fs
+    def show_function(tok):
+        if tok == 'root':
+            return 'tok'        
+        for i in deps.links:
+            if i.dependent.idx == tok.id:
+                return i.type.rstrip(',')
+        return 'none'
+
 
     def show_distance(token_set):
+        """broken"""
         fs = set()
         for tok in token_set:
+            if tok == 'root':
+                fs.add(tok)
+                continue
             all_matching_tokens = [l for l in deps.links]
             distance = distancer(all_matching_tokens, tok)
             if distance is not False and distance is not None:
                 fs.add(str(distance))
         return fs
 
-    def show_index(token_set):
-        return set([str(tok.id) for tok in token_set])
+    def show_governor(tok):
+        for i in deps.links:
+            if i.dependent.idx == tok.id:
+                gov = s.get_token_by_id(i.governor.idx)
+                if gov:
+                    return gov
+                else:
+                    return 'root'
+        return 'none' # not possible?
 
-    def show_governor(token_set):
-        govs = set()
-        for tok in token_set:
-            for i in deps.links:
-                if i.dependent.idx == tok.id:
-                    gov = s.get_token_by_id(i.governor.idx)
-                    if gov:
-                        govs.add(gov)
-        return govs
+    def show_dependent(tok):
+        """this has been hacked, needs rewriting"""
+        for i in deps.links:
+            if i.governor.idx == tok.id:
+                dep = s.get_token_by_id(i.dependent.idx)
+                if dep:
+                    return dep
+                else:
+                    return 'none'
+        return 'none'
 
-    def show_dependent(token_set):
-        dat = set()
-        for tok in token_set:
-            for i in deps.links:
-                if i.governor.idx == tok.id:
-                    dep = s.get_token_by_id(i.dependent.idx)
-                    if dep:
-                        dat.add(dep)
-        return dat
+    def show_match(tok):
+        return tok
 
-    def show_next(token_set):
+    def show_next(token_set, _):
         """get token to the right"""
         nexts = set()
         for tok in token_set:
@@ -212,32 +228,28 @@ def dep_searcher(sents,
                 pass
         return nexts
 
-    lookup_show = {'w': show_word,
-                   'l': show_lemma,
-                   'g': show_governor,
+    lookup_show = {'g': show_governor,
                    'd': show_dependent,
-                   'r': show_distance,
-                   'i': show_index,
-                   'p': show_pos,
-                   'f': show_function,
-                   'x': show_wordclass,
-                   'o': show_next
-                  }
+                   'm': show_match}
 
     ####################################################
     ################ PROCESSING FUNCS ##################
     ####################################################
 
-    def get_list_of_lookup_funcs(show):
-        """take a single search/show type, return match"""
-        #show = [i.lstrip('n').lstrip('b') for i in show]
+    def get_list_of_lookup_funcs(show_bit):
+        """take a single search/show_bit type, return match"""
+        #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r']
-        show = show.lstrip('n')
-        show = show.lstrip('b')
-        show = list(show)
-        if show[-1] not in ends:
-            show.append('w')
-        return [lookup_show[i] for i in show]
+        starts = ['d', 'g', 'm', 'n', 'b']
+        show_bit = show_bit.lstrip('n')
+        show_bit = show_bit.lstrip('b')
+        show_bit = list(show_bit)
+        if show_bit[-1] not in ends:
+            show_bit.append('w')
+        if show_bit[0] not in starts:
+            show_bit.insert(0, 'm')
+        return lookup_show.get(show_bit[0]), show_bit[1]
+       # return [(lookup_show.get(i, show_this), i) for i in show_bit]
 
     def fix_search(search):
         """if search has nested dicts, remove them"""
@@ -385,9 +397,7 @@ def dep_searcher(sents,
         # now, if we don't need the whole sent, we discard it. if we don't
         # need to format it, we format it now.
 
-        if language_model:
-            tokens = tokens
-        else:
+        if not language_model:
             if do_concordancing:
                 if only_format_match or show == ['n'] or show == ['b']:
                     start = ' '.join(t.word for index, t in enumerate(tokens) \
@@ -414,6 +424,8 @@ def dep_searcher(sents,
             separator = '_'
         else:
             separator = ' '
+        if language_model:
+            separator = '-spl-it-'
 
         # now, for each word in the matching sentence, format it.
         # note that if we're not doing concordancing, or if only formatting 
@@ -421,11 +433,11 @@ def dep_searcher(sents,
         processed_toklist = []
         for token in tokens:
             single_result = process_a_token(token, show)
-            for bit in single_result:
-                processed_toklist.append(bit)
+            if single_result:
+                processed_toklist.append(single_result)
         
         if language_model:
-            return '-SPL-IT-'.join(processed_toklist), conc_line
+            return '-spl-it-'.join(processed_toklist), conc_line
             #return tuple(processed_toklist), conc_line
         # if no conc at all, return the empty ish one and a string of token(s)
         if not do_concordancing:
@@ -456,18 +468,27 @@ def dep_searcher(sents,
         Take entire show argument, and a token of interest,
         and return slash sep token
         """
-        # make an iterable token, because this can generate more than one token
-        # if searching for dependent, for example
-        intermediate_result = []
-        # for each show value, add the correct representation to the list
+        result = []
         for val in show:
-            tok = {token}
-            funcs = get_list_of_lookup_funcs(val)
-            for func in funcs:
-                tok = func(tok)
-            for t in tok:
-                intermediate_result.append(t)
-        return ['/'.join(intermediate_result)]
+            get_tok, show_bit = get_list_of_lookup_funcs(val)
+            tok = get_tok(token)
+            to_show = show_this(tok, show_bit)
+            if isinstance(exclude, dict) and val in exclude:
+                if re.search(exclude[val], to_show):
+                    return
+            result.append(to_show)
+        if result:
+            if nopunct:
+                if not all(re.search(is_a_word, i) for i in result):
+                    return
+            if kwargs.get('no_root'):
+                if any(i == 'root' for i in result):
+                    return
+            if kwargs.get('no_none'):
+                if any(i == 'none' for i in result):
+                    return
+
+        return '/'.join(i.replace('/', '-slash') for i in result)
 
     def remove_by_mode(matching_tokens, mode):
         """
