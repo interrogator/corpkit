@@ -188,7 +188,7 @@ class Corpus(object):
             self.path, self.datatype, len(self.subcorpora))
         if self.singlefile:
             show += '\nCorpus is a single file.\n'
-        if 'features' in self.__dict__.keys():
+        if hasattr(self, 'features'):
             if not self.singlefile:
                 cols = list(self.features.columns)[:10]
                 show += '\nFeatures:\n\n' + \
@@ -539,6 +539,7 @@ class Corpus(object):
                 kwargs['multiprocess'] = par
             return interrogator(self.subcorpora, search, *args, **kwargs)
         else:
+            kwargs['multiprocess'] = par
             return interrogator(self, search, *args, **kwargs)
 
     def parse(self, corenlppath=False, operations=False, copula_head=True,
@@ -575,6 +576,7 @@ class Corpus(object):
 
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
+        import os
         from corpkit.make import make_corpus
         #from corpkit.process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
@@ -583,20 +585,25 @@ class Corpus(object):
                 'parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
-        return Corpus(
-            make_corpus(
-                unparsed_corpus_path=self.path,
-                parse=True,
-                tokenise=False,
-                corenlppath=corenlppath,
-                operations=operations,
-                copula_head=copula_head,
-                speaker_segmentation=speaker_segmentation,
-                memory_mb=memory_mb,
-                multiprocess=multiprocess,
-                split_texts=400,
-                *args,
-                **kwargs))
+        corp = make_corpus(unparsed_corpus_path=self.path,
+                           parse=True,
+                           tokenise=False,
+                           corenlppath=corenlppath,
+                           operations=operations,
+                           copula_head=copula_head,
+                           speaker_segmentation=speaker_segmentation,
+                           memory_mb=memory_mb,
+                           multiprocess=multiprocess,
+                           split_texts=400,
+                           *args,
+                           **kwargs
+                          )
+        if not corp:
+            return
+        if os.path.isfile(corp):
+            return File(corp)
+        else:
+            return Corpus(corp)
 
     def tokenise(self, *args, **kwargs):
         """
@@ -727,15 +734,14 @@ class Corpus(object):
             return MultiModel(load(name, loaddir='models'))
 
         # set some defaults if not passed in as kwargs
-        search = kwargs.get('search', {'i': r'^1$'})
-        show = kwargs.get('show', ['w'])
-        just_totals = kwargs.get('just_totals', False)
+        search = kwargs.pop('search', {'i': r'^1$'})
+        langmod = not any(i.startswith('n') for i in search.keys())
 
         res = self.interrogate(search,
-                               show=show,
-                               language_model=True,
+                               language_model=langmod,
                                **kwargs)
-        return res.language_model(name, just_totals=just_totals, **kwargs)
+
+        return res.language_model(name, search=search, **kwargs)
 
 
 class Subcorpus(Corpus):
@@ -777,10 +783,13 @@ class Subcorpus(Corpus):
 class File(Corpus):
     """Models a corpus file for reading, interrogating, concordancing"""
 
-    def __init__(self, path, dirname, datatype):
+    def __init__(self, path, dirname=False, datatype=False):
         import os
         from os.path import join, isfile, isdir
-        self.path = join(dirname, path)
+        if dirname:
+            self.path = join(dirname, path)
+        else:
+            self.path = path
         kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
         Corpus.__init__(self, self.path, **kwargs)
         if self.path.endswith('.p'):
