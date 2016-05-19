@@ -31,9 +31,19 @@ def translator():
        'subject':        ['nsubj', 'nsubjpass', 'csubj', 'csubjpass'],
        'textual':        ['cc', 'ref', 'mark'],
        'thing':          ['nsubj', 'agent', 'nsubjpass', 'csubj', 'dobj', 
-                         r'(prep|nmod)(_|:).*', 'appos', 'csubjpass', 'pobj', 'iobj', 'tmod']}
+                         r'(prep|nmod)(_|:).*', 'appos', 'csubjpass', 'pobj', 'iobj', 'tmod'],
+       'any':            ['acl', 'acl:relcl', 'advcl', 'advmod', 'amod', 'appos', 'aux', 'auxpass',
+                          'case', 'cc', 'cc:preconj', 'ccomp', 'compound', 'compound:prt', 'conj', 
+                          'cop', 'csubj', 'csubjpass', 'dep', 'det', 'det:predet', 'discourse', 
+                          'dislocated', 'dobj', 'expl', 'foreign', 'goeswith', 'iobj', 'list', 
+                          'mark', 'mwe', 'name', 'neg', 'nmod', 'nmod:npmod', 'nmod:poss', 'nmod:tmod', 
+                          'nsubj', 'nsubjpass', 'nummod', 'parataxis', 'punct', 'remnant', 'reparandum',
+                          'root', 'vocative', 'xcomp']
+
+       }
 
     outputnames = namedtuple('roles', sorted([i for i in roledict.keys()]))
-    return outputnames(*[sorted(roledict[w]) for w in outputnames._fields])
+    fields = [sorted(roledict[w]) for w in outputnames._fields]
+    return outputnames(*fields)
 
 roles = translator()
