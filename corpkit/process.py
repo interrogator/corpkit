@@ -552,11 +552,11 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
 
 def searchfixer(search, query, datatype = False):
     """normalise query/search value"""
-    if type(search) == str and type(query) == dict:
+    if isinstance(search, basestring) and isinstance(query, dict):
         return search
-    if type(search) == str:
-        search = search[0].lower()
-        if not search.lower().startswith('t') and not search.lower().startswith('n'):
+    if isinstance(search, basestring):
+        srch = search[0].lower()
+        if not srch.startswith('t') and not srch.lower().startswith('n'):
             if query == 'any':
                 query = r'.*'
         search = {search: query}
@@ -930,3 +930,20 @@ def sanitise_dict(d):
         if canpickle(v):
             newd[k] = v
     return newd
+
+
+def saferead(path):
+    """
+    Read a file with detect encoding
+    :returns: text and its encoding
+    """
+    import chardet
+    with open(path, 'r') as fo:
+        data = fo.read()
+    try:
+        enc = 'utf-8'
+        data = data.decode(enc)
+    except UnicodeDecodeError:
+        enc = chardet.detect(data)['encoding']
+        data = data.decode(enc, errors='ignore')
+    return data, enc

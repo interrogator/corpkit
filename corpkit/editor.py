@@ -1036,7 +1036,7 @@ def editor(interrogation,
             df = DataFrame(df)
 
     # delete non-appearing conc lines
-    if interrogation.__dict__.get('concordance', None) is None:
+    if not getattr(interrogation, 'concordance', None):
         lns = None
     else:
         col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
