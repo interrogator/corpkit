@@ -410,6 +410,9 @@ class Interrogation(object):
         from corpkit.other import quickview
         quickview(self, n=n)
 
+    def rel(self):
+        return self.edit('%', 'self')
+
     def multiindex(self, indexnames=None):
         """Create a `pandas.MultiIndex` object from slash-separated results.
 
@@ -716,7 +719,13 @@ class Interrodict(OrderedDict):
         if axis.lower()[0] not in ['x', 'y']:
             df = self.values()[0].results
             others = [i.results.T for i in self.values()[1:]]
-            df = df.T.join(others).T
+            try:
+                df = df.T.join(others).T
+            except ValueError:
+                order = list(self.values()[0].results.columns)
+                for i in self.values()[1:]:
+                    df = df.add(i.results, fill_value=0)
+
             df = df.fillna(0)
         else:
             out = []
