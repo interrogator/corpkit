@@ -896,7 +896,7 @@ def interrogator(corpus,
     show_collocates = any(x.startswith('b') for x in show)
 
     # instantiate lemmatiser if need be
-    if 'l' in show and search.get('t'):
+    if 'l' in show and isinstance(search, dict) and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr = WordNetLemmatizer()
 
@@ -1172,8 +1172,7 @@ def interrogator(corpus,
                     if not only_conc:
                         if not preserve_case:
                             if not statsmode:
-                                if not language_model:
-                                    res = [i.lower() for i in res]
+                                res = [i.lower() for i in res]
                         if spelling:
                             if not statsmode:
                                 res = [correct_spelling(r) for r in res]
@@ -1221,8 +1220,6 @@ def interrogator(corpus,
         if show_ngram or show_collocates:
             if not language_model:
                 df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
-            else:
-                df = df / gramsize
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)

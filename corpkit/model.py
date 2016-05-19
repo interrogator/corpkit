@@ -25,7 +25,7 @@ class LanguageModel(object):
         for ngram, count in sentences.items():
             # the issue is that this stays stable when it's supposed
             # to change as per 'order'. to fix it, sent
-            gram = tuple(ngram.split('-SPL-IT-'))
+            gram = tuple(ngram.split('-spl-it-'))
             wordNGrams = nltk.ngrams(gram, order)
             for wordNGram in wordNGrams:
                 self.counts[wordNGram] += count
@@ -62,9 +62,12 @@ class MultiModel(dict):
         self.name = name
         self.order = order
         self.kwargs = kwargs
-        pth = os.path.join('models', self.name)
-        if os.path.isfile(pth):
-            data = load(name, loaddir='models')
+        if os.path.isfile(self.name):
+            data = load(self.name, loaddir='models')
+        else:
+            pth = os.path.join('models', self.name)
+            if os.path.isfile(pth):
+                data = load(self.name, loaddir='models')
         super(MultiModel, self).__init__(data)
 
     def score(self, data, **kwargs):
@@ -91,7 +94,7 @@ class MultiModel(dict):
             dat = []
             sents = nltk.sent_tokenize(data)
             for sent in sents:
-                dat.append('-SPL-IT-'.join(nltk.word_tokenize(sent)))
+                dat.append('-spl-it-'.join(nltk.word_tokenize(sent)))
             counted_sents = Counter(dat)
             counts = LanguageModel(self.order, kwargs.get('alpha', 0.4), counted_sents).counts
         tempscores = {}
