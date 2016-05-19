@@ -540,11 +540,13 @@ def extract_cnlp(fullfilepath, corenlppath = False, root = False):
     time = strftime("%H:%M:%S", localtime())
     print('%s: CoreNLP extracted. ' % time)
 
-def get_corpus_filepaths(projpath = False, corpuspath = False):
+def get_corpus_filepaths(projpath=False,
+                         corpuspath=False):
     import corpkit
     import fnmatch
     import os
     matches = []
+
     for root, dirnames, filenames in os.walk(corpuspath):
         for filename in fnmatch.filter(filenames, '*.txt'):
             matches.append(os.path.join(root, filename))
@@ -604,6 +606,8 @@ def parse_corpus(proj_path=False,
     from time import localtime, strftime
     import time
 
+    fileparse = kwargs.get('fileparse', False)
+
     url = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'
     
     if not only_tokenise:
@@ -626,10 +630,13 @@ def parse_corpus(proj_path=False,
 
     basecp = os.path.basename(corpuspath)
 
-    if only_tokenise:
-        new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
+    if fileparse:
+        new_corpus_path = os.path.dirname(corpuspath)
     else:
-        new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
+        if only_tokenise:
+            new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
+        else:
+            new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
 
     # todo:
     # this is not stable
@@ -646,7 +653,7 @@ def parse_corpus(proj_path=False,
                     print('Folder containing xml already exists: "%s-parsed"' % basecp)
                     return False
             else:
-                if any([f.endswith('.txt') for f in fs]):
+                if any([f.endswith('.p') for f in fs]):
                     print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
                     return False          
 
@@ -688,10 +695,13 @@ def parse_corpus(proj_path=False,
             memory_mb = 2024
         if operations is False:
             operations = 'tokenize,ssplit,pos,lemma,parse'# 'ner,dcoref'
-        if type(operations) == list:
+        if isinstance(operations, list):
             operations = ','.join([i.lower() for i in operations])
 
-        num_files_to_parse = len([l for l in open(filelist, 'r').read().splitlines() if l])
+        with open(filelist, 'r') as fo:
+            dat = fo.read()
+        num_files_to_parse = len([l for l in dat.splitlines() if l])
+
         # get corenlp version number
         import re
         reg = re.compile(r'stanford-corenlp-([0-9].[0-9].[0-9])-javadoc.jar')
@@ -722,24 +732,25 @@ def parse_corpus(proj_path=False,
         while proc.poll() is None:
             sys.stdout = stdout
             thetime = strftime("%H:%M:%S", localtime())
-            num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
-            if num_parsed == 0:
+            if not fileparse:
+                num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
+                if num_parsed == 0:
+                    if root:
+                        print('%s: Initialising parser ... ' % (thetime))
+                if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
+                    if root:
+                        print('%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse))
+                    if kwargs.get('note'):
+                        kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
+                    #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
+                time.sleep(1)
                 if root:
-                    print('%s: Initialising parser ... ' % (thetime))
-            if num_parsed > 0 and (num_parsed + 1) <= num_files_to_parse:
-                if root:
-                    print('%s: Parsing file %d/%d ... ' % (thetime, num_parsed + 1, num_files_to_parse))
-                if kwargs.get('note'):
-                    kwargs['note'].progvar.set((num_parsed) * 100.0 / num_files_to_parse)
-                #p.animate(num_parsed - 1, str(num_parsed) + '/' + str(num_files_to_parse))
-            time.sleep(1)
-            if root:
-                root.update()
+                    root.update()
     else:
 
         from nltk import word_tokenize as tokenise
         # tokenise each file
-        import pickle
+        import cPickle as pickle
         fs = open(filelist).read().splitlines()
         dirs = sorted(list(set([os.path.basename(os.path.dirname(f)) for f in fs])))
         if len(dirs) == 0:
@@ -1060,6 +1071,8 @@ def flatten_treestring(tree):
 def can_folderise(folder):
     import os
     from glob import glob
+    if os.path.isfile(folder):
+        return False
     fs = glob(os.path.join(folder, '*.txt'))
     if len(fs) > 1:
         if not any(os.path.isdir(x) for x in glob(os.path.join(folder, '*'))):
