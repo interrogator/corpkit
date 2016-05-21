@@ -353,6 +353,9 @@ class Corpus(object):
 
         :returns: a `DataFrame` of tokens and counts
         """
+        from os.path import join, isfile, isdir
+        from corpkit.interrogator import interrogator
+        from corpkit.other import load
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
         if isinstance(show, basestring):
@@ -362,9 +365,10 @@ class Corpus(object):
                 return load(self.name + '-lexicon')
             except AttributeError:
                 pass
-        dat = self.interrogate(W, show=show, **kwargs).results
+        dat = self.interrogate('w', show=show, **kwargs).results
         if isdir(savedir):
             dat.save(self.name + '-lexicon')
+        return dat
 
     def configurations(self, search, **kwargs):
         """
@@ -418,35 +422,39 @@ class Corpus(object):
             03         14         5      5        3           1        0        0
             ...                                                               ...
 
-        :param search: What the query should be matching. Keys can be any of:
+        :param search: What part of the lexicogrammar to search, and what 
+                       criteria to match. The `keys` are the thing to be 
+                       searched, and values are the criteria. To search parse 
+                       trees, use the `T` key, and a Tregex query as the value.
+                       When searching dependencies, you can use any of:
 
-            +--------------------+-------+----------+-----------+
-            |                    | Match | Governor | Dependent |
-            +====================+=======+==========+===========+
-            | Word               | W     | G        | D         |
-            +--------------------+-------+----------+-----------+
-            | Lemma              | L     | GL       | DL        |
-            +--------------------+-------+----------+-----------+
-            | Function           | F     | GF       | DF        |
-            +--------------------+-------+----------+-----------+
-            | POS tag            | P     | GP       | DP        |
-            +--------------------+-------+----------+-----------+
-            | Word class         | X     | GX       | DX        |
-            +--------------------+-------+----------+-----------+
-            | Distance from root | R     | GR       | DR        |
-            +--------------------+-------+----------+-----------+
-            | Index              | I     | GI       | DI        |
-            +--------------------+-------+----------+-----------+
+                       +--------------------+-------+----------+-----------+
+                       |                    | Match | Governor | Dependent |
+                       +====================+=======+==========+===========+
+                       | Word               | `W`   | `G`      | `D`       |
+                       +--------------------+-------+----------+-----------+
+                       | Lemma              | `L`   | `GL`     | `DL`      |
+                       +--------------------+-------+----------+-----------+
+                       | Function           | `F`   | `GF`     | `DF`      |
+                       +--------------------+-------+----------+-----------+
+                       | POS tag            | `P`   | `GP`     | `DP`      |
+                       +--------------------+-------+----------+-----------+
+                       | Word class         | `X`   | `GX`     | `DX`      |
+                       +--------------------+-------+----------+-----------+
+                       | Distance from root | `R`   | `GR`     | `DR`      |
+                       +--------------------+-------+----------+-----------+
+                       | Index              | `I`   | `GI`     | `DI`      |
+                       +--------------------+-------+----------+-----------+
 
-        :type search: `str` or `dict`. `dict` is used when you have multiple criteria.
-        Keys are the thing to be searched, and values are the criteria, which is
-        a Tregex query, a regex, or a list of words to match. Therefore, the two
-        syntaxes below do the same thing:
+                       Values should be regular expressions or wordlists to 
+                       match.
+
+        :type search: `dict`
 
         :Example:
 
-        >>> corpus.interrogate(T, r'/NN.?/')
-        >>> corpus.interrogate({T: r'/NN.?/'})
+        >>> corpus.interrogate({T: r'/NN.?/' < /^t/'}) # T- nouns, via trees
+        >>> corpus.interrogate({W: '^t': P: r'^v'}) # T- nouns, via dependencies
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: `str` -- `'any'`/`'all'`
@@ -458,51 +466,50 @@ class Corpus(object):
         :type excludemode: `str` -- `'any'`/`'all'`
 
         :param query: A search query for the interrogation. This is only used
-                      when `search` is a string, or when multiprocessing. If `search` is a
-                      `dict`, the query/queries are stored there as the values instead. When
-                      multiprocessing, the following is possible:
+                      when `search` is a `str`, or when multiprocessing. When 
+                      `search` If `search` is a str, the search criteria can be 
+                      passed in as `query, in order to allow the simpler syntax:
 
-        :Example:
+                         >>> corpus.interrogate(GL, '(think|want|feel)')
 
-        >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
-        ### return an :class:`corpkit.interrogation.Interrodict` object:
-        >>> corpus.interrogate(T, q)
-        ### return an :class:`corpkit.interrogation.Interrogation` object:
-        >>> corpus.interrogate(T, q, show = C)
+                      When multiprocessing, the following is possible:
 
-        :type query:
-           - `str` -- regex/Tregex pattern (use when `search` is a `str`)
-           - `dict` -- `{name: pattern}` (as per example above)
-           - `list` -- word list to match
+                         >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
+                         ### return an :class:`corpkit.interrogation.Interrodict` object:
+                         >>> corpus.interrogate(T, q)
+                         ### return an :class:`corpkit.interrogation.Interrogation` object:
+                         >>> corpus.interrogate(T, q, show=C)
 
-        :param show: What to output. If multiple strings are passed in as a ``list``, results
-                     will be colon-separated, in the suppled order. If you want 
-                     to show ngrams, you can't have multiple values. Possible 
-                     values are the same as those for ``search``, plus:
+        :type query: `str`, `dict` or `list`
 
-            +------+-----------------------+------------------------+
-            | Show | Gloss                 | Example                |
-            +======+=======================+========================+
-            | N    |  N-gram word          | `The women were`       |
-            +------+-----------------------+------------------------+
-            | NL   |  N-gram lemma         | `The woman be`         |
-            +------+-----------------------+------------------------+
-            | NF   |  N-gram function      | `det nsubj root`       |
-            +------+-----------------------+------------------------+
-            | NP   |  N-gram POS tag       | `DT NNS VBN`           |
-            +------+-----------------------+------------------------+
-            | NX   |  N-gram word class    | `determiner noun verb` |
-            +------+-----------------------+------------------------+
-            | B    |  Collocate word       | `The_were`             |
-            +------+-----------------------+------------------------+
-            | BL   |  Collocate lemma      | `The_be`               |
-            +------+-----------------------+------------------------+
-            | BF   |  Collocate function   | `det_root`             |
-            +------+-----------------------+------------------------+
-            | BP   |  Collocate POS tag    | `DT_VBN`               |
-            +------+-----------------------+------------------------+
-            | BX   |  Collocate word class | `determiner_verb`      |
-            +------+-----------------------+------------------------+
+        :param show: What to output. If multiple strings are passed in as a `list`, 
+                     results will be colon-separated, in the suppled order. Possible 
+                     values are the same as those for `search`, plus options 
+                     n-gramming and getting collocates:
+
+                     +------+-----------------------+------------------------+
+                     | Show | Gloss                 | Example                |
+                     +======+=======================+========================+
+                     | N    |  N-gram word          | `The women were`       |
+                     +------+-----------------------+------------------------+
+                     | NL   |  N-gram lemma         | `The woman be`         |
+                     +------+-----------------------+------------------------+
+                     | NF   |  N-gram function      | `det nsubj root`       |
+                     +------+-----------------------+------------------------+
+                     | NP   |  N-gram POS tag       | `DT NNS VBN`           |
+                     +------+-----------------------+------------------------+
+                     | NX   |  N-gram word class    | `determiner noun verb` |
+                     +------+-----------------------+------------------------+
+                     | B    |  Collocate word       | `The_were`             |
+                     +------+-----------------------+------------------------+
+                     | BL   |  Collocate lemma      | `The_be`               |
+                     +------+-----------------------+------------------------+
+                     | BF   |  Collocate function   | `det_root`             |
+                     +------+-----------------------+------------------------+
+                     | BP   |  Collocate POS tag    | `DT_VBN`               |
+                     +------+-----------------------+------------------------+
+                     | BX   |  Collocate word class | `determiner_verb`      |
+                     +------+-----------------------+------------------------+
 
         :type show: `str`/`list` of strings
 
@@ -518,10 +525,8 @@ class Corpus(object):
         :type spelling: `False`/`'US'`/`'UK'`
 
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want
-                         to use
-        :type dep_type: `str` -- `'basic-dependencies'/`'a'`,
-                         `'collapsed-dependencies'`/`'b'`,
-                         `'collapsed-ccprocessed-dependencies'`/`'c'`
+                         to use: `'basic-dependencies'`, `'collapsed-dependencies'`,
+                         or `'collapsed-ccprocessed-dependencies'`.
 
         :param save: Save result as pickle to `saved_interrogations/<save>` on 
                      completion
@@ -544,10 +549,8 @@ class Corpus(object):
                                  store as `.concordance` attribute
         :type do_concordancing: `bool`/`'only'`
 
-        :param maxconc: Maximum number of concordance lines
-        :type maxconc: `int`
-
-        :param tgrep: Use `TGrep` for tree querying
+        :param tgrep: Use `TGrep` for tree querying. TGrep is less expressive 
+                      than Tregex, and is slower, but can work without Java.
         :type tgrep: `bool`
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
@@ -677,7 +680,7 @@ class Corpus(object):
     def concordance(self, *args, **kwargs):
         """
         A concordance method for Tregex queries, CoreNLP dependencies,
-        tokenised data or plaintext.
+        tokenised data or plaintext. 
 
         :Example:
 
@@ -689,24 +692,28 @@ class Corpus(object):
            3   01  1-01.txt.xml                      So I  felt     like i recognized li
            ...                                                                       ...
 
-        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
+        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, 
+        plus a few extra parameters:
 
         :param only_format_match: If `True`, left and right window will just be
-                                  words, regardless of what is in ``show``
+                                  words, regardless of what is in `show`
         :type only_format_match: `bool`
 
         :param only_unique: Return only unique lines
         :type only_unique: `bool`
 
-        :returns: A :class:`corpkit.interrogation.Concordance` instance
+        :param maxconc: Maximum number of concordance lines
+        :type maxconc: `int`
 
+        :returns: A :class:`corpkit.interrogation.Concordance` instance, with 
+                  columns showing filename, subcorpus name, speaker name, left 
+                  context, match and right context.
         """
 
-        from corpkit.interrogator import interrogator
         kwargs.pop('do_concordancing', None)
         kwargs.pop('conc', None)
         kwargs.pop('corpus', None)
-        return interrogator(self, do_concordancing='only', *args, **kwargs)
+        return self.interrogate(do_concordancing='only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
         """
@@ -783,10 +790,12 @@ class Corpus(object):
 
 
 class Subcorpus(Corpus):
-    """Model a subcorpus, containing files but no subdirectories.
+    """
+    Model a subcorpus, containing files but no subdirectories.
 
     Methods for interrogating, concordancing and configurations are the same as
-    :class:`corpkit.corpus.Corpus`."""
+    :class:`corpkit.corpus.Corpus`.
+    """
 
     def __init__(self, path, datatype):
         self.path = path
@@ -819,7 +828,13 @@ class Subcorpus(Corpus):
 
 
 class File(Corpus):
-    """Models a corpus file for reading, interrogating, concordancing"""
+    """
+    Models a corpus file for reading, interrogating, concordancing.
+
+    Methods for interrogating, concordancing and configurations are the same as
+    :class:`corpkit.corpus.Corpus`, plus methods for accessing the file contents 
+    directly as a `str`, or as a *CoreNLP XML Document`.
+    """
 
     def __init__(self, path, dirname=False, datatype=False):
         import os
@@ -878,7 +893,6 @@ class File(Corpus):
             s = ' '.join(i.word for i in sent.tokens)
             print(s)
         doc = None
-
 
 class Datalist(object):
     """
@@ -959,17 +973,23 @@ class Datalist(object):
             return self.current - 1
 
     def interrogate(self, *args, **kwargs):
-        """Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`"""
+        """
+        Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`
+        """
         from corpkit.interrogator import interrogator
         return interrogator(self, *args, **kwargs)
 
     def concordance(self, *args, **kwargs):
-        """Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`"""
+        """
+        Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`
+        """
         from corpkit.interrogator import interrogator
         return interrogator(self, do_concordancing='only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
-        """Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`"""
+        """
+        Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`
+        """
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
@@ -980,10 +1000,10 @@ class Corpora(Datalist):
     interrogating and plotting the entire collection. This is the highest level 
     of abstraction available.
 
-    :param data: Corpora to model
-    :type data: `str` (path containing corpora), `list` (of corpus paths/Corpus 
-                objects)
-    :class:`corpkit.corpus.Corpus` objects)
+    :param data: Corpora to model. A `str` is interpreted as a path containing 
+                 corpora. A `list` can be a list of corpus paths or 
+                 :class:`corpkit.corpus.Corpus` objects. )
+    :type data: `str`/`list`
     """
 
     def __init__(self, data=False, **kwargs):
@@ -1029,18 +1049,24 @@ class Corpora(Datalist):
 
     @lazyprop
     def features(self):
-        """Generate features attribute for all corpora"""
+        """
+        Generate features attribute for all corpora
+        """
         for corpus in self:
             corpus.features
 
     @lazyprop
     def postags(self):
-        """Generate postags attribute for all corpora"""
+        """
+        Generate postags attribute for all corpora
+        """
         for corpus in self:
             corpus.postags
 
     @lazyprop
     def wordclasses(self):
-        """Generate wordclasses attribute for all corpora"""
+        """
+        Generate wordclasses attribute for all corpora
+        """
         for corpus in self:
             corpus.wordclasses
