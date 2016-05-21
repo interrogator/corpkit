@@ -419,6 +419,7 @@ class Corpus(object):
             ...                                                               ...
 
         :param search: What the query should be matching.
+
            - `t`: tree
            - `w`: word
            - `l`: lemma
@@ -435,7 +436,8 @@ class Corpus(object):
            - `i`/index
            - `n`/n-grams (deprecated, use `show`)
            - `s`/general stats
-        :type search: str or dict. dict is used when you have multiple criteria.
+
+        :type search: `str` or `dict`. dict is used when you have multiple criteria.
         Keys are what to search as `str`, and values are the criteria, which is
         a Tregex query, a regex, or a list of words to match. Therefore, the two
         syntaxes below do the same thing:
@@ -455,9 +457,9 @@ class Corpus(object):
         :type excludemode: `str` -- `'any'`/`'all'`
 
         :param query: A search query for the interrogation. This is only used
-        when `search` is a string, or when multiprocessing. If `search` is a
-        `dict`, the query/queries are stored there as the values instead. When
-        multiprocessing, the following is possible:
+                      when `search` is a string, or when multiprocessing. If `search` is a
+                      `dict`, the query/queries are stored there as the values instead. When
+                      multiprocessing, the following is possible:
 
         :Example:
 
@@ -473,8 +475,9 @@ class Corpus(object):
            - `list` -- word list to match
 
         :param show: What to output. If multiple strings are passed in as a ``list``, results
-                     will be colon-separated, in the suppled order. If you want to show ngrams, you can't
-                     have multiple values. Possible values are the same as those for ``search``, plus:
+                     will be colon-separated, in the suppled order. If you want 
+                     to show ngrams, you can't have multiple values. Possible 
+                     values are the same as those for ``search``, plus:
 
            - `a`/distance from root
            - `n`/ngram
@@ -544,32 +547,43 @@ class Corpus(object):
             kwargs['multiprocess'] = par
             return interrogator(self, search, *args, **kwargs)
 
-    def parse(self, corenlppath=False, operations=False, copula_head=True,
-              speaker_segmentation=False, memory_mb=False, multiprocess=False,
-              split_texts=400, *args, **kwargs):
+    def parse(self,
+              corenlppath=False,
+              operations=False,
+              copula_head=True,
+              speaker_segmentation=False,
+              memory_mb=False,
+              multiprocess=False,
+              split_texts=400,
+              *args,
+              **kwargs
+             ):
         """
         Parse an unparsed corpus, saving to disk
 
         :param corenlppath: folder containing corenlp jar files (use if *corpkit* can't find
         it automatically)
-        :type corenlppath: str
+        :type corenlppath: `str`
 
         :param operations: which kinds of annotations to do
-        :type operations: str
+        :type operations: `str`
 
         :param speaker_segmentation: add speaker name to parser output if your
                                      corpus is script-like
-        :type speaker_segmentation: bool
+        :type speaker_segmentation: `bool`
 
         :param memory_mb: Amount of memory in MB for parser
-        :type memory_mb: int
+        :type memory_mb: `int`
 
         :param copula_head: Make copula head in dependency parse
-        :type copula_head: bool
+        :type copula_head: `bool`
+
+        :param split_texts: Split texts longer than `n` lines for parser memory
+        :type split_text: `int`
 
         :param multiprocess: Split parsing across n cores (for high-performance 
                              computers)
-        :type multiprocess: int
+        :type multiprocess: `int`
 
         :Example:
 
@@ -656,15 +670,14 @@ class Corpus(object):
            3   01  1-01.txt.xml                      So I  felt     like i recognized li
            ...                                                                       ...
 
-
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
-        :param only_format_match: if True, left and right window will just be words, regardless of 
-        what is in ``show``
-        :type only_format_match: bool
+        :param only_format_match: if True, left and right window will just be
+                                  words, regardless of what is in ``show``
+        :type only_format_match: `bool`
 
         :param only_unique: only unique lines
-        :type only_unique: bool
+        :type only_unique: `bool`
 
         :returns: A :class:`corpkit.interrogation.Concordance` instance
 
@@ -677,7 +690,9 @@ class Corpus(object):
         return interrogator(self, do_concordancing='only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
-        """Interrogate, relativise, then plot, with very little customisability. A demo function.
+        """
+        Interrogate, relativise, then plot, with very little customisability.
+        A demo function.
 
         :Example:
 
@@ -689,7 +704,7 @@ class Corpus(object):
         :param kwargs: extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
         :type kwargs: keyword arguments
 
-        :returns: None (but show a plot)
+        :returns: `None` (but show a plot)
         """
         if isinstance(search, basestring):
             search = {'t': search}
@@ -698,14 +713,15 @@ class Corpus(object):
         edited.visualise(self.name, **kwargs).show()
 
     def save(self, savename=False, **kwargs):
-        """Save corpus class to file
+        """
+        Save corpus instance to file. There's not much reason to do this, really.
 
            >>> corpus.save(filename)
 
         :param savename: name for the file
-        :type savename: str
+        :type savename: `str`
 
-        :returns: None
+        :returns: `None`
         """
         from corpkit.other import save
         if not savename:
@@ -810,14 +826,17 @@ class File(Corpus):
 
     @lazyprop
     def document(self):
-        """Return the parsed XML of a parsed file"""
+        """
+        Return the parsed XML of a parsed file
+        """
         from corenlp_xml.document import Document
         return Document(self.read())
 
     def read(self, **kwargs):
-        """Read file data. If data is pickled, unpickle first
+        """
+        Read file data. If data is pickled, unpickle first
 
-        :returns: str/unpickled data
+        :returns: `str`/unpickled data
         """
 
         if self.datatype == 'tokens':
@@ -832,6 +851,9 @@ class File(Corpus):
 
     @lazyprop
     def plainview(self):
+        """
+        Show the sentences in a File as plaintext
+        """
         doc = self.document
         for sent in doc.sentences:
             s = ' '.join(i.word for i in sent.tokens)
