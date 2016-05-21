@@ -410,7 +410,7 @@ class Corpus(object):
         >>> corpus = Corpus('data/conversations-parsed')
         ### show lemma form of nouns ending in 'ing'
         >>> q = {W: r'ing$', P: r'^N'}
-        >>> data = corpus.interrogate(q, show = L)
+        >>> data = corpus.interrogate(q, show=L)
         >>> data.results
             ..  something  anything  thing  feeling  everything  nothing  morning
             01         14        11     12        1           6        0        1
@@ -418,27 +418,28 @@ class Corpus(object):
             03         14         5      5        3           1        0        0
             ...                                                               ...
 
-        :param search: What the query should be matching.
+        :param search: What the query should be matching. Keys can be any of:
 
-           - `t`: tree
-           - `w`: word
-           - `l`: lemma
-           - `p`: pos
-           - `f`: function
-           - `g/gw`: governor
-           - `gl`: governor's lemma form
-           - `gp`: governor's pos
-           - `gf`: governor's function
-           - `d/dependent
-           - `d`l`: dependent's lemma form
-           - `d`p`: dependent's pos
-           - `d`f`: dependent's function
-           - `i`/index
-           - `n`/n-grams (deprecated, use `show`)
-           - `s`/general stats
+            +--------------------+-------+----------+-----------+
+            |                    | Match | Governor | Dependent |
+            +====================+=======+==========+===========+
+            | Word               | W     | G        | D         |
+            +--------------------+-------+----------+-----------+
+            | Lemma              | L     | GL       | DL        |
+            +--------------------+-------+----------+-----------+
+            | Function           | F     | GF       | DF        |
+            +--------------------+-------+----------+-----------+
+            | POS tag            | P     | GP       | DP        |
+            +--------------------+-------+----------+-----------+
+            | Word class         | X     | GX       | DX        |
+            +--------------------+-------+----------+-----------+
+            | Distance from root | R     | GR       | DR        |
+            +--------------------+-------+----------+-----------+
+            | Index              | I     | GI       | DI        |
+            +--------------------+-------+----------+-----------+
 
-        :type search: `str` or `dict`. dict is used when you have multiple criteria.
-        Keys are what to search as `str`, and values are the criteria, which is
+        :type search: `str` or `dict`. `dict` is used when you have multiple criteria.
+        Keys are the thing to be searched, and values are the criteria, which is
         a Tregex query, a regex, or a list of words to match. Therefore, the two
         syntaxes below do the same thing:
 
@@ -479,11 +480,29 @@ class Corpus(object):
                      to show ngrams, you can't have multiple values. Possible 
                      values are the same as those for ``search``, plus:
 
-           - `a`/distance from root
-           - `n`/ngram
-           - `nl`/ngram lemma
-           - `np`/ngram POS
-           - `npl`/ngram wordclass
+            +------+-----------------------+------------------------+
+            | Show | Gloss                 | Example                |
+            +======+=======================+========================+
+            | N    |  N-gram word          | `The women were`       |
+            +------+-----------------------+------------------------+
+            | NL   |  N-gram lemma         | `The woman be`         |
+            +------+-----------------------+------------------------+
+            | NF   |  N-gram function      | `det nsubj root`       |
+            +------+-----------------------+------------------------+
+            | NP   |  N-gram POS tag       | `DT NNS VBN`           |
+            +------+-----------------------+------------------------+
+            | NX   |  N-gram word class    | `determiner noun verb` |
+            +------+-----------------------+------------------------+
+            | B    |  Collocate word       | `The_were`             |
+            +------+-----------------------+------------------------+
+            | BL   |  Collocate lemma      | `The_be`               |
+            +------+-----------------------+------------------------+
+            | BF   |  Collocate function   | `det_root`             |
+            +------+-----------------------+------------------------+
+            | BP   |  Collocate POS tag    | `DT_VBN`               |
+            +------+-----------------------+------------------------+
+            | BX   |  Collocate word class | `determiner_verb`      |
+            +------+-----------------------+------------------------+
 
         :type show: `str`/`list` of strings
 
@@ -491,9 +510,9 @@ class Corpus(object):
                           instead, output a lemma form with the `show` argument**
         :type lemmatise: `bool`
 
-        :param lemmatag: Explicitly pass a pos to lemmatiser (generally when data is unparsed),
-                         or when tag cannot be recovered from Tregex query
-        :type lemmatag: False/`'n'`/`'v'`/`'a'`/`'r'`
+        :param lemmatag: Explicitly pass a POS to lemmatiser (generally when data
+                         is unparsed, or when tag cannot be recovered from Tregex query)
+        :type lemmatag: `'n'`/`'v'`/`'a'`/`'r'`/`False`
 
         :param spelling: Convert all to U.S. or U.K. English
         :type spelling: `False`/`'US'`/`'UK'`
@@ -508,27 +527,27 @@ class Corpus(object):
                      completion
         :type save: `str`
 
-        :param gramsize: size of n-grams (default 2)
+        :param gramsize: Size of n-grams (default 2)
         :type gramsize: `int`
 
-        :param split_contractions: make `"don't"` et al into two tokens
+        :param split_contractions: Make `"don't"` et al into two tokens
         :type split_contractions: `bool`
 
-        :param multiprocess: how many parallel processes to run
-        :type multiprocess: `int`/`bool` (to determine automatically)
+        :param multiprocess: How many parallel processes to run
+        :type multiprocess: `int`/`bool` (`bool` determines automatically)
 
-        :param files_as_subcorpora: treat each file as a subcorpus, ignoring 
+        :param files_as_subcorpora: Treat each file as a subcorpus, ignoring 
                                     actual subcorpora if present
         :type files_as_subcorpora: `bool`
 
-        :param do_concordancing: generate a concordance while interrogating, 
+        :param do_concordancing: Generate a concordance while interrogating, 
                                  store as `.concordance` attribute
         :type do_concordancing: `bool`/`'only'`
 
         :param maxconc: Maximum number of concordance lines
         :type maxconc: `int`
 
-        :param tgrep: Use tgrep for tree querying
+        :param tgrep: Use `TGrep` for tree querying
         :type tgrep: `bool`
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
@@ -561,14 +580,14 @@ class Corpus(object):
         """
         Parse an unparsed corpus, saving to disk
 
-        :param corenlppath: folder containing corenlp jar files (use if *corpkit* can't find
-        it automatically)
+        :param corenlppath: Folder containing corenlp jar files (use if *corpkit* can't find
+                            it automatically)
         :type corenlppath: `str`
 
-        :param operations: which kinds of annotations to do
+        :param operations: Which kinds of annotations to do
         :type operations: `str`
 
-        :param speaker_segmentation: add speaker name to parser output if your
+        :param speaker_segmentation: Add speaker name to parser output if your
                                      corpus is script-like
         :type speaker_segmentation: `bool`
 
@@ -611,7 +630,7 @@ class Corpus(object):
                            speaker_segmentation=speaker_segmentation,
                            memory_mb=memory_mb,
                            multiprocess=multiprocess,
-                           split_texts=400,
+                           split_texts=split_texts,
                            *args,
                            **kwargs
                           )
@@ -626,8 +645,8 @@ class Corpus(object):
         """
         Tokenise a plaintext corpus, saving to disk
 
-        :param nltk_data_path: path to tokeniser if not found automatically
-        :type nltk_data_path: str
+        :param nltk_data_path: Path to tokeniser if not found automatically
+        :type nltk_data_path: `str`
 
         :Example:
 
@@ -672,11 +691,11 @@ class Corpus(object):
 
         Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, plus:
 
-        :param only_format_match: if True, left and right window will just be
+        :param only_format_match: If `True`, left and right window will just be
                                   words, regardless of what is in ``show``
         :type only_format_match: `bool`
 
-        :param only_unique: only unique lines
+        :param only_unique: Return only unique lines
         :type only_unique: `bool`
 
         :returns: A :class:`corpkit.interrogation.Concordance` instance
@@ -699,10 +718,10 @@ class Corpus(object):
         >>> corpus.interroplot(r'/NN.?/ >># NP')
         <matplotlib figure>
 
-        :param search: search as per :func:`~corpkit.corpus.Corpus.interrogate`
+        :param search: Search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: `dict`
-        :param kwargs: extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
-        :type kwargs: keyword arguments
+        :param kwargs: Extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
+        :type kwargs: Keyword arguments
 
         :returns: `None` (but show a plot)
         """
@@ -718,7 +737,7 @@ class Corpus(object):
 
            >>> corpus.save(filename)
 
-        :param savename: name for the file
+        :param savename: Name for the file
         :type savename: `str`
 
         :returns: `None`
