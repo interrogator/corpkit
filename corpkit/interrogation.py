@@ -1,8 +1,8 @@
-from __future__ import print_function
+"""
+corpkit: `Int`errogation and Interrogation-like classes
+"""
 
-"""
-corpkit: Interrogation and Interrogation-like classes
-"""
+from __future__ import print_function
 
 from collections import OrderedDict
 import pandas as pd
@@ -233,7 +233,7 @@ class Interrogation(object):
         
         :param calc_all: When keywording, calculate words that appear in either 
                          corpus
-        :type calc_all: bool
+        :type calc_all: `bool`
 
         :returns: :class:`corpkit.interrogation.Interrogation`
         """
@@ -292,7 +292,7 @@ class Interrogation(object):
         :param reverse_legend: Reverse the order of the legend
         :type reverse_legend: `bool`
         :param num_to_plot: How many columns to plot
-        :type num_to_plot: int/'all'
+        :type num_to_plot: `int`/'all'
         :param tex: Use TeX to draw plot text
         :type tex: `bool`
         :param colours: Colourmap for lines/bars/slices
@@ -322,7 +322,7 @@ class Interrogation(object):
         :param legend: Show a legend
         :type legend: `bool`
         :param rot: Rotate x axis ticks by *rot* degrees
-        :type rot: int
+        :type rot: `int`
         :param subplots: Plot each column separately
         :type subplots: `bool`
         :param layout: Grid shape to use when *subplots* is True
@@ -365,6 +365,11 @@ class Interrogation(object):
                       )
 
     def language_model(self, *args, **kwargs):
+        """
+        Make a language model from an Interrogation. This is usually done 
+        directly on a :class:`corpkit.corpus.Corpus` object with the 
+        :func:`~corpkit.corpus.Corpus.make_language_model` method.
+        """
         from corpkit.model import _make_model_from_interro
         return _make_model_from_interro(self, *args, **kwargs)
 
@@ -379,13 +384,13 @@ class Interrogation(object):
         >>> o.save('savename')
         
         :param savename: A name for the saved file
-        :type savename: str
+        :type savename: `str`
         
         :param savedir: Relative path to directory in which to save file
-        :type savedir: str
+        :type savedir: `str`
         
         :param print_info: Show/hide stdout
-        :type print_info: bool
+        :type print_info: `bool`
         
         :returns: None
         """
@@ -405,8 +410,8 @@ class Interrogation(object):
             4: think (n=676)
 
         :param n: Show top *n* results
-        :type n: int
-        :returns: None
+        :type n: `int`
+        :returns: `None`
         """
         from corpkit.other import quickview
         quickview(self, n=n)
@@ -433,7 +438,7 @@ class Interrogation(object):
             2             86     10    1     3      0                                   
 
         :param indexnames: provide custom names for the new index, or leave blank to guess.
-        :type indexnames: list of strings
+        :type indexnames: `list` of strings
 
         :returns: :class:`corpkit.interrogation.Interrogation`, with 
                   `pandas.MultiIndex` as 
@@ -447,15 +452,15 @@ class Interrogation(object):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param datatype: show abs/rel frequencies, or keyness
-        :type datatype: str (n/k/%)
+        :type datatype: `str` (n/k/%)
         :param n: number of result to show
-        :type n: int
+        :type n: `int`
         :param df: return a DataFrame
-        :type df: bool
+        :type df: `bool`
         :param sort: Sort results, or show as is
-        :type sort: bool
+        :type sort: `bool`
         :param precision: float precision to show
-        :type precision: int
+        :type precision: `int`
 
         :Example:
 
@@ -493,13 +498,13 @@ class Concordance(pd.core.frame.DataFrame):
         Print concordance lines nicely, to string, LaTeX or CSV
 
         :param kind: output format: `string`/`latex`/`csv`
-        :type kind: str
+        :type kind: `str`
         :param n: Print first `n` lines only
-        :type n: int/`'all'`
+        :type n: `int`/`'all'`
         :param window: how many characters to show to left and right
-        :type window: int
+        :type window: `int`
         :param columns: which columns to show
-        :type columns: list
+        :type columns: `list`
 
         :Example:
 
@@ -526,7 +531,7 @@ class Concordance(pd.core.frame.DataFrame):
         """Shuffle concordance lines
 
         :param inplace: Modify current object, or create a new one
-        :type inplace: bool
+        :type inplace: `bool`
 
         :Example:
 
@@ -569,7 +574,7 @@ class Interrodict(OrderedDict):
 
     Methods for saving, editing, etc. are similar to 
     :class:`corpkit.corpus.Interrogation`. Additional methods are available for 
-    collapsing into single (multiindexed) DataFrames.
+    collapsing into single (multi-indexed) DataFrames.
     """
     
     def __init__(self, data):
@@ -662,13 +667,13 @@ class Interrodict(OrderedDict):
         Save an interrogation as pickle to `savedir`.
 
         :param savename: A name for the saved file
-        :type savename: str
+        :type savename: `str`
         
         :param savedir: Relative path to directory in which to save file
-        :type savedir: str
+        :type savedir: `str`
         
         :param print_info: Show/hide stdout
-        :type print_info: bool
+        :type print_info: `bool`
         
         :Example: 
 
@@ -686,34 +691,41 @@ class Interrodict(OrderedDict):
         Collapse Interrodict on an axis or along interrogation name.
 
         :param axis: collapse along x, y or name axis
-        :type axis: str: x/y/n
+        :type axis: `str`: x/y/n
 
         :Example:
 
-        >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show=L)
-        >>> d.keys()
-            ['CHT', 'WAP', 'WSJ']
-        >>> d['CHT'].results
-            ....  health  cancer  security  credit  flight  safety  heart
-            1987      87      25        28      13       7       6      4
-            1988      72      24        20      15       7       4      9
-            1989     137      61        23      10       5       5      6
-        >>> d.collapse().results
-            ...  health  cancer  credit  security
-            CHT    3174    1156     566       697
-            WAP    2799     933     582      1127
-            WSJ    1812     680    2009       537
-        >>> d.collapse(axis='x').results
-            ...  1987  1988  1989
-            CHT   384   328   464
-            WAP   389   355   435
-            WSJ   428   410   473
-        >>> d.collapse(axis='key').results
-            ...   health  cancer  credit  security
-            1987     282     127      65        93
-            1988     277     100      70       107
-            1989     379     253      83        91
+        .. code-block:: python
 
+           >>> d = corpora.interrogate({F: 'compound', GL: r'^risk'}, show=L)
+           
+           >>> d.keys()
+               ['CHT', 'WAP', 'WSJ']
+           
+           >>> d['CHT'].results
+               ....  health  cancer  security  credit  flight  safety  heart
+               1987      87      25        28      13       7       6      4
+               1988      72      24        20      15       7       4      9
+               1989     137      61        23      10       5       5      6
+           
+           >>> d.collapse().results
+               ...  health  cancer  credit  security
+               CHT    3174    1156     566       697
+               WAP    2799     933     582      1127
+               WSJ    1812     680    2009       537
+           
+           >>> d.collapse(axis='x').results
+               ...  1987  1988  1989
+               CHT   384   328   464
+               WAP   389   355   435
+               WSJ   428   410   473
+           
+           >>> d.collapse(axis='key').results
+               ...   health  cancer  credit  security
+               1987     282     127      65        93
+               1988     277     100      70       107
+               1989     379     253      83        91
+               
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
         # join on keys ... probably shouldn't transpose like this though!
@@ -756,15 +768,15 @@ class Interrodict(OrderedDict):
         """Show top n results in each corpus alongside absolute or relative frequencies.
 
         :param datatype: show abs/rel frequencies, or keyness
-        :type datatype: str (n/k/%)
+        :type datatype: `str` (n/k/%)
         :param n: number of result to show
-        :type n: int
+        :type n: `int`
         :param df: return a DataFrame
-        :type df: bool
+        :type df: `bool`
         :param sort: Sort results, or show as is
-        :type sort: bool
+        :type sort: `bool`
         :param precision: float precision to show
-        :type precision: int
+        :type precision: `int`
         :Example:
 
         >>> data.topwords(n=5)

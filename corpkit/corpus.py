@@ -111,32 +111,6 @@ class Corpus(object):
         if print_info:
             print('Corpus: %s' % self.path)
 
-    # these two are duplicated from the file object. not good.
-    @lazyprop
-    def document(self):
-        """Return the parsed XML of a parsed file"""
-        if self.level != 'f':
-            raise ValueError('Can only access document for File')
-        from corenlp_xml.document import Document
-        return Document(self.read())
-
-    def read(self, **kwargs):
-        """Read file data. If data is pickled, unpickle first
-
-        :returns: str/unpickled data
-        """
-        if self.level != 'f':
-            raise ValueError('Can only call read method on File')
-        if self.datatype == 'tokens':
-            import pickle
-            with open(self.path, "rb", **kwargs) as openfile:
-                data = pickle.load(openfile)
-            return data
-        else:
-            with open(self.path, 'r', **kwargs) as openfile:
-                data = openfile.read()
-            return data
-
     @lazyprop
     def subcorpora(self):
         """A list-like object containing a corpus' subcorpora."""
@@ -376,16 +350,21 @@ class Corpus(object):
         expression. The search below makes DataFrames containing the most 
         common subjects, objects, modifiers (etc.) of 'see':
 
-        :param search: Similar to `search` in the `interrogate()`/`concordance()
-                       methods. `W`/`L keys match word or lemma; `F`: key 
-                       specifies semantic role (`'participant'`, `'process'` or 
+        :param search: Similar to `search` in the 
+                       :func:`~corpkit.interrogation.Interrogation.interrogate` 
+                       method.
+
+                       Valid keys are:
+
+                          - `W`/`L match word or lemma
+                          - `F`: match a semantic role (`'participant'`, `'process'` or 
                        `'modifier'`. If `F` not specified, each role will be 
                        searched for.
         :type search: `dict`
 
         :Example:
 
-        >>> see = corpus.configurations({L: 'see', F: 'process'}, show = L)
+        >>> see = corpus.configurations({L: 'see', F: 'process'}, show=L)
         >>> see.has_subject.results.sum()
             i           452
             it          227
@@ -857,7 +836,7 @@ class File(Corpus):
 
     def __str__(self):
         return self.path
-
+ 
     @lazyprop
     def document(self):
         """
@@ -874,13 +853,13 @@ class File(Corpus):
         """
 
         if self.datatype == 'tokens':
-            import pickle
-            with open(self.path, "rb", **kwargs) as openfile:
-                data = pickle.load(openfile)
+            import cPickle as pickle
+            with open(self.path, "rb", **kwargs) as fo:
+                data = pickle.load(fo)
             return data
         else:
-            with open(self.path, 'r', **kwargs) as openfile:
-                data = openfile.read()
+            with open(self.path, 'r', **kwargs) as fo:
+                data = fo.read()
             return data
 
     @lazyprop
