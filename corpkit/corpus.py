@@ -497,8 +497,9 @@ class Corpus(object):
 
         :param dep_type: The kind of Stanford CoreNLP dependency parses you want
                          to use
-        :type dep_type: `str` -- 'basic-dependencies'/'a',
-        'collapsed-dependencies'/'b', 'collapsed-ccprocessed-dependencies'/'c'
+        :type dep_type: `str` -- `'basic-dependencies'/`'a'`,
+                         `'collapsed-dependencies'`/`'b'`,
+                         `'collapsed-ccprocessed-dependencies'`/`'c'`
 
         :param save: Save result as pickle to `saved_interrogations/<save>` on 
                      completion
@@ -514,11 +515,11 @@ class Corpus(object):
         :type multiprocess: `int`/`bool` (to determine automatically)
 
         :param files_as_subcorpora: treat each file as a subcorpus, ignoring 
-               actual subcorpora if present
+                                    actual subcorpora if present
         :type files_as_subcorpora: `bool`
 
         :param do_concordancing: generate a concordance while interrogating, 
-        store as `.concordance` attribute
+                                 store as `.concordance` attribute
         :type do_concordancing: `bool`/`'only'`
 
         :param maxconc: Maximum number of concordance lines
@@ -940,7 +941,7 @@ class Corpora(Datalist):
 
     :param data: Corpora to model
     :type data: `str` (path containing corpora), `list` (of corpus paths/Corpus 
-    objects)
+                objects)
     :class:`corpkit.corpus.Corpus` objects)
     """
 
