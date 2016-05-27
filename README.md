@@ -4,14 +4,14 @@
 
 > **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways. Complete documentation is [over here](http://corpkit.readthedocs.org/en/latest/).
 > 
-> A comprehensive graphical interface is included. After [pip/Git installation](#installation), you can open it from the command line with `python -m corpkit.gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/). 
+> A comprehensive graphical interface is included. After [installation](#installation), you can open it from the command line with `python -m corpkit.gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/). 
 
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)
     - [Navigating `Corpus` objects](#navigating-corpus-objects)
     - [`interrogate()` method](#interrogate-method)
     - [`concordance()` method](#concordance-method)
-  - [`Interrogation()`](#interrogation)
+  - [`Interrogation`](#interrogation)
     - [`edit()` method](#edit-method)
     - [`visualise()` method](#visualise-method)
   - [Functions, lists, etc.](#functions-lists-etc)
@@ -175,9 +175,9 @@ Output sample:
 ```
 
 <a name="interrogation"></a>
-### `Interrogation()`
+### `Interrogation`
 
-The `corpus.interrogate()` method returns an `Interrogation()` object. These have attributes:
+The `corpus.interrogate()` method returns an `Interrogation` object. These have attributes:
 
 | Attribute | Contains |
 | ---------------|----------|
@@ -884,7 +884,7 @@ To parallel-process multiple corpora, first, wrap them up as a `Corpora()` objec
 
 ```
 
-The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The main exception to this is if you use `show=C`, which will concatenate results from each query into a single `Interrogation()` object, using corpus/speaker/query names as column names.
+The output of a multiprocessed interrogation will generally be a `dict` with  corpus/speaker/query names as keys. The main exception to this is if you use `show=C`, which will concatenate results from each query into a single `Interrogation` object, using corpus/speaker/query names as column names.
 
 <a name="multiple-speakers"></a>
 #### Multiple speakers
