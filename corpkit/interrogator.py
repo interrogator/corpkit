@@ -64,6 +64,10 @@ def interrogator(corpus,
     
     have_java = check_jdk()
 
+    # allow 'conc', which will be preferred in the future
+    do_concordancing = kwargs.pop('conc', do_concordancing)
+
+
     def signal_handler(signal, _):
         """pause on ctrl+c, rather than just stop loop"""   
         import signal
@@ -1101,6 +1105,8 @@ def interrogator(corpus,
                                              speaker=slow_treg_speaker_guess,
                                              gramsize=gramsize,
                                              nopunct=kwargs.get('nopunct', True),
+                                             noclosed=kwargs.get('noclosed', False),
+                                             whitelist=kwargs.get('whitelist', False),
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
