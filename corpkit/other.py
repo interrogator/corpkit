@@ -209,7 +209,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         savename = makesafe(savename, drop_datatype=False, hyphens_ok=True)
         if not savename.endswith('.p'):
             savename = savename + '.p'
-        if hasattr(interrogation, 'query'):
+        if hasattr(interrogation, 'query') and interrogation.query:
             corpus = interrogation.query.get('corpus')
             if corpus:
                 if isinstance(corpus, basestring):
