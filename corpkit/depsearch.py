@@ -14,6 +14,8 @@ def dep_searcher(sents,
                  speaker=False,
                  gramsize=2,
                  nopunct=True,
+                 noclosed=False,
+                 whitelist=False,
                  split_contractions=False,
                  window=2,
                  language_model=False,
@@ -369,6 +371,14 @@ def dep_searcher(sents,
             last_in_gram = first_in_gram
         return first_in_gram, last_in_gram
 
+    def remove_words_from_concline(start, middle, end, wordlist):
+        """Remove words from conc line if they aren't in wordlist"""
+        if not wordlist:
+            return start, middle, end
+        start = [i for i in start if i in wordlist]
+        end = [i for i in end if i in wordlist]
+        return start, middle, end
+
     def process_a_submatch(match, repeat, tokens):
         """
         For ngrams, etc., we have to repeat over results. so, this is for 
@@ -448,13 +458,17 @@ def dep_searcher(sents,
         # it into start, middle and end, unless only_format_match
         else:
             if not only_format_match:
-                start = ' '.join(w for index, w in enumerate(processed_toklist) \
-                                 if index < first_in_gram)
-                end = ' '.join(w for index, w in enumerate(processed_toklist) \
-                                 if index > last_in_gram)
-                middle = separator.join(w for index, w in enumerate(processed_toklist) \
-                                 if index >= first_in_gram \
-                    and index <= last_in_gram)
+                st = [w for index, w in enumerate(processed_toklist) if index < first_in_gram]
+                md = [w for index, w in enumerate(processed_toklist) \
+                      if index >= first_in_gram \
+                      and index <= last_in_gram]
+                ed = [w for index, w in enumerate(processed_toklist) if index > last_in_gram]
+                
+                st, md, ed = remove_words_from_concline(st, md, ed, whitelist)
+                
+                start = ' '.join(st)
+                end = ' '.join(ed)
+                middle = separator.join(md)
             else:
                 middle = separator.join(processed_toklist)
 
@@ -462,7 +476,7 @@ def dep_searcher(sents,
                 conc_line.append(bit)
 
         return middle, conc_line
-
+        
     def process_a_token(token, show):
         """
         Take entire show argument, and a token of interest,
@@ -480,6 +494,14 @@ def dep_searcher(sents,
         if result:
             if nopunct:
                 if not all(re.search(is_a_word, i) for i in result):
+                    return
+            if noclosed:
+                if isinstance(noclosed, list):
+                    nc = noclosed
+                else:
+                    from corpkit.dictionaries import wordlists as wl
+                    nc = wl.closedclass
+                if all(i in nc for i in result):
                     return
             if kwargs.get('no_root'):
                 if any(i == 'root' for i in result):
@@ -528,13 +550,13 @@ def dep_searcher(sents,
         matching_tokens = []
         deps = get_deps(s, dep_type)
         # remove punctuation if need be
+        tokens = s.tokens
         if nopunct:
-            tokens = [w for w in s.tokens if re.search(is_a_word, w.word)]
-        else:
-            tokens = s.tokens
-        # identify matching Token objects
-        #matching_tokens = get_matches_from_sent(s, search, deps, tokens, 
-        #                                        dep_type, mode=searchmode)
+            tokens = [w for w in tokens if re.search(is_a_word, w.word)]
+        if noclosed:
+            from corpkit.dictionaries import wordlists as wl
+            tokens = [w for w in tokens if w.word.lower() not in wl.closedclass]
+
         for srch, pat in search.items():
             deprole, attr = srch[0], srch[-1]
             matching_tokens += simple_searcher(deprole, pat, attr)
