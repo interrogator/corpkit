@@ -370,7 +370,6 @@ class Processes(object):
                      'blame',
                      'instruct',
                      'chat',
-                     'email',
                      'assure',
                      'dx',
                      'recomend',
