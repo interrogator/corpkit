@@ -126,9 +126,12 @@ def configurations(corpus, search, **kwargs):
     
     # remove result itself
     # not ideal, but it's much more impressive this way.
-    for k, v in data.items():
-        v.results = v.results.drop(word_or_token, axis=1, errors='ignore')
-        v.totals = v.results.sum(axis=1)
-        data[k] = v
-    return Interrodict(data)
+    if isinstance(data, Interrodict):
+      for k, v in data.items():
+          v.results = v.results.drop(word_or_token, axis=1, errors='ignore')
+          v.totals = v.results.sum(axis=1)
+          data[k] = v
+      return Interrodict(data)
+    else:
+      return data
 
