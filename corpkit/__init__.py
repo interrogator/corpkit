@@ -22,7 +22,7 @@ __all__ = [
     "Corpora"] + LETTERS
 
 #metadata
-__version__ = "2.1.7"
+__version__ = "2.1.8"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -156,3 +156,4 @@ SELF = 'self'
 T = 't'
 V = 'v'
 W = 'w'
+NF = 'nf'
