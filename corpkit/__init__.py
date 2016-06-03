@@ -6,8 +6,8 @@ A toolkit for corpus linguistics
 
 # quicker access to search, exclude, show types
 LETTERS = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
-           'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NW', 'P',
-           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W']
+           'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NF', 'NW',
+           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W', 'P']
 
 # asterisk import
 __all__ = [
