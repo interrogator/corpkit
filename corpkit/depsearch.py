@@ -13,8 +13,6 @@ def dep_searcher(sents,
                  only_format_match=False,
                  speaker=False,
                  gramsize=2,
-                 nopunct=True,
-                 noclosed=False,
                  whitelist=False,
                  split_contractions=False,
                  window=2,
@@ -28,6 +26,9 @@ def dep_searcher(sents,
     from corpkit.process import filtermaker, animator, get_deps
 
     is_a_word = re.compile(regex_nonword_filter)
+
+    no_punct = kwargs.get('no_punct', True)
+    no_closed = kwargs.get('no_closed', True)
 
     if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
         only_format_match = True
@@ -492,12 +493,12 @@ def dep_searcher(sents,
                     return
             result.append(to_show)
         if result:
-            if nopunct:
+            if no_punct:
                 if not all(re.search(is_a_word, i) for i in result):
                     return
-            if noclosed:
-                if isinstance(noclosed, list):
-                    nc = noclosed
+            if no_closed:
+                if isinstance(no_closed, list):
+                    nc = no_closed
                 else:
                     from corpkit.dictionaries import wordlists as wl
                     nc = wl.closedclass
@@ -551,9 +552,9 @@ def dep_searcher(sents,
         deps = get_deps(s, dep_type)
         # remove punctuation if need be
         tokens = s.tokens
-        if nopunct:
+        if no_punct:
             tokens = [w for w in tokens if re.search(is_a_word, w.word)]
-        if noclosed:
+        if no_closed:
             from corpkit.dictionaries import wordlists as wl
             tokens = [w for w in tokens if w.word.lower() not in wl.closedclass]
 

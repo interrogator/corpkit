@@ -1104,14 +1104,14 @@ def interrogator(corpus,
                                              only_format_match=only_format_match,
                                              speaker=slow_treg_speaker_guess,
                                              gramsize=gramsize,
-                                             nopunct=kwargs.get('nopunct', True),
-                                             noclosed=kwargs.get('noclosed', False),
+                                             no_punct=kwargs.get('no_punct', True),
+                                             no_closed=kwargs.get('no_closed', False),
                                              whitelist=kwargs.get('whitelist', False),
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
-                                             root=root,
-                                             language_model=language_model
+                                             language_model=language_model,
+                                             **kwargs
                                             )
                         
                     if res == 'Bad query':
