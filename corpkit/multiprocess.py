@@ -286,7 +286,7 @@ def pmultiquery(corpus,
             d['startnum'] = (100 / denom) * index
             res.append(interrogator(**d))
         try:
-            res = sorted(res)
+            res = sorted([i for i in res if i])
         except:
             pass
 
@@ -306,6 +306,7 @@ def pmultiquery(corpus,
     if kwargs.get('do_concordancing') == 'only':
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
+        concs = concs.reset_index(drop=True)
         lines = Concordance(concs)
         
         if save:
