@@ -149,7 +149,8 @@ def dep_searcher(sents,
     lookup = {'w': 'word',
               'l': 'lemma',
               'p': 'pos',
-              'i': 'id'}
+              'i': 'id',
+              'x': 'pos'}
 
     def show_this(tokenx, this):
 
@@ -170,7 +171,7 @@ def dep_searcher(sents,
 
         if hasattr(tokenx, t):
             att = getattr(tokenx, t)
-            return postp.get(att, att)
+            return postp.get(att.lower(), att)
         else:
             return tokenx
 
