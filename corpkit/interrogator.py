@@ -99,6 +99,8 @@ def interrogator(corpus,
                 show[index] = 'nw'
             elif val == 'b' or val == 'bw':
                 show[index] = 'bw'
+            elif val.endswith('pl'):
+                show[index] = val.replace('pl', 'x')
             else:
                 if len(val) == 2 and val.endswith('w'):
                     show[index] = val[0]
@@ -337,7 +339,7 @@ def interrogator(corpus,
         if whole:
             fnames, snames, results = zip(*results)
 
-        if 'l' in show or 'pl' in show:
+        if 'l' in show or 'x' in show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
         else:
             lemmata = [None for i in results]
@@ -354,7 +356,7 @@ def interrogator(corpus,
                     if re.search(exclude.get('p'), word):
                         continue
                 if len(list(exclude.keys())) == 1 or excludemode == 'any':
-                    if re.search(exclude.get('pl'), lemma):
+                    if re.search(exclude.get('x'), lemma):
                         continue
             if exclude and excludemode == 'all':
                 num_to_cause_exclude = len(list(exclude.keys()))
@@ -368,8 +370,8 @@ def interrogator(corpus,
                 if exclude.get('p'):
                     if re.search(exclude.get('p'), word):
                         current_num += 1
-                if exclude.get('pl'):
-                    if re.search(exclude.get('pl'), lemma):
+                if exclude.get('x'):
+                    if re.search(exclude.get('x'), lemma):
                         current_num += 1   
                 if current_num == num_to_cause_exclude:
                     continue                 
@@ -383,7 +385,7 @@ def interrogator(corpus,
                     bits.append(word)
                 elif i == 'p':
                     bits.append(word)
-                elif i == 'pl':
+                elif i == 'x':
                     bits.append(lemma)
             joined = '/'.join(bits)
             done.append(joined)
@@ -608,6 +610,7 @@ def interrogator(corpus,
         # listquery, anyquery, translated_option
         treg_dict = {'p': [r'__ < (/%s/ !< __)' % regex, r'__ < (/.?[A-Za-z0-9].?/ !< __)', 'u'],
                      'pl': [r'__ < (/%s/ !< __)' % regex, r'__ < (/.?[A-Za-z0-9].?/ !< __)', 'u'],
+                     'x': [r'__ < (/%s/ !< __)' % regex, r'__ < (/.?[A-Za-z0-9].?/ !< __)', 'u'],
                      't': [r'__ < (/%s/ !< __)' % regex, r'__ < (/.?[A-Za-z0-9].?/ !< __)', 'o'],
                      'w': [r'/%s/ !< __' % regex, r'/.?[A-Za-z0-9].?/ !< __', 't'],
                      'c': [r'/%s/ !< __'  % regex, r'/.?[A-Za-z0-9].?/ !< __', 'C'],
@@ -816,7 +819,10 @@ def interrogator(corpus,
 
             locs['corpus'] = corpus.name
             conc_df = Concordance(conc_df)
-            conc_df.query = locs
+            try:
+                conc_df.query = locs
+            except AttributeError:
+                pass
             return conc_df
 
         except ValueError:
@@ -1199,7 +1205,10 @@ def interrogator(corpus,
 
         if only_conc:
             locs = sanitise_dict(locs)
-            conc_df.query = locs
+            try:
+                conc_df.query = locs
+            except AttributeError:
+                return conc_df
             if save and not kwargs.get('outname'):
                 print('\n')
                 conc_df.save(savename)
