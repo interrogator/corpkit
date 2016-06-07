@@ -7,7 +7,7 @@ A toolkit for corpus linguistics
 # quicker access to search, exclude, show types
 LETTERS = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
            'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NF', 'NW',
-           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W', 'P']
+           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W', 'P', 'X']
 
 # asterisk import
 __all__ = [
@@ -157,3 +157,4 @@ T = 't'
 V = 'v'
 W = 'w'
 NF = 'nf'
+X = 'x'
