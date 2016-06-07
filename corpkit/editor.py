@@ -845,7 +845,7 @@ def editor(interrogation,
         else:
             for i in merge_entries:
                 pin = parse_input(df, merge_entries)
-                the_newname = newname_getter(df, pin, newname=newname, prinf=print_info)
+                the_newname = newname_getter(df, pin, prinf=print_info)
                 df = merge_these_entries(df, pin, the_newname, prinf=print_info)
                 if not single_totals:
                     pin2 = parse_input(df2, merge_entries)
