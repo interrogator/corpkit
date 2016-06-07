@@ -280,6 +280,8 @@ def interrogator(corpus,
                 word = taglemma.get(word.lower(), 'Other')
             else:
                 word = wordlist.get(word, lmtzr.lemmatize(word, tag))
+            if not preserve_case:
+                word = word.lower()
             output.append(word)
         return output
 
@@ -594,7 +596,8 @@ def interrogator(corpus,
                           query=search.get('t'),
                           options=['-t'],
                           check_query=True,
-                          root=root
+                          root=root,
+                          preserve_case=preserve_case
                          )
         if q is False:
             if root:
@@ -1185,6 +1188,7 @@ def interrogator(corpus,
                         if not preserve_case:
                             if not statsmode:
                                 res = [i.lower() for i in res]
+
                         if spelling:
                             if not statsmode:
                                 res = [correct_spelling(r) for r in res]
