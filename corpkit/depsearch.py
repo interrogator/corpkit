@@ -159,15 +159,16 @@ def dep_searcher(sents,
         if this == 'r':
             return show_distance(tokenx)
 
-        t = lookup.get(this, this)
-        if t == 'x':
+        if this == 'x':
             from corpkit.dictionaries.word_transforms import taglemma
             postp = taglemma
-        elif t == 'i':
+        elif this == 'l':
             from corpkit.dictionaries.word_transforms import wordlist
             postp = wordlist
         else:
             postp = {}
+
+        t = lookup.get(this, this)
 
         if hasattr(tokenx, t):
             att = getattr(tokenx, t)
