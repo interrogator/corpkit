@@ -37,7 +37,8 @@ def dep_searcher(sents,
     #    raise ValueError("Can't mix n-gram and non-ngram show values.")
 
     """
-    Search corenlp dependency parse.
+    Search CoreNLP XML Sentences
+
     1. search for 'search' keyword arg
        governor
        dependent
@@ -76,6 +77,12 @@ def dep_searcher(sents,
                   'i': 'id',
                   'w': 'word',
                   'l': 'lemma'}
+
+    lookup = {'w': 'word',
+              'l': 'lemma',
+              'p': 'pos',
+              'i': 'id',
+              'x': 'pos'}
 
     def locate_tokens(tok, deprole, attr):
         ret = set()
@@ -116,17 +123,35 @@ def dep_searcher(sents,
 
     def search_function(deprole, pattern):
         matches = set()
-        for tok in tokens:
+        if deprole == 'm':
             for l in deps.links:
-                if not re.search(pat, l.type):
-                    continue
-                if deprole == 'm':
+                if re.search(pat, l.type):
                     matches.add(s.get_token_by_id(l.dependent.idx))
-                else:
+        
+        else:
+            # can this be improved?
+            for tok in tokens:
+                for l in deps.links:
+                    if not re.search(pat, l.type):
+                        continue
                     in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
                     for lnk in in_deps:
                         matches.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
+
+            # improvement here?
+            #for l in deps.links:
+            #    if re.search(pat, l.type):
+            #        if deprole == 'g':
+            #            gotten = [s.get_token_by_id(i.dependent.idx) for i in deps.links \
+            #                      if i.dependent.idx == l.governor.idx]
+            #        elif deprole == 'd':
+            #            gotten = [s.get_token_by_id(i.dependent.idx) for i in deps.links \
+            #                      if i.dependent.idx == l.governor.idx]
+            #        for tk in gotten:
+            #            matches.add(tk)
+
         return matches
+
 
     def distance_searcher(tosearch, pattern):
         matches = set()
@@ -145,12 +170,6 @@ def dep_searcher(sents,
     ####################################################
     ################## SHOW FUNCTIONS ##################
     ####################################################
-
-    lookup = {'w': 'word',
-              'l': 'lemma',
-              'p': 'pos',
-              'i': 'id',
-              'x': 'pos'}
 
     def show_this(tokenx, this):
 
