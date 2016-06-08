@@ -19,7 +19,8 @@ __all__ = [
     "new_project",
     "Corpus",
     "File",
-    "Corpora"] + LETTERS
+    "Corpora",
+    "Wordlist"] + LETTERS
 
 #metadata
 __version__ = "2.1.8"
@@ -51,7 +52,7 @@ from corpkit.other import load, loader, load_all_results
 from corpkit.lazyprop import lazyprop
 from other import load_all_results
 from other import quickview, as_regex, new_project
-
+from dictionaries.process_types import Wordlist
 # monkeypatch editing and plotting to pandas objects
 from pandas import DataFrame, Series
 
