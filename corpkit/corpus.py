@@ -524,9 +524,9 @@ class Corpus(object):
                                     actual subcorpora if present
         :type files_as_subcorpora: `bool`
 
-        :param do_concordancing: Generate a concordance while interrogating, 
+        :param conc: Generate a concordance while interrogating, 
                                  store as `.concordance` attribute
-        :type do_concordancing: `bool`/`'only'`
+        :type conc: `bool`/`'only'`
 
         :param tgrep: Use `TGrep` for tree querying. TGrep is less expressive 
                       than Tregex, and is slower, but can work without Java.
@@ -689,10 +689,10 @@ class Corpus(object):
                   context, match and right context.
         """
 
-        kwargs.pop('do_concordancing', None)
+        kwargs.pop('conc', None)
         kwargs.pop('conc', None)
         kwargs.pop('corpus', None)
-        return self.interrogate(do_concordancing='only', *args, **kwargs)
+        return self.interrogate(conc='only', *args, **kwargs)
 
     def interroplot(self, search, **kwargs):
         """
@@ -963,7 +963,7 @@ class Datalist(object):
         Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`
         """
         from corpkit.interrogator import interrogator
-        return interrogator(self, do_concordancing='only', *args, **kwargs)
+        return interrogator(self, conc='only', *args, **kwargs)
 
     def configurations(self, search, **kwargs):
         """

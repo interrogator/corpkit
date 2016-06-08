@@ -28,7 +28,7 @@ def interrogator(corpus,
                  regex_nonword_filter=r'[A-Za-z0-9:_]',
                  gramsize=2,
                  split_contractions=False,
-                 do_concordancing=False,
+                 conc=False,
                  maxconc=9999,
                  window=4,
                  **kwargs
@@ -37,6 +37,10 @@ def interrogator(corpus,
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
+    
+    # in case old kwarg is used
+    conc = kwargs.get('do_concordancing', conc)
+
     # store kwargs and locs
     locs = locals().copy()
     locs.update(kwargs)
@@ -63,10 +67,6 @@ def interrogator(corpus,
     from corpkit.build import check_jdk
     
     have_java = check_jdk()
-
-    # allow 'conc', which will be preferred in the future
-    do_concordancing = kwargs.pop('conc', do_concordancing)
-
 
     def signal_handler(signal, _):
         """pause on ctrl+c, rather than just stop loop"""   
@@ -285,7 +285,7 @@ def interrogator(corpus,
             output.append(word)
         return output
 
-    def tgrep_searcher(sents, search, show, do_concordancing, **kwargs):
+    def tgrep_searcher(sents, search, show, conc, **kwargs):
         """
         Use tgrep for constituency grammar search
         """
@@ -304,11 +304,11 @@ def interrogator(corpus,
             results = tgrep(sent, search['t'])
             for res in results:
                 out.append(show_tree_as_per_option(show, res, sent))
-                if do_concordancing:
+                if conc:
                     lin = [f, sk, show_tree_as_per_option(show + ['whole'], res, sent)]
                     conc_out.append(lin)
 
-        if do_concordancing:
+        if conc:
             conc_output = make_conc_lines_from_whole_mid(conc_out, out)
         return out, conc_output
 
@@ -880,9 +880,9 @@ def interrogator(corpus,
     # find out about concordancing
     only_conc = False
     no_conc = False
-    if do_concordancing is False:
+    if conc is False:
         no_conc = True
-    if isinstance(do_concordancing, str) and do_concordancing.lower() == 'only':
+    if isinstance(conc, str) and conc.lower() == 'only':
         only_conc = True
         no_conc = False
     numconc = 0
@@ -982,7 +982,7 @@ def interrogator(corpus,
     if statsmode:
         no_conc = True
         only_conc = False
-        do_concordancing = False
+        conc = False
 
     # Set some Tregex-related values
     if search.get('t'):
@@ -1109,7 +1109,7 @@ def interrogator(corpus,
                                              searchmode=searchmode,
                                              lemmatise=False,
                                              case_sensitive=case_sensitive,
-                                             do_concordancing=do_concordancing,
+                                             conc=conc,
                                              only_format_match=only_format_match,
                                              speaker=slow_treg_speaker_guess,
                                              gramsize=gramsize,

@@ -181,11 +181,11 @@ def pmultiquery(corpus,
             a_dict['printstatus'] = False
             ds.append(a_dict)
 
-    if kwargs.get('do_concordancing') is False:
+    if kwargs.get('conc') is False:
         message = 'Interrogating'
-    elif kwargs.get('do_concordancing') is True:
+    elif kwargs.get('conc') is True:
         message = 'Interrogating and concordancing'
-    elif kwargs.get('do_concordancing').lower() == 'only':
+    elif kwargs.get('conc').lower() == 'only':
         message = 'Concordancing'
     time = strftime("%H:%M:%S", localtime())
     sformat = ''
@@ -194,14 +194,14 @@ def pmultiquery(corpus,
     else:
         to_it_over = search
     for i, (k, v) in enumerate(list(to_it_over.items())):
-        if type(v) == list:
+        if isinstance(v, list):
             vformat = ', '.join(v[:5])
             if len(v) > 5:
                 vformat += ' ...'
-        elif type(v) == dict:
+        elif isinstance(v, dict):
             vformat = ''
             for kk, vv in v.items():
-                if type(vv) == list:
+                if isinstance(vv, list):
                     vv = ', '.join(vv[:5])
 
                 vformat += '\n                     %s: %s' % (kk, vv)
@@ -303,7 +303,7 @@ def pmultiquery(corpus,
         qlocs['corpus'] = list([i.path for i in qlocs['corpus']])
 
     from corpkit.interrogation import Concordance
-    if kwargs.get('do_concordancing') == 'only':
+    if kwargs.get('conc') == 'only':
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
         concs = concs.reset_index(drop=True)
@@ -338,7 +338,7 @@ def pmultiquery(corpus,
         idict.query = qlocs
 
         if save:
-            idict.save(save, print_info = print_info)
+            idict.save(save, print_info=print_info)
 
         return idict
     
@@ -386,8 +386,8 @@ def pmultiquery(corpus,
 
         if len(out.results.columns) == 1:
             out.results = out.results.sort_index()   
-        if kwargs.get('do_concordancing') is True:
-            concs = pd.concat([x.concordance for x in res], ignore_index = True)
+        if kwargs.get('conc') is True:
+            concs = pd.concat([x.concordance for x in res], ignore_index=True)
             concs = concs.sort_values(by='c')
             concs = concs.reset_index(drop=True)
             out.concordance = Concordance(concs)

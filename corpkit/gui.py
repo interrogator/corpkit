@@ -1460,7 +1460,7 @@ def corpkit_gui():
                                  'root': root,
                                  'note': note,
                                  'df1_always_df': True,
-                                 'do_concordancing': doing_concondancing,
+                                 'conc': doing_concondancing,
                                  'only_format_match': not bool(only_format_match.get()),
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path,

@@ -5,7 +5,7 @@ def dep_searcher(sents,
                  show=['w'],
                  dep_type='collapsed-ccprocessed-dependencies',
                  regex_nonword_filter=r'[A-Za-z0-9:_]',
-                 do_concordancing=False,
+                 conc=False,
                  exclude=False,
                  excludemode='any',
                  searchmode='all',
@@ -411,7 +411,7 @@ def dep_searcher(sents,
         # need to format it, we format it now.
 
         if not language_model:
-            if do_concordancing:
+            if conc:
                 if only_format_match or show == ['n'] or show == ['b']:
                     start = ' '.join(t.word for index, t in enumerate(tokens) \
                         if index < first_in_gram)
@@ -453,7 +453,7 @@ def dep_searcher(sents,
             return '-spl-it-'.join(processed_toklist), conc_line
             #return tuple(processed_toklist), conc_line
         # if no conc at all, return the empty ish one and a string of token(s)
-        if not do_concordancing:
+        if not conc:
             return ' '.join(processed_toklist), conc_line
 
         # if we're concordancing:
@@ -600,11 +600,11 @@ def dep_searcher(sents,
     if 'c' in show:
         result = sum(result)
 
-    if isinstance(do_concordancing, basestring) and \
-        do_concordancing.lower() == 'only':
+    if isinstance(conc, basestring) and \
+        conc.lower() == 'only':
         result = []
 
-    if not do_concordancing:
+    if not conc:
         conc_result = []
 
     return result, conc_result
