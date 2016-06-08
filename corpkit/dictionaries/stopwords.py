@@ -1,6 +1,7 @@
 
 # stopwords from spindle
-stopwords = ["yeah", "monday","tuesday","wednesday","thursday","friday",
+from corpkit.dictionaries.process_types import Wordlist
+stopwords = Wordlist(["yeah", "monday","tuesday","wednesday","thursday","friday",
              "saturday","sunday","a","able","about","above","abst","accordance",
              "according","accordingly","across","act","actually","added","adj",
              "adopted","affected","affecting","affects","after","afterwards",
@@ -93,11 +94,11 @@ stopwords = ["yeah", "monday","tuesday","wednesday","thursday","friday",
              "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", 
              "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", 
              "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", 
-             "now", "gonna", "n't", '-lrb-', '-rrb-', "'m", "'ll", "'re", "'s", "'ve", "&amp;"]
+             "now", "gonna", "n't", '-lrb-', '-rrb-', "'m", "'ll", "'re", "'s", "'ve", "&amp;"], single=True)
 
 # add nltk, justext and minilist here ...
 
-justtext_stopwords = ["the","of","and","in","to","a","was","is","The","for","as","on","with","by",
+justtext_stopwords = Wordlist(["the","of","and","in","to","a","was","is","The","for","as","on","with","by",
                       "that","from","at","his","an","he","In","are","were","which","be","has","He","it",
                       "or","also","had","first","It","their","not","but","have","who","its","one","this",
                       "been","her","two","they","other","into","after","all","when","more","This","only",
@@ -142,4 +143,4 @@ justtext_stopwords = ["the","of","and","in","to","a","was","is","The","for","as"
                       "announced","men","result","times","field","you","right","east","almost","country","story",
                       "Church","followed","good","days","signed","features","together","described","research","sent",
                       "open","special","close","see","To","character","social","miles","rather","life","Council",
-                      "Western","the","party","official","years","church"]
+                      "Western","the","party","official","years","church"], single=True)

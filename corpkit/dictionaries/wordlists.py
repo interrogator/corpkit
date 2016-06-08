@@ -1,10 +1,12 @@
-# lists of closed class words
+"""
+lists of closed class words
+"""
 
-# feel free to correct/add things, this was just a quick grab from the web
+# feel free to correct/add things---this was just a quick grab from the web
 
 def closed_class_wordlists():
     """add words here if need be"""
-    import collections
+    from collections import namedtuple
 
     pronouns = [u"all",
             u"another",
@@ -449,9 +451,12 @@ def closed_class_wordlists():
     other = ['not']
 
     #all_lists = [pronouns, articles, determiners, prepositions, connectors, modals]
+    from corpkit.dictionaries.process_types import Wordlist
     closedclass = sorted(list(set(pronouns + articles + conjunctions + determiners + prepositions + connectors + modals + other)))
-    outputnames = collections.namedtuple('wordlists', ['pronouns', 'conjunctions', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass', 'stopwords', 'titles', 'whpro'])
-    output = outputnames(pronouns, conjunctions, articles, determiners, prepositions, connectors, modals, closedclass, stopwords, titlewords, whpro)
+    outputnames = namedtuple('wordlists', ['pronouns', 'conjunctions', 'articles', 'determiners', 'prepositions', 'connectors', 'modals', 'closedclass', 'stopwords', 'titles', 'whpro'])
+    eachlist = [pronouns, conjunctions, articles, determiners, prepositions, connectors, modals, closedclass, stopwords, titlewords, whpro]
+    eachlist = [Wordlist(l, single=True) for l in eachlist]
+    output = outputnames(*eachlist)
     return output
 
 wordlists = closed_class_wordlists()
