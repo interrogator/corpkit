@@ -532,6 +532,15 @@ class Corpus(object):
                       than Tregex, and is slower, but can work without Java.
         :type tgrep: `bool`
 
+        :param just_speakers: Limit search to paricular speakers. If 'each',
+                              generate :class:`corpkit.interrogation.Interrodict`
+                              for each speaker. If a `list` of speaker names, 
+                              generate :class:`corpkit.interrogation.Interrodict`
+                              for each named speaker. If compiled regular expression,
+                              generate :class:`corpkit.interrogation.Interrogation`
+                              with each speaker matching the regex conflated.
+        :type just_speakers: `str`/`each`/`list`/`regex`
+
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
                   `.query`, `.results`, `.totals` attributes. If multiprocessing is 
                   invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
