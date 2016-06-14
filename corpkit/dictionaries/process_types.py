@@ -169,6 +169,8 @@ class Wordlist(list):
         self.kwargs = kwargs
         super(Wordlist, self).__init__(self.data)
 
+    # make slice also return wordlist
+
     @lazyprop
     def words(self):
         """get inflections"""
@@ -185,14 +187,15 @@ class Wordlist(list):
         else:
             return
 
-    def as_regex(self, boundaries='w', case_sensitive=False, inverse=False):
+    def as_regex(self, boundaries='w', case_sensitive=False, inverse=False, compile=False):
         """turn list into regular expression matching any item in list"""
         if self.kwargs.get('single'):
             from corpkit import as_regex
             return as_regex(get_both_spellings(self.data),
                             boundaries=boundaries,
                             case_sensitive=case_sensitive,
-                            inverse=inverse
+                            inverse=inverse,
+                            compile=compile
                            )
 
 class Processes(object):

@@ -198,7 +198,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
 
     print_info = kwargs.get('print_info', True)
 
-    def make_filename(corpus, savename):
+    def make_filename(interrogation, savename):
         """create a filename"""
         if '/' in savename:
             return savename
@@ -210,7 +210,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         if not savename.endswith('.p'):
             savename = savename + '.p'
         if hasattr(interrogation, 'query') and interrogation.query:
-            corpus = interrogation.query.get('corpus')
+            corpus = interrogation.query.get('corpus', False)
             if corpus:
                 if isinstance(corpus, basestring):
                     firstpart = corpus
@@ -221,6 +221,9 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
                         firstpart = corpus.name
                     else:
                         firstpart = ''
+        
+        firstpart = os.path.basename(firstpart)
+
         if firstpart:
             return firstpart + '-' + savename
         else:
@@ -484,7 +487,7 @@ def texify(series, n = 20, colname = 'Keyness', toptail = False, sort = False):
         return tex
 
 
-def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
+def as_regex(lst, boundaries='w', case_sensitive=False, inverse=False, compile=False):
     """Turns a wordlist into an uncompiled regular expression
 
     :param lst: A wordlist to convert
@@ -535,9 +538,13 @@ def as_regex(lst, boundaries = 'w', case_sensitive = False, inverse = False):
 
     if inverse:
         joinbit = r'%s|%s' % (boundary2, boundary1)
-        return case + inverser1 + r'(' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
+        as_string = case + inverser1 + r'(' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
     else:
-        return case + boundary1 + inverser1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + inverser2 + boundary2
+        as_string = case + boundary1 + inverser1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + inverser2 + boundary2
+    if compile:
+        return re.compile(as_string)
+    else:
+        return as_string
 
 def make_multi(interrogation, indexnames = None):    
     """
