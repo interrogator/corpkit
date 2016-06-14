@@ -1107,8 +1107,6 @@ def interrogator(corpus,
                             sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
                             if len(just_speakers) == 1:
                                 slow_treg_speaker_guess = just_speakers[0]
-                        if not sents:
-                            continue
                     else:
                         sents = corenlp_xml.sentences
                     corenlp_xml = None

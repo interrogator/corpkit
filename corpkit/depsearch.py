@@ -25,6 +25,9 @@ def dep_searcher(sents,
     from corpkit.build import flatten_treestring
     from corpkit.process import filtermaker, animator, get_deps
 
+    if not sents:
+        return [], []
+
     is_a_word = re.compile(regex_nonword_filter)
 
     no_punct = kwargs.get('no_punct', True)
