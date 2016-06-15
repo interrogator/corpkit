@@ -234,12 +234,14 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     # delete unpicklable parts of query
     if hasattr(interrogation, 'query'):
         iq = interrogation.query
-        from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
-        interrogation.query = {k: v for k, v in iq.items() if not isinstance(v, ModuleType) \
-            and not isinstance(v, FunctionType) \
-            and not isinstance(v, BuiltinFunctionType) \
-            and not isinstance(v, BuiltinMethodType)}
-
+        if iq:
+            from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
+            interrogation.query = {k: v for k, v in iq.items() if not isinstance(v, ModuleType) \
+                and not isinstance(v, FunctionType) \
+                and not isinstance(v, BuiltinFunctionType) \
+                and not isinstance(v, BuiltinMethodType)}
+        else:
+            iq = {}
 
     if savedir and not '/' in savename:
         if not os.path.exists(savedir):
