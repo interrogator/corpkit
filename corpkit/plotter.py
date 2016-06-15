@@ -416,8 +416,8 @@ def plotter(df,
     if piemode and not sbplt and kwargs.get('explode'):
         kwargs['explode'] = auto_explode(dataframe, 
                                         kwargs['explode'], 
-                                        was_series = was_series, 
-                                        num_to_plot = num_to_plot)
+                                        was_series=was_series, 
+                                        num_to_plot=num_to_plot)
     else:
         kwargs.pop('explode', None)
 
@@ -773,7 +773,8 @@ def plotter(df,
         if not sbplt:
             # check if negative values, no stacked if so
             if areamode:
-                kwargs['legend'] = False
+                if not kwargs.get('ax'):
+                    kwargs['legend'] = False
                 if dataframe.applymap(lambda x: x < 0.0).any().any():
                     kwargs['stacked'] = False
                     rev_leg = False
@@ -782,16 +783,16 @@ def plotter(df,
                 if kind=='pie' and pie_legend:
                     kwargs['labels'] = None
                     kwargs['autopct'] = '%.2f'
-                ax = dataframe.plot(figsize = figsize, **kwargs)
+                ax = dataframe.plot(figsize=figsize, **kwargs)
             else:
-                plt.figure(figsize = figsize)
+                plt.figure(figsize=figsize)
                 if title:
                     plt.title(title)
                 ax = plt.axes()
-                sns.heatmap(dataframe, ax = ax, **hmargs)
+                sns.heatmap(dataframe, ax=ax, **hmargs)
                 plt.yticks(rotation=0)
 
-            if areamode:
+            if areamode and not kwargs.get('ax'):
                 handles, labels = plt.gca().get_legend_handles_labels()
                 del handles
                 del labels
@@ -806,13 +807,13 @@ def plotter(df,
                 plt.gcf().set_tight_layout(False)
 
             if kind != 'heatmap':
-                ax = dataframe.plot(figsize = figsize, **kwargs)
+                ax = dataframe.plot(figsize=figsize, **kwargs)
             else:
-                plt.figure(figsize = figsize)
+                plt.figure(figsize=figsize)
                 if title:
                     plt.title(title)
                 ax = plt.axes()
-                sns.heatmap(dataframe, ax = ax, **hmargs)
+                sns.heatmap(dataframe, ax=ax, **hmargs)
                 plt.xticks(rotation=0)
                 plt.yticks(rotation=0)
 
@@ -880,8 +881,12 @@ def plotter(df,
                     if rev_leg:
                         handles = handles[::-1]
                         labels = labels[::-1]
-                    lgd = plt.legend(handles, labels, **leg_options)
-                    lgd.draw_frame(leg_frame)
+                    if kwargs.get('ax'):
+                        lgd = plt.gca().legend(handles, labels, **leg_options)
+                        ax.get_legend().draw_frame(leg_frame)
+                    else:
+                        lgd = plt.legend(handles, labels, **leg_options)
+                        lgd.draw_frame(leg_frame)
 
     if interactive:
         # 1 = highlight lines
