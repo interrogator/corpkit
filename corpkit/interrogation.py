@@ -797,6 +797,23 @@ class Interrodict(OrderedDict):
             topwords(self, datatype=datatype, n=n,
                      sort=sort, precision=precision)
 
+    def visualise(self, shape='auto', **kwargs):
+        """
+        Attempt to visualise Interrodict by using subplots
+
+        :param shape: Layout for the subplots (e.g. `(2, 2)`)
+        :type shape: tuple
+        :param kwargs: specifications to pass to :func:`~corpkit.plotter.plotter`
+        :type kwargs: keyword arguments
+        """
+        import matplotlib.pyplot as plt
+        if shape == 'auto':
+            shape = (int(len(self) / 2), 2)
+        f, axes = plt.subplots(2, 2)
+        for (name, interro), ax in zip(self.items(), axes.flatten()):
+            interro.visualise(title, ax=ax, **kwargs)
+        return plt
+
     def get_totals(self):
         """
         Helper function to concatenate all totals
