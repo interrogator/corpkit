@@ -924,13 +924,17 @@ def canpickle(obj):
             return False
 
 def sanitise_dict(d):
-    """make a sanitised dict"""
+    """
+    Make a dict that works as query attribute"""
     newd = {}
+    if d.get('kwargs') and isinstance(d['kwargs'], dict):
+        for k, v in d['kwargs'].items():
+            if canpickle(v) and not isinstance(v, type):
+                newd[k] = v
     for k, v in d.items():
-        if canpickle(v):
+        if canpickle(v) and not isinstance(v, type):
             newd[k] = v
     return newd
-
 
 def saferead(path):
     """
