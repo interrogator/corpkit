@@ -951,3 +951,12 @@ def saferead(path):
         enc = chardet.detect(data)['encoding']
         data = data.decode(enc, errors='ignore')
     return data, enc
+
+def urlify(s):
+    "Turn title into filename"
+    import re
+    s = s.lower()
+    s = re.sub(r"[^\w\s-]", '', s)
+    s = re.sub(r"\s+", '-', s)
+    s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
+    return s

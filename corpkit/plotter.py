@@ -152,15 +152,8 @@ def plotter(df,
     def get_savename(imagefolder, save = False, title = False, ext = 'png'):
         """Come up with the savename for the image."""
         import os
+        from corpkit.process import urlify
 
-        def urlify(s):
-            "Turn title into filename"
-            import re
-            s = s.lower()
-            s = re.sub(r"[^\w\s-]", '', s)
-            s = re.sub(r"\s+", '-', s)
-            s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
-            return s
         # name as 
         if not ext.startswith('.'):
             ext = '.' + ext
@@ -808,6 +801,7 @@ def plotter(df,
 
             if kind != 'heatmap':
                 ax = dataframe.plot(figsize=figsize, **kwargs)
+                return ax
             else:
                 plt.figure(figsize=figsize)
                 if title:
@@ -1027,8 +1021,17 @@ def plotter(df,
                 else:
                     plt.annotate(score, (i, score), ha='center', va='bottom')        
 
-    if not kwargs.get('layout') and not sbplt:
+    if not kwargs.get('layout') and not sbplt and not kwargs.get('ax'):
         plt.tight_layout()
+    if kwargs.get('ax'):
+        try:
+            plt.gcf().set_tight_layout(False)
+        except:
+            pass
+        try:
+            plt.set_tight_layout(False)
+        except:
+            pass
 
     if save:
         if running_python_tex:
@@ -1086,5 +1089,97 @@ def plotter(df,
     else:
         return plt
 
+def multiplot(df, leftdict={},rightdict={}, **kwargs):
+    """
+    Plot a big chart and its subplots together
+
+    :param leftdict: a dict of arguments for the big plot
+    :type leftdict: dict
+    :param rightdict: a dict of arguments for the small plot
+    :type rightdict: dict
+
+    """
 
 
+
+
+def multiplot(df, leftdict={},rightdict={}, **kwargs):
+    """
+    Plot a big chart and its subplots together
+
+    :param leftdict: a dict of arguments for the big plot
+    :type leftdict: dict
+    :param rightdict: a dict of arguments for the small plot
+    :type rightdict: dict
+    
+    """
+    from corpkit.interrogation import Interrogation
+    import matplotlib.pyplot as plt
+    axes = []
+
+    if isinstance(df, Interrogation):
+        df = df.results
+
+    # add more cool layouts here
+    layouts = {
+               1: [(1,2,1), (2,4,3), (2,4,4), (2,4,7), (2,4,8)], # 4
+               2: [(1,2,1), (3,4,3), (3,4,4), (3,4,7), (3,4,8), (3,4,11), (3,4,12)], #6
+               3: [(1,2,1), (3,2,2), (3,2,4), (3,2,6)], # 3
+               4: [(2,1,1), (2,3,4), (2,3,5), (2,3,6)], # 3
+               5: [(1,5,(1,2)), (3,5,3), (3,5,4), (3,5,5), (3,5,8), (3,5,9), (3, 5, 10),(3, 5, 13),(3, 5, 14),(3, 5, 15)]
+              }
+
+    if isinstance(kwargs.get('layout'), list):
+        layout = kwargs.get('layout')
+    else:
+        lay = kwargs.get('layout', 1)
+        layout = layouts.get(lay)
+
+    kinda = leftdict.pop('kind', 'area')
+    kindb = rightdict.pop('kind', 'line')
+    tpa = leftdict.pop('transpose', False)
+    tpb = rightdict.pop('transpose', False)
+    numtoplot = leftdict.pop('num_to_plot', len(layout) - 1)
+    
+    fig = plt.figure()
+    
+    for i, (nrows, ncols, plot_number) in enumerate(layout, start=-1):
+        ax = fig.add_subplot(nrows, ncols, plot_number)
+        if i == -1:
+            df.visualise(kind=kinda, ax=ax, transpose=tpa,
+                         num_to_plot=numtoplot, **leftdict)
+            if kinda == 'bar':
+                import matplotlib as mpl
+                colmap = []
+                rects = [r for r in ax.get_children() if isinstance(r, mpl.patches.Rectangle)]
+                for r in rects:
+                    if r._facecolor not in colmap:
+                        colmap.append(r._facecolor)
+            else:
+                colmap = [i.get_color() for i in ax.get_lines()]
+        else:
+            if colmap:
+                c = colmap[i]
+            else:
+                c = rightdict.pop('colours', 'default')
+            if tpb:
+                df.T.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c, **rightdict)
+                ax.set_title(df.T.iloc[:, i].name)
+            else:
+                df.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c, **rightdict)
+                ax.set_title(df.iloc[:, i].name)
+            
+    wspace = kwargs.get('wspace', .2)
+    hspace = kwargs.get('hspace', .5)
+    
+    fig.subplots_adjust(bottom=0.025, left=0.025, top = 0.975, right=0.975,
+                        wspace=wspace, hspace=hspace)
+
+    size = kwargs.get('figsize', (10, 4))
+    fig.set_size_inches(size)
+    if kwargs.get('save'):
+        import os
+        from corpkit.process import urlify
+        savepath = os.path.join('images', urlify(kwargs['save']) + '.png')
+        fig.savefig(savepath, dpi=150)
+    return plt

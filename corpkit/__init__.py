@@ -49,6 +49,7 @@ import corpkit.dictionaries as dictionaries
 
 # import functions, though most are now class methods
 from corpkit.other import load, loader, load_all_results
+from corpkit.plotter import multiplot
 from corpkit.lazyprop import lazyprop
 from other import load_all_results
 from other import quickview, as_regex, new_project
@@ -95,6 +96,7 @@ def _shuffle(self, inplace = False):
     else:
         return shuffled
 
+
 def _top(self):
     """Show as many rows and cols as possible without truncation"""
     import pandas as pd
@@ -107,6 +109,10 @@ Series.edit = _edit
 
 DataFrame.visualise = _plot
 Series.visualise = _plot
+
+DataFrame.multiplot = multiplot
+Series.multiplot = multiplot
+
 
 DataFrame.save = _save
 Series.save = _save

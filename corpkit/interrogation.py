@@ -364,6 +364,10 @@ class Interrogation(object):
                        **kwargs
                       )
 
+    def multiplot(self, leftdict={}, rightdict={}, **kwargs):
+        from corpkit.plotter import multiplot
+        multiplot(self, leftdict={}, rightdict={}, **kwargs)
+
     def language_model(self, *args, **kwargs):
         """
         Make a language model from an Interrogation. This is usually done 
@@ -797,7 +801,7 @@ class Interrodict(OrderedDict):
             topwords(self, datatype=datatype, n=n,
                      sort=sort, precision=precision)
 
-    def visualise(self, shape='auto', **kwargs):
+    def visualise(self, shape='auto', truncate=8, **kwargs):
         """
         Attempt to visualise Interrodict by using subplots
 
@@ -809,9 +813,13 @@ class Interrodict(OrderedDict):
         import matplotlib.pyplot as plt
         if shape == 'auto':
             shape = (int(len(self) / 2), 2)
-        f, axes = plt.subplots(2, 2)
+        if truncate:
+            self = self[:truncate]
+        f, axes = plt.subplots(*shape)
         for (name, interro), ax in zip(self.items(), axes.flatten()):
-            interro.visualise(title, ax=ax, **kwargs)
+            if kwargs.get('name_format'):
+                name = name_format.format(name)
+            plt = interro.visualise(name, ax=ax, **kwargs)
         return plt
 
     def get_totals(self):
