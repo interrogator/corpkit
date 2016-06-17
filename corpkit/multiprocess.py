@@ -81,7 +81,7 @@ def pmultiquery(corpus,
         denom = len(corpus)
         if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
             mult_corp_are_subs = True
-    elif (isinstance(query, list) or isinstance(query, dict)) and not hasattr(search, '__iter__'):
+    elif (isinstance(query, (list, dict)) and not hasattr(search, '__iter__')):
             multiple_queries = True
             num_cores = best_num_parallel(num_cores, len(query))
             denom = len(query)
@@ -292,10 +292,8 @@ def pmultiquery(corpus,
 
     # remove unpicklable bits from query
     from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
-    qlocs = {k: v for k, v in locs.items() if not isinstance(v, ModuleType) \
-            and not isinstance(v, FunctionType) \
-            and not isinstance(v, BuiltinFunctionType) \
-            and not isinstance(v, BuiltinMethodType)}
+    badtypes = (ModuleType, FunctionType, BuiltinFunctionType, BuiltinMethodType)
+    qlocs = {k: v for k, v in locs.items() if not isinstance(v, badtypes)}
 
     if hasattr(qlocs['corpus'], 'name'):
         qlocs['corpus'] = qlocs['corpus'].path

@@ -35,7 +35,7 @@ class Corpus(object):
         self.datatype = kwargs.pop('datatype', None)
         print_info = kwargs.get('print_info', True)
 
-        if isinstance(path, Datalist) or isinstance(path, list):
+        if isinstance(path, (list, Datalist)):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
@@ -1001,7 +1001,7 @@ class Corpora(Datalist):
             data = 'data'
 
         # handle a folder containing corpora
-        if isinstance(data, str) or isinstance(data, str):
+        if isinstance(data, basestring):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):

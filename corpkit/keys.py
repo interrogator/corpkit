@@ -87,7 +87,7 @@ def keywords(target_corpus,
         # get total num words in ref corpus
         key_scores = {}
         ref_sum = sum(reference_corpus.values())
-        if isinstance(target_corpus, dict) or isinstance(target_corpus, Counter):
+        if isinstance(target_corpus, dict):
             target_sum = sum(target_corpus.values())
         if isinstance(target_corpus, Series):
             target_sum = target_corpus.sum()

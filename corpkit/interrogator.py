@@ -122,7 +122,7 @@ def interrogator(corpus,
         if isinstance(query, list):
             if query != list(search.values())[0] or len(list(search.keys())) > 1:
                 query = {c.title(): c for c in query}
-        if isinstance(query, dict) or isinstance(query, OrderedDict):
+        if isinstance(query, (dict, OrderedDict)):
             is_mul = True
         if just_speakers:
             if just_speakers == 'each':
@@ -542,7 +542,7 @@ def interrogator(corpus,
                         searcher = tok_by_reg
                     else:
                         searcher = tok_by_list
-                    if isinstance(search.get('w'), list) or isinstance(search.get('w'), Wordlist):
+                    if isinstance(search.get('w'), (list, Wordlist)):
                         searcher = tok_by_list
                     optiontext = 'Searching tokens'
             only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf',
@@ -894,7 +894,7 @@ def interrogator(corpus,
         import copy
         corpus = copy.copy(corpus)
         for k, v in corpus.__dict__.items():
-            if isinstance(v, Interrogation) or isinstance(v, Interrodict):
+            if isinstance(v, (Interrogation, Interrodict)):
                 corpus.__dict__.pop(k, None)
 
     # convert path to corpus object

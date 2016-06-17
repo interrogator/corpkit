@@ -73,7 +73,7 @@ def editor(interrogation,
                 denominator = interrogation
 
             # if df2 is also a dict, get the relevant entry
-            if isinstance(denominator, dict) or denominator.__class__ == Interrodict:
+            if isinstance(denominator, (dict, Interrodict)):
                 #if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
                 #   sorted(set([i.lower() for i in list(denominator.keys())])):
                 #   locs['denominator'] = denominator[k]
@@ -96,7 +96,7 @@ def editor(interrogation,
             print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys()))))
         return Interrodict(outdict)
 
-    elif isinstance(interrogation, DataFrame) or isinstance(interrogation, Series):
+    elif isinstance(interrogation, (DataFrame, Series)):
         dataframe1 = interrogation
     elif isinstance(interrogation, Interrogation):
         #if interrogation.__dict__.get('concordance', None) is not None:

@@ -213,7 +213,7 @@ def plotter(df,
         else:
             l = list(dataframe.columns)
 
-        if isinstance(tinput, basestring) or isinstance(tinput, int):
+        if isinstance(tinput, (basestring, int)):
             tinput = [tinput]
         if isinstance(tinput, list):
             for i in tinput:
