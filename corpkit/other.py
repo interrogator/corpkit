@@ -1,7 +1,8 @@
 from __future__ import print_function
 
-def quickview(results, n = 25):
-    """view top n results as painlessly as possible.
+def quickview(results, n=25):
+    """
+    View top n results as painlessly as possible.
 
     :param results: Interrogation data
     :type results: :class:``corpkit.interrogation.Interrogation``
@@ -27,10 +28,10 @@ def quickview(results, n = 25):
 
     dtype = corpkit.interrogation.Interrogation
 
-    if type(results) == str:
+    if isinstance(results, basestring):
         if os.path.isfile(os.path.join(dictpath, results)):
             from corpkit.other import load
-            results = load(results, loaddir = dictpath)
+            results = load(results, loaddir=dictpath)
 
         elif os.path.isfile(os.path.join(savedpath, results)):
             from corpkit.other import load
@@ -94,7 +95,7 @@ def quickview(results, n = 25):
         else:
             print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
-def concprinter(dataframe, kind = 'string', n = 100, window = 35, columns = 'all', **kwargs):
+def concprinter(dataframe, kind='string', n=100, window=35, columns='all', **kwargs):
     """
     Print conc lines nicely, to string, latex or csv
 
@@ -132,7 +133,7 @@ def concprinter(dataframe, kind = 'string', n = 100, window = 35, columns = 'all
         df.is_copy = False
         df['l'] = df['l'].str.slice(start=-window, stop=None)
         df['l'] = df['l'].str.rjust(window)
-        df['r'] = df['r'].str.slice(start = 0, stop = window)
+        df['r'] = df['r'].str.slice(start=0, stop=window)
         df['r'] = df['r'].str.ljust(window)
         df['m'] = df['m'].str.ljust(df['m'].str.len().max())
         return df
@@ -316,7 +317,7 @@ def load(savename, loaddir='saved_interrogations'):
         data = pickle.load(fo)
     return data
 
-def loader(savedir = 'saved_interrogations'):
+def loader(savedir='saved_interrogations'):
     """Show a list of data that can be loaded, and then load by user input of index"""
     import glob
     import os
@@ -346,7 +347,7 @@ def loader(savedir = 'saved_interrogations'):
         raise ValueError('Selection not recognised.')
     return load(os.path.basename(fs[index]))
 
-def new_project(name, loc = '.', **kwargs):
+def new_project(name, loc='.', **kwargs):
     """Make a new project in ``loc``.
 
     :param name: A name for the project
@@ -460,12 +461,12 @@ def load_all_results(data_dir='saved_interrogations', **kwargs):
     from interrogation import Interrodict
     return Interrodict(output)
 
-def texify(series, n = 20, colname = 'Keyness', toptail = False, sort = False):
+def texify(series, n=20, colname='Keyness', toptail=False, sort=False):
     """turn a series into a latex table"""
     import corpkit
     import pandas as pd
     if sort:
-        df = pd.DataFrame(series.order(ascending = False))
+        df = pd.DataFrame(series.order(ascending=False))
     else:
         df = pd.DataFrame(series)
     df.columns = [colname]
@@ -516,7 +517,7 @@ def as_regex(lst, boundaries='w', case_sensitive=False, inverse=False, compile=F
     if not boundaries:
         boundary1 = r''
         boundary2 = r''
-    elif type(boundaries) == tuple or type(boundaries) == list:
+    elif isinstance(boundaries, (tuple, list)):
         boundary1 = boundaries[0]
         boundary2 = boundaries[1]
     else:
@@ -548,7 +549,7 @@ def as_regex(lst, boundaries='w', case_sensitive=False, inverse=False, compile=F
     else:
         return as_string
 
-def make_multi(interrogation, indexnames = None):    
+def make_multi(interrogation, indexnames=None):
     """
     make pd.multiindex version of an interrogation (for pandas geeks)
 
@@ -583,7 +584,7 @@ def make_multi(interrogation, indexnames = None):
 
     # if it's an interrodict, we want to make it into a single df
     import corpkit
-    from interrogation import Interrodict, Interrogation
+    from corpkit.interrogation import Interrodict, Interrogation
     if interrogation.__class__ == Interrodict:
         import pandas as pd
         import numpy as np
@@ -598,24 +599,24 @@ def make_multi(interrogation, indexnames = None):
         flat[0] = np.array(flat[0])
         flat[1] = np.array(flat[1])
 
-        df = pd.DataFrame(flat[2], index = flat[:2])
+        df = pd.DataFrame(flat[2], index=flat[:2])
         if indexnames is None:
             indexnames = ['Corpus', 'Subcorpus']
         df.index.names = indexnames
         df = df.fillna(0)
         df = df.T
-        df[('Total', 'Total')] = df.sum(axis = 1)
-        df = df.sort_values(by=('Total', 'Total'), ascending = False).drop(('Total', 'Total'), axis = 1).T
+        df[('Total', 'Total')] = df.sum(axis=1)
+        df = df.sort_values(by=('Total', 'Total'), ascending=False).drop(('Total', 'Total'), axis=1).T
         try:
             df = df.astype(int)
         except:
             pass
-        return Interrogation(df, df.sum(axis = 1), getattr(interrogation, 'query', None))
+        return Interrogation(df, df.sum(axis=1), getattr(interrogation, 'query', None))
     # determine datatype, get df and cols
-    if type(interrogation) == pd.core.frame.DataFrame:
+    if isinstance(interrogation, pd.core.frame.DataFrame):
         df = interrogation
         cols = list(interrogation.columns)
-    elif type(interrogation) == pd.core.series.Series:
+    elif isinstance(interrogation, pd.core.series.Series):
         cols = list(interrogation.index)
         df = pd.DataFrame(interrogation).T
     else:
@@ -643,7 +644,7 @@ def make_multi(interrogation, indexnames = None):
         newdf.columns.names = indexnames
     
     pd.set_option('display.multi_sparse', False)
-    totals = newdf.sum(axis = 1)
+    totals = newdf.sum(axis=1)
     query = interrogation.query
     conco = getattr(interrogation, 'concordance', None)
     return Interrogation(newdf, totals, query, conco)
@@ -676,7 +677,7 @@ def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
     :returns: None
     """
     import corpkit
-    from interrogation import Interrogation, Interrodict
+    from corpkit.interrogation import Interrogation, Interrodict
     import pandas as pd
     pd.set_option('display.float_format', lambda x: format(x, '.%df' % precision))
     strings = []
@@ -692,17 +693,18 @@ def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
         operation = 'k'
     else:
         operation = '%'
-    if type(self) == corpkit.interrogation.Interrodict:
+    if isinstance(self, corpkit.interrogation.Interrodict):
         to_iterate = self.items()
     else:
         if sort is True:
-            to_iterate = [(x, self.results.ix[x].sort_values(ascending = ascend)) for x in list(self.results.index)]
+            to_iterate = [(x, self.results.ix[x].sort_values(ascending=ascend)) \
+                          for x in list(self.results.index)]
         else:
             to_iterate = [(x, self.results.ix[x]) for x in list(self.results.index)]
     for name, data in to_iterate:
-        if type(self) == corpkit.interrogation.Interrodict:
+        if isinstance(self, corpkit.interrogation.Interrodict):
             if sort is True:
-                data = data.results.sum().sort_values(ascending = ascend)
+                data = data.results.sum().sort_values(ascending=ascend)
             else:
                 data = data.results.sum()
         # todo: if already float, don't do this operation...
@@ -722,14 +724,14 @@ def topwords(self, datatype='n', n=10, df=False, sort=True, precision=2):
             #strings.append(ser1)
             #strings.append(ser2)
         else:
-            as_str = data[:n].to_string(header = False)
+            as_str = data[:n].to_string(header=False)
             linelen = len(as_str.splitlines()[1])
             strings.append(name.ljust(linelen - 1) + '%s\n' % operation + as_str)
 
 
     # strings is a list of series as strings
     if df:
-        dataframe = pd.concat(strings, axis = 1, keys = [i for i, j in to_iterate])
+        dataframe = pd.concat(strings, axis=1, keys=[i for i, _ in to_iterate])
         return dataframe
     output = ''
     for tup in zip(*[i.splitlines() for i in strings]):

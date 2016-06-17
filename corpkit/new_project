@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 """
-A shell script to create a new corpkit project
+A script to create a new corpkit project
 """
 
 import sys
