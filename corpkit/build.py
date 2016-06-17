@@ -573,7 +573,8 @@ def check_jdk():
     from subprocess import PIPE, STDOUT, Popen
     p = Popen(["java", "-version"], stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
-    if 'java version "1.8' in stderr.decode(encoding='utf-8'):
+    encoded = stderr.decode(encoding='utf-8').lower()
+    if 'java version "1.8' in encoded or 'openjdk version "1.8' in encoded:
         return True
     else:
         #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
