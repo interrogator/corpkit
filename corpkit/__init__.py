@@ -23,7 +23,7 @@ __all__ = [
     "Wordlist"] + LETTERS
 
 #metadata
-__version__ = "2.1.8"
+__version__ = "2.1.9"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
