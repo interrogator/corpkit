@@ -3,116 +3,6 @@ from __future__ import print_function
 # in here are functions used internally by corpkit
 # not intended to be called by users. 
 
-def datareader(data, plaintext = False, **kwargs):
-    import corpkit
-    """
-    Returns a string of plain text from a number of kinds of data.
-
-    The kinds of data currently accepted are:
-
-    path to corpus : all trees are flattened
-    path to subcorpus : all trees are flattened
-    conc() output (list of concordance lines)
-    csv file generated with conc()
-    a string of text
-    """
-    import os
-    import pandas
-    from process import tregex_engine
-    try:
-        get_ipython().getoutput()
-    except TypeError:
-        have_ipython = True
-    except NameError:
-        import subprocess
-        have_ipython = False
-
-    tregex_engine_used = False
-    
-    # if unicode, make it a string
-    if type(data) == str:
-        if not os.path.isdir(data):
-            if not os.path.isfile(data):
-                return good
-    if type(data) == str:
-        # if it's a file, read it
-        if os.path.isfile(data):
-            good = open(data).read()
-        # if it's a dir, flatten all trees
-        elif os.path.isdir(data):
-            # get all sentences newline separated
-            query = r'__ !< __'
-            options = ['-o', '-t']
-
-            # if lemmatise, we get each word on a newline
-            if kwargs.get('lemmatise'):
-                query = r'__ <# (__ !< __)'
-                options = ['-o']
- 
-            # check for trees ...
-            #while plaintext is False:
-                #for f in first_twenty:
-                    #plaintext = tregex_engine(corpus = f, check_for_trees = True)
-            
-            if not plaintext:
-                tregex_engine_used = True
-                results = tregex_engine(corpus = data,
-                                              options = options,
-                                              query = query, 
-                                              **kwargs)
-            else:
-                results = []
-                fs = [os.path.join(data, f) for f in os.listdir(data)]
-                # do recursive if need
-                if any(os.path.isdir(f) for f in fs):
-                    recursive_files = []
-                    for dirname, dirnames, filenames in os.walk(data):
-                        for filename in filenames:
-                            recursive_files.append(os.path.join(dirname, filename))
-                    fs = recursive_files
-                
-                import nltk
-                sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
-                for f in fs:
-                    raw = str(open(f).read(), 'utf-8', errors = 'ignore')
-                    sents = sent_tokenizer.tokenize(raw)
-                    tokenized_sents = [nltk.word_tokenize(i) for i in sents]
-                    for sent in tokenized_sents:
-                        for w in sent:
-                            results.append(w.lower()) 
-
-            return results
-
-            #good = '\n'.join(results)
-        # if a string of text, 
-        else:
-            good = data
-    # if conc results, turn into string...
-    elif type(data) == pandas.core.frame.DataFrame:
-        # if conc lines:
-        try:
-            if list(data.columns) == ['l', 'm', 'r']:
-                conc_lines = True
-            else:
-                conc_lines = False
-        except:
-            conc_lines = False
-        if conc_lines:
-            # may not be unicode!?
-            good = [' '.join(list(data.ix[l])) for l in list(data.index)]
-
-    else:
-        good = data
-
-    # make unicode
-    if not tregex_engine_used:
-        try:
-            good = str(good, 'utf-8', errors = 'ignore')
-        except TypeError:
-            pass
-
-    return good
-
 def tregex_engine(corpus=False,  
                   options=False, 
                   query=False, 
@@ -122,7 +12,8 @@ def tregex_engine(corpus=False,
                   just_content_words=False,
                   root=False,
                   preserve_case=False,
-                  **kwargs):
+                  **kwarg
+                 ):
     """
     Run a Java Tregex query
     
@@ -179,20 +70,6 @@ def tregex_engine(corpus=False,
         options.pop(options.index('-filter'))
 
     on_cloud = checkstack('/opt/python/lib')
-
-    def find_wordnet_tag(tag):
-        import corpkit
-        if tag.startswith('j'):
-            tag = 'a'
-        elif tag.startswith('v') or tag.startswith('m'):
-            tag = 'v'
-        elif tag.startswith('n'):
-            tag = 'n'
-        elif tag.startswith('r'):
-            tag = 'r'
-        else:
-            tag = False
-        return tag
 
     # if check_query, enter the while loop
     # if not, get out of it
@@ -253,7 +130,7 @@ def tregex_engine(corpus=False,
                 else:
                     filtermode = True
             elif hasattr(corpus, 'path'):
-                    tregex_command.append(corpus.path)
+                tregex_command.append(corpus.path)
         
         if filtermode:
             tregex_command.append('-filter')
@@ -263,11 +140,10 @@ def tregex_engine(corpus=False,
             res = res.decode(encoding='UTF-8').splitlines()
         else:
             p = Popen(tregex_command, stdout=PIPE, stdin=PIPE, stderr=send_stderr_to)
-            p.stdin.write(corpus.encode('UTF-8', errors = 'ignore'))
+            p.stdin.write(corpus.encode('UTF-8', errors='ignore'))
             res = p.communicate()[0].decode(encoding='UTF-8').splitlines()
             p.stdin.close()
         
-        # TODO:
         # Fix up the stderr stdout rubbish
         if check_query:
             # define error searches 
@@ -275,14 +151,14 @@ def tregex_engine(corpus=False,
             regex_error = re.compile(r'^Exception in thread.*PatternSyntaxException')
             # if tregex error, give general error message
             if re.match(tregex_error, res[0]):
-                tregex_error_output = ""
                 if root:
                     time = strftime("%H:%M:%S", localtime())
                     print('%s: Error parsing Tregex query.' % time)
                     return False
                 time = strftime("%H:%M:%S", localtime())
 
-                selection = inputfunc('\n%s: Error parsing Tregex expression "%s".\nWould you like to:\n\n' \
+                selection = inputfunc('\n%s: Error parsing Tregex expression "%s".'\
+                                      '\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
                 if 'a' in selection:
@@ -307,7 +183,8 @@ def tregex_engine(corpus=False,
                 selection = inputfunc('\n%s: Error parsing regex inside Tregex query: %s'\
                 '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
                 '              a) rewrite it now\n' \
-                '              b) exit\n\nYour selection: ' % (time, str(info[1]), str(remove_end[0]), spaces))
+                '              b) exit\n\nYour selection: ' % \
+                    (time, str(info[1]), str(remove_end[0]), spaces))
                 if 'a' in selection:
                     query = inputfunc('\nNew Tregex query: ')
                 elif 'b' in selection:
@@ -344,20 +221,15 @@ def tregex_engine(corpus=False,
             if r.startswith('# /'):
                 make_tuples.append([r, res[index + 1]])
         res = make_tuples
-                
-    if not filenaming:
-        if preserve_case:
-            pass # res = [str(w, 'utf-8', errors = 'ignore') for w in res]
-        else:
+    
+    if not preserve_case:
+        if not filenaming:
             res = [w.lower().replace('/', '-slash-') for w in res]
-    else:
-        if preserve_case:
-            pass
         else:
             res = [[t, w.lower().replace('/', '-slash-')] for t, w in res]
     return res
 
-def show(lines, index, show = 'thread'):
+def show(lines, index, show='thread'):
     """show lines.ix[index][link] as frame"""
     import corpkit
     url = lines.ix[index]['link'].replace('<a href=', '').replace('>link</a>', '')
@@ -395,10 +267,8 @@ def get_gui_resource_dir():
     import os
     import sys
     if sys.platform == 'darwin':
-        key = 'Mod1'
         fext = 'app'
     else:
-        key = 'Control'
         fext = 'exe'
     corpath = corpath = __file__
     extens = '.%s' % fext
@@ -423,7 +293,6 @@ def get_fullpath_to_jars(path_var):
     import os
     important_files = ['stanford-corenlp-3.5.2-javadoc.jar', 'stanford-corenlp-3.5.2-models.jar',
                    'stanford-corenlp-3.5.2-sources.jar', 'stanford-corenlp-3.5.2.jar']
-    
     # if user selected file in parser dir rather than dir,
     # get the containing dir
     path_var_str = path_var.get()
@@ -469,10 +338,11 @@ def get_fullpath_to_jars(path_var):
     return False
 
 def determine_datatype(path):
-    """determine if plaintext, tokens or parsed xml"""
+    """
+    Determine if plaintext, tokens or parsed XML
+    """
     import os
     from collections import Counter
-    allowed = ['.txt', '.xml', '.p']
     exts = []
     if not os.path.isdir(path) and not os.path.isfile(path):
         raise ValueError("Corpus path '%s' doesn't exist." % path)
@@ -495,14 +365,12 @@ def determine_datatype(path):
         mc = counted.most_common(1)[0][0]
     except IndexError:
         mc = '.txt'
-    if mc == '.xml':
-        return 'parse', singlefile
-    elif mc == '.txt':
-        return 'plaintext', singlefile
-    elif mc == '.p':
-        return 'tokens', singlefile
-    else:
-        return 'plaintext', singlefile
+    
+    lookup = {'.xml': 'parse',
+              '.txt': 'plaintext',
+              '.p':   'tokens'}
+
+    return lookup.get(mc, 'plaintext'), singlefile
 
 def filtermaker(the_filter, case_sensitive=False, **kwargs):
     import re
@@ -510,7 +378,7 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
     from time import localtime, strftime
     root = kwargs.get('root')
     if isinstance(the_filter, (list, Wordlist)):
-        from other import as_regex
+        from corpkit.other import as_regex
         the_filter = as_regex(the_filter, case_sensitive=case_sensitive)
     try:
         output = re.compile(the_filter)
@@ -521,8 +389,7 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
             import traceback
             import sys
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            lst = traceback.format_exception(exc_type, exc_value,
-                          exc_traceback)
+            lst = traceback.format_exception(exc_type, exc_value, exc_traceback)
             error_message = lst[-1]
             thetime = strftime("%H:%M:%S", localtime())
             print('%s: Filter %s' % (thetime, error_message))
@@ -551,7 +418,9 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
     return output
 
 def searchfixer(search, query, datatype = False):
-    """normalise query/search value"""
+    """
+    Normalise query/search value
+    """
     if isinstance(search, basestring) and isinstance(query, dict):
         return search
     if isinstance(search, basestring):
@@ -563,7 +432,9 @@ def searchfixer(search, query, datatype = False):
     return search
 
 def is_number(s):
-    """check if str can be can be made into float/int"""
+    """
+    Check if str can be can be made into float/int
+    """
     try:
         float(s) # for int, long and float
         return True
@@ -576,8 +447,15 @@ def is_number(s):
     except TypeError:
         return False
 
-def animator(progbar, count, tot_string = False, linenum = False, terminal = False, 
-             init = False, length = False, **kwargs):
+def animator(progbar,
+             count,
+             tot_string=False,
+             linenum=False,
+             terminal=False,
+             init=False,
+             length=False,
+             **kwargs
+            ):
     """
     Animates progress bar in unique position in terminal
     Multiple progress bars not supported in jupyter yet.
@@ -640,7 +518,7 @@ def animator(progbar, count, tot_string = False, linenum = False, terminal = Fal
 
     if init:
         from corpkit.textprogressbar import TextProgressBar
-        return TextProgressBar(length, dirname = tot_string)
+        return TextProgressBar(length, dirname=tot_string)
         # this try is for sublime text nosetests, which don't take terminal object
     try:
         with terminal.location(0, terminal.height - (linenum + 1)):
@@ -661,9 +539,9 @@ def parse_just_speakers(just_speakers, path):
         just_speakers = ['each']
     if just_speakers is False or just_speakers is None:
         return False
-    if type(just_speakers) == str:
+    if isinstance(just_speakers, basestring):
         just_speakers = [just_speakers]
-    if type(just_speakers) == list:
+    if isinstance(just_speakers, list):
         if just_speakers == ['each']:
             from build import get_speaker_names_from_xml_corpus
             just_speakers = get_speaker_names_from_xml_corpus(path)
@@ -684,9 +562,9 @@ def timestring(input):
     thetime = strftime("%H:%M:%S", localtime())
     print('%s: %s' % (thetime, input.lstrip()))
 
-def makesafe(variabletext, drop_datatype = True, hyphens_ok = False):
+def makesafe(variabletext, drop_datatype=True, hyphens_ok=False):
     import re
-    from process import is_number
+    from corpkit.process import is_number
     if hyphens_ok:
         variable_safe_r = re.compile(r'[^A-Za-z0-9_-]+', re.UNICODE)
     else:
@@ -697,7 +575,6 @@ def makesafe(variabletext, drop_datatype = True, hyphens_ok = False):
         txt = variabletext.split('.')[0]
     if drop_datatype:
         txt = txt.replace('-parsed', '')
-
     txt = txt.replace(' ', '_')
     if not hyphens_ok:
         txt = txt.replace('-', '_')
@@ -707,7 +584,9 @@ def makesafe(variabletext, drop_datatype = True, hyphens_ok = False):
     return variable_safe
 
 def interrogation_from_conclines(newdata):
-    """make new interrogation result from its conc lines"""
+    """
+    Make new interrogation result from its conc lines
+    """
     from collections import Counter
     from pandas import DataFrame
     from corpkit.editor import editor
@@ -721,7 +600,8 @@ def interrogation_from_conclines(newdata):
     the_big_dict = {}
     unique_results = set([item for sublist in list(results.values()) for item in sublist])
     for word in unique_results:
-        the_big_dict[word] = [subcorp_result[word] for name, subcorp_result in sorted(results.items(), key=lambda x: x[0])]
+        the_big_dict[word] = [subcorp_result[word] for name, subcorp_result \
+                              in sorted(results.items(), key=lambda x: x[0])]
     # turn master dict into dataframe, sorted
     df = DataFrame(the_big_dict, index=sorted(results.keys())) 
     df = editor(df, sort_by='total', print_info=False)
@@ -736,21 +616,17 @@ def checkstack(the_string):
         for b in bit:
             thestack.append(str(b))
     as_string = ' '.join(thestack)
-    if as_string.lower().count(the_string) > 1:
-        return True
-    else:
-        return False
+    return as_string.lower().count(the_string) > 1
 
-def check_tex(have_ipython = True):
-    """see if tex is available"""
+def check_tex(have_ipython=True):
+    """
+    See if tex is available
+    """
     import os
     if have_ipython:
         checktex_command = 'which latex'
         o = get_ipython().getoutput(checktex_command)[0]
-        if o.startswith('which: no latex in'):
-            have_tex = False
-        else:
-            have_tex = True
+        have_tex = not o.startswith('which: no latex in')
     else:
         import subprocess
         FNULL = open(os.devnull, 'w')
@@ -856,12 +732,10 @@ def classname(cls):
     """Create the class name str for __repr__"""
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
 
-
 def show_tree_as_per_option(show, tree, sent=False):
     """
     Turn a ParentedTree into shown output
     """
-
     tree_vals = {}
     if 'whole' in show:
         tree = tree.root()
