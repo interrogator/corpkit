@@ -365,8 +365,8 @@ class Interrogation(object):
                       )
 
     def multiplot(self, leftdict={}, rightdict={}, **kwargs):
-        from corpkit.plotter import multiplot
-        multiplot(self, leftdict={}, rightdict={}, **kwargs)
+        from corpkit.plotter import multiplotter
+        return multiplotter(self, leftdict=leftdict, rightdict=rightdict, **kwargs)
 
     def language_model(self, *args, **kwargs):
         """

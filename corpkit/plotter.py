@@ -773,7 +773,7 @@ def plotter(df,
                     rev_leg = False
             if kind != 'heatmap':
                 # turn off pie labels at the last minute
-                if kind=='pie' and pie_legend:
+                if kind == 'pie' and pie_legend:
                     kwargs['labels'] = None
                     kwargs['autopct'] = '%.2f'
                 ax = dataframe.plot(figsize=figsize, **kwargs)
@@ -781,7 +781,7 @@ def plotter(df,
                 plt.figure(figsize=figsize)
                 if title:
                     plt.title(title)
-                ax = plt.axes()
+                ax = kwargs.get('ax', plt.axes())
                 sns.heatmap(dataframe, ax=ax, **hmargs)
                 plt.yticks(rotation=0)
 
@@ -801,7 +801,6 @@ def plotter(df,
 
             if kind != 'heatmap':
                 ax = dataframe.plot(figsize=figsize, **kwargs)
-                return ax
             else:
                 plt.figure(figsize=figsize)
                 if title:
@@ -1089,21 +1088,8 @@ def plotter(df,
     else:
         return plt
 
-def multiplot(df, leftdict={},rightdict={}, **kwargs):
-    """
-    Plot a big chart and its subplots together
 
-    :param leftdict: a dict of arguments for the big plot
-    :type leftdict: dict
-    :param rightdict: a dict of arguments for the small plot
-    :type rightdict: dict
-
-    """
-
-
-
-
-def multiplot(df, leftdict={},rightdict={}, **kwargs):
+def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     """
     Plot a big chart and its subplots together
 
@@ -1120,13 +1106,22 @@ def multiplot(df, leftdict={},rightdict={}, **kwargs):
     if isinstance(df, Interrogation):
         df = df.results
 
+    df2 = rightdict.pop('data', df.copy())
+    if isinstance(df2, Interrogation):
+        df2 = df2.results
+
     # add more cool layouts here
     layouts = {
                1: [(1,2,1), (2,4,3), (2,4,4), (2,4,7), (2,4,8)], # 4
                2: [(1,2,1), (3,4,3), (3,4,4), (3,4,7), (3,4,8), (3,4,11), (3,4,12)], #6
                3: [(1,2,1), (3,2,2), (3,2,4), (3,2,6)], # 3
                4: [(2,1,1), (2,3,4), (2,3,5), (2,3,6)], # 3
-               5: [(1,5,(1,2)), (3,5,3), (3,5,4), (3,5,5), (3,5,8), (3,5,9), (3, 5, 10),(3, 5, 13),(3, 5, 14),(3, 5, 15)]
+               5: [(1,5,(1,2)), (3,5,3), (3,5,4), (3,5,5), (3,5,8), (3,5,9), (3, 5, 10),(3, 5, 13),(3, 5, 14),(3, 5, 15)],
+               6: [(4,2,(6,8)), (4,2,1),(4,2,2), (4,2,3), (4,2,4),(4,2,5), (4,2,7)],
+               7: [(4,1,1),
+                   (4,4, 5), (4,4,6), (4,4,7), (4,4,8),
+                   (4,4,9), (4, 4, 10), (4, 4, 11), (4, 4, 12),
+                   (4,4,13), (4, 4, 14), (4, 4, 15), (4, 4, 16)]
               }
 
     if isinstance(kwargs.get('layout'), list):
@@ -1140,10 +1135,15 @@ def multiplot(df, leftdict={},rightdict={}, **kwargs):
     tpa = leftdict.pop('transpose', False)
     tpb = rightdict.pop('transpose', False)
     numtoplot = leftdict.pop('num_to_plot', len(layout) - 1)
+    ntpb = rightdict.pop('num_to_plot', 'all')
     
     fig = plt.figure()
     
     for i, (nrows, ncols, plot_number) in enumerate(layout, start=-1):
+        if tpb:
+            df2 = df2.T
+        if i >= len(df2.columns):
+            continue
         ax = fig.add_subplot(nrows, ncols, plot_number)
         if i == -1:
             df.visualise(kind=kinda, ax=ax, transpose=tpa,
@@ -1155,20 +1155,24 @@ def multiplot(df, leftdict={},rightdict={}, **kwargs):
                 for r in rects:
                     if r._facecolor not in colmap:
                         colmap.append(r._facecolor)
+                colmap = {list(df.columns)[i]: x for i, x in enumerate(colmap[:len(df.columns)])}
             else:
-                colmap = [i.get_color() for i in ax.get_lines()]
+                colmap = {list(df.columns)[i]: l.get_color() for i, l in enumerate(ax.get_lines())}
         else:
             if colmap:
-                c = colmap[i]
+                try:
+                    name = df2.iloc[:, i].name
+                    c = colmap[name]
+                except IndexError:
+                    c = 'gray'
+                except KeyError:
+                    c = 'gray'
             else:
                 c = rightdict.pop('colours', 'default')
-            if tpb:
-                df.T.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c, **rightdict)
-                ax.set_title(df.T.iloc[:, i].name)
-            else:
-                df.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c, **rightdict)
-                ax.set_title(df.iloc[:, i].name)
-            
+            df2.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c,
+                                    num_to_plot=ntpb, **rightdict)
+            ax.set_title(df2.iloc[:, i].name)
+        
     wspace = kwargs.get('wspace', .2)
     hspace = kwargs.get('hspace', .5)
     

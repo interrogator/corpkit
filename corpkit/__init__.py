@@ -49,7 +49,7 @@ import corpkit.dictionaries as dictionaries
 
 # import functions, though most are now class methods
 from corpkit.other import load, loader, load_all_results
-from corpkit.plotter import multiplot
+from corpkit.plotter import multiplotter
 from corpkit.lazyprop import lazyprop
 from other import load_all_results
 from other import quickview, as_regex, new_project
@@ -85,6 +85,10 @@ def _calculate(self, *args, **kwargs):
     from corpkit.process import interrogation_from_conclines
     return interrogation_from_conclines(self)
 
+def _multiplot(self, leftdict={}, rightdict={}, *args, **kwargs):
+    from corpkit.plotter import multiplotter
+    return multiplotter(self, leftdict=leftdict, rightdict=rightdict, **kwargs)
+
 def _shuffle(self, inplace = False):
     import random
     index = list(self.index)
@@ -102,7 +106,7 @@ def _top(self):
     import pandas as pd
     max_row = pd.options.display.max_rows
     max_col = pd.options.display.max_columns
-    return self.iloc[:max_row,:max_col]
+    return self.iloc[:max_row, :max_col]
 
 DataFrame.edit = _edit
 Series.edit = _edit
@@ -110,8 +114,8 @@ Series.edit = _edit
 DataFrame.visualise = _plot
 Series.visualise = _plot
 
-DataFrame.multiplot = multiplot
-Series.multiplot = multiplot
+DataFrame.multiplot = _multiplot
+Series.multiplot = _multiplot
 
 
 DataFrame.save = _save
