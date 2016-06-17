@@ -317,7 +317,7 @@ def plotter(df,
     # copy data, make series into df
     dataframe = df.copy()
     was_series = False
-    if type(dataframe) == Series:
+    if isinstance(dataframe, Series):
         was_series = True
         if not cumulative:
             dataframe = DataFrame(dataframe)
@@ -776,6 +776,8 @@ def plotter(df,
                 if kind == 'pie' and pie_legend:
                     kwargs['labels'] = None
                     kwargs['autopct'] = '%.2f'
+                if kind == 'pie':
+                    kwargs.pop('color', None)
                 ax = dataframe.plot(figsize=figsize, **kwargs)
             else:
                 plt.figure(figsize=figsize)
@@ -1111,6 +1113,7 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
         df2 = df2.results
 
     # add more cool layouts here
+    # and figure out a nice way to access them other than numbers...
     layouts = {
                1: [(1,2,1), (2,4,3), (2,4,4), (2,4,7), (2,4,8)], # 4
                2: [(1,2,1), (3,4,3), (3,4,4), (3,4,7), (3,4,8), (3,4,11), (3,4,12)], #6
@@ -1121,7 +1124,18 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
                7: [(4,1,1),
                    (4,4, 5), (4,4,6), (4,4,7), (4,4,8),
                    (4,4,9), (4, 4, 10), (4, 4, 11), (4, 4, 12),
-                   (4,4,13), (4, 4, 14), (4, 4, 15), (4, 4, 16)]
+                   (4,4,13), (4, 4, 14), (4, 4, 15), (4, 4, 16)],
+               8: [(1,6,(1,3)), (3,6,4), (3,6,5), (3,6,6), (3,6,10), (3,6,11), (3, 6, 12),(3, 6, 16),(3, 6, 17),(3, 6, 18)],  # same as 5 but bigger left
+               9: [(1, 2, 1), (1, 2, 2)],
+               10: [(3,3, (1, 5)), (3,3,3), (3,3,6), (3, 3, 7), (3, 3, 8), (3,3,9)],
+               11: [(4,4, (1, 6)), (4,4,3), (4,4,4),(4,4,7), (4,4,8),(4,4,9), (4,4,10),
+     (4,4,11), (4,4,12),(4,4,13), (4,4,14), (4,4,15),(4, 4, 16)],
+               12: [(6,3,(1,5)),          (6,3,3),
+                                          (6,3,6),
+                    (6,3,7),    (6,3,8),  (6,3,9),
+                    (6,3,10),   (6,3,11), (6,3,12),
+                    (6,3,13),   (6,3,14), (6,3,15),
+                    (6,3,16),   (6,3,17), (6,3,18)]
               }
 
     if isinstance(kwargs.get('layout'), list):
@@ -1136,7 +1150,9 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     tpb = rightdict.pop('transpose', False)
     numtoplot = leftdict.pop('num_to_plot', len(layout) - 1)
     ntpb = rightdict.pop('num_to_plot', 'all')
-    
+    if kindb == 'pie':
+        piecol = rightdict.pop('colours', 'default')
+    coloursb = rightdict.pop('colours', 'default')
     fig = plt.figure()
     
     for i, (nrows, ncols, plot_number) in enumerate(layout, start=-1):
@@ -1148,7 +1164,7 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
         if i == -1:
             df.visualise(kind=kinda, ax=ax, transpose=tpa,
                          num_to_plot=numtoplot, **leftdict)
-            if kinda == 'bar':
+            if kinda in ['bar', 'hist', 'barh']:
                 import matplotlib as mpl
                 colmap = []
                 rects = [r for r in ax.get_children() if isinstance(r, mpl.patches.Rectangle)]
@@ -1159,24 +1175,28 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
             else:
                 colmap = {list(df.columns)[i]: l.get_color() for i, l in enumerate(ax.get_lines())}
         else:
-            if colmap:
+            if colmap and kindb != 'pie':
                 try:
                     name = df2.iloc[:, i].name
-                    c = colmap[name]
+                    coloursb = colmap[name]
                 except IndexError:
-                    c = 'gray'
+                    coloursb = 'gray'
                 except KeyError:
-                    c = 'gray'
+                    coloursb = 'gray'
+
+            if kindb == 'pie':
+                rightdict['colours'] = piecol
             else:
-                c = rightdict.pop('colours', 'default')
-            df2.iloc[:, i].visualise(kind=kindb, ax=ax, colours=c,
-                                    num_to_plot=ntpb, **rightdict)
+                rightdict['colours'] = coloursb
+
+            df2.iloc[:, i].visualise(kind=kindb, ax=ax,
+                                     num_to_plot=ntpb, **rightdict)
             ax.set_title(df2.iloc[:, i].name)
         
     wspace = kwargs.get('wspace', .2)
     hspace = kwargs.get('hspace', .5)
-    
-    fig.subplots_adjust(bottom=0.025, left=0.025, top = 0.975, right=0.975,
+
+    fig.subplots_adjust(bottom=0.025, left=0.025, top=0.975, right=0.975,
                         wspace=wspace, hspace=hspace)
 
     size = kwargs.get('figsize', (10, 4))
