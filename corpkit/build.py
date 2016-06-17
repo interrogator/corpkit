@@ -568,17 +568,17 @@ def get_corpus_filepaths(projpath=False,
     return fp
 
 def check_jdk():
+    """Check for a Java/OpenJDK"""
     import corpkit
     import subprocess
     from subprocess import PIPE, STDOUT, Popen
+    # add any other version string to here
+    javastrings = ['java version "1.8', 'openjdk version "1.8']
     p = Popen(["java", "-version"], stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
+    _, stderr = p.communicate()
     encoded = stderr.decode(encoding='utf-8').lower()
-    if 'java version "1.8' in encoded or 'openjdk version "1.8' in encoded:
-        return True
-    else:
-        #print "Get the latest Java from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
-        return False
+
+    return any(j in encoded for j in javastrings)
 
 def parse_corpus(proj_path=False, 
                 corpuspath=False, 
