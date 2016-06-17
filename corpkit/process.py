@@ -942,15 +942,22 @@ def saferead(path):
     :returns: text and its encoding
     """
     import chardet
-    with open(path, 'r') as fo:
-        data = fo.read()
-    try:
+    import sys
+    if sys.version_info.major == 3:
         enc = 'utf-8'
-        data = data.decode(enc)
-    except UnicodeDecodeError:
-        enc = chardet.detect(data)['encoding']
-        data = data.decode(enc, errors='ignore')
-    return data, enc
+        with open(path, 'r', encoding=enc) as fo:
+            data = fo.read()
+        return data, enc
+    else:
+        with open(path, 'r') as fo:
+            data = fo.read()
+        try:
+            enc = 'utf-8'
+            data = data.decode(enc)
+        except UnicodeDecodeError:
+            enc = chardet.detect(data)['encoding']
+            data = data.decode(enc, errors='ignore')
+        return data, enc
 
 def urlify(s):
     "Turn title into filename"

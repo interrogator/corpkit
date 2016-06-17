@@ -754,10 +754,7 @@ def parse_corpus(proj_path=False,
         import cPickle as pickle
         fs = open(filelist).read().splitlines()
         dirs = sorted(list(set([os.path.basename(os.path.dirname(f)) for f in fs])))
-        if len(dirs) == 0:
-            one_big_corpus = True
-        else:
-            one_big_corpus = False
+        one_big_corpus = len(dirs) == 0
         if any(os.path.isdir(os.path.join(new_corpus_path, d)) for d in dirs):
             thetime = strftime("%H:%M:%S", localtime())
             print('%s: Directory already exists. Delete it if need be.' % thetime)
