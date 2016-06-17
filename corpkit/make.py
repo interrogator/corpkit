@@ -217,21 +217,22 @@ def make_corpus(unparsed_corpus_path,
             ds = []
             for listpath in filelists:
                 d = {'proj_path': project_path, 
-                    'corpuspath': to_parse,
-                    'filelist': listpath,
-                    'corenlppath': corenlppath,
-                    'nltk_data_path': nltk_data_path,
-                    'operations': operations,
-                    'copula_head': cop_head,
-                    'multiprocessing': True,
-                    'root': root,
-                    'note': note,
-                    'stdout': stdout}
+                     'corpuspath': to_parse,
+                     'filelist': listpath,
+                     'corenlppath': corenlppath,
+                     'nltk_data_path': nltk_data_path,
+                     'operations': operations,
+                     'copula_head': cop_head,
+                     'multiprocessing': True,
+                     'root': root,
+                     'note': note,
+                     'stdout': stdout
+                    }
                 ds.append(d)
 
             res = Parallel(n_jobs=multiprocess)(delayed(parse_corpus)(**x) for x in ds)
             if len(res) > 0:
-                new_parsed_corpus_path = res[0]
+                newparsed = res[0]
             else:
                 return
             if all(r is False for r in res):
@@ -244,19 +245,19 @@ def make_corpus(unparsed_corpus_path,
                     pass
 
         else:
-            new_parsed_corpus_path = parse_corpus(proj_path=project_path, 
-                                   corpuspath=to_parse,
-                                   filelist=filelist,
-                                   corenlppath=corenlppath,
-                                   nltk_data_path=nltk_data_path,
-                                   operations=operations,
-                                   copula_head=cop_head,
-                                   root=root,
-                                   note=note,
-                                   stdout=stdout,
-                                   fileparse=fileparse)
+            newparsed = parse_corpus(proj_path=project_path, 
+                                     corpuspath=to_parse,
+                                     filelist=filelist,
+                                     corenlppath=corenlppath,
+                                     nltk_data_path=nltk_data_path,
+                                     operations=operations,
+                                     copula_head=cop_head,
+                                     root=root,
+                                     note=note,
+                                     stdout=stdout,
+                                     fileparse=fileparse)
 
-        if new_parsed_corpus_path is False:
+        if newparsed is False:
             return 
         if fileparse:
             # cleanup mistakes :)
@@ -266,10 +267,10 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.xml'
         
-        move_parsed_files(project_path, to_parse, new_parsed_corpus_path)
-        outpath = new_parsed_corpus_path
+        move_parsed_files(project_path, to_parse, newparsed)
+        outpath = newparsed
         if speaker_segmentation:
-            add_ids_to_xml(new_parsed_corpus_path)
+            add_ids_to_xml(newparsed)
         try:
             os.remove(filelist)
         except:
@@ -280,15 +281,16 @@ def make_corpus(unparsed_corpus_path,
                                         corpuspath=unparsed_corpus_path)
 
     if tokenise:
-        new_tokenised_corpus_path = parse_corpus(proj_path=project_path, 
-                                   corpuspath=unparsed_corpus_path,
-                                   filelist=filelist,
-                                   nltk_data_path=nltk_data_path,
-                                   operations=operations,
-                                   only_tokenise=True)
-        if new_tokenised_corpus_path is False:
+        newtok = parse_corpus(proj_path=project_path, 
+                              corpuspath=unparsed_corpus_path,
+                              filelist=filelist,
+                              nltk_data_path=nltk_data_path,
+                              operations=operations,
+                              only_tokenise=True
+                             )
+        if newtok is False:
             return   
-        outpath = new_tokenised_corpus_path
+        outpath = newtok
 
     rename_all_files(outpath)
     print('Done!\n')
