@@ -1094,7 +1094,10 @@ def interrogator(corpus,
                     # right now, this is not using the File class's read() or document
                     # methods. the reason is that there seem to be memory leaks. these
                     # may have been fixed already though.
-                    from corenlp_xml import Document
+                    try:
+                        from corenlp_xml import Document
+                    except ImportError:
+                        from corenlp_xml.document import Document
                     with codecs.open(f.path, 'rb') as fo:
                         data = fo.read()
                     corenlp_xml = Document(data)

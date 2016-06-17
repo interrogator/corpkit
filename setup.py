@@ -22,10 +22,10 @@ class CustomInstallCommand(install):
         wordnetpath = os.path.join(nltkpath, 'corpora')
         if not os.path.isfile(os.path.join(punktpath, 'punkt.zip')) \
             and not os.path.isdir(os.path.join(punktpath, 'punkt')):
-            nltk.download('punkt', download_dir = nltkpath)
+            nltk.download('punkt', download_dir=nltkpath)
         if not os.path.isfile(os.path.join(wordnetpath, 'wordnet.zip')) \
             and not os.path.isdir(os.path.join(wordnetpath, 'wordnet')):
-            nltk.download('wordnet', download_dir = nltkpath)
+            nltk.download('wordnet', download_dir=nltkpath)
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
@@ -50,4 +50,7 @@ setup(name='corpkit',
                         "lxml>=3.4.4",
                         "requests",
                         "chardet",
-                        "blessings>=1.6"])
+                        "blessings>=1.6",
+                        "traitlets>=4.1.0"],
+    dependency_links=['git+https://github.com/interrogator/corenlp-xml-lib.git@26f126f33fbf67a17f9a5d5913b17fe99742c8c3#egg=corenlp_xml',
+                      'git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable'])
