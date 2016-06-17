@@ -967,3 +967,8 @@ def urlify(s):
     s = re.sub(r"\s+", '-', s)
     s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
     return s
+
+def get_speakername(sent):
+    """Return speakername without CoreNLP_XML"""
+    sn = sent._element.xpath('speakername/text()')
+    return sn[0] if sn else ''

@@ -410,7 +410,8 @@ def dep_searcher(sents,
         each repeat
         """
         # make a conc line with just speaker name so far
-        speakr = s.speakername
+        from corpkit.process import get_speakername
+        speakr = get_speakername(s)
         if not speakr:
             speakr = ''
         # begin building line with speaker first

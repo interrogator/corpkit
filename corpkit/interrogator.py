@@ -62,9 +62,8 @@ def interrogator(corpus,
 
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
-    from corpkit.process import tregex_engine, get_deps, unsplitter, sanitise_dict
+    from corpkit.process import tregex_engine, get_deps, unsplitter, sanitise_dict, get_speakername, animator
     from corpkit.other import as_regex
-    from corpkit.process import animator
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
     from corpkit.build import check_jdk
@@ -303,12 +302,7 @@ def interrogator(corpus,
         conc_output = []
         conc_out = []
         for sent in sents:
-            if hasattr(sent, 'speakername'):
-                sk = sent.speakername
-                if not sk:
-                    sk = ''
-            else:
-                sk = ''
+            sk = get_speakername(sent)
             results = tgrep(sent, search['t'])
             for res in results:
                 out.append(show_tree_as_per_option(show, res, sent))
@@ -1025,7 +1019,7 @@ def interrogator(corpus,
         in_notebook = False
 
     # print welcome message
-    welcome_message = welcome_printer(return_it = in_notebook)
+    welcome_message = welcome_printer(return_it=in_notebook)
 
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar()
@@ -1105,9 +1099,10 @@ def interrogator(corpus,
                     if just_speakers:
                         import re
                         if isinstance(just_speakers, re._pattern_type):
-                            sents = [s for s in corenlp_xml.sentences if re.search(just_speakers, getattr(s, 'speakername', ''))]
+                            sents = [s for s in corenlp_xml.sentences if \
+                                     re.search(just_speakers, get_speakername(s))]
                         else:
-                            sents = [s for s in corenlp_xml.sentences if s.speakername in just_speakers]
+                            sents = [s for s in corenlp_xml.sentences if get_speakername(s) in just_speakers]
                             if len(just_speakers) == 1:
                                 slow_treg_speaker_guess = just_speakers[0]
                     else:
