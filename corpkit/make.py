@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 def make_corpus(unparsed_corpus_path,
                 project_path=None,
@@ -257,8 +258,11 @@ def make_corpus(unparsed_corpus_path,
                                      stdout=stdout,
                                      fileparse=fileparse)
 
-        if newparsed is False:
+        if not newparsed:
             return 
+        if all(not x for x in newparsed):
+            return
+
         if fileparse:
             # cleanup mistakes :)
             if isfile(splitext(unparsed_corpus_path)[0]):
