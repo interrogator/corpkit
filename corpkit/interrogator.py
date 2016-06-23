@@ -1111,13 +1111,15 @@ def interrogator(corpus,
                     else:
                         sents = corenlp_xml.sentences
 
+                    # get coreferences
                     if kwargs.get('coref'):
                         if just_speakers:
                             corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
                         else:
-                            corefs = corelxml_xml.coreferences
+                            corefs = corenlp_xml.coreferences
                     else:
                         corefs = []
+                        
                     corenlp_xml = None
                     gc.collect()
 

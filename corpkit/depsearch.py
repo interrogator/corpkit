@@ -24,7 +24,7 @@ def dep_searcher(sents,
     from corenlp_xml.document import Document
     from collections import Counter
     from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator, get_deps
+    from corpkit.process import filtermaker, animator
 
     if not sents:
         return [], []
@@ -89,6 +89,9 @@ def dep_searcher(sents,
               'x': 'pos'}
 
     def locate_tokens(tok, deprole, attr):
+        """
+        take a token, return it, its gov or dependent
+        """
         ret = set()
         if deprole == 'm':
             if attr == 'f':
@@ -101,7 +104,18 @@ def dep_searcher(sents,
                 ret.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
             return ret
 
-    def simple_searcher(deprole, pattern, attr):
+    def get_candidates(tok):
+        candidates = [tok]
+        for coref in corefs:
+            for mention in coref.mentions:
+                # if current token is a coref chain
+                if tok == mention.head:
+                    for sibling in mention.siblings:
+                        candidates.append(sibling.head)
+                    return candidates
+        return candidates
+
+    def simple_searcher(tokens, deprole, pattern, attr, repeating=True):
         if attr == 'f':
             return search_function(deprole, pattern)
         elif attr == 'r':
@@ -109,20 +123,44 @@ def dep_searcher(sents,
         else:
             attrib = attr_trans.get(attr, attr)
         matches = set()
+
         for tok in tokens:
+
+            if corefs and repeating:
+                print('firsttime')
+                # get a list of tokens that could match, and pass those
+                # recursively into this function
+                candidates = get_candidates(tok)
+                #
+                res = simple_searcher(candidates, deprole, pattern, attr, repeating=False)
+                if res:
+                    matches |= locate_tokens(tok, deprole, attr)
+                continue
+            print('secondtime')
+
+            # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
+            print(tosearch)
             # deal with possible ints
             if isinstance(pattern, int) and isinstance(tosearch, int):
                 if pattern != tosearch:
                     continue
             elif isinstance(tosearch, int) and not isinstance(pattern, int):
-                tosearch = str(tosearch)        
+                tosearch = str(tosearch)
+
+            # turn pos tags into word classes
             if attr == 'x':
                 from corpkit.dictionaries.word_transforms import taglemma
                 tosearch = taglemma.get(tosearch.lower(), tosearch.lower())
+            
+            # search pattern against what we grabbed
+            
             if not re.search(pattern, tosearch):
                 continue
+
+            # return governor, dependent, or match
             matches |= locate_tokens(tok, deprole, attr)
+
         return matches
 
     def search_function(deprole, pattern):
@@ -298,12 +336,6 @@ def dep_searcher(sents,
             else:
                 newsearch[srch] = pat_format(pat)
         return newsearch
-
-    def do_single_search(srch, pattern):
-        """get results from single search criterion"""
-        deprole, attr = srch[0], srch[-1]
-        matching_tokens = simple_searcher(deprole, pattern, attr)
-        return matching_tokens
 
     def distancer(matching_tokens, token):
         "determine number of jumps to root"      
@@ -554,6 +586,10 @@ def dep_searcher(sents,
     ################## BEGIN WORKFLOW ##################
     ####################################################
 
+    deptrans = {'a': 'basic-dependencies',
+                'b': 'collapsed-dependencies',
+                'c': 'collapsed-ccprocessed-dependencies'}
+
     # if we're doing ngrams or collocations, we need to repeat over the data
     # otherwise it's just once
     repeats = 1
@@ -570,13 +606,17 @@ def dep_searcher(sents,
     search = fix_search(search)
     exclude = fix_search(exclude)
 
+
     # iterate over sentences
+
     for s in sents:
-#        if corefs:
+
+#       if corefs:
 
         # all search matches go here
         matching_tokens = []
-        deps = get_deps(s, dep_type)
+        dep_type = dep_type.replace('-', '_')
+        deps = getattr(s, deptrans.get(dep_type, dep_type))
         # remove punctuation if need be
         tokens = s.tokens
         if no_punct:
@@ -587,7 +627,7 @@ def dep_searcher(sents,
 
         for srch, pat in search.items():
             deprole, attr = srch[0], srch[-1]
-            matching_tokens += simple_searcher(deprole, pat, attr)
+            matching_tokens += simple_searcher(tokens, deprole, pat, attr)
 
         matching_tokens = remove_by_mode(matching_tokens, searchmode)
 
@@ -596,7 +636,7 @@ def dep_searcher(sents,
         if exclude:
             for excl, expat in exclude.items():
                 exclv, exattr = excl[0], excl[-1]
-                for remove in simple_searcher(exclv, expat, exattr):
+                for remove in simple_searcher(tokens, exclv, expat, exattr):
                     removes.append(remove)
 
             removes = remove_by_mode(removes, excludemode)
