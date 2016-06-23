@@ -191,6 +191,24 @@ There are a number of further keyword arguments for customising figures:
 
 A number of these and other options for customising figures are also described in the :class:`corpkit.interrogation.Interrogation.visualise` method documentation.
 
+Multiplotting
+---------------
+
+The :class:`corpkit.interrogation.Interrogation` also comes with a :class:`corpkit.interrogation.Interrogation.multiplot` method, which can be used to show two different kinds of chart within the same figure.
+
+The first two arguments for the function are two `dict` objects, which configure the larger and smaller plots.
+
+For the second dictionary, you may pass in a `data` argument, which can be an 
+
+This is useful, for example, if you want your main plot to show absolute frequencies, and your subplots to show relative frequencies.
+
+There is also `layout`, which you can use to choose an overall grid design.
+
+You can pass in a list of tuples if you like, to use your own layout.
+
+
+
+
 .. _plot: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.plot.html
 .. _docs: https://stanford.edu/~mwaskom/software/seaborn/generated/seaborn.heatmap.html
 .. _mpld3: http://mpld3.github.io/
