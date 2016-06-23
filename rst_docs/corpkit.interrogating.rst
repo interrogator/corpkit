@@ -407,6 +407,11 @@ So, if you wanted to find all the processes a certain entity is engaged in, you 
 
 This will count `support` in `Clinton supported the independence of Kosovo`, and also potentially `authorize` in `He authorized the use of force`.
 
+.. note::
+
+   You can toggle `representative=True` and `non_representative=True` arguments if you want to distinguish between copula and non-copula coreference.
+
+
 Multiprocessing
 ---------------------
 
@@ -416,7 +421,9 @@ Interrogating the corpus can be slow. To speed it up, you can pass an integer as
 
    >>> corpus.interrogate({T: r'__ > MD'}, multiprocess=4)
 
-Note that too many parallel processes may slow your computer down. If you pass in ``multiprocessing=True``, the number of processes will equal the number of cores on your machine. This is usually a fairly sensible number.
+.. note::
+
+   Too many parallel processes may slow your computer down. If you pass in ``multiprocessing=True``, the number of processes will equal the number of cores on your machine. This is usually a fairly sensible number.
 
 N-grams
 ---------------------
