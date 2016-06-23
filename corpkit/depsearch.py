@@ -20,6 +20,8 @@ def dep_searcher(sents,
                  window=2,
                  language_model=False,
                  corefs=False,
+                 representative=True,
+                 non_representative=True,
                  **kwargs
                 ):
     import re
@@ -110,6 +112,10 @@ def dep_searcher(sents,
         candidates = [tok]
         for coref in corefs:
             for mention in coref.mentions:
+                if not representative and mention.representative:
+                    continue
+                if not non_representative and not mention.representative:
+                    continue
                 # if current token is a coref chain
                 if tok == mention.head:
                     for sibling in mention.siblings:
