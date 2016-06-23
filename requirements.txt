@@ -1,4 +1,4 @@
--e git+https://github.com/interrogator/corenlp-xml-lib.git@26f126f33fbf67a17f9a5d5913b17fe99742c8c3#egg=corenlp_xml
+-e git+http://www.github.com/interrogator/corenlp-xml-lib
 -e git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable
 matplotlib >= 1.5.1
 nltk >= 3.0.0

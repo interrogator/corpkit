@@ -13,6 +13,8 @@ def dep_searcher(sents,
                  only_format_match=False,
                  speaker=False,
                  gramsize=2,
+                 no_punct=True,
+                 no_closed=False,
                  whitelist=False,
                  split_contractions=False,
                  window=2,
@@ -32,7 +34,7 @@ def dep_searcher(sents,
     is_a_word = re.compile(regex_nonword_filter)
 
     no_punct = kwargs.get('no_punct', True)
-    no_closed = kwargs.get('no_closed', True)
+    no_closed = kwargs.get('no_closed', False)
 
     if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
         only_format_match = True
@@ -127,7 +129,6 @@ def dep_searcher(sents,
         for tok in tokens:
 
             if corefs and repeating:
-                print('firsttime')
                 # get a list of tokens that could match, and pass those
                 # recursively into this function
                 candidates = get_candidates(tok)
@@ -136,11 +137,9 @@ def dep_searcher(sents,
                 if res:
                     matches |= locate_tokens(tok, deprole, attr)
                 continue
-            print('secondtime')
 
             # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
-            print(tosearch)
             # deal with possible ints
             if isinstance(pattern, int) and isinstance(tosearch, int):
                 if pattern != tosearch:
@@ -233,7 +232,11 @@ def dep_searcher(sents,
 
         if hasattr(tokenx, t):
             att = getattr(tokenx, t)
-            return postp.get(att.lower(), att)
+            if isinstance(att, int):
+                return postp.get(att, att)
+            else:
+                return postp.get(att.lower(), att)
+
         else:
             return tokenx
 
@@ -259,7 +262,7 @@ def dep_searcher(sents,
                 fs.add(str(distance))
         return fs
 
-    def show_governor(tok):
+    def show_governor(tok, _):
         for i in deps.links:
             if i.dependent.idx == tok.id:
                 gov = s.get_token_by_id(i.governor.idx)
@@ -269,18 +272,22 @@ def dep_searcher(sents,
                     return 'root'
         return 'none' # not possible?
 
-    def show_dependent(tok):
-        """this has been hacked, needs rewriting"""
+    def show_dependent(tok, repeat):
+        """get nth dependent"""
+        matches = []
         for i in deps.links:
             if i.governor.idx == tok.id:
-                dep = s.get_token_by_id(i.dependent.idx)
-                if dep:
-                    return dep
-                else:
-                    return 'none'
-        return 'none'
-
-    def show_match(tok):
+                dp = s.get_token_by_id(i.dependent.idx)
+                if dp:
+                    matches.append(dp)
+                    if len(matches) == repeat:
+                        break
+        if not matches:
+            return 'none'
+        else:
+            return matches[-1]
+        
+    def show_match(tok, _):
         return tok
 
     def show_next(token_set, _):
@@ -315,7 +322,6 @@ def dep_searcher(sents,
         if show_bit[0] not in starts:
             show_bit.insert(0, 'm')
         return lookup_show.get(show_bit[0]), show_bit[1]
-       # return [(lookup_show.get(i, show_this), i) for i in show_bit]
 
     def fix_search(search):
         """if search has nested dicts, remove them"""
@@ -397,9 +403,16 @@ def dep_searcher(sents,
             res, conc_res = process_a_submatch(match, repeat, tokens)
             if not res and not conc_res:
                 continue
-            #for r, c in zip(res, conc_res):
-            resultlist.append(res)
-            conclist.append(conc_res)
+
+            if conc:
+                for r, c in zip(res, conc_res):
+                    if r and c:
+                        resultlist.append(r)
+                        conclist.append(c)
+            else:
+                for r in res:
+                    resultlist.append(r)
+
         return resultlist, conclist
 
     def get_indices(match, repeat, tokens):
@@ -447,6 +460,7 @@ def dep_searcher(sents,
         speakr = get_speakername(s)
         if not speakr:
             speakr = ''
+
         # begin building line with speaker first
         conc_line = [speakr]
 
@@ -503,14 +517,18 @@ def dep_searcher(sents,
         for token in tokens:
             single_result = process_a_token(token, show)
             if single_result:
-                processed_toklist.append(single_result)
+                for sing in single_result:
+                    processed_toklist.append(sing)
         
         if language_model:
             return '-spl-it-'.join(processed_toklist), conc_line
             #return tuple(processed_toklist), conc_line
+        
         # if no conc at all, return the empty ish one and a string of token(s)
         if not conc:
-            return ' '.join(processed_toklist), conc_line
+            return processed_toklist, False
+        #if not conc:
+        #    return processed_toklist, conc_line
 
         # if we're concordancing:
         # now we have formatted tokens as a list. we need to split
@@ -534,23 +552,54 @@ def dep_searcher(sents,
             for bit in start, middle, end:
                 conc_line.append(bit)
 
-        return middle, conc_line
+        return [middle], [conc_line]
         
+    def get_num_repeats(tok):
+        num = 0
+        for i in deps.links:
+            if i.governor.idx == tok.id:
+                if s.get_token_by_id(i.dependent.idx):
+                    num += 1
+        return num if num else 1
+
+
     def process_a_token(token, show):
         """
         Take entire show argument, and a token of interest,
         and return slash sep token
         """
-        result = []
-        for val in show:
-            get_tok, show_bit = get_list_of_lookup_funcs(val)
-            tok = get_tok(token)
-            to_show = show_this(tok, show_bit)
-            if isinstance(exclude, dict) and val in exclude:
-                if re.search(exclude[val], to_show):
-                    return
-            result.append(to_show)
-        if result:
+        #result = []
+        #for val in show:
+        #    get_tok, show_bit = get_list_of_lookup_funcs(val)
+        #    tok = get_tok(token)
+        #    to_show = show_this(tok, show_bit)
+        #    if isinstance(exclude, dict) and val in exclude:
+        #        if re.search(exclude[val], to_show):
+        #            return
+        #    result.append(to_show)
+        #if result:
+
+        results = []
+        output = []
+        
+        # the whole operation needs to loop if we're getting dependents
+        repeats = get_num_repeats(token) if any(x.startswith('d') for x in show) else 1
+        
+        for repeat in range(1, repeats + 1):
+            single_token_bits = []
+            for val in show:        
+                get_tok, show_bit = get_list_of_lookup_funcs(val)
+                # get the token we need to format
+                tok = get_tok(token, repeat)
+                # get the word/lemma text of the token
+                to_show = show_this(tok, show_bit)
+                if isinstance(exclude, dict) and val in exclude:
+                    if re.search(exclude[val], to_show):
+                        return
+                single_token_bits.append(to_show)
+            results.append(single_token_bits)
+
+        for result in results:
             if no_punct:
                 if not all(re.search(is_a_word, i) for i in result):
                     return
@@ -558,7 +607,7 @@ def dep_searcher(sents,
                 if isinstance(no_closed, list):
                     nc = no_closed
                 else:
-                    from corpkit.dictionaries import wordlists as wl
+                    from corpkit.dictionaries.wordlists import wordlists as wl
                     nc = wl.closedclass
                 if all(i in nc for i in result):
                     return
@@ -569,7 +618,8 @@ def dep_searcher(sents,
                 if any(i == 'none' for i in result):
                     return
 
-        return '/'.join(i.replace('/', '-slash') for i in result)
+            output.append('/'.join(i.replace('/', '-slash-') for i in result))
+        return output
 
     def remove_by_mode(matching_tokens, mode):
         """
@@ -622,7 +672,7 @@ def dep_searcher(sents,
         if no_punct:
             tokens = [w for w in tokens if re.search(is_a_word, w.word)]
         if no_closed:
-            from corpkit.dictionaries import wordlists as wl
+            from corpkit.dictionaries.wordlists import wordlists as wl
             tokens = [w for w in tokens if w.word.lower() not in wl.closedclass]
 
         for srch, pat in search.items():
@@ -657,10 +707,14 @@ def dep_searcher(sents,
         for match in matching_tokens:
             # they are returned as lists, so add those to final result
             res, conc_res = process_a_match(match, tokens)
-            for r, c in zip(res, conc_res):
-                if r and c:
+            if conc:
+                for r, c in zip(res, conc_res):
+                    if r and c:
+                        result.append(r)
+                        conc_result.append(c)
+            else:
+                for r in res:
                     result.append(r)
-                    conc_result.append(c)
 
     if 'c' in show:
         result = sum(result)

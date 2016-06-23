@@ -61,7 +61,9 @@ def editor(interrogation,
     from corpkit.process import stringtype
     stringtype = stringtype()
 
+    # to use if we also need to worry about concordance lines
     return_conc = False
+
     from corpkit.interrogation import Interrodict, Interrogation, Concordance
     if interrogation.__class__ == Interrodict:
         locs.pop('interrogation', None)
@@ -76,15 +78,16 @@ def editor(interrogation,
                 denominator = interrogation
 
             # if df2 is also a dict, get the relevant entry
+
             if isinstance(denominator, (dict, Interrodict)):
                 #if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
                 #   sorted(set([i.lower() for i in list(denominator.keys())])):
                 #   locs['denominator'] = denominator[k]
 
                 # fix: this repeats itself for every key, when it doesn't need to
+                # denominator_sum: 
                 if kwargs.get('denominator_sum'):
-                    denominator = denominator.collapse(axis='key')
-                    locs['denominator'] = denominator
+                    locs['denominator'] = denominator.collapse(axis='key')
 
                 if kwargs.get('denominator_totals'):
                     locs['denominator'] = denominator[k].totals
@@ -94,7 +97,7 @@ def editor(interrogation,
 
             outdict[k] = v.results.edit(**locs)
         if print_info:
-            from time import localtime, strftime
+            
             thetime = strftime("%H:%M:%S", localtime())
             print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys()))))
         return Interrodict(outdict)
@@ -168,21 +171,21 @@ def editor(interrogation,
                 try:
                     df = df.div(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '+':
                 try:
                     df = df.add(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '-':
                 try:
                     df = df.sub(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '*':
@@ -190,7 +193,7 @@ def editor(interrogation,
                 try:
                     df = df.mul(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '/':
@@ -198,7 +201,7 @@ def editor(interrogation,
                     totals = df.sum() / float(df.sum().sum())
                     df = df.div(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
 
@@ -519,7 +522,7 @@ def editor(interrogation,
         try: 
             from scipy.stats import linregress
         except ImportError:
-            from time import localtime, strftime
+            
             thetime = strftime("%H:%M:%S", localtime())
             print('%s: sort type not available in this verion of corpkit.' % thetime)
             return False

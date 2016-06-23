@@ -27,7 +27,6 @@ def plotter(df,
             rot=False,
             **kwargs):
     """Visualise corpus interrogations.
-
     :param title: A title for the plot
     :type title: str
     :param df: Data to be plotted
@@ -1096,7 +1095,6 @@ def plotter(df,
 def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     """
     Plot a big chart and its subplots together
-
     :param leftdict: a dict of arguments for the big plot
     :type leftdict: dict
     :param rightdict: a dict of arguments for the small plot
@@ -1187,3 +1185,4 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
         savepath = os.path.join('images', urlify(kwargs['save']) + '.png')
         fig.savefig(savepath, dpi=150)
     return plt
+    

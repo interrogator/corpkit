@@ -859,7 +859,7 @@ def urlify(s):
 def get_speakername(sent):
     """Return speakername without CoreNLP_XML"""
     sn = sent._element.xpath('speakername/text()')
-    return sn[0] if sn else ''
+    return str(sn[0]) if sn else ''
 
 def which_python():
     import sys
