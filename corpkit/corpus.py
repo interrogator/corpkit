@@ -530,6 +530,9 @@ class Corpus(object):
                                  store as `.concordance` attribute
         :type conc: `bool`/`'only'`
 
+        :param coref: Allow counting of pronominal referents
+        :type coref: `bool`
+
         :param tgrep: Use `TGrep` for tree querying. TGrep is less expressive 
                       than Tregex, and is slower, but can work without Java.
         :type tgrep: `bool`

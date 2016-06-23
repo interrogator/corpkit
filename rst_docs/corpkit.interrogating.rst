@@ -382,6 +382,31 @@ If you've used speaker segmentation when building your corpus, you can tell the 
 
 If you have only one speaker, other sentences will not be searched. If you have multiple speakers, or if you pass in ``just_speakers='each'``, the search will return a :class:`corpkit.interrogation.Interrodict`. This class is a `dict`-like container of multiple interrogations. In this case, the speaker names will be the keys, and the individual interrogations will be the values. These objects can be edited, collapsed and visualised too.
 
+Working with coreferences
+--------------------------
+
+One major challenge in corpus linguistics is the fact that pronouns stand in for other words. Parsing provides coreference resolution, which maps pronouns to the things they denote. You can enable this kind of parsing by specifying the `dcoref` annotator:
+
+.. code-block:: python
+
+   >>> ops = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
+   >>> parsed = corpus.interrogate(operations=ops)
+
+If you have done this, you can use `coref=True` while parsing to allow coreferents to be mapped together:
+
+.. code-block:: python
+
+   >>> corpus.interrogate(query, coref=True)
+
+So, if you wanted to find all the processes a certain entity is engaged in, you can get a more complete result with:
+
+.. code-block:: python
+
+   >>> from dictionaries import roles
+   >>> corpus.interrogate({W: 'clinton', GF: roles.process}, coref=True)
+
+This will count `support` in `Clinton supported the independence of Kosovo`, and also potentially `authorize` in `He authorized the use of force`.
+
 Multiprocessing
 ---------------------
 
