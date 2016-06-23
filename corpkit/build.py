@@ -659,7 +659,9 @@ def get_speaker_names_from_xml_corpus(path):
 def rename_all_files(dirs_to_do):
     """get rid of the inserted dirname in filenames after parsing"""
     import os
-    if isinstance(dirs_to_do, basestring):
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+    if isinstance(dirs_to_do, stringtype):
         dirs_to_do = [dirs_to_do]
     for d in dirs_to_do:
         if d.endswith('-parsed'):

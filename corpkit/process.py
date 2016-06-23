@@ -36,15 +36,17 @@ def tregex_engine(corpus=False,
 
     """
     import corpkit
-    from process import add_corpkit_to_path
     add_corpkit_to_path()
+    
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+    
     import subprocess 
     from subprocess import Popen, PIPE, STDOUT
 
     import re
     from time import localtime, strftime
-    from process import checkstack
-    from dictionaries.word_transforms import wordlist
+    from corpkit.dictionaries.word_transforms import wordlist
     import os
     import sys
 
@@ -124,7 +126,7 @@ def tregex_engine(corpus=False,
         # in which case, add its path var
 
         if corpus:
-            if isinstance(corpus, basestring):
+            if isinstance(corpus, stringtype):
                 if os.path.isdir(corpus) or os.path.isfile(corpus):
                     tregex_command.append(corpus)
                 else:
@@ -421,9 +423,11 @@ def searchfixer(search, query, datatype = False):
     """
     Normalise query/search value
     """
-    if isinstance(search, basestring) and isinstance(query, dict):
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+    if isinstance(search, stringtype) and isinstance(query, dict):
         return search
-    if isinstance(search, basestring):
+    if isinstance(search, stringtype):
         srch = search[0].lower()
         if not srch.startswith('t') and not srch.lower().startswith('n'):
             if query == 'any':
@@ -535,11 +539,13 @@ def animator(progbar,
 
 
 def parse_just_speakers(just_speakers, path):
+    from corpkit.process import stringtype
+    stringtype = stringtype()
     if just_speakers is True:
         just_speakers = ['each']
     if just_speakers is False or just_speakers is None:
         return False
-    if isinstance(just_speakers, basestring):
+    if isinstance(just_speakers, stringtype):
         just_speakers = [just_speakers]
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
@@ -645,11 +651,15 @@ def get_corenlp_path(corenlppath):
     Find a working CoreNLP path.
     Return a dir containing jars
     """
+
     import os
     import sys
     import re
     import glob
     
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+
     cnlp_regex = re.compile(r'stanford-corenlp-[0-9\.]+\.jar')
 
     # if something has been passed in, find that first
@@ -675,7 +685,7 @@ def get_corenlp_path(corenlppath):
     pths = ['.', 'corenlp',
             os.path.expanduser("~"),
             os.path.join(os.path.expanduser("~"), 'corenlp')]
-    if isinstance(corenlppath, basestring):
+    if isinstance(corenlppath, stringtype):
         pths.append(corenlppath)
     possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
     # remove empty strings
@@ -697,7 +707,11 @@ def get_corenlp_path(corenlppath):
 
 def unsplitter(data):
     """unsplit contractions and apostophes from tokenised text"""
-    if isinstance(data, basestring):
+    
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+
+    if isinstance(data, stringtype):
         replaces = [("$ ", "$"),
                     ("`` ", "``"),
                     (" ,", ","),
@@ -846,3 +860,14 @@ def get_speakername(sent):
     """Return speakername without CoreNLP_XML"""
     sn = sent._element.xpath('speakername/text()')
     return sn[0] if sn else ''
+
+def which_python():
+    import sys
+    return sys.version_info.major
+
+def stringtype():
+    import sys
+    if sys.version_info.major == 3:
+        return str
+    else:
+        return basestring

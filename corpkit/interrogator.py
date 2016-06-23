@@ -37,7 +37,9 @@ def interrogator(corpus,
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
-    
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
 
@@ -46,7 +48,7 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    if isinstance(search, basestring) and len(search) > 3:
+    if isinstance(search, stringtype) and len(search) > 3:
         raise ValueError('search argument not recognised.')
 
     import codecs
@@ -62,7 +64,8 @@ def interrogator(corpus,
 
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
-    from corpkit.process import tregex_engine, get_deps, unsplitter, sanitise_dict, get_speakername, animator
+    from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
+                                 get_speakername, animator, which_python)
     from corpkit.other import as_regex
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
@@ -89,7 +92,7 @@ def interrogator(corpus,
         """lowercase anything in show and turn into list"""
         if isinstance(show, list):
             show = [i.lower() for i in show]
-        elif isinstance(show, basestring):
+        elif isinstance(show, stringtype):
             show = show.lower()
             show = [show]
 
@@ -130,7 +133,7 @@ def interrogator(corpus,
                 just_speakers = ['each']
             if just_speakers == ['each']:
                 is_mul = True
-            elif isinstance(just_speakers, basestring):
+            elif isinstance(just_speakers, stringtype):
                 is_mul = False
                 just_speakers = [just_speakers]
             #import re
@@ -400,7 +403,7 @@ def interrogator(corpus,
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
-        if isinstance(pattern, basestring):
+        if isinstance(pattern, stringtype):
             pattern = [pattern]
         if not case_sensitive:
             pattern = [p.lower() for p in pattern]
@@ -676,7 +679,7 @@ def interrogator(corpus,
         """search for tokens in plaintext corpora"""
         import re
         result = []
-        if isinstance(pattern, basestring):
+        if isinstance(pattern, stringtype):
             pattern = [pattern]
         for p in pattern:
             if concordancing:
@@ -948,7 +951,7 @@ def interrogator(corpus,
     # get corpus metadata
     subcorpora = corpus.subcorpora
     cname = corpus.name
-    if isinstance(save, basestring):
+    if isinstance(save, stringtype):
         savename = corpus.name + '-' + save
     if save is True:
         raise ValueError('save must be str, not bool.')
@@ -1107,6 +1110,14 @@ def interrogator(corpus,
                                 slow_treg_speaker_guess = just_speakers[0]
                     else:
                         sents = corenlp_xml.sentences
+
+                    if kwargs.get('coref'):
+                        if just_speakers:
+                            corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
+                        else:
+                            corefs = corelxml_xml.coreferences
+                    else:
+                        corefs = []
                     corenlp_xml = None
                     gc.collect()
 
@@ -1128,6 +1139,7 @@ def interrogator(corpus,
                                              window=window,
                                              filename=f.name,
                                              language_model=language_model,
+                                             corefs=corefs,
                                              **kwargs
                                             )
                         

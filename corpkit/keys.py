@@ -66,11 +66,13 @@ def keywords(target_corpus,
 
     def set_threshold(threshold):
         """define a threshold"""
+        from corpkit.process import stringtype
+        stringtype = stringtype()
         if threshold is False:
             return 0
         if threshold is True:
             threshold = 'm'
-        if isinstance(threshold, basestring):
+        if isinstance(threshold, stringtype):
             if threshold.startswith('l'):
                 denominator = 800
             if threshold.startswith('m'):
@@ -85,6 +87,8 @@ def keywords(target_corpus,
     def calc_keywords(target_corpus, reference_corpus):
         """get keywords in target corpus compared to reference corpus"""
         # get total num words in ref corpus
+        from corpkit.process import stringtype
+        stringtype = stringtype()
         key_scores = {}
         ref_sum = sum(reference_corpus.values())
         if isinstance(target_corpus, dict):
@@ -113,7 +117,7 @@ def keywords(target_corpus,
         return key_scores
 
     # load string ref corp 
-    if isinstance(reference_corpus, basestring):
+    if isinstance(reference_corpus, stringtype):
         from corpkit.other import load
         ldr = kwargs.get('loaddir', 'dictionaries')
         reference_corpus = load(reference_corpus, loaddir=ldr)

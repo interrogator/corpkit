@@ -330,9 +330,11 @@ class Corpus(object):
         from os.path import join, isfile, isdir
         from corpkit.interrogator import interrogator
         from corpkit.other import load
+        from corpkit.process import stringtype
+        stringtype = stringtype()
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
-        if isinstance(show, basestring):
+        if isinstance(show, stringtype):
             show = [show]
         if isfile(join(savedir, self.name + '-lexicon.p')):
             try:
@@ -720,7 +722,9 @@ class Corpus(object):
 
         :returns: `None` (but show a plot)
         """
-        if isinstance(search, basestring):
+        from corpkit.process import stringtype
+        stringtype = stringtype()
+        if isinstance(search, stringtype):
             search = {'t': search}
         interro = self.interrogate(search=search, show=kwargs.pop('show', 'w'))
         edited = interro.edit('%', 'self', print_info=False)
@@ -999,9 +1003,11 @@ class Corpora(Datalist):
         # if no arg, load every corpus in data dir
         if not data:
             data = 'data'
+        from corpkit.process import stringtype
+        stringtype = stringtype()
 
         # handle a folder containing corpora
-        if isinstance(data, basestring):
+        if isinstance(data, stringtype):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):

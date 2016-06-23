@@ -17,6 +17,7 @@ def dep_searcher(sents,
                  split_contractions=False,
                  window=2,
                  language_model=False,
+                 corefs=False,
                  **kwargs
                 ):
     import re
@@ -571,6 +572,7 @@ def dep_searcher(sents,
 
     # iterate over sentences
     for s in sents:
+#        if corefs:
 
         # all search matches go here
         matching_tokens = []
@@ -623,7 +625,7 @@ def dep_searcher(sents,
     if 'c' in show:
         result = sum(result)
 
-    if isinstance(conc, basestring) and \
+    if isinstance(conc, str) and \
         conc.lower() == 'only':
         result = []
 
