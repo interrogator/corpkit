@@ -11,11 +11,27 @@ last_updated: 2016-04-26
 All notable changes to the *corpkit* GUI will be documented in this file.
 This project does not yet adhere to strict [Semantic Versioning](http://semver.org/). It will once the first major release is a bit more stable.
 
+## 2016-06-24
+
+### Added
+
+* Support for coreferences via 'Count coreferents'
+
+### Updated
+
+* Numerous backend updates
+
+## 2016-05-18
+
+### Fixed
+
+* File encoding problems
+
 ## 2016-05-14
 
 ### Fixed
 
-Fixed POS search
+* Fixed POS search
 
 ## 2016-05-13
 

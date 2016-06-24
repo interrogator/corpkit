@@ -151,7 +151,7 @@ The final key difference between *corpkit* and most current corpus linguistic so
 
 ## Download
 
-To download the most recent OSX version, use the link in the menu bar, or just [click here](https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.1.6.tar.gz). See the [Setup page](doc_setup.html) for (very simple) installation instructions.
+To download the most recent OSX version, use the link in the menu bar, or just [click here](https://github.com/interrogator/corpkit-app/raw/master/corpkit-2.2.0.tar.gz). See the [Setup page](doc_setup.html) for (very simple) installation instructions.
 
 Linux users can run the graphical interface by installing *corpkit* with `pip install corpkit` and then open the GUI with `python -m corpkit.gui`.
 
