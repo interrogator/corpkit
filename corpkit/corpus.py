@@ -23,7 +23,8 @@ class Corpus(object):
         import os
         from os.path import join, isfile, isdir, abspath, dirname, basename
 
-        from corpkit.process import determine_datatype
+        from corpkit.process import determine_datatype, stringtype
+        stringtype = stringtype()
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which
         # one is determined automatically below, and processed accordingly. We
@@ -39,10 +40,12 @@ class Corpus(object):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
-        else:
+        elif isinstance(path, stringtype):
             self.path = abspath(path)
             self.name = basename(path)
-
+        elif hasattr(path, 'path') and path.path:
+            self.path = abspath(path.path)
+            self.name = basename(path.path)
         # this messy code figures out as quickly as possible what the datatype
         # and singlefile status of the path is. it's messy because it shortcuts
         # full checking where possible some of the shortcutting could maybe be
