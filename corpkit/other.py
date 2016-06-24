@@ -16,7 +16,10 @@ def quickview(results, n=25):
     import numpy as np
     import os
     import corpkit
-    from corpkit.interrogation import Interrogation, Results, Totals
+    from corpkit.interrogation import Interrogation
+
+    from corpkit.process import stringtype
+    stringtype = stringtype()
 
     # handle dictionaries too:
     dictpath = 'dictionaries'
@@ -28,7 +31,7 @@ def quickview(results, n=25):
 
     dtype = corpkit.interrogation.Interrogation
 
-    if isinstance(results, basestring):
+    if isinstance(results, stringtype):
         if os.path.isfile(os.path.join(dictpath, results)):
             from corpkit.other import load
             results = load(results, loaddir=dictpath)
@@ -201,6 +204,8 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
 
     def make_filename(interrogation, savename):
         """create a filename"""
+        from corpkit.process import stringtype
+        stringtype = stringtype()
         if '/' in savename:
             return savename
 
@@ -213,7 +218,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         if hasattr(interrogation, 'query') and interrogation.query:
             corpus = interrogation.query.get('corpus', False)
             if corpus:
-                if isinstance(corpus, basestring):
+                if isinstance(corpus, stringtype):
                     firstpart = corpus
                 else:
                     if isinstance(corpus, Datalist):

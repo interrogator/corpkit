@@ -5,9 +5,42 @@ A toolkit for corpus linguistics
 """
 
 # quicker access to search, exclude, show types
-LETTERS = ['A', 'ANY', 'ANYWORD', 'C', 'D', 'D', 'DF', 'DL', 'DP', 'F', 'G', 
-           'GF', 'GL', 'GP', 'I', 'K', 'L', 'M', 'N', 'NL', 'NP', 'NF', 'NW',
-           'PL', 'R', 'S', 'SELF', 'T', 'V', 'W', 'P', 'X']
+LETTERS = ['A',
+           'ANY',
+           'ANYWORD',
+           'C',
+           'D',
+           'D',
+           'DF',
+           'DL',
+           'DP',
+           'DW',
+           'DX',
+           'F',
+           'G',
+           'GF',
+           'GL',
+           'GP',
+           'GW',
+           'GX',
+           'I',
+           'K',
+           'L',
+           'M',
+           'N',
+           'NF',
+           'NL',
+           'NP',
+           'NW',
+           'P',
+           'PL',
+           'R',
+           'S',
+           'SELF',
+           'T',
+           'V',
+           'W',
+           'X']
 
 # asterisk import
 __all__ = [
@@ -137,6 +170,7 @@ DataFrame.shuffle = _shuffle
 DataFrame.top = _top
 
 # Defining globals
+
 A = 'a'
 ANY = 'any'
 ANYWORD = r'[A-Za-z0-9:_]'
@@ -146,16 +180,21 @@ D = 'd'
 DF = 'df'
 DL = 'dl'
 DP = 'dp'
+DW = 'dw'
+DX = 'dx'
 F = 'f'
 G = 'g'
 GF = 'gf'
 GL = 'gl'
 GP = 'gp'
+GW = 'gw'
+GX = 'gx'
 I = 'i'
 K = 'k'
 L = 'l'
 M = 'm'
 N = 'n'
+NF = 'nf'
 NL = 'nl'
 NP = 'np'
 NW = 'nw'
@@ -167,5 +206,4 @@ SELF = 'self'
 T = 't'
 V = 'v'
 W = 'w'
-NF = 'nf'
 X = 'x'

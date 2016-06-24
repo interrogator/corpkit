@@ -58,7 +58,12 @@ def editor(interrogation,
     except ImportError:
         pass
 
+    from corpkit.process import stringtype
+    stringtype = stringtype()
+
+    # to use if we also need to worry about concordance lines
     return_conc = False
+
     from corpkit.interrogation import Interrodict, Interrogation, Concordance
     if interrogation.__class__ == Interrodict:
         locs.pop('interrogation', None)
@@ -69,19 +74,20 @@ def editor(interrogation,
             if i != 0:
                 locs['print_info'] = False
 
-            if isinstance(denominator, basestring) and denominator.lower() == 'self':
+            if isinstance(denominator, stringtype) and denominator.lower() == 'self':
                 denominator = interrogation
 
             # if df2 is also a dict, get the relevant entry
+
             if isinstance(denominator, (dict, Interrodict)):
                 #if sorted(set([i.lower() for i in list(dataframe1.keys())])) == \
                 #   sorted(set([i.lower() for i in list(denominator.keys())])):
                 #   locs['denominator'] = denominator[k]
 
                 # fix: this repeats itself for every key, when it doesn't need to
+                # denominator_sum: 
                 if kwargs.get('denominator_sum'):
-                    denominator = denominator.collapse(axis='key')
-                    locs['denominator'] = denominator
+                    locs['denominator'] = denominator.collapse(axis='key')
 
                 if kwargs.get('denominator_totals'):
                     locs['denominator'] = denominator[k].totals
@@ -91,7 +97,7 @@ def editor(interrogation,
 
             outdict[k] = v.results.edit(**locs)
         if print_info:
-            from time import localtime, strftime
+            
             thetime = strftime("%H:%M:%S", localtime())
             print("\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % (thetime, "'\n         '".join(sorted(outdict.keys()))))
         return Interrodict(outdict)
@@ -165,21 +171,21 @@ def editor(interrogation,
                 try:
                     df = df.div(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '+':
                 try:
                     df = df.add(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '-':
                 try:
                     df = df.sub(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '*':
@@ -187,7 +193,7 @@ def editor(interrogation,
                 try:
                     df = df.mul(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
             elif operation == '/':
@@ -195,7 +201,7 @@ def editor(interrogation,
                     totals = df.sum() / float(df.sum().sum())
                     df = df.div(denom, axis=0)
                 except ValueError:
-                    from time import localtime, strftime
+                    
                     thetime = strftime("%H:%M:%S", localtime())
                     print('%s: cannot combine DataFrame 1 and 2: different shapes' % thetime)
 
@@ -275,7 +281,7 @@ def editor(interrogation,
             except:
                 pass
             the_input = [the_input]
-        elif isinstance(the_input, basestring):
+        elif isinstance(the_input, stringtype):
             regex = re.compile(the_input)
             parsed_input = [w for w in list(df) if re.search(regex, w)]
             return parsed_input
@@ -285,7 +291,7 @@ def editor(interrogation,
         if isinstance(the_input, list):
             if isinstance(the_input[0], int):
                 parsed_input = [word for index, word in enumerate(list(df)) if index in the_input]
-            elif isinstance(the_input[0], basestring):
+            elif isinstance(the_input[0], stringtype):
                 try:
                     parsed_input = [word for word in the_input if word in df.columns]
                 except AttributeError: # if series
@@ -344,11 +350,11 @@ def editor(interrogation,
         import re
         # get input into list of tuples
         # if it's a string, we want to delete it
-        if isinstance(replace_names, basestring):
+        if isinstance(replace_names, stringtype):
             replace_names = [(replace_names, '')]
         # this is for some malformed list
         if not isinstance(replace_names, dict):
-            if isinstance(replace_names[0], basestring):
+            if isinstance(replace_names[0], stringtype):
                 replace_names = [replace_names]
         # if dict, make into list of tupes
         if isinstance(replace_names, dict):
@@ -396,7 +402,7 @@ def editor(interrogation,
                 newname = 'combine'
         if isinstance(newname, int):
             the_newname = list(df.columns)[newname]
-        elif isinstance(newname, basestring):
+        elif isinstance(newname, stringtype):
             if newname == 'combine':
                 if len(parsed_input) <= 3:
                     the_newname = '/'.join(parsed_input)
@@ -412,7 +418,7 @@ def editor(interrogation,
                 summed = sum(list(df[item]))
                 sumdict[item] = summed
             the_newname = max(iter(sumdict.items()), key=operator.itemgetter(1))[0]
-        if not isinstance(the_newname, basestring):
+        if not isinstance(the_newname, stringtype):
             the_newname = str(the_newname, errors='ignore')
         return the_newname
 
@@ -516,7 +522,7 @@ def editor(interrogation,
         try: 
             from scipy.stats import linregress
         except ImportError:
-            from time import localtime, strftime
+            
             thetime = strftime("%H:%M:%S", localtime())
             print('%s: sort type not available in this verion of corpkit.' % thetime)
             return False
@@ -619,7 +625,7 @@ def editor(interrogation,
         return df
 
     def set_threshold(big_list, threshold, prinf=True):
-        if isinstance(threshold, basestring):
+        if isinstance(threshold, stringtype):
             if threshold.startswith('l'):
                 denominator = 10000
             if threshold.startswith('m'):
@@ -656,10 +662,10 @@ def editor(interrogation,
         if just_entries:
             if isinstance(just_entries, int):
                 just_entries = [just_entries]
-            if isinstance(just_entries, basestring):
+            if isinstance(just_entries, stringtype):
                 df = df[df['m'].str.contains(just_entries)]
             if isinstance(just_entries, list):
-                if all(isinstance(e, basestring) for e in just_entries):
+                if all(isinstance(e, stringtype) for e in just_entries):
                     mp = df['m'].map(lambda x: x in just_entries)
                     df = df[mp]
                 else:
@@ -668,10 +674,10 @@ def editor(interrogation,
         if skip_entries:
             if isinstance(skip_entries, int):
                 skip_entries = [skip_entries]
-            if isinstance(skip_entries, basestring):
+            if isinstance(skip_entries, stringtype):
                 df = df[~df['m'].str.contains(skip_entries)]
             if isinstance(skip_entries, list):
-                if all(isinstance(e, basestring) for e in skip_entries):
+                if all(isinstance(e, stringtype) for e in skip_entries):
                     mp = df['m'].map(lambda x: x not in skip_entries)
                     df = df[mp]
                 else:
@@ -680,10 +686,10 @@ def editor(interrogation,
         if just_subcorpora:
             if isinstance(just_subcorpora, int):
                 just_subcorpora = [just_subcorpora]
-            if isinstance(just_subcorpora, basestring):
+            if isinstance(just_subcorpora, stringtype):
                 df = df[df['c'].str.contains(just_subcorpora)]
             if isinstance(just_subcorpora, list):
-                if all(isinstance(e, basestring) for e in just_subcorpora):
+                if all(isinstance(e, stringtype) for e in just_subcorpora):
                     mp = df['c'].map(lambda x: x in just_subcorpora)
                     df = df[mp]
                 else:
@@ -692,10 +698,10 @@ def editor(interrogation,
         if skip_subcorpora:
             if isinstance(skip_subcorpora, int):
                 skip_subcorpora = [skip_subcorpora]
-            if isinstance(skip_subcorpora, basestring):
+            if isinstance(skip_subcorpora, stringtype):
                 df = df[~df['c'].str.contains(skip_subcorpora)]
             if isinstance(skip_subcorpora, list):
-                if all(isinstance(e, basestring) for e in skip_subcorpora):
+                if all(isinstance(e, stringtype) for e in skip_subcorpora):
                     mp = df['c'].map(lambda x: x not in skip_subcorpora)
                     df = df[mp]
                 else:
@@ -732,7 +738,7 @@ def editor(interrogation,
         except AttributeError:
             denominator = denominator.totals
 
-    if denominator is not False and not isinstance(denominator, basestring):
+    if denominator is not False and not isinstance(denominator, stringtype):
         df2 = denominator.copy()
         using_totals = True
         if isinstance(df2, DataFrame):
@@ -832,7 +838,7 @@ def editor(interrogation,
     # merging: make dicts if they aren't already, so we can iterate
     if merge_entries:
         if not isinstance(merge_entries, list):
-            if isinstance(merge_entries, basestring):
+            if isinstance(merge_entries, stringtype):
                 merge_entries = {'combine': merge_entries}
             # for newname, criteria    
             for name, the_input in sorted(merge_entries.items()):
@@ -856,7 +862,7 @@ def editor(interrogation,
             if isinstance(merge_subcorpora, list):
                 if isinstance(merge_subcorpora[0], tuple):
                     merge_subcorpora = {x: y for x, y in merge_subcorpora}
-                elif isinstance(merge_subcorpora[0], basestring):
+                elif isinstance(merge_subcorpora[0], stringtype):
                     merge_subcorpora = {'combine': [x for x in merge_subcorpora]}
                 elif isinstance(merge_subcorpora[0], int):
                     merge_subcorpora = {'combine': [str(x) for x in merge_subcorpora]}
@@ -932,7 +938,7 @@ def editor(interrogation,
     # if doing keywording...
     if operation.startswith('k'):
 
-        if isinstance(denominator, basestring):
+        if isinstance(denominator, stringtype):
             if denominator == 'self':
                 df2 = df.copy()
             else:

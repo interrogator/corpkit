@@ -27,7 +27,6 @@ def plotter(df,
             rot=False,
             **kwargs):
     """Visualise corpus interrogations.
-
     :param title: A title for the plot
     :type title: str
     :param df: Data to be plotted
@@ -208,16 +207,18 @@ def plotter(df,
     def auto_explode(dataframe, tinput, was_series = False, num_to_plot = 7):
         """give me a list of strings and i'll output explode option"""
         output = [0 for s in range(num_to_plot)]
+        from corpkit.process import stringtype
+        stringtype = stringtype()
         if was_series:
             l = list(dataframe.index)
         else:
             l = list(dataframe.columns)
 
-        if isinstance(tinput, (basestring, int)):
+        if isinstance(tinput, (stringtype, int)):
             tinput = [tinput]
         if isinstance(tinput, list):
             for i in tinput:
-                if isinstance(i, basestring):
+                if isinstance(i, stringtype):
                     index = l.index(i)
                 else:
                     index = i
@@ -1094,7 +1095,6 @@ def plotter(df,
 def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     """
     Plot a big chart and its subplots together
-
     :param leftdict: a dict of arguments for the big plot
     :type leftdict: dict
     :param rightdict: a dict of arguments for the small plot
@@ -1185,3 +1185,4 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
         savepath = os.path.join('images', urlify(kwargs['save']) + '.png')
         fig.savefig(savepath, dpi=150)
     return plt
+    
