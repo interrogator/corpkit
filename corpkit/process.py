@@ -801,14 +801,19 @@ def tgrep(sent, search):
 def canpickle(obj):
     """determine if object can be pickled"""
     import os
-    from cPickle import UnpickleableError
-    import cPickle as pickle
+    try:
+        from cPickle import UnpickleableError as unpick_error
+        import cPickle as pickle
+    except ImportError:
+        import pickle
+        from pickle import UnpicklingError as unpick_error
 
-    with open(os.devnull, 'w') as fo:
+    mode = 'w' if which_python() == 2 else 'wb'
+    with open(os.devnull, mode) as fo:
         try:
             pickle.dump(obj, fo)
             return True
-        except UnpickleableError:
+        except unpick_error:
             return False
 
 def sanitise_dict(d):
@@ -877,4 +882,3 @@ def gui():
     from corpkit.gui import corpkit_gui
     current = os.getcwd()
     corpkit_gui(noupdate=True, loadcurrent=current)
-    
