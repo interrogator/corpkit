@@ -132,8 +132,12 @@ def test_conc():
     data = corp.concordance({'f': 'amod'})
     assert_equals(data.ix[0]['m'], 'small')
 
+# this syntax isn't recognised by tgrep :)
+
 def test_edit():
     """Testing edit function"""
     data = corp.interrogate({'t': r'__ !< __'})
     data = data.edit('%', 'self')
     assert_equals(data.results.iloc[0,0], 11.627906976744185)
+
+test_edit.slow = 1
