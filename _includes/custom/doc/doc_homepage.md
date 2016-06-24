@@ -155,7 +155,7 @@ To download the most recent OSX version, use the link in the menu bar, or just [
 
 Linux users can run the graphical interface by installing *corpkit* with `pip install corpkit` and then open the GUI with `python -m corpkit.gui`.
 
-Windows users will need to get a Python interpreter and *pip* installed, and then run `pip install corpit` and `python -m corpkit.gui`.
+Windows users will need to get a Python interpreter and *pip* installed, and then run `pip install corpkit` and `python -m corpkit.gui`.
 
 ## Cite
 
