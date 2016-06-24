@@ -262,6 +262,10 @@ If you have used the `Speaker segmentation` option, you can restrict your search
 
 If you have selected `ALL` speakers, or have highlighted more than one, multiple interrogations will be performed, with the speaker ID appended to the interrogation name. Only one of these results will be shown as a spreadsheet, but you can use `Previous` and `Next` to navigate between them.
 
+## Coreference
+
+If you tick `Count coreferents`, your search will count not only matches, but any pronouns that denote those matches. For this to work, you must have used the `Referent tracking` option when parsing the corpus.
+
 ## Naming an interrogation
 
 You are given the option of naming your interrogation. You don't *have to* to do this, but it will help you keep track of which interrogations contain which kinds of data.
