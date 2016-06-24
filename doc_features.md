@@ -3,7 +3,7 @@ title: "Key features"
 tags: [features, getting-started, pandas, matplotlib, concordance]
 keywords: features, gui, corpkit
 summary: "<i>corpkit</i> does what you'd expect, plus a lot more. Better still, it's free and open-source!"
-last_updated: 2015-09-01
+last_updated: 2016-06-24
 ---
 {% include linkrefs.html %}
 
