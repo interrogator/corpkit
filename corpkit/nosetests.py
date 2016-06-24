@@ -132,8 +132,7 @@ def test_conc():
     data = corp.concordance({'f': 'amod'})
     assert_equals(data.ix[0]['m'], 'small')
 
-# this syntax isn't recognised by tgrep :)
-
+# this syntax isn't recognised by tgrep, so we'll skip it in tests
 def test_edit():
     """Testing edit function"""
     data = corp.interrogate({'t': r'__ !< __'})
