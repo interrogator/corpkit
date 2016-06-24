@@ -53,10 +53,11 @@ __all__ = [
     "Corpus",
     "File",
     "Corpora",
-    "Wordlist"] + LETTERS
+    "Wordlist",
+    "gui"] + LETTERS
 
 #metadata
-__version__ = "2.1.9"
+__version__ = "2.2.0"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
@@ -87,6 +88,7 @@ from corpkit.lazyprop import lazyprop
 from other import load_all_results
 from other import quickview, as_regex, new_project
 from dictionaries.process_types import Wordlist
+from process import gui
 # monkeypatch editing and plotting to pandas objects
 from pandas import DataFrame, Series
 

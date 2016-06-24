@@ -39,12 +39,17 @@ except ImportError:
 
 # determine path to gui resources:
 py_script = False
+from_py = False
 rd = sys.argv[0]
 if sys.platform == 'darwin':
     key = 'Mod1'
     fext = 'app'
     if '.app' in rd:
         rd = os.path.join(rd.split('.app', 1)[0] + '.app', 'Contents', 'MacOS')
+    else:
+        import corpkit
+        rd = os.path.dirname(corpkit.__file__)
+        from_py = True
 else:
     key = 'Control'
     fext = 'exe'
@@ -64,13 +69,20 @@ class SplashScreen(object):
         from PIL import Image
         from PIL import ImageTk
         self._root = tkRoot
-        self._image = ImageTk.PhotoImage(file=os.path.join(rd, imageFilename))
-        self._splash = None
-        self._minSplashTime = time.time() + minSplashTime
+        fname = os.path.join(rd, imageFilename)
+        if os.path.isfile(fname):
+            self._image = ImageTk.PhotoImage(file=fname)
+            self._splash = None
+            self._minSplashTime = time.time() + minSplashTime
+        else:
+            self._image = False
       
     def __enter__(self):
         # Remove the app window from the display
         #self._root.withdraw( )
+
+        if not self._image:
+            return
         
         # Calculate the geometry to center the splash image
         scrnWt = self._root.winfo_screenwidth()
@@ -103,6 +115,11 @@ class SplashScreen(object):
    
     def __exit__( self, exc_type, exc_value, traceback ):
         # Make sure the minimum splash time has elapsed
+
+
+        if not self._image:
+            return
+
         timeNow = time.time()
         if timeNow < self._minSplashTime:
             time.sleep( self._minSplashTime - timeNow )
@@ -303,7 +320,7 @@ class Notebook(Frame):
                 break                                                                      #Job is done, exit the loop
             self.iteratedTabs += 1                                                         #Add one to the loop count
 
-def corpkit_gui():
+def corpkit_gui(noupdate=False, loadcurrent=False):
     
     # make app
     root=Tk()
@@ -1465,6 +1482,7 @@ def corpkit_gui():
                                  'dep_type': depdict[kind_of_dep.get()],
                                  'nltk_data_path': nltk_data_path,
                                  'regex': regex,
+                                 'coref': coref.get(),
                                  'files_as_subcorpora': bool(files_as_subcorpora.get())}
 
             excludes = {}
@@ -1717,6 +1735,7 @@ def corpkit_gui():
                 tokbut.config(state=DISABLED)
             if not corpus_name.endswith('-parsed'):
                 pick_dep_type.config(state=DISABLED)
+                coref_but.config(state=DISABLED)
                 #parsebut.config(state=NORMAL)
                 #speakcheck_build.config(state=NORMAL)
                 interrobut_conc.config(state=DISABLED)
@@ -1725,6 +1744,7 @@ def corpkit_gui():
             else:
                 if datatype_picked.get() not in ['Trees', 'N-grams']:
                     pick_dep_type.config(state=NORMAL)
+                    coref_but.config(state=NORMAL)
                     #q.config(state=NORMAL)
                 #else:
                     #q.config(state=DISABLED)
@@ -1934,8 +1954,14 @@ def corpkit_gui():
         Label(interro_opt, text='Dependency type:').grid(row=16, column=0, sticky=W)
         pick_dep_type = OptionMenu(interro_opt, kind_of_dep, *dep_types)
         pick_dep_type.config(state=DISABLED)
-        pick_dep_type.grid(row=16, column=1, sticky=E)
+        pick_dep_type.grid(row=16, column=0, sticky=W, padx=(125,0))
         #kind_of_dep.trace("w", d_callback)
+
+        coref = IntVar(root)
+        coref.set(False)
+        coref_but = Checkbutton(interro_opt, text='Count coreferents', variable=coref, onvalue=True, offvalue=False)
+        coref_but.grid(row=16, column=1, sticky=E) 
+        coref_but.config(state=DISABLED)
 
         # query
         entrytext=StringVar()
@@ -1943,7 +1969,7 @@ def corpkit_gui():
         Label(interro_opt, text='Query:').grid(row=3, column=0, sticky='NW', pady=(5,0))
         entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
         qa = Text(interro_opt, width=40, height=4, borderwidth=0.5, 
-                  font=("Courier New", 14), undo = True, relief = SUNKEN, wrap = WORD, highlightthickness=0)
+                  font=("Courier New", 14), undo=True, relief=SUNKEN, wrap=WORD, highlightthickness=0)
         qa.insert(END, entrytext.get())
         qa.grid(row=3, column=0, columnspan=2, sticky=E, pady=(5,0), padx=(0, 4))
         all_text_widgets.append(qa)
@@ -3832,7 +3858,7 @@ def corpkit_gui():
         ch_col.grid(row=16, column=1, sticky=E)
         chart_cols.set('viridis')
         # style
-        if not py_script:
+        if not py_script and not from_py:
             mplsty_path = os.path.join(rd, 'matplotlib', 'mpl-data', 'stylelib')
             stys = tuple(sorted([i.split('.')[0] for i in os.listdir(mplsty_path) if i.endswith('.mplstyle')]))
         else:
@@ -4955,7 +4981,7 @@ def corpkit_gui():
             """if user clicks a recent project, open it"""
             if recent_project.get() != '':
                 project_fullpath.set(recent_project.get())            
-                load_project(path = project_fullpath.get())
+                load_project(path=project_fullpath.get())
 
         def projchange(*args):
             """if user changes projects, add to recent list and save prefs"""
@@ -6191,7 +6217,7 @@ def corpkit_gui():
             """get the location of the tool preferences files"""
             return os.path.join(rd, 'tool_settings.ini')
 
-        def save_tool_prefs(printout = True):
+        def save_tool_prefs(printout=True):
             """save any preferences to tool preferences"""
             try:
                 import configparser
@@ -6337,7 +6363,7 @@ def corpkit_gui():
 
         root.protocol("WM_DELETE_WINDOW", quitfunc)
 
-        def restart(newpath = False):
+        def restart(newpath=False):
             """restarts corpkit .py or gui, designed for version updates"""
             import sys
             import os
@@ -6484,7 +6510,7 @@ def corpkit_gui():
             t = os.path.getmtime(filename)
             return datetime.datetime.fromtimestamp(t)
 
-        def check_updates(showfalse = True, lateprint = False, auto = False):
+        def check_updates(showfalse=True, lateprint=False, auto=False):
             """check for updates, minor and major."""
             import os
             import re
@@ -6492,6 +6518,9 @@ def corpkit_gui():
             from dateutil.parser import parse
             import sys
             import shutil
+            
+            if noupdate:
+                return
             
             # weird hacky way to not repeat request
             if do_auto_update.get() == 0 and auto is True:
@@ -6636,8 +6665,10 @@ def corpkit_gui():
 
 
         def start_update_check():
+            if noupdate:
+                return
             try:
-                check_updates(showfalse = False, lateprint = True, auto = True)
+                check_updates(showfalse=False, lateprint=True, auto=True)
             except:
                 filemenu.entryconfig("Check for updates", state="disabled")
 
@@ -6655,14 +6686,14 @@ def corpkit_gui():
                 the_kwargs = {'message': 'Select folder containing the CoreNLP parser.'}
             else:
                 the_kwargs = {}
-            fp = filedialog.askdirectory(title = 'CoreNLP path',
-                                           initialdir = os.path.expanduser("~"),
+            fp = filedialog.askdirectory(title='CoreNLP path',
+                                           initialdir=os.path.expanduser("~"),
                                            **the_kwargs)
             if fp and fp != '':
                 corenlppath.set(fp)
                 if not get_fullpath_to_jars(corenlppath):
-                    recog = messagebox.showwarning(title = 'CoreNLP not found', 
-                                message = "CoreNLP not found in %s." % fp )
+                    recog = messagebox.showwarning(title='CoreNLP not found', 
+                                message="CoreNLP not found in %s." % fp )
                     timestring("CoreNLP not found in %s." % fp )
                 else:
                     save_tool_prefs()
@@ -6844,6 +6875,9 @@ def corpkit_gui():
         root.config(menu=menubar)
         note.focus_on(tab1)
     
+    if loadcurrent:
+        load_project(loadcurrent)
+
     root.deiconify()
     root.lift()
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
@@ -6856,6 +6890,7 @@ def corpkit_gui():
 
     # overwrite quitting behaviour, prompt to save settings
     root.createcommand('exit', quitfunc)
+    
     root.mainloop()
 
 if __name__ == "__main__":

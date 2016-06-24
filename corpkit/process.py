@@ -871,3 +871,10 @@ def stringtype():
         return str
     else:
         return basestring
+
+def gui():
+    import os
+    from corpkit.gui import corpkit_gui
+    current = os.getcwd()
+    corpkit_gui(noupdate=True, loadcurrent=current)
+    
