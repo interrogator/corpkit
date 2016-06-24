@@ -802,7 +802,10 @@ def interrogator(corpus,
             else:
                 unique_results = resu
             #make into series
-            pindex = 'c f s l m r'.encode('utf-8').split()
+            if which_python() == 2:
+                pindex = 'c f s l m r'.encode('utf-8').split()
+            else:
+                pindex = 'c f s l m r'.split()
             for fname, spkr, start, word, end in unique_results:
                 #spkr = str(spkr, errors = 'ignore')
                 fname = os.path.basename(fname)
