@@ -37,13 +37,10 @@ You can use also use *Tregex* to define very complex queries, like the one below
 
 The example below shows how members of an online support group increasingly prefer *having bipolar* constructions to *being bipolar* constructions:
 
-<center>
-<div style="width:560px;height:280px;overflow:hidden;" >
-<a href="images/being-and-having-bipolar-538.png" >
-<img title="" src="images/being-and-having-bipolar-538.png"/>
-</div>
-</a>
-</center>
+
+<p align="center">
+<img src="images/being-and-having-bipolar-538.png"  height="400" width="400"/>
+</p>
 
 It was made in three simple steps:
 
@@ -82,48 +79,31 @@ There are preset queries to match mood types, process types, heads of participan
 
 *corpkit* is designed to work with structured corpora (those containing subfolders). So, not only can you search for nuanced patterns in the text, but you can quickly find out how they vary in frequency by subcorpus.
 
-<center>
-<div style="width:700px;height:350px;overflow:hidden;" >
-<a href="images/mental-proc.png" > 
-<img title="" src="images/mental-proc.png" align="center"/>
-</div>
-</a>
-</center>
+<p align="center">
+<img src="images/mental-proc.png"  height="400" width="400"/>
+</p>
 
 #### Sophisticated editing of results
 
 The `Edit` tab provides a rane of possibilities for transforming interrogation results:
 
-<center>
-<div style="width:300px;height:400px;overflow:hidden;" >
-<a href="images/edit-panel.png" > 
-<img title="" src="images/edit-panel.png">
-</a>
-</div>
-
-</center>
+<p align="center">
+<img src="images/edit-panel.png"  height="400" width="400"/>
+</p>
 
 You can quickly remove, keep or merge entries or subcorpora. In the figure below, kinds of modals are collapsed, and annual subcorpora are collapsed into decades:
 
-<center>
-<div style="width:700px;height:350px;overflow:hidden;" >
-<a href="images/modals-use-by-decade.png" > 
-<img title="" src="images/modals-use-by-decade.png", height="130", width="200"/>
-</div>
-</a>
-</center>
+<p align="center">
+<img src="images/modals-use-by-decade.png"  height="400" width="400"/>
+</p>
 
 #### Controlled keywording
 
 Keywording works better when you compare subcorpora to a corpus, rather than a corpus to a reference corpus. It also produces more engaging results if you isolate a particular word class or grammatical position. Here's a visualisation of US politicians' names as log-likelihood keywords in the NYT:
 
-<center>
-<div style="width:700px;height:350px;overflow:hidden;" >
-<a href="images/keyness-of-politicians-in-the-emphnyt.png" > 
-<img title="" src="images/keyness-of-politicians-in-the-emphnyt.png", height="130", width="200"/>
-</div>
-</a>
-</center>
+<p align="center">
+<img src="images/keyness-of-politicians-in-the-emphnyt.png"  height="400" width="400"/>
+</p>
 
 #### Concordance grammatically
 
@@ -133,13 +113,9 @@ You can concordance using Tregex queries or dependency roles, rather than a simp
 
 You can quickly highlight concordance lines, add tags, sort by tag, and export these tags alongside your data. In the example below, passive constructions in a clinical encounter have been concordanced and coloured by person. Speaker IDs are also shown.
 
-<center>
-<div style="width:700px;height:350px;overflow:hidden;" >
-<a href="images/conc-passives.png" >
-<img title="" src="images/conc-passives.png", height="100", width="200"/>
-</div>
-</a>
-</center>
+<p align="center">
+<img src="images/conc-passives.png"  height="400" width="400"/>
+</p>
 
 #### Store everything
 
