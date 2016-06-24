@@ -9,3 +9,4 @@ lxml>=3.4.4
 requests
 chardet
 blessings>=1.6
+traitlets>=4.1.0
