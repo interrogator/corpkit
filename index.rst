@@ -99,13 +99,20 @@ Parsing and interrogation of parse trees will also require *Stanford CoreNLP*. *
 
 .. rubric:: Graphical interface
 
-Much of corpkit's command line functionality is also available in the *corpkit* GUI. After installation, it can be started with:
+Much of corpkit's command line functionality is also available in the *corpkit GUI*. After installation, it can be started from the command line with:
 
 .. code-block:: bash
 
    python -m corpkit.gui
 
-Alternatively, it's available (alongside documentation) as a standalone OSX app here_.
+If you're working on a project from within Python, you can open it graphically with:
+
+.. code-block:: python
+
+   >>> from corpkit import gui
+   >>> gui()
+
+Alternatively, the GUI is available (alongside documentation) as a standalone OSX app here_.
 
 .. toctree::
    :maxdepth: 1
