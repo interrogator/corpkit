@@ -51,6 +51,14 @@ It was made in three simple steps:
 2. Merging every result aside from *be* and *have* as *Other processes*
 3. Plotting the three remaining results as a line chart, with *fivethirtyeight* style.
 
+#### Coreference resolution
+
+Unlike other corpus linguistic tools, *corpkit* makes it possible to search for words alongside their coreferents. In a text that looks like this:
+
+    Here's my iguana. She loves company!
+
+You may want to automatically determine that it is the iguana who loves company. By parsing the texts with the `Referent tracking` option, and by switching on `Count coreferents` during interrogation, you could search for `iguana`, returning `governor lemma`, and get `love` in the results!
+
 #### Dedicated visualisation tools
 
 *corpkit* leverages *pandas*, *matplotlib* and *TeX* to generate high-quality visualisations of linguistic data. You can choose colourmaps, plot types, styles, labels, and much more. Every visualisation shown on this site was made with *corpkit*. That said, you can also export your data easily to CSV files, which can be loaded painlessly into Excel.
