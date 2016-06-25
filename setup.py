@@ -31,7 +31,7 @@ class CustomInstallCommand(install):
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-      version='2.2.4',
+      version='2.2.5',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
@@ -54,7 +54,7 @@ setup(name='corpkit',
                         "requests",
                         "chardet",
                         "blessings>=1.6",
-                        "traitlets>=4.1.0",
+                        "traitlets>=4.1.0"],
       dependency_links=['git+https://www.github.com/interrogator/corenlp-xml-lib#egg=corenlp-xml-lib',
                         'git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable'])
   
