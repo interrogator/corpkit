@@ -392,7 +392,7 @@ One major challenge in corpus linguistics is the fact that pronouns stand in for
    >>> ops = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
    >>> parsed = corpus.interrogate(operations=ops)
 
-If you have done this, you can use `coref=True` while parsing to allow coreferents to be mapped together:
+If you have done this, you can use `coref=True` while interrogating to allow coreferents to be mapped together:
 
 .. code-block:: python
 

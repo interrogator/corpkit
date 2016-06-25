@@ -22,8 +22,9 @@
 - [Quickstart](#quickstart)
 - [More detailed examples](#more-detailed-examples)
   - [`search`, `exclude` and `show`](#search-exclude-and-show)
+- [Working with coreferences](#working-with-coreferences)
 - [Building corpora](#building-corpora)
-  - [Speaker IDs](#speaker-ids)
+    - [Speaker IDs](#speaker-ids)
   - [Navigating parsed corpora](#navigating-parsed-corpora)
   - [Getting general stats](#getting-general-stats)
 - [Concordancing](#concordancing)
@@ -32,9 +33,9 @@
   - [Visualising keywords](#visualising-keywords)
   - [Traditional reference corpora](#traditional-reference-corpora)
 - [Parallel processing](#parallel-processing)
-  - [Multiple corpora](#multiple-corpora)
-  - [Multiple speakers](#multiple-speakers)
-  - [Multiple queries](#multiple-queries)
+    - [Multiple corpora](#multiple-corpora)
+    - [Multiple speakers](#multiple-speakers)
+    - [Multiple queries](#multiple-queries)
 - [More complex queries and plots](#more-complex-queries-and-plots)
   - [Visualisation options](#visualisation-options)
 - [Contact](#contact)
@@ -411,6 +412,36 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 | `[C]` | `24` |
 
 Again, common sense dictates what is possible. When searching trees, only trees, words, lemmata, POS and counts can be returned. If showing trees, you can't show anything else. If you use `C`, you can't use anything else.
+
+
+<a name="working-with-coreferences"></a>
+## Working with coreferences
+
+One major challenge in corpus linguistics is the fact that pronouns stand in for other words. Parsing provides coreference resolution, which maps pronouns to the things they denote. You can enable this kind of parsing by specifying the `dcoref` annotator:
+
+```python
+>>> ops = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
+>>> parsed = corpus.interrogate(operations=ops)
+```
+
+If you have done this, you can use `coref=True` while interrogating to allow coreferents to be mapped together:
+
+```python
+>>> corpus.interrogate(query, coref=True)
+```
+
+So, if you wanted to find all the processes a certain entity is engaged in, you can get a more complete result with:
+
+```python
+>>> from dictionaries import roles
+>>> corpus.interrogate({W: 'clinton', GF: roles.process}, coref=True)
+```
+
+This will count `support` in `Clinton supported the independence of Kosovo`, and also potentially `authorize` in `He authorized the use of force`. You can also toggle the `representative=True` and `non_representative=True` arguments if you want to distinguish between copula and non-copula coreference.
+
+```python
+>>> corpus.interrogate({W: 'clinton', GF: roles.process}, coref=True, representative=False)
+```
 
 <a name="building-corpora"></a>
 ## Building corpora
