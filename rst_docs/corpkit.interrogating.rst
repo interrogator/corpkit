@@ -389,23 +389,31 @@ One major challenge in corpus linguistics is the fact that pronouns stand in for
 
 .. code-block:: python
 
+   >>> corpus = Corpus('example.txt')
    >>> ops = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
    >>> parsed = corpus.interrogate(operations=ops)
+   ### print a plaintext representation of the parsed corpus
+   >>> print(parsed.plain)
 
-If you have done this, you can use `coref=True` while interrogating to allow coreferents to be mapped together:
+.. code-block:: none
 
-.. code-block:: python
+   0. Clinton supported the independence of Kosovo
+   1. He authorized the use of force.
 
-   >>> corpus.interrogate(query, coref=True)
-
-So, if you wanted to find all the processes a certain entity is engaged in, you can get a more complete result with:
+If you have done this, you can use `coref=True` while interrogating to allow coreferent forms to be counted alongside query matches. For example, if you wanted to find all the processes Clinton is engaged in, you could do:
 
 .. code-block:: python
 
    >>> from dictionaries import roles
-   >>> corpus.interrogate({W: 'clinton', GF: roles.process}, coref=True)
+   >>> query = {W: 'clinton', GF: roles.process}
+   >>> res = parsed.interrogate(query, show=L, coref=True)
+   >>> res.results.columns
 
-This will count `support` in `Clinton supported the independence of Kosovo`, and also potentially `authorize` in `He authorized the use of force`.
+This matches both `Clinton` and `he`, and thus gives us:
+
+.. code-block:: python
+
+   ['support', 'authorize']
 
 .. note::
 

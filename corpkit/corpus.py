@@ -887,16 +887,15 @@ class File(Corpus):
                 data = fo.read()
             return data
 
-    @lazyprop
     def plainview(self):
         """
         Show the sentences in a File as plaintext
         """
+        text = []
         doc = self.document
-        for sent in doc.sentences:
-            s = ' '.join(i.word for i in sent.tokens)
-            print(s)
-        doc = None
+        for i, sent in enumerate(doc.sentences):
+            text.append('%d: ' % i + ' '.join(i.word for i in sent.tokens))
+        return '\n'.join(text)
 
 class Datalist(object):
     """
