@@ -887,7 +887,8 @@ class File(Corpus):
                 data = fo.read()
             return data
 
-    def plainview(self):
+    @lazyprop
+    def plain(self):
         """
         Show the sentences in a File as plaintext
         """
