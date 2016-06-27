@@ -69,7 +69,7 @@ __all__ = [
     "gui"] + LETTERS
 
 #metadata
-__version__ = "2.2.5"
+__version__ = "2.2.6"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
