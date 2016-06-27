@@ -347,7 +347,7 @@ For parsed corpora, there are many other possible keys:
 | Key | Gloss |
 |-----|-------|
 | `P`    | Part of speech tag |
-| `PL`   | Word class |
+| `X`   | Word class |
 | `G`    | Governor word  |
 | `GL`   | Governor lemma form   |
 | `GP`   | Governor POS   |
@@ -400,7 +400,7 @@ The `show` argument wants a list of keys you'd like to return for each result. T
 | `[W]` | `'champions'` |
 | `L` | `'champion'`  |
 | `P` | `'NNS'` |
-| `PL` | `'Noun'` |
+| `X` | `'Noun'` |
 | `T` | `'(np (jj prevailing) (nns champions))'` (depending on Tregex query) |
 | `[P, W]`    | `'NNS/champions'`      |
 | `[W, P]`    | `'champions/NNS'`     |
