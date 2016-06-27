@@ -55,7 +55,7 @@ def test_parse():
 # this is how you define a slow test
 test_parse.slow = 1
 
-def test_parse_speakseg(skipassert = False):
+def test_parse_speakseg(skipassert=False):
     """Testing parser with speaker segmentation"""
     unparsed = Corpus(unparsed_path)
     import shutil
@@ -63,7 +63,7 @@ def test_parse_speakseg(skipassert = False):
         shutil.rmtree(parsed_path)
     except:
         pass
-    parsed = unparsed.parse(speaker_segmentation = True)
+    parsed = unparsed.parse(speaker_segmentation=True)
     fnames = []
     for subc in parsed.subcorpora:
         for f in subc.files:

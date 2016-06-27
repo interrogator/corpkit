@@ -419,7 +419,7 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
             return False
     return output
 
-def searchfixer(search, query, datatype = False):
+def searchfixer(search, query, datatype=False):
     """
     Normalise query/search value
     """

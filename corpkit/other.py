@@ -568,29 +568,31 @@ def make_multi(interrogation, indexnames=None):
     :returns: pd.DataFrame with multiindex"""
 
     # get proper names for index if possible
-    translator = {'f': 'Function',
-                  'l': 'Lemma',
-                  'r': 'Distance from root',
-                  'w': 'Word',
-                  't': 'Trees',
-                  'i': 'Index',
-                  'n': 'N-grams',
-                  'p': 'POS',
-                  'g': 'Governor',
-                  'd': 'Dependent',
-                  'gp': 'Governor POS',
-                  'dp': 'Dependent POS',
-                  'gl': 'Governor lemma',
-                  'dl': 'Dependent lemma',
-                  'gf': 'Governor function',
-                  'df': 'Dependent function'}
+    transshow = {'f': 'Function',
+                 'l': 'Lemma',
+                 'r': 'Distance from root',
+                 'w': 'Word',
+                 't': 'Trees',
+                 'i': 'Index',
+                 'n': 'N-grams',
+                 'p': 'POS',
+                 'x': 'Word class',
+                 's': 'Sentence'}
+    transobjs = {'g': 'Governor',
+                 'd': 'Dependent',
+                 'm': 'Match',
+                 'h': 'Head'}
+
     import numpy as np
     import pandas as pd
 
     # if it's an interrodict, we want to make it into a single df
     import corpkit
     from corpkit.interrogation import Interrodict, Interrogation
-    if interrogation.__class__ == Interrodict:
+    
+    seriesmode = False
+    
+    if isinstance(interrogation, (Interrodict, dict)):
         import pandas as pd
         import numpy as np
 
@@ -618,19 +620,40 @@ def make_multi(interrogation, indexnames=None):
             pass
         return Interrogation(df, df.sum(axis=1), getattr(interrogation, 'query', None))
     # determine datatype, get df and cols
+    rows=False
     if isinstance(interrogation, pd.core.frame.DataFrame):
         df = interrogation
         cols = list(interrogation.columns)
+        rows = list(interrogation.index)
     elif isinstance(interrogation, pd.core.series.Series):
         cols = list(interrogation.index)
+        seriesmode = True
         df = pd.DataFrame(interrogation).T
-    else:
-        cols = list(interrogation.results.columns)
+    elif isinstance(interrogation, Interrogation):
         df = interrogation.results
+        if isinstance(df, pd.core.series.Series):
+            cols = list(df.index)
+            seriesmode = True
+            df = pd.DataFrame(df).T
+        else:
+            cols = list(df.columns)
+            rows = list(df.index)
+
         # set indexnames if we have them
         if indexnames is not False:
             if interrogation.query.get('show'):
-                indexnames = [translator[i] for i in interrogation.query['show']]
+                indexnames = []
+                ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
+                for showval in interrogation.query['show']:
+                    if len(showval) == 1:
+                        if showval in ends:
+                            showval = 'm' + showval
+                        else:
+                            showval = showval + 'w'
+                    a = transobjs.get(showval[0], showval[0])
+                    b = transshow.get(showval[-1], showval[-1])
+                    indexstring = '%s %s' % (a, b.lower())
+                    indexnames.append(indexstring)
             else:
                 indexnames = False
 
@@ -647,6 +670,9 @@ def make_multi(interrogation, indexnames=None):
     newdf = pd.DataFrame(df.T.as_matrix(), index=arrays).T
     if indexnames:
         newdf.columns.names = indexnames
+
+    if rows:
+        newdf.index = rows
     
     pd.set_option('display.multi_sparse', False)
     totals = newdf.sum(axis=1)
