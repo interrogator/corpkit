@@ -111,6 +111,8 @@ def dep_searcher(sents,
 
     def get_candidates(tok, justfirst=False):
         candidates = [tok]
+        if not corefs:
+            return candidates
         for coref in corefs:
             for index, mention in enumerate(coref.mentions):
                 if not representative and mention.representative:
@@ -292,6 +294,8 @@ def dep_searcher(sents,
         return 'none' # not possible?
 
     def show_head(tok, _):
+        if not corefs:
+            return 'none'
         for coref in corefs:
             for index, mention in enumerate(coref.mentions):
                 if not representative and mention.representative:
@@ -367,7 +371,6 @@ def dep_searcher(sents,
         for srch, pat in search.items():
             if len(srch) == 1 and srch in ends:
                 srch = 'm%s' % srch
-
             if isinstance(pat, dict):
                 for k, v in list(pat.items()):
                     if k != 'w':
