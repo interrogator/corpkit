@@ -35,9 +35,6 @@ def dep_searcher(sents,
 
     is_a_word = re.compile(regex_nonword_filter)
 
-    no_punct = kwargs.get('no_punct', True)
-    no_closed = kwargs.get('no_closed', False)
-
     if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
         only_format_match = True
 
@@ -214,6 +211,12 @@ def dep_searcher(sents,
                     matches.add(t)
         return matches
 
+    def show_sent_id(token):
+        # this could be slow
+        #return int(token.getparent().getparent().get('id')) - 1
+        # faster?
+        return int(s.id) - 1
+
     ####################################################
     ################## SHOW FUNCTIONS ##################
     ####################################################
@@ -224,6 +227,8 @@ def dep_searcher(sents,
             return show_function(tokenx)
         if this == 'r':
             return show_distance(tokenx)
+        if this == 's':
+            return show_sent_id(tokenx)
 
         if this == 'x':
             from corpkit.dictionaries.word_transforms import taglemma
@@ -239,7 +244,7 @@ def dep_searcher(sents,
         if hasattr(tokenx, t):
             att = getattr(tokenx, t)
             if isinstance(att, int):
-                return postp.get(att, att)
+                return postp.get(att - 1, att - 1)
             else:
                 return postp.get(att.lower(), att)
 
@@ -253,7 +258,6 @@ def dep_searcher(sents,
             if i.dependent.idx == tok.id:
                 return i.type.rstrip(',')
         return 'none'
-
 
     def show_distance(token_set):
         """broken"""
@@ -277,6 +281,21 @@ def dep_searcher(sents,
                 else:
                     return 'root'
         return 'none' # not possible?
+
+    def show_head(tok, _):
+        for coref in corefs:
+            for index, mention in enumerate(coref.mentions):
+                if not representative and mention.representative:
+                    continue
+                if not non_representative and not mention.representative:
+                    continue
+                # if current token is a coref chain
+                if tok == mention.head:
+                    if index > 0:
+                        return mention.siblings[0].head
+                    else:
+                        return tok
+        return 'none'
 
     def show_dependent(tok, repeat):
         """get nth dependent"""
@@ -309,6 +328,7 @@ def dep_searcher(sents,
 
     lookup_show = {'g': show_governor,
                    'd': show_dependent,
+                   'h': show_head,
                    'm': show_match}
 
     ####################################################
@@ -319,7 +339,7 @@ def dep_searcher(sents,
         """take a single search/show_bit type, return match"""
         #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r']
-        starts = ['d', 'g', 'm', 'n', 'b']
+        starts = ['d', 'g', 'm', 'n', 'b', 'h']
         show_bit = show_bit.lstrip('n')
         show_bit = show_bit.lstrip('b')
         show_bit = list(show_bit)
@@ -593,7 +613,7 @@ def dep_searcher(sents,
         
         for repeat in range(1, repeats + 1):
             single_token_bits = []
-            for val in show:        
+            for val in show:
                 get_tok, show_bit = get_list_of_lookup_funcs(val)
                 # get the token we need to format
                 tok = get_tok(token, repeat)
@@ -606,8 +626,10 @@ def dep_searcher(sents,
             results.append(single_token_bits)
 
         for result in results:
+            #if all(isinstance(i, int) for i in result)
+            #    pass
             if no_punct:
-                if not all(re.search(is_a_word, i) for i in result):
+                if not all(re.search(is_a_word, str(i)) for i in result):
                     return
             if no_closed:
                 if isinstance(no_closed, list):
@@ -624,7 +646,7 @@ def dep_searcher(sents,
                 if any(i == 'none' for i in result):
                     return
 
-            output.append('/'.join(i.replace('/', '-slash-') for i in result))
+            output.append('/'.join(str(i).replace('/', '-slash-') for i in result))
         return output
 
     def remove_by_mode(matching_tokens, mode):

@@ -31,6 +31,9 @@ def interrogator(corpus,
                  conc=False,
                  maxconc=9999,
                  window=4,
+                 no_closed=False,
+                 no_punct=True,
+                 whitelist=False,
                  **kwargs
                 ):
     """
@@ -1115,7 +1118,7 @@ def interrogator(corpus,
                         sents = corenlp_xml.sentences
 
                     # get coreferences
-                    if kwargs.get('coref'):
+                    if kwargs.get('coref') or any(x.startswith('h') for x in show):
                         if just_speakers:
                             corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
                         else:
@@ -1136,9 +1139,9 @@ def interrogator(corpus,
                                              only_format_match=only_format_match,
                                              speaker=slow_treg_speaker_guess,
                                              gramsize=gramsize,
-                                             no_punct=kwargs.get('no_punct', True),
-                                             no_closed=kwargs.get('no_closed', False),
-                                             whitelist=kwargs.get('whitelist', False),
+                                             no_punct=no_punct,
+                                             no_closed=no_closed,
+                                             whitelist=whitelist,
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
