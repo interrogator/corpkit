@@ -307,7 +307,7 @@ def parse_corpus(proj_path=False,
         if memory_mb is False:
             memory_mb = 2024
         if operations is False:
-            operations = 'tokenize,ssplit,pos,lemma,parse'# 'ner,dcoref'
+            operations = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
         if isinstance(operations, list):
             operations = ','.join([i.lower() for i in operations])
 
