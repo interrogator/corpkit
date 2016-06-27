@@ -12,6 +12,7 @@ LETTERS = ['A',
            'D',
            'D',
            'DF',
+           'DI',
            'DL',
            'DP',
            'DS',
@@ -20,6 +21,7 @@ LETTERS = ['A',
            'F',
            'G',
            'GF',
+           'GI',
            'GL',
            'GP',
            'GS',
@@ -27,6 +29,7 @@ LETTERS = ['A',
            'GX',
            'H',
            'HF',
+           'HI',
            'HL',
            'HP',
            'HS',
@@ -189,6 +192,7 @@ C = 'c'
 D = 'd'
 D = 'd'
 DF = 'df'
+DI = 'di'
 DL = 'dl'
 DP = 'dp'
 DS = 'ds'
@@ -197,13 +201,15 @@ DX = 'dx'
 F = 'f'
 G = 'g'
 GF = 'gf'
+GI = 'gi'
 GL = 'gl'
 GP = 'gp'
-gs = 'gs'
+GS = 'gs'
 GW = 'gw'
 GX = 'gx'
 H = 'h'
 HF = 'hf'
+HI = 'hi'
 HL = 'hl'
 HP = 'hp'
 HS = 'hs'

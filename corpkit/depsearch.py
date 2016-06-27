@@ -73,9 +73,11 @@ def dep_searcher(sents,
     ####################################################
     
     bmatch = {'d': 'governor',
-              'g': 'dependent'}
+              'g': 'dependent',
+              'h': 'head'}
     fmatch = {'g': 'governor',
-              'd': 'dependent'}
+              'd': 'dependent',
+              'h': 'head'}
 
     attr_trans = {'p': 'pos',
                   'x': 'pos',
@@ -99,20 +101,27 @@ def dep_searcher(sents,
                 return set([s.get_token_by_id(tok.id)])
             else:
                 return set([tok])
+        elif deprole == 'h':
+            return set(get_candidates(tok, justfirst=True))
         else:
             in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
             for lnk in in_deps:
                 ret.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
             return ret
 
-    def get_candidates(tok):
+    def get_candidates(tok, justfirst=False):
         candidates = [tok]
         for coref in corefs:
-            for mention in coref.mentions:
+            for index, mention in enumerate(coref.mentions):
                 if not representative and mention.representative:
                     continue
                 if not non_representative and not mention.representative:
                     continue
+                if justfirst:
+                    if index > 0:
+                        return [mention.siblings[0].head]
+                    else:
+                        return candidates
                 # if current token is a coref chain
                 if tok == mention.head:
                     for sibling in mention.siblings:
@@ -351,7 +360,7 @@ def dep_searcher(sents,
 
     def fix_search(search):
         """if search has nested dicts, remove them"""
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x']
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
         if not search:
             return
         newsearch = {}
