@@ -1,58 +1,22 @@
-from __future__ import print_function
-
 """
 A toolkit for corpus linguistics
 """
 
+from __future__ import print_function
+
+#metadata
+__version__ = "2.2.6"
+__author__ = "Daniel McDonald"
+__license__ = "MIT"
+
 # quicker access to search, exclude, show types
-LETTERS = ['A',
-           'ANY',
-           'ANYWORD',
-           'C',
-           'D',
-           'D',
-           'DF',
-           'DI',
-           'DL',
-           'DP',
-           'DS',
-           'DW',
-           'DX',
-           'F',
-           'G',
-           'GF',
-           'GI',
-           'GL',
-           'GP',
-           'GS',
-           'GW',
-           'GX',
-           'H',
-           'HF',
-           'HI',
-           'HL',
-           'HP',
-           'HS',
-           'HW',
-           'HX',
-           'I',
-           'K',
-           'L',
-           'M',
-           'N',
-           'NF',
-           'NL',
-           'NP',
-           'NW',
-           'P',
-           'PL',
-           'R',
-           'S',
-           'SELF',
-           'T',
-           'V',
-           'W',
-           'X']
+from itertools import product
+starts = ['M', 'N', 'B', 'G', 'D', 'H']
+ends = ['W', 'L', 'I', 'S', 'P', 'X', 'R', 'F']
+others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K']
+prod = list(product(starts, ends))
+prod = [''.join(i) for i in prod]
+LETTERS = sorted(prod + starts + ends + others)
 
 # asterisk import
 __all__ = [
@@ -65,13 +29,7 @@ __all__ = [
     "Corpus",
     "File",
     "Corpora",
-    "Wordlist",
     "gui"] + LETTERS
-
-#metadata
-__version__ = "2.2.6"
-__author__ = "Daniel McDonald"
-__license__ = "MIT"
 
 # probably not needed, anymore but adds corpkit to path for tregex.sh
 import sys
@@ -93,17 +51,17 @@ from corpkit.model import MultiModel
 
 import corpkit.dictionaries as dictionaries
 
-# import functions, though most are now class methods
-from corpkit.other import load, loader, load_all_results
-from corpkit.plotter import multiplotter
+from corpkit.other import (load, loader, load_all_results, 
+                           quickview, as_regex, new_project)
+
 from corpkit.lazyprop import lazyprop
-from other import load_all_results
-from other import quickview, as_regex, new_project
-from dictionaries.process_types import Wordlist
-from process import gui
+#from corpkit.dictionaries.process_types import Wordlist
+from corpkit.process import gui
+
 # monkeypatch editing and plotting to pandas objects
 from pandas import DataFrame, Series
 
+# monkey patch functions
 def _plot(self, *args, **kwargs):
     from corpkit.plotter import plotter
     return plotter(self, *args, **kwargs)
@@ -116,9 +74,9 @@ def _save(self, savename, **kwargs):
     from corpkit.other import save
     save(self, savename, **kwargs)
 
-def _quickview(self, n = 25):
+def _quickview(self, n=25):
     from corpkit.other import quickview
-    quickview(self, n = n)
+    quickview(self, n=n)
 
 def _format(self, *args, **kwargs):
     from corpkit.other import concprinter
@@ -132,11 +90,11 @@ def _calculate(self, *args, **kwargs):
     from corpkit.process import interrogation_from_conclines
     return interrogation_from_conclines(self)
 
-def _multiplot(self, leftdict={}, rightdict={}, *args, **kwargs):
+def _multiplot(self, leftdict={}, rightdict={}, **kwargs):
     from corpkit.plotter import multiplotter
     return multiplotter(self, leftdict=leftdict, rightdict=rightdict, **kwargs)
 
-def _shuffle(self, inplace = False):
+def _shuffle(self, inplace=False):
     import random
     index = list(self.index)
     random.shuffle(index)
@@ -147,13 +105,14 @@ def _shuffle(self, inplace = False):
     else:
         return shuffled
 
-
 def _top(self):
     """Show as many rows and cols as possible without truncation"""
     import pandas as pd
     max_row = pd.options.display.max_rows
     max_col = pd.options.display.max_columns
     return self.iloc[:max_row, :max_col]
+
+# monkey patching things
 
 DataFrame.edit = _edit
 Series.edit = _edit
@@ -163,7 +122,6 @@ Series.visualise = _plot
 
 DataFrame.multiplot = _multiplot
 Series.multiplot = _multiplot
-
 
 DataFrame.save = _save
 Series.save = _save
@@ -183,54 +141,12 @@ DataFrame.shuffle = _shuffle
 
 DataFrame.top = _top
 
-# Defining globals
+# Defining letters
+module = sys.modules[__name__]
+for letter in LETTERS:
+    setattr(module, letter, letter.lower())
+    # other methods:
+    # globals()[letter] = letter.lower()
+    # exec('%s = "%s"' % (letter, letter.lower()))
 
-A = 'a'
-ANY = 'any'
 ANYWORD = r'[A-Za-z0-9:_]'
-C = 'c'
-D = 'd'
-D = 'd'
-DF = 'df'
-DI = 'di'
-DL = 'dl'
-DP = 'dp'
-DS = 'ds'
-DW = 'dw'
-DX = 'dx'
-F = 'f'
-G = 'g'
-GF = 'gf'
-GI = 'gi'
-GL = 'gl'
-GP = 'gp'
-GS = 'gs'
-GW = 'gw'
-GX = 'gx'
-H = 'h'
-HF = 'hf'
-HI = 'hi'
-HL = 'hl'
-HP = 'hp'
-HS = 'hs'
-HW = 'hw'
-HX = 'hx'
-I = 'i'
-K = 'k'
-L = 'l'
-M = 'm'
-N = 'n'
-NF = 'nf'
-NL = 'nl'
-NP = 'np'
-NS = 'ns'
-NW = 'nw'
-P = 'p'
-PL = 'pl'
-R = 'r'
-S = 's'
-SELF = 'self'
-T = 't'
-V = 'v'
-W = 'w'
-X = 'x'
