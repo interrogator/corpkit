@@ -6,6 +6,7 @@ import math
 import os
 import nltk
 
+from corpkit.constants import PYTHON_VERSION, STRINGTYPE
 
 class LanguageModel(object):
     def __init__(self, order, alpha, sentences):
@@ -54,8 +55,6 @@ class MultiModel(dict):
     
     def __init__(self, data, name='', order=3, **kwargs):
         import os
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         from corpkit.other import load
         if isinstance(data, STRINGTYPE):
             name = data
@@ -80,8 +79,6 @@ class MultiModel(dict):
         from collections import Counter, OrderedDict
         import pandas as pd
         from corpkit.corpus import Subcorpus, File
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         # get subcorpus
         if isinstance(data, Subcorpus):
             counts = self[data.name].counts

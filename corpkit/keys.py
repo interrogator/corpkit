@@ -86,8 +86,6 @@ def keywords(target_corpus,
     def calc_keywords(target_corpus, reference_corpus):
         """get keywords in target corpus compared to reference corpus"""
         # get total num words in ref corpus
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         key_scores = {}
         ref_sum = sum(reference_corpus.values())
         if isinstance(target_corpus, dict):

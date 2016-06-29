@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
+
 def quickview(results, n=25):
     """
     View top n results as painlessly as possible.
@@ -201,8 +203,6 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
 
     def make_filename(interrogation, savename):
         """create a filename"""
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         if '/' in savename:
             return savename
 

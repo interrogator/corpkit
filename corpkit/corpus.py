@@ -333,8 +333,6 @@ class Corpus(object):
         from os.path import join, isfile, isdir
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
         if isinstance(show, STRINGTYPE):
@@ -737,8 +735,6 @@ class Corpus(object):
 
         :returns: `None` (but show a plot)
         """
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
         if isinstance(search, STRINGTYPE):
             search = {'t': search}
         interro = self.interrogate(search=search, show=kwargs.pop('show', 'w'))

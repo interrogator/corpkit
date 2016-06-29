@@ -208,8 +208,7 @@ def plotter(df,
     def auto_explode(dataframe, tinput, was_series = False, num_to_plot = 7):
         """give me a list of strings and i'll output explode option"""
         output = [0 for s in range(num_to_plot)]
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
+
         if was_series:
             l = list(dataframe.index)
         else:
