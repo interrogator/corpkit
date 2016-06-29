@@ -1,15 +1,16 @@
-from __future__ import print_function
-from corpkit.constants import STRINGTYPE, PYTHON_VERSION
+"""
+In here are functions used internally by corpkit,  
+not intended to be called by users. 
+"""
 
-# in here are functions used internally by corpkit
-# not intended to be called by users. 
+from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def tregex_engine(corpus=False,  
                   options=False, 
                   query=False, 
                   check_query=False,
                   check_for_trees=False,
-                  lemmatise=False,
                   just_content_words=False,
                   root=False,
                   preserve_case=False,
@@ -62,8 +63,6 @@ def tregex_engine(corpus=False,
     else:
         send_stderr_to = DEVNULL
         send_stdout_to = subprocess.STDOUT
-
-    inputfunc = raw_input if PYTHON_VERSION == 2 else input
 
     filtermode = False
     if isinstance(options, list):
@@ -159,12 +158,12 @@ def tregex_engine(corpus=False,
                     return False
                 time = strftime("%H:%M:%S", localtime())
 
-                selection = inputfunc('\n%s: Error parsing Tregex expression "%s".'\
+                selection = INPUTFUNC('\n%s: Error parsing Tregex expression "%s".'\
                                       '\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
                 if 'a' in selection:
-                    query = inputfunc('\nNew Tregex query: ')
+                    query = INPUTFUNC('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print('')
                     return False
@@ -182,13 +181,13 @@ def tregex_engine(corpus=False,
                 remove_start = query.split('/', 1)
                 remove_end = remove_start[1].split('/', -1)
                 time = strftime("%H:%M:%S", localtime())
-                selection = inputfunc('\n%s: Error parsing regex inside Tregex query: %s'\
+                selection = INPUTFUNC('\n%s: Error parsing regex inside Tregex query: %s'\
                 '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
                 '              a) rewrite it now\n' \
                 '              b) exit\n\nYour selection: ' % \
                     (time, str(info[1]), str(remove_end[0]), spaces))
                 if 'a' in selection:
-                    query = inputfunc('\nNew Tregex query: ')
+                    query = INPUTFUNC('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print('')
                     return                
@@ -404,11 +403,11 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
             print('%s: Invalid the_filter regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
-        selection = inputfunc('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+        selection = INPUTFUNC('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
             '              a) rewrite it now\n' \
             '              b) exit\n\nYour selection: ' % (time, the_filter))
         if 'a' in selection:
-            the_filter = inputfunc('\nNew regular expression: ')
+            the_filter = INPUTFUNC('\nNew regular expression: ')
             try:
                 output = re.compile(r'\b' + the_filter + r'\b')
                 is_valid = True

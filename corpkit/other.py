@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from corpkit.constants import STRINGTYPE, PYTHON_VERSION
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def quickview(results, n=25):
     """
@@ -254,12 +254,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         fullpath = savename
 
     while os.path.isfile(fullpath):
-        import sys
-        if sys.version_info.major == 3:
-            selection = input(("\nSave error: %s already exists in %s.\n\n" \
-                "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
-        else:
-            selection = raw_input(("\nSave error: %s already exists in %s.\n\n" \
+        INPUTFUNC(("\nSave error: %s already exists in %s.\n\n" \
                 "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
 
         if selection == 'o' or selection == 'O':
@@ -324,17 +319,14 @@ def loader(savedir='saved_interrogations'):
     import glob
     import os
     import corpkit
-    from other import load
+    from corpkit.other import load
     fs = [i for i in glob.glob(r'%s/*' % savedir) if not os.path.basename(i).startswith('.')]
     string_to_show = '\nFiles in %s:\n' % savedir
     most_digits = max([len(str(i)) for i, j in enumerate(fs)])
     for index, fname in enumerate(fs):
         string_to_show += str(index).rjust(most_digits) + ':\t' + os.path.basename(fname) + '\n'
     print(string_to_show)
-    try:
-        index = raw_input('Enter index of item to load: ')
-    except:
-        index = input('Enter index of item to load: ')
+    INPUTFUNC('Enter index of item to load: ')
     if ' ' in index or '=' in index:
         if '=' in index:
             index = index.replace(' = ', ' ')

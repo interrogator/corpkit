@@ -5,7 +5,7 @@ corpkit: Interrogate a parsed corpus
 #!/usr/bin/python
 
 from __future__ import print_function
-from corpkit.constants import STRINGTYPE, PYTHON_VERSION
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def interrogator(corpus, 
                  search, 
@@ -87,10 +87,7 @@ def interrogator(corpus,
         from time import localtime, strftime
         signal.signal(signal.SIGINT, original_sigint)
         thetime = strftime("%H:%M:%S", localtime())
-        try:
-            raw_input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
-        except NameError:
-            input('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
+        INPUTFUNC('\n\n%s: Paused. Press any key to resume, or ctrl+c to quit.\n' % thetime)
         time = strftime("%H:%M:%S", localtime())
         print('%s: Interrogation resumed.\n' % time)
         signal.signal(signal.SIGINT, signal_handler)
