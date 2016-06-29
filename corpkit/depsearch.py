@@ -658,7 +658,10 @@ def dep_searcher(sents,
                 if any(i == 'none' for i in result):
                     return
 
-            output.append('/'.join(str(i).replace('/', '-slash-') for i in result))
+            try:
+                output.append('/'.join(str(i).replace('/', '-slash-') for i in result))
+            except UnicodeEncodeError:
+                output.append('/'.join(i.replace('/', '-slash-') for i in result))
         return output
 
     def remove_by_mode(matching_tokens, mode):
