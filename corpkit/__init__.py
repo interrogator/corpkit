@@ -14,14 +14,7 @@ import sys
 import os
 import inspect
 
-# quicker access to search, exclude, show types
-from itertools import product
-starts = ['M', 'N', 'B', 'G', 'D', 'H']
-ends = ['W', 'L', 'I', 'S', 'P', 'X', 'R', 'F']
-others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K', 'T']
-prod = list(product(starts, ends))
-prod = [''.join(i) for i in prod]
-LETTERS = sorted(prod + starts + ends + others)
+from corpkit.constants import LETTERS
 
 # asterisk import
 __all__ = [
