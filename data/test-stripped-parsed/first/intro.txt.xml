@@ -10,6 +10,8 @@
             <CharacterOffsetBegin>0</CharacterOffsetBegin>
             <CharacterOffsetEnd>4</CharacterOffsetEnd>
             <POS>DT</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="2">
             <word>small</word>
@@ -17,6 +19,8 @@
             <CharacterOffsetBegin>5</CharacterOffsetBegin>
             <CharacterOffsetEnd>10</CharacterOffsetEnd>
             <POS>JJ</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="3">
             <word>corpus</word>
@@ -24,6 +28,8 @@
             <CharacterOffsetBegin>11</CharacterOffsetBegin>
             <CharacterOffsetEnd>17</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="4">
             <word>is</word>
@@ -31,6 +37,8 @@
             <CharacterOffsetBegin>18</CharacterOffsetBegin>
             <CharacterOffsetEnd>20</CharacterOffsetEnd>
             <POS>VBZ</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="5">
             <word>used</word>
@@ -38,6 +46,8 @@
             <CharacterOffsetBegin>21</CharacterOffsetBegin>
             <CharacterOffsetEnd>25</CharacterOffsetEnd>
             <POS>VBN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="6">
             <word>in</word>
@@ -45,6 +55,8 @@
             <CharacterOffsetBegin>26</CharacterOffsetBegin>
             <CharacterOffsetEnd>28</CharacterOffsetEnd>
             <POS>IN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="7">
             <word>corpkit</word>
@@ -52,6 +64,8 @@
             <CharacterOffsetBegin>29</CharacterOffsetBegin>
             <CharacterOffsetEnd>36</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="8">
             <word>'s</word>
@@ -59,6 +73,8 @@
             <CharacterOffsetBegin>36</CharacterOffsetBegin>
             <CharacterOffsetEnd>38</CharacterOffsetEnd>
             <POS>POS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="9">
             <word>tests</word>
@@ -66,6 +82,8 @@
             <CharacterOffsetBegin>39</CharacterOffsetBegin>
             <CharacterOffsetEnd>44</CharacterOffsetEnd>
             <POS>NNS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="10">
             <word>.</word>
@@ -73,6 +91,8 @@
             <CharacterOffsetBegin>44</CharacterOffsetBegin>
             <CharacterOffsetEnd>45</CharacterOffsetEnd>
             <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
         </tokens>
         <parse>(ROOT (S (NP (DT This) (JJ small) (NN corpus)) (VP (VBZ is) (VP (VBN used) (PP (IN in) (NP (NP (NN corpkit) (POS 's)) (NNS tests))))) (. .))) </parse>
@@ -212,6 +232,8 @@
             <CharacterOffsetBegin>46</CharacterOffsetBegin>
             <CharacterOffsetEnd>49</CharacterOffsetEnd>
             <POS>RB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="2">
             <word>a</word>
@@ -219,6 +241,8 @@
             <CharacterOffsetBegin>50</CharacterOffsetBegin>
             <CharacterOffsetEnd>51</CharacterOffsetEnd>
             <POS>DT</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="3">
             <word>lot</word>
@@ -226,6 +250,8 @@
             <CharacterOffsetBegin>52</CharacterOffsetBegin>
             <CharacterOffsetEnd>55</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="4">
             <word>of</word>
@@ -233,6 +259,8 @@
             <CharacterOffsetBegin>56</CharacterOffsetBegin>
             <CharacterOffsetEnd>58</CharacterOffsetEnd>
             <POS>IN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="5">
             <word>data</word>
@@ -240,6 +268,8 @@
             <CharacterOffsetBegin>59</CharacterOffsetBegin>
             <CharacterOffsetEnd>63</CharacterOffsetEnd>
             <POS>NNS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="6">
             <word>is</word>
@@ -247,6 +277,8 @@
             <CharacterOffsetBegin>64</CharacterOffsetBegin>
             <CharacterOffsetEnd>66</CharacterOffsetEnd>
             <POS>VBZ</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="7">
             <word>required</word>
@@ -254,6 +286,8 @@
             <CharacterOffsetBegin>67</CharacterOffsetBegin>
             <CharacterOffsetEnd>75</CharacterOffsetEnd>
             <POS>VBN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="8">
             <word>.</word>
@@ -261,6 +295,8 @@
             <CharacterOffsetBegin>75</CharacterOffsetBegin>
             <CharacterOffsetEnd>76</CharacterOffsetEnd>
             <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
         </tokens>
         <parse>(ROOT (S (NP (NP (RB Not) (DT a) (NN lot)) (PP (IN of) (NP (NNS data)))) (VP (VBZ is) (VP (VBN required))) (. .))) </parse>
@@ -376,6 +412,8 @@
             <CharacterOffsetBegin>77</CharacterOffsetBegin>
             <CharacterOffsetEnd>81</CharacterOffsetEnd>
             <POS>RB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="2">
             <word>,</word>
@@ -383,6 +421,8 @@
             <CharacterOffsetBegin>81</CharacterOffsetBegin>
             <CharacterOffsetEnd>82</CharacterOffsetEnd>
             <POS>,</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="3">
             <word>we</word>
@@ -390,6 +430,8 @@
             <CharacterOffsetBegin>83</CharacterOffsetBegin>
             <CharacterOffsetEnd>85</CharacterOffsetEnd>
             <POS>PRP</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="4">
             <word>'re</word>
@@ -397,6 +439,8 @@
             <CharacterOffsetBegin>85</CharacterOffsetBegin>
             <CharacterOffsetEnd>88</CharacterOffsetEnd>
             <POS>VBP</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="5">
             <word>testing</word>
@@ -404,6 +448,8 @@
             <CharacterOffsetBegin>89</CharacterOffsetBegin>
             <CharacterOffsetEnd>96</CharacterOffsetEnd>
             <POS>VBG</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="6">
             <word>the</word>
@@ -411,6 +457,8 @@
             <CharacterOffsetBegin>97</CharacterOffsetBegin>
             <CharacterOffsetEnd>100</CharacterOffsetEnd>
             <POS>DT</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="7">
             <word>speaker_segmentation</word>
@@ -418,6 +466,8 @@
             <CharacterOffsetBegin>101</CharacterOffsetBegin>
             <CharacterOffsetEnd>121</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="8">
             <word>option</word>
@@ -425,6 +475,8 @@
             <CharacterOffsetBegin>122</CharacterOffsetBegin>
             <CharacterOffsetEnd>128</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="9">
             <word>.</word>
@@ -432,6 +484,8 @@
             <CharacterOffsetBegin>128</CharacterOffsetBegin>
             <CharacterOffsetEnd>129</CharacterOffsetEnd>
             <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
         </tokens>
         <parse>(ROOT (S (ADVP (RB Here)) (, ,) (NP (PRP we)) (VP (VBP 're) (VP (VBG testing) (NP (DT the) (NN speaker_segmentation) (NN option)))) (. .))) </parse>
@@ -559,6 +613,8 @@
             <CharacterOffsetBegin>130</CharacterOffsetBegin>
             <CharacterOffsetEnd>135</CharacterOffsetEnd>
             <POS>RB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="2">
             <word>you</word>
@@ -566,6 +622,8 @@
             <CharacterOffsetBegin>136</CharacterOffsetBegin>
             <CharacterOffsetEnd>139</CharacterOffsetEnd>
             <POS>PRP</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="3">
             <word>are</word>
@@ -573,6 +631,8 @@
             <CharacterOffsetBegin>140</CharacterOffsetBegin>
             <CharacterOffsetEnd>143</CharacterOffsetEnd>
             <POS>VBP</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="4">
             <word>.</word>
@@ -580,6 +640,8 @@
             <CharacterOffsetBegin>143</CharacterOffsetBegin>
             <CharacterOffsetEnd>144</CharacterOffsetEnd>
             <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
         </tokens>
         <parse>(ROOT (S (ADVP (RB Right)) (NP (PRP you)) (VP (VBP are)) (. .))) </parse>
@@ -647,6 +709,8 @@
             <CharacterOffsetBegin>145</CharacterOffsetBegin>
             <CharacterOffsetEnd>148</CharacterOffsetEnd>
             <POS>DT</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="2">
             <word>next</word>
@@ -654,6 +718,8 @@
             <CharacterOffsetBegin>149</CharacterOffsetBegin>
             <CharacterOffsetEnd>153</CharacterOffsetEnd>
             <POS>JJ</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="3">
             <word>file</word>
@@ -661,6 +727,8 @@
             <CharacterOffsetBegin>154</CharacterOffsetBegin>
             <CharacterOffsetEnd>158</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="4">
             <word>,</word>
@@ -668,6 +736,8 @@
             <CharacterOffsetBegin>158</CharacterOffsetBegin>
             <CharacterOffsetEnd>159</CharacterOffsetEnd>
             <POS>,</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="5">
             <word>however</word>
@@ -675,6 +745,8 @@
             <CharacterOffsetBegin>160</CharacterOffsetBegin>
             <CharacterOffsetEnd>167</CharacterOffsetEnd>
             <POS>RB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="6">
             <word>,</word>
@@ -682,6 +754,8 @@
             <CharacterOffsetBegin>167</CharacterOffsetBegin>
             <CharacterOffsetEnd>168</CharacterOffsetEnd>
             <POS>,</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="7">
             <word>wo</word>
@@ -689,6 +763,8 @@
             <CharacterOffsetBegin>169</CharacterOffsetBegin>
             <CharacterOffsetEnd>171</CharacterOffsetEnd>
             <POS>MD</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="8">
             <word>n't</word>
@@ -696,6 +772,8 @@
             <CharacterOffsetBegin>171</CharacterOffsetBegin>
             <CharacterOffsetEnd>174</CharacterOffsetEnd>
             <POS>RB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="9">
             <word>have</word>
@@ -703,6 +781,8 @@
             <CharacterOffsetBegin>175</CharacterOffsetBegin>
             <CharacterOffsetEnd>179</CharacterOffsetEnd>
             <POS>VB</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="10">
             <word>speaker</word>
@@ -710,6 +790,8 @@
             <CharacterOffsetBegin>180</CharacterOffsetBegin>
             <CharacterOffsetEnd>187</CharacterOffsetEnd>
             <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="11">
             <word>IDs</word>
@@ -717,6 +799,8 @@
             <CharacterOffsetBegin>188</CharacterOffsetBegin>
             <CharacterOffsetEnd>191</CharacterOffsetEnd>
             <POS>NNS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
           <token id="12">
             <word>.</word>
@@ -724,6 +808,8 @@
             <CharacterOffsetBegin>191</CharacterOffsetBegin>
             <CharacterOffsetEnd>192</CharacterOffsetEnd>
             <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
           </token>
         </tokens>
         <parse>(ROOT (S (NP (DT The) (JJ next) (NN file)) (, ,) (ADVP (RB however)) (, ,) (VP (MD wo) (RB n't) (VP (VB have) (NP (NN speaker) (NNS IDs)))) (. .))) </parse>

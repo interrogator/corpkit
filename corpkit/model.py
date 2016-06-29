@@ -54,10 +54,10 @@ class MultiModel(dict):
     
     def __init__(self, data, name='', order=3, **kwargs):
         import os
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
         from corpkit.other import load
-        if isinstance(data, stringtype):
+        if isinstance(data, STRINGTYPE):
             name = data
             if not name.endswith('.p'):
                 name = name + '.p'
@@ -80,19 +80,19 @@ class MultiModel(dict):
         from collections import Counter, OrderedDict
         import pandas as pd
         from corpkit.corpus import Subcorpus, File
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
         # get subcorpus
         if isinstance(data, Subcorpus):
             counts = self[data.name].counts
-        elif isinstance(data, stringtype) and data in self.keys():
+        elif isinstance(data, STRINGTYPE) and data in self.keys():
             counts = self[data].counts 
         #get file
-        elif isinstance(data, File) or (isinstance(data, stringtype) and \
+        elif isinstance(data, File) or (isinstance(data, STRINGTYPE) and \
             os.path.isfile(data)):
             counts = self._turn_file_obj_into_counts(data)
         # get text
-        elif isinstance(data, stringtype) and not \
+        elif isinstance(data, STRINGTYPE) and not \
             os.path.exists(data):
             dat = []
             sents = nltk.sent_tokenize(data)

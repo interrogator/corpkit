@@ -1,4 +1,5 @@
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 def plotter(df,
             title=False,
@@ -156,7 +157,7 @@ def plotter(df,
         # name as 
         if not ext.startswith('.'):
             ext = '.' + ext
-        if type(save) == str:
+        if isinstance(save, STRINGTYPE):
             savename = os.path.join(imagefolder, (urlify(save) + ext))
         #this 'else' is redundant now that title is obligatory
         else:
@@ -207,18 +208,18 @@ def plotter(df,
     def auto_explode(dataframe, tinput, was_series = False, num_to_plot = 7):
         """give me a list of strings and i'll output explode option"""
         output = [0 for s in range(num_to_plot)]
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
         if was_series:
             l = list(dataframe.index)
         else:
             l = list(dataframe.columns)
 
-        if isinstance(tinput, (stringtype, int)):
+        if isinstance(tinput, (STRINGTYPE, int)):
             tinput = [tinput]
         if isinstance(tinput, list):
             for i in tinput:
-                if isinstance(i, stringtype):
+                if isinstance(i, STRINGTYPE):
                     index = l.index(i)
                 else:
                     index = i

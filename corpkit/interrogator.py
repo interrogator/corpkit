@@ -5,6 +5,7 @@ corpkit: Interrogate a parsed corpus
 #!/usr/bin/python
 
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 def interrogator(corpus, 
                  search, 
@@ -40,8 +41,6 @@ def interrogator(corpus,
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
-    from corpkit.process import stringtype
-    stringtype = stringtype()
 
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
@@ -51,13 +50,12 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    if isinstance(search, stringtype) and len(search) > 3:
+    if isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')
 
     import codecs
     import signal
     import os
-    import gc
     from time import localtime, strftime
     from collections import Counter
 
@@ -68,11 +66,17 @@ def interrogator(corpus,
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
-                                 get_speakername, animator, which_python)
+                                 get_speakername, animator, filtermaker)
     from corpkit.other import as_regex
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
     from corpkit.build import check_jdk
+
+    import re
+    if regex_nonword_filter:
+        is_a_word = re.compile(regex_nonword_filter)
+    else:
+        is_a_word = re.compile(r'.*')
     
     have_java = check_jdk()
 
@@ -95,7 +99,7 @@ def interrogator(corpus,
         """lowercase anything in show and turn into list"""
         if isinstance(show, list):
             show = [i.lower() for i in show]
-        elif isinstance(show, stringtype):
+        elif isinstance(show, STRINGTYPE):
             show = show.lower()
             show = [show]
 
@@ -113,6 +117,49 @@ def interrogator(corpus,
                 if len(val) == 2 and val.endswith('w'):
                     show[index] = val[0]
         return show
+
+    def fix_search(search):
+        """if search has nested dicts, remove them"""
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
+        if not search:
+            return
+        if search.get('t'):
+            return search
+        newsearch = {}
+        for srch, pat in search.items():
+            if len(srch) == 1 and srch in ends:
+                srch = 'm%s' % srch
+            if isinstance(pat, dict):
+                for k, v in list(pat.items()):
+                    if k != 'w':
+                        newsearch[srch + k] = pat_format(v)
+                    else:
+                        newsearch[srch] = pat_format(v)
+            else:
+                newsearch[srch] = pat_format(pat)
+        return newsearch
+
+    def pat_format(pat):
+        from corpkit.dictionaries.process_types import Wordlist
+        import re
+        if pat == 'any':
+            return re.compile(r'.*')
+        if isinstance(pat, Wordlist):
+            pat = list(pat)
+        if isinstance(pat, list):
+            if all(isinstance(x, int) for x in pat):
+                pat = [str(x) for x in pat]
+            pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
+        else:
+            if isinstance(pat, int):
+                return pat
+            if isinstance(pat, re._pattern_type):
+                return pat
+            if case_sensitive:
+                pat = re.compile(pat)
+            else:
+                pat = re.compile(pat, re.IGNORECASE)
+        return pat
 
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
@@ -136,7 +183,7 @@ def interrogator(corpus,
                 just_speakers = ['each']
             if just_speakers == ['each']:
                 is_mul = True
-            elif isinstance(just_speakers, stringtype):
+            elif isinstance(just_speakers, STRINGTYPE):
                 is_mul = False
                 just_speakers = [just_speakers]
             #import re
@@ -335,6 +382,13 @@ def interrogator(corpus,
                    '': False,
                    'Off': False}
 
+        # in case someone compiles the tregex query
+        try:
+            query = query.pattern
+        except AttributeError:
+            query = query
+        
+
         qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
         firstletter = next((c for c in qr if c.isalpha()), 'n')
         return tagdict.get(firstletter.upper(), 'n')
@@ -406,7 +460,7 @@ def interrogator(corpus,
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
-        if isinstance(pattern, stringtype):
+        if isinstance(pattern, STRINGTYPE):
             pattern = [pattern]
         if not case_sensitive:
             pattern = [p.lower() for p in pattern]
@@ -439,8 +493,6 @@ def interrogator(corpus,
         import re
         result = []
         list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
-        if pattern.lower() == 'any':
-            pattern = r'.*'
 
         if not split_contractions:
             list_of_toks = unsplitter(list_of_toks)
@@ -462,6 +514,8 @@ def interrogator(corpus,
 
     def compiler(pattern):
         """compile regex or fail gracefully"""
+        if hasattr(pattern, 'pattern'):
+            return pattern
         import re
         try:
             if case_sensitive:
@@ -526,11 +580,11 @@ def interrogator(corpus,
             optiontext = 'Searching parse trees'
         else:
             if datatype == 'plaintext':
-                if search.get('n'):
+                if any(i.endswith('n') for i in search.keys()):
                     optiontext = 'n-grams via plaintext'
                     raise NotImplementedError('Use a tokenised or parsed corpus for n-gramming.')
                     #searcher = plaintext_ngram
-                elif search.get('w'):
+                elif any(i.endswith('w') for i in search.keys()):
                     if kwargs.get('regex', True):
                         searcher = plaintext_regex_search
                     else:
@@ -540,10 +594,10 @@ def interrogator(corpus,
                     raise ValueError("Plaintext search must be 'w' or 'n'.")
 
             elif datatype == 'tokens':
-                if search.get('n'):
+                if any(i.endswith('n') for i in search.keys()):
                     searcher = tok_ngrams
                     optiontext = 'n-grams via tokens'
-                elif search.get('w'):
+                elif any(i.endswith('w') for i in search.keys()):
                     if kwargs.get('regex', True):
                         searcher = tok_by_reg
                     else:
@@ -554,26 +608,27 @@ def interrogator(corpus,
             only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf',
                           'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
             
+
             if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
                 form = ', '.join(i for i in list(search.keys()) if i in only_parse)
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
             elif datatype == 'parse':
-                if search.get('n'):
+                if any(i.endswith('n') for i in search.keys()):
                     search['w'] = search.pop('n')
                     if not show_ngram:
                         show = ['n']
-                if search.get('t'):
+                if any(i.endswith('t') for i in search.keys()):
                     if have_java and not kwargs.get('tgrep'):
                         searcher = slow_tregex
                     else:
                         searcher = tgrep_searcher
                     optiontext = 'Searching parse trees'
-                elif search.get('s'):
+                elif any(i.endswith('s') for i in search.keys()):
                     searcher = get_stats
                     statsmode = True
                     optiontext = 'General statistics'
-                elif search.get('r'):
+                elif any(i.endswith('r') for i in search.keys()):
                     from corpkit.depsearch import dep_searcher
                     searcher = dep_searcher
                     optiontext = 'Distance from root'
@@ -682,7 +737,7 @@ def interrogator(corpus,
         """search for tokens in plaintext corpora"""
         import re
         result = []
-        if isinstance(pattern, stringtype):
+        if isinstance(pattern, STRINGTYPE):
             pattern = [pattern]
         for p in pattern:
             if concordancing:
@@ -758,10 +813,17 @@ def interrogator(corpus,
             message = 'Interrogating and concordancing'
         if kwargs.get('printstatus', True):
             thetime = strftime("%H:%M:%S", localtime())
-
-            sformat = '\n                 '.join('%s: %s' % \
-                (k.rjust(3), v) for k, v in list(search.items()))
-            if search == {'s': r'.*'}:
+            from corpkit.constants import transshow, transobjs
+            sformat = '\n'
+            for k, v in search.items():
+                if k == 't':
+                    dratt = ''
+                else:
+                    dratt = transshow.get(k[-1], k[-1])
+                drole = transobjs.get(k[0], k[0])
+                vform = getattr(v, 'pattern', v)
+                sformat += '                 %s %s: %s\n' % (drole, dratt.lower(), vform)
+            if search.get('s'):
                 sformat = 'Features'
             welcome = ('\n%s: %s %s ...\n          %s\n          ' \
                         'Query: %s\n          %s corpus ... \n' % \
@@ -805,7 +867,7 @@ def interrogator(corpus,
             else:
                 unique_results = resu
             #make into series
-            if which_python() == 2:
+            if PYTHON_VERSION == 2:
                 pindex = 'c f s l m r'.encode('utf-8').split()
             else:
                 pindex = 'c f s l m r'.split()
@@ -932,13 +994,16 @@ def interrogator(corpus,
         corpus = Corpus(corpus)
     if hasattr(corpus, '__iter__') and not im:
         im = True
-    if corpus.__class__ == Corpora:
+    if isinstance(corpus, Corpora):
         im = True
 
     # split corpus if the user wants multiprocessing but no other iterable
     if not im and multiprocess:
         im = True
         corpus = corpus[:]
+
+    search = fix_search(search)
+    exclude = fix_search(exclude)
 
     # if it's already been through pmultiquery, don't do it again
     locs['search'] = search
@@ -957,7 +1022,7 @@ def interrogator(corpus,
     # get corpus metadata
     subcorpora = corpus.subcorpora
     cname = corpus.name
-    if isinstance(save, stringtype):
+    if isinstance(save, STRINGTYPE):
         savename = corpus.name + '-' + save
     if save is True:
         raise ValueError('save must be str, not bool.')
@@ -1127,7 +1192,6 @@ def interrogator(corpus,
                         corefs = []
                         
                     corenlp_xml = None
-                    gc.collect()
 
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
@@ -1147,6 +1211,7 @@ def interrogator(corpus,
                                              filename=f.name,
                                              language_model=language_model,
                                              corefs=corefs,
+                                             is_a_word=is_a_word,
                                              **kwargs
                                             )
                         

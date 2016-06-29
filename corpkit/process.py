@@ -1,4 +1,5 @@
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 # in here are functions used internally by corpkit
 # not intended to be called by users. 
@@ -38,8 +39,11 @@ def tregex_engine(corpus=False,
     import corpkit
     add_corpkit_to_path()
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
+    # in case someone compiles the tregex query
+    try:
+        query = query.pattern
+    except AttributeError:
+        query = query
     
     import subprocess 
     from subprocess import Popen, PIPE, STDOUT
@@ -59,11 +63,7 @@ def tregex_engine(corpus=False,
         send_stderr_to = DEVNULL
         send_stdout_to = subprocess.STDOUT
 
-    pyver = sys.version_info.major
-    if pyver == 2:
-        inputfunc = raw_input
-    elif pyver == 3:
-        inputfunc = input
+    inputfunc = raw_input if PYTHON_VERSION == 2 else input
 
     filtermode = False
     if isinstance(options, list):
@@ -126,7 +126,7 @@ def tregex_engine(corpus=False,
         # in which case, add its path var
 
         if corpus:
-            if isinstance(corpus, stringtype):
+            if isinstance(corpus, STRINGTYPE):
                 if os.path.isdir(corpus) or os.path.isfile(corpus):
                     tregex_command.append(corpus)
                 else:
@@ -423,11 +423,9 @@ def searchfixer(search, query, datatype=False):
     """
     Normalise query/search value
     """
-    from corpkit.process import stringtype
-    stringtype = stringtype()
-    if isinstance(search, stringtype) and isinstance(query, dict):
+    if isinstance(search, STRINGTYPE) and isinstance(query, dict):
         return search
-    if isinstance(search, stringtype):
+    if isinstance(search, STRINGTYPE):
         srch = search[0].lower()
         if not srch.startswith('t') and not srch.lower().startswith('n'):
             if query == 'any':
@@ -539,13 +537,11 @@ def animator(progbar,
 
 
 def parse_just_speakers(just_speakers, path):
-    from corpkit.process import stringtype
-    stringtype = stringtype()
     if just_speakers is True:
         just_speakers = ['each']
     if just_speakers is False or just_speakers is None:
         return False
-    if isinstance(just_speakers, stringtype):
+    if isinstance(just_speakers, STRINGTYPE):
         just_speakers = [just_speakers]
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
@@ -657,8 +653,6 @@ def get_corenlp_path(corenlppath):
     import re
     import glob
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
 
     cnlp_regex = re.compile(r'stanford-corenlp-[0-9\.]+\.jar')
 
@@ -685,7 +679,7 @@ def get_corenlp_path(corenlppath):
     pths = ['.', 'corenlp',
             os.path.expanduser("~"),
             os.path.join(os.path.expanduser("~"), 'corenlp')]
-    if isinstance(corenlppath, stringtype):
+    if isinstance(corenlppath, STRINGTYPE):
         pths.append(corenlppath)
     possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
     # remove empty strings
@@ -708,10 +702,8 @@ def get_corenlp_path(corenlppath):
 def unsplitter(data):
     """unsplit contractions and apostophes from tokenised text"""
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
 
-    if isinstance(data, stringtype):
+    if isinstance(data, STRINGTYPE):
         replaces = [("$ ", "$"),
                     ("`` ", "``"),
                     (" ,", ","),
@@ -808,7 +800,7 @@ def canpickle(obj):
         import pickle
         from pickle import UnpicklingError as unpick_error
 
-    mode = 'w' if which_python() == 2 else 'wb'
+    mode = 'w' if PYTHON_VERSION == 2 else 'wb'
     with open(os.devnull, mode) as fo:
         try:
             pickle.dump(obj, fo)
@@ -865,17 +857,6 @@ def get_speakername(sent):
     """Return speakername without CoreNLP_XML"""
     sn = sent._element.xpath('speakername/text()')
     return str(sn[0]) if sn else ''
-
-def which_python():
-    import sys
-    return sys.version_info.major
-
-def stringtype():
-    import sys
-    if sys.version_info.major == 3:
-        return str
-    else:
-        return basestring
 
 def gui():
     import os

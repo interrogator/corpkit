@@ -9,11 +9,16 @@ __version__ = "2.2.6"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
+# probably not needed, anymore but adds corpkit to path for tregex.sh
+import sys
+import os
+import inspect
+
 # quicker access to search, exclude, show types
 from itertools import product
 starts = ['M', 'N', 'B', 'G', 'D', 'H']
 ends = ['W', 'L', 'I', 'S', 'P', 'X', 'R', 'F']
-others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K']
+others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K', 'T']
 prod = list(product(starts, ends))
 prod = [''.join(i) for i in prod]
 LETTERS = sorted(prod + starts + ends + others)
@@ -30,11 +35,6 @@ __all__ = [
     "File",
     "Corpora",
     "gui"] + LETTERS
-
-# probably not needed, anymore but adds corpkit to path for tregex.sh
-import sys
-import os
-import inspect
 
 corpath = inspect.getfile(inspect.currentframe())
 baspat = os.path.dirname(corpath)

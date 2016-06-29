@@ -123,10 +123,12 @@ def make_corpus(unparsed_corpus_path,
     unparsed_corpus_path = newp
 
     # ask to folderise?
+    do_folderise = kwargs.get('folderise', None)
     if can_folderise(unparsed_corpus_path):
-        do_folderise = inputfunc("Your corpus has multiple files, but no subcorpora. "\
+        if do_folderise is None:
+            check_do_folderise = inputfunc("Your corpus has multiple files, but no subcorpora. "\
                                  "Would you like each file to be treated as a subcorpus? (y/n)")
-        if do_folderise:
+        if check_do_folderise or do_folderise:
             folderise(unparsed_corpus_path)
             
     # this is bad!

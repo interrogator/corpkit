@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from lazyprop import lazyprop
 from corpkit.process import classname
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 class Corpus(object):
     """
@@ -23,8 +24,7 @@ class Corpus(object):
         import os
         from os.path import join, isfile, isdir, abspath, dirname, basename
 
-        from corpkit.process import determine_datatype, stringtype
-        stringtype = stringtype()
+        from corpkit.process import determine_datatype
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which
         # one is determined automatically below, and processed accordingly. We
@@ -40,7 +40,7 @@ class Corpus(object):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
-        elif isinstance(path, stringtype):
+        elif isinstance(path, STRINGTYPE):
             self.path = abspath(path)
             self.name = basename(path)
         elif hasattr(path, 'path') and path.path:
@@ -333,11 +333,11 @@ class Corpus(object):
         from os.path import join, isfile, isdir
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
-        if isinstance(show, stringtype):
+        if isinstance(show, STRINGTYPE):
             show = [show]
         if isfile(join(savedir, self.name + '-lexicon.p')):
             try:
@@ -609,6 +609,9 @@ class Corpus(object):
                              computers)
         :type multiprocess: `int`
 
+        :param folderise: If corpus is just files, move each into own folder
+        :type folderise: `bool`
+
         :Example:
 
         >>> parsed = corpus.parse(speaker_segmentation = True)
@@ -734,9 +737,9 @@ class Corpus(object):
 
         :returns: `None` (but show a plot)
         """
-        from corpkit.process import stringtype
-        stringtype = stringtype()
-        if isinstance(search, stringtype):
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
+        if isinstance(search, STRINGTYPE):
             search = {'t': search}
         interro = self.interrogate(search=search, show=kwargs.pop('show', 'w'))
         edited = interro.edit('%', 'self', print_info=False)
@@ -1015,11 +1018,11 @@ class Corpora(Datalist):
         # if no arg, load every corpus in data dir
         if not data:
             data = 'data'
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+        from corpkit.process import STRINGTYPE
+        STRINGTYPE = STRINGTYPE()
 
         # handle a folder containing corpora
-        if isinstance(data, stringtype):
+        if isinstance(data, STRINGTYPE):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):
