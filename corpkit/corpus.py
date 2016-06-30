@@ -1014,9 +1014,7 @@ class Corpora(Datalist):
         # if no arg, load every corpus in data dir
         if not data:
             data = 'data'
-        from corpkit.process import STRINGTYPE
-        STRINGTYPE = STRINGTYPE()
-
+            
         # handle a folder containing corpora
         if isinstance(data, STRINGTYPE):
             import os

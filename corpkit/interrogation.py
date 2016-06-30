@@ -807,6 +807,11 @@ class Interrodict(OrderedDict):
 
         :param shape: Layout for the subplots (e.g. `(2, 2)`)
         :type shape: tuple
+
+        :param truncate: Only process the first `n` items in the 
+                         class:`corpkit.interrogation.Interrodict`
+        :type truncate: `int`
+
         :param kwargs: specifications to pass to :func:`~corpkit.plotter.plotter`
         :type kwargs: keyword arguments
         """
