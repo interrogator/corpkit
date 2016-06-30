@@ -805,7 +805,7 @@ def interrogator(corpus,
                     for f in corpus:
                         to_iterate_over[(f.name, f.path)] = [f]
                 else:
-                    for subcorpus in subcorpora:
+                    for subcorpus in corpus.subcorpora:
                         to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         return to_iterate_over
 
@@ -1024,19 +1024,16 @@ def interrogator(corpus,
         return pmultiquery(**locs)
 
     # get corpus metadata
-    subcorpora = corpus.subcorpora
     cname = corpus.name
     if isinstance(save, STRINGTYPE):
         savename = corpus.name + '-' + save
     if save is True:
         raise ValueError('save must be str, not bool.')
 
-    try:
-        datatype = corpus.datatype
-        singlefile = corpus.singlefile
-    except AttributeError:
-        datatype = 'parse'
-        singlefile = False
+
+    datatype = getattr(corpus, 'datatype', 'parse')
+    singlefile = getattr(corpus, 'singlefile', False)
+    level = getattr(corpus, 'level', 'c')
         
     # store all results in here
     results = {}
@@ -1342,7 +1339,7 @@ def interrogator(corpus,
 
     # turn df into series if all conditions met
     if not countmode:
-        if not subcorpora or singlefile:
+        if level == 's' or singlefile:
             if not files_as_subcorpora:
                 if not kwargs.get('df1_always_df'):
                     df = Series(df.ix[0])
