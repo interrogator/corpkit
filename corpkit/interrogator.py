@@ -292,6 +292,9 @@ def interrogator(corpus,
         """
         import re
         import os
+        if not wholes and not middle_column_result:
+            return []
+            
         conc_lines = []
         # remove duplicates from results
         unique_wholes = []
@@ -393,8 +396,12 @@ def interrogator(corpus,
     def format_tregex(results, whole=False):
         """format tregex by show list"""
         import re
+
         if countmode:
             return results
+
+        if not results:
+            return
 
         done = []
         if whole:
@@ -968,7 +975,7 @@ def interrogator(corpus,
     numconc = 0
 
     # wipe non essential class attributes to not bloat query attrib
-    if corpus.__class__ == Corpus:
+    if isinstance(corpus, Corpus):
         import copy
         corpus = copy.copy(corpus)
         for k, v in corpus.__dict__.items():
