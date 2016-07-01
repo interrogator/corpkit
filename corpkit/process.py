@@ -162,9 +162,9 @@ def tregex_engine(corpus=False,
                                       '\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
-                if 'a' in selection:
+                if 'a' in selection.lower():
                     query = INPUTFUNC('\nNew Tregex query: ')
-                elif 'b' in selection:
+                elif 'b' in selection.lower():
                     print('')
                     return False
             
