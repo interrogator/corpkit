@@ -5370,7 +5370,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             x_axis_l.set(conmap(Config, "Visualise")['x axis title'])
             chart_cols.set(conmap(Config, "Visualise")['colour scheme'])
             rel_corpuspath = conmap(Config, "Interrogate")['corpus path']
-            files_as_subcorpora.set(conmap(Config, "Interrogate")['treat files as subcorpora'])
+            try:
+                files_as_subcorpora.set(conmap(Config, "Interrogate")['treat files as subcorpora'])
+            except KeyError:
+                files_as_subcorpora.set(False)
             corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
             #corpus_fullpath.set(corpa)
             current_corpus.set(os.path.basename(corpa))

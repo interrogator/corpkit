@@ -1,4 +1,5 @@
 import sys
+
 PYTHON_VERSION = sys.version_info.major
 STRINGTYPE = str if PYTHON_VERSION == 3 else basestring
 INPUTFUNC = input if PYTHON_VERSION == 3 else raw_input

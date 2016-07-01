@@ -827,6 +827,36 @@ class Interrodict(OrderedDict):
             plt = interro.visualise(name, ax=ax, **kwargs)
         return plt
 
+    def flip(self, truncate=8, axis='x', repeat=False):
+        import pandas as pd
+        from corpkit.interrogation import Interrodict
+        if axis == 'x':
+            copied = {}
+            for k, v in self.items():
+                r = v.results.T
+                copied[k] = r.edit()
+            copied = Interrodict(copied)
+        else:
+            copied = self
+        words = list(copied.collapse().results.columns)[:truncate]
+        data = {}
+        for word in words:
+            wordata = []
+            for k, v in copied.items():
+                point = v.results[word]
+                point.name = k
+                wordata.append(point)
+            df = pd.concat(wordata, axis=1)
+            df = df.edit()
+            # divide each newspaper separately
+            data[word] = df
+        idi = Interrodict(data)
+        if repeat:
+            return idi.flip(truncate=truncate, axis=axis, repeat=False)
+        else:
+            return idi
+
+            
     def get_totals(self):
         """
         Helper function to concatenate all totals
