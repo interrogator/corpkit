@@ -757,7 +757,7 @@ def interrogator(corpus,
         
         # skip file definitions if they are not needed
         if simple_tregex_mode:
-            if corpus.level == 's':
+            if corpus.level in ['s', 'f']:
                 return {(corpus.name, corpus.path): False}
             else:
                 return {(os.path.basename(i), os.path.join(corpus.path, i)): False
