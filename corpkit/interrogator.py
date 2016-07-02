@@ -120,6 +120,8 @@ def interrogator(corpus,
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
         if not search:
             return
+        if isinstance(search, STRINGTYPE):
+            return search
         if search.get('t'):
             return search
         newsearch = {}
@@ -294,7 +296,7 @@ def interrogator(corpus,
         import os
         if not wholes and not middle_column_result:
             return []
-            
+
         conc_lines = []
         # remove duplicates from results
         unique_wholes = []
@@ -835,6 +837,8 @@ def interrogator(corpus,
                 else:
                     dratt = transshow.get(k[-1], k[-1])
                 drole = transobjs.get(k[0], k[0])
+                if k == 't':
+                    drole = 'Trees'
                 vform = getattr(v, 'pattern', v)
                 sformat += '                 %s %s: %s\n' % (drole, dratt.lower(), vform)
             if search.get('s'):
