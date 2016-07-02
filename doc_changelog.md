@@ -11,6 +11,13 @@ last_updated: 2016-04-26
 All notable changes to the *corpkit* GUI will be documented in this file.
 This project does not yet adhere to strict [Semantic Versioning](http://semver.org/). It will once the first major release is a bit more stable.
 
+## 2016-07-02
+
+* Fixed
+
+* Edit --> transpose option
+* Searching with dependencies in a few ways
+
 ## 2016-06-24
 
 ### Added
