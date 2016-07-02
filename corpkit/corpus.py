@@ -325,7 +325,7 @@ class Corpus(object):
         and save to disk for next time.
 
         :param kwargs: Arguments to pass to the 
-        :func:`~corpkit.interrogation.Interrogation.interrogate`` method
+                       :func:`~corpkit.interrogation.Interrogation.interrogate` method
         :type kwargs: keyword arguments
 
         :returns: a `DataFrame` of tokens and counts
@@ -1049,6 +1049,21 @@ class Corpora(Datalist):
                 from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
+
+    def parse(self, **kwargs):
+        """
+        Parse multiple corpora
+
+        :param kwargs: Arguments to pass to the
+                       :func:`~corpkit.corpus.Corpus.parse` method.
+        :returns: :class:`corpkit.corpus.Corpora`
+
+        """
+        from corpkit.corpus import Corpora
+        objs = []
+        for k, v in self.items():
+            objs.append(v.parse(**kwargs))
+        return Corpora(objs)
 
     @lazyprop
     def features(self):
