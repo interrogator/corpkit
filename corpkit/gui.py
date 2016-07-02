@@ -1469,7 +1469,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data='interrogation')
             
-            selected_option = datatype_picked.get().lower()[0]
+            # get the main query
+            so = datatype_picked.get()
+            selected_option = convert_name_to_query.get(so, so)
 
             if selected_option == '':
                 timestring('You need to select a search type.')
@@ -1477,6 +1479,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             queryd = {}
             for k, v in list(additional_criteria.items()):
+                # this should already be done
                 queryd[k] = v
             queryd[selected_option] = query
 
@@ -1657,8 +1660,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 if conc_to_show is not None:
                     numresults = len(conc_to_show.index)
                     if numresults > truncate_conc_after.get() - 1:
+                        nums = str(numresults)
+                        if numresults == 9999:
+                            nums += '+'
                         truncate = messagebox.askyesno("Long results list", 
-                                     "%d unique concordance results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
+                                     "%s unique concordance results! Truncate to %s?" % (nums, str(truncate_conc_after.get())))
                         if truncate:
                             conc_to_show = conc_to_show.head(truncate_conc_after.get())
                     add_conc_lines_to_window(conc_to_show, preserve_colour=False)
@@ -2059,7 +2065,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                         optvar.set(optvar.get())
                         datatype_picked.set(optvar.get())
                     if optvar is not None:
-                        o = convert_name_to_query[optvar.get()]
+                        o = convert_name_to_query.get(optvar.get(), optvar.get())
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
                         output_dict[o] = q
@@ -2165,7 +2171,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         plusbut = Button(interro_opt, text='+', \
                         command=lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
-                        state=DISABLED)
+                        state=NORMAL)
         plusbut.grid(row=1, column=0, columnspan=2, padx=(0,200))
 
         def entry_callback(*args):
@@ -2695,16 +2701,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                             
                             return
                     if transpose.get():
-                        data2 = data2.T
+                        try:
+                            data2 = data2.T
+                        except:
+                            pass
 
             the_data = all_interrogations[name_of_o_ed_spread.get()]
+
             if df1branch.get() == 'results':
-                try:
-                    data1 = the_data.results
-                except AttributeError:
+                if not hasattr(the_data, 'results'):
                     timestring('Interrogation has no results branch.')
-                    
                     return
+
             elif df1branch.get() == 'totals':
                 data1 = the_data.totals
 
@@ -2783,9 +2791,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if just_tot_setting.get() == 1:
                 editor_args['just_totals'] = True
 
-            if transpose.get():
-                data1 = data1.T
-
             if keeptopnum.get() != 'all':
                 try:
                     numtokeep = int(keeptopnum.get())
@@ -2794,13 +2799,26 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     
                     return
                 editor_args['keep_top'] = numtokeep
-            
+
+
             # do editing
-            r = the_data.edit(branch = df1branch.get(), **editor_args)
+            r = the_data.edit(branch=df1branch.get(), **editor_args)
+
+            if transpose.get():
+                try:
+                    r.results = r.results.T
+                except:
+                    pass
+                try:
+                    r.totals = r.totals.T
+                except:
+                    pass
+
             
-            if type(r) == str:
+            if isinstance(r, str):
                 if r == 'linregress':
                     return
+                    
             if not r:
                 timestring('Editing caused an error.')
                 return
@@ -5530,7 +5548,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             for d in ['dataframe1', 'dataframe2']:
                 q_dict.pop(d, None)
 
-            for k, v in sorted(qdict.items()):
+            for k, v in sorted(q_dict.items()):
                 try:
                     if v is False:
                         v = 'False'
