@@ -382,7 +382,7 @@ You can also select from the three dependency grammars used by CoreNLP: one of `
 Working with speaker segmentation
 ----------------------------------
 
-If you've used speaker segmentation when building your corpus, you can tell the ``interrogate()`` to restrict searches to a particular speaker.
+If you've used speaker segmentation when building your corpus, you can tell the :func:`~corpkit.corpus.Corpus.interrogate` method to restrict searches to a particular speaker.
 
 .. code-block:: python
 
@@ -456,6 +456,10 @@ Collocation
 
 Collocations can be shown by using one of the ``B`` show values. You can use ``window=n`` to specify the size of the window to the left and right of the match.
 
+.. code-block:: python
+
+   >>> corpus.interrogate({W: 'father'}, show='BL', window=6)
+
 Saving interrogations
 ----------------------
 
@@ -486,7 +490,7 @@ Other options
 
 :func:`~corpkit.corpus.Corpus.interrogate` takes a number of other arguments, each of which is documented in the API documentation.
 
-If you're done interrogating, you can head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, Hit `Next` to learn about concordancing.
+If you're done interrogating, you can head to the page on :ref:`editing-page` to learn how to transform raw frequency counts into something more meaningful. Or, hit `Next` to learn about concordancing.
 
 .. _here: http://nlp.stanford.edu/~manning/courses/ling289/Tregex.htm
 .. _Penn Treebank tagset: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html

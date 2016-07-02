@@ -326,7 +326,7 @@ class Corpus(object):
 
         :param kwargs: Arguments to pass to the 
                        :func:`~corpkit.interrogation.Interrogation.interrogate` method
-        :type kwargs: keyword arguments
+        :type kwargs: `keyword arguments`
 
         :returns: a `DataFrame` of tokens and counts
         """
@@ -359,10 +359,10 @@ class Corpus(object):
 
                        Valid keys are:
 
-                          - `W`/`L match word or lemma
+                          - `W`/`L` match word or lemma
                           - `F`: match a semantic role (`'participant'`, `'process'` or 
-                       `'modifier'`. If `F` not specified, each role will be 
-                       searched for.
+                            `'modifier'`. If `F` not specified, each role will be 
+                            searched for.
         :type search: `dict`
 
         :Example:
@@ -410,23 +410,25 @@ class Corpus(object):
                        trees, use the `T` key, and a Tregex query as the value.
                        When searching dependencies, you can use any of:
 
-                       +--------------------+-------+----------+-----------+
-                       |                    | Match | Governor | Dependent |
-                       +====================+=======+==========+===========+
-                       | Word               | `W`   | `G`      | `D`       |
-                       +--------------------+-------+----------+-----------+
-                       | Lemma              | `L`   | `GL`     | `DL`      |
-                       +--------------------+-------+----------+-----------+
-                       | Function           | `F`   | `GF`     | `DF`      |
-                       +--------------------+-------+----------+-----------+
-                       | POS tag            | `P`   | `GP`     | `DP`      |
-                       +--------------------+-------+----------+-----------+
-                       | Word class         | `X`   | `GX`     | `DX`      |
-                       +--------------------+-------+----------+-----------+
-                       | Distance from root | `R`   | `GR`     | `DR`      |
-                       +--------------------+-------+----------+-----------+
-                       | Index              | `I`   | `GI`     | `DI`      |
-                       +--------------------+-------+----------+-----------+
+                       +--------------------+-------+----------+-----------+-----------+
+                       |                    | Match | Governor | Dependent | Head      |
+                       +====================+=======+==========+===========+===========+
+                       | Word               | `W`   | `G`      | `D`       | `H`       |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Lemma              | `L`   | `GL`     | `DL`      | `HL`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Function           | `F`   | `GF`     | `DF`      | `HF`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | POS tag            | `P`   | `GP`     | `DP`      | `HP`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Word class         | `X`   | `GX`     | `DX`      | `HX`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Distance from root | `R`   | `GR`     | `DR`      | `HR`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Index              | `I`   | `GI`     | `DI`      | `HI`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Sentence index     | `S`   | `SI`     | `SI`      | `SI`      |
+                       +--------------------+-------+----------+-----------+-----------+
 
                        Values should be regular expressions or wordlists to 
                        match.
@@ -612,7 +614,7 @@ class Corpus(object):
 
         :Example:
 
-        >>> parsed = corpus.parse(speaker_segmentation = True)
+        >>> parsed = corpus.parse(speaker_segmentation=True)
         >>> parsed
         <corpkit.corpus.Corpus instance: speeches-parsed; 9 subcorpora>
 
@@ -731,7 +733,7 @@ class Corpus(object):
         :param search: Search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: `dict`
         :param kwargs: Extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
-        :type kwargs: Keyword arguments
+        :type kwargs: `keyword arguments`
 
         :returns: `None` (but show a plot)
         """
@@ -765,7 +767,7 @@ class Corpus(object):
         :type name: `str`
 
         :param kwargs: keyword arguments for the interrogate() method
-        :type kwargs: `dict`
+        :type kwargs: `keyword arguments`
 
         :returns: a :class:`corpkit.model.MultiModel`
         """
@@ -836,7 +838,7 @@ class File(Corpus):
 
     Methods for interrogating, concordancing and configurations are the same as
     :class:`corpkit.corpus.Corpus`, plus methods for accessing the file contents 
-    directly as a `str`, or as a *CoreNLP XML Document`.
+    directly as a `str`, or as a *CoreNLP XML* `Document`.
     """
 
     def __init__(self, path, dirname=False, datatype=False):
