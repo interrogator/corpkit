@@ -2818,7 +2818,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if isinstance(r, str):
                 if r == 'linregress':
                     return
-                    
+
             if not r:
                 timestring('Editing caused an error.')
                 return
@@ -3258,10 +3258,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             the_kind = charttype.get()
             if the_kind == 'Type of chart':
                 the_kind = 'line'
+
+
             # plotter options
             d = {'num_to_plot': num,
                  'kind': the_kind,
                  'indices': False}
+
+            if the_kind == 'heatmap':
+                d['robust'] = True
 
             #the_style = 
             #if the_style == 'matplotlib':
