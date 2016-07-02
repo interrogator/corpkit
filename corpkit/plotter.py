@@ -1128,6 +1128,8 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     tpb = rightdict.pop('transpose', False)
     numtoplot = leftdict.pop('num_to_plot', len(layout) - 1)
     ntpb = rightdict.pop('num_to_plot', 'all')
+    sharex = rightdict.pop('sharex', True)
+    sharey = rightdict.pop('sharey', False)
     if kindb == 'pie':
         piecol = rightdict.pop('colours', 'default')
     coloursb = rightdict.pop('colours', 'default')
@@ -1167,7 +1169,7 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
             else:
                 rightdict['colours'] = coloursb
 
-            df2.iloc[:, i].visualise(kind=kindb, ax=ax,
+            df2.iloc[:, i].visualise(kind=kindb, ax=ax, sharex=sharex, sharey=sharey,
                                      num_to_plot=ntpb, **rightdict)
             ax.set_title(df2.iloc[:, i].name)
         
@@ -1179,6 +1181,10 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
 
     size = kwargs.get('figsize', (10, 4))
     fig.set_size_inches(size)
+    try:
+        plt.set_size_inches(size)
+    except:
+        pass
     if kwargs.get('save'):
         import os
         from corpkit.process import urlify

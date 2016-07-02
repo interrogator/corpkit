@@ -748,8 +748,6 @@ def editor(interrogation,
             single_totals = True
             #if operation == 'k':
                 #raise ValueError('Keywording requires a DataFrame for denominator. Use "self"?')
-        else:
-            raise ValueError('Denominator not recognised.')
     else:
         if operation in ['k', 'a', '%', '/', '*', '-', '+']:
             denominator = 'self'         
@@ -1040,7 +1038,9 @@ def editor(interrogation,
             df = DataFrame(df)
 
     # delete non-appearing conc lines
-    if not getattr(interrogation, 'concordance', None):
+    if not hasattr(interrogation, 'concordance'):
+        lns = None
+    elif hasattr(interrogation, 'concordance') and interrogation.concordance is None:
         lns = None
     else:
         col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
