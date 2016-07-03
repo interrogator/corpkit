@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from corpkit.constants import INPUTFUNC
 def make_corpus(unparsed_corpus_path,
                 project_path=None,
                 parse=True,
@@ -51,10 +52,6 @@ def make_corpus(unparsed_corpus_path,
     from corpkit.build import folderise, can_folderise
     from corpkit.process import saferead
     pyver = sys.version_info.major
-    if pyver == 2:
-        inputfunc = raw_input
-    elif pyver == 3:
-        inputfunc = input
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
@@ -123,10 +120,12 @@ def make_corpus(unparsed_corpus_path,
     unparsed_corpus_path = newp
 
     # ask to folderise?
+    do_folderise = kwargs.get('folderise', None)
     if can_folderise(unparsed_corpus_path):
-        do_folderise = inputfunc("Your corpus has multiple files, but no subcorpora. "\
+        if do_folderise is None:
+            check_do_folderise = INPUTFUNC("Your corpus has multiple files, but no subcorpora. "\
                                  "Would you like each file to be treated as a subcorpus? (y/n)")
-        if do_folderise:
+        if check_do_folderise or do_folderise:
             folderise(unparsed_corpus_path)
             
     # this is bad!
@@ -164,7 +163,7 @@ def make_corpus(unparsed_corpus_path,
         if speaker_segmentation:
             newpath = unparsed_corpus_path + '-stripped-parsed'
             if isdir(newpath) and not root:
-                ans = inputfunc('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
+                ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                 if ans.lower().strip()[0] == 'y':
                     shutil.rmtree(newpath)
                 else:

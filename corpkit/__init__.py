@@ -5,18 +5,16 @@ A toolkit for corpus linguistics
 from __future__ import print_function
 
 #metadata
-__version__ = "2.2.6"
+__version__ = "2.2.7"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
-# quicker access to search, exclude, show types
-from itertools import product
-starts = ['M', 'N', 'B', 'G', 'D', 'H']
-ends = ['W', 'L', 'I', 'S', 'P', 'X', 'R', 'F']
-others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K']
-prod = list(product(starts, ends))
-prod = [''.join(i) for i in prod]
-LETTERS = sorted(prod + starts + ends + others)
+# probably not needed, anymore but adds corpkit to path for tregex.sh
+import sys
+import os
+import inspect
+
+from corpkit.constants import LETTERS
 
 # asterisk import
 __all__ = [
@@ -30,11 +28,6 @@ __all__ = [
     "File",
     "Corpora",
     "gui"] + LETTERS
-
-# probably not needed, anymore but adds corpkit to path for tregex.sh
-import sys
-import os
-import inspect
 
 corpath = inspect.getfile(inspect.currentframe())
 baspat = os.path.dirname(corpath)

@@ -1,14 +1,16 @@
-from __future__ import print_function
+"""
+In here are functions used internally by corpkit,  
+not intended to be called by users. 
+"""
 
-# in here are functions used internally by corpkit
-# not intended to be called by users. 
+from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def tregex_engine(corpus=False,  
                   options=False, 
                   query=False, 
                   check_query=False,
                   check_for_trees=False,
-                  lemmatise=False,
                   just_content_words=False,
                   root=False,
                   preserve_case=False,
@@ -38,8 +40,11 @@ def tregex_engine(corpus=False,
     import corpkit
     add_corpkit_to_path()
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
+    # in case someone compiles the tregex query
+    try:
+        query = query.pattern
+    except AttributeError:
+        query = query
     
     import subprocess 
     from subprocess import Popen, PIPE, STDOUT
@@ -58,12 +63,6 @@ def tregex_engine(corpus=False,
     else:
         send_stderr_to = DEVNULL
         send_stdout_to = subprocess.STDOUT
-
-    pyver = sys.version_info.major
-    if pyver == 2:
-        inputfunc = raw_input
-    elif pyver == 3:
-        inputfunc = input
 
     filtermode = False
     if isinstance(options, list):
@@ -126,7 +125,7 @@ def tregex_engine(corpus=False,
         # in which case, add its path var
 
         if corpus:
-            if isinstance(corpus, stringtype):
+            if isinstance(corpus, STRINGTYPE):
                 if os.path.isdir(corpus) or os.path.isfile(corpus):
                     tregex_command.append(corpus)
                 else:
@@ -159,13 +158,13 @@ def tregex_engine(corpus=False,
                     return False
                 time = strftime("%H:%M:%S", localtime())
 
-                selection = inputfunc('\n%s: Error parsing Tregex expression "%s".'\
+                selection = INPUTFUNC('\n%s: Error parsing Tregex expression "%s".'\
                                       '\nWould you like to:\n\n' \
                     '              a) rewrite it now\n' \
                     '              b) exit\n\nYour selection: ' % (time, query))
-                if 'a' in selection:
-                    query = inputfunc('\nNew Tregex query: ')
-                elif 'b' in selection:
+                if 'a' in selection.lower():
+                    query = INPUTFUNC('\nNew Tregex query: ')
+                elif 'b' in selection.lower():
                     print('')
                     return False
             
@@ -182,13 +181,13 @@ def tregex_engine(corpus=False,
                 remove_start = query.split('/', 1)
                 remove_end = remove_start[1].split('/', -1)
                 time = strftime("%H:%M:%S", localtime())
-                selection = inputfunc('\n%s: Error parsing regex inside Tregex query: %s'\
+                selection = INPUTFUNC('\n%s: Error parsing regex inside Tregex query: %s'\
                 '. Best guess: \n%s\n%s^\n\nYou can either: \n' \
                 '              a) rewrite it now\n' \
                 '              b) exit\n\nYour selection: ' % \
                     (time, str(info[1]), str(remove_end[0]), spaces))
                 if 'a' in selection:
-                    query = inputfunc('\nNew Tregex query: ')
+                    query = INPUTFUNC('\nNew Tregex query: ')
                 elif 'b' in selection:
                     print('')
                     return                
@@ -404,11 +403,11 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
             print('%s: Invalid the_filter regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
-        selection = inputfunc('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
+        selection = INPUTFUNC('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
             '              a) rewrite it now\n' \
             '              b) exit\n\nYour selection: ' % (time, the_filter))
         if 'a' in selection:
-            the_filter = inputfunc('\nNew regular expression: ')
+            the_filter = INPUTFUNC('\nNew regular expression: ')
             try:
                 output = re.compile(r'\b' + the_filter + r'\b')
                 is_valid = True
@@ -423,11 +422,9 @@ def searchfixer(search, query, datatype=False):
     """
     Normalise query/search value
     """
-    from corpkit.process import stringtype
-    stringtype = stringtype()
-    if isinstance(search, stringtype) and isinstance(query, dict):
+    if isinstance(search, STRINGTYPE) and isinstance(query, dict):
         return search
-    if isinstance(search, stringtype):
+    if isinstance(search, STRINGTYPE):
         srch = search[0].lower()
         if not srch.startswith('t') and not srch.lower().startswith('n'):
             if query == 'any':
@@ -539,13 +536,11 @@ def animator(progbar,
 
 
 def parse_just_speakers(just_speakers, path):
-    from corpkit.process import stringtype
-    stringtype = stringtype()
     if just_speakers is True:
         just_speakers = ['each']
     if just_speakers is False or just_speakers is None:
         return False
-    if isinstance(just_speakers, stringtype):
+    if isinstance(just_speakers, STRINGTYPE):
         just_speakers = [just_speakers]
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
@@ -657,8 +652,6 @@ def get_corenlp_path(corenlppath):
     import re
     import glob
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
 
     cnlp_regex = re.compile(r'stanford-corenlp-[0-9\.]+\.jar')
 
@@ -685,7 +678,7 @@ def get_corenlp_path(corenlppath):
     pths = ['.', 'corenlp',
             os.path.expanduser("~"),
             os.path.join(os.path.expanduser("~"), 'corenlp')]
-    if isinstance(corenlppath, stringtype):
+    if isinstance(corenlppath, STRINGTYPE):
         pths.append(corenlppath)
     possible_paths = os.getenv('PATH').split(os.pathsep) + sys.path + pths
     # remove empty strings
@@ -708,10 +701,8 @@ def get_corenlp_path(corenlppath):
 def unsplitter(data):
     """unsplit contractions and apostophes from tokenised text"""
     
-    from corpkit.process import stringtype
-    stringtype = stringtype()
 
-    if isinstance(data, stringtype):
+    if isinstance(data, STRINGTYPE):
         replaces = [("$ ", "$"),
                     ("`` ", "``"),
                     (" ,", ","),
@@ -808,7 +799,7 @@ def canpickle(obj):
         import pickle
         from pickle import UnpicklingError as unpick_error
 
-    mode = 'w' if which_python() == 2 else 'wb'
+    mode = 'w' if PYTHON_VERSION == 2 else 'wb'
     with open(os.devnull, mode) as fo:
         try:
             pickle.dump(obj, fo)
@@ -865,17 +856,6 @@ def get_speakername(sent):
     """Return speakername without CoreNLP_XML"""
     sn = sent._element.xpath('speakername/text()')
     return str(sn[0]) if sn else ''
-
-def which_python():
-    import sys
-    return sys.version_info.major
-
-def stringtype():
-    import sys
-    if sys.version_info.major == 3:
-        return str
-    else:
-        return basestring
 
 def gui():
     import os

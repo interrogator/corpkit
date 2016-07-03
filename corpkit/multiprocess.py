@@ -208,7 +208,10 @@ def pmultiquery(corpus,
                 if len(vv) > 5:
                     vformat += ' ...'
         else:
-            vformat = v
+            try:
+                vformat = v.pattern
+            except AttributeError:
+                vformat = v
         sformat += '%s: %s' %(k, vformat)
         if i < len(to_it_over.keys()) - 1:
             sformat += '\n                   '

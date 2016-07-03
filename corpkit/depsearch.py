@@ -1,4 +1,5 @@
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE
 
 def dep_searcher(sents,
                  search,
@@ -24,23 +25,7 @@ def dep_searcher(sents,
                  non_representative=True,
                  **kwargs
                 ):
-    import re
-    from corenlp_xml.document import Document
-    from collections import Counter
-    from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator
-
-    if not sents:
-        return [], []
-
-    is_a_word = re.compile(regex_nonword_filter)
-
-    if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
-        only_format_match = True
-
-    #if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
-    #    raise ValueError("Can't mix n-gram and non-ngram show values.")
-
+    
     """
     Search CoreNLP XML Sentences
 
@@ -56,13 +41,23 @@ def dep_searcher(sents,
     2. exclude entries if need be, using same method as search
     3. return results and conc lines, or just a count
        """
+
     import re
     from corenlp_xml.document import Document
     from collections import Counter
     from corpkit.build import flatten_treestring
-    from corpkit.process import filtermaker, animator, get_deps
+    from corpkit.process import animator
 
-    is_a_word = re.compile(regex_nonword_filter)
+    if not sents:
+        return [], []
+
+    is_a_word = kwargs.get('is_a_word')
+
+    if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
+        only_format_match = True
+
+    #if any(x.startswith('n') for x in show) and any(not x.startswith('n') for x in show):
+    #    raise ValueError("Can't mix n-gram and non-ngram show values.")
 
     #if any(x.startswith('n') for x in show) \
     #if any(x.startswith('b') for x in show):
@@ -176,18 +171,22 @@ def dep_searcher(sents,
 
         return matches
 
+    # i am a bottleneck
     def search_function(deprole, pattern):
         matches = set()
         if deprole == 'm':
-            for l in deps.links:
-                if re.search(pat, l.type):
-                    matches.add(s.get_token_by_id(l.dependent.idx))
-        
+            mcs = [v for k, v in deps._links_by_type.items() if re.search(pattern, k)]
+            # for each list of links
+            for el in mcs:
+                # for each link
+                for link in el:
+                    # simple mode: add the dependent token
+                    matches.add(s.get_token_by_id(link.dependent.idx))
         else:
-            # can this be improved?
+            # can this be improved? surely somehow using _links_by_type
             for tok in tokens:
                 for l in deps.links:
-                    if not re.search(pat, l.type):
+                    if not re.search(pattern, l.type):
                         continue
                     in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
                     for lnk in in_deps:
@@ -362,25 +361,6 @@ def dep_searcher(sents,
             show_bit.insert(0, 'm')
         return lookup_show.get(show_bit[0]), show_bit[1]
 
-    def fix_search(search):
-        """if search has nested dicts, remove them"""
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
-        if not search:
-            return
-        newsearch = {}
-        for srch, pat in search.items():
-            if len(srch) == 1 and srch in ends:
-                srch = 'm%s' % srch
-            if isinstance(pat, dict):
-                for k, v in list(pat.items()):
-                    if k != 'w':
-                        newsearch[srch + k] = pat_format(v)
-                    else:
-                        newsearch[srch] = pat_format(v)
-            else:
-                newsearch[srch] = pat_format(pat)
-        return newsearch
-
     def distancer(matching_tokens, token):
         "determine number of jumps to root"      
         c = 0
@@ -411,25 +391,6 @@ def dep_searcher(sents,
                 c += 1
         if c < 30:
             return c
-
-    def pat_format(pat):
-        from corpkit.dictionaries.process_types import Wordlist
-        if pat == 'any':
-            return re.compile(r'.*')
-        if isinstance(pat, Wordlist):
-            pat = list(pat)
-        if isinstance(pat, list):
-            if all(isinstance(x, int) for x in pat):
-                pat = [str(x) for x in pat]
-            pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
-        else:
-            if isinstance(pat, int):
-                return pat
-            if case_sensitive:
-                pat = re.compile(pat)
-            else:
-                pat = re.compile(pat, re.IGNORECASE)
-        return pat
 
     def process_a_match(match, tokens):
         """
@@ -637,12 +598,14 @@ def dep_searcher(sents,
                 single_token_bits.append(to_show)
             results.append(single_token_bits)
 
+        
         for result in results:
             #if all(isinstance(i, int) for i in result)
             #    pass
-            if no_punct:
-                if not all(re.search(is_a_word, str(i)) for i in result):
-                    return
+            # this check slows things down :(
+            #if no_punct:
+            #    if not all(re.search(is_a_word, str(i)) for i in result if isinstance(i, STRINGTYPE)):
+            #        return
             if no_closed:
                 if isinstance(no_closed, list):
                     nc = no_closed
@@ -658,7 +621,10 @@ def dep_searcher(sents,
                 if any(i == 'none' for i in result):
                     return
 
-            output.append('/'.join(str(i).replace('/', '-slash-') for i in result))
+            try:
+                output.append('/'.join(str(i).replace('/', '-slash-') for i in result))
+            except:
+                output.append('/'.join(i.replace('/', '-slash-') for i in result))
         return output
 
     def remove_by_mode(matching_tokens, mode):
@@ -692,11 +658,6 @@ def dep_searcher(sents,
     result = []
     conc_result = []
 
-    # fix search and excludes
-    search = fix_search(search)
-    exclude = fix_search(exclude)
-
-
     # iterate over sentences
 
     for s in sents:
@@ -707,6 +668,7 @@ def dep_searcher(sents,
         matching_tokens = []
         dep_type = dep_type.replace('-', '_')
         deps = getattr(s, deptrans.get(dep_type, dep_type))
+        
         # remove punctuation if need be
         tokens = s.tokens
         if no_punct:

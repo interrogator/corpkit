@@ -198,15 +198,37 @@ The :class:`corpkit.interrogation.Interrogation` also comes with a :class:`corpk
 
 The first two arguments for the function are two `dict` objects, which configure the larger and smaller plots.
 
-For the second dictionary, you may pass in a `data` argument, which can be an 
+For the second dictionary, you may pass in a `data` argument, which is an :class:`corpkit.interrogation.Interrogation` or similar, and will be used as separate data for the subplots. This is useful, for example, if you want your main plot to show absolute frequencies, and your subplots to show relative frequencies.
 
-This is useful, for example, if you want your main plot to show absolute frequencies, and your subplots to show relative frequencies.
+There is also `layout`, which you can use to choose an overall grid design. You can also pass in a list of tuples if you like, to use your own layout. Below is a complete example, focussing on objects in risk processes:
 
-There is also `layout`, which you can use to choose an overall grid design.
+.. code-block:: python
 
-You can pass in a list of tuples if you like, to use your own layout.
+   >>> from corpkit import *
+   >>> from dictionaries import * 
+   ### parse a collection of text files
+   >>> corpora = Corus('data/news')
+   ### make dependency parse query: get get 'object' of risk process
+   >>> query = {F: roles.participant2, GL: r'\brisk', GF: roles.process} 
+   ### interrogate corpus, return lemma form, no coreference
+   >>> result = corpus.interrogate(query, show=[L], coref=False) 
+   ### generate relative frequencies, skip closed class, and sort
+   >>> inc = result.edit('%', SELF,
+   >>>                   sort_by='increase',
+   >>>                   skip_entries=wordlists.closedclass) 
+   ### visualise as area and line charts combined
+   >>> inc.multiplot({'title': 'Objects of risk processes, increasing',
+   >>>                'kind': 'area',
+   >>>                'x_label': 'Year',
+   >>>                'y_label': 'Percentage of all results'},
+   >>>                {'kind': 'line'}, layout=5)
 
+.. figure:: ../images/inc-risk-obj.png
+   :width: 50%
+   :target: ../images/inc-risk-obj.png
+   :align: center
 
+   `multiplot` example
 
 
 .. _plot: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.plot.html

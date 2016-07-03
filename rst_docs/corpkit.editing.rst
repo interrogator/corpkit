@@ -22,17 +22,17 @@ One of the simplest kinds of editing is removing or keeping results or subcorpor
 .. code-block:: python
 
    >>> criteria = r'ing$'
-   >>> result.edit(just_entries = criteria)
+   >>> result.edit(just_entries=criteria)
 
 .. code-block:: python
 
    >>> criteria = ['everything', 'nothing', 'anything']
-   >>> result.edit(skip_entries = criteria)
+   >>> result.edit(skip_entries=criteria)
 
 
 .. code-block:: python
 
-   >>> result.edit(just_subcorpora = ['Chapter_10', 'Chapter_11'])
+   >>> result.edit(just_subcorpora=['Chapter_10', 'Chapter_11'])
 
 You can also span subcorpora, using a tuple of ``(first_subcorpus, second_subcorpus)``. This works for numerical and non-numerical subcorpus names:
 
@@ -185,3 +185,8 @@ You can generate CSV data very easily using Pandas:
 .. code-block:: python
 
    >>> result.results.to_csv()
+
+Next step
+----------
+
+Once you've edited data, it's ready to visualise. Hit next to learn how to use the :func:`~corpkit.interrogation.Interrogation.visualise` method.

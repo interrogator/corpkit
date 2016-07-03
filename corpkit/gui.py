@@ -561,22 +561,61 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                                'Subjects':     'w',
                                'Entities':     'w'}
 
-        convert_name_to_query = {'Trees': 't',
-                                'Words': 'w',
-                                'POS': 'p',
-                                'Lemmata': 'l',
-                                'Governor lemmata': 'gl',
-                                'Governor functions': 'gf',
-                                'Governor POS': 'gp',
-                                'Dependent lemmata': 'gl',
-                                'Dependent functions': 'gf',
-                                'Dependent POS': 'gp',
-                                'Functions': 'f',
-                                'Governors': 'g',
-                                'Dependents': 'd',
-                                'N-grams': 'n',
-                                'Stats': 's',
-                                'Index': 'i'}
+        #convert_name_to_query = {'Trees': 't',
+        #                        'Words': 'w',
+        #                        'POS': 'p',
+        #                        'Lemmata': 'l',
+        #                        'Governor lemmata': 'gl',
+        #                        'Governor functions': 'gf',
+        #                        'Governor POS': 'gp',
+        #                        'Dependent lemmata': 'gl',
+        #                        'Dependent functions': 'gf',
+        #                        'Dependent POS': 'gp',
+        #                        'Functions': 'f',
+        #                        'Governors': 'g',
+        #                        'Dependents': 'd',
+        #                        'N-grams': 'n',
+        #                        'Stats': 's',
+        #                        'Index': 'i'}
+
+        # todo: newer method
+        from corpkit.constants import transshow, transobjs, LETTERS
+        convert_name_to_query = {'Trees': 't', 'Stats': 's'}
+        for l, o in transobjs.items():
+            if o == 'Match':
+                o = ''
+            else:
+                o = o + ' '
+            for m, p in sorted(transshow.items()):
+                if m in ['n', 't']:
+                    continue
+                if p != 'POS' and o != '':
+                    p = p.lower()
+                convert_name_to_query['%s%s' % (o, p)] = '%s%s' % (l, m)
+
+        # these are example queries for each data type
+        def_queries = {}
+        for i in convert_name_to_query.keys():
+            if i.lower().endswith('function'):
+                def_queries[i] = r'\b(amod|nn|advm|vmod|tmod)\b'
+            elif i.lower().endswith('lemma'):
+                def_queries[i] = r'\b(want|desire|need)\b'
+            elif i.lower().endswith('word class'):
+                def_queries[i] = r'^(ad)verb$'
+            elif i.lower().endswith('index'):
+                def_queries[i] = r'[012345]',
+            elif i.lower().endswith('stats'):
+                def_queries[i] = r'any',
+            elif i.lower().endswith('pos'):
+                def_queries[i] = r'^[NJR]',
+            elif i.lower().endswith('index'):
+                def_queries[i] = r'[012345]',
+            elif i.lower().endswith('distance from root'):
+                def_queries[i] = r'[012345]',
+            elif i.lower().endswith('trees'):
+                def_queries[i] = r'JJ > (NP <<# /NN.?/)'
+            else:
+                def_queries[i] = r'\b(m.n|wom.n|child(ren)?)\b'
 
         # dependency search names
         depdict = {'Basic': 'basic-dependencies', 
@@ -1430,7 +1469,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data='interrogation')
             
-            selected_option = datatype_picked.get().lower()[0]
+            # get the main query
+            so = datatype_picked.get()
+            selected_option = convert_name_to_query.get(so, so)
 
             if selected_option == '':
                 timestring('You need to select a search type.')
@@ -1438,12 +1479,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             queryd = {}
             for k, v in list(additional_criteria.items()):
+                # this should already be done
                 queryd[k] = v
             queryd[selected_option] = query
 
             if selected_option == 's':
                 queryd = {'s': 'any'}
                 doing_concondancing = False
+            else:
+                doing_concondancing = True
 
             # to do: make this order customisable for the gui too
             poss_returns = [return_function, return_pos, return_lemma, return_token, \
@@ -1616,8 +1660,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 if conc_to_show is not None:
                     numresults = len(conc_to_show.index)
                     if numresults > truncate_conc_after.get() - 1:
+                        nums = str(numresults)
+                        if numresults == 9999:
+                            nums += '+'
                         truncate = messagebox.askyesno("Long results list", 
-                                     "%d unique concordance results! Truncate to %s?" % (numresults, str(truncate_conc_after.get())))
+                                     "%s unique concordance results! Truncate to %s?" % (nums, str(truncate_conc_after.get())))
                         if truncate:
                             conc_to_show = conc_to_show.head(truncate_conc_after.get())
                     add_conc_lines_to_window(conc_to_show, preserve_colour=False)
@@ -1751,9 +1798,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 #sensplitbut.config(state=DISABLED)
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
-                for i in ['Trees', 'Words', 'POS', 'Lemmata', \
-                          'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
-                          'Functions', 'Governors', 'Dependents', 'N-grams', 'Stats', 'Index']:
+                for i in sorted(convert_name_to_query.keys()):
                     pick_a_datatype['menu'].add_command(label = i, command=_setit(datatype_picked, i))
                 #parsebut.config(state=DISABLED)
                 #speakcheck_build.config(state=DISABLED)
@@ -1807,6 +1852,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
             shortname = current_corpus.get() + '-' + 'features'
             if os.path.isfile(featfile) and shortname not in all_interrogations.keys():
+                from corpkit.other import load
                 all_interrogations[shortname] = load(featfile)
 
         Label(interro_opt, text='Corpus:').grid(row=0, column=0, sticky=W)
@@ -1867,8 +1913,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         Label(interro_opt, text='Exclude:').grid(row=5, column=0, sticky=W, pady=(0, 10))
         exclude_op = StringVar()
         exclude_op.set('None')
-        exclude = OptionMenu(interro_opt, exclude_op, *tuple(('None', 'Words', 'POS', 'Lemmata', 'Functions', 'Dependents', 'Governors', 'Index', \
-                             'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
+        exclude = OptionMenu(interro_opt, exclude_op, *['None'] + sorted(convert_name_to_query.keys()))
         exclude.config(width=14)
         exclude.grid(row=5, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
         qr = Entry(interro_opt, textvariable=exclude_str, width=18, state=DISABLED)
@@ -2020,7 +2065,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                         optvar.set(optvar.get())
                         datatype_picked.set(optvar.get())
                     if optvar is not None:
-                        o = convert_name_to_query[optvar.get()]
+                        o = convert_name_to_query.get(optvar.get(), optvar.get())
                         q = entstring.get().strip()
                         q = remake_special_query(q, return_list = True)
                         output_dict[o] = q
@@ -2075,10 +2120,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 for i in n_items:
                     n_items.remove(i)
                 chosen = StringVar()
-                poss = tuple(('None', 'Words', 'POS', 'Lemmata', \
-                             'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', \
-                             'Dependent functions', 'Dependent POS', \
-                             'Functions', 'Dependents', 'Governors', 'Index'))
+                poss = ['None'] + sorted(convert_name_to_query.keys())
                 chosen.set('Words')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 opt.config(width=16)
@@ -2129,7 +2171,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         plusbut = Button(interro_opt, text='+', \
                         command=lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
-                        state=DISABLED)
+                        state=NORMAL)
         plusbut.grid(row=1, column=0, columnspan=2, padx=(0,200))
 
         def entry_callback(*args):
@@ -2138,40 +2180,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             qa.delete(1.0, END)
             qa.insert(END, entrytext.get())
         entrytext.trace("w", entry_callback)
-
-        # these are example queries for each data type
-        def_queries = {'Trees': r'JJ > (NP <<# /NN.?/)',
-                       'Plaintext': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Governors': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Dependents': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Words': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Lemmata': r'\b(want|desire|need)\b',
-                       'Governor lemmata': r'\b(want|desire|need)\b',
-                       'Dependent lemmata': r'\b(want|desire|need)\b',
-                       'Dependencies': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Tokens': r'\b(m.n|wom.n|child(ren)?)\b',
-                       'Other': r'[cat,cats,mouse,mice,cheese]',
-                       'other2': r'\b(amod|nn|advm|vmod|tmod)\b',
-                       'Functions': r'\b(amod|nn|advm|vmod|tmod)\b',
-                       'Governor functions': r'\b(amod|nn|advm|vmod|tmod)\b',
-                       'Dependent functions': r'\b(amod|nn|advm|vmod|tmod)\b',
-                       'N-grams': r'any',
-                       'Stats': r'any',
-                       'Index': r'[012345]',
-                       'POS': r'^[NJR]',
-                       'Governor POS': r'^[NJR]',
-                       'Dependent POS': r'^[NJR]',
-                       'Functions': r'\b(amod|nn|advm|vmod|tmod)',
-                       'other3': 'any'}
-
-        # these are more specific examples for particular options
-        special_examples = {'Get tokens by role': r'\b(amod|nn|advm|vmod|tmod)\b',
-                                'Simple search string search': r'[cat,cats,mouse,mice,cheese]',
-                                'Regular expression search': r'(m.n|wom.n|child(ren)?)',
-                                'Get tokens by regex': r'(m.n|wom.n|child(ren)?)',
-                                'Get tokens matching list': r'[cat,cats,mouse,mice,cheese]',
-                                'Get ngrams from tokens': 'any',
-                                'Get ngrams from trees': 'any'}
 
         def onselect(evt):
             """when an option is selected, add the example query
@@ -2183,13 +2191,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             #datatype_chosen_option.set(value)
             #datatype_listbox.select_set(index)
             #datatype_listbox.see(index)
-            if qa.get(1.0, END).strip('\n').strip() in list(def_queries.values()) + list(special_examples.values()):
+            if qa.get(1.0, END).strip('\n').strip() in list(def_queries.values()):
                 if qa.get(1.0, END).strip('\n').strip() not in list(qd.values()):
-                    try:
-                        entrytext.set(special_examples[value])
-                    except KeyError:
-                        entrytext.set(def_queries[datatype_picked.get()])
-
+                    entrytext.set(def_queries[datatype_picked.get()])
                 #try:
                 #    ngmsize.destroy()
                 #except:
@@ -2264,6 +2268,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             #lst = option_dict[chosen]
             #for e in lst:
             #    datatype_listbox.insert(END, e)
+            notree = [i for i in sorted(convert_name_to_query.keys()) if i != 'Trees']
 
             if chosen == 'Trees':
                 for but in [ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16, \
@@ -2281,10 +2286,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 plusbut.config(state=DISABLED) 
                 ex_plusbut.config(state=DISABLED) 
 
-            elif chosen in ['Words', 'Functions', 'Governors', 'Dependents', \
-                            'Governor lemmata', 'Governor functions', 'Governor POS', \
-                            'Dependent lemmata', 'Dependent functions', 'Dependent POS', \
-                            'Index', 'Distance', 'POS', 'Lemmata']:
+            elif chosen in notree:
                 if current_corpus.get().endswith('-parsed'):     
                     for but in [ck1, ck2, ck3, ck5, ck6, ck7, ck8, ck9, ck10, \
                                 ck11, ck12, ck13, ck14, ck15, ck16, \
@@ -2317,22 +2319,21 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
             clean_query = qa.get(1.0, END).strip('\n').strip()
-            if clean_query not in list(qd.values()) and clean_query in list(def_queries.values()):
+            acc_for_tups = [i[0] if isinstance(i, tuple) else i for i in list(def_queries.values())]
+            if (clean_query not in list(qd.values()) and clean_query in acc_for_tups) \
+                or not clean_query:
                 try:
-                    entrytext.set(def_queries[chosen])
-                except:
-                    pass
-            if not clean_query:
-                try:
-                    entrytext.set(def_queries[chosen])
+                    # for the life of me i don't know why some are appearing as tuples
+                    found = def_queries.get(chosen, clean_query)
+                    if isinstance(found, tuple):
+                        found = found[0]
+                    entrytext.set(found)
                 except:
                     pass
 
         datatype_picked = StringVar(root)
         Label(interro_opt, text='Search: ').grid(row=1, column=0, sticky=W, pady=10)
-        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *tuple(('Trees', 'Words', 'POS', \
-                            'Lemmata', 'Functions', 'Dependents', 'Governors', 'N-grams', 'Index', \
-                             'Stats', 'Governor lemmata', 'Governor functions', 'Governor POS', 'Dependent lemmata', 'Dependent functions', 'Dependent POS')))
+        pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *sorted(convert_name_to_query.keys()))
         pick_a_datatype.configure(width=30, justify=CENTER)
         datatype_picked.set('Words')
         pick_a_datatype.grid(row=1, column=0, columnspan=2, sticky=W, padx=(136,0))
@@ -2700,16 +2701,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                             
                             return
                     if transpose.get():
-                        data2 = data2.T
+                        try:
+                            data2 = data2.T
+                        except:
+                            pass
 
             the_data = all_interrogations[name_of_o_ed_spread.get()]
+
             if df1branch.get() == 'results':
-                try:
-                    data1 = the_data.results
-                except AttributeError:
+                if not hasattr(the_data, 'results'):
                     timestring('Interrogation has no results branch.')
-                    
                     return
+
             elif df1branch.get() == 'totals':
                 data1 = the_data.totals
 
@@ -2788,9 +2791,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if just_tot_setting.get() == 1:
                 editor_args['just_totals'] = True
 
-            if transpose.get():
-                data1 = data1.T
-
             if keeptopnum.get() != 'all':
                 try:
                     numtokeep = int(keeptopnum.get())
@@ -2799,13 +2799,26 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     
                     return
                 editor_args['keep_top'] = numtokeep
-            
+
+
             # do editing
-            r = the_data.edit(branch = df1branch.get(), **editor_args)
+            r = the_data.edit(branch=df1branch.get(), **editor_args)
+
+            if transpose.get():
+                try:
+                    r.results = r.results.T
+                except:
+                    pass
+                try:
+                    r.totals = r.totals.T
+                except:
+                    pass
+
             
-            if type(r) == str:
+            if isinstance(r, str):
                 if r == 'linregress':
                     return
+
             if not r:
                 timestring('Editing caused an error.')
                 return
@@ -3245,10 +3258,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             the_kind = charttype.get()
             if the_kind == 'Type of chart':
                 the_kind = 'line'
+
+
             # plotter options
             d = {'num_to_plot': num,
                  'kind': the_kind,
                  'indices': False}
+
+            if the_kind == 'heatmap':
+                d['robust'] = True
 
             #the_style = 
             #if the_style == 'matplotlib':
@@ -5375,7 +5393,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             x_axis_l.set(conmap(Config, "Visualise")['x axis title'])
             chart_cols.set(conmap(Config, "Visualise")['colour scheme'])
             rel_corpuspath = conmap(Config, "Interrogate")['corpus path']
-            files_as_subcorpora.set(conmap(Config, "Interrogate")['treat files as subcorpora'])
+            try:
+                files_as_subcorpora.set(conmap(Config, "Interrogate")['treat files as subcorpora'])
+            except KeyError:
+                files_as_subcorpora.set(False)
             corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
             #corpus_fullpath.set(corpa)
             current_corpus.set(os.path.basename(corpa))
@@ -5503,7 +5524,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             load_custom_list_json()
 
-        def view_query(kind = False):
+        def view_query(kind=False):
             if len(manage_listbox_vals) == 0:
                 return
             if len(manage_listbox_vals) > 1:
@@ -5529,29 +5550,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             #show_query_vals.delete(0, 'end')
             flipped_trans = {v: k for k, v in list(transdict.items())}
             
-            # flip options dict, make 'kind of search'
-            if 'option' in list(q_dict.keys()):
-                flipped_opt = {}
-                for nm, lst in list(option_dict.items()):
-                    for i in lst:
-                        flipped_opt[i] = nm
-                # not very robust, will break when more added
-                try:
-                    the_opt = flipped_opt[flipped_trans[q_dict['option']]]
-                except KeyError:
-                    the_opt = 'Stats'
-                q_dict['kind_of_search'] = the_opt
-
             for d in ['dataframe1', 'dataframe2']:
-                try:
-                    del q_dict[d]
-                except KeyError:
-                    pass
+                q_dict.pop(d, None)
 
-            for i, k in enumerate(sorted(q_dict.keys())):
-                v = q_dict[k]
-                if k == 'option':
-                    v = flipped_trans[v]
+            for k, v in sorted(q_dict.items()):
                 try:
                     if v is False:
                         v = 'False'
@@ -5566,7 +5568,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     pass
                 mlb.append([k, v])
 
-            if 'query' in list(q_dict.keys()):
+            if q_dict.get('query'):
                 qubox = Text(frame_to_the_right, font=("Courier New", 14), relief = SUNKEN, wrap = WORD, width=40, height=5, undo = True)
                 qubox.grid(column=0, row=2, rowspan = 1, padx=(10,0))
                 qubox.delete(1.0, END)

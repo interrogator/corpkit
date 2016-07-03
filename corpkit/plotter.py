@@ -1,4 +1,5 @@
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 def plotter(df,
             title=False,
@@ -156,7 +157,7 @@ def plotter(df,
         # name as 
         if not ext.startswith('.'):
             ext = '.' + ext
-        if type(save) == str:
+        if isinstance(save, STRINGTYPE):
             savename = os.path.join(imagefolder, (urlify(save) + ext))
         #this 'else' is redundant now that title is obligatory
         else:
@@ -207,18 +208,17 @@ def plotter(df,
     def auto_explode(dataframe, tinput, was_series = False, num_to_plot = 7):
         """give me a list of strings and i'll output explode option"""
         output = [0 for s in range(num_to_plot)]
-        from corpkit.process import stringtype
-        stringtype = stringtype()
+
         if was_series:
             l = list(dataframe.index)
         else:
             l = list(dataframe.columns)
 
-        if isinstance(tinput, (stringtype, int)):
+        if isinstance(tinput, (STRINGTYPE, int)):
             tinput = [tinput]
         if isinstance(tinput, list):
             for i in tinput:
-                if isinstance(i, stringtype):
+                if isinstance(i, STRINGTYPE):
                     index = l.index(i)
                 else:
                     index = i
@@ -1128,6 +1128,8 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
     tpb = rightdict.pop('transpose', False)
     numtoplot = leftdict.pop('num_to_plot', len(layout) - 1)
     ntpb = rightdict.pop('num_to_plot', 'all')
+    sharex = rightdict.pop('sharex', True)
+    sharey = rightdict.pop('sharey', False)
     if kindb == 'pie':
         piecol = rightdict.pop('colours', 'default')
     coloursb = rightdict.pop('colours', 'default')
@@ -1167,7 +1169,7 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
             else:
                 rightdict['colours'] = coloursb
 
-            df2.iloc[:, i].visualise(kind=kindb, ax=ax,
+            df2.iloc[:, i].visualise(kind=kindb, ax=ax, sharex=sharex, sharey=sharey,
                                      num_to_plot=ntpb, **rightdict)
             ax.set_title(df2.iloc[:, i].name)
         
@@ -1179,6 +1181,10 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
 
     size = kwargs.get('figsize', (10, 4))
     fig.set_size_inches(size)
+    try:
+        plt.set_size_inches(size)
+    except:
+        pass
     if kwargs.get('save'):
         import os
         from corpkit.process import urlify
