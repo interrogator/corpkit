@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def structure_corpus(path_to_files, new_corpus_name='structured_corpus'):
     """
@@ -72,10 +73,9 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
     if actually_download:
         if not root:
             txt = 'CoreNLP not found. Download latest version (%s)? (y/n) ' % url
-            if sys.version_info.major == 3:
-                selection = input(txt)
-            else:
-                selection = raw_input(txt)
+            
+            selection = INPUTFUNC(txt)
+
             if 'n' in selection.lower():
                 return None, None
         try:
@@ -257,19 +257,24 @@ def parse_corpus(proj_path=False,
     if os.path.join('data', 'data') in new_corpus_path:
         new_corpus_path = new_corpus_path.replace(os.path.join('data', 'data'), 'data')
 
-    if not os.path.isdir(new_corpus_path):
+    # this caused errors when multiprocessing
+    # it used to be isdir, but supposedly there was a file there
+    # i don't see how it's possible ...
+    
+    if not os.path.exists(new_corpus_path):
         os.makedirs(new_corpus_path)
     else:
-        fs = os.listdir(new_corpus_path)
-        if not multiprocessing:
-            if not only_tokenise:
-                if any([f.endswith('.xml') for f in fs]):
-                    print('Folder containing xml already exists: "%s-parsed"' % basecp)
-                    return False
-            else:
-                if any([f.endswith('.p') for f in fs]):
-                    print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
-                    return False          
+        if not os.path.isfile(new_corpus_path):
+            fs = os.listdir(new_corpus_path)
+            if not multiprocessing:
+                if not only_tokenise:
+                    if any([f.endswith('.xml') for f in fs]):
+                        print('Folder containing xml already exists: "%s-parsed"' % basecp)
+                        return False
+                else:
+                    if any([f.endswith('.p') for f in fs]):
+                        print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
+                        return False          
 
     corenlppath = get_corenlp_path(corenlppath)
 
@@ -659,9 +664,7 @@ def get_speaker_names_from_xml_corpus(path):
 def rename_all_files(dirs_to_do):
     """get rid of the inserted dirname in filenames after parsing"""
     import os
-    from corpkit.process import stringtype
-    stringtype = stringtype()
-    if isinstance(dirs_to_do, stringtype):
+    if isinstance(dirs_to_do, STRINGTYPE):
         dirs_to_do = [dirs_to_do]
     for d in dirs_to_do:
         if d.endswith('-parsed'):

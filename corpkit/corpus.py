@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from lazyprop import lazyprop
 from corpkit.process import classname
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
 class Corpus(object):
     """
@@ -23,8 +24,7 @@ class Corpus(object):
         import os
         from os.path import join, isfile, isdir, abspath, dirname, basename
 
-        from corpkit.process import determine_datatype, stringtype
-        stringtype = stringtype()
+        from corpkit.process import determine_datatype
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which
         # one is determined automatically below, and processed accordingly. We
@@ -40,7 +40,7 @@ class Corpus(object):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
-        elif isinstance(path, stringtype):
+        elif isinstance(path, STRINGTYPE):
             self.path = abspath(path)
             self.name = basename(path)
         elif hasattr(path, 'path') and path.path:
@@ -325,19 +325,17 @@ class Corpus(object):
         and save to disk for next time.
 
         :param kwargs: Arguments to pass to the 
-        :func:`~corpkit.interrogation.Interrogation.interrogate`` method
-        :type kwargs: keyword arguments
+                       :func:`~corpkit.interrogation.Interrogation.interrogate` method
+        :type kwargs: `keyword arguments`
 
         :returns: a `DataFrame` of tokens and counts
         """
         from os.path import join, isfile, isdir
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.process import stringtype
-        stringtype = stringtype()
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
-        if isinstance(show, stringtype):
+        if isinstance(show, STRINGTYPE):
             show = [show]
         if isfile(join(savedir, self.name + '-lexicon.p')):
             try:
@@ -361,10 +359,10 @@ class Corpus(object):
 
                        Valid keys are:
 
-                          - `W`/`L match word or lemma
+                          - `W`/`L` match word or lemma
                           - `F`: match a semantic role (`'participant'`, `'process'` or 
-                       `'modifier'`. If `F` not specified, each role will be 
-                       searched for.
+                            `'modifier'`. If `F` not specified, each role will be 
+                            searched for.
         :type search: `dict`
 
         :Example:
@@ -412,23 +410,25 @@ class Corpus(object):
                        trees, use the `T` key, and a Tregex query as the value.
                        When searching dependencies, you can use any of:
 
-                       +--------------------+-------+----------+-----------+
-                       |                    | Match | Governor | Dependent |
-                       +====================+=======+==========+===========+
-                       | Word               | `W`   | `G`      | `D`       |
-                       +--------------------+-------+----------+-----------+
-                       | Lemma              | `L`   | `GL`     | `DL`      |
-                       +--------------------+-------+----------+-----------+
-                       | Function           | `F`   | `GF`     | `DF`      |
-                       +--------------------+-------+----------+-----------+
-                       | POS tag            | `P`   | `GP`     | `DP`      |
-                       +--------------------+-------+----------+-----------+
-                       | Word class         | `X`   | `GX`     | `DX`      |
-                       +--------------------+-------+----------+-----------+
-                       | Distance from root | `R`   | `GR`     | `DR`      |
-                       +--------------------+-------+----------+-----------+
-                       | Index              | `I`   | `GI`     | `DI`      |
-                       +--------------------+-------+----------+-----------+
+                       +--------------------+-------+----------+-----------+-----------+
+                       |                    | Match | Governor | Dependent | Head      |
+                       +====================+=======+==========+===========+===========+
+                       | Word               | `W`   | `G`      | `D`       | `H`       |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Lemma              | `L`   | `GL`     | `DL`      | `HL`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Function           | `F`   | `GF`     | `DF`      | `HF`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | POS tag            | `P`   | `GP`     | `DP`      | `HP`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Word class         | `X`   | `GX`     | `DX`      | `HX`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Distance from root | `R`   | `GR`     | `DR`      | `HR`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Index              | `I`   | `GI`     | `DI`      | `HI`      |
+                       +--------------------+-------+----------+-----------+-----------+
+                       | Sentence index     | `S`   | `SI`     | `SI`      | `SI`      |
+                       +--------------------+-------+----------+-----------+-----------+
 
                        Values should be regular expressions or wordlists to 
                        match.
@@ -609,9 +609,12 @@ class Corpus(object):
                              computers)
         :type multiprocess: `int`
 
+        :param folderise: If corpus is just files, move each into own folder
+        :type folderise: `bool`
+
         :Example:
 
-        >>> parsed = corpus.parse(speaker_segmentation = True)
+        >>> parsed = corpus.parse(speaker_segmentation=True)
         >>> parsed
         <corpkit.corpus.Corpus instance: speeches-parsed; 9 subcorpora>
 
@@ -730,13 +733,11 @@ class Corpus(object):
         :param search: Search as per :func:`~corpkit.corpus.Corpus.interrogate`
         :type search: `dict`
         :param kwargs: Extra arguments to pass to :func:`~corpkit.corpus.Corpus.visualise`
-        :type kwargs: Keyword arguments
+        :type kwargs: `keyword arguments`
 
         :returns: `None` (but show a plot)
         """
-        from corpkit.process import stringtype
-        stringtype = stringtype()
-        if isinstance(search, stringtype):
+        if isinstance(search, STRINGTYPE):
             search = {'t': search}
         interro = self.interrogate(search=search, show=kwargs.pop('show', 'w'))
         edited = interro.edit('%', 'self', print_info=False)
@@ -766,7 +767,7 @@ class Corpus(object):
         :type name: `str`
 
         :param kwargs: keyword arguments for the interrogate() method
-        :type kwargs: `dict`
+        :type kwargs: `keyword arguments`
 
         :returns: a :class:`corpkit.model.MultiModel`
         """
@@ -837,7 +838,7 @@ class File(Corpus):
 
     Methods for interrogating, concordancing and configurations are the same as
     :class:`corpkit.corpus.Corpus`, plus methods for accessing the file contents 
-    directly as a `str`, or as a *CoreNLP XML Document`.
+    directly as a `str`, or as a *CoreNLP XML* `Document`.
     """
 
     def __init__(self, path, dirname=False, datatype=False):
@@ -1015,11 +1016,9 @@ class Corpora(Datalist):
         # if no arg, load every corpus in data dir
         if not data:
             data = 'data'
-        from corpkit.process import stringtype
-        stringtype = stringtype()
-
+            
         # handle a folder containing corpora
-        if isinstance(data, stringtype):
+        if isinstance(data, STRINGTYPE):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):
@@ -1052,6 +1051,21 @@ class Corpora(Datalist):
                 from corpkit.process import is_number
                 if is_number(key):
                     return self.__getattribute__('c' + key)
+
+    def parse(self, **kwargs):
+        """
+        Parse multiple corpora
+
+        :param kwargs: Arguments to pass to the
+                       :func:`~corpkit.corpus.Corpus.parse` method.
+        :returns: :class:`corpkit.corpus.Corpora`
+
+        """
+        from corpkit.corpus import Corpora
+        objs = []
+        for k, v in self.items():
+            objs.append(v.parse(**kwargs))
+        return Corpora(objs)
 
     @lazyprop
     def features(self):

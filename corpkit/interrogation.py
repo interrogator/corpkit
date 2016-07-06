@@ -807,6 +807,11 @@ class Interrodict(OrderedDict):
 
         :param shape: Layout for the subplots (e.g. `(2, 2)`)
         :type shape: tuple
+
+        :param truncate: Only process the first `n` items in the 
+                         class:`corpkit.interrogation.Interrodict`
+        :type truncate: `int`
+
         :param kwargs: specifications to pass to :func:`~corpkit.plotter.plotter`
         :type kwargs: keyword arguments
         """
@@ -821,6 +826,68 @@ class Interrodict(OrderedDict):
                 name = name_format.format(name)
             plt = interro.visualise(name, ax=ax, **kwargs)
         return plt
+
+    def copy(self):
+        from corpkit.interrogation import Interrodict
+        copied = {}
+        for k, v in self.items():
+            copied[k] = v
+        return Interrodict(copied)
+
+    def flip(self, truncate=30, transpose=True, repeat=False, *args, **kwargs):
+        """
+        Change the dimensions of :class:`corpkit.interrogation.Interrodict`,
+        making column names into keys.
+
+        :param truncate: Get first `n` columns
+        :type truncate: `int`/`'all'`
+
+        :param transpose: Flip rows and columns:
+        :type transpose: `bool`
+
+        :param repeat: Flip twice, to move columns into key position
+        :type repeat: `bool`
+
+        :param kwargs: Arguments to pass to the 
+                       :func:`~corpkit.interrogation.Interrogation.edit`
+                       method
+
+        :returns: :class:`corpkit.interrogation.Interrodict`
+        """
+        import pandas as pd
+        from corpkit.interrogation import Interrodict
+
+        # copy interrodict
+        copied = self.copy()
+
+        # first, flip x axis and keys
+        words = list(copied.collapse().results.columns)
+        if truncate != 'all':
+            words = words[:truncate]
+
+        data = {}
+        for word in words:
+            wordata = []
+            for k, v in copied.items():
+                try:
+                    point = v.results[word]
+                except KeyError:
+                    ser = [0] * len(v.results.index)
+                    point = pd.Series(ser, index=v.results.index)
+                point.name = k
+                wordata.append(point)
+            df = pd.concat(wordata, axis=1)
+            if transpose:
+                df = df.T
+            df = df.edit(*args, **kwargs)
+            # divide each newspaper separately
+            data[word] = df
+        idi = Interrodict(data)
+        if repeat:
+            return idi.flip(truncate=truncate, transpose=False, repeat=False)
+        else:
+            return idi
+
 
     def get_totals(self):
         """

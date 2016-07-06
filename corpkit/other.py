@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
+
 def quickview(results, n=25):
     """
     View top n results as painlessly as possible.
@@ -18,9 +20,6 @@ def quickview(results, n=25):
     import corpkit
     from corpkit.interrogation import Interrogation
 
-    from corpkit.process import stringtype
-    stringtype = stringtype()
-
     # handle dictionaries too:
     dictpath = 'dictionaries'
     savedpath = 'saved_interrogations'
@@ -31,7 +30,7 @@ def quickview(results, n=25):
 
     dtype = corpkit.interrogation.Interrogation
 
-    if isinstance(results, stringtype):
+    if isinstance(results, STRINGTYPE):
         if os.path.isfile(os.path.join(dictpath, results)):
             from corpkit.other import load
             results = load(results, loaddir=dictpath)
@@ -204,8 +203,6 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
 
     def make_filename(interrogation, savename):
         """create a filename"""
-        from corpkit.process import stringtype
-        stringtype = stringtype()
         if '/' in savename:
             return savename
 
@@ -218,7 +215,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         if hasattr(interrogation, 'query') and interrogation.query:
             corpus = interrogation.query.get('corpus', False)
             if corpus:
-                if isinstance(corpus, stringtype):
+                if isinstance(corpus, STRINGTYPE):
                     firstpart = corpus
                 else:
                     if isinstance(corpus, Datalist):
@@ -257,12 +254,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         fullpath = savename
 
     while os.path.isfile(fullpath):
-        import sys
-        if sys.version_info.major == 3:
-            selection = input(("\nSave error: %s already exists in %s.\n\n" \
-                "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
-        else:
-            selection = raw_input(("\nSave error: %s already exists in %s.\n\n" \
+        INPUTFUNC(("\nSave error: %s already exists in %s.\n\n" \
                 "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
 
         if selection == 'o' or selection == 'O':
@@ -327,17 +319,14 @@ def loader(savedir='saved_interrogations'):
     import glob
     import os
     import corpkit
-    from other import load
+    from corpkit.other import load
     fs = [i for i in glob.glob(r'%s/*' % savedir) if not os.path.basename(i).startswith('.')]
     string_to_show = '\nFiles in %s:\n' % savedir
     most_digits = max([len(str(i)) for i, j in enumerate(fs)])
     for index, fname in enumerate(fs):
         string_to_show += str(index).rjust(most_digits) + ':\t' + os.path.basename(fname) + '\n'
     print(string_to_show)
-    try:
-        index = raw_input('Enter index of item to load: ')
-    except:
-        index = input('Enter index of item to load: ')
+    INPUTFUNC('Enter index of item to load: ')
     if ' ' in index or '=' in index:
         if '=' in index:
             index = index.replace(' = ', ' ')
@@ -568,20 +557,7 @@ def make_multi(interrogation, indexnames=None):
     :returns: pd.DataFrame with multiindex"""
 
     # get proper names for index if possible
-    transshow = {'f': 'Function',
-                 'l': 'Lemma',
-                 'r': 'Distance from root',
-                 'w': 'Word',
-                 't': 'Trees',
-                 'i': 'Index',
-                 'n': 'N-grams',
-                 'p': 'POS',
-                 'x': 'Word class',
-                 's': 'Sentence'}
-    transobjs = {'g': 'Governor',
-                 'd': 'Dependent',
-                 'm': 'Match',
-                 'h': 'Head'}
+    from corpkit.constants import transshow, transobjs
 
     import numpy as np
     import pandas as pd
