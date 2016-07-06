@@ -795,16 +795,18 @@ def canpickle(obj):
     try:
         from cPickle import UnpickleableError as unpick_error
         import cPickle as pickle
+        from cPickle import PicklingError as unpick_error_2
     except ImportError:
         import pickle
         from pickle import UnpicklingError as unpick_error
+        from pickle import PicklingError as unpick_error_2
 
     mode = 'w' if PYTHON_VERSION == 2 else 'wb'
     with open(os.devnull, mode) as fo:
         try:
             pickle.dump(obj, fo)
             return True
-        except (unpick_error, TypeError) as err:
+        except (unpick_error, TypeError, unpick_error_2) as err:
             return False
 
 def sanitise_dict(d):
