@@ -804,7 +804,7 @@ def canpickle(obj):
         try:
             pickle.dump(obj, fo)
             return True
-        except unpick_error:
+        except (unpick_error, TypeError) as err:
             return False
 
 def sanitise_dict(d):
@@ -862,3 +862,102 @@ def gui():
     from corpkit.gui import corpkit_gui
     current = os.getcwd()
     corpkit_gui(noupdate=True, loadcurrent=current)
+
+
+def dictformat(d, query=False):
+    """Format a dict search query"""
+    from corpkit.constants import transshow, transobjs
+    if isinstance(d, STRINGTYPE) and isinstance(query, dict):
+        newd = {}
+        for k, v in query.items():
+            newd[k] = fix_search({d: v})
+        return dictformat(newd)
+        if query:
+            sformat = dictformat(query)
+            return sformat
+        else:
+            return d
+    if all(isinstance(i, dict) for i in d.values()):
+        sformat = '\n'
+        for k, v in d.items():
+            sformat += '             ' + k + ':'
+            sformat += dictformat(v)
+        return sformat
+    if len(d) == 1 and d.get('s'):
+        return 'Features'
+    sformat = '\n'
+    for k, v in d.items():
+        if k == 't':
+            dratt = ''
+        else:
+            dratt = transshow.get(k[-1], k[-1])
+        if len(k) > 1:
+            drole = transobjs.get(k[0], k[0])
+        else:
+            drole = ''
+        if k == 't':
+            drole = 'Trees'
+        vform = getattr(v, 'pattern', v)
+        sformat += '                 %s %s: %s\n' % (drole, dratt.lower(), vform)
+    return sformat
+
+
+def fix_search(search, case_sensitive=False, root=False):
+    """if search has nested dicts, remove them"""
+    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
+    
+    # handle the possibility of nesting queries
+    nestq = False
+    if isinstance(search, dict):
+        if all(isinstance(v, dict) for v in search.values()):
+            nestq = True
+            for v in search.values():
+                if not all(x.islower() and x.isalpha() and len(x) < 4 for x in v.keys()):
+                    nestq = False
+    if nestq:
+        newd = {}
+        for k, v in search.items():
+            newd[k] = fix_search(v)
+        return newd
+
+    if not search:
+        return
+    if isinstance(search, STRINGTYPE):
+        return search
+    if search.get('t'):
+        return search
+    newsearch = {}
+    for srch, pat in search.items():
+        if len(srch) == 1 and srch in ends:
+            srch = 'm%s' % srch
+        if isinstance(pat, dict):
+            for k, v in list(pat.items()):
+                if k != 'w':
+                    newsearch[srch + k] = pat_format(v, case_sensitive=case_sensitive, root=root)
+                else:
+                    newsearch[srch] = pat_format(v, case_sensitive=case_sensitive, root=root)
+        else:
+            newsearch[srch] = pat_format(pat)
+    return newsearch
+
+def pat_format(pat, case_sensitive=False, root=False):
+    from corpkit.dictionaries.process_types import Wordlist
+    import re
+    if pat == 'any':
+        return re.compile(r'.*')
+    if isinstance(pat, Wordlist):
+        pat = list(pat)
+    if isinstance(pat, list):
+        if all(isinstance(x, int) for x in pat):
+            pat = [str(x) for x in pat]
+        pat = filtermaker(pat, case_sensitive=case_sensitive, root=root)
+    else:
+        if isinstance(pat, int):
+            return pat
+        if isinstance(pat, re._pattern_type):
+            return pat
+        if case_sensitive:
+            pat = re.compile(pat)
+        else:
+            pat = re.compile(pat, re.IGNORECASE)
+    return pat

@@ -29,6 +29,7 @@ def pmultiquery(corpus,
     import corpkit
     from corpkit.interrogator import interrogator
     from corpkit.interrogation import Interrogation
+    from corpkit.process import canpickle
     try:
         from joblib import Parallel, delayed
     except ImportError:
@@ -67,42 +68,36 @@ def pmultiquery(corpus,
     num_cores = multiprocessing.cpu_count()
 
     # what is our iterable? ...
-    multiple_option = False
-    multiple_queries = False
-    multiple_speakers = False
-    multiple_corpora = False
-    multiple_search = False
+    multiple = kwargs.get('multiple', False)
     mult_corp_are_subs = False
-    denom = 1
-
     if hasattr(corpus, '__iter__'):
-        multiple_corpora = True
-        num_cores = best_num_parallel(num_cores, len(corpus))
-        denom = len(corpus)
-        if all(c.__class__ == corpkit.corpus.Subcorpus for c in corpus):
+        if all(getattr(x, 'level', False) == 's' for x in corpus):
             mult_corp_are_subs = True
-    elif (isinstance(query, (list, dict)) and not hasattr(search, '__iter__')):
-            multiple_queries = True
-            num_cores = best_num_parallel(num_cores, len(query))
-            denom = len(query)
-    elif hasattr(search, '__iter__') and all(isinstance(i, dict) for i in list(search.values())):
-        multiple_search = True
-        num_cores = best_num_parallel(num_cores, len(list(search.keys())))
-        denom = len(list(search.keys()))
 
-    elif just_speakers:
-        from build import get_speaker_names_from_xml_corpus
-        multiple_speakers = True
+    mapcores = {'datalist': [corpus, 'corpus'],
+                'multiplecorpora': [corpus, 'corpus'],
+                'namedqueriessingle': [query, 'query'],
+                'eachspeaker': [just_speakers, 'just_speakers'],
+                'multiplespeaker': [just_speakers, 'just_speakers'],
+                'namedqueriesmultiple': [search, 'search']}
+
+    if just_speakers:
+        from corpkit.build import get_speaker_names_from_xml_corpus
         if just_speakers == 'each' or just_speakers == ['each']:
             just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
         if len(just_speakers) == 0:
             print('No speaker name data found.')
             return
-        num_cores = best_num_parallel(num_cores, len(just_speakers))
-        denom = len(just_speakers)
 
-    if multiple_corpora and any(x is True for x in [multiple_speakers, multiple_queries, 
-                                                    multiple_search, multiple_option]):
+    # a is a dummy, just to produce default one
+    toiter, itsname = mapcores.get(multiple, [False, False])
+    if isinstance(toiter, dict):
+        toiter = toiter.items()
+    denom = len(toiter)
+    num_cores = best_num_parallel(num_cores, denom)
+
+    vals = ['eachspeaker', 'multiplespeaker', 'namedqueriesmultiple']
+    if multiple == 'multiplecorpora' and any(x is True for x in vals):
         from corpkit.corpus import Corpus, Corpora
         if isinstance(corpus, Corpora):
             multiprocess = False
@@ -118,131 +113,65 @@ def pmultiquery(corpus,
     if save is True:
         raise ValueError('save must be string when multiprocessing.')
     
-    # the options that don't change
-    d = {'function': 'interrogator',
-         'root': root,
-         'note': note,
-         'denominator': denom}
-    
-    # add kwargs to query
-    for k, v in list(kwargs.items()):
-        d[k] = v
 
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
-    ds = []
-    if multiple_corpora:
-        for index, p in enumerate(corpus):
-            name = p.name
-            a_dict = dict(d)
-            a_dict['corpus'] = p
-            a_dict['search'] = search
-            a_dict['query'] = query
-            a_dict['show'] = show
-            a_dict['outname'] = name.replace('-parsed', '')
-            a_dict['just_speakers'] = just_speakers
-            a_dict['paralleling'] = index
-            a_dict['printstatus'] = False
-            ds.append(a_dict)
-    elif multiple_queries:
-        for index, (name, q) in enumerate(query.items()):
-            a_dict = dict(d)
-            a_dict['corpus'] = corpus
-            a_dict['search'] = search
-            a_dict['query'] = q
-            a_dict['show'] = show
-            a_dict['outname'] = name
-            a_dict['just_speakers'] = just_speakers
-            a_dict['paralleling'] = index
-            a_dict['printstatus'] = False
-            ds.append(a_dict)
-    elif multiple_speakers:
-        for index, name in enumerate(just_speakers):
-            a_dict = dict(d)
-            a_dict['corpus'] = corpus
-            a_dict['search'] = search
-            a_dict['query'] = query
-            a_dict['show'] = show
-            a_dict['outname'] = name
-            a_dict['just_speakers'] = [name]
-            a_dict['paralleling'] = index
-            a_dict['printstatus'] = False
-            ds.append(a_dict)
-    elif multiple_search:
-        for index, (name, val) in enumerate(search.items()):
-            a_dict = dict(d)
-            a_dict['corpus'] = corpus
-            a_dict['search'] = val
-            a_dict['query'] = query
-            a_dict['show'] = show
-            a_dict['outname'] = name
-            a_dict['just_speakers'] = just_speakers
-            a_dict['paralleling'] = index
-            a_dict['printstatus'] = False
-            ds.append(a_dict)
+    
+    locs['printstatus'] = False
+    locs['multiprocess'] = False
 
+    locs = {k: v for k, v in locs.items() if canpickle(v)}
+    ds = [dict(**locs) for i in range(denom)]
+    for index, (d, bit) in enumerate(zip(ds, toiter)):
+        d['paralleling'] = index
+        if multiple in ['namedqueriessingle', 'namedqueriesmultiple']:
+            d[itsname] = bit[1]
+            d['outname'] = bit[0]
+        else:    
+            if multiple in ['multiplecorpora', 'datalist']:
+                d['outname'] = bit.name.replace('-parsed', '')
+            else:
+                d['outname'] = bit
+            d[itsname] = bit
+
+    # message printer should be a function...
     if kwargs.get('conc') is False:
         message = 'Interrogating'
     elif kwargs.get('conc') is True:
         message = 'Interrogating and concordancing'
     elif kwargs.get('conc').lower() == 'only':
         message = 'Concordancing'
-    time = strftime("%H:%M:%S", localtime())
-    sformat = ''
-    if multiple_queries:
-        to_it_over = query
-    else:
-        to_it_over = search
-    for i, (k, v) in enumerate(list(to_it_over.items())):
-        if isinstance(v, list):
-            vformat = ', '.join(v[:5])
-            if len(v) > 5:
-                vformat += ' ...'
-        elif isinstance(v, dict):
-            vformat = ''
-            for kk, vv in v.items():
-                if isinstance(vv, list):
-                    vv = ', '.join(vv[:5])
 
-                vformat += '\n                     %s: %s' % (kk, vv)
-                if len(vv) > 5:
-                    vformat += ' ...'
-        else:
-            try:
-                vformat = v.pattern
-            except AttributeError:
-                vformat = v
-        sformat += '%s: %s' %(k, vformat)
-        if i < len(to_it_over.keys()) - 1:
-            sformat += '\n                   '
+    time = strftime("%H:%M:%S", localtime())
+    from corpkit.process import dictformat
+    
 
     if print_info:
+
         # proper printing for plurals
         # in truth this needs to be revised, it's horrible.
+        sformat = dictformat(search, query)
+
         if num_cores == 1:
             add_es = ''
         else:
             add_es = 'es'
-        if multiple_corpora and not multiple_option:
+        if multiple in ['multiplecorpora', 'datalist']:
             corplist = "\n              ".join([i.name for i in corpus[:20]])
             if len(corpus) > 20:
                 corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s):\n              %s" \
                "\n          Query: %s\n          %s corpus ... \n"  % (time, len(corpus), num_cores, add_es, corplist, sformat, message)))
 
-        elif multiple_queries:
+        elif multiple == 'namedqueriessingle':
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
                "\n          Queries: %s\n          %s corpus ... \n" % (time, len(query), num_cores,  add_es, corpus.name, sformat, message) ))
 
-        elif multiple_search:
+        elif multiple == 'namedqueriesmultiple':
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
                "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, add_es, corpus.name, sformat, message)))
 
-        elif multiple_option:
-            print(("\n%s: Beginning %d parallel corpus interrogation%s (multiple options): %s" \
-               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat,  message) ))
-
-        elif multiple_speakers:
+        elif multiple in ['eachspeaker', 'multiplespeaker']:
             print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
                "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
 
@@ -347,7 +276,7 @@ def pmultiquery(corpus,
     # make query and total branch, save, return
     # todo: standardise this so we don't have to guess transposes
     else:
-        if multiple_corpora and not mult_corp_are_subs:
+        if multiple == 'multiplecorpora' and not mult_corp_are_subs:
             sers = [i.results for i in res]
             out = DataFrame(sers, index=[i.query['outname'] for i in res])
             out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols

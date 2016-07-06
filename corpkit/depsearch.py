@@ -667,8 +667,6 @@ def dep_searcher(sents,
 
     for s in sents:
 
-#       if corefs:
-
         # all search matches go here
         matching_tokens = []
         dep_type = dep_type.replace('-', '_')
@@ -732,5 +730,10 @@ def dep_searcher(sents,
 
     if not conc:
         conc_result = []
+
+    sents = None
+    deps = None
+    matching_tokens = None
+    tokens = None
 
     return result, conc_result

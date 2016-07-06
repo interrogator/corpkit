@@ -66,7 +66,8 @@ def interrogator(corpus,
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
-                                 get_speakername, animator, filtermaker)
+                                 get_speakername, animator, filtermaker, fix_search,
+                                 pat_format)
     from corpkit.other import as_regex
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
@@ -115,51 +116,6 @@ def interrogator(corpus,
                     show[index] = val[0]
         return show
 
-    def fix_search(search):
-        """if search has nested dicts, remove them"""
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
-        if not search:
-            return
-        if isinstance(search, STRINGTYPE):
-            return search
-        if search.get('t'):
-            return search
-        newsearch = {}
-        for srch, pat in search.items():
-            if len(srch) == 1 and srch in ends:
-                srch = 'm%s' % srch
-            if isinstance(pat, dict):
-                for k, v in list(pat.items()):
-                    if k != 'w':
-                        newsearch[srch + k] = pat_format(v)
-                    else:
-                        newsearch[srch] = pat_format(v)
-            else:
-                newsearch[srch] = pat_format(pat)
-        return newsearch
-
-    def pat_format(pat):
-        from corpkit.dictionaries.process_types import Wordlist
-        import re
-        if pat == 'any':
-            return re.compile(r'.*')
-        if isinstance(pat, Wordlist):
-            pat = list(pat)
-        if isinstance(pat, list):
-            if all(isinstance(x, int) for x in pat):
-                pat = [str(x) for x in pat]
-            pat = filtermaker(pat, case_sensitive=case_sensitive, root=kwargs.get('root'))
-        else:
-            if isinstance(pat, int):
-                return pat
-            if isinstance(pat, re._pattern_type):
-                return pat
-            if case_sensitive:
-                pat = re.compile(pat)
-            else:
-                pat = re.compile(pat, re.IGNORECASE)
-        return pat
-
     def is_multiquery(corpus, search, query, just_speakers):
         """determine if multiprocessing is needed
         do some retyping if need be as well"""
@@ -169,19 +125,26 @@ def interrogator(corpus,
         #    is_mul = True
         # so we can do search = 't', query = ['NP', 'VP']:
         from corpkit.dictionaries.process_types import Wordlist
+        
+        #if isinstance(search, dict) and query in ['any', False, None]:
+        #    if not all(k.islower() and k.isalpha() and len(k) < 4 for k in search.keys()):
+        #        is_mul = 'namedqueriesmultiple'
         if isinstance(query, Wordlist):
             query = list(query)
-        if isinstance(query, list):
-            if query != list(search.values())[0] or len(list(search.keys())) > 1:
-                query = {c.title(): c for c in query}
+
+        # what on earth is this?
+        #if isinstance(query, list):
+        #    if query != list(search.values())[0] or len(list(search.keys())) > 1:
+        #        query = {c.title(): c for c in query}
+        
         if isinstance(query, (dict, OrderedDict)):
-            is_mul = True
+            is_mul = 'namedqueriessingle'
         if just_speakers:
             if just_speakers == 'each':
-                is_mul = True
+                is_mul = 'eachspeaker'
                 just_speakers = ['each']
             if just_speakers == ['each']:
-                is_mul = True
+                is_mul = 'eachspeaker'
             elif isinstance(just_speakers, STRINGTYPE):
                 is_mul = False
                 just_speakers = [just_speakers]
@@ -190,10 +153,10 @@ def interrogator(corpus,
             #    is_mul = False
             if isinstance(just_speakers, list):
                 if len(just_speakers) > 1:
-                    is_mul = True
+                    'multiplespeaker'
         if isinstance(search, dict):
             if all(isinstance(i, dict) for i in list(search.values())):
-                is_mul = True
+                is_mul = 'namedqueriesmultiple'
         return is_mul, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **dummy_args):
@@ -827,22 +790,12 @@ def interrogator(corpus,
             message = 'Interrogating'
         else:
             message = 'Interrogating and concordancing'
+        if only_conc:
+            message = 'Concordancing'
         if kwargs.get('printstatus', True):
             thetime = strftime("%H:%M:%S", localtime())
-            from corpkit.constants import transshow, transobjs
-            sformat = '\n'
-            for k, v in search.items():
-                if k == 't':
-                    dratt = ''
-                else:
-                    dratt = transshow.get(k[-1], k[-1])
-                drole = transobjs.get(k[0], k[0])
-                if k == 't':
-                    drole = 'Trees'
-                vform = getattr(v, 'pattern', v)
-                sformat += '                 %s %s: %s\n' % (drole, dratt.lower(), vform)
-            if search.get('s'):
-                sformat = 'Features'
+            from corpkit.process import dictformat
+            sformat = dictformat(search)
             welcome = ('\n%s: %s %s ...\n          %s\n          ' \
                         'Query: %s\n          %s corpus ... \n' % \
                       (thetime, message, cname, optiontext, sformat, message))
@@ -949,6 +902,7 @@ def interrogator(corpus,
 
         outn = kwargs.get('outname', '')
         if outn:
+            outn = getattr(outn, 'name', outn)
             outn = outn + ': '
 
         tstr = '%s%d/%d' % (outn, current_iter, total_files)
@@ -1009,19 +963,19 @@ def interrogator(corpus,
 
     # figure out if we can multiprocess the corpus
     if hasattr(corpus, '__iter__') and im:
-        corpus = Corpus(corpus)
+        corpus = Corpus(corpus, print_info=False)
     if hasattr(corpus, '__iter__') and not im:
-        im = True
+        im = 'datalist'
     if isinstance(corpus, Corpora):
-        im = True
+        im = 'multiplecorpora'
 
     # split corpus if the user wants multiprocessing but no other iterable
     if not im and multiprocess:
-        im = True
+        im = 'datalist'
         corpus = corpus[:]
 
-    search = fix_search(search)
-    exclude = fix_search(exclude)
+    search = fix_search(search, case_sensitive=case_sensitive, root=root)
+    exclude = fix_search(exclude, case_sensitive=case_sensitive, root=root)
 
     # if it's already been through pmultiquery, don't do it again
     locs['search'] = search
@@ -1030,6 +984,7 @@ def interrogator(corpus,
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
+    locs['multiple'] = im
 
     # send to multiprocess function
     if im:
