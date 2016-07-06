@@ -116,7 +116,7 @@ def interrogator(corpus,
                     show[index] = val[0]
         return show
 
-    def is_multiquery(corpus, search, query, just_speakers):
+    def is_multiquery(corpus, search, query, just_speakers, outname):
         """determine if multiprocessing is needed
         do some retyping if need be as well"""
         is_mul = False
@@ -157,6 +157,9 @@ def interrogator(corpus,
         if isinstance(search, dict):
             if all(isinstance(i, dict) for i in list(search.values())):
                 is_mul = 'namedqueriesmultiple'
+        # cannot recursive multiquery
+        if outname:
+            is_mul = False
         return is_mul, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **dummy_args):
@@ -959,7 +962,8 @@ def interrogator(corpus,
         lmtzr = WordNetLemmatizer()
 
     # do multiprocessing if need be
-    im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, just_speakers)
+    im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, 
+                                                just_speakers, kwargs.get('outname', False))
 
     # figure out if we can multiprocess the corpus
     if hasattr(corpus, '__iter__') and im:
@@ -1184,6 +1188,10 @@ def interrogator(corpus,
                                              is_a_word=is_a_word,
                                              **kwargs
                                             )
+
+                    # garbage collection needed?
+                    sents = None
+                    corefs = None
                         
                     if res == 'Bad query':
                         return 'Bad query'
