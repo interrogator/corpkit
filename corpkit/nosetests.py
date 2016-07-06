@@ -75,7 +75,7 @@ test_parse_speakseg.slow = 1
 if os.path.isdir(parsed_path):
     corp = Corpus('data/test-stripped-parsed')
 else:
-    test_parse_speakseg(skipassert = True)
+    test_parse_speakseg(skipassert=True)
     corp = Corpus('data/test-stripped-parsed')
 
 def test_interro1():
@@ -90,7 +90,7 @@ def test_interro2():
 
 def test_interro3():
     """Testing interrogation 3"""
-    data = corp.interrogate({'w': r'^c'}, exclude = {'l': r'check'}, show = ['l', 'f'])
+    data = corp.interrogate({'w': r'^c'}, exclude={'l': r'check'}, show=['l', 'f'])
     st = set(['corpus/nsubjpass',
              'corpus/compound',
              'corpkit/nmod:poss',
@@ -120,7 +120,7 @@ def test_interro5():
 def test_interro_multiindex_tregex_justspeakers():
     """Testing interrogation 6"""
     import pandas as pd
-    data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers = ['each'])
+    data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers=['each'])
     assert_equals(all(data.multiindex().results.index), 
                   all(pd.MultiIndex(levels=[['ANONYMOUS', 'NEWCOMER', 'TESTER', 
                       'UNIDENTIFIED', 'Total'], ['first', 'second', 'Total']],
