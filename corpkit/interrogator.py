@@ -50,7 +50,7 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    if isinstance(search, STRINGTYPE) and len(search) > 3:
+    if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')
 
     import codecs
@@ -80,6 +80,11 @@ def interrogator(corpus,
         is_a_word = re.compile(r'.*')
     
     have_java = check_jdk()
+
+    # convert cql-style queries
+    if kwargs.get('cql'):
+        from corpkit.cql import to_corpkit
+        search, exclude = to_corpkit(search)
 
     def signal_handler(signal, _):
         """pause on ctrl+c, rather than just stop loop"""   

@@ -963,3 +963,20 @@ def pat_format(pat, case_sensitive=False, root=False):
         else:
             pat = re.compile(pat, re.IGNORECASE)
     return pat
+
+
+def make_name_to_query_dict(existing={}):
+    from corpkit.constants import transshow, transobjs
+    for l, o in transobjs.items():
+        if o == 'Match':
+            o = ''
+        else:
+            o = o + ' '
+        for m, p in sorted(transshow.items()):
+            if m in ['n', 't']:
+                continue
+            if p != 'POS' and o != '':
+                p = p.lower()
+            existing['%s%s' % (o, p)] = '%s%s' % (l, m)
+    return existing
+    
