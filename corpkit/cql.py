@@ -1,17 +1,51 @@
-"""Translating between CQL and corpkit"""
+"""
+Translating between CQL and corpkit
 
-def remake_special(querybit, **kwargs):
+* CQL is extended through the use of wordlists
+
+"""
+
+def remake_special(querybit, customs=False, return_list=False, **kwargs):
+    """expand references to wordlists in queries"""
+    import re
     from corpkit.dictionaries import roles, wordlists, processes
+    from corpkit.other import as_regex
+    
+    def convert(d):
+        """convert dict to named tuple"""
+        from collections import namedtuple
+        return namedtuple('outputnames', list(d.keys()))(**d)
+
+    if customs:
+        customs = convert(customs)
+
     mapped = {'ROLES': roles,
               'WORDLISTS': wordlists,
-              'PROCESSES': processes}
+              'PROCESSES': processes,
+              'LIST': customs,
+              'CUSTOM': customs}
 
-    possible = ['ROLES', 'WORDLISTS', 'PROCESSES']
-    if any(querybit.startswith(x) for x in possible):
-        macro, micro = querybit.split(':', 1)
-        return getattr(mapped[macro], micro.lower()).as_regex(**kwargs)
-    else:
+    if not any(x in querybit for x in mapped.keys()):
         return querybit
+    thereg = r'(' + '|'.join(mapped.keys()) + r'):([A-Z0-9]+)'
+    splitup = re.split(thereg, querybit)
+    fixed = []
+    skipme = []
+    for i, bit in enumerate(splitup):
+        if i in skipme:
+            continue
+        if mapped.get(bit):
+            att = getattr(mapped[bit], splitup[i+1].lower())
+            if hasattr(att, 'words') and att.words:
+                att = att.words
+            if return_list:
+                return att
+            att = att.as_regex(**kwargs)
+            fixed.append(att)
+            skipme.append(i+1)
+        else:
+            fixed.append(bit)
+    return ''.join(fixed)   
 
 def process_piece(piece, op='=', **kwargs):
     from corpkit.process import make_name_to_query_dict
@@ -36,19 +70,31 @@ def process_piece(piece, op='=', **kwargs):
 def to_corpkit(cstring, **kwargs):
     sdict = {}
     edict = {}
-    cstring = cstring.strip('[] ')
-    clist = cstring.split(' & ')
-    for piece in clist:
-        targ, crit = process_piece(piece, op='!=', **kwargs)
-        if targ is False and crit is False:
-            targ, crit = process_piece(piece, op='=', **kwargs)
-            # assume it's just a word without operator
+    cstring = [i.strip('[] ') for i in cstring.split('] [')]
+    for i, c in enumerate(cstring):
+        c = c.strip('[] ')
+        clist = c.split(' & ')
+        for piece in clist:
+            targ, crit = process_piece(piece, op='!=', **kwargs)
             if targ is False and crit is False:
-                sdict['w'] = piece.strip('"')
+                
+                targ, crit = process_piece(piece, op='=', **kwargs)
+                # assume it's just a word without operator
+                if targ is False and crit is False:
+                    if i > 0:
+                        b = '+{}w'.format(i)
+                        sdict[b] = piece.strip('"')
+                    else:
+                        sdict['w'] = piece.strip('"')
+                else:
+                    if i > 0:
+                        targ = '+%d%s' % (i, targ)
+                    sdict[targ] = crit
             else:
-                sdict[targ] = crit
-        else:
-            edict[targ] = crit
+                if i > 0:
+                    targ = '{}'.format(targ)
+                edict[targ] = crit
+
     return sdict, edict
 
 def to_cql(dquery, exclude=False, **kwargs):

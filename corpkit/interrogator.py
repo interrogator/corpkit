@@ -86,6 +86,7 @@ def interrogator(corpus,
     if cql:
         from corpkit.cql import to_corpkit
         search, exclude = to_corpkit(search)
+        print(search, exclude)
 
     def signal_handler(signal, _):
         if root:
@@ -991,6 +992,7 @@ def interrogator(corpus,
 
     # if it's already been through pmultiquery, don't do it again
     locs['search'] = search
+    locs['exclude'] = exclude
     locs['query'] = query
     locs['just_speakers'] = just_speakers
     locs['corpus'] = corpus

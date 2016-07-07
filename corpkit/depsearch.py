@@ -86,7 +86,7 @@ def dep_searcher(sents,
               'i': 'id',
               'x': 'pos'}
 
-    def locate_tokens(tok, deprole, attr):
+    def locate_tokens(tok, deprole, attr, adjacent=False):
         """
         take a token, return it, its gov or dependent
         """
@@ -98,6 +98,10 @@ def dep_searcher(sents,
                 return set([tok])
         elif deprole == 'h':
             return set(get_candidates(tok, justfirst=True))
+        elif deprole == '+':
+            return set([s.get_token_by_id(tok.id - int(adjacent))])
+        elif deprole == '-':
+            return set([s.get_token_by_id(tok.id + int(adjacent))])
         else:
             in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
             for lnk in in_deps:
@@ -162,9 +166,27 @@ def dep_searcher(sents,
                 tosearch = taglemma.get(tosearch.lower(), tosearch.lower())
             
             # search pattern against what we grabbed
-            
             if not re.search(pattern, tosearch):
                 continue
+
+
+            # this part for adjacency searching
+            justop = {k: v for k, v in search.items()
+                      if k.startswith('+') or k.startswith('-')}
+            if not repeating:
+                justop = False
+            if justop:
+                needed_matches = 0
+                for k, v in justop.items():
+                    import operator
+                    mapping = {'+': operator.add, '-': operator.sub}
+                    op, count = mapping.get(k[0]), int(k[1])
+                    newtoks = [s.get_token_by_id(op(tok.id, count))]
+                    res = simple_searcher(newtoks, k[0], v, k[-1], repeating=False)
+                    if res:
+                        needed_matches += 1
+                if not needed_matches >= len(justop):
+                    continue
 
             # return governor, dependent, or match
             matches |= locate_tokens(tok, deprole, attr)
@@ -292,6 +314,12 @@ def dep_searcher(sents,
                     return 'root'
         return 'none' # not possible?
 
+    def show_adjacent(tok, repeat, space):
+        import operator
+        mapping = {'+': operator.add, '-': operator.sub}
+        op, count = mapping.get(space[0]), int(space[1])
+        return next((i for i in tokens if i.id == op(tok.id, count)), 'none')
+
     def show_head(tok, _):
         if not corefs:
             return 'none'
@@ -351,7 +379,7 @@ def dep_searcher(sents,
         """take a single search/show_bit type, return match"""
         #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
         ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r']
-        starts = ['d', 'g', 'm', 'n', 'b', 'h']
+        starts = ['d', 'g', 'm', 'n', 'b', 'h', '+', '-']
         show_bit = show_bit.lstrip('n')
         show_bit = show_bit.lstrip('b')
         show_bit = list(show_bit)
@@ -359,6 +387,8 @@ def dep_searcher(sents,
             show_bit.append('w')
         if show_bit[0] not in starts:
             show_bit.insert(0, 'm')
+        if show_bit[0] in ['+', '-']:
+            return show_adjacent, show_bit[-1]
         return lookup_show.get(show_bit[0]), show_bit[1]
 
     def distancer(matching_tokens, token):
@@ -595,8 +625,11 @@ def dep_searcher(sents,
             single_token_bits = []
             for val in show:
                 get_tok, show_bit = get_list_of_lookup_funcs(val)
-                # get the token we need to format
-                tok = get_tok(token, repeat)
+                if get_tok == show_adjacent:
+                    tok = get_tok(token, repeat, val)
+                else:
+                    # get the token we need to format
+                    tok = get_tok(token, repeat)
                 # get the word/lemma text of the token
                 to_show = show_this(tok, show_bit)
                 if isinstance(exclude, dict) and val in exclude:
@@ -632,7 +665,7 @@ def dep_searcher(sents,
             
         return output
 
-    def remove_by_mode(matching_tokens, mode):
+    def remove_by_mode(matching_tokens, mode, excluding=False):
         """
         If search/excludemode is 'all', remove words that don't always appear.
         """
@@ -640,7 +673,10 @@ def dep_searcher(sents,
             return matching_tokens
         from collections import Counter
         counted = Counter(matching_tokens)
-        must_contain = len(search)
+        if excluding:
+            must_contain = len(search)
+        else:
+            must_contain = len([i for i in search if i.isalpha()])
         return [k for k, v in counted.items() if v >= must_contain]
 
     ####################################################
@@ -681,6 +717,8 @@ def dep_searcher(sents,
             tokens = [w for w in tokens if w.word.lower() not in wl.closedclass]
 
         for srch, pat in search.items():
+            if srch[0] in ['+', '-']:
+                continue
             deprole, attr = srch[0], srch[-1]
             matching_tokens += simple_searcher(tokens, deprole, pat, attr)
 
@@ -694,7 +732,7 @@ def dep_searcher(sents,
                 for remove in simple_searcher(tokens, exclv, expat, exattr):
                     removes.append(remove)
 
-            removes = remove_by_mode(removes, excludemode)
+            removes = remove_by_mode(removes, excludemode, excluding=True)
                 
             # do removals
             for i in removes:

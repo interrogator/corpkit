@@ -580,18 +580,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # todo: newer method
         from corpkit.constants import transshow, transobjs, LETTERS
-        convert_name_to_query = {'Trees': 't', 'Stats': 's'}
-        for l, o in transobjs.items():
-            if o == 'Match':
-                o = ''
-            else:
-                o = o + ' '
-            for m, p in sorted(transshow.items()):
-                if m in ['n', 't']:
-                    continue
-                if p != 'POS' and o != '':
-                    p = p.lower()
-                convert_name_to_query['%s%s' % (o, p)] = '%s%s' % (l, m)
+        from corpkit.process import make_name_to_query_dict
+
+        exist = {'Trees': 't', 'Stats': 's', 'CQL': 'cql'}
+        convert_name_to_query = make_name_to_query_dict(exist)
 
         # these are example queries for each data type
         def_queries = {}
@@ -606,6 +598,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 def_queries[i] = r'[012345]',
             elif i.lower().endswith('stats'):
                 def_queries[i] = r'any',
+            elif i.lower().endswith('cql'):
+                def_queries[i] = r'[pos="RB" & word=".*ly$"]',
             elif i.lower().endswith('pos'):
                 def_queries[i] = r'^[NJR]',
             elif i.lower().endswith('index'):
@@ -798,67 +792,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 table.createTableFrame()            # sorts by total freq, ok for now
                 table.redrawTable()
 
-        def remake_special_query(query, return_list = False):
-            """turn special queries (LIST:NAME) into appropriate regexes, lists, etc"""
-            # for custom queries
-            from collections import namedtuple
-
-            def convert(dictionary):
-                """convert dict to named tuple"""
-                return namedtuple('outputnames', list(dictionary.keys()))(**dictionary)
-
-            # possible identifiers of special queries---some obsolete or undocumented
-            lst_of_specials = ['PROCESSES:',
-                               'ROLES:',
-                               'WORDLISTS:',
-                               'CUSTOM:',
-                               'LIST:']
-
-            if any([special in query for special in lst_of_specials]):
-                #timestring('Special query detected. Loading wordlists ... ')
-                
-                # get all our lists, and a regex maker for them
-                from dictionaries.process_types import processes
-                from dictionaries.roles import roles
-                from dictionaries.wordlists import wordlists
-                from corpkit.other import as_regex
-
-                customs = convert(custom_special_dict)
-
-                # map the special query type to the named tuple ... largely obsolete
-                dict_of_specials = {'PROCESSES:': processes,
-                                    'ROLES:': roles, 
-                                    'WORDLISTS:': wordlists,
-                                    'CUSTOM:': customs,
-                                    'LIST:': customs}
-
-                for special in lst_of_specials:
-                    if special in query:
-                        # possible values after colon
-                        types = [k for k in list(dict_of_specials[special].__dict__.keys())]
-                        # split up the query by the first part of the special query
-                        reg = re.compile('(^.*)(%s)(:)([A-Z0-9_]+)(.*$)' % special[:-1])
-                        # split the query into parts
-                        divided = re.search(reg, query)
-                        # set the right boundaries: line only
-                        the_bound = 'l'
-                        try:
-                            # when custom, the keys *are* capitalised :)
-                            if special != 'CUSTOM:' and special != 'LIST:':
-                                lst_of_matches = dict_of_specials[special].__dict__[divided.group(4).lower()]
-                            else:
-                                lst_of_matches = dict_of_specials[special].__dict__[divided.group(4)]
-                            if return_list:
-                                return lst_of_matches
-                            asr = as_regex(lst_of_matches, 
-                                           boundaries = the_bound, 
-                                           case_sensitive = bool(case_sensitive.get()), 
-                                           inverse = False)
-                            query = divided.group(1) + asr + divided.group(5)
-                        except:
-                            timestring('"%s" not found in wordlists.' % divided.group(4))
-                            return False                
-            return query
+        from corpkit.cql import remake_special
 
         def ignore():
             """turn this on when buttons should do nothing"""
@@ -1418,7 +1352,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         tab1.grid_columnconfigure(2, weight=5)
 
-        def do_interrogation(conc = True):
+        def do_interrogation(conc=True):
             """the main function: calls interrogator()"""
             import pandas
             from corpkit.interrogator import interrogator
@@ -1452,25 +1386,35 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 datatype_picked.set('Trees')
 
             else:
+
                 if special_queries.get() != 'Stats':
                     query = qa.get(1.0, END)
                     query = query.replace('\n', '')
-                    # allow list queries
-                    if query.startswith('[') and query.endswith(']') and ',' in query:
-                        query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                    #elif transdict[searchtype()] in ['e', 's']:
-                        #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                    else:
-                        # convert special stuff
-                        query = remake_special_query(query)
-                        if query is False:
-                            return
+                    if not datatype_picked.get() == 'CQL':
+                        # allow list queries
+                        if query.startswith('[') and query.endswith(']') and ',' in query:
+                            query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                        #elif transdict[searchtype()] in ['e', 's']:
+                            #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                        else:
+                            # convert special stuff
+                            query = remake_special(query, customs=custom_special_dict, 
+                                                   case_sensitive=case_sensitive.get())
+                            if query is False:
+                                return
 
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data='interrogation')
-            
+
+            cqlmode = IntVar()
+            cqlmode.set(0)
+
             # get the main query
             so = datatype_picked.get()
+
+            if so == 'CQL':
+                cqlmode.set(1)
+
             selected_option = convert_name_to_query.get(so, so)
 
             if selected_option == '':
@@ -1482,6 +1426,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 # this should already be done
                 queryd[k] = v
             queryd[selected_option] = query
+            
+            # cql mode just takes a string
+            if cqlmode.get():
+                queryd = query
 
             if selected_option == 's':
                 queryd = {'s': 'any'}
@@ -1527,6 +1475,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                                  'nltk_data_path': nltk_data_path,
                                  'regex': regex,
                                  'coref': coref.get(),
+                                 'cql': cqlmode.get(),
                                  'files_as_subcorpora': bool(files_as_subcorpora.get())}
 
             excludes = {}
@@ -1534,7 +1483,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 if k != 'None':
                     excludes[k.lower()[0]] = v
             if exclude_op.get() != 'None':
-                q = remake_special_query(exclude_str.get(), return_list=True)
+                q = remake_special(exclude_str.get(), return_list=True,
+                                   customs=custom_special_dict, 
+                                                      case_sensitive=case_sensitive.get())
                 if q:
                     excludes[exclude_op.get().lower()[0]] = q
 
@@ -2067,7 +2018,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     if optvar is not None:
                         o = convert_name_to_query.get(optvar.get(), optvar.get())
                         q = entstring.get().strip()
-                        q = remake_special_query(q, return_list = True)
+                        q = remake_special(q, customs=custom_special_dict, 
+                                               case_sensitive=case_sensitive.get(), return_list=True)
                         output_dict[o] = q
                 # may not work on mac ...
                 if title == 'Additional criteria':
@@ -2759,7 +2711,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             else:
                 # convert special stuff
                 re.compile(entry_do_with)
-                entry_do_with = remake_special_query(entry_do_with, return_list = True)
+                entry_do_with = remake_special(entry_do_with, customs=custom_special_dict, 
+                                       case_sensitive=case_sensitive.get(),
+                                               return_list=True)
                 if entry_do_with is False:
                     return
 
@@ -3279,7 +3233,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     explval = explbox.get().lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
                 else:
                     explval = explbox.get().strip()
-                    explval = remake_special_query(explval)
+                    explval = remake_special(explval, customs=custom_special_dict, 
+                                           case_sensitive=case_sensitive.get())
                 d['explode'] = explval
             
             texu = texuse.get()
