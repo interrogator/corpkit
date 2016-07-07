@@ -81,12 +81,15 @@ def interrogator(corpus,
     
     have_java = check_jdk()
 
-    # convert cql-style queries
-    if kwargs.get('cql'):
+    # convert cql-style queries---pop for the sake of multiprocessing
+    cql = kwargs.pop('cql', None)
+    if cql:
         from corpkit.cql import to_corpkit
         search, exclude = to_corpkit(search)
 
     def signal_handler(signal, _):
+        if root:
+            return
         """pause on ctrl+c, rather than just stop loop"""   
         import signal
         import sys
@@ -585,7 +588,6 @@ def interrogator(corpus,
             only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf',
                           'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
             
-
             if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
                 form = ', '.join(i for i in list(search.keys()) if i in only_parse)
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
@@ -927,8 +929,9 @@ def interrogator(corpus,
     # set up pause method
     original_sigint = signal.getsignal(signal.SIGINT)
     if kwargs.get('paralleling', None) is None:
-        original_sigint = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, signal_handler)
+        if not root:
+            original_sigint = signal.getsignal(signal.SIGINT)
+            signal.signal(signal.SIGINT, signal_handler)
 
     # find out about concordancing
     only_conc = False
@@ -1292,7 +1295,8 @@ def interrogator(corpus,
                 print('\n')
                 conc_df.save(savename)
             goodbye_printer(only_conc=True)
-            signal.signal(signal.SIGINT, original_sigint)            
+            if not root:
+                signal.signal(signal.SIGINT, original_sigint)            
             return conc_df
     else:
         conc_df = None
@@ -1367,5 +1371,6 @@ def interrogator(corpus,
             p.children[2].value = goodbye.replace('\n', '')
         except AttributeError:
             pass
-    signal.signal(signal.SIGINT, original_sigint)
+    if not root:
+        signal.signal(signal.SIGINT, original_sigint)
     return interro
