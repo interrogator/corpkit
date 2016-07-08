@@ -92,7 +92,7 @@ def to_corpkit(cstring, **kwargs):
                     sdict[targ] = crit
             else:
                 if i > 0:
-                    targ = '{}'.format(targ)
+                    targ = '+{}{}'.format(i, targ)
                 edict[targ] = crit
 
     return sdict, edict

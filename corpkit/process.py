@@ -889,6 +889,10 @@ def dictformat(d, query=False):
         return 'Features'
     sformat = '\n'
     for k, v in d.items():
+        adj = ''
+        if k[0] in ['-', '+']:
+            adj = ' ' + k[:2]
+            k = k[2:]
         if k == 't':
             dratt = ''
         else:
@@ -900,7 +904,7 @@ def dictformat(d, query=False):
         if k == 't':
             drole = 'Trees'
         vform = getattr(v, 'pattern', v)
-        sformat += '                 %s %s: %s\n' % (drole, dratt.lower(), vform)
+        sformat += '                %s %s %s: %s\n' % (adj, drole, dratt.lower(), vform)
     return sformat
 
 
@@ -932,6 +936,13 @@ def fix_search(search, case_sensitive=False, root=False):
     for srch, pat in search.items():
         if len(srch) == 1 and srch in ends:
             srch = 'm%s' % srch
+        if len(srch) == 3 and srch[0] in ['+', '-']:
+            srch = list(srch)
+            if srch[-1] in ends:
+                srch.insert(2, 'm')
+            else:
+                srch.append('w')
+            srch = ''.join(srch)
         if isinstance(pat, dict):
             for k, v in list(pat.items()):
                 if k != 'w':
@@ -979,4 +990,3 @@ def make_name_to_query_dict(existing={}):
                 p = p.lower()
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
-    

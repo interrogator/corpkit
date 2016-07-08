@@ -86,7 +86,6 @@ def interrogator(corpus,
     if cql:
         from corpkit.cql import to_corpkit
         search, exclude = to_corpkit(search)
-        print(search, exclude)
 
     def signal_handler(signal, _):
         if root:

@@ -91,6 +91,11 @@ def dep_searcher(sents,
         take a token, return it, its gov or dependent
         """
         ret = set()
+        if adjacent and adjacent[0] == '+':
+            tok = s.get_token_by_id(tok.id - int(adjacent))
+        elif adjacent and adjacent[0] == '-':
+            tok = s.get_token_by_id(tok.id + int(adjacent))
+
         if deprole == 'm':
             if attr == 'f':
                 return set([s.get_token_by_id(tok.id)])
@@ -98,10 +103,7 @@ def dep_searcher(sents,
                 return set([tok])
         elif deprole == 'h':
             return set(get_candidates(tok, justfirst=True))
-        elif deprole == '+':
-            return set([s.get_token_by_id(tok.id - int(adjacent))])
-        elif deprole == '-':
-            return set([s.get_token_by_id(tok.id + int(adjacent))])
+
         else:
             in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
             for lnk in in_deps:
@@ -130,7 +132,8 @@ def dep_searcher(sents,
                     return candidates
         return candidates
 
-    def simple_searcher(tokens, deprole, pattern, attr, repeating=True):
+    def simple_searcher(tokens, deprole, pattern, attr, repeating=True, adjacent=False):
+
         if attr == 'f':
             return search_function(deprole, pattern)
         elif attr == 'r':
@@ -151,6 +154,21 @@ def dep_searcher(sents,
                     matches |= locate_tokens(tok, deprole, attr)
                 continue
 
+            adjstuff = False
+
+            # if looking at an adjacent search, select the adjacent
+            # token and then check pattern against it
+            if adjacent:
+                import operator
+                mapping = {'+': operator.add, '-': operator.sub}
+                op, count = mapping.get(adjacent[0]), int(adjacent[1])
+                the_id = op(tok.id, count)
+                oldtok = tok
+                tok = s.get_token_by_id(the_id)
+                if not tok:
+                    continue
+                adjstuff = (op, count)
+
             # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
             # deal with possible ints
@@ -169,27 +187,29 @@ def dep_searcher(sents,
             if not re.search(pattern, tosearch):
                 continue
 
-
             # this part for adjacency searching
-            justop = {k: v for k, v in search.items()
-                      if k.startswith('+') or k.startswith('-')}
-            if not repeating:
-                justop = False
-            if justop:
-                needed_matches = 0
-                for k, v in justop.items():
-                    import operator
-                    mapping = {'+': operator.add, '-': operator.sub}
-                    op, count = mapping.get(k[0]), int(k[1])
-                    newtoks = [s.get_token_by_id(op(tok.id, count))]
-                    res = simple_searcher(newtoks, k[0], v, k[-1], repeating=False)
-                    if res:
-                        needed_matches += 1
-                if not needed_matches >= len(justop):
-                    continue
+            #justop = {k: v for k, v in search.items()
+            #          if k.startswith('+') or k.startswith('-')}
+            #if not repeating:
+            #    justop = False
+            #if justop:
+            #    needed_matches = 0
+            #    for k, v in justop.items():
+            #        import operator
+            #        mapping = {'+': operator.add, '-': operator.sub}
+            #        op, count = mapping.get(k[0]), int(k[1])
+            #        newtoks = [s.get_token_by_id(op(tok.id, count))]
+            #        res = simple_searcher(newtoks, k[0], v, k[-1], repeating=False)
+            #        if res:
+            #            needed_matches += 1
+            #    if not needed_matches >= len(justop):
+            #        continue
 
             # return governor, dependent, or match
-            matches |= locate_tokens(tok, deprole, attr)
+            if adjacent:
+                tok = oldtok
+
+            matches |= locate_tokens(tok, deprole, attr, adjacent=adjstuff)
 
         return matches
 
@@ -665,7 +685,7 @@ def dep_searcher(sents,
             
         return output
 
-    def remove_by_mode(matching_tokens, mode, excluding=False):
+    def remove_by_mode(matching_tokens, mode):
         """
         If search/excludemode is 'all', remove words that don't always appear.
         """
@@ -673,10 +693,7 @@ def dep_searcher(sents,
             return matching_tokens
         from collections import Counter
         counted = Counter(matching_tokens)
-        if excluding:
-            must_contain = len(search)
-        else:
-            must_contain = len([i for i in search if i.isalpha()])
+        must_contain = len([i for i in search if i.isalpha()])
         return [k for k, v in counted.items() if v >= must_contain]
 
     ####################################################
@@ -718,9 +735,10 @@ def dep_searcher(sents,
 
         for srch, pat in search.items():
             if srch[0] in ['+', '-']:
-                continue
-            deprole, attr = srch[0], srch[-1]
-            matching_tokens += simple_searcher(tokens, deprole, pat, attr)
+                adj, deprole, attr = srch[:2], srch[-2], srch[-1]
+            else:
+                adj, deprole, attr = False, srch[0], srch[-1]
+            matching_tokens += simple_searcher(tokens, deprole, pat, attr, adjacent=adj)
 
         matching_tokens = remove_by_mode(matching_tokens, searchmode)
 
@@ -728,11 +746,15 @@ def dep_searcher(sents,
         removes = []
         if exclude:
             for excl, expat in exclude.items():
-                exclv, exattr = excl[0], excl[-1]
-                for remove in simple_searcher(tokens, exclv, expat, exattr):
+
+                if excl[0] in ['+', '-']:
+                    adj, exclv, exattr = excl[:2], excl[-2], excl[-1]
+                else:
+                    adj, exclv, exattr = False, excl[0], excl[-1]
+                for remove in simple_searcher(tokens, exclv, expat, exattr, adjacent=adj):
                     removes.append(remove)
 
-            removes = remove_by_mode(removes, excludemode, excluding=True)
+            removes = remove_by_mode(removes, excludemode)
                 
             # do removals
             for i in removes:
