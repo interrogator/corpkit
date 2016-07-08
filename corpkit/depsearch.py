@@ -51,6 +51,10 @@ def dep_searcher(sents,
     if not sents:
         return [], []
 
+    if any(x[0] in ['-', '+'] for x in search):
+        import operator
+        mapping = {'+': operator.add, '-': operator.sub}
+
     is_a_word = kwargs.get('is_a_word')
 
     if any(x.startswith('n') for x in show) or any(x.startswith('b') for x in show):
@@ -159,15 +163,13 @@ def dep_searcher(sents,
             # if looking at an adjacent search, select the adjacent
             # token and then check pattern against it
             if adjacent:
-                import operator
-                mapping = {'+': operator.add, '-': operator.sub}
-                op, count = mapping.get(adjacent[0]), int(adjacent[1])
+                op, count = adjacent
                 the_id = op(tok.id, count)
                 oldtok = tok
-                tok = s.get_token_by_id(the_id)
+                tok = next((i for i in tokens if i.id == the_id), False)
                 if not tok:
                     continue
-                adjstuff = (op, count)
+                adjstuff = adjacent
 
             # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
@@ -693,7 +695,7 @@ def dep_searcher(sents,
             return matching_tokens
         from collections import Counter
         counted = Counter(matching_tokens)
-        must_contain = len([i for i in search if i.isalpha()])
+        must_contain = len(search)
         return [k for k, v in counted.items() if v >= must_contain]
 
     ####################################################
@@ -735,7 +737,8 @@ def dep_searcher(sents,
 
         for srch, pat in search.items():
             if srch[0] in ['+', '-']:
-                adj, deprole, attr = srch[:2], srch[-2], srch[-1]
+                deprole, attr = srch[-2], srch[-1]   
+                adj = (mapping.get(srch[0]), int(srch[1]))
             else:
                 adj, deprole, attr = False, srch[0], srch[-1]
             matching_tokens += simple_searcher(tokens, deprole, pat, attr, adjacent=adj)
@@ -746,9 +749,9 @@ def dep_searcher(sents,
         removes = []
         if exclude:
             for excl, expat in exclude.items():
-
                 if excl[0] in ['+', '-']:
-                    adj, exclv, exattr = excl[:2], excl[-2], excl[-1]
+                    exclv, exattr = excl[-2], excl[-1]   
+                    adj = (mapping.get(excl[0]), int(excl[1]))
                 else:
                     adj, exclv, exattr = False, excl[0], excl[-1]
                 for remove in simple_searcher(tokens, exclv, expat, exattr, adjacent=adj):
