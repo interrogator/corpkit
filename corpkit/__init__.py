@@ -137,7 +137,11 @@ DataFrame.top = _top
 # Defining letters
 module = sys.modules[__name__]
 for letter in LETTERS:
-    setattr(module, letter, letter.lower())
+    if not letter.isalpha():
+        trans = letter.replace('A', '-', 1).replace('Z', '+', 1).lower()
+    else:
+        trans = letter.lower()
+    setattr(module, letter, trans)
     # other methods:
     # globals()[letter] = letter.lower()
     # exec('%s = "%s"' % (letter, letter.lower()))
