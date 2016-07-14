@@ -178,6 +178,10 @@ def interrogator(corpus,
         # first, put the relevant trees into temp file
         to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
                               if sent.parse_string is not None)
+        # make tuple with speakername...
+        #to_open = '\n'.join((get_speakername(sent), sent.parse_string.strip()) for sent in sents \
+        #                      if sent.parse_string is not None)
+
         q = list(search.values())[0]
         ops = ['-o', '-%s' % translated_option]
         concs = []
@@ -187,6 +191,9 @@ def interrogator(corpus,
                             root=root,
                             preserve_case=True
                            )
+
+        res = format_tregex(res)
+        
         if not no_conc:
             ops += ['-w', '-f']
             whole_res = tregex_engine(query=q, 
@@ -198,8 +205,11 @@ def interrogator(corpus,
             for line in whole_res:
                 line.insert(1, speakr) 
 
-            res = format_tregex(res)
-            whole_res = format_tregex(whole_res, whole=True)
+            # format match too depending on option
+            if not only_format_match:
+                whole_res = format_tregex(whole_res, whole=True)
+
+            # make conc lines from conc results
             concs = make_conc_lines_from_whole_mid(whole_res, res)
 
         if root:
@@ -551,7 +561,7 @@ def interrogator(corpus,
         statsmode = False
         tree_to_text = False
 
-        if search.get('t') and not just_speakers and not kwargs.get('tgrep'):
+        if search.get('t') and not just_speakers and not kwargs.get('tgrep') and not files_as_subcorpora:
             if have_java:
                 simple_tregex_mode = True
                 searcher = None
@@ -984,7 +994,10 @@ def interrogator(corpus,
     # split corpus if the user wants multiprocessing but no other iterable
     if not im and multiprocess:
         im = 'datalist'
-        corpus = corpus[:]
+        if hasattr(corpus, 'subcorpora') and corpus.subcorpora:
+            corpus = corpus[:]
+        else:
+            corpus = corpus.files
 
     search = fix_search(search, case_sensitive=case_sensitive, root=root)
     exclude = fix_search(exclude, case_sensitive=case_sensitive, root=root)
@@ -1067,12 +1080,14 @@ def interrogator(corpus,
     from traitlets import TraitError
     try:
         from ipywidgets import IntProgress
-
         _ = IntProgress(min=0, max=10, value=1)
         in_notebook = True
     except TraitError:
         in_notebook = False
     except ImportError:
+        in_notebook = False
+    # caused in newest ipython
+    except AttributeError:
         in_notebook = False
 
     # print welcome message
@@ -1140,7 +1155,7 @@ def interrogator(corpus,
         # dependencies, plaintext, tokens, slow_tregex and tree_to_text
         if not simple_tregex_mode:
             for f in files:
-                slow_treg_speaker_guess = kwargs.get('outname', False)
+                slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
                 if datatype == 'parse' and not tree_to_text:
                     # right now, this is not using the File class's read() or document
                     # methods. the reason is that there seem to be memory leaks. these
@@ -1266,7 +1281,8 @@ def interrogator(corpus,
                     if not only_conc:
                         if not preserve_case:
                             if not statsmode:
-                                res = [i.lower() for i in res]
+                                if res:
+                                    res = [i.lower() for i in res]
 
                         if spelling:
                             if not statsmode:

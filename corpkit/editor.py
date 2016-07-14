@@ -58,6 +58,10 @@ def editor(interrogation,
         from IPython.display import display, clear_output
     except ImportError:
         pass
+    # new ipython error
+    except AttributeError:
+        have_ipython = False
+        pass
 
     # to use if we also need to worry about concordance lines
     return_conc = False

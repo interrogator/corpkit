@@ -74,13 +74,6 @@ def pmultiquery(corpus,
         if all(getattr(x, 'level', False) == 's' for x in corpus):
             mult_corp_are_subs = True
 
-    mapcores = {'datalist': [corpus, 'corpus'],
-                'multiplecorpora': [corpus, 'corpus'],
-                'namedqueriessingle': [query, 'query'],
-                'eachspeaker': [just_speakers, 'just_speakers'],
-                'multiplespeaker': [just_speakers, 'just_speakers'],
-                'namedqueriesmultiple': [search, 'search']}
-
     if just_speakers:
         from corpkit.build import get_speaker_names_from_xml_corpus
         if just_speakers == 'each' or just_speakers == ['each']:
@@ -88,6 +81,13 @@ def pmultiquery(corpus,
         if len(just_speakers) == 0:
             print('No speaker name data found.')
             return
+
+    mapcores = {'datalist': [corpus, 'corpus'],
+                'multiplecorpora': [corpus, 'corpus'],
+                'namedqueriessingle': [query, 'query'],
+                'eachspeaker': [just_speakers, 'just_speakers'],
+                'multiplespeaker': [just_speakers, 'just_speakers'],
+                'namedqueriesmultiple': [search, 'search']}
 
     # a is a dummy, just to produce default one
     toiter, itsname = mapcores.get(multiple, [False, False])
@@ -116,9 +116,14 @@ def pmultiquery(corpus,
 
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
-    
     locs['printstatus'] = False
     locs['multiprocess'] = False
+    locs['df1_always_df'] = False
+    locs['files_as_subcorpora'] = False
+    locs['just_speakers'] = just_speakers
+
+    if multiple == 'multiplespeaker':
+        locs['multispeaker'] = True
 
     locs = {k: v for k, v in locs.items() if canpickle(v)}
     ds = [dict(**locs) for i in range(denom)]
@@ -132,6 +137,8 @@ def pmultiquery(corpus,
                 d['outname'] = bit.name.replace('-parsed', '')
             else:
                 d['outname'] = bit
+                if multiple in ['eachspeaker', 'multiplespeaker']:
+                    d['just_speakers'] = bit
             d[itsname] = bit
 
     # message printer should be a function...
@@ -262,7 +269,7 @@ def pmultiquery(corpus,
         
         if print_info:
             time = strftime("%H:%M:%S", localtime())
-            print("\n\n%s: Finished! Output is a dictionary with keys:\n\n         '%s'\n" % \
+            print("\n\n%s: Finished! Output is a dict-like object with keys:\n\n         '%s'\n" % \
                 (time, "'\n         '".join(sorted(out.keys()))))
 
         idict.query = qlocs

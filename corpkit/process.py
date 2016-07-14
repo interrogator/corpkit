@@ -14,7 +14,7 @@ def tregex_engine(corpus=False,
                   just_content_words=False,
                   root=False,
                   preserve_case=False,
-                  **kwarg
+                  **kwargs
                  ):
     """
     Run a Java Tregex query
@@ -218,16 +218,21 @@ def tregex_engine(corpus=False,
     make_tuples = []
 
     if filenaming:
-        for index, r in enumerate(res):
-            if r.startswith('# /'):
-                make_tuples.append([r, res[index + 1]])
-        res = make_tuples
-    
+        if any(x.startswith('# /') for x in res):
+            for index, r in enumerate(res):
+                if r.startswith('# /'):
+                    make_tuples.append([r, res[index + 1]])
+            res = make_tuples
+        # this deals with filtermode, slow_tregex, files_as_subcorpora...
+        else:
+            res = [[kwargs.get('filename', ''), x] for x in res] 
+
     if not preserve_case:
         if not filenaming:
             res = [w.lower().replace('/', '-slash-') for w in res]
         else:
             res = [[t, w.lower().replace('/', '-slash-')] for t, w in res]
+
     return res
 
 def show(lines, index, show='thread'):
@@ -488,6 +493,9 @@ def animator(progbar,
         except TraitError:
             pass
         except ImportError:
+            pass
+        # newest ipython error
+        except AttributeError:
             pass
     if not init:
         try:
