@@ -562,7 +562,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                                'Entities':     'w'}
 
         #convert_name_to_query = {'Trees': 't',
-        #                        'Words': 'w',
+        #                        'Word': 'w',
         #                        'POS': 'p',
         #                        'Lemmata': 'l',
         #                        'Governor lemmata': 'gl',
@@ -1236,7 +1236,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         parser_memory.set(str(2000))
 
         truncate_conc_after = IntVar()
-        truncate_conc_after.set(1000)
+        truncate_conc_after.set(9999)
 
         truncate_spreadsheet_after = IntVar()
         truncate_spreadsheet_after.set(9999)
@@ -1750,20 +1750,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
                 for i in sorted(convert_name_to_query.keys()):
-                    pick_a_datatype['menu'].add_command(label = i, command=_setit(datatype_picked, i))
+                    pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
                 #parsebut.config(state=DISABLED)
                 #speakcheck_build.config(state=DISABLED)
-                datatype_picked.set('Words')
+                datatype_picked.set('Word')
             if not corpus_name.endswith('-tokenised'):
                 if not corpus_name.endswith('-parsed'):
-                    pick_a_datatype['menu'].add_command(label = 'Words', command=_setit(datatype_picked, 'Words'))
-                    datatype_picked.set('Words')
+                    pick_a_datatype['menu'].add_command(label='Word', command=_setit(datatype_picked, 'Word'))
+                    datatype_picked.set('Word')
                     
             else:
-                for i in ['Words', 'N-grams']:
-                    pick_a_datatype['menu'].add_command(label = i, command=_setit(datatype_picked, i))
+                for i in ['Word', 'N-grams']:
+                    pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
                 #tokbut.config(state=DISABLED)
-                datatype_picked.set('Words')
+                datatype_picked.set('Word')
             
             add_subcorpora_to_build_box(fp)
 
@@ -2062,7 +2062,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 """clear the popup"""
                 for optmenu, optvar, entbox, entstring in list(objs.values()):
                     if optmenu is not None:
-                        optvar.set('Words')
+                        optvar.set('Word')
                         entstring.set('')
 
             def new_item(total, optvar, enttext, init = False):
@@ -2073,7 +2073,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     n_items.remove(i)
                 chosen = StringVar()
                 poss = ['None'] + sorted(convert_name_to_query.keys())
-                chosen.set('Words')
+                chosen.set('Word')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 opt.config(width=16)
                 t = total + 1
@@ -2287,7 +2287,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         Label(interro_opt, text='Search: ').grid(row=1, column=0, sticky=W, pady=10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *sorted(convert_name_to_query.keys()))
         pick_a_datatype.configure(width=30, justify=CENTER)
-        datatype_picked.set('Words')
+        datatype_picked.set('Word')
         pick_a_datatype.grid(row=1, column=0, columnspan=2, sticky=W, padx=(136,0))
         datatype_picked.trace("w", callback)
         
@@ -5510,21 +5510,24 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             for k, v in sorted(q_dict.items()):
                 try:
-                    if v is False:
-                        v = 'False'
-                    if v == 0:
+                    if isinstance(v, (int, float)) and v == 0:
+                        v = '0'
+                    if v is None:
+                        v == 'None'
+                    if not v:
                         v = 'False'
                     if v is True:
                         v = 'True'
                     # could be bad with threshold etc
                     if v == 1:
-                        v = True
+                        v = 'True'
                 except:
                     pass
                 mlb.append([k, v])
 
             if q_dict.get('query'):
-                qubox = Text(frame_to_the_right, font=("Courier New", 14), relief = SUNKEN, wrap = WORD, width=40, height=5, undo = True)
+                qubox = Text(frame_to_the_right, font=("Courier New", 14), relief=SUNKEN,
+                             wrap=WORD, width=40, height=5, undo=True)
                 qubox.grid(column=0, row=2, rowspan = 1, padx=(10,0))
                 qubox.delete(1.0, END)
                 qubox.insert(END, q_dict['query'])
