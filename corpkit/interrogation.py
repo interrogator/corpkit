@@ -28,7 +28,7 @@ class Interrogation(object):
 
     def __str__(self):
         if self.query.get('corpus'):
-            prst = self.query['corpus'].name
+            prst = getattr(self.query['corpus'], 'name', self.query['corpus'])
         else:
             try:
                 prst = self.query['interrogation'].query['corpus'].name

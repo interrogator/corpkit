@@ -191,8 +191,12 @@ class Corpus(object):
         from corpkit.process import makesafe
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(
-                *key.indices(len(self.subcorpora)))])
+            if hasattr(self, 'subcorpora') and self.subcorpora:
+                return Datalist([self[ii] for ii in range(
+                    *key.indices(len(self.subcorpora)))])
+            elif hasattr(self, 'files') and self.files:
+                return Datalist([self[ii] for ii in range(
+                    *key.indices(len(self.files)))])                
         elif isinstance(key, int):
             return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
         else:
