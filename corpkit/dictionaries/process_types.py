@@ -12,7 +12,7 @@ except:
 
 def _verbs():
     import corpkit
-    from dictionaries.verblist import allverbs
+    from corpkit.dictionaries.verblist import allverbs
     verblist = [i for i in allverbs if '_' not in i]
     return Wordlist(verblist)
 
