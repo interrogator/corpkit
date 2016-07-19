@@ -70,6 +70,9 @@ def tregex_engine(corpus=False,
     if filtermode:
         options.pop(options.index('-filter'))
 
+    treenumbermode = '-n' in options
+    speaker_data = kwargs.get('speaker_data')
+
     on_cloud = checkstack('/opt/python/lib')
 
     # if check_query, enter the while loop
@@ -217,7 +220,20 @@ def tregex_engine(corpus=False,
     # make unicode and lowercase
     make_tuples = []
 
-    if filenaming:
+    # if we had numbered trees, remove numbers if no speaker data
+    if treenumbermode:
+        make_tuples = []
+        if speaker_data:
+            for line in res:
+                num, data = line.split(': ', 1)
+                speaker = speaker_data[int(num) - 1]
+                make_tuples.append([speaker, data])
+            res = make_tuples
+
+        else:
+            res = [d for n, d in res.split(': ', 1)]
+
+    if filenaming and not speaker_data:
         if any(x.startswith('# /') for x in res):
             for index, r in enumerate(res):
                 if r.startswith('# /'):

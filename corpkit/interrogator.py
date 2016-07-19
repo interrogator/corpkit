@@ -78,6 +78,8 @@ def interrogator(corpus,
         is_a_word = re.compile(regex_nonword_filter)
     else:
         is_a_word = re.compile(r'.*')
+
+    from traitlets import TraitError
     
     have_java = check_jdk()
 
@@ -176,23 +178,34 @@ def interrogator(corpus,
         import os
         from corpkit.process import tregex_engine
         # first, put the relevant trees into temp file
-        to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
-                              if sent.parse_string is not None)
-        # make tuple with speakername...
-        #to_open = '\n'.join((get_speakername(sent), sent.parse_string.strip()) for sent in sents \
+        #to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
         #                      if sent.parse_string is not None)
+        # make tuple with speakername...
+        speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
+                              if sent.parse_string is not None]
+        if speak_tree:
+            speak, tree = zip(*speak_tree)
+        else:
+            speak, tree = [], []
+        
+        if all(not x for x in speak):
+            speak = False
+
+        to_open = '\n'.join(tree)
+        concs = []
 
         q = list(search.values())[0]
-        ops = ['-o', '-%s' % translated_option]
-        concs = []
+        ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
+
         res = tregex_engine(query=q, 
                             options=ops, 
                             corpus=to_open,
                             root=root,
-                            preserve_case=True
+                            preserve_case=True,
+                            speaker_data=speak
                            )
 
-        res = format_tregex(res)
+        res = format_tregex(res, speaker_data=speak)
         
         if not no_conc:
             ops += ['-w', '-f']
@@ -200,17 +213,18 @@ def interrogator(corpus,
                                       options=ops, 
                                       corpus=to_open,
                                       root=root,
-                                      preserve_case=True
+                                      preserve_case=True,
+                                      speaker_data=speak
                                      )
-            for line in whole_res:
-                line.insert(1, speakr) 
+            #for line in whole_res:
+            #    line.insert(1, speakr) 
 
             # format match too depending on option
             if not only_format_match:
-                whole_res = format_tregex(whole_res, whole=True)
+                whole_res = format_tregex(whole_res, whole=True, speaker_data=speak)
 
             # make conc lines from conc results
-            concs = make_conc_lines_from_whole_mid(whole_res, res)
+            concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
 
         if root:
             root.update()
@@ -264,6 +278,7 @@ def interrogator(corpus,
                                 options=['-o', '-C'], 
                                 corpus=to_open,  
                                 root=root
+
                                )
             statsmode_results[name] += int(res)
             if root:
@@ -271,7 +286,8 @@ def interrogator(corpus,
         return statsmode_results, []
 
     def make_conc_lines_from_whole_mid(wholes,
-                                       middle_column_result
+                                       middle_column_result,
+                                       filename=False
                                       ):
         """
         Create concordance line output from tregex output
@@ -286,6 +302,10 @@ def interrogator(corpus,
         unique_wholes = []
         unique_middle_column_result = []
         duplicates = []
+        
+        if filename:
+            wholes = [[filename] + list(x) for x in wholes]
+
         for (f, sk, whole), mid in zip(wholes, middle_column_result):
             joined = '-join-'.join([f, sk, whole, mid])
             if joined not in duplicates:
@@ -379,7 +399,7 @@ def interrogator(corpus,
         firstletter = next((c for c in qr if c.isalpha()), 'n')
         return tagdict.get(firstletter.upper(), 'n')
 
-    def format_tregex(results, whole=False):
+    def format_tregex(results, whole=False, speaker_data=False):
         """format tregex by show list"""
         import re
 
@@ -390,8 +410,13 @@ def interrogator(corpus,
             return
 
         done = []
+
+        if speaker_data:
+            if not whole:
+                snames, results = zip(*results)
+
         if whole:
-            fnames, snames, results = zip(*results)
+            fnames, results = zip(*results)
 
         if 'l' in show or 'x' in show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
@@ -444,7 +469,7 @@ def interrogator(corpus,
             joined = '/'.join(bits)
             done.append(joined)
         if whole:
-            done = zip(fnames, snames, done)
+            done = zip(fnames, done)
         return done
 
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
@@ -669,15 +694,22 @@ def interrogator(corpus,
                      't': [r'__ < (/%s/ !< __)' % regex, r'__ < (/.?[A-Za-z0-9].?/ !< __)', 'o'],
                      'w': [r'/%s/ !< __' % regex, r'/.?[A-Za-z0-9].?/ !< __', 't'],
                      'c': [r'/%s/ !< __'  % regex, r'/.?[A-Za-z0-9].?/ !< __', 'C'],
-                     'l': [r'/%s/ !< __'  % regex, r'/.?[A-Za-z0-9].?/ !< __', 't']
+                     'l': [r'/%s/ !< __'  % regex, r'/.?[A-Za-z0-9].?/ !< __', 't'],
+                     'u': [r'/%s/ !< __'  % regex, r'/.?[A-Za-z0-9].?/ !< __', 'v']
                     }
 
+        newshow = []
         listq, anyq, translated_option = treg_dict.get(show[0].lower())
+        newshow.append(translated_option)
+        for item in show[1:]:
+            _, _, noption = treg_dict.get(item.lower())
+            newshow.append(noption)
+
         if isinstance(search['t'], list):
             search['t'] = listq
         elif search['t'] == 'any':   
             search['t'] = anyq
-        return search['t'], translated_option
+        return search['t'], newshow
 
     def plaintext_regex_search(pattern, plaintext_data, concordancing=False, **kwargs):
         """search for regex in plaintext corpora
@@ -1072,12 +1104,11 @@ def interrogator(corpus,
         op = ['-o', '-t', '-w']
     elif simple_tregex_mode:
         treg_q = search['t']
-        op = ['-o', '-' + translated_option]
+        op = ['-%s' % i for i in translated_option] + ['-o']
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
 
-    from traitlets import TraitError
     try:
         from ipywidgets import IntProgress
         _ = IntProgress(min=0, max=10, value=1)
@@ -1120,6 +1151,7 @@ def interrogator(corpus,
             # if concordancing, do the query again with 'whole' sent and fname
             if not no_conc:
                 ops = ['-w', '-f'] + op
+                ops = [i for i in ops if i != '-n']
                 whole_result = tregex_engine(query=search['t'],
                                              options=ops,
                                              corpus=subcorpus_path,

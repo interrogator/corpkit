@@ -106,6 +106,8 @@ def plotter(df,
     try:
         import seaborn as sns
     except ImportError:
+        pass
+    except AttributeError:
         pass   
     
     if interactive:
@@ -343,16 +345,16 @@ def plotter(df,
     if not was_series:
         for name, ax in zip(['Total'] * 2 + ['tkintertable-order'] * 2, [0, 1, 0, 1]):
             try:
-                dataframe = dataframe.drop(name, axis = ax, errors = 'ignore')
+                dataframe = dataframe.drop(name, axis=ax, errors='ignore')
             except:
                 pass
     
     try:
-        dataframe = dataframe.drop('tkintertable-order', errors = 'ignore')
+        dataframe = dataframe.drop('tkintertable-order', errors='ignore')
     except:
         pass
     try:
-        dataframe = dataframe.drop('tkintertable-order', axis = 1, errors = 'ignore')
+        dataframe = dataframe.drop('tkintertable-order', axis=1, errors='ignore')
     except:
         pass
 
@@ -440,7 +442,7 @@ def plotter(df,
     # remove stats fields, put p in entry text, etc.
     statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
     try:
-        dataframe = dataframe.drop(statfields, axis = 1, errors = 'ignore')
+        dataframe = dataframe.drop(statfields, axis=1, errors='ignore')
     except:
         pass    
     try:
@@ -467,12 +469,12 @@ def plotter(df,
                 newname = '%s (%s)' % (col, pstr)
                 newnames.append(newname)
             dataframe.columns = newnames
-            dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
+            dataframe.drop(statfields, axis=0, inplace = True, errors='ignore')
         else:
             warnings.warn('No p-values calculated to show.\n\nUse keep_stats kwarg while editing to generate these values.')
     else:
         if there_are_p_vals:
-            dataframe.drop(statfields, axis = 0, inplace = True, errors = 'ignore')
+            dataframe.drop(statfields, axis=0, inplace = True, errors='ignore')
 
     # make and set y label
     absolutes = True
@@ -491,7 +493,7 @@ def plotter(df,
     ##########################################
 
     # set defaults, with nothing for heatmap yet
-    if colours is True or colours == 'default':
+    if colours is True or colours == 'default' or colours == 'Default':
         if kind != 'heatmap':
             colours = 'viridis'
         else:
@@ -839,12 +841,18 @@ def plotter(df,
             for index, a in enumerate(axes):
                 labels = [item.get_text() for item in a.get_xticklabels()]
                 rotation = rotate_degrees(the_rotation, labels)                
-                a.set_xticklabels(labels, rotation = rotation, ha='right')
+                if the_rotation == 0:
+                    ax.set_xticklabels(labels, rotation=rotation, ha='center')
+                else:
+                    ax.set_xticklabels(labels, rotation=rotation, ha='right')
         else:
             if kind == 'heatmap':
                 labels = [item.get_text() for item in ax.get_xticklabels()]
                 rotation = rotate_degrees(the_rotation, labels)
-                ax.set_xticklabels(labels, rotation = rotation, ha='right')
+                if the_rotation == 0:
+                    ax.set_xticklabels(labels, rotation=rotation, ha='center')
+                else:
+                    ax.set_xticklabels(labels, rotation=rotation, ha='right')
 
         if transparent:
             plt.gcf().patch.set_facecolor('white')
