@@ -136,7 +136,8 @@ def dep_searcher(sents,
                     return candidates
         return candidates
 
-    def simple_searcher(tokens, deprole, pattern, attr, repeating=True, adjacent=False):
+    def simple_searcher(tokens, deprole, pattern, attr,
+                        repeating=True, adjacent=False, sliced=False):
 
         if attr == 'f':
             return search_function(deprole, pattern)
@@ -144,32 +145,56 @@ def dep_searcher(sents,
             return distance_searcher(tokens, pattern)
         else:
             attrib = attr_trans.get(attr, attr)
+        
         matches = set()
 
         for tok in tokens:
-
             if corefs and repeating:
                 # get a list of tokens that could match, and pass those
                 # recursively into this function
                 candidates = get_candidates(tok)
                 #
-                res = simple_searcher(candidates, deprole, pattern, attr, repeating=False)
+                res = simple_searcher(candidates, deprole, pattern, attr, repeating=False, sliced=sliced)
                 if res:
                     matches |= locate_tokens(tok, deprole, attr)
                 continue
 
-            adjstuff = False
-
             # if looking at an adjacent search, select the adjacent
             # token and then check pattern against it
+            adjstuff = False
             if adjacent:
+                # add subtract method and number of spaces
                 op, count = adjacent
-                the_id = op(tok.id, count)
-                oldtok = tok
-                tok = next((i for i in tokens if i.id == the_id), False)
-                if not tok:
+                if not sliced:
+                    the_id = op(tok.id, count)
+                    oldtok = tok
+                    tok = next((i for i in tokens if i.id == the_id), False)
+                    if not tok:
+                        continue
+                    adjstuff = adjacent
+                # if a slice was found, check for a match within the slice
+                # seems like some little bugs here for now
+                else:
+                    # rewrite this!
+                    # so, if we're on token 5, and our slice is +0:5:
+                    the_first_id = op(tok.id, int(sliced[0])) # 5+0 = 5
+                    the_second_id = op(the_first_id, int(sliced[1])) # 5 + 5 = 10
+                    candidates = tokens[the_first_id:the_second_id] # tokens[5:10]
+                    res = simple_searcher(candidates, deprole, pattern, attr, repeating=False)
+                    if sliced[-1] is not False:
+                        if sliced[-1] == '+':
+                            if len(candidates) > res:
+                                continue
+                            else:
+                                if res:
+                                    matches |= locate_tokens(tok, deprole, attr)
+                        else:
+                            if res:
+                                matches |= locate_tokens(tok, deprole, attr)
+                    else:
+                        if res:
+                            matches |= locate_tokens(tok, deprole, attr)
                     continue
-                adjstuff = adjacent
 
             # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
@@ -189,28 +214,11 @@ def dep_searcher(sents,
             if not re.search(pattern, tosearch):
                 continue
 
-            # this part for adjacency searching
-            #justop = {k: v for k, v in search.items()
-            #          if k.startswith('+') or k.startswith('-')}
-            #if not repeating:
-            #    justop = False
-            #if justop:
-            #    needed_matches = 0
-            #    for k, v in justop.items():
-            #        import operator
-            #        mapping = {'+': operator.add, '-': operator.sub}
-            #        op, count = mapping.get(k[0]), int(k[1])
-            #        newtoks = [s.get_token_by_id(op(tok.id, count))]
-            #        res = simple_searcher(newtoks, k[0], v, k[-1], repeating=False)
-            #        if res:
-            #            needed_matches += 1
-            #    if not needed_matches >= len(justop):
-            #        continue
-
-            # return governor, dependent, or match
+            # get the original token if adjacent
             if adjacent:
                 tok = oldtok
 
+            # return governor, dependent, or match
             matches |= locate_tokens(tok, deprole, attr, adjacent=adjstuff)
 
         return matches
@@ -235,19 +243,6 @@ def dep_searcher(sents,
                     in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
                     for lnk in in_deps:
                         matches.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
-
-            # improvement here?
-            #for l in deps.links:
-            #    if re.search(pat, l.type):
-            #        if deprole == 'g':
-            #            gotten = [s.get_token_by_id(i.dependent.idx) for i in deps.links \
-            #                      if i.dependent.idx == l.governor.idx]
-            #        elif deprole == 'd':
-            #            gotten = [s.get_token_by_id(i.dependent.idx) for i in deps.links \
-            #                      if i.dependent.idx == l.governor.idx]
-            #        for tk in gotten:
-            #            matches.add(tk)
-
         return matches
 
 
@@ -736,12 +731,28 @@ def dep_searcher(sents,
             tokens = [w for w in tokens if w.word.lower() not in wl.closedclass]
 
         for srch, pat in search.items():
+            # if adjacency enabled, get the normal stuff, then get
+            # a tuple that is left/right and how many places
+            sliced = False
             if srch[0] in ['+', '-']:
-                deprole, attr = srch[-2], srch[-1]   
+                deprole, attr = srch[-2], srch[-1]
                 adj = (mapping.get(srch[0]), int(srch[1]))
+                if len(srch) > 4 and ':' in srch:
+                    lsrch = list(srch)
+                    lsrch.pop(0)
+                    lsrch.pop(-1)
+                    lsrch.pop(-1)
+                    lsrch = ''.join(lsrch)
+                    sliced = lsrch.split(':', 1)
+                    if sliced[-1][-1] in ['+', '?']:
+                        sliced[-1] = sliced[-1][:-1]
+                    if not lsrch[-1].isdigit():
+                        sliced.append(lsrch[-1])
+                    else:
+                        sliced.append(False)
             else:
                 adj, deprole, attr = False, srch[0], srch[-1]
-            matching_tokens += simple_searcher(tokens, deprole, pat, attr, adjacent=adj)
+            matching_tokens += simple_searcher(tokens, deprole, pat, attr, adjacent=adj, sliced=sliced)
 
         matching_tokens = remove_by_mode(matching_tokens, searchmode)
 

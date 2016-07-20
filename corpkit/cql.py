@@ -5,6 +5,8 @@ Translating between CQL and corpkit
 
 """
 
+MAX = 9
+
 def remake_special(querybit, customs=False, return_list=False, **kwargs):
     """expand references to wordlists in queries"""
     import re
@@ -47,7 +49,10 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
             fixed.append(bit)
     return ''.join(fixed)   
 
-def process_piece(piece, op='=', **kwargs):
+def parse_quant(quant):
+    return quant
+
+def process_piece(piece, op='=', quant=False, **kwargs):
     from corpkit.process import make_name_to_query_dict
     if op not in piece:
         return False, False
@@ -67,31 +72,82 @@ def process_piece(piece, op='=', **kwargs):
             form = 'POS'
     return translator.get(form), criteria
 
+
+def tok_cql(query):
+    """take a cql query and return a list of tuples
+    which is token, quantifer"""
+    quantstarts = ['+', '{', ',', '}', '?', '*']
+    tokens = ''
+    count = 0
+    for i, t in enumerate(query):
+        if t == '[':
+            count += 1
+        if t == ']':
+            count -= 1
+        if count != 0:
+            tokens += t
+        else:
+            if count == 0 and t == ']':
+                try:
+                    if not query[i+1].isspace():
+                        tokens += t
+                        tokens += '\n'
+                    else:
+                        tokens += t
+                except IndexError:
+                    pass
+            # separate on space between tokens
+            elif t.isspace():
+                tokens += '\n'
+            # if part of quantifier
+            if t in quantstarts or t.isdigit():
+                tokens += t
+    tokens = tokens.split('\n')
+    skips = []
+    out = []
+    for i, t in enumerate(tokens):
+        if i in skips:
+            continue
+        try:
+            nextt = tokens[i+1]
+        except IndexError:
+            if t[0] not in quantstarts:
+                out.append([t, False])
+
+        if any(nextt.startswith(x) for x in quantstarts):
+            out.append([t, nextt])
+            skips.append(i+1)
+        else:
+            out.append([t, False])
+
+    return out
+
 def to_corpkit(cstring, **kwargs):
     sdict = {}
     edict = {}
-    cstring = [i.strip('[] ') for i in cstring.split('] [')]
-    for i, c in enumerate(cstring):
+    cstring = tok_cql(cstring)
+    for i, (c, q) in enumerate(cstring):
+        if q:
+            i = parse_quant(q)
         c = c.strip('[] ')
         clist = c.split(' & ')
         for piece in clist:
-            targ, crit = process_piece(piece, op='!=', **kwargs)
+            targ, crit = process_piece(piece, op='!=', quant=q, **kwargs)
             if targ is False and crit is False:
-                
-                targ, crit = process_piece(piece, op='=', **kwargs)
+                targ, crit = process_piece(piece, op='=', quant=q, **kwargs)
                 # assume it's just a word without operator
                 if targ is False and crit is False:
-                    if i > 0:
+                    if i > 0 or isinstance(i, str):
                         b = '+{}w'.format(i)
                         sdict[b] = piece.strip('"')
                     else:
                         sdict['w'] = piece.strip('"')
                 else:
-                    if i > 0:
+                    if i > 0 or isinstance(i, str):
                         targ = '+%d%s' % (i, targ)
                     sdict[targ] = crit
             else:
-                if i > 0:
+                if i > 0 or isinstance(i, str):
                     targ = '+{}{}'.format(i, targ)
                 edict[targ] = crit
 
