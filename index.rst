@@ -42,7 +42,7 @@ Below, this corpus is made into a `Corpus` object, parsed with *Stanford CoreNLP
 .. code-block:: python
 
    >>> from corpkit import *
-   >>> from dictionaries import processes
+   >>> from corpkit.dictionaries import processes
    
    ### parse corpus of NYT articles containing annual subcorpora
    >>> unparsed = Corpus('data/NYT')

@@ -1,7 +1,6 @@
 __all__ = ["wordlists", "roles", "bnc", "processes", "verbs", 
            "uktous", "tagtoclass", "queries", "mergetags"]
 
-import corpkit
 from corpkit.dictionaries.bnc import _get_bnc
 from corpkit.dictionaries.process_types import processes
 from corpkit.dictionaries.process_types import verbs

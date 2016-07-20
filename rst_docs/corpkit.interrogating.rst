@@ -138,17 +138,21 @@ Grammatical searching
 
 In the examples above, we match attributes of tokens. The great thing about parsed data, is that we can search for relationships between words. So, other possible search keys are:
 
-+--------+-----------------------+
-| Search | Gloss                 |
-+========+=======================+
-| G      |  Governor             |
-+--------+-----------------------+
-| D      |  Dependent            |
-+--------+-----------------------+
-| H      |  Coreference head     |
-+--------+-----------------------+
-| T      |  Syntax tree          |
-+--------+-----------------------+
++--------+------------------------+
+| Search | Gloss                  |
++========+========================+
+| G      |  Governor              |
++--------+------------------------+
+| D      |  Dependent             |
++--------+------------------------+
+| H      |  Coreference head      |
++--------+------------------------+
+| T      |  Syntax tree           |
++--------+------------------------+
+| A1     | Token 1 place to left  |
++--------+------------------------+
+| Z1     | Token 1 place to right |
++--------+------------------------+
 
 .. code-block:: python
 
@@ -156,27 +160,27 @@ In the examples above, we match attributes of tokens. The great thing about pars
    ### return any token with governor word starting with 'b'
    >>> corpus.interrogate(q)
 
-`Governor` and `Dependent` can be combined with the earlier table, allowing a large array of search types:
+`Governor`, `Dependent` and `Left/Right` can be combined with the earlier table, allowing a large array of search types:
 
-+--------------------+-------+----------+-----------+------------+
-|                    | Match | Governor | Dependent | Coref head |
-+====================+=======+==========+===========+============+
-| Word               | W     | G        | D         | H         |
-+--------------------+-------+----------+-----------+------------+
-| Lemma              | L     | GL       | DL        | HL         |
-+--------------------+-------+----------+-----------+------------+
-| Function           | F     | GF       | DF        | HF         |
-+--------------------+-------+----------+-----------+------------+
-| POS tag            | P     | GP       | DP        | HP         |
-+--------------------+-------+----------+-----------+------------+
-| Word class         | X     | GX       | DX        | HX         |
-+--------------------+-------+----------+-----------+------------+
-| Distance from root | R     | GR       | DR        | HR         |
-+--------------------+-------+----------+-----------+------------+
-| Index              | I     | GI       | DI        | HI         |
-+--------------------+-------+----------+-----------+------------+
-| Sentence index     | S     | GS       | DS        | HS         |
-+--------------------+-------+----------+-----------+------------+
++--------------------+-------+----------+-----------+------------+-----------------+
+|                    | Match | Governor | Dependent | Coref head | Left/right      |
++====================+=======+==========+===========+============+=================+
+| Word               | W     | G        | D         | H          | A1/Z1           |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Lemma              | L     | GL       | DL        | HL         | A1L/Z1L         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Function           | F     | GF       | DF        | HF         | A1F/Z1F         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| POS tag            | P     | GP       | DP        | HP         | A1P/Z1P         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Word class         | X     | GX       | DX        | HX         | A1X/Z1X         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Distance from root | R     | GR       | DR        | HR         | A1R/Z1R         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Index              | I     | GI       | DI        | HI         | A1I/Z1I         |
++--------------------+-------+----------+-----------+------------+-----------------+
+| Sentence index     | S     | GS       | DS        | HS         | A1S/Z1S         |
++--------------------+-------+----------+-----------+------------+-----------------+
 
 Syntax tree searching can't be combined with other options. We'll return to them in a minute, however.
 
@@ -187,7 +191,7 @@ You may also wish to exclude particular phenomena from the results. The ``exclud
 
 .. code-block:: python
 
-   >>> from dictionaries import wordlists
+   >>> from corpkit.dictionaries import wordlists
    ### get any noun, but exclude closed class words
    >>> corpus.interrogate({P: r'^n'}, exclude={W: wordlists.closedclass})
    ### when there's only one search criterion, you can also write:
@@ -245,25 +249,25 @@ N-gramming is therefore as simple as:
 
 So, this leaves us with a huge array of possible things to show, all of which can be combined if need be:
 
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-|                    | Match | Governor | Dependent | Coref Head | N-gram | Collocate |
-+====================+=======+==========+===========+============+========+===========+
-| Word               | W     | G        | D         | H          | N      | B         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Lemma              | L     | GL       | DL        | HL         | NL     | BL        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Function           | F     | GF       | DF        | HF         | NF     | BF        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| POS tag            | P     | GP       | DP        | HP         | NP     | BP        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Word class         | X     | GX       | DX        | HX         | NX     | BX        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Distance from root | R     | GR       | DR        | HR         | NR     | BR        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Index              | I     | GI       | DI        | HI         | NI     | BI        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
-| Sentence index     | S     | GS       | DS        | HS         | NS     | BS        |
-+--------------------+-------+----------+-----------+------------+--------+-----------+
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+|                    | Match | Governor | Dependent | Coref Head | N-gram | Collocate | 1L position | 1R position |
++====================+=======+==========+===========+============+========+===========+=============+=============+
+| Word               | W     | G        | D         | H          | N      | B         | A1          | Z1          |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Lemma              | L     | GL       | DL        | HL         | NL     | BL        | A1L         | Z1L         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Function           | F     | GF       | DF        | HF         | NF     | BF        | A1F         | Z1F         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| POS tag            | P     | GP       | DP        | HP         | NP     | BP        | A1P         | Z1P         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Word class         | X     | GX       | DX        | HX         | NX     | BX        | A1X         | Z1X         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Distance from root | R     | GR       | DR        | HR         | NR     | BR        | A1R         | Z1R         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Index              | I     | GI       | DI        | HI         | NI     | BI        | A1I         | Z1I         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
+| Sentence index     | S     | GS       | DS        | HS         | NS     | BS        | A1S         | Z1S         |
++--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
 
 One further extra show value is ``'c'`` (count), which simply counts occurrences of a phenomenon. Rather than returning a DataFrame of results, it will result in a single Series. It cannot be combined with other values.
 
@@ -364,7 +368,7 @@ When working with dependencies, you can use any of the long list of search and `
 
 .. code-block:: python
 
-   >>> from dictionaries import process_types, roles
+   >>> from corpkit.dictionaries import process_types, roles
    ### nominal nsubj with verbal process as governor
    >>> crit = {F: r'^nsubj$',
    ...         GL: processes.verbal.lemmata,
@@ -412,7 +416,7 @@ If you have done this, you can use `coref=True` while interrogating to allow cor
 
 .. code-block:: python
 
-   >>> from dictionaries import roles
+   >>> from corpkit.dictionaries import roles
    >>> query = {W: 'clinton', GF: roles.process}
    >>> res = parsed.interrogate(query, show=L, coref=True)
    >>> res.results.columns

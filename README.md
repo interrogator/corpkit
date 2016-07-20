@@ -134,7 +134,7 @@ The code below demonstrates the complex kinds of queries that can be handled by 
 >>> corpus = Corpus('data/postcounts-parsed')
 
 ### import process type lists and closed class wordlists
->>> from dictionaries import *
+>>> from corpkit.dictionaries import *
 
 ### match tokens with governor that is in relational process wordlist, 
 ### and whose function is `nsubj(pass)` or `csubj(pass)`:
@@ -433,7 +433,7 @@ If you have done this, you can use `coref=True` while interrogating to allow cor
 So, if you wanted to find all the processes a certain entity is engaged in, you can get a more complete result with:
 
 ```python
->>> from dictionaries import roles
+>>> from corpkit.dictionaries import roles
 >>> corpus.interrogate({W: 'clinton', GF: roles.process}, coref=True)
 ```
 
@@ -615,7 +615,7 @@ If you really wanted, you can then go on to use `concordance()` output as a dict
 Because I mostly use systemic functional grammar, there is also a simple tool for distinguishing between process types (relational, mental, verbal) when interrogating a corpus. If you add words to the lists in `dictionaries/process_types.py`, corpkit will get their inflections automatically.
 
 ```python
->>> from dictionaries import processes
+>>> from corpkit.dictionaries import processes
 
 ### match nsubj with verbal process as governor
 >>> crit = {F: '^nsubj$', G: processes.verbal}
@@ -656,7 +656,7 @@ Output:
 First, let's try removing the pronouns using `edit()`. The quickest way is to use the editable wordlists stored in `dictionaries/wordlists`:
 
 ```python
->>> from dictionaries import wordlists
+>>> from corpkit.dictionaries import wordlists
 >>> prps = wordlists.pronouns
 
 # alternative approaches:
@@ -859,7 +859,7 @@ If you still want to use a standard reference corpus, you can do that (and a dic
 
 ```python
 ### arbitrary list of common/boring words
->>> from dictionaries import stopwords
+>>> from corpkit.dictionaries import stopwords
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', skip_entries=stopwords).results
 >>> print p.results.ix['2013'].edit(K, 'bnc.p', calc_all=False).results
 ```

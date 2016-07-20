@@ -86,7 +86,7 @@ You can edit concordance lines using the :func:`~corpkit.interrogation.Concordan
 .. code-block:: python
 
    ### get just uk variants of words with variant spellings
-   >>> from dictionaries import usa_convert
+   >>> from corpkit.dictionaries import usa_convert
    >>> concs = result.concordance.edit(just_entries=usa_convert.keys())
 
 

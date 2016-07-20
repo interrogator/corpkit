@@ -205,7 +205,7 @@ There is also `layout`, which you can use to choose an overall grid design. You 
 .. code-block:: python
 
    >>> from corpkit import *
-   >>> from dictionaries import * 
+   >>> from corpkit.dictionaries import * 
    ### parse a collection of text files
    >>> corpora = Corus('data/news')
    ### make dependency parse query: get get 'object' of risk process
