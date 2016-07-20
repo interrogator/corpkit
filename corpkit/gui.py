@@ -4203,9 +4203,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             global conc_saved
             conc_saved = False
 
-        def do_inflection(pos = 'v'):
+        def do_inflection(pos='v'):
             global tb
-            from dictionaries.process_types import get_both_spellings, add_verb_inflections
+            from corpkit.dictionaries.process_types import get_both_spellings, add_verb_inflections
             
             # get every word
             all_words = [w.strip().lower() for w in tb.get(1.0, END).split()]
@@ -4251,9 +4251,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             def convert(dictionary):
                 return namedtuple('outputnames', list(dictionary.keys()))(**dictionary)
             all_preset_types = {}
-            from dictionaries.process_types import processes
-            from dictionaries.roles import roles
-            from dictionaries.wordlists import wordlists
+            from corpkit.dictionaries.process_types import processes
+            from corpkit.dictionaries.roles import roles
+            from corpkit.dictionaries.wordlists import wordlists
             from corpkit.other import as_regex
             customs = convert(custom_special_dict)
             special_qs = [processes, roles, wordlists]
