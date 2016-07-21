@@ -220,35 +220,37 @@ def tregex_engine(corpus=False,
     # make unicode and lowercase
     make_tuples = []
 
+    # we need to get the data into tuples of equal length
+    # the tuple should be n (file, speakername, result)
+
+    if filenaming and any(x.startswith('# /') for x in res):
+        for index, r in enumerate(res):
+            if r.startswith('# /'):
+                make_tuples.append([r, res[index + 1]])
+        res = make_tuples
+        # this deals with filtermode, slow_tregex, files_as_subcorpora...
+    else:
+        res = [[kwargs.get('filename', ''), x] for x in res] 
+
     # if we had numbered trees, remove numbers if no speaker data
     if treenumbermode:
-        make_tuples = []
-        if speaker_data:
-            for line in res:
-                num, data = line.split(': ', 1)
+        for fname, line in res:
+            num, data = line.split(': ', 1)
+            if speaker_data:
                 speaker = speaker_data[int(num) - 1]
-                make_tuples.append([speaker, data])
-            res = make_tuples
+            else:
+                speaker = ''
+            make_tuples.append([fname, speaker, data])
+        res = make_tuples
+    elif not treenumbermode:
+        res = [[a, '', b] for a, b in res]
 
-        else:
-            res = [d for n, d in res.split(': ', 1)]
-
-    if filenaming and not speaker_data:
-        if any(x.startswith('# /') for x in res):
-            for index, r in enumerate(res):
-                if r.startswith('# /'):
-                    make_tuples.append([r, res[index + 1]])
-            res = make_tuples
-        # this deals with filtermode, slow_tregex, files_as_subcorpora...
-        else:
-            res = [[kwargs.get('filename', ''), x] for x in res] 
-
+    make_tuples = []
     if not preserve_case:
-        if not filenaming:
-            res = [w.lower().replace('/', '-slash-') for w in res]
-        else:
-            res = [[t, w.lower().replace('/', '-slash-')] for t, w in res]
-
+        for line in res:
+            line[-1] = line[-1].lower().replace('/', '-slash-')
+            make_tuples.append(line)
+        res = make_tuples
     return res
 
 def show(lines, index, show='thread'):

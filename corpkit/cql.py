@@ -50,6 +50,13 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
     return ''.join(fixed)   
 
 def parse_quant(quant):
+    """normalise quanitifers ... i don't know what i'm doing anymore"""
+    if quant.startswith('{'}):
+        quant = quant.strip('}{ ')
+        if ',' in quant:
+            return quant.replace(',', ':')
+        else:
+            return quant
     return quant
 
 def process_piece(piece, op='=', quant=False, **kwargs):
@@ -63,17 +70,21 @@ def process_piece(piece, op='=', quant=False, **kwargs):
     if '-' in target:
         obj, show = target.split('-', 1)
         show = show.lower()
-        if show == 'pos':
+        if show == 'deprel':
+            show = 'Function'
+        elif show == 'pos':
             show = 'POS'
         form = '{} {}'.format(obj.title(), show.lower())
     else:
         form = target.title()
-        if form == 'Pos':
+        if form == 'Deprel':
+            form = 'Function'
+        elif form == 'Pos':
             form = 'POS'
     return translator.get(form), criteria
 
 
-def tok_cql(query):
+def tokenise_cql(query):
     """take a cql query and return a list of tuples
     which is token, quantifer"""
     quantstarts = ['+', '{', ',', '}', '?', '*']
@@ -108,24 +119,25 @@ def tok_cql(query):
     for i, t in enumerate(tokens):
         if i in skips:
             continue
+        # get next token
         try:
             nextt = tokens[i+1]
         except IndexError:
+            # if it's the last token, if not quantifier, add it
             if t[0] not in quantstarts:
                 out.append([t, False])
-
+                continue
         if any(nextt.startswith(x) for x in quantstarts):
             out.append([t, nextt])
             skips.append(i+1)
         else:
             out.append([t, False])
-
     return out
 
 def to_corpkit(cstring, **kwargs):
     sdict = {}
     edict = {}
-    cstring = tok_cql(cstring)
+    cstring = tokenise_cql(cstring)
     for i, (c, q) in enumerate(cstring):
         if q:
             i = parse_quant(q)
@@ -144,7 +156,7 @@ def to_corpkit(cstring, **kwargs):
                         sdict['w'] = piece.strip('"')
                 else:
                     if i > 0 or isinstance(i, str):
-                        targ = '+%d%s' % (i, targ)
+                        targ = '+%s%s' % (str(i), targ)
                     sdict[targ] = crit
             else:
                 if i > 0 or isinstance(i, str):

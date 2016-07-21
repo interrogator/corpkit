@@ -198,6 +198,8 @@ def dep_searcher(sents,
 
             # get the part of the token to search (word, lemma, index, etc)
             tosearch = getattr(tok, attrib)
+            if not tosearch:
+                continue
             # deal with possible ints
             if isinstance(pattern, int) and isinstance(tosearch, int):
                 if pattern != tosearch:

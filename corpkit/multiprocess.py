@@ -75,12 +75,16 @@ def pmultiquery(corpus,
             mult_corp_are_subs = True
 
     if just_speakers:
-        from corpkit.build import get_speaker_names_from_xml_corpus
-        if just_speakers == 'each' or just_speakers == ['each']:
-            just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
-        if len(just_speakers) == 0:
-            print('No speaker name data found.')
-            return
+        if just_speakers is True:
+            import re
+            just_speakers = re.compile(r'.*')
+        else:
+            from corpkit.build import get_speaker_names_from_xml_corpus
+            if just_speakers == 'each' or just_speakers == ['each']:
+                just_speakers = get_speaker_names_from_xml_corpus(corpus.path)
+            if len(just_speakers) == 0:
+                print('No speaker name data found.')
+                return
 
     mapcores = {'datalist': [corpus, 'corpus'],
                 'multiplecorpora': [corpus, 'corpus'],

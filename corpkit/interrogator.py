@@ -26,7 +26,7 @@ def interrogator(corpus,
                  only_format_match=False,
                  multiprocess=False,
                  spelling=False,
-                 regex_nonword_filter=r'[A-Za-z0-9:_]',
+                 regex_nonword_filter=r'[A-Za-z0-9]',
                  gramsize=2,
                  split_contractions=False,
                  conc=False,
@@ -88,6 +88,7 @@ def interrogator(corpus,
     if cql:
         from corpkit.cql import to_corpkit
         search, exclude = to_corpkit(search)
+        print(search)
 
     def signal_handler(signal, _):
         if root:
@@ -208,7 +209,7 @@ def interrogator(corpus,
         res = format_tregex(res, speaker_data=speak)
         
         if not no_conc:
-            ops += ['-w', '-f']
+            ops += ['-w']
             whole_res = tregex_engine(query=q, 
                                       options=ops, 
                                       corpus=to_open,
@@ -303,10 +304,11 @@ def interrogator(corpus,
         unique_middle_column_result = []
         duplicates = []
         
-        if filename:
-            wholes = [[filename] + list(x) for x in wholes]
+        #if filename:
+        #    wholes = [[filename] + list(x) for x in wholes]
 
         for (f, sk, whole), mid in zip(wholes, middle_column_result):
+            mid = mid[-1]
             joined = '-join-'.join([f, sk, whole, mid])
             if joined not in duplicates:
                 duplicates.append(joined)
@@ -411,12 +413,7 @@ def interrogator(corpus,
 
         done = []
 
-        if speaker_data:
-            if not whole:
-                snames, results = zip(*results)
-
-        if whole:
-            fnames, results = zip(*results)
+        fnames, snames, results = zip(*results)
 
         if 'l' in show or 'x' in show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
@@ -468,8 +465,9 @@ def interrogator(corpus,
                     bits.append(lemma)
             joined = '/'.join(bits)
             done.append(joined)
-        if whole:
-            done = zip(fnames, done)
+
+        done = zip(fnames, snames, done)
+        
         return done
 
     def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
@@ -1101,10 +1099,10 @@ def interrogator(corpus,
     # more tregex options
     if tree_to_text:
         treg_q = r'ROOT << __'
-        op = ['-o', '-t', '-w']
+        op = ['-o', '-t', '-w', '-f']
     elif simple_tregex_mode:
         treg_q = search['t']
-        op = ['-%s' % i for i in translated_option] + ['-o']
+        op = ['-%s' % i for i in translated_option] + ['-o', '-f']
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
@@ -1150,16 +1148,14 @@ def interrogator(corpus,
 
             # if concordancing, do the query again with 'whole' sent and fname
             if not no_conc:
-                ops = ['-w', '-f'] + op
-                ops = [i for i in ops if i != '-n']
+                ops = ['-w'] + op
+                #ops = [i for i in ops if i != '-n']
                 whole_result = tregex_engine(query=search['t'],
                                              options=ops,
                                              corpus=subcorpus_path,
                                              root=root,
                                              preserve_case=preserve_case
                                             )
-                for line in whole_result:
-                    line.insert(1, '') 
 
                 # format match too depending on option
                 if not only_format_match:
@@ -1202,11 +1198,14 @@ def interrogator(corpus,
                     #corenlp_xml = f.document
                     if just_speakers:
                         import re
+                        if just_speakers is True:
+                            just_speakers = re.compile(r'.*')
                         if isinstance(just_speakers, re._pattern_type):
                             sents = [s for s in corenlp_xml.sentences if \
                                      re.search(just_speakers, get_speakername(s))]
                         else:
                             sents = [s for s in corenlp_xml.sentences if get_speakername(s) in just_speakers]
+
                             if len(just_speakers) == 1:
                                 slow_treg_speaker_guess = just_speakers[0]
                     else:
@@ -1314,7 +1313,10 @@ def interrogator(corpus,
                         if not preserve_case:
                             if not statsmode:
                                 if res:
-                                    res = [i.lower() for i in res]
+                                    if searcher == slow_tregex:
+                                        res = [i[-1].lower() for i in res]
+                                    else:
+                                        res = [i.lower() for i in res]
 
                         if spelling:
                             if not statsmode:
