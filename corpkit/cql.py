@@ -51,7 +51,7 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
 
 def parse_quant(quant):
     """normalise quanitifers ... i don't know what i'm doing anymore"""
-    if quant.startswith('{'}):
+    if quant.startswith('}{'):
         quant = quant.strip('}{ ')
         if ',' in quant:
             return quant.replace(',', ':')

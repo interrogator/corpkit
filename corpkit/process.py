@@ -392,7 +392,8 @@ def determine_datatype(path):
     
     lookup = {'.xml': 'parse',
               '.txt': 'plaintext',
-              '.p':   'tokens'}
+              '.p':   'tokens',
+              '.conll': 'conll'}
 
     return lookup.get(mc, 'plaintext'), singlefile
 
@@ -1016,3 +1017,5 @@ def make_name_to_query_dict(existing={}):
                 p = p.lower()
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
+
+

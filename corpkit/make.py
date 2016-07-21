@@ -226,7 +226,8 @@ def make_corpus(unparsed_corpus_path,
                      'multiprocessing': True,
                      'root': root,
                      'note': note,
-                     'stdout': stdout
+                     'stdout': stdout,
+                     'output_format': kwargs.get('output_format', 'xml')
                     }
                 ds.append(d)
 
@@ -255,7 +256,8 @@ def make_corpus(unparsed_corpus_path,
                                      root=root,
                                      note=note,
                                      stdout=stdout,
-                                     fileparse=fileparse)
+                                     fileparse=fileparse,
+                                     output_format=kwargs.get('output_format', 'xml'))
 
         if not newparsed:
             return 

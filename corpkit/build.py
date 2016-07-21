@@ -335,7 +335,8 @@ def parse_corpus(proj_path=False,
                    operations, 
                    '-filelist', filelist,
                    '-noClobber',
-                   '-outputExtension', '.xml',
+                   '-outputExtension', '.%s' % kwargs.get('output_format', 'xml'),
+                   '-outputFormat', kwargs.get('output_format', 'xml'),
                    '-outputDirectory', new_corpus_path]
         if copula_head:
             arglist.append('--parse.flags')

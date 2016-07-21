@@ -60,7 +60,9 @@ class Corpus(object):
             if not isdir(self.path):
                 if isdir(join('data', path)):
                     self.path = abspath(join('data', path))
-        if self.path.endswith('-parsed'):
+        if kwargs.get('conll'):
+            self.datatype = 'conll'
+        elif self.path.endswith('-parsed'):
             self.datatype = 'parse'
             if len([d for d in os.listdir(self.path)
                     if isdir(join(self.path, d))]) > 0:

@@ -397,7 +397,7 @@ def dep_searcher(sents,
     def get_list_of_lookup_funcs(show_bit):
         """take a single search/show_bit type, return match"""
         #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r']
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r', 's']
         starts = ['d', 'g', 'm', 'n', 'b', 'h', '+', '-']
         show_bit = show_bit.lstrip('n')
         show_bit = show_bit.lstrip('b')

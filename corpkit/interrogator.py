@@ -88,7 +88,6 @@ def interrogator(corpus,
     if cql:
         from corpkit.cql import to_corpkit
         search, exclude = to_corpkit(search)
-        print(search)
 
     def signal_handler(signal, _):
         if root:
@@ -625,7 +624,7 @@ def interrogator(corpus,
                 form = ', '.join(i for i in list(search.keys()) if i in only_parse)
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
-            elif datatype == 'parse':
+            elif datatype == 'parse' or datatype == 'conll':
                 if any(i.endswith('n') for i in search.keys()):
                     search['w'] = search.pop('n')
                     if not show_ngram:
@@ -1255,6 +1254,21 @@ def interrogator(corpus,
                     import pickle
                     with codecs.open(f.path, "rb") as fo:
                         data = pickle.load(fo)
+
+                if datatype == 'conll':
+                    from corpkit.conll import pipeline
+                    
+                    res, conc_res = pipeline(f.path,
+                                   search,
+                                   show,
+                                   exclude=exclude,
+                                   conc=conc,
+                                   only_format_match=only_format_match,
+                                   searchmode=searchmode,
+                                   excludemode=excludemode,
+                                   filename=f.name,
+                                   **kwargs)
+                    
                 elif datatype == 'plaintext' or tree_to_text:
                     if tree_to_text:
                         data = '\n'.join(result)
@@ -1296,7 +1310,8 @@ def interrogator(corpus,
                     # add filename and do lowercasing for conc
                     if not no_conc:
                         for line in conc_res:
-                            if searcher != slow_tregex and searcher != tgrep_searcher:
+                            if searcher != slow_tregex and searcher != tgrep_searcher \
+                                and datatype != 'conll':
                                 line.insert(0, f.name)
                             else:
                                 line[0] = f.name
