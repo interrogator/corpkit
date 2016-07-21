@@ -909,7 +909,7 @@ def interrogator(corpus,
             if all(x == '' for x in list(conc_df['s'].values)):
                 conc_df.drop('s', axis=1, inplace=True)
             
-            if show_ngram or show_collocates:
+            if show_collocates:
                 if not language_model:
                     counted = Counter(conc_df['m'])
                     indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 

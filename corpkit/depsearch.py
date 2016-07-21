@@ -94,7 +94,7 @@ def dep_searcher(sents,
         """
         take a token, return it, its gov or dependent
         """
-        ret = set()
+        ret = []
         if adjacent and adjacent[0] == '+':
             tok = s.get_token_by_id(tok.id - int(adjacent))
         elif adjacent and adjacent[0] == '-':
@@ -102,16 +102,16 @@ def dep_searcher(sents,
 
         if deprole == 'm':
             if attr == 'f':
-                return set([s.get_token_by_id(tok.id)])
+                return [s.get_token_by_id(tok.id)]
             else:
-                return set([tok])
+                return [tok]
         elif deprole == 'h':
-            return set(get_candidates(tok, justfirst=True))
+            return get_candidates(tok, justfirst=True)
 
         else:
             in_deps = [i for i in deps.links if getattr(i, fmatch[deprole]).idx == tok.id]
             for lnk in in_deps:
-                ret.add(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
+                ret.append(s.get_token_by_id(getattr(lnk, bmatch[deprole]).idx))
             return ret
 
     def get_candidates(tok, justfirst=False):
@@ -146,7 +146,7 @@ def dep_searcher(sents,
         else:
             attrib = attr_trans.get(attr, attr)
         
-        matches = set()
+        matches = []
 
         for tok in tokens:
             if corefs and repeating:
@@ -156,7 +156,7 @@ def dep_searcher(sents,
                 #
                 res = simple_searcher(candidates, deprole, pattern, attr, repeating=False, sliced=sliced)
                 if res:
-                    matches |= locate_tokens(tok, deprole, attr)
+                    matches += locate_tokens(tok, deprole, attr)
                 continue
 
             # if looking at an adjacent search, select the adjacent
@@ -187,13 +187,13 @@ def dep_searcher(sents,
                                 continue
                             else:
                                 if res:
-                                    matches |= locate_tokens(tok, deprole, attr)
+                                    matches += locate_tokens(tok, deprole, attr)
                         else:
                             if res:
-                                matches |= locate_tokens(tok, deprole, attr)
+                                matches += locate_tokens(tok, deprole, attr)
                     else:
                         if res:
-                            matches |= locate_tokens(tok, deprole, attr)
+                            matches += locate_tokens(tok, deprole, attr)
                     continue
 
             # get the part of the token to search (word, lemma, index, etc)
@@ -219,7 +219,7 @@ def dep_searcher(sents,
                 tok = oldtok
 
             # return governor, dependent, or match
-            matches |= locate_tokens(tok, deprole, attr, adjacent=adjstuff)
+            matches += locate_tokens(tok, deprole, attr, adjacent=adjstuff)
 
         return matches
 
@@ -458,7 +458,6 @@ def dep_searcher(sents,
             else:
                 for r in res:
                     resultlist.append(r)
-
         return resultlist, conclist
 
     def get_indices(match, repeat, tokens):
@@ -473,9 +472,9 @@ def dep_searcher(sents,
         # second time, at the word - 1
         # if ngramming, we need an index of the last token in the ngram
         if any(x.startswith('n') for x in show):
-
-            first_in_gram = py_index - repeat
-            last_in_gram = first_in_gram + (gramsize - 1)
+            first_in_gram = py_index
+            last_in_gram = first_in_gram + gramsize - 1
+            #print(match.word, match.id, first_in_gram, last_in_gram)
         
         elif any(x.startswith('b') for x in show):
             first_in_gram = py_index - window + repeat
@@ -555,6 +554,7 @@ def dep_searcher(sents,
             separator = ' '
         if language_model:
             separator = '-spl-it-'
+
 
         # now, for each word in the matching sentence, format it.
         # note that if we're not doing concordancing, or if only formatting 
@@ -691,7 +691,7 @@ def dep_searcher(sents,
         from collections import Counter
         counted = Counter(matching_tokens)
         must_contain = len(search)
-        return [k for k, v in counted.items() if v >= must_contain]
+        return [k for k in matching_tokens if counted[k] >= must_contain]
 
     ####################################################
     ################## BEGIN WORKFLOW ##################
@@ -705,7 +705,7 @@ def dep_searcher(sents,
     # otherwise it's just once
     repeats = 1
     if any(x.startswith('n') for x in show):
-        repeats = gramsize
+        pass
     if any(x.startswith('b') for x in show):
         repeats = (window * 2) + 1
 
@@ -809,5 +809,4 @@ def dep_searcher(sents,
     deps = None
     matching_tokens = None
     tokens = None
-
     return result, conc_result
