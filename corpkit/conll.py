@@ -44,12 +44,15 @@ def get_match(df, sent_id, tok_id, repeat=False):
     return [(sent_id, tok_id)]
 
 def get_conc_start_end(df, only_format_match, show, idx, new_idx):
+    """return the left and right context of a concordance line"""
+    # todo: these aren't always aligning for some reason!
     sent_id, tok_id = idx
     new_sent, new_tok = new_idx
-    """return the left and right context of a concordance line"""
     sent = df.xs(sent_id, level='s', drop_level=False)
     if only_format_match:
-        return ' '.join(sent['w'][:tok_id - 1]), ' '.join(sent['w'][new_tok:])
+        start = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] < tok_id)
+        end = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] > new_tok)
+        return start, end
     else:
         start = []
         end = []
@@ -59,9 +62,9 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
                 continue
             else:
                 out = out[0]
-            if t < tok_id:
+            if t[1] < tok_id:
                 start.append(str(out[0]))
-            elif t > new_tok:
+            elif t[1] > new_tok:
                 end.append(str(out[0]))
         return ' '.join(start), ' '.join(end)
 
@@ -242,8 +245,9 @@ def pipeline(f,
 
     df = parse_conll(f)
 
-    if kwargs.get('no_punct', True):
+    if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
+        # find way to reset the 'i' index ...
 
     if kwargs.get('no_closed'):
         from corpkit.dictionaries import wordlists

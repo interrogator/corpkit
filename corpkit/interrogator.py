@@ -1267,6 +1267,8 @@ def interrogator(corpus,
                                    searchmode=searchmode,
                                    excludemode=excludemode,
                                    filename=f.name,
+                                   no_punct=no_punct,
+                                   no_closed=no_closed,
                                    **kwargs)
                     
                 elif datatype == 'plaintext' or tree_to_text:
