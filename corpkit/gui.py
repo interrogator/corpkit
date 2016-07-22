@@ -4311,30 +4311,32 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             popt = OrderedDict()
             for k, v in [('Tokenise', 'tokenize'),
-                        ('Sentence splitting', 'ssplit'),
-                        ('POS tagging', 'pos'),
-                        ('Lemmatisation', 'lemma'),
-                        ('Named entity recognition', 'ner'),
-                        ('Parse', 'parse'),
-                        ('Referent tracking', 'dcoref')]:
-                        popt[k] = v
+                         ('Clean XML', 'cleanxml')
+                         ('Sentence splitting', 'ssplit'),
+                         ('POS tagging', 'pos'),
+                         ('Lemmatisation', 'lemma'),
+                         ('Named entity recognition', 'ner'),
+                         ('Parse', 'parse'),
+                         ('Referent tracking', 'dcoref')]:
+                         popt[k] = v
 
             butvar = {}
             butbut = {}
 
             orders = {'tokenize': 0,
-                      'ssplit': 1,
-                      'pos': 2,
-                      'lemma': 3,
-                      'ner': 4,
-                      'parse': 5,
-                      'dcoref': 6}
+                      'cleanxml': 1,
+                      'ssplit': 2,
+                      'pos': 3,
+                      'lemma': 4,
+                      'ner': 5,
+                      'parse': 6,
+                      'dcoref': 7}
 
             for index, (k, v) in enumerate(popt.items()):
                 tmp = StringVar()
                 but = Checkbutton(poptions, text=k, variable=tmp, onvalue = v, offvalue = False)
                 but.grid(sticky=W)
-                if k != 'Referent tracking' and k != 'Named entity recognition':
+                if k != 'Referent tracking' and k != 'Named entity recognition' and k != 'Clean XML':
                     but.select()
                 else:
                     but.deselect()

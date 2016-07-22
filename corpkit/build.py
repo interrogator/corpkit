@@ -252,6 +252,8 @@ def parse_corpus(proj_path=False,
         else:
             new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
 
+        new_corpus_path = new_corpus_path.replace('-stripped-', '-')
+
     # todo:
     # this is not stable
     if os.path.join('data', 'data') in new_corpus_path:
@@ -327,6 +329,10 @@ def parse_corpus(proj_path=False,
             extra_jar = 'slf4j-api.jar:slf4j-simple.jar:'
         else:
             extra_jar = ''
+
+        out_form = 'json' if kwargs.get('output_format') in ['conll', 'json'] else 'xml'
+        out_ext = 'conll' if kwargs.get('output_format') in ['conll', 'json'] else 'xml'
+
         arglist = ['java', '-cp', 
                    'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:%sjollyday.jar:ejml-0.23.jar' % (fver, fver, extra_jar), 
                    '-Xmx%sm' % str(memory_mb),
@@ -335,8 +341,8 @@ def parse_corpus(proj_path=False,
                    operations, 
                    '-filelist', filelist,
                    '-noClobber',
-                   '-outputExtension', '.%s' % kwargs.get('output_format', 'xml'),
-                   '-outputFormat', kwargs.get('output_format', 'xml'),
+                   '-outputExtension', '.%s' % out_ext,
+                   '-outputFormat', out_form,
                    '-outputDirectory', new_corpus_path]
         if copula_head:
             arglist.append('--parse.flags')
@@ -410,7 +416,7 @@ def parse_corpus(proj_path=False,
     os.chdir(curdir)
     return new_corpus_path
 
-def move_parsed_files(proj_path, corpuspath, new_corpus_path):
+def move_parsed_files(proj_path, corpuspath, new_corpus_path, ext='xml'):
     """
     Make parsed files follow existing corpus structure
     """
@@ -433,7 +439,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
         os.makedirs(d)
     os.chdir(cwd)
     # make list of xml filenames
-    parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.xml')]
+    parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.%s' % ext)]
     # make a dictionary of the right paths
     pathdict = {}
     for rootd, dirnames, filenames in os.walk(corpuspath):
@@ -442,7 +448,7 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path):
 
     # move each file
     for f in parsed_fs:
-        noxml = f.replace('.xml', '')
+        noxml = f.replace('.%s' % ext, '')
         right_dir = pathdict[noxml].replace(corpuspath, new_corpus_path)
         # get rid of the temp adding of dirname to fname
         #short_name = f.replace('-%s.txt.xml' % os.path.basename(right_dir), '.txt.xml')
@@ -581,15 +587,13 @@ def add_ids_to_xml(corpuspath, root=False, note=False):
 
         # open the unparsed version of the file, read into memory
         stripped_txtfile = f.replace('.xml', '').replace('-parsed', '')
-        old_txt = open(stripped_txtfile, 'r')
-        stripped_txtdata = old_txt.read()
-        old_txt.close()
+        with open(stripped_txtfile, 'r') as old_txt:
+            stripped_txtdata = old_txt.read()
 
         # open the unparsed version with speaker ids
         id_txtfile = f.replace('.xml', '').replace('-stripped-parsed', '')
-        idttxt = open(id_txtfile, 'r')
-        id_txtdata = idttxt.read()
-        idttxt.close()
+        with open(id_txtfile, 'r') as idttxt:
+            id_txtdata = idttxt.read()
 
         for s in sents:
             # don't get corefs
@@ -623,6 +627,59 @@ def add_ids_to_xml(corpuspath, root=False, note=False):
 
     if note:
         note.progvar.set(100)
+
+def add_ids_to_conll(corpuspath, root=False, note=False):
+    
+    files = get_filepaths(corpuspath, ext='conll')
+    if note:
+        note.progvar.set(0)
+    thetime = strftime("%H:%M:%S", localtime())
+    print('%s: Processing speaker IDs ...' % thetime)
+    if root:
+        root.update()
+
+    for i, f in enumerate(files):
+        if note:
+            note.progvar.set(i * 100.0 / len(files))
+        thetime = strftime("%H:%M:%S", localtime())
+        print('%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files)))
+        if root:
+            root.update()
+
+        # open the unparsed version of the file, read into memory
+        stripped_txtfile = f.replace('.conll', '').replace('-parsed', '')
+        with open(stripped_txtfile, 'r') as old_txt:
+            stripped_txtdata = old_txt.read()
+
+        # open the unparsed version with speaker ids
+        id_txtfile = f.replace('.conll', '').replace('-stripped-parsed', '')
+        with open(id_txtfile, 'r') as idttxt:
+            id_txtdata = idttxt.read()
+
+        # how to add speakers to conll? by sent?
+        from corpkit.conll import get_dependents_of_id, parse_conll
+        df = parse_conll(f)
+
+
+    return
+
+def add_deps_to_corpus_path(path):
+    """add a column to a conll file with dependents"""
+    # to do: progress bar
+    from corpkit.conll import get_dependents_of_id, parse_conll
+    files = get_filepaths(path, 'conll')
+    for f in files:
+        df = parse_conll(f, first_time=True)
+        all_deps = []
+        for idx in list(df.index):
+            deps = get_dependents_of_id(df, *idx)
+            if not deps:
+                all_deps.append('0')
+                continue
+            deps = [str(i) for s, i in deps]
+            all_deps.append(','.join(deps))
+        df['d'] = all_deps
+        df.to_csv(f, sep='\t', header=False)
 
 def get_speaker_names_from_xml_corpus(path):
     """

@@ -60,7 +60,7 @@ class Corpus(object):
             if not isdir(self.path):
                 if isdir(join('data', path)):
                     self.path = abspath(join('data', path))
-        if kwargs.get('conll'):
+        if kwargs.get('conll') or self.path.endswith('-conll'):
             self.datatype = 'conll'
         elif self.path.endswith('-parsed'):
             self.datatype = 'parse'
@@ -653,7 +653,7 @@ class Corpus(object):
         if os.path.isfile(corp):
             return File(corp)
         else:
-            return Corpus(corp)
+            return Corpus(corp, conll=kwargs.get('output_format') == 'conll')
 
     def tokenise(self, *args, **kwargs):
         """

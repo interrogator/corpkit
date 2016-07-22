@@ -552,6 +552,7 @@ def interrogator(corpus,
     def tok_by_reg(pattern, list_of_toks, concordancing = False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
+        pattern = pattern.values()[0]
         comped = compiler(pattern)
         if comped == 'Bad query':
             return 'Bad query'
@@ -714,8 +715,12 @@ def interrogator(corpus,
         it searches over lines, so the user needs to be careful.
         """
         import re
+        pattern = pattern.values()[0]
+        pattern = getattr(pattern, 'pattern', pattern)
+
         if concordancing:
             pattern = r'(.{,140})\b(' + pattern + r')\b(.{,140})'
+        
         compiled_pattern = compiler(pattern)
         if compiled_pattern == 'Bad query':
             return 'Bad query'
@@ -1285,7 +1290,7 @@ def interrogator(corpus,
                     query = list(search.values())[0]
 
                     if not only_conc:
-                        res = searcher(query,
+                        res = searcher(search,
                                        data,
                                        split_contractions=split_contractions, 
                                        concordancing=False
@@ -1294,7 +1299,7 @@ def interrogator(corpus,
                             if root:
                                 return 'Bad query'
                     if not no_conc:
-                        conc_res = searcher(query,
+                        conc_res = searcher(search,
                                             data,
                                             split_contractions=split_contractions, 
                                             concordancing=True

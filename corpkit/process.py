@@ -1019,3 +1019,10 @@ def make_name_to_query_dict(existing={}):
     return existing
 
 
+def convert(dictionary, level=0):
+    from collections import namedtuple
+    for key, value in dictionary.iteritems():
+            if isinstance(value, dict):
+                if level == 0:
+                    dictionary[key] = convert(value, level=1) 
+    return namedtuple('GenericDict', dictionary.keys())(**dictionary)

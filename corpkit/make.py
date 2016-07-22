@@ -272,10 +272,17 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.xml'
         
-        move_parsed_files(project_path, to_parse, newparsed)
+        move_parsed_files(project_path, to_parse, newparsed, ext=kwargs.get('output_format', 'xml'))
         outpath = newparsed
-        if speaker_segmentation:
+        if speaker_segmentation and kwargs.get('output_format', 'xml') == 'xml':
             add_ids_to_xml(newparsed)
+        if kwargs.get('output_format') == 'conll':
+            #from corpkit.build import add_deps_to_corpus_path
+            from corpkit.conll import convert_json_to_conll
+            coref = 'coref' in operations or 'dcoref' in operations if isinstance(operations, str) else False
+            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation, coref=coref)
+            #add_deps_to_corpus_path(newparsed)
+
         try:
             os.remove(filelist)
         except:
