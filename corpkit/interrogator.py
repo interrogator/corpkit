@@ -908,7 +908,8 @@ def interrogator(corpus,
 
         try:
             conc_df = pd.concat(all_conc_lines, axis=1).T
-            if all(x == '' for x in list(conc_df['s'].values)):
+            if all(x == '' for x in list(conc_df['s'].values)) or \
+               all(x == 'none' for x in list(conc_df['s'].values)):
                 conc_df.drop('s', axis=1, inplace=True)
             
             if show_collocates:
