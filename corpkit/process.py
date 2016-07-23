@@ -977,7 +977,7 @@ def fix_search(search, case_sensitive=False, root=False):
                 else:
                     newsearch[srch] = pat_format(v, case_sensitive=case_sensitive, root=root)
         else:
-            newsearch[srch] = pat_format(pat)
+            newsearch[srch] = pat_format(pat, case_sensitive=case_sensitive)
     return newsearch
 
 def pat_format(pat, case_sensitive=False, root=False):
@@ -993,8 +993,10 @@ def pat_format(pat, case_sensitive=False, root=False):
         pat = filtermaker(pat, case_sensitive=case_sensitive, root=root)
     else:
         if isinstance(pat, int):
+            print('aaaaa')
             return pat
         if isinstance(pat, re._pattern_type):
+            print('bbbbbbb')
             return pat
         if case_sensitive:
             pat = re.compile(pat)

@@ -1227,7 +1227,6 @@ def interrogator(corpus,
                         corefs = []
                         
                     corenlp_xml = None
-
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
                                              exclude=exclude,
