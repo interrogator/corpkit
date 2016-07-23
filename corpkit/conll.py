@@ -12,7 +12,7 @@ def parse_conll(f, first_time=False):
     for sent in data.split('\n\n'):
         metadata[count] = {}
         for line in sent.split('\n'):
-            if not line.startswith('#'):
+            if line and not line.startswith('#'):
                 splitdata.append('\n%s' % line)
             else:
                 line = line.lstrip('# ')
@@ -48,19 +48,6 @@ def get_dependents_of_id(df, sent_id, tok_id, repeat=False):
             return [justgov.index[repeat - 1]]
         else:
             return list(justgov.index)
-
-def get_dependents_of_id2(df, sent_id, tok_id, repeat=False):
-    """get governors of a token"""
-
-    ['d']
-    justgov = df.loc[df['g'] == tok_id].xs(sent_id, level='s', drop_level=False)
-    #print(df.ix[sent_id, tok_id]['w'])
-    #for i, x in list(justgov.index):
-    #    print(df.ix[sent_id, tok_id]['w'], df.ix[i, x]['w'])
-    if repeat is not False:
-        return [justgov.index[repeat - 1]]
-    else:
-        return list(justgov.index)
 
 def get_governors_of_id(df, sent_id, tok_id, repeat=False):
     """get dependents of a token"""
@@ -103,7 +90,19 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
                 end.append(str(out[0]))
         return ' '.join(start), ' '.join(end)
 
-def search_this(df, obj, attrib, pattern, adjacent=False):
+def get_all_corefs(df, idx, token):
+    if not hasattr(token, 'c'):
+        return [(idx, token)]
+    elif token['c'] == '_':
+        return [(idx, token)]
+    else:
+        just_same_coref = df.loc[df['c'] == token['c']]
+        for i, t in just_same_coref.iterrows():
+            print(token['w'], t['w'])
+        return [(i, t) for i, t in just_same_coref.iterrows()]
+    return corefs
+
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     """search the dataframe for a single criterion"""
     
     import re
@@ -114,7 +113,8 @@ def search_this(df, obj, attrib, pattern, adjacent=False):
     for idx, token in df.iterrows():
         sent_id, tok_id = idx
 
-        # if in adjacent mode, be recursive?
+        # if in adjacent mode, change the token being processed
+        # before changing it back later
         if adjacent:
             import operator
             mapping = {'+': operator.add, '-': operator.sub}
@@ -126,27 +126,36 @@ def search_this(df, obj, attrib, pattern, adjacent=False):
                 token = df.ix[idx]
             except IndexError:
                 continue
+        
         if not hasattr(token, attrib):
             continue
-        if not re.search(pattern, token[attrib]):
-            continue
 
-        if adjacent:
-            idx = old_idx
-            tok_id = old_tok_id
-        
-        if obj == 'm':
-            matches.append(idx)
-        elif obj == 'd':
-            govs = get_governors_of_id(df, sent_id, tok_id)
-            for idx in govs:
+        if coref:
+            to_iter = get_all_corefs(df, idx, token)
+        else:
+            to_iter = [(idx, token)]
+
+        for idx, token in to_iter:
+            if not re.search(pattern, token[attrib]):
+                continue
+            print(idx, token[attrib])
+
+            if adjacent:
+                idx = old_idx
+                tok_id = old_tok_id
+            
+            if obj == 'm':
                 matches.append(idx)
-        elif obj == 'g':
-            deps = get_dependents_of_id(df, sent_id, tok_id)
-            if not deps:
-                matches.append(None)
-            for idx in deps:
-                matches.append(idx)
+            elif obj == 'd':
+                govs = get_governors_of_id(df, sent_id, tok_id)
+                for idx in govs:
+                    matches.append(idx)
+            elif obj == 'g':
+                deps = get_dependents_of_id(df, sent_id, tok_id)
+                if not deps:
+                    matches.append(None)
+                for idx in deps:
+                    matches.append(idx)
 
     return matches
 
@@ -269,6 +278,7 @@ def pipeline(f,
              searchmode='all',
              excludemode='any',
              conc=False,
+             coref=False,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
@@ -297,7 +307,7 @@ def pipeline(f,
             k = k[-2:]
         else:
             adj = False
-        res = search_this(df, k[0], k[-1], v, adjacent=adj)
+        res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
         for r in res:
             all_matches.append(r)
 
@@ -310,7 +320,7 @@ def pipeline(f,
                 k = k[-2:]
             else:
                 adj = False
-            res = search_this(df, k[0], k[-1], v, adjacent=adj)
+            res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
             for r in res:
                 all_exclude.append(r)
 
@@ -358,38 +368,6 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets):
     else:
         speakerid = 'UNIDENTIFIED'
     return speakerid
-
-def get_corefs(data, sentid, tokenid, current_ref=1):
-    # for each coref chain
-    for idx, list_of_ds in data['corefs'].items():
-        if len(list_of_ds) == 1:
-            continue
-        # for each mention
-        for i, d in enumerate(list_of_ds):
-            # if the start and end for the mention
-            sent_id, start, end = d['sentNum'], d['endIndex'], d['endIndex']
-            if sentid == sent_id and tokenid >= start and tokenid <= end:
-                print('match!', d['text'], current_ref)
-                #for dct in list_of_ds:
-                    #a, b, c = dct['sentNum'], dct['startIndex'], dct['endIndex']
-                    #if a == sent_id and b == start and c == end:
-                    #    continue
-                return current_ref
-        #        chain = []
-        #        for ii, dd in enumerate(list_of_ds):
-        #            sn, st, en = str(ii + 1), dd['endIndex'], dd['endIndex']
-        #            chain.append('%s,%s,%s' % (sn, st, en))
-        #        print(chain)
-        #if chain:
-        #    return ';'.join(chain)
-
-                #coords = list_of_ds[0]['position']
-                # NEVER AGAIN
-                #head = str(data['sentences'][coords[0]]['tokens'][coords[1]]['index'])
-                #return '%s,%s' % (str(sent_id), head)
-    return '_'
-            # if match
-
 
 
 def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
@@ -461,7 +439,8 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
             idxreg = re.compile('^([0-9]+)\t([0-9]+)')
             splitmain = main_out.split('\n')
             for i, line in enumerate(splitmain):
-                splitmain[i] += '\t_'
+                if line:
+                    splitmain[i] += '\t_'
                 match = re.search(idxreg, line)
                 if match:
                     l, t = match.group(1), match.group(2)

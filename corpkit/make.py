@@ -279,7 +279,12 @@ def make_corpus(unparsed_corpus_path,
         if kwargs.get('output_format') == 'conll':
             #from corpkit.build import add_deps_to_corpus_path
             from corpkit.conll import convert_json_to_conll
-            coref = 'coref' in operations or 'dcoref' in operations if isinstance(operations, str) else False
+            coref = False
+            if operations is False:
+                coref = True
+            elif 'coref' in operations or 'dcoref' in operations:
+               coref = True
+
             convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation, coref=coref)
             #add_deps_to_corpus_path(newparsed)
 

@@ -586,12 +586,12 @@ def add_ids_to_xml(corpuspath, root=False, note=False):
         sents = xmlroot[0][0]
 
         # open the unparsed version of the file, read into memory
-        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '')
+        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '-stripped')
         with open(stripped_txtfile, 'r') as old_txt:
             stripped_txtdata = old_txt.read()
 
         # open the unparsed version with speaker ids
-        id_txtfile = f.replace('.xml', '').replace('-stripped-parsed', '')
+        id_txtfile = f.replace('.xml', '').replace('-parsed', '')
         with open(id_txtfile, 'r') as idttxt:
             id_txtdata = idttxt.read()
 

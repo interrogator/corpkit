@@ -552,7 +552,7 @@ def interrogator(corpus,
     def tok_by_reg(pattern, list_of_toks, concordancing = False, **kwargs):
         """search for regex in plaintext corpora"""
         import re
-        pattern = pattern.values()[0]
+        pattern = list(pattern.values())[0]
         comped = compiler(pattern)
         if comped == 'Bad query':
             return 'Bad query'
@@ -607,7 +607,7 @@ def interrogator(corpus,
                     raise ValueError("Plaintext search must be 'w' or 'n'.")
 
             elif datatype == 'tokens':
-                if any(i.endswith('n') for i in search.keys()):
+                if any(i.endswith('n') for i in show):
                     searcher = tok_ngrams
                     optiontext = 'n-grams via tokens'
                 elif any(i.endswith('w') for i in search.keys()):
@@ -715,7 +715,7 @@ def interrogator(corpus,
         it searches over lines, so the user needs to be careful.
         """
         import re
-        pattern = pattern.values()[0]
+        pattern = list(pattern.values())[0]
         pattern = getattr(pattern, 'pattern', pattern)
 
         if concordancing:

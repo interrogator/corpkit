@@ -24,7 +24,7 @@ import corpkit
 from corpus import Corpus
 
 unparsed_path = 'data/test'
-parsed_path = 'data/test-stripped-parsed'
+parsed_path = 'data/test-parsed'
 
 def test_import():
     import corpkit
@@ -73,10 +73,10 @@ def test_parse_speakseg(skipassert=False):
 test_parse_speakseg.slow = 1
 
 if os.path.isdir(parsed_path):
-    corp = Corpus('data/test-stripped-parsed')
+    corp = Corpus('data/test-parsed')
 else:
     test_parse_speakseg(skipassert=True)
-    corp = Corpus('data/test-stripped-parsed')
+    corp = Corpus('data/test-parsed')
 
 def test_interro1():
     """Testing interrogation 1"""
@@ -121,6 +121,9 @@ def test_interro5():
 def test_interro_multiindex_tregex_justspeakers():
     """Testing interrogation 6"""
     import pandas as pd
+
+    corp = Corpus('data/test-parsed')
+
     data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers=['each'])
     assert_equals(all(data.multiindex().results.index), 
                   all(pd.MultiIndex(levels=[['ANONYMOUS', 'NEWCOMER', 'TESTER', 
