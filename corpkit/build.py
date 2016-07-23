@@ -629,7 +629,7 @@ def add_ids_to_xml(corpuspath, root=False, note=False):
         note.progvar.set(100)
 
 def add_ids_to_conll(corpuspath, root=False, note=False):
-    
+    """unused now"""
     files = get_filepaths(corpuspath, ext='conll')
     if note:
         note.progvar.set(0)
@@ -647,12 +647,12 @@ def add_ids_to_conll(corpuspath, root=False, note=False):
             root.update()
 
         # open the unparsed version of the file, read into memory
-        stripped_txtfile = f.replace('.conll', '').replace('-parsed', '')
+        stripped_txtfile = f.replace('.conll', '').replace('-parsed', '-stripped')
         with open(stripped_txtfile, 'r') as old_txt:
             stripped_txtdata = old_txt.read()
 
         # open the unparsed version with speaker ids
-        id_txtfile = f.replace('.conll', '').replace('-stripped-parsed', '')
+        id_txtfile = f.replace('.conll', '').replace('-parsed', '')
         with open(id_txtfile, 'r') as idttxt:
             id_txtdata = idttxt.read()
 

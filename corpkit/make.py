@@ -161,7 +161,7 @@ def make_corpus(unparsed_corpus_path,
                     #os.rename(fp, newname)
 
         if speaker_segmentation:
-            newpath = unparsed_corpus_path + '-stripped-parsed'
+            newpath = unparsed_corpus_path + '-parsed'
             if isdir(newpath) and not root:
                 ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                 if ans.lower().strip()[0] == 'y':
