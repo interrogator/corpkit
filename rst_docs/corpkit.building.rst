@@ -135,6 +135,12 @@ Parsing creates a corpus that is structurally identical to the original, but wit
 | `output_format`          | `str`      | Save as `xml`, `conll`, `json`        |
 +--------------------------+------------+---------------------------------------+
 
+If you like, you can run parsing operations from the command line as well:
+
+.. code-block:: bash
+
+   $ parse mycorpus --multiprocess 4 --outname MyData --output-format conll
+
 .. note::
 
    *corpkit* will soon shift from using `XML` to `conll-u` data by default. This means smaller file sizes and faster processing. Another benefit is that *corpkit*` will be useful on many corpora that are stored as CSV or TSV files. Support for this mode is experimental, but if you want to try it out, use `output_format = 'conll'`, and interrogate as normal. *corpkit* will detect and process `conll` data automatically if it's there.

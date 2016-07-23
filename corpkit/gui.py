@@ -516,7 +516,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 'Get part-of-speech tag':                           'p',
                 'Regular expression search':                        'r',
                 'Get tokens matching regex':                        't',
-                'Get stats':                                        's',
+                'Get stats':                                        'v',
                 'Get words':                                        'w',
                 'Get tokens by regex':                              'h',
                 'Get tokens matching list':                         'e'}
@@ -582,7 +582,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         from corpkit.constants import transshow, transobjs, LETTERS
         from corpkit.process import make_name_to_query_dict
 
-        exist = {'Trees': 't', 'Stats': 's', 'CQL': 'cql'}
+        exist = {'Trees': 't', 'Stats': 'v', 'CQL': 'cql'}
         convert_name_to_query = make_name_to_query_dict(exist)
 
         # these are example queries for each data type
@@ -1431,8 +1431,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if cqlmode.get():
                 queryd = query
 
-            if selected_option == 's':
-                queryd = {'s': 'any'}
+            if selected_option == 'v':
+                queryd = {'v': 'any'}
                 doing_concondancing = False
             else:
                 doing_concondancing = True
@@ -1445,7 +1445,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                             return_ngm_lemma, return_ngm_pos, return_ngm_func, return_ngm]
 
             to_show = [i.get() for i in poss_returns if i.get() != '']
-            if not to_show and not selected_option == 's':
+            if not to_show and not selected_option == 'v':
                 timestring('Interrogation must return something.')
                 return
             
@@ -1527,7 +1527,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             # stats preset is actually a search type
             if special_queries.get() == 'Stats':
-                selected_option = 's'
+                selected_option = 'v'
                 interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
@@ -1553,7 +1553,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                         timestring('No results found, sorry.')
                         return 
 
-            if selected_option == 's':
+            if selected_option == 'v':
                 featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
                 if not os.path.isfile(featfile):
                     interrodata.save('features', savedir=savedinterro_fullpath.get())
@@ -1604,7 +1604,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             recent_interrogation_name = dict_of_results.keys()[0]
             recent_interrogation_data = dict_of_results.values()[0]
 
-            if queryd == {'s': 'any'}:
+            if queryd == {'v': 'any'}:
                 conc = False
             if doing_concondancing:
                 conc_to_show = recent_interrogation_data.concordance

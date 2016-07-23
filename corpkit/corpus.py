@@ -176,16 +176,16 @@ class Corpus(object):
             self.path, self.datatype, len(self.subcorpora))
         if self.singlefile:
             show += '\nCorpus is a single file.\n'
-        if hasattr(self, 'features'):
-            if not self.singlefile:
-                cols = list(self.features.columns)[:10]
-                show += '\nFeatures:\n\n' + \
-                    self.features.head(10).to_string(columns=cols)
-            else:
-                show += '\nFeatures:\n\n' + \
-                    self.features.head(10).to_string()
-        else:
-            show += '\nFeatures not analysed yet. Use .features to calculate them.\n'
+        #if hasattr(self, 'features'):
+        #    if not self.singlefile:
+        #        cols = list(self.features.columns)[:10]
+        #        show += '\nFeatures:\n\n' + \
+        #            self.features.head(10).to_string(columns=cols)
+        #    else:
+        #        show += '\nFeatures:\n\n' + \
+        #            self.features.head(10).to_string()
+        #else:
+        #    show += '\nFeatures not analysed yet. Use .features to calculate them.\n'
         return show
 
     def __repr__(self):
@@ -248,7 +248,7 @@ class Corpus(object):
             except AttributeError:
                 return load(self.name + '-features')
         else:
-            feat = interrogator(self, 's', 'any').results
+            feat = interrogator(self, 'v', 'any').results
             if isdir(savedir):
                 feat.save(self.name + '-features')
             return feat

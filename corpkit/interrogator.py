@@ -637,7 +637,7 @@ def interrogator(corpus,
                     else:
                         searcher = tgrep_searcher
                     optiontext = 'Searching parse trees'
-                elif any(i.endswith('s') for i in search.keys()):
+                elif any(i.endswith('v') for i in search.keys()):
                     searcher = get_stats
                     statsmode = True
                     optiontext = 'General statistics'
