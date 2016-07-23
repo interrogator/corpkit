@@ -524,7 +524,7 @@ class Concordance(pd.core.frame.DataFrame):
         """
         from corpkit.other import concprinter
         return concprinter(self, kind=kind, n=n, window=window,
-                           columns=columns, **kwargs)
+                           columns=columns, return_it=True, **kwargs)
 
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""
@@ -563,6 +563,12 @@ class Concordance(pd.core.frame.DataFrame):
 
         from corpkit.editor import editor
         return editor(self, *args, **kwargs)
+
+    def __str__(self):
+        return self.format()
+
+    def __repr__(self):
+        return self.format()
 
 class Interrodict(OrderedDict):
     """
