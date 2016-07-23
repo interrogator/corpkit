@@ -50,7 +50,7 @@ def get_dependents_of_id(df, sent_id, tok_id, repeat=False):
     """get governors of a token"""
     try:
         deps = df.ix[(sent_id, tok_id)]['d'].split(',')
-        return [(sent_id, d) for d in deps]
+        return [(sent_id, int(d)) for d in deps]
     except:
         justgov = df.loc[df['g'] == tok_id].xs(sent_id, level='s', drop_level=False)
         #print(df.ix[sent_id, tok_id]['w'])
@@ -217,6 +217,7 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
         repeats = len(get_dependents_of_id(df, *idx)) if any(x.startswith('d') for x in show) else 1
         for repeat in range(1, repeats + 1):
             single_token_bits = []
+            matched_idx = False
             for val in show:
                 
                 adj, val = determine_adjacent(val)
@@ -228,6 +229,9 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
                     new_token, new_idx = get_adjacent_token(df, idx, adj)
                 else:
                     new_idx = idx
+
+                if not new_idx in df.index:
+                    continue
 
                 # get idxs to show
                 matched_idx = obj_getter(df, *new_idx, repeat=repeat)
@@ -264,6 +268,8 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
                                     continue
                                 piece = piece[attr].replace('/', '-slash-')
                             except IndexError:
+                                continue
+                            except KeyError:
                                 continue
                             if wcmode:
                                 from corpkit.dictionaries.word_transforms import taglemma

@@ -621,7 +621,8 @@ def interrogator(corpus,
             only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf',
                           'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
             
-            if datatype != 'parse' and any(i in only_parse for i in list(search.keys())):
+            if datatype != 'parse' and datatype != 'conll' and \
+                any(i in only_parse for i in list(search.keys())):
                 form = ', '.join(i for i in list(search.keys()) if i in only_parse)
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
