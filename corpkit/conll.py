@@ -92,15 +92,36 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
 
 def get_all_corefs(df, idx, token):
     if not hasattr(token, 'c'):
-        return [(idx, token)]
+        return [(idx, token, idx, token)]
     elif token['c'] == '_':
-        return [(idx, token)]
+        return [(idx, token, idx, token)]
     else:
-        just_same_coref = df.loc[df['c'] == token['c']]
-        for i, t in just_same_coref.iterrows():
-            print(token['w'], t['w'])
-        return [(i, t) for i, t in just_same_coref.iterrows()]
-    return corefs
+        just_same_coref = df.loc[df['c'] == token['c'] + '*']
+        return [(idx, token, i, t) for i, t in just_same_coref.iterrows()]
+
+
+def get_adjacent_token(df, idx, adjacent, opposite=False):
+            
+    import operator
+    
+    if opposite:
+        mapping = {'-': operator.add, '+': operator.sub}
+    else:
+        mapping = {'+': operator.add, '-': operator.sub}
+    
+    # save the old bits
+    # get the new idx by going back a few spaces
+    # is this ok with no_punct? 
+    op, spaces = adjacent[0], int(adjacent[1])
+    op = mapping.get(op)
+    new_idx = (idx[0], op(idx[1], spaces))
+    # if it doesn't exist, move on. maybe wrong?
+    try:
+        new_token = df.ix[new_idx]
+    except IndexError:
+        return False, False
+
+    return new_token, new_idx
 
 def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     """search the dataframe for a single criterion"""
@@ -116,46 +137,53 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
         # if in adjacent mode, change the token being processed
         # before changing it back later
         if adjacent:
-            import operator
-            mapping = {'+': operator.add, '-': operator.sub}
-            old_idx, old_token, old_tok_id = idx, token, tok_id
-            op, spaces = adjacent[0], int(adjacent[1])
-            op = mapping.get(op)
-            idx = (sent_id, op(tok_id, spaces))
-            try:
-                token = df.ix[idx]
-            except IndexError:
+            old_idx, old_token = idx, token
+            token, idx = get_adjacent_token(df, idx, adjacent)
+            if token is False:
                 continue
+
+            # so, if adj mode, now 'token' and 'idx' are the adjacent
+            # but we'll change back after the search is done ...
         
+        # in weird cases where there is no lemma or something
         if not hasattr(token, attrib):
             continue
 
         if coref:
-            to_iter = get_all_corefs(df, idx, token)
+            to_iter = [(idx, token, idx, token)] + get_all_corefs(df, idx, token)
         else:
-            to_iter = [(idx, token)]
+             to_iter = [(idx, token, idx, token)]
 
-        for idx, token in to_iter:
+        # if corefs, search the word and return the coref
+        # otherwise, we're just searching and returning word
+
+        for idx, token, coref_idx, coref_token in to_iter:
             if not re.search(pattern, token[attrib]):
                 continue
-            print(idx, token[attrib])
 
-            if adjacent:
-                idx = old_idx
-                tok_id = old_tok_id
-            
+            # adjacent mode, we add the original token, not the
+            # adjacent one ...
+
+            if adjacent and not coref:
+                coref_idx = old_idx
+
+            elif adjacent and coref:
+                coref_token, coref_idx = get_adjacent_token(df, coref_idx, adjacent, opposite=True)
+                if coref_token is False:
+                    continue
+
             if obj == 'm':
-                matches.append(idx)
+                matches.append(coref_idx)
             elif obj == 'd':
-                govs = get_governors_of_id(df, sent_id, tok_id)
-                for idx in govs:
-                    matches.append(idx)
+                govs = get_governors_of_id(df, *coref_idx)
+                for coref_idx in govs:
+                    matches.append(coref_idx)
             elif obj == 'g':
-                deps = get_dependents_of_id(df, sent_id, tok_id)
+                deps = get_dependents_of_id(df, *coref_idx)
                 if not deps:
                     matches.append(None)
-                for idx in deps:
-                    matches.append(idx)
+                for coref_idx in deps:
+                    matches.append(coref_idx)
 
     return matches
 
@@ -179,24 +207,18 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
             single_token_bits = []
             for val in show:
                 
-                if val[0] in ['+', '-']:
-                    adj = (val[0], int(val[1:-2]))
-                    val = val[-2:]
-                else:
-                    adj = False
+                adj, val = determine_adjacent(val)
                 
                 obj, attr = val[0], val[-1]
                 obj_getter = objmapping.get(obj)
                 
                 if adj:
-                    import operator
-                    mapping = {'+': operator.add, '-': operator.sub}
-                    op = mapping.get(adj[0])
-                    new_idx = (idx[0], op(idx[1], adj[1]))
+                    new_token, new_idx = get_adjacent_token(df, idx, adj)
                 else:
                     new_idx = idx
+
                 # get idxs to show
-                matched_idx = obj_getter(df, new_idx[0], new_idx[1], repeat=repeat)
+                matched_idx = obj_getter(df, *new_idx, repeat=repeat)
                 
                 # should it really return a list if we never use all bits?
                 if not matched_idx:
@@ -209,8 +231,14 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
                     elif attr == 'i':
                         piece = str(matched_idx[1])
                     
+                    # this deals
                     if matched_idx[1] == 0:
-                        if attr in easy_attrs:
+                        if df.ix[matched_idx].name == 'w':
+                            if len(show) == 1:
+                                continue
+                            else:
+                                piece = 'none'
+                        elif attr in easy_attrs:
                             piece = 'root'
                     else:
                         if not piece:
@@ -236,8 +264,13 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
                 start, end = get_conc_start_end(df, only_format_match, show, idx, new_idx)
                 fname = kwargs.get('filename', '')
                 sname = metadata[idx[0]].get('speaker', 'none')
+                if all(x == 'none' for x in out.split('/')):
+                    continue
+                if not out:
+                    continue
                 concs.append([fname, sname, start, out, end])
 
+    strings = [i for i in strings if i and not all(x == 'none' for x in i.split('/'))]
     return strings, concs
 
 def fix_show_bit(show_bit):
@@ -271,6 +304,14 @@ def remove_by_mode(matches, mode, criteria):
                 out.append(w)        
     return out
 
+def determine_adjacent(original):
+    if original[0] in ['+', '-']:
+        adj = (original[0], original[1:-2])
+        original = original[-2:]
+    else:
+        adj = False
+    return adj, original
+
 def pipeline(f,
              search,
              show,
@@ -301,12 +342,9 @@ def pipeline(f,
         df = df[~df['w'].str.lower.contains(crit)]
 
     for k, v in search.items():
+
+        adj, k = determine_adjacent(k)
         
-        if k[0] in ['+', '-']:
-            adj = (k[0], k[1:-2])
-            k = k[-2:]
-        else:
-            adj = False
         res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
         for r in res:
             all_matches.append(r)
@@ -315,11 +353,7 @@ def pipeline(f,
     
     if exclude:
         for k, v in exclude.items():
-            if k[0] in ['+', '-']:
-                adj = (k[0], k[1:-2])
-                k = k[-2:]
-            else:
-                adj = False
+            adj, k = determine_adjacent(k)
             res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
             for r in res:
                 all_exclude.append(r)
@@ -438,21 +472,30 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
             dct = {}
             idxreg = re.compile('^([0-9]+)\t([0-9]+)')
             splitmain = main_out.split('\n')
+            # add tab _ to each line, make dict of sent-token: line index
             for i, line in enumerate(splitmain):
-                if line:
+                if line and not line.startswith('#'):
                     splitmain[i] += '\t_'
                 match = re.search(idxreg, line)
                 if match:
                     l, t = match.group(1), match.group(2)
                     dct[(int(l), int(t))] = i
             
+            # for each coref chain
             for numstring, list_of_dicts in sorted(data['corefs'].items()):
+                # for each mention
                 for d in list_of_dicts:
                     snum = d['sentNum']
+                    # get head?
                     for i in range(d['startIndex'], d['endIndex']):
+                    
                         try:
                             ix = dct[(snum, i)]
-                            splitmain[ix] = splitmain[ix].rstrip('\t_') + '\t%s' % numstring
+                            fixed_line = splitmain[ix].rstrip('\t_') + '\t%s' % numstring
+                            gov_s = int(fixed_line.split('\t')[6])
+                            if gov_s < d['startIndex'] or gov_s > d['endIndex']:
+                                fixed_line += '*'
+                            splitmain[ix] = fixed_line
                             dct.pop((snum, i))
                         except KeyError:
                             pass
