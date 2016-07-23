@@ -1,9 +1,16 @@
-"""Process CONLL formatted data"""
+"""
+Process CONLL formatted data
+"""
 
 def parse_conll(f, first_time=False):
     """take a file and return pandas dataframe with multiindex"""
     import pandas as pd
+    import StringIO
+    # here are the fields for the TSV file
+    # sent, index, word, lem, pos, ner, gov, func, deps, coref, custom
+    # we may need a way to customise them if others' data is different...
     head = ['s', 'i', 'w', 'l', 'p', 'n', 'g', 'f', 'd', 'c', 'x', 'y', 'z']
+    
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
     splitdata = []
@@ -20,17 +27,22 @@ def parse_conll(f, first_time=False):
                     field, val = line.split('=', 1)
                     metadata[count][field] = val
         count += 1
-    # determine proper head
+
+    # determine the number of columns we need
     l = len(splitdata[0].strip('\t').split('\t'))
     head = head[:l]
+    
+    # if formatting for the first time, add sent ids
     if first_time:
         for i, d in enumerate(splitdata, start=1):
             d = d.replace('\n', '\n%s\t' % str(i))
             splitdata[i-1] = d
+
+    # turn into something pandas can read    
     data = '\n'.join(splitdata)
     data = data.replace('\n\n', '\n') + '\n'
-    import StringIO
-    #data = '\n'.join(['%s\t%s' % (i, x) for i, x in enumerate(data.splitlines())])
+
+    # open with sent and token as multiindex
     df = pd.read_csv(StringIO.StringIO(data), sep='\t', header=None, names=head, index_col=['s', 'i'])
     return df, metadata
 
