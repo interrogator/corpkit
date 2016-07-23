@@ -46,6 +46,7 @@ class Corpus(object):
         elif hasattr(path, 'path') and path.path:
             self.path = abspath(path.path)
             self.name = basename(path.path)
+
         # this messy code figures out as quickly as possible what the datatype
         # and singlefile status of the path is. it's messy because it shortcuts
         # full checking where possible some of the shortcutting could maybe be
@@ -60,10 +61,18 @@ class Corpus(object):
             if not isdir(self.path):
                 if isdir(join('data', path)):
                     self.path = abspath(join('data', path))
-        if kwargs.get('conll') or self.path.endswith('-conll'):
-            self.datatype = 'conll'
-        elif self.path.endswith('-parsed'):
-            self.datatype = 'parse'
+        
+        if self.path.endswith('-parsed'):
+
+            for r, d, f in os.walk(self.path):
+                if not f:
+                    continue
+                if f[0].endswith('xml'):
+                    self.datatype = 'parse'
+                elif f[0].endswith('conll'):
+                    self.datatype = 'conll'
+                break
+
             if len([d for d in os.listdir(self.path)
                     if isdir(join(self.path, d))]) > 0:
                 self.singlefile = False
@@ -860,6 +869,8 @@ class File(Corpus):
             self.datatype = 'tokens'
         elif self.path.endswith('.xml'):
             self.datatype = 'parse'
+        elif self.path.endswith('.conll'):
+            self.datatype = 'conll'
         else:
             self.datatype = 'plaintext'
 
@@ -869,14 +880,6 @@ class File(Corpus):
     def __str__(self):
         return self.path
  
-    @lazyprop
-    def document(self):
-        """
-        Return the parsed XML of a parsed file
-        """
-        from corenlp_xml.document import Document
-        return Document(self.read())
-
     def read(self, **kwargs):
         """
         Read file data. If data is pickled, unpickle first
@@ -893,6 +896,25 @@ class File(Corpus):
             with open(self.path, 'r', **kwargs) as fo:
                 data = fo.read()
             return data
+
+    @lazyprop
+    def document(self):
+        """
+        Return a version of the file that can be manipulated
+
+        * For XML, this is a corenlp_xml Document.
+        * For conll, this is a DataFrame
+        * For tokens, this is a list of tokens
+        * For plaintext, this is a string
+        """
+        if self.datatype == 'parse':
+            from corenlp_xml.document import Document
+            return Document(self.read())
+        elif self.datatype == 'conll':
+            from corpkit.conll import parse_conll
+            return parse_conll(self.path)
+        else:
+            return self.read()
 
     @lazyprop
     def plain(self):
