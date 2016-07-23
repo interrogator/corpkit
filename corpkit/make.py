@@ -12,6 +12,7 @@ def make_corpus(unparsed_corpus_path,
                 root=False,
                 multiprocess=False,
                 split_texts=400,
+                outname=False,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -72,7 +73,10 @@ def make_corpus(unparsed_corpus_path,
 
     # raise error if no tokeniser
     if tokenise:
-        newpath = unparsed_corpus_path + '-tokenised'
+        if outname:
+            newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
+        else:
+            newpath = unparsed_corpus_path + '-tokenised'
         if isdir(newpath):
             shutil.rmtree(newpath)
         import nltk
@@ -161,7 +165,10 @@ def make_corpus(unparsed_corpus_path,
                     #os.rename(fp, newname)
 
         if speaker_segmentation:
-            newpath = unparsed_corpus_path + '-parsed'
+            if outname:
+                newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
+            else:
+                newpath = unparsed_corpus_path + '-parsed'
             if isdir(newpath) and not root:
                 ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                 if ans.lower().strip()[0] == 'y':
@@ -227,6 +234,7 @@ def make_corpus(unparsed_corpus_path,
                      'root': root,
                      'note': note,
                      'stdout': stdout,
+                     'outname': outname,
                      'output_format': kwargs.get('output_format', 'xml')
                     }
                 ds.append(d)
@@ -257,6 +265,7 @@ def make_corpus(unparsed_corpus_path,
                                      note=note,
                                      stdout=stdout,
                                      fileparse=fileparse,
+                                     outname=outname,
                                      output_format=kwargs.get('output_format', 'xml'))
 
         if not newparsed:
@@ -275,7 +284,7 @@ def make_corpus(unparsed_corpus_path,
         move_parsed_files(project_path, to_parse, newparsed, ext=kwargs.get('output_format', 'xml'))
         outpath = newparsed
         if speaker_segmentation and kwargs.get('output_format', 'xml') == 'xml':
-            add_ids_to_xml(newparsed)
+            add_ids_to_xml(newparsed, originalname=to_parse)
         if kwargs.get('output_format') == 'conll':
             #from corpkit.build import add_deps_to_corpus_path
             from corpkit.conll import convert_json_to_conll
@@ -303,7 +312,8 @@ def make_corpus(unparsed_corpus_path,
                               filelist=filelist,
                               nltk_data_path=nltk_data_path,
                               operations=operations,
-                              only_tokenise=True
+                              only_tokenise=True,
+                              outname=outname
                              )
         if newtok is False:
             return   

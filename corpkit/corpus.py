@@ -594,6 +594,7 @@ class Corpus(object):
               memory_mb=False,
               multiprocess=False,
               split_texts=400,
+              outname=False,
               *args,
               **kwargs
              ):
@@ -627,6 +628,12 @@ class Corpus(object):
         :param folderise: If corpus is just files, move each into own folder
         :type folderise: `bool`
 
+        :param output_format: Save parser output as `xml`, `json`, `conll` 
+        :type output_format: `str`
+
+        :param outname: Specify a name for the parsed corpus
+        :type outname: `str`
+
         :Example:
 
         >>> parsed = corpus.parse(speaker_segmentation=True)
@@ -636,6 +643,11 @@ class Corpus(object):
         :returns: The newly created :class:`corpkit.corpus.Corpus`
         """
         import os
+        if outname:
+            outpath = os.path.join('data', outname)
+            if os.path.exists(outpath):
+                raise ValueError('Path exists: %s' % outpath)
+
         from corpkit.make import make_corpus
         #from corpkit.process import determine_datatype
         #dtype, singlefile = determine_datatype(self.path)
@@ -654,15 +666,22 @@ class Corpus(object):
                            memory_mb=memory_mb,
                            multiprocess=multiprocess,
                            split_texts=split_texts,
+                           outname=outname,
                            *args,
                            **kwargs
                           )
         if not corp:
             return
+        #if outname:
+        #    import shutil
+        #    newpath = os.path.join(os.path.dirname(corp), outname)
+        #    shutil.move(corp, newpath)
+        #    corp = newpath
+
         if os.path.isfile(corp):
             return File(corp)
         else:
-            return Corpus(corp, conll=kwargs.get('output_format') == 'conll')
+            return Corpus(corp)
 
     def tokenise(self, *args, **kwargs):
         """

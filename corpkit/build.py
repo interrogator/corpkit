@@ -204,6 +204,7 @@ def parse_corpus(proj_path=False,
                  memory_mb=2000,
                  copula_head=True,
                  multiprocessing=False,
+                 outname=False,
                  **kwargs
                 ):
     """
@@ -247,12 +248,15 @@ def parse_corpus(proj_path=False,
     if fileparse:
         new_corpus_path = os.path.dirname(corpuspath)
     else:
-        if only_tokenise:
-            new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
+        if outname:
+            new_corpus_path = os.path.join(proj_path, 'data', outname)
         else:
-            new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
+            if only_tokenise:
+                new_corpus_path = os.path.join(proj_path, 'data', '%s-tokenised' % basecp)
+            else:
+                new_corpus_path = os.path.join(proj_path, 'data', '%s-parsed' % basecp)
 
-        new_corpus_path = new_corpus_path.replace('-stripped-', '-')
+            new_corpus_path = new_corpus_path.replace('-stripped-', '-')
 
     # todo:
     # this is not stable
@@ -267,15 +271,18 @@ def parse_corpus(proj_path=False,
         os.makedirs(new_corpus_path)
     else:
         if not os.path.isfile(new_corpus_path):
-            fs = os.listdir(new_corpus_path)
+            fs = get_filepaths(new_corpus_path, ext=False)
             if not multiprocessing:
                 if not only_tokenise:
                     if any([f.endswith('.xml') for f in fs]):
-                        print('Folder containing xml already exists: "%s-parsed"' % basecp)
+                        print('Folder containing xml already exists: %s' % new_corpus_path)
+                        return False
+                    elif any([f.endswith('.conll') for f in fs]):
+                        print('Folder containing .conll files already exists: %s' % new_corpus_path)
                         return False
                 else:
                     if any([f.endswith('.p') for f in fs]):
-                        print('Folder containing tokens already exists: "%s-tokenised"' % basecp)  
+                        print('Folder containing tokens already exists: %s' % new_corpus_path)  
                         return False          
 
     corenlppath = get_corenlp_path(corenlppath)
@@ -287,10 +294,11 @@ def parse_corpus(proj_path=False,
                                                  note=note,
                                                  actually_download=True,
                                                  custom_corenlp_dir=corenlppath)
+        # cleanup
         if corenlppath is None and fpath is None:
             import shutil
             shutil.rmtree(new_corpus_path)
-            shutil.rmtree(new_corpus_path.replace('-parsed', ''))
+            shutil.rmtree(new_corpus_path.replace('-parsed', '-stripped'))
             os.remove(new_corpus_path.replace('-parsed', '-filelist.txt'))
             raise ValueError('CoreNLP needed to parse texts.')
         extract_cnlp(fpath)
@@ -544,7 +552,7 @@ def make_no_id_corpus(pth, newpth):
         else:
             print('%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20])))))
 
-def add_ids_to_xml(corpuspath, root=False, note=False):
+def add_ids_to_xml(corpuspath, root=False, note=False, originalname=False):
     """
     Add ids to the xml in corpuspath
 
@@ -586,12 +594,20 @@ def add_ids_to_xml(corpuspath, root=False, note=False):
         sents = xmlroot[0][0]
 
         # open the unparsed version of the file, read into memory
-        stripped_txtfile = f.replace('.xml', '').replace('-parsed', '-stripped')
+        if originalname:
+            on = os.path.basename(originalname)
+            stripped_txtfile = f.replace('.xml', '').replace(os.path.basename(corpuspath), on, 1)
+        else:
+            stripped_txtfile = f.replace('.xml', '').replace('-parsed', '-stripped')
         with open(stripped_txtfile, 'r') as old_txt:
             stripped_txtdata = old_txt.read()
 
         # open the unparsed version with speaker ids
-        id_txtfile = f.replace('.xml', '').replace('-parsed', '')
+        if originalname:
+            on = os.path.basename(originalname)
+            id_txtfile = f.replace('.xml', '').replace(os.path.basename(corpuspath), on, 1)
+        else:
+            id_txtfile = f.replace('.xml', '').replace('-parsed', '').replace('-stripped', '')
         with open(id_txtfile, 'r') as idttxt:
             id_txtdata = idttxt.read()
 
