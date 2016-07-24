@@ -42,6 +42,7 @@ def interpreter(debug=False):
     previous = []
     edited = None
     concordance = None
+    query = None
     stored = {}
 
     proj_dirs = ['data', 'saved_interrogations', 'exported']
@@ -70,6 +71,10 @@ def interpreter(debug=False):
         global edited
         global previous
         global result
+
+        if command == 'history':
+            for i in range(readline.get_current_history_length()):
+                print readline.get_history_item(i + 1)
 
         if command == 'help':
             print("\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
@@ -316,6 +321,9 @@ def interpreter(debug=False):
            > search corpus for words matching "^[abcde]" with preserve_case and case_sensitive
         """
         global corpus
+        if not corpus:
+            print('Corpus not set. use "set <corpusname>".')
+
         kwargs = parse_search_args(tokens)
         
         if debug:
@@ -334,6 +342,9 @@ def interpreter(debug=False):
         if tokens[0] == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
+        if tokens[0] == 'query':
+            global query
+            print(sorted(query.items()))
 
     def get_info(tokens):
         pass
@@ -347,6 +358,8 @@ def interpreter(debug=False):
             global result
             result = out
             print(out.results)
+            global query
+            query = out.query
         if command == edit_something:
             if hasattr(out, 'results'):
                 print(out.results)
@@ -494,8 +507,10 @@ def interpreter(debug=False):
     def parse_corpus(tokens):
         if tokens[0] != 'corpus':
             print('Command not understood. Use "set <corpusname>" and "parse corpus"')
-        
         global corpus
+        if not corpus:
+            print('Corpus not set. use "set <corpusname>" on an unparsed corpus.')
+            return
 
         if corpus.datatype != 'plaintext':
             print('Corpus is not plain text.')
