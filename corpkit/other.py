@@ -212,7 +212,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         savename = makesafe(savename, drop_datatype=False, hyphens_ok=True)
         if not savename.endswith('.p'):
             savename = savename + '.p'
-        if hasattr(interrogation, 'query') and interrogation.query:
+        if hasattr(interrogation, 'query') and isinstance(interrogation.query, dict):
             corpus = interrogation.query.get('corpus', False)
             if corpus:
                 if isinstance(corpus, STRINGTYPE):
@@ -235,7 +235,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     savename = make_filename(interrogation, savename)
 
     # delete unpicklable parts of query
-    if hasattr(interrogation, 'query'):
+    if hasattr(interrogation, 'query') and isinstance(interrogation.query, dict):
         iq = interrogation.query
         if iq:
             from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
@@ -254,7 +254,7 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
         fullpath = savename
 
     while os.path.isfile(fullpath):
-        INPUTFUNC(("\nSave error: %s already exists in %s.\n\n" \
+        selection = INPUTFUNC(("\nSave error: %s already exists in %s.\n\n" \
                 "Type 'o' to overwrite, or enter a new name: " % (savename, savedir)))
 
         if selection == 'o' or selection == 'O':

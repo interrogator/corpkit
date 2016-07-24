@@ -324,7 +324,7 @@ class Corpus(object):
             except AttributeError:
                 return load(self.name + '-postags')
         else:
-            feat = interrogator(self, 't', 'any', show='p').results
+            feat = interrogator(self, 't', 'any', show='p', preserve_case=True).results
             if isdir(savedir):
                 feat.save(self.name + '-postags')
                 wordclss = feat.edit(

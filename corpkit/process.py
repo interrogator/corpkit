@@ -838,7 +838,10 @@ def canpickle(obj):
 
 def sanitise_dict(d):
     """
-    Make a dict that works as query attribute"""
+    Make a dict that works as query attribute
+    """
+    if not isinstance(d, dict):
+        return
     newd = {}
     if d.get('kwargs') and isinstance(d['kwargs'], dict):
         for k, v in d['kwargs'].items():
@@ -954,7 +957,7 @@ def fix_search(search, case_sensitive=False, root=False):
         return newd
 
     newsearch = {}
-    
+
     if not search:
         return
     if isinstance(search, STRINGTYPE):

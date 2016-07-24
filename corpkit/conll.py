@@ -505,6 +505,8 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
                 for d in list_of_dicts:
                     snum = d['sentNum']
                     # get head?
+                    # this has been fixed in dev corenlp: 'headIndex' --- could simply use that
+                    # ref : https://github.com/stanfordnlp/CoreNLP/issues/231
                     for i in range(d['startIndex'], d['endIndex']):
                     
                         try:

@@ -1,16 +1,22 @@
 """
-A corpkit interpreter!
+A corpkit interpreter, with natural language commands.
 
 todo:
 
-* save, load
-* previous results
+* documentation
+* handling of kwargs tuples etc
+* checking for bugs
 
 """
+from __future__ import print_function
+from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 import os
 import traceback
 import pandas as pd
+import readline
+import atexit
+import rlcompleter
 
 import corpkit
 from corpkit import *
@@ -20,11 +26,30 @@ from corpkit.constants import transshow, transobjs
 size = pd.util.terminal.get_terminal_size()
 pd.set_option('display.max_rows', 0)
 pd.set_option('display.max_columns', 0)
-import readline
-readline.parse_and_bind('tab: complete')
+
 readline.parse_and_bind('set editing-mode vi')
 
+
+# this code makes it possible to remember history from previous sessions
+history_path = os.path.expanduser("~/.pyhistory")
+
+def save_history(history_path=history_path):
+    import readline
+    readline.write_history_file(history_path)
+
+if os.path.exists(history_path):
+    readline.read_history_file(history_path)
+
+atexit.register(save_history)
+
+readline.parse_and_bind('tab: complete')
+
+del os, atexit, readline, rlcompleter, save_history, history_path
+
+
+
 def interpreter(debug=False):
+    import os
 
     allig = '\n   Welcome!\n'
     allig += "               .-._   _ _ _ _ _ _ _ _\n    " \
@@ -35,15 +60,26 @@ def interpreter(debug=False):
              "          (((____.-'        '-.  /   : :\n    "\
              "                            (((-'\ .' /\n    "\
              "                          _____..'  .'\n    "\
-             "                         '-._____.-'"
+             "                         '-._____.-'\n"
 
     # globally accessed
-    result = None
-    previous = []
-    edited = None
-    concordance = None
-    query = None
-    stored = {}
+
+    class Objects(object):
+
+        def __init__(self):
+
+            self.result = None
+            self.previous = []
+            self.edited = None
+            self.concordance = None
+            self.query = None
+            self.features = None
+            self.postags = None
+            self.wordclasses = None
+            self.stored = {}
+            self.figure = None
+
+    objs = Objects()
 
     proj_dirs = ['data', 'saved_interrogations', 'exported']
     in_a_project = all(x in os.listdir('.') for x in proj_dirs)
@@ -66,15 +102,9 @@ def interpreter(debug=False):
 
     def show_help(command):
 
-        global corpus
-        global concordance
-        global edited
-        global previous
-        global result
-
         if command == 'history':
             for i in range(readline.get_current_history_length()):
-                print readline.get_history_item(i + 1)
+                print(readline.get_history_item(i + 1))
 
         if command == 'help':
             print("\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
@@ -104,30 +134,38 @@ def interpreter(debug=False):
             print(getattr(corpus, 'name', 'Corpus not set. use "set <corpusname>".'))
         if command == 'python' or command == 'ipython':
             from IPython import embed
+
             from IPython.terminal.embed import InteractiveShellEmbed
 
             # the theory is that somewhere we could get the locals from the embedded session
+            # atexit_operations could be the answer
 
             s = generate_outprint()
             ret = InteractiveShellEmbed(header=s, debug=debug,
                                         exit_msg='Switching back to corpkit environment ...')
             cc = ret()
-            we_need = 'corpus', 'result', 'concordance', 'edited', 'previous'
-            dct = {k: v for k, v in ret.user_ns['__builtins__'].globals().items() if k in we_need}
-            corpus = dct.get('corpus', corpus)
-            concordance = dct.get('concordance', concordance)
-            edited = dct.get('edited', edited)
-            result = dct.get('result', result)
-            previous = dct.get('previous', previous)
+            #we_need = 'corpus', 'result', 'concordance', 'edited', 'previous'
+            #dct = {k: v for k, v in ret.user_ns['__builtins__'].globals().items() if k in we_need}
+            #corpus = dct.get('corpus', corpus)
+            #concordance = dct.get('concordance', concordance)
+            #edited = dct.get('edited', edited)
+            #result = dct.get('result', result)
+            #previous = dct.get('previous', previous)
 
         elif command == 'result':
-            print(result.results)
+            print(getattr(objs.result, 'results', 'Nothing here yet.'))
         elif command == 'edited':
-            print(edited.results)
+            print(getattr(objs.edited, 'results', 'Nothing here yet.'))
         elif command == 'concordance':
-            print(result.concordance)
+            print(getattr(objs.concordance, 'concordance', 'Nothing here yet.'))
+        elif command == 'features':
+            print(objs.features)
+        elif command == 'wordclasses':
+            print(objs.wordclasses)
+        elif command == 'postags':
+            print(objs.postags)
         elif command == 'previous':
-            for index, entry in enumerate(list(reversed(previous)), start=1):
+            for index, entry in enumerate(list(reversed(objs.previous)), start=1):
                 print('%d\nCommand: %s\nOutput:\n%s' % (index, entry[0], str(entry[1])))
         else:
             pass
@@ -140,27 +178,48 @@ def interpreter(debug=False):
 
         set junglebook-parsed
         """
+        from corpkit.other import load
         path = tokens[0]
+        loadsaved = len(tokens) > 1 and tokens[1].startswith('load')
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
-            global corpus
-            corpus = Corpus(path)
+            
+            objs.corpus = Corpus(path, load_saved=loadsaved)
+            
+            objs.features = load(objs.corpus.name + '-features')
 
-    def search_helper():
-        search = {}
+            objs.postags = load(objs.corpus.name + '-postags')
+            
+            objs.wordclasses = load(objs.corpus.name + '-wordclasses')
+
+        else:
+            print('Corpus not found: %s' % tokens[0])
+            return
+
+    def search_helper(text='search'):
+        if text == 'search':
+            search_or_show = {}
+        else:
+            search_or_show = []
         while True:
-            out = raw_input('\n    match (words, lemma, pos, func ... ) > ')
+            out = INPUTFUNC('\n    %s (words, lemma, pos, func ... ) > ' % text)
             out = out.lower()
             if not out:
                 continue
             if out.startswith('done'):
                 break
-            val = raw_input('\n    value (regex) > ')
+            if out == 'cql':
+                cql = INPUTFUNC('\n        CQL query > ')
+                return cql.strip()
+            if text == 'show':
+                search_or_show.append(out)
+                continue
+            val = INPUTFUNC('\n        value (regex) > ')
             if not val:
                 continue
             if val.startswith('done'):
                 break
-            search[out.lower()[0]] = value
-        return search
+            search_or_show[out.lower()[0]] = val
+        return search_or_show
 
     def process_long_key(srch):
         from corpkit.constants import transshow, transobjs
@@ -239,7 +298,11 @@ def interpreter(debug=False):
     def parse_search_args(tokens):
         tokens = tokens[1:]
         if not tokens:
-            return search_helper()
+            search = search_helper(text='search')
+            show = search_helper(text='show')
+            kwargs = {'search': search, 'show': show,
+                      'cql': isinstance(search, str), 'conc': True}
+            return kwargs
 
         search_related = []
         for token in tokens:
@@ -263,17 +326,22 @@ def interpreter(debug=False):
         exclude = {}
 
         cqlmode = False
+        featuresmode = False
         
         for i, token in enumerate(search_related):
             if token in ['for', 'and', 'not']:
                 if search_related[i+1] == 'not':
                     continue
+                if search_related[i+1] == 'features':
+                    search = {'v': 'any'}
+                    featuresmode = True
+                    break
                 k = search_related[i+1]
                 if k == 'cql':
                     cqlmode = True
-                    query = next((i for i in search_related[i+2:] if i not in ['matching']), False)
-                    if query:
-                        search = query
+                    aquery = next((i for i in search_related[i+2:] if i not in ['matching']), False)
+                    if aquery:
+                        search = aquery
                         break
                 k = process_long_key(k)
                 v = search_related[i+3].strip("'")
@@ -320,49 +388,59 @@ def interpreter(debug=False):
            > search corpus for trees matching "/NN.?/ >># NP" 
            > search corpus for words matching "^[abcde]" with preserve_case and case_sensitive
         """
-        global corpus
-        if not corpus:
+        if not objs.corpus:
             print('Corpus not set. use "set <corpusname>".')
+            return
 
         kwargs = parse_search_args(tokens)
         
         if debug:
             print(kwargs)
 
-        result = corpus.interrogate(**kwargs)
-        return result
+        objs.result = objs.corpus.interrogate(**kwargs)
+        return objs.result
 
     def show_this(tokens):
-
+        """
+        Show any object in a human-readable form
+        """
         if tokens[0] == 'corpora':
             print ('\t' + '\n\t'.join([i for i in os.listdir('data') if not i.startswith('.')]))
         elif tokens[0].startswith('store'):
-            global stored
-            print(stored)
-        if tokens[0] == 'saved':
+            print(objs.stored)
+        elif tokens[0] == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
-        if tokens[0] == 'query':
-            global query
-            print(sorted(query.items()))
+        elif tokens[0] == 'query':
+            print(sorted(objs.query.items()))
+        elif tokens[0] == 'figure':
+            if hasattr(objs, 'figure') and objs.figure:
+                objs.figure.show()
+            else:
+                print('Nothing here yet.')
+        elif tokens[0] in ['features', 'wordclasses', 'postags']:
+            print(getattr(objs.corpus, tokens[0]))
+
+        else:
+            print("No information about: %s" % tokens[0])
 
     def get_info(tokens):
         pass
 
     def run_command(tokens):
-
         command = get_command.get(tokens[0], unrecognised)        
         out = command(tokens[1:])
-        previous.append((output, out))
+        objs.previous.append((output, out))
         if command == search_corpus:
-            global result
-            result = out
-            print(out.results)
-            global query
-            query = out.query
+            objs.result = out
+            print('\nresult:\n\n', out.results, '\n')
+            objs.query = out.query
+            objs.concordance = out.concordance
+            # find out what is going on here
+            objs.edited = False
         if command == edit_something:
             if hasattr(out, 'results'):
-                print(out.results)
+                print('\nedited:\n\n',  out.results, '\n')
         else:
             if debug:
                 print('Done:', repr(out))
@@ -373,11 +451,10 @@ def interpreter(debug=False):
         return
 
     def export_result(tokens):
-        global result
         if tokens[0] == 'result':
-            obj = result.results
+            obj = objs.result.results
         elif tokens[0] == 'concordance':
-            obj = result.concordance
+            obj = objs.result.concordance
         if len(tokens) == 1:
             print(obj.to_string())
             return
@@ -406,22 +483,15 @@ def interpreter(debug=False):
 
     def get_thing_to_edit(token):
 
-        global result
-        global concordance
-        global edited
-
-        thing_to_edit = result
+        thing_to_edit = objs.result
         if token == 'concordance':
-            thing_to_edit = concordance
+            thing_to_edit = objs.concordance
         elif token == 'edited':
-            thing_to_edit = edited
+            thing_to_edit = objs.edited
         return thing_to_edit
 
     def sort_something(tokens):
         """sort a result or concordance line"""
-        global result
-        global concordance
-        global edited
 
         thing_to_edit = get_thing_to_edit(tokens[0])
 
@@ -429,19 +499,13 @@ def interpreter(debug=False):
 
         val = next((x for x in tokens[1:] if x not in recog), 'total')
 
-        if thing_to_edit in [result, edited]:
-            edited = thing_to_edit.edit(sort_by=val)
+        if thing_to_edit in [objs.result, objs.edited]:
+            objs.edited = thing_to_edit.edit(sort_by=val)
         else:
-            concordance = thing_to_edit.sort_values(val[0], axis=1)
+            objs.concordance = thing_to_edit.sort_values(val[0], axis=1)
         return
 
     def edit_something(tokens):
-
-        global result
-        global concordance
-        global edited
-
-
 
         thing_to_edit = get_thing_to_edit(tokens[0])
 
@@ -480,134 +544,179 @@ def interpreter(debug=False):
                 #    skips.append(x)
         if debug:
             print(kwargs)
-        global edited
-        edited = thing_to_edit.edit(**kwargs)
+        objs.edited = thing_to_edit.edit(**kwargs)
 
         return
 
     def plot_result(tokens):
-
+        """
+        Visualise an interrogation
+        """
+        
+        import matplotlib.pyplot as plt
+        kinds = ['line', 'heatmap', 'bar', 'barh', 'pie', 'area']
+        kind = next((x for x in tokens if x in kinds), 'line')
         kwargs = process_kwargs(tokens)
-
-        return
+        title = kwargs.pop('title', False)
+        objs.figure = getattr(objs, tokens[0]).visualise(title=title, kind=kind, **kwargs)
+        objs.figure.show()
 
 
     def calculate_result(tokens):
-        global result
-        calcs = ['k', '%', '+', '/', '-', '*']
+        """
+        Get relative frequencies, combine results, etc
+        """
+        calcs = ['k', '%', '+', '/', '-', '*', 'percentage']
         operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
         if not operation:
-            print('bad operation')
+            print('Bad operation ...')
             return
         denominator = tokens[-1]
-        result = result.edit(operation, denominator)
-        print(result.results)
+        if denominator.startswith('features'):
+            attr = denominator.split('.', 1)[-1]
+            denominator = objs.features[attr.title()]
+        elif denominator.startswith('wordclasses'):
+            attr = denominator.split('.', 1)[-1]
+            denominator = objs.wordclasses[attr.title()]
+        elif denominator.startswith('postags'):
+            attr = denominator.split('.', 1)[-1]
+            denominator = objs.postags[attr.upper()]
+        elif denominator.startswith('stored'):
+            attr = denominator.split('.', 1)[-1]
+            denominator = fetch_this([attr], unbound=True)
+        if operation == 'percentage':
+            operation = '%'
+        the_obj = getattr(objs, tokens[0])
+        print(the_obj, operation, denominator)
+        objs.edited = the_obj.edit(operation, denominator)
+        print('\nedited:\n\n', objs.edited.results, '\n')
         return
 
     def parse_corpus(tokens):
+        """
+        Parse an unparsed corpus
+        """
         if tokens[0] != 'corpus':
             print('Command not understood. Use "set <corpusname>" and "parse corpus"')
-        global corpus
-        if not corpus:
+        if not objs.corpus:
             print('Corpus not set. use "set <corpusname>" on an unparsed corpus.')
             return
 
-        if corpus.datatype != 'plaintext':
+        if objs.corpus.datatype != 'plaintext':
             print('Corpus is not plain text.')
             return
         kwargs = process_kwargs(tokens)
-        parsed = corpus.parse(**kwargs)
+        parsed = objs.corpus.parse(**kwargs)
         if parsed:
-            corpus = parsed
+            objs.corpus = parsed
         return
 
-    def fetch_this(tokens):
-        global result
-        global concordance
-        global edited
-        global corpus
-        global stored
+    def fetch_this(tokens, unbound=False):
+        """
+        Get something from storage
+        """
 
         from corpkit.corpus import Corpus
         from corpkit.interrogation import Interrogation, Concordance
         
-        to_fetch = stored.get(tokens[0], False)
+        to_fetch = objs.stored.get(tokens[0], False)
         if not to_fetch:
-            print('Not in store')
+            print('Not in store: %s' % tokens[0])
             return
 
-        if tokens[2] == 'corpus':
-            corpus = to_fetch
-        elif tokens[2].startswith('conc'):
-            concordance = to_fetch
-        elif tokens[2] == 'result':
-            result = to_fetch
-        elif tokens[2] == 'edited':
-            edited = to_fetch
+        if unbound:
+            return to_fetch
 
-        print('%s made into %s.' % (str(to_fetch), tokens[2]))
+        if len(tokens) < 3:
+            if isinstance(to_fetch, Corpus):
+                weneed = 'corpus'
+            elif isinstance(to_fetch, Interrogation):
+                if hasattr(to_fetch, 'denominator'):
+                    weneed = 'edited'
+                else:
+                    weneed = 'result'
+            elif isinstance(to_fetch, Concordance):
+                weneed = 'concordance'
+        else:
+            weneed = tokens[2]
 
-    def save_this(tokens):
-        global result
-        global concordance
-        global edited
+        if weneed == 'corpus':
+            objs.corpus = to_fetch
+        elif weneed.startswith('conc'):
+            objs.concordance = to_fetch
+        elif weneed == 'result':
+            objs.result = to_fetch
+        elif weneed == 'edited':
+            objs.edited = to_fetch
 
-        mapping = {'result': result,
-                   'concordance': concordance,
-                   'edited': edited}
+        print('%s fetched as %s.' % (repr(to_fetch), tokens[2]))
 
-        to_save = mapping.get(tokens[0])
-        to_save.save(tokens[2])
+    def save_this(tokens, passedin=False):
+        """
+        Save a result or concordance
+        """
+        if passedin:
+            to_save = passedin
+        else:
+            to_save = getattr(objs, tokens[0])
+
+        if to_save == 'store' and not passedin:
+            for k, v in objs.stored.items():
+                save_this(['as', k], passedin=v)
+
+        if tokens[0] == 'figure' or hasattr(to_save, 'savefig'):
+            tokens[2] = os.path.join('images', tokens[2])
+            to_save.savefig(tokens[2])
+        else:
+            to_save.save(tokens[2])
+
 
     def load_this(tokens):
-        global result
-        global concordance
-        global edited
-        global stored
+        """
+        Load data from file
+        """
+
         from corpkit.other import load
         if tokens[2] == 'result':
-            result = load(tokens[0])
+            objs.result = load(tokens[0])
         if tokens[2] == 'concordance':
-            concordance = load(tokens[0])
+            objs.concordance = load(tokens[0])
         if tokens[2] == 'edited':
-            edited = load(tokens[0])
-        pass
+            objs.edited = load(tokens[0])
 
     def new_project(tokens):
+        """
+        Start a new project with a name of your choice, then move into it
+        """
+
         from corpkit.other import new_project
         new_project(tokens[-1])
         os.chdir(tokens[-1])
 
     def store_this(tokens):
-        global result
-        global concordance
-        global edited
-        global stored
+        """
+        Send a result into storage
+        """
 
-        mapping = {'result': result,
-                   'concordance': concordance,
-                   'edited': edited}
-
-        to_store = mapping.get(tokens[0])
+        to_store = getattr(objs, tokens[0])
 
         if not to_store:
-            print('Not storable')
+            print('Not storable:' % tokens[0])
             return
 
         if tokens[1] == 'as':
             name = tokens[2]
         else:
             count = 0
-            while str(count) in stored.keys():
+            while str(count) in objs.stored.keys():
                 count += 1
             name = str(count)
 
-        stored[name] = to_store
+        objs.stored[name] = to_store
 
     def run_previous(tokens):
         import shlex
-        global previous
-        output = list(reversed(previous))[int(tokens[0]) - 1][0]
+        output = list(reversed(objs.previous))[int(tokens[0]) - 1][0]
         tokens = [i.rstrip(',') for i in shlex.split(output)]
         return run_command(tokens)
 
@@ -636,27 +745,43 @@ def interpreter(debug=False):
 
     print(allig)
 
-    global corpus
     if debug:
         try:
-            corpus = Corpus('jb-parsed')
+            objs.corpus = Corpus('jb-parsed')
         except:
-            corpus = None
+            objs.corpus = None
     else:
-        corpus = None
+        objs.corpus = None
+
+    def py(output):
+        """
+        Run text as Python code
+        """
+        return eval(output)
+
+    def get_prompt():
+        folder = os.path.basename(os.getcwd())
+        name = getattr(objs.corpus, 'name', 'no-corpus')
+        return 'corpkit@%s:%s> ' % (folder, name)
 
     while True:
         try:
-            output = raw_input('\ncorpkit > ')
+            output = INPUTFUNC(get_prompt())
             
             if output.lower() in ['exit', 'quit']:
-                print('\n\nBye!\n')
+                print('\nBye!\n')
                 break
 
             if not output:
                 output = True
                 continue
             
+            if output.startswith('py '):
+
+                output = output[3:].strip()
+                py(output)
+                continue
+
             tokens = shlex.split(output)
             if debug:
                 print('command', tokens)
@@ -666,6 +791,7 @@ def interpreter(debug=False):
                 continue
 
             out = run_command(tokens)
+
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
         except EOFError:
@@ -676,11 +802,6 @@ def interpreter(debug=False):
             raise
         except Exception, err:
             traceback.print_exc()
-
-        #if command == unrecognised:
-        #    continue
-        #if not command:
-        #    continue
 
 if __name__ == '__main__':
     import sys
