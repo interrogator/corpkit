@@ -306,6 +306,8 @@ def interrogator(corpus,
         #if filename:
         #    wholes = [[filename] + list(x) for x in wholes]
 
+        word_index = show.index('w') if 'w' in show else 0
+
         for (f, sk, whole), mid in zip(wholes, middle_column_result):
             mid = mid[-1]
             joined = '-join-'.join([f, sk, whole, mid])
@@ -315,7 +317,9 @@ def interrogator(corpus,
                 unique_middle_column_result.append(mid)
 
         # split into start, middle and end, dealing with multiple occurrences
+        # this fails when multiple show values are given, because they are slash separated...
         for (f, sk, whole), mid in zip(unique_wholes, unique_middle_column_result):
+            mid = mid.split('/')[word_index]
             reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', \
                              re.IGNORECASE | re.UNICODE)
             offsets = [(m.start(), m.end()) for m in re.finditer(reg, whole)]
@@ -343,7 +347,7 @@ def interrogator(corpus,
         """
         output = []
         for word in list_of_words:
-            if translated_option.startswith('u'):
+            if 'u' in translated_option:
                 word = taglemma.get(word.lower(), 'Other')
             else:
                 word = wordlist.get(word, lmtzr.lemmatize(word, tag))
@@ -414,7 +418,11 @@ def interrogator(corpus,
 
         fnames, snames, results = zip(*results)
 
-        if 'l' in show or 'x' in show:
+        # this needs to be standardised!
+        new_show = [x.lstrip('m') for x in show]
+        new_show = ['w' if not x else x for x in new_show]
+
+        if 'l' in new_show or 'x' in new_show:
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
         else:
             lemmata = [None for i in results]
@@ -451,7 +459,7 @@ def interrogator(corpus,
                 if current_num == num_to_cause_exclude:
                     continue                 
 
-            for i in show:
+            for i in new_show:
                 if i == 't':
                     bits.append(word)
                 if i == 'l':
@@ -657,7 +665,7 @@ def interrogator(corpus,
 
         return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
 
-    def get_tregex_values():
+    def get_tregex_values(show):
         """If using Tregex, set appropriate values
 
         - Check for valid query
@@ -675,6 +683,16 @@ def interrogator(corpus,
                           root=root,
                           preserve_case=preserve_case
                          )
+
+        # so many of these bad fixing loops!
+        nshow = []
+        for i in show:
+            if i == 'm':
+                nshow.append('w')
+            else:
+                nshow.append(i.lstrip('m'))
+        show = nshow
+
         if q is False:
             if root:
                 return 'Bad query', None
@@ -698,7 +716,8 @@ def interrogator(corpus,
                     }
 
         newshow = []
-        listq, anyq, translated_option = treg_dict.get(show[0].lower())
+
+        listq, anyq, translated_option = treg_dict.get(show[0][-1].lower())
         newshow.append(translated_option)
         for item in show[1:]:
             _, _, noption = treg_dict.get(item.lower())
@@ -1011,7 +1030,7 @@ def interrogator(corpus,
     show_collocates = any(x.startswith('b') for x in show)
 
     # instantiate lemmatiser if need be
-    if 'l' in show and isinstance(search, dict) and search.get('t'):
+    if any(i.endswith('l') for i in show) and isinstance(search, dict) and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lmtzr = WordNetLemmatizer()
 
@@ -1096,7 +1115,7 @@ def interrogator(corpus,
     if search.get('t'):
         if show_ngram:
             raise ValueError("Can't search trees for n-grams---use a dependency search.")
-        query, translated_option = get_tregex_values()
+        query, translated_option = get_tregex_values(show)
         if query == 'Bad query' and translated_option is None:
             if root:
                 return 'Bad query'
@@ -1178,6 +1197,7 @@ def interrogator(corpus,
             if countmode:
                 count_results[subcorpus_name] += [result]            
             else:
+                _, _, result = zip(*result)
                 result = Counter(result)
                 results[subcorpus_name] += result
 

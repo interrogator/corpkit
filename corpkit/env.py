@@ -88,8 +88,11 @@ def interpreter(debug=False):
         if '-' not in srch:
             if srch in transobjs:
                 string = transobjs.get(srch) + 'w'
-            elif srch in transshow:
-                string = 'm' + transshow.get(srch)
+            elif srch in transshow or srch.startswith('t'):
+                if not srch.startswith('t'):
+                    string = 'm' + transshow.get(srch)
+                else:
+                    string = transshow.get(srch, 't')
             else:
                 string = srch
         else:
@@ -252,9 +255,10 @@ def interpreter(debug=False):
 
 
     def run_previous(tokens):
+        import shlex
         global previous
         output = list(reversed(previous))[int(tokens[0]) - 1][0]
-        tokens = [i.rstrip(',') for i in output.split()]
+        tokens = [i.rstrip(',') for i in shlex.split(output)]
         return run_command(tokens)
 
     get_command = {'set': set_corpus,
@@ -268,6 +272,9 @@ def interpreter(debug=False):
         print('unrecognised!')
 
     output = True
+
+    import shlex
+
     print(allig + '\n')
     while output:
         if debug:
@@ -282,7 +289,7 @@ def interpreter(debug=False):
             output = True
             continue
         
-        tokens = output.split()
+        tokens = shlex.split(output)
         print('command', tokens)
         
         if len(tokens) == 1:

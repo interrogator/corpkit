@@ -953,16 +953,21 @@ def fix_search(search, case_sensitive=False, root=False):
             newd[k] = fix_search(v)
         return newd
 
+    newsearch = {}
+    
     if not search:
         return
     if isinstance(search, STRINGTYPE):
         return search
     if search.get('t'):
         return search
-    newsearch = {}
+    trees = 't' in search.keys()
     for srch, pat in search.items():
         if len(srch) == 1 and srch in ends:
-            srch = 'm%s' % srch
+            if trees:
+                pass
+            else:
+                srch = 'm%s' % srch
         if len(srch) == 3 and srch[0] in ['+', '-']:
             srch = list(srch)
             if srch[-1] in ends:

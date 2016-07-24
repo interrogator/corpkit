@@ -497,7 +497,8 @@ class Concordance(pd.core.frame.DataFrame):
         super(Concordance, self).__init__(data)
         self.results = data
 
-    def format(self, kind='string', n=100, window=35, columns='all', **kwargs):
+    def format(self, kind='string', n=100, window=35,
+               print_it=True, columns='all', **kwargs):
         """
         Print concordance lines nicely, to string, LaTeX or CSV
 
@@ -523,7 +524,11 @@ class Concordance(pd.core.frame.DataFrame):
         :returns: None
         """
         from corpkit.other import concprinter
-        return concprinter(self, kind=kind, n=n, window=window,
+        if print_it:
+            print(concprinter(self, kind=kind, n=n, window=window,
+                           columns=columns, return_it=True, **kwargs))
+        else:
+            return concprinter(self, kind=kind, n=n, window=window,
                            columns=columns, return_it=True, **kwargs)
 
     def calculate(self):
@@ -565,10 +570,10 @@ class Concordance(pd.core.frame.DataFrame):
         return editor(self, *args, **kwargs)
 
     def __str__(self):
-        return self.format()
+        return self.format(print_it=False)
 
     def __repr__(self):
-        return self.format()
+        return self.format(print_it=False)
 
 class Interrodict(OrderedDict):
     """
