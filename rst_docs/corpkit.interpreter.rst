@@ -27,27 +27,27 @@ Objects
 
 The interpreter has a few objects you can work with.
 
-+-------------+-----------------------------------------------+
-| Object      | Contains                                      |
-+=============+===============================================+
-| corpus      | Dataset selected for parsing or searching     |
-+-------------+-----------------------------------------------+
-| results     | Search output                                 |
-+-------------+-----------------------------------------------+
-| edited      | Results after sorting, editing or calculating |
-+-------------+-----------------------------------------------+
-| concordance | Concordance lines from search                 |
-+-------------+-----------------------------------------------+
-| features    | General linguistic features of corpus         |
-+-------------+-----------------------------------------------+
-| wordclasses | Distribution of word classes in corpus        |
-+-------------+-----------------------------------------------+
-| postags     | Distribution of POS tags in corpus            |
-+-------------+-----------------------------------------------+
-| figure      | Plotted data                                  |
-+-------------+-----------------------------------------------+
-| query       | Values used to perform search or edit         |
-+-------------+-----------------------------------------------+
++---------------+-----------------------------------------------+
+| Object        | Contains                                      |
++===============+===============================================+
+| `corpus`      | Dataset selected for parsing or searching     |
++---------------+-----------------------------------------------+
+| `results`     | Search output                                 |
++---------------+-----------------------------------------------+
+| `edited`      | Results after sorting, editing or calculating |
++---------------+-----------------------------------------------+
+| `concordance` | Concordance lines from search                 |
++---------------+-----------------------------------------------+
+| `features`    | General linguistic features of corpus         |
++---------------+-----------------------------------------------+
+| `wordclasses` | Distribution of word classes in corpus        |
++---------------+-----------------------------------------------+
+| `postags`     | Distribution of POS tags in corpus            |
++---------------+-----------------------------------------------+
+| `figure`      | Plotted data                                  |
++---------------+-----------------------------------------------+
+| `query`       | Values used to perform search or edit         |
++---------------+-----------------------------------------------+
 
 
 Commands 
@@ -58,35 +58,35 @@ You do things to the objects via commands.
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | Command         | Purpose                                                      | Syntax                                                                                     |
 +=================+==============================================================+============================================================================================+
-| ``new``         | Make a new project                                           | ``new project <name>``                                                                     |
+| `new`           | Make a new project                                           | `new project <name>`                                                                       |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``set``         | Set current corpus                                           | ``set <corpusname>``                                                                       |
+| `set`           | Set current corpus                                           | `set <corpusname>`                                                                         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``parse``       | Parse corpus                                                 | ``parse corpus with [options]\*``                                                          |
+| `parse`         | Parse corpus                                                 | `parse corpus with [options]*`                                                             |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``search``      | Search a corpus for linguistic feature, generate concordance | ``search corpus for [feature matching pattern]\* showing [feature]\* with [options]\*``    |
+| `search`        | Search a corpus for linguistic feature, generate concordance | `search corpus for [feature matching pattern]* showing [feature]* with [options]*`         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``edit``        | Edit results or edited results                               | ``edit result by [skipping subcorpora/entries matching pattern]\* with [options]\*``       |
+| `edit`          | Edit results or edited results                               | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`           |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``calculate``   | Calculate relative frequencies, keyness, etc.                | ``calculate result as operation of denominator``                                           |
+| `calculate`     | Calculate relative frequencies, keyness, etc.                | `calculate result/edited as operation of denominator`                                      |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``sort``        | Sort results or concordance                                  | ``sort result/concordance by value ``                                                      |
+| `sort`          | Sort results or concordance                                  | `sort result/concordance by value`                                                         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``plot``        | Visualise result or edited result                            | ``plot edited as line chart with [options]\*``                                             |
+| `plot`          | Visualise result or edited result                            | `plot result/edited as line chart with [options]*`                                         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``export``      | Export result, edited result or concordance to string/file   | ``export result to string/csv/latex/file <filename>``                                      |
+| `export`        | Export result, edited result or concordance to string/file   | `export result to string/csv/latex/file <filename>`                                        |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``save``        | Save data to disk                                            | ``save object to <filename>``                                                              |
+| `save`          | Save data to disk                                            | `save object to <filename>`                                                                |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``load``        | Load data from disk                                          | ``load object as result``                                                                  |
+| `load`          | Load data from disk                                          | `load object as result`                                                                    |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``store``       | Store something in memory                                    | ``store object as <name>``                                                                 |
+| `store`         | Store something in memory                                    | `store object as <name>`                                                                   |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``fetch``       | Fetch something from memory                                  | ``fetch <name> as result/edited/concordance``                                              |
+| `fetch`         | Fetch something from memory                                  | `fetch <name> as object`                                                                   |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``help``        | Get help on an object or command                             | ``help command/object``                                                                    |
+| `help`          | Get help on an object or command                             | `help command/object`                                                                      |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``history``     | See previously entered commands                              | ``history``                                                                                |
+| `history`       | See previously entered commands                              | `history`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 
 In square brackets with asterisks are recursive parts of the syntax, which often also accepted `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
