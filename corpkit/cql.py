@@ -36,8 +36,8 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
     for i, bit in enumerate(splitup):
         if i in skipme:
             continue
-        if mapped.get(bit):
-            att = getattr(mapped[bit], splitup[i+1].lower())
+        if mapped.get(bit.upper()):
+            att = getattr(mapped[bit.upper()], splitup[i+1].lower())
             if hasattr(att, 'words') and att.words:
                 att = att.words
             if return_list:

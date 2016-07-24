@@ -152,12 +152,19 @@ def interpreter(debug=False):
             #result = dct.get('result', result)
             #previous = dct.get('previous', previous)
 
-        elif command == 'result':
-            print(getattr(objs.result, 'results', 'Nothing here yet.'))
-        elif command == 'edited':
-            print(getattr(objs.edited, 'results', 'Nothing here yet.'))
-        elif command == 'concordance':
-            print(getattr(objs.concordance, 'concordance', 'Nothing here yet.'))
+        elif command in ['result', 'edited', 'concordance']:
+
+            # this horrible code accounts for cases where we modify with exec
+            toshow = getattr(getattr(objs, command), 'results', False)
+            if isinstance(toshow, (pd.DataFrame, pd.Series)):
+                print(toshow)
+            elif toshow:
+                print(toshow)
+            else:
+                if isinstance(getattr(objs, command, False), pd.DataFrame):
+                    print(objs.result)
+                else:
+                    print('Nothing here yet.')
         elif command == 'features':
             print(objs.features)
         elif command == 'wordclasses':
@@ -257,11 +264,30 @@ def interpreter(debug=False):
         else:
             return string
 
-    def process_kwargs(tokens):
-
+    def parse_pattern(val):
+        """Parses the token after 'matching'"""
         trans = {'true': True,
                  'false': False,
                  'none': None}
+
+        remade = remake_special(val)
+        
+        if remade != val:
+            return remade
+
+        if val.isdigit():
+            return int(val)
+        elif val.lower() in trans.keys():
+            return trans.get(val)
+        else:
+            if val in dir(__builtins__) + ['any', 'all']:
+                return val
+            try:
+                return eval(val)
+            except (SyntaxError, NameError):
+                return val
+
+    def process_kwargs(tokens):
 
         if 'with' in tokens:
             start = tokens.index('with')
@@ -279,9 +305,9 @@ def interpreter(debug=False):
             elif '=' not in token:
                 if tokens[i+1] == 'as':
                     val = tokens[i+2]
-                    if val.isdigit():
-                        val = int(val)
-                    val = trans.get(val, val)
+
+                    parse_pattern(val)
+
                     withs[token.lower()] = val
                     skips.append(i+1)
                     skips.append(i+2)
@@ -345,9 +371,7 @@ def interpreter(debug=False):
                         break
                 k = process_long_key(k)
                 v = search_related[i+3].strip("'")
-                new = remake_special(v.upper())
-                if new.lower() != v:
-                    v = new
+                v = parse_pattern(v)
                 if token == 'not':
                     exclude[k] = v
                 else:
@@ -366,7 +390,7 @@ def interpreter(debug=False):
 
         withs = process_kwargs(tokens)
 
-        kwargs = {'search': search, 'exclude': exclude,
+        kwargs = {'search': search, 'exclude': exclude, 'df1_always_df': True,
                   'show': show, 'cql': cqlmode, 'conc': True}
         kwargs.update(withs)
         return kwargs
@@ -432,6 +456,8 @@ def interpreter(debug=False):
         out = command(tokens[1:])
         objs.previous.append((output, out))
         if command == search_corpus:
+            if not objs.result:
+                return
             objs.result = out
             print('\nresult:\n\n', out.results, '\n')
             objs.query = out.query
@@ -446,10 +472,6 @@ def interpreter(debug=False):
                 print('Done:', repr(out))
         return out
         
-    def splitter(command):
-        """better tokeniser for query, that allows tregex vals"""
-        return
-
     def export_result(tokens):
         if tokens[0] == 'result':
             obj = objs.result.results
@@ -536,12 +558,17 @@ def interpreter(debug=False):
                 if not v:
                     print('v not found')
                     return
-                new = remake_special(v.upper())
-                if new.lower() != v:
-                    v = new
+                v = parse_pattern(v)
                 kwargs[k] = v
                 #for x in range(i, ind+1):
                 #    skips.append(x)
+        
+        # add bools etc
+        morekwargs = process_kwargs(tokens)
+        for k, v in morekwargs.items():
+            if k not in kwargs.keys():
+                kwargs[k] = v
+
         if debug:
             print(kwargs)
         objs.edited = thing_to_edit.edit(**kwargs)
@@ -757,7 +784,7 @@ def interpreter(debug=False):
         """
         Run text as Python code
         """
-        return eval(output)
+        exec(output)
 
     def get_prompt():
         folder = os.path.basename(os.getcwd())
@@ -768,8 +795,8 @@ def interpreter(debug=False):
         try:
             output = INPUTFUNC(get_prompt())
             
-            if output.lower() in ['exit', 'quit']:
-                print('\nBye!\n')
+            if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
+                print('\n\tBye!\n')
                 break
 
             if not output:
@@ -778,8 +805,15 @@ def interpreter(debug=False):
             
             if output.startswith('py '):
 
-                output = output[3:].strip()
-                py(output)
+                output = output[3:].strip().strip("'").strip('"')
+                
+                # is this just a terrible idea?
+                for k, v in objs.__dict__.items():
+                    locals()[k] = v
+                exec(output, globals(), locals())
+                for k, v in locals().items():
+                    if hasattr(objs, k):
+                        setattr(objs, k, v)
                 continue
 
             tokens = shlex.split(output)

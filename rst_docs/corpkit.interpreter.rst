@@ -79,6 +79,8 @@ You do things to the objects via commands.
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `plot`          | Visualise result or edited result                            | `plot result/edited as line chart with [options]*`                                         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| `show`          | Show any object                                              | `show object`                                                                              |
++-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `export`        | Export result, edited result or concordance to string/file   | `export result to string/csv/latex/file <filename>`                                        |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `save`          | Save data to disk                                            | `save object to <filename>`                                                                |
@@ -95,10 +97,10 @@ You do things to the objects via commands.
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `ipython`       | Entering IPython with objects available                      | `ipython`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| `py`            | Execute Python code                                          | `py print('hello world')`                                                                  |
+| `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 
-In square brackets with asterisks are recursive parts of the syntax, which often also accepted `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
+In square brackets with asterisks are recursive parts of the syntax, which often also accept `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
 
 Search examples
 --------------------
@@ -110,6 +112,27 @@ Search examples
    > search corpus for cql matching '[pos="DT"] [pos="NN"]' showing pos and word with coref
    > search corpus for function matching roles.process showing dependent-lemma
    > etc.
+
+
+Editing, calculating and sorting
+----------------------------------
+
+.. code-block:: none
+
+   > edit result by keeping subcorpora matching '[01234]'
+   > edit result by skipping entries matching wordlists.closedclass
+   > calculate result as percentage of self
+   > calculate edited as percentage of features.clauses
+   > sort edited by increase
+
+Plotting
+---------
+
+.. code-block:: none
+
+   > plot edited as bar chart with title as 'Example plot' and x_label as 'Subcorpus'
+   > plot edited as area chart with stacked and colours as Paired
+   > plot edited with style as seaborn-talk
 
 Switching to IPython
 ---------------------
