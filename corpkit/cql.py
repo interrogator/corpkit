@@ -124,6 +124,8 @@ def tokenise_cql(query):
             nextt = tokens[i+1]
         except IndexError:
             # if it's the last token, if not quantifier, add it
+            if not t:
+                continue
             if t[0] not in quantstarts:
                 out.append([t, False])
                 continue
