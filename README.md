@@ -4,7 +4,9 @@
 
 > **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways. Complete documentation is [over here](http://corpkit.readthedocs.org/en/latest/).
 > 
-> A comprehensive graphical interface is included. After [installation](#installation), you can open it from the command line with `python -m corpkit.gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/). 
+> A comprehensive graphical interface is included. After [installation](#installation), you can open it from the command line with `python -m corpkit.gui`. Alternatively, there's a dedicated website for a standalone OSX app [here](http://interrogator.github.io/corpkit/).
+>
+> There's even a simple interpreter in development, with you can access with `python -m corpkit.env`. Documentation is going to be evolving [here](http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html).
 
 - [What's in here?](#whats-in-here)
   - [`Corpus()`](#corpus)

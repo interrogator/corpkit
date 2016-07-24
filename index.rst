@@ -126,6 +126,7 @@ Alternatively, the GUI is available (alongside documentation) as a standalone OS
    rst_docs/corpkit.langmodel.rst
    rst_docs/corpkit.managing.rst
    rst_docs/corpkit.about.rst
+   rst_docs/corpkit.interpreter.rst
 
 .. toctree::
    :maxdepth: 2

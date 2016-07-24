@@ -37,20 +37,11 @@ def interpreter(debug=False):
              "                          _____..'  .'\n    "\
              "                         '-._____.-'"
 
-
-    global result
+    # globally accessed
     result = None
-
-    global previous
     previous = []
-
-    global edited
     edited = None
-
-    global concordance
     concordance = None
-
-    global stored
     stored = {}
 
     proj_dirs = ['data', 'saved_interrogations', 'exported']
@@ -63,6 +54,15 @@ def interpreter(debug=False):
         s += 'corpus, results, concordance, edited ...\n\n\tType "quit" to return to corpkit environment'
         return s
 
+    def helper(tokens):
+        func = get_command.get(tokens[0], False)
+
+        if not func:
+            print('Not recognised: %s' % tokens[0])
+            return
+
+        print(getattr(func, '__doc__', 'Not written yet, sorry.'))
+
     def show_help(command):
 
         global corpus
@@ -71,8 +71,32 @@ def interpreter(debug=False):
         global previous
         global result
 
+        if command == 'help':
+            print("\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
+                  "and visualising corpora. It works through a combination of objects and commands:\n\n" \
+                  "Objects:\n\n\tcorpus: corpus being used\n\t" \
+                  "result: interrogation output\n\t" \
+                  "edited: output of an edit\n\t" \
+                  "concordance: the concordance attached to an interrogation\n\t" \
+                  "store: where you can store objects\n\t" \
+                  "\nCommand examples:\n\n\t" \
+                  "set <name>                                 Set the corpus to be searched\n\t" \
+                  "parse corpus with speaker_segmentation     Make a speaker segmented parsed corpus\n\t" \
+                  "search corpus for words matching '.*'      Regex search over tokens\n\t" \
+                  "show result                                Look at search result\n\t" \
+                  "show concordance                           Look at concordance\n\t" \
+                  "edit result by skipping subcorpora '.*'    Manipulate result\n\t" \
+                  "sort result by increase                    Sort results\n\t" \
+                  "store edited as <name>                     Save to store with custom name\n\t" \
+                  "fetch <name> as result                     Get something from store\n\t" \
+                  "save result as <name>                      Save to disk\n\t" \
+                  "load <name> as result                      Loading from disk\n\t" \
+                  "calculate result as \% of self             Relativise frequencies\n" \
+                  "ipython                                    Enter IPython with objects available"
+                  "\nYou can access more specific help by doing 'help <command>'.\n") 
+
         if command == 'corpus':
-            print(corpus.name)
+            print(getattr(corpus, 'name', 'Corpus not set. use "set <corpusname>".'))
         if command == 'python' or command == 'ipython':
             from IPython import embed
             from IPython.terminal.embed import InteractiveShellEmbed
@@ -98,13 +122,19 @@ def interpreter(debug=False):
         elif command == 'concordance':
             print(result.concordance)
         elif command == 'previous':
-            global previous
             for index, entry in enumerate(list(reversed(previous)), start=1):
                 print('%d\nCommand: %s\nOutput:\n%s' % (index, entry[0], str(entry[1])))
         else:
-            print('Not done yet, sorry!')
+            pass
 
     def set_corpus(tokens):
+        """
+        Set the active corpus:
+
+        :Example:
+
+        set junglebook-parsed
+        """
         path = tokens[0]
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
             global corpus
@@ -269,10 +299,27 @@ def interpreter(debug=False):
         return kwargs
 
     def search_corpus(tokens):
+        """
+        Search a corpus for lexicogrammatical features. You are limited only by your imagination.
+        
+        :Syntax:
+
+        search corpus for [object matching pattern]* showing [things to show]* with [extra options]*
+         
+        The asterisk marked parts of the query can be recursive and negated
+
+        :Examples:
+
+           > search corpus for cql matching '[word="test"]' showing word and lemma
+           > search corpus for governor-function matching roles:process with coref
+           > search corpus for trees matching "/NN.?/ >># NP" 
+           > search corpus for words matching "^[abcde]" with preserve_case and case_sensitive
+        """
         global corpus
         kwargs = parse_search_args(tokens)
-
-        print(kwargs)
+        
+        if debug:
+            print(kwargs)
 
         result = corpus.interrogate(**kwargs)
         return result
@@ -300,8 +347,12 @@ def interpreter(debug=False):
             global result
             result = out
             print(out.results)
+        if command == edit_something:
+            if hasattr(out, 'results'):
+                print(out.results)
         else:
-            print('Done:', repr(out))
+            if debug:
+                print('Done:', repr(out))
         return out
         
     def splitter(command):
@@ -309,11 +360,10 @@ def interpreter(debug=False):
         return
 
     def export_result(tokens):
+        global result
         if tokens[0] == 'result':
-            global result
             obj = result.results
         elif tokens[0] == 'concordance':
-            global result
             obj = result.concordance
         if len(tokens) == 1:
             print(obj.to_string())
@@ -355,7 +405,7 @@ def interpreter(debug=False):
         return thing_to_edit
 
     def sort_something(tokens):
-
+        """sort a result or concordance line"""
         global result
         global concordance
         global edited
@@ -415,7 +465,8 @@ def interpreter(debug=False):
                 kwargs[k] = v
                 #for x in range(i, ind+1):
                 #    skips.append(x)
-        print(kwargs)
+        if debug:
+            print(kwargs)
         global edited
         edited = thing_to_edit.edit(**kwargs)
 
@@ -442,7 +493,7 @@ def interpreter(debug=False):
 
     def parse_corpus(tokens):
         if tokens[0] != 'corpus':
-            print('Command not understood. Use "set <corpusname" and "parse corpus"')
+            print('Command not understood. Use "set <corpusname>" and "parse corpus"')
         
         global corpus
 
@@ -485,7 +536,6 @@ def interpreter(debug=False):
         global result
         global concordance
         global edited
-        print(tokens)
 
         mapping = {'result': result,
                    'concordance': concordance,
@@ -556,6 +606,7 @@ def interpreter(debug=False):
                    'sort': sort_something,
                    'edit': edit_something,
                    'plot': plot_result,
+                   'help': helper,
                    'store': store_this,
                    'new': new_project,
                    'fetch': fetch_this,
@@ -568,7 +619,7 @@ def interpreter(debug=False):
 
     import shlex
 
-    print(allig + '\n')
+    print(allig)
 
     global corpus
     if debug:
@@ -592,7 +643,8 @@ def interpreter(debug=False):
                 continue
             
             tokens = shlex.split(output)
-            print('command', tokens)
+            if debug:
+                print('command', tokens)
             
             if len(tokens) == 1:
                 show_help(tokens[0])
@@ -619,4 +671,3 @@ if __name__ == '__main__':
     import sys
     debug = sys.argv[-1] == 'debug'
     interpreter(debug=debug)
-    

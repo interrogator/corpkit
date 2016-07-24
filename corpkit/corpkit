@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+"""
+A script start corpkit environment
+"""
+
+import sys
+from corpkit.env import interpreter
+interpreter()
