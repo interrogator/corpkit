@@ -10,6 +10,11 @@ corpkit now has its very own interpreter!
 .. contents::
    :local:
 
+Dependencies
+-------------
+
+To use the interpreter, you'll need to have `readline` installed, and ideally `IPython` as well.
+
 Accessing
 --------------------
 
@@ -87,6 +92,10 @@ You do things to the objects via commands.
 | `help`          | Get help on an object or command                             | `help command/object`                                                                      |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `history`       | See previously entered commands                              | `history`                                                                                  |
++-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| `ipython`       | Entering IPython with objects available                      | `ipython`                                                                                  |
++-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| `py`            | Execute Python code                                          | `py print('hello world')`                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 
 In square brackets with asterisks are recursive parts of the syntax, which often also accepted `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
