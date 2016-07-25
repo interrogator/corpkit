@@ -27,9 +27,9 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
               'LIST': customs,
               'CUSTOM': customs}
 
-    if not any(x in querybit for x in mapped.keys()):
+    if not any(x in querybit.upper() for x in mapped.keys()):
         return querybit
-    thereg = r'(' + '|'.join(mapped.keys()) + r'):([A-Z0-9]+)'
+    thereg = r'(?i)(' + '|'.join(mapped.keys()) + r'):([A-Z0-9]+)'
     splitup = re.split(thereg, querybit)
     fixed = []
     skipme = []

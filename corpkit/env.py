@@ -80,6 +80,7 @@ def interpreter(debug=False):
             self.wordclasses = None
             self.stored = {}
             self.figure = None
+            self.totals = None
 
     objs = Objects()
 
@@ -200,7 +201,7 @@ def interpreter(debug=False):
             #result = dct.get('result', result)
             #previous = dct.get('previous', previous)
 
-        elif command in ['result', 'edited', 'concordance']:
+        elif command in ['result', 'edited', 'concordance', 'totals']:
 
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
@@ -209,10 +210,12 @@ def interpreter(debug=False):
             elif toshow:
                 print(toshow)
             else:
-                if isinstance(getattr(objs, command, False), pd.DataFrame):
-                    print(objs.result)
+                if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
+                    print(getattr(objs, command))
                 else:
                     print('Nothing here yet.')
+
+
         elif command == 'features':
             print(objs.features)
         elif command == 'wordclasses':
@@ -377,7 +380,7 @@ def interpreter(debug=False):
                 withs[with_related[i+1].lower()] = False
                 skips.append(i+1)
             elif '=' not in token:
-                if with_related[i+1] == 'as':
+                if len(with_related) <= i and with_related[i+1] == 'as':
                     val = with_related[i+2]
                     val = parse_pattern(val)
                     withs[token.lower()] = val
@@ -498,6 +501,7 @@ def interpreter(debug=False):
             print(kwargs)
 
         objs.result = objs.corpus.interrogate(**kwargs)
+        objs.totals = objs.result.totals
         return objs.result
 
     def show_this(tokens):
@@ -603,6 +607,7 @@ def interpreter(debug=False):
 
         if thing_to_edit in [objs.result, objs.edited]:
             objs.edited = thing_to_edit.edit(sort_by=val)
+            objs.totals = objs.edited.totals
         else:
             objs.concordance = thing_to_edit.sort_values(val[0], axis=1)
         return
@@ -652,6 +657,7 @@ def interpreter(debug=False):
         if debug:
             print(kwargs)
         objs.edited = thing_to_edit.edit(**kwargs)
+        objs.totals = objs.edited.totals
 
         return
 
@@ -696,6 +702,7 @@ def interpreter(debug=False):
         the_obj = getattr(objs, tokens[0])
         print(the_obj, operation, denominator)
         objs.edited = the_obj.edit(operation, denominator)
+        objs.totals = objs.edited.totals
         print('\nedited:\n\n', objs.edited.results, '\n')
         return
 
