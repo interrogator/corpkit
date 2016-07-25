@@ -85,15 +85,15 @@ Via pip:
 
 .. code-block:: bash
 
-   pip install corpkit
+   $ pip install corpkit
 
 via Git:
 
 .. code-block:: bash
 
-   git clone https://www.github.com/interrogator/corpkit
-   cd corpkit
-   python setup.py install
+   $ git clone https://www.github.com/interrogator/corpkit
+   $ cd corpkit
+   $ python setup.py install
 
 Parsing and interrogation of parse trees will also require *Stanford CoreNLP*. *corpkit* can download and install it for you automatically.
 
@@ -103,7 +103,8 @@ Much of corpkit's command line functionality is also available in the *corpkit G
 
 .. code-block:: bash
 
-   python -m corpkit.gui
+   $ python -m corpkit.gui
+
 
 If you're working on a project from within Python, you can open it graphically with:
 
@@ -113,6 +114,29 @@ If you're working on a project from within Python, you can open it graphically w
    >>> gui()
 
 Alternatively, the GUI is available (alongside documentation) as a standalone OSX app here_.
+
+.. rubric:: Interpreter
+
+*corpkt* also has its own interpreter, a bit like CQP, but with more features. You can open it with:
+
+.. code-block:: bash
+
+   $ corpkit
+   # or, alternatively:
+   $ python -m corpkit.env
+
+And then start working with natural language commands:
+
+.. code-block:: none
+
+   > set junglebook as corpus
+   > parse junglebook with outname as jb
+   > set jb as corpus
+   > search corpus for governor-lemma matching processes:verbal showing pos and lemma
+   > calculate result as percentage of self
+   > plot result as line chart with title as 'Example figure'
+
+Information about the syntax is available at the :ref:`interpreter-page`.
 
 .. toctree::
    :maxdepth: 1

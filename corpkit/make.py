@@ -128,7 +128,7 @@ def make_corpus(unparsed_corpus_path,
     if can_folderise(unparsed_corpus_path):
         if do_folderise is None:
             check_do_folderise = INPUTFUNC("Your corpus has multiple files, but no subcorpora. "\
-                                 "Would you like each file to be treated as a subcorpus? (y/n)")
+                                 "Would you like each file to be treated as a subcorpus? (y/n) ")
         if check_do_folderise or do_folderise:
             folderise(unparsed_corpus_path)
             

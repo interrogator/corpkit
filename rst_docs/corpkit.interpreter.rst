@@ -1,3 +1,5 @@
+.. _interpreter-page:
+
 Interpreter
 ====================
 
