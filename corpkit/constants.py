@@ -37,3 +37,19 @@ transobjs = {'g': 'Governor',
              'd': 'Dependent',
              'm': 'Match',
              'h': 'Head'}
+
+# modify this if your conll-style data is different from what is provided by the
+# parser plus post-processing. data must tart with 's' for sentence index and 'i'
+# for token index. after that, you can have whichever fields you like, and should 
+# be able to access them using normal corpkit syntax.
+
+# 'd', for deps, is a comma-sep string of dependent token indices
+
+# 'c', for coref, has an artibrary number representing a dependency chain. the
+# head of a mention is marked with an asterisk.
+
+# y and z are left as custom fields, not really in use now, but theoretically
+# they are searchable
+
+# default: sent, index, word, lem, pos, ner, gov, func, deps, coref, custom * 3
+CONLL_COLUMNS = ['s', 'i', 'w', 'l', 'p', 'n', 'g', 'f', 'd', 'c', 'y', 'z']

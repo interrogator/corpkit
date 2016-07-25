@@ -6,10 +6,9 @@ def parse_conll(f, first_time=False):
     """take a file and return pandas dataframe with multiindex"""
     import pandas as pd
     import StringIO
-    # here are the fields for the TSV file
-    # sent, index, word, lem, pos, ner, gov, func, deps, coref, custom
-    # we may need a way to customise them if others' data is different...
-    head = ['s', 'i', 'w', 'l', 'p', 'n', 'g', 'f', 'd', 'c', 'x', 'y', 'z']
+
+    # go to corpkit.constants to modify the order of columns if yours are different
+    from corpkit.constants import CONLL_COLUMNS as head
     
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
