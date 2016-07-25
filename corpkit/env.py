@@ -109,28 +109,74 @@ def interpreter(debug=False):
                 print(readline.get_history_item(i + 1))
 
         if command == 'help':
-            print("\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
-                  "and visualising corpora. It works through a combination of objects and commands:\n\n" \
-                  "Objects:\n\n\tcorpus: corpus being used\n\t" \
-                  "result: interrogation output\n\t" \
-                  "edited: output of an edit\n\t" \
-                  "concordance: the concordance attached to an interrogation\n\t" \
-                  "store: where you can store objects\n\t" \
-                  "\nCommand examples:\n\n\t" \
-                  "set <name>                                 Set the corpus to be searched\n\t" \
-                  "parse corpus with speaker_segmentation     Make a speaker segmented parsed corpus\n\t" \
-                  "search corpus for words matching '.*'      Regex search over tokens\n\t" \
-                  "show result                                Look at search result\n\t" \
-                  "show concordance                           Look at concordance\n\t" \
-                  "edit result by skipping subcorpora '.*'    Manipulate result\n\t" \
-                  "sort result by increase                    Sort results\n\t" \
-                  "store edited as <name>                     Save to store with custom name\n\t" \
-                  "fetch <name> as result                     Get something from store\n\t" \
-                  "save result as <name>                      Save to disk\n\t" \
-                  "load <name> as result                      Loading from disk\n\t" \
-                  "calculate result as \% of self             Relativise frequencies\n" \
-                  "ipython                                    Enter IPython with objects available"
-                  "\nYou can access more specific help by doing 'help <command>'.\n") 
+            import pydoc
+            pydoc.pager(\
+            "\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
+            "and visualising corpora. It works through a combination of objects and commands:\n\n" \
+            "Objects:\n\n\t" \
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | Object        | Contains                                      | \n\t"\
+            " +===============+===============================================+ \n\t"\
+            " | `corpus`      | Dataset selected for parsing or searching     | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `results`     | Search output                                 | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `edited`      | Results after sorting, editing or calculating | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `concordance` | Concordance lines from search                 | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `features`    | General linguistic features of corpus         | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `wordclasses` | Distribution of word classes in corpus        | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `postags`     | Distribution of POS tags in corpus            | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `figure`      | Plotted data                                  | \n\t"\
+            " +---------------+-----------------------------------------------+ \n\t"\
+            " | `query`       | Values used to perform search or edit         | \n\t"\
+            " +---------------+-----------------------------------------------+ "
+            "\n\nCommand examples:\n\n\t" \
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | Command         | Syntax                                                                             | \n\t"\
+            " +=================+====================================================================================+ \n\t"\
+            " | `new`           | `new project <name>`                                                               | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `set`           | `set <corpusname>`                                                                 | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `parse`         | `parse corpus with [options]*`                                                     | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `search`        | `search corpus for [feature matching pattern]* showing [feature]* with [options]*` | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `edit`          | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`   | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `calculate`     | `calculate result/edited as operation of denominator`                              | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `sort`          | `sort result/concordance by value`                                                 | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `plot`          | `plot result/edited as line chart with [options]*`                                 | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `show`          | `show object`                                                                      | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `export`        | `export result to string/csv/latex/file <filename>`                                | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `save`          | `save object to <filename>`                                                        | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `load`          | `load object as result`                                                            | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `store`         | `store object as <name>`                                                           | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `fetch`         | `fetch <name> as object`                                                           | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `help`          | `help command/object`                                                              | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `history`       | `history`                                                                          | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `ipython`       | `ipython`                                                                          | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            " | `py`            | `py print('hello world')`                                                          | \n\t"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
+            "\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
+            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n(Hit 'q' to exit help).\n\n") 
 
         if command == 'corpus':
             print(getattr(corpus, 'name', 'Corpus not set. use "set <corpusname>".'))
@@ -188,17 +234,30 @@ def interpreter(debug=False):
         set junglebook-parsed
         """
         from corpkit.other import load
+        if not tokens:
+            show_this(['corpora'])
+            selected = INPUTFUNC('Pick a corpus by name or number: ')
+            selected = selected.strip()
+            if not selected:
+                return
+            elif selected.isdigit():
+                dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
+                set_corpus([dirs[int(selected)-1]])
+                return
+            else:
+                set_corpus([selected])
+                return
+
         path = tokens[0]
         loadsaved = len(tokens) > 1 and tokens[1].startswith('load')
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
             
             objs.corpus = Corpus(path, load_saved=loadsaved)
-            
-            objs.features = load(objs.corpus.name + '-features')
-
-            objs.postags = load(objs.corpus.name + '-postags')
-            
-            objs.wordclasses = load(objs.corpus.name + '-wordclasses')
+            for i in ['features', 'wordclasses', 'postags']:
+                try:
+                    setattr(objs, i, load(objs.corpus.name + '-%s' % i))
+                except IOError:
+                    pass
 
         else:
             print('Corpus not found: %s' % tokens[0])
@@ -446,14 +505,17 @@ def interpreter(debug=False):
         Show any object in a human-readable form
         """
         if tokens[0] == 'corpora':
-            print ('\t' + '\n\t'.join([i for i in os.listdir('data') if not i.startswith('.')]))
+            dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
+            dirs = ['\t%d: %s' % (i, x) for i, x in enumerate(dirs, start=1)]
+            print ('\n'.join(dirs))
         elif tokens[0].startswith('store'):
             print(objs.stored)
         elif tokens[0] == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
         elif tokens[0] == 'query':
-            print(sorted(objs.query.items()))
+            import json
+            print(json.dump(objs.query))
         elif tokens[0] == 'figure':
             if hasattr(objs, 'figure') and objs.figure:
                 objs.figure.show()
@@ -462,7 +524,8 @@ def interpreter(debug=False):
         elif tokens[0] in ['features', 'wordclasses', 'postags']:
             print(getattr(objs.corpus, tokens[0]))
 
-        else:
+        elif hasattr(objs, tokens[0]):
+            show_help(tokens[0])
             print("No information about: %s" % tokens[0])
 
     def get_info(tokens):
@@ -755,7 +818,10 @@ def interpreter(debug=False):
             while str(count) in objs.stored.keys():
                 count += 1
             name = str(count)
-
+        if name in objs.stored.keys():
+            cont = INPUTFUNC('%s already in store. Replace it? (y/n) ')
+            if cont.lower().startswith('n'):
+                return
         objs.stored[name] = to_store
 
     def run_previous(tokens):
@@ -838,6 +904,8 @@ def interpreter(debug=False):
                 print('command', tokens)
             
             if len(tokens) == 1:
+                if tokens[0] == 'set':
+                    set_corpus([])
                 show_help(tokens[0])
                 continue
 

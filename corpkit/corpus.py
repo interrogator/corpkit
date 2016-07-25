@@ -656,6 +656,7 @@ class Corpus(object):
                 'parse method can only be used on plaintext corpora.')
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
+        kwargs['output_format'] = kwargs.pop('output_format', 'conll')
         corp = make_corpus(unparsed_corpus_path=self.path,
                            parse=True,
                            tokenise=False,
