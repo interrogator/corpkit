@@ -330,6 +330,27 @@ def determine_adjacent(original):
         adj = False
     return adj, original
 
+def process_df_for_speakers(df, metadata, just_speakers, return_trees=False):
+    """
+    keep just the correct speakers
+    """
+    if not just_speakers:
+        return df
+    import re
+    good_sents = []
+    new_metadata = {}
+    for sentid, data in sorted(metadata.items()):
+        speaker = data.get('speaker')
+        if isinstance(just_speakers, list):
+            if speaker in just_speakers:
+                good_sents.append(sentid)
+                new_metadata[sentid] = data
+        elif isinstance(just_speakers, (re._pattern_type, str)):
+            if re.search(just_speakers, speaker):
+                good_sents.append(sentid)
+                new_metadata[sentid] = data
+    return df.loc[good_sents], new_metadata
+
 def pipeline(f,
              search,
              show,
@@ -349,6 +370,8 @@ def pipeline(f,
     show = [fix_show_bit(i) for i in show]
 
     df, metadata = parse_conll(f)
+
+    df, metadata = process_df_for_speakers(df, metadata, kwargs.get('just_speakers'))
 
     if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]

@@ -697,18 +697,23 @@ def add_deps_to_corpus_path(path):
         df['d'] = all_deps
         df.to_csv(f, sep='\t', header=False)
 
-def get_speaker_names_from_xml_corpus(path):
+def get_speaker_names_from_xml_corpus(corpus):
     """
     Use regex to get speaker names from xml without parsing it
     """
     import os
     import re
+
+    path = corpus.path
     
     list_of_files = []
     names = []
 
-    # parsing html with regular expression! :)
-    speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
+    if corpus.datatype == 'parse':
+        # parsing html with regular expression! :)
+        speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
+    else:
+        speakid = re.compile(r'^# speaker=(.*)', re.MULTILINE)
 
     def get_names(filepath):
         """get a list of speaker names from a file"""

@@ -562,7 +562,7 @@ def animator(progbar,
             progbar.animate(count)
 
 
-def parse_just_speakers(just_speakers, path):
+def parse_just_speakers(just_speakers, corpus):
     if just_speakers is True:
         just_speakers = ['each']
     if just_speakers is False or just_speakers is None:
@@ -572,7 +572,7 @@ def parse_just_speakers(just_speakers, path):
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
             from build import get_speaker_names_from_xml_corpus
-            just_speakers = get_speaker_names_from_xml_corpus(path)
+            just_speakers = get_speaker_names_from_xml_corpus(corpus)
     return just_speakers
 
 
@@ -1001,10 +1001,8 @@ def pat_format(pat, case_sensitive=False, root=False):
         pat = filtermaker(pat, case_sensitive=case_sensitive, root=root)
     else:
         if isinstance(pat, int):
-            print('aaaaa')
             return pat
         if isinstance(pat, re._pattern_type):
-            print('bbbbbbb')
             return pat
         if case_sensitive:
             pat = re.compile(pat)

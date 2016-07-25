@@ -236,11 +236,65 @@ def interrogator(corpus,
         else:
             return res, concs
 
-    def get_stats(sents, **dummy_args):
+    def ispunct(s):
+        import string
+        return all(c in string.punctuation for c in s)
+
+    def get_stats_conll(filepath, **dummy_args):
+        """get a bunch of frequencies on interpersonal phenomena"""
+        from collections import Counter
+        statsmode_results = Counter()
+        from corpkit.conll import parse_conll
+        df, metadata = parse_conll(filepath)
+        if dummy_args.get('just_speakers'):
+            from corpkit.conll import process_df_for_speakers
+            df, metadata = process_df_for_speakers(df, metadata, just_speakers)
+            to_open = '\n'.join([i['parse'] for i in metadata.values()])
+        else:
+            to_open = filepath
+
+        statsmode_results['Sentences'] = len(list(df.index.levels[0]))
+        statsmode_results['Passives'] = len(df[df['f'] == 'nsubjpass'])
+        statsmode_results['Tokens'] = len(df)
+        statsmode_results['Words'] = len([w for w in list(df['w']) if not ispunct(w)])
+        statsmode_results['Characters'] = sum([len(x) for x in list(df['w'])])
+        statsmode_results['Open class'] = sum([1 for x in list(df['p']) if x[0] in ['N', 'J', 'V', 'R']])
+        statsmode_results['Punctuation'] = statsmode_results['Tokens'] - statsmode_results['Words']
+        statsmode_results['Closed class'] = statsmode_results['Words'] - statsmode_results['Open class']
+        
+        from corpkit.dictionaries.process_types import processes
+        from corpkit.other import as_regex
+        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                     #'Open class': r'/^(NN|JJ|VB|RB)/ < __',
+                     #'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
+                     'Clauses': r'/^S/ < __',
+                     'Interrogative': r'ROOT << (/\?/ !< __)',
+                     'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
+                         as_regex(processes.mental, boundaries='w'),
+                     'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
+                         as_regex(processes.verbal, boundaries='w'),
+                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
+                         as_regex(processes.relational, boundaries='w'),
+                     'Verbless clause': r'/^S/ !<< /^VB.?/'}
+
+        for name, q in sorted(tregex_qs.items()):
+            res = tregex_engine(query=q, 
+                                options=['-o', '-C'], 
+                                corpus=to_open,  
+                                root=root)
+            statsmode_results[name] += int(res)
+            if root:
+                root.update()
+        return statsmode_results, []
+
+    def get_stats_xml(sents, **dummy_args):
         """get a bunch of frequencies on interpersonal phenomena"""
         from collections import Counter
         statsmode_results = Counter()  
-        # first, put the relevant trees into temp file
 
         for sent in sents:
             statsmode_results['Sentences'] += 1
@@ -262,7 +316,7 @@ def interrogator(corpus,
                      'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
                      'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
                      'Open class': r'/^(NN|JJ|VB|RB)/ < __',
-                     'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/',
+                     'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
                      'Clauses': r'/^S/ < __',
                      'Interrogative': r'ROOT << (/\?/ !< __)',
                      'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
@@ -277,9 +331,7 @@ def interrogator(corpus,
             res = tregex_engine(query=q, 
                                 options=['-o', '-C'], 
                                 corpus=to_open,  
-                                root=root
-
-                               )
+                                root=root)
             statsmode_results[name] += int(res)
             if root:
                 root.update()
@@ -635,6 +687,9 @@ def interrogator(corpus,
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
             elif datatype == 'parse' or datatype == 'conll':
+                from corpkit.depsearch import dep_searcher
+                from corpkit.conll import pipeline
+
                 if any(i.endswith('n') for i in search.keys()):
                     search['w'] = search.pop('n')
                     if not show_ngram:
@@ -646,22 +701,20 @@ def interrogator(corpus,
                         searcher = tgrep_searcher
                     optiontext = 'Searching parse trees'
                 elif any(i.endswith('v') for i in search.keys()):
-                    searcher = get_stats
+                    searcher = get_stats_xml if datatype == 'parse' else get_stats_conll
                     statsmode = True
                     optiontext = 'General statistics'
                 elif any(i.endswith('r') for i in search.keys()):
-                    from corpkit.depsearch import dep_searcher
-                    searcher = dep_searcher
+                    searcher = dep_searcher if datatype == 'parse' else pipeline
                     optiontext = 'Distance from root'
                 else:
-                    from corpkit.depsearch import dep_searcher
-                    searcher = dep_searcher
+                    searcher = dep_searcher if datatype == 'parse' else pipeline
                     optiontext = 'Dependency querying'
                 
                 # ngram mode for parsed data
                 if show_ngram:
                     optiontext = 'N-grams from parsed data'
-                    searcher = dep_searcher
+                    searcher = dep_searcher if datatype == 'parse' else pipeline
 
         return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
 
@@ -950,6 +1003,44 @@ def interrogator(corpus,
         except ValueError:
             return
 
+
+    def turn_file_into_sents_corefs(f, show, just_speakers, coref=False):
+        try:
+            from corenlp_xml import Document
+        except ImportError:
+            from corenlp_xml.document import Document
+        with codecs.open(f.path, 'rb') as fo:
+            data = fo.read()
+
+        corenlp_xml = Document(data)
+        #corenlp_xml = f.document
+        from corpkit.process import parse_just_speakers
+        just_speakers = parse_just_speakers(just_speakers, corpus)
+        if just_speakers:
+            import re
+            if just_speakers is True:
+                just_speakers = re.compile(r'.*')
+            if isinstance(just_speakers, re._pattern_type):
+                sents = [s for s in corenlp_xml.sentences if \
+                         re.search(just_speakers, get_speakername(s))]
+            else:
+                sents = [s for s in corenlp_xml.sentences if get_speakername(s) in just_speakers]
+        else:
+            sents = corenlp_xml.sentences
+
+        # get coreferences
+        if kwargs.get('coref') or any(x.startswith('h') for x in show):
+            if just_speakers:
+                corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
+            else:
+                corefs = corenlp_xml.coreferences
+        else:
+            corefs = []
+        corenlp_xml = None
+        return sents, corefs
+
+
+
     def make_progress_bar():
         """generate a progress bar"""
 
@@ -1210,43 +1301,17 @@ def interrogator(corpus,
         if not simple_tregex_mode:
             for f in files:
                 slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
-                if datatype == 'parse' and not tree_to_text:
+                if datatype in ['parse', 'conll'] and not tree_to_text:
+                    from corpkit.process import parse_just_speakers
+                    just_speakers = parse_just_speakers(just_speakers, corpus)
                     # right now, this is not using the File class's read() or document
                     # methods. the reason is that there seem to be memory leaks. these
                     # may have been fixed already though.
-                    try:
-                        from corenlp_xml import Document
-                    except ImportError:
-                        from corenlp_xml.document import Document
-                    with codecs.open(f.path, 'rb') as fo:
-                        data = fo.read()
-                    corenlp_xml = Document(data)
-                    #corenlp_xml = f.document
-                    if just_speakers:
-                        import re
-                        if just_speakers is True:
-                            just_speakers = re.compile(r'.*')
-                        if isinstance(just_speakers, re._pattern_type):
-                            sents = [s for s in corenlp_xml.sentences if \
-                                     re.search(just_speakers, get_speakername(s))]
-                        else:
-                            sents = [s for s in corenlp_xml.sentences if get_speakername(s) in just_speakers]
-
-                            if len(just_speakers) == 1:
-                                slow_treg_speaker_guess = just_speakers[0]
-                    else:
-                        sents = corenlp_xml.sentences
-
-                    # get coreferences
-                    if kwargs.get('coref') or any(x.startswith('h') for x in show):
-                        if just_speakers:
-                            corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
-                        else:
-                            corefs = corenlp_xml.coreferences
-                    else:
-                        corefs = []
-                        
-                    corenlp_xml = None
+                    if datatype == 'parse':
+                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=kwargs.get('coref'))
+                    elif datatype == 'conll':
+                        sents, corefs = f.path, kwargs.get('coref')
+                    
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
                                              exclude=exclude,
@@ -1260,6 +1325,7 @@ def interrogator(corpus,
                                              no_punct=no_punct,
                                              no_closed=no_closed,
                                              whitelist=whitelist,
+                                             just_speakers=just_speakers,
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.name,
@@ -1281,22 +1347,6 @@ def interrogator(corpus,
                     with codecs.open(f.path, "rb") as fo:
                         data = pickle.load(fo)
 
-                if datatype == 'conll':
-                    from corpkit.conll import pipeline
-                    
-                    res, conc_res = pipeline(f.path,
-                                   search,
-                                   show,
-                                   exclude=exclude,
-                                   conc=conc,
-                                   only_format_match=only_format_match,
-                                   searchmode=searchmode,
-                                   excludemode=excludemode,
-                                   filename=f.name,
-                                   no_punct=no_punct,
-                                   no_closed=no_closed,
-                                   **kwargs)
-                    
                 elif datatype == 'plaintext' or tree_to_text:
                     if tree_to_text:
                         data = '\n'.join(result)
