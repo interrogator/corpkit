@@ -4104,7 +4104,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             import pandas
             import itertools
             sort_way = True
-            if type(current_conc[0]) == str:
+            if isinstance(current_conc[0], str):
                 return
             if prev_sortval[0] == sortval.get():
                 # if subcorpus is the same, etc, as well
@@ -4126,7 +4126,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 #df.insert(1, 't', themelist)
                 df.insert(1, 'tosorton', themelist)
             elif sortval.get() == 'Index':
-                df = df.sort(ascending = sort_way)
+                df = df.sort(ascending=sort_way)
             elif sortval.get() == 'Subcorpus':
                 sbs = [l.lower() for l in df['c']]
                 df['tosorton'] = sbs
@@ -4144,16 +4144,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 df['tosorton'] = low
             # if sorting by other columns, however, it gets tough.
             else:
-                from nltk import word_tokenize as tokenise
+                
                 td = {}
                 #if 'note' in kwargs.keys():
                 #    td['note'] = kwargs['note']
                 #    add_nltk_data_to_nltk_path(**td)
-                timestring('Tokenising concordance lines ... ')
                 # tokenise the right part of each line
                 # get l or r column
                 col = sortval.get()[0].lower()
-                tokenised = [tokenise(s) for s in list(df[col].values)]
+                tokenised = [s.split() for s in list(df[col].values)]
                 if col == 'm':
                     repeats = 2
                 else:
@@ -4192,10 +4191,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 df['tosorton'] = just_sortword
 
             if sortval.get() != 'Index' and sortval.get() != 'Random':
-                df = df.sort(['tosorton'], ascending = sort_way)
-                df = df.drop(['tosorton'], axis = 1, errors = 'ignore')
+                df = df.sort(['tosorton'], ascending=sort_way)
+                df = df.drop(['tosorton'], axis=1, errors='ignore')
             if show_filenames.get() == 0:
-                add_conc_lines_to_window(df.drop('f', axis = 1, errors = 'ignore'))
+                add_conc_lines_to_window(df.drop('f', axis=1, errors='ignore'))
             else:
                 add_conc_lines_to_window(df)
             

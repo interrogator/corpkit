@@ -79,20 +79,27 @@ def get_match(df, sent_id, tok_id, repeat=False):
 
 def get_conc_start_end(df, only_format_match, show, idx, new_idx):
     """return the left and right context of a concordance line"""
-    # todo: these aren't always aligning for some reason!
+
     sent_id, tok_id = idx
     new_sent, new_tok = new_idx
-    sent = df.xs(sent_id, level='s', drop_level=False)
+    
+    # potentially need to re-enable for head search
+    #sent = df.xs(sent_id, level='s', drop_level=False)
+    sent = df.ix[sent_id]
+
     if only_format_match:
-        start = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] < tok_id)
-        end = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] > new_tok)
+
+        # very optimised by trial and error!
+        start = ' '.join(sent['w'][:tok_id])
+        end = ' '.join(sent['w'][new_tok+1:])
+
         return start, end
     # if formatting the whole line, we have to be recursive
     else:
         start = []
         end = []
         # iterate over the words in the sentence
-        for t in list(df.ix[sent_id].index):
+        for t in list(sent.index):
             # show them as we did the match
             out = show_this(df, [(sent_id, t)], show, df._metadata, conc=False)
             if not out:
@@ -203,11 +210,26 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
 
     return matches
 
+def get_head(df, sent_id, tok_id, repeat=False):
+    token = df.ix[sent_id, tok_id]
+    if not hasattr(token, 'c'):
+        # this should error, because the data isn't there at all
+        return [(sent_id, tok_id)]
+    elif token['c'] == '_':
+        return [(sent_id, tok_id)]
+    else:
+        just_same_coref = df.loc[df['c'] == token['c'] + '*']
+        if not just_same_coref.empty:
+            return [just_same_coref.iloc[0].name]
+        else:
+            return [(sent_id, tok_id)]
+
 def show_this(df, matches, show, metadata, conc=False, **kwargs):
     """show everything"""
     objmapping = {'d': get_dependents_of_id,
                   'g': get_governors_of_id,
-                  'm': get_match}
+                  'm': get_match,
+                  'h': get_head}
 
     easy_attrs = ['w', 'l', 'p', 'f']
     strings = []

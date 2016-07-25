@@ -199,8 +199,10 @@ def interpreter(debug=False):
             # atexit_operations could be the answer
 
             s = generate_outprint()
-            ret = InteractiveShellEmbed(header=s, debug=debug,
-                                        exit_msg='Switching back to corpkit environment ...')
+
+            ret = InteractiveShellEmbed(header=s,
+                                        exit_msg='Switching back to corpkit environment ...',
+                                        **objs.__dict__)
             cc = ret()
 
         elif command in ['result', 'edited', 'totals', 'previous']:
@@ -227,6 +229,8 @@ def interpreter(debug=False):
             print(objs.wordclasses)
         elif command == 'postags':
             print(objs.postags)
+        elif command == 'query':
+            show_this([command])
         else:
             pass
 
@@ -519,8 +523,7 @@ def interpreter(debug=False):
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
         elif tokens[0] == 'query':
-            import json
-            print(json.dump(objs.query))
+            print(objs.query)
         elif tokens[0] == 'figure':
             if hasattr(objs, 'figure') and objs.figure:
                 objs.figure.show()
