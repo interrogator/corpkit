@@ -35,10 +35,12 @@ history_path = os.path.expanduser("~/.pyhistory")
 
 def save_history(history_path=history_path):
     import readline
+    readline.remove_history_item(readline.get_current_history_length() - 1)
     readline.write_history_file(history_path)
 
 if os.path.exists(history_path):
     readline.read_history_file(history_path)
+    readline.set_history_length(1000)
 
 atexit.register(save_history)
 
@@ -235,12 +237,24 @@ def interpreter(debug=False):
         transshow = {v.lower(): k.replace(' ', '-') for k, v in transshow.items()}
         showplurals = {k + 's': v for k, v in transshow.items()}
         objsplurals = {k + 's': v for k, v in transobjs.items()}
+        
+        transshow['distance'] = 'r'
+        transshow['ngram'] = 'n'
+        transshow['distances'] = 'r'
+        transshow['ngrams'] = 'n'
+
         transshow.update(showplurals)
         transobjs.update(objsplurals)
 
         ngram = srch.startswith('n')
         colls = srch.startswith('b')
-        srch = srch.lstrip('rb')
+
+        if ngram or colls:
+            newsrch = srch.split('-', 1)[-1]
+            if newsrch == srch:
+                srch = 'nw' if ngram else 'bw'
+            else:
+                srch = newsrch
 
         srch = srch.lower()
         
@@ -297,17 +311,16 @@ def interpreter(debug=False):
         withs = {}
         skips = []
         for i, token in enumerate(with_related):
+
             if i in skips or token == 'and':
                 continue
             if token == 'not':
                 withs[with_related[i+1].lower()] = False
                 skips.append(i+1)
             elif '=' not in token:
-                if tokens[i+1] == 'as':
-                    val = tokens[i+2]
-
-                    parse_pattern(val)
-
+                if with_related[i+1] == 'as':
+                    val = with_related[i+2]
+                    val = parse_pattern(val)
                     withs[token.lower()] = val
                     skips.append(i+1)
                     skips.append(i+2)
@@ -338,7 +351,11 @@ def interpreter(debug=False):
             
         if 'showing' in tokens:
             start = tokens.index('showing')
+            
             show_related = tokens[start+1:]
+            end = show_related.index('with') if 'with' in show_related else False
+            if end:
+                show_related = show_related[:end]
         else:
             show_related = []
 
