@@ -181,8 +181,14 @@ def interrogator(corpus,
         #to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
         #                      if sent.parse_string is not None)
         # make tuple with speakername...
-        speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
-                              if sent.parse_string is not None]
+        if corpus.datatype == 'parse':
+            speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
+                          if sent.parse_string is not None]
+        else:
+            from corpkit.conll import parse_conll
+            df = parse_conll(sents)
+            speak_tree = [(x['speaker'], x['parse']) for x in df._metadata.values()]
+            
         if speak_tree:
             speak, tree = zip(*speak_tree)
         else:
@@ -245,11 +251,11 @@ def interrogator(corpus,
         from collections import Counter
         statsmode_results = Counter()
         from corpkit.conll import parse_conll
-        df, metadata = parse_conll(filepath)
+        df = parse_conll(filepath)
         if dummy_args.get('just_speakers'):
             from corpkit.conll import process_df_for_speakers
-            df, metadata = process_df_for_speakers(df, metadata, just_speakers)
-            to_open = '\n'.join([i['parse'] for i in metadata.values()])
+            df = process_df_for_speakers(df, df._metadata, just_speakers)
+            to_open = '\n'.join([i['parse'] for i in df._metadata.values()])
         else:
             to_open = filepath
 

@@ -44,7 +44,8 @@ def parse_conll(f, first_time=False):
 
     # open with sent and token as multiindex
     df = pd.read_csv(StringIO.StringIO(data), sep='\t', header=None, names=head, index_col=['s', 'i'])
-    return df, metadata
+    df._metadata = metadata
+    return df
 
 def get_dependents_of_id(df, sent_id, tok_id, repeat=False):
     """get governors of a token"""
@@ -87,18 +88,22 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
         start = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] < tok_id)
         end = ' '.join(t['w'] for i, t in sent.iterrows() if i[1] > new_tok)
         return start, end
+    # if formatting the whole line, we have to be recursive
     else:
         start = []
         end = []
+        # iterate over the words in the sentence
         for t in list(df.ix[sent_id].index):
-            out = show_this(df, [(sent_id, t)], show, conc=False)
+            # show them as we did the match
+            out = show_this(df, [(sent_id, t)], show, df._metadata, conc=False)
             if not out:
                 continue
             else:
                 out = out[0]
-            if t[1] < tok_id:
+            # are these exactly right?
+            if t < tok_id:
                 start.append(str(out[0]))
-            elif t[1] > new_tok:
+            elif t > new_tok:
                 end.append(str(out[0]))
         return ' '.join(start), ' '.join(end)
 
@@ -349,7 +354,9 @@ def process_df_for_speakers(df, metadata, just_speakers, return_trees=False):
             if re.search(just_speakers, speaker):
                 good_sents.append(sentid)
                 new_metadata[sentid] = data
-    return df.loc[good_sents], new_metadata
+    df = df.loc[good_sents]
+    df._metadata = new_metadata
+    return df
 
 def pipeline(f,
              search,
@@ -369,9 +376,10 @@ def pipeline(f,
         show = [show]
     show = [fix_show_bit(i) for i in show]
 
-    df, metadata = parse_conll(f)
+    df = parse_conll(f)
 
-    df, metadata = process_df_for_speakers(df, metadata, kwargs.get('just_speakers'))
+    df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'))
+    metadata = df._metadata
 
     if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]

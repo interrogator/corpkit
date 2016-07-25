@@ -52,7 +52,7 @@ def test_parse():
         for f in subc.files:
             fnames.append(f.name)
     shutil.move(parsed.path, parsed_path)
-    assert_equals(fnames, ['intro.txt.xml', 'body.txt.xml'])
+    assert_equals(fnames, ['intro.txt.conll', 'body.txt.conll'])
 
 def test_speak_parse():
     """Test CoreNLP parsing with speaker segmentation"""
@@ -68,7 +68,7 @@ def test_speak_parse():
         for f in subc.files:
             fnames.append(f.name)
     shutil.move(parsed.path, speak_path)
-    assert_equals(fnames, ['intro.txt.xml', 'body.txt.xml'])
+    assert_equals(fnames, ['intro.txt.conll', 'body.txt.conll'])
 
 # this is how you define a slow test
 test_parse.slow = 1
@@ -90,16 +90,16 @@ def test_interro3():
     """Testing interrogation 3"""
     corp = Corpus(parsed_path)
     data = corp.interrogate({'w': r'^c'}, exclude={'l': r'check'}, show=['l', 'f'])
-    st = set(['corpus/nsubjpass',
-             'corpus/compound',
-             'corpkit/nmod:poss',
-             'continuum/nmod:on',
-             'conduit/nmod:as',
-             'concordancing/nmod:like',
-             'concordancing/appos',
-             'computational/amod',
-             'case/nmod:in',
-             'can/aux'])
+    st = {'can/aux',
+          'case/nmod',
+          'computational/amod',
+          'concordancing/appos',
+          'concordancing/nmod',
+          'conduit/nmod',
+          'continuum/nmod',
+          'corpkit/nmod:poss',
+          'corpus/compound',
+          'corpus/nsubjpass'}
     assert_equals(set(list(data.results.columns)), st)
 
 # skipping this for now, as who cares about tokens
