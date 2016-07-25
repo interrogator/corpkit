@@ -153,6 +153,10 @@ def concprinter(dataframe, kind='string', n=100, window=35, columns='all', **kwa
         functi = pd.DataFrame.to_latex
     if kind.startswith('c'):
         functi = pd.DataFrame.to_csv
+        kwargs['sep'] = ','
+    if kind.startswith('t'):
+        functi = pd.DataFrame.to_csv
+        kwargs['sep'] = '\t'
 
     return_it = kwargs.pop('return_it', False)
 

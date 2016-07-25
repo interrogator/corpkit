@@ -55,6 +55,8 @@ The interpreter has a few objects you can work with.
 +---------------+-----------------------------------------------+
 | `query`       | Values used to perform search or edit         |
 +---------------+-----------------------------------------------+
+| `previous`    | Object created before last                    |
++---------------+-----------------------------------------------+
 
 
 Commands 

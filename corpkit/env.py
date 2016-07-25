@@ -71,7 +71,7 @@ def interpreter(debug=False):
         def __init__(self):
 
             self.result = None
-            self.previous = []
+            self.previous = None
             self.edited = None
             self.concordance = None
             self.query = None
@@ -81,6 +81,7 @@ def interpreter(debug=False):
             self.stored = {}
             self.figure = None
             self.totals = None
+            self._previous_type = None
 
     objs = Objects()
 
@@ -105,7 +106,13 @@ def interpreter(debug=False):
 
     def show_help(command):
 
+        args = []
+        if isinstance(command, list):
+            args = command[1:]
+            command = command[0]
+
         if command == 'history':
+            import readline
             for i in range(readline.get_current_history_length()):
                 print(readline.get_history_item(i + 1))
 
@@ -180,8 +187,10 @@ def interpreter(debug=False):
             "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n(Hit 'q' to exit help).\n\n") 
 
         if command == 'corpus':
-            print(getattr(corpus, 'name', 'Corpus not set. use "set <corpusname>".'))
-        if command == 'python' or command == 'ipython':
+            if not hasattr(objs.corpus, 'name'):
+                print('Corpus not set. use "set <corpusname>".')
+                return
+        elif command == 'python' or command == 'ipython':
             from IPython import embed
 
             from IPython.terminal.embed import InteractiveShellEmbed
@@ -193,15 +202,8 @@ def interpreter(debug=False):
             ret = InteractiveShellEmbed(header=s, debug=debug,
                                         exit_msg='Switching back to corpkit environment ...')
             cc = ret()
-            #we_need = 'corpus', 'result', 'concordance', 'edited', 'previous'
-            #dct = {k: v for k, v in ret.user_ns['__builtins__'].globals().items() if k in we_need}
-            #corpus = dct.get('corpus', corpus)
-            #concordance = dct.get('concordance', concordance)
-            #edited = dct.get('edited', edited)
-            #result = dct.get('result', result)
-            #previous = dct.get('previous', previous)
 
-        elif command in ['result', 'edited', 'concordance', 'totals']:
+        elif command in ['result', 'edited', 'totals', 'previous']:
 
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
@@ -215,6 +217,9 @@ def interpreter(debug=False):
                 else:
                     print('Nothing here yet.')
 
+        elif command == 'concordance':
+            kwargs = process_kwargs(args)
+            getattr(objs, command).format(**kwargs)
 
         elif command == 'features':
             print(objs.features)
@@ -222,9 +227,6 @@ def interpreter(debug=False):
             print(objs.wordclasses)
         elif command == 'postags':
             print(objs.postags)
-        elif command == 'previous':
-            for index, entry in enumerate(list(reversed(objs.previous)), start=1):
-                print('%d\nCommand: %s\nOutput:\n%s' % (index, entry[0], str(entry[1])))
         else:
             pass
 
@@ -380,7 +382,7 @@ def interpreter(debug=False):
                 withs[with_related[i+1].lower()] = False
                 skips.append(i+1)
             elif '=' not in token:
-                if len(with_related) <= i and with_related[i+1] == 'as':
+                if len(with_related) >= i and with_related[i+1] == 'as':
                     val = with_related[i+2]
                     val = parse_pattern(val)
                     withs[token.lower()] = val
@@ -390,8 +392,7 @@ def interpreter(debug=False):
                     withs[token.lower()] = True
             elif '=' in token:
                 k, v = token.lower().split('=', 1)
-                if v.isdigit():
-                    v = int(v)
+                v = parse_pattern(v)
                 withs[k] = v
         return withs
 
@@ -529,28 +530,90 @@ def interpreter(debug=False):
             print(getattr(objs.corpus, tokens[0]))
 
         elif hasattr(objs, tokens[0]):
-            show_help(tokens[0])
+            show_help(tokens)
+        else:
             print("No information about: %s" % tokens[0])
 
     def get_info(tokens):
         pass
 
+
+    def edit_something(tokens):
+
+        thing_to_edit = get_thing_to_edit(tokens[0])
+
+        trans = {'skipping': 'skip',
+                 'keeping':  'just',
+                 'merging':  'merge',
+                 'spanning': 'span'}
+
+        recog = ['not', 'matching', 'result', 'entry', 'entries', 'results', 'subcorpus', 'subcorpora', 'edited']
+
+        # skip, keep, merge
+        by_related = []
+        if 'by' in tokens:
+            start = tokens.index('by')
+            by_related = tokens[start+1:]
+
+        if not by_related:
+            inter = interactive_edit(tokens)
+
+        kwargs = {}
+        skips = []
+        for i, token in enumerate(by_related):
+            if i in skips:
+                continue
+            if token in trans.keys():
+                k = trans.get(token) + '_' + by_related[i+1]
+                v = next((x for x in by_related[i+1:] if x not in recog), False)
+                if not v:
+                    print('v not found')
+                    return
+                v = parse_pattern(v)
+                kwargs[k] = v
+                #for x in range(i, ind+1):
+                #    skips.append(x)
+        
+        # add bools etc
+        morekwargs = process_kwargs(tokens)
+        for k, v in morekwargs.items():
+            if k not in kwargs.keys():
+                kwargs[k] = v
+
+        if debug:
+            print(kwargs)
+        objs.edited = thing_to_edit.edit(**kwargs)
+        objs.totals = objs.edited.totals
+
+        return objs.edited
+
     def run_command(tokens):
         command = get_command.get(tokens[0], unrecognised)        
         out = command(tokens[1:])
-        objs.previous.append((output, out))
+        
+        # store the previous thing as previous
+        attr = objmap.get(command, False)
+        if attr:
+            objs.previous = getattr(objs, attr)
+            objs._previous_type = attr
+
         if command == search_corpus:
             if not objs.result:
                 return
             objs.result = out
+            objs.previous = out
             print('\nresult:\n\n', out.results, '\n')
             objs.query = out.query
             objs.concordance = out.concordance
             # find out what is going on here
             objs.edited = False
-        if command == edit_something:
+        if command in [edit_something, sort_something, calculate_result]:
+            from corpkit.interrogation import Concordance
             if hasattr(out, 'results'):
                 print('\nedited:\n\n',  out.results, '\n')
+        
+            elif isinstance(out, Concordance):
+                print(out.format())
         else:
             if debug:
                 print('Done:', repr(out))
@@ -605,61 +668,14 @@ def interpreter(debug=False):
 
         val = next((x for x in tokens[1:] if x not in recog), 'total')
 
-        if thing_to_edit in [objs.result, objs.edited]:
+        from corpkit.interrogation import Concordance
+        if not isinstance(thing_to_edit, Concordance):
             objs.edited = thing_to_edit.edit(sort_by=val)
             objs.totals = objs.edited.totals
+            return objs.edited
         else:
-            objs.concordance = thing_to_edit.sort_values(val[0], axis=1)
-        return
-
-    def edit_something(tokens):
-
-        thing_to_edit = get_thing_to_edit(tokens[0])
-
-        trans = {'skipping': 'skip',
-                 'keeping':  'just',
-                 'merging':  'merge',
-                 'spanning': 'span'}
-
-        recog = ['not', 'matching', 'result', 'entry', 'entries', 'results', 'subcorpus', 'subcorpora', 'edited']
-
-        # skip, keep, merge
-        by_related = []
-        if 'by' in tokens:
-            start = tokens.index('by')
-            by_related = tokens[start+1:]
-
-        if not by_related:
-            inter = interactive_edit(tokens)
-
-        kwargs = {}
-        skips = []
-        for i, token in enumerate(by_related):
-            if i in skips:
-                continue
-            if token in trans.keys():
-                k = trans.get(token) + '_' + by_related[i+1]
-                v = next((x for x in by_related[i+1:] if x not in recog), False)
-                if not v:
-                    print('v not found')
-                    return
-                v = parse_pattern(v)
-                kwargs[k] = v
-                #for x in range(i, ind+1):
-                #    skips.append(x)
-        
-        # add bools etc
-        morekwargs = process_kwargs(tokens)
-        for k, v in morekwargs.items():
-            if k not in kwargs.keys():
-                kwargs[k] = v
-
-        if debug:
-            print(kwargs)
-        objs.edited = thing_to_edit.edit(**kwargs)
-        objs.totals = objs.edited.totals
-
-        return
+            objs.concordance = thing_to_edit.sort_values(val[0], axis=0)
+            return objs.concordance
 
     def plot_result(tokens):
         """
@@ -673,6 +689,7 @@ def interpreter(debug=False):
         title = kwargs.pop('title', False)
         objs.figure = getattr(objs, tokens[0]).visualise(title=title, kind=kind, **kwargs)
         objs.figure.show()
+        return objs.figure
 
 
     def calculate_result(tokens):
@@ -700,11 +717,10 @@ def interpreter(debug=False):
         if operation == 'percentage':
             operation = '%'
         the_obj = getattr(objs, tokens[0])
-        print(the_obj, operation, denominator)
         objs.edited = the_obj.edit(operation, denominator)
         objs.totals = objs.edited.totals
         print('\nedited:\n\n', objs.edited.results, '\n')
-        return
+        return objs.edited
 
     def parse_corpus(tokens):
         """
@@ -854,6 +870,14 @@ def interpreter(debug=False):
                    'save': save_this,
                    'load': load_this,
                    'calculate': calculate_result}
+
+    objmap = {search_corpus: 'result',
+              edit_something: 'edited',
+              calculate_result: 'edited',
+              sort_something: 'edited',
+              plot_result: 'figure',
+              set_corpus: 'corpus',
+              load_this: 'result'}
 
     def unrecognised(*args, **kwargs):
         print('unrecognised!')
