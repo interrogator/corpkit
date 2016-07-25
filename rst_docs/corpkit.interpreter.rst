@@ -97,7 +97,7 @@ You do things to the objects via commands.
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `ipython`       | Entering IPython with objects available                      | `ipython`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                  |
+| `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 
 In square brackets with asterisks are recursive parts of the syntax, which often also accept `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
