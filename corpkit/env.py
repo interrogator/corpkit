@@ -82,6 +82,7 @@ def interpreter(debug=False):
             self.figure = None
             self.totals = None
             self._previous_type = None
+            self._do_conc = True
 
     objs = Objects()
 
@@ -475,7 +476,7 @@ def interpreter(debug=False):
         withs = process_kwargs(tokens)
 
         kwargs = {'search': search, 'exclude': exclude, 'df1_always_df': True,
-                  'show': show, 'cql': cqlmode, 'conc': True}
+                  'show': show, 'cql': cqlmode, 'conc': objs._do_conc}
         kwargs.update(withs)
         return kwargs
 
@@ -605,15 +606,18 @@ def interpreter(debug=False):
                 return
             objs.result = out
             objs.previous = out
-            print('\nresult:\n\n', out.results, '\n')
+            print('\n', out.results, '\n')
             objs.query = out.query
-            objs.concordance = out.concordance
+            if objs._do_conc:
+                objs.concordance = out.concordance
+            else:
+                objs.concordance = None
             # find out what is going on here
             objs.edited = False
         if command in [edit_something, sort_something, calculate_result]:
             from corpkit.interrogation import Concordance
             if hasattr(out, 'results'):
-                print('\nedited:\n\n',  out.results, '\n')
+                print('\n', out.results, '\n')
         
             elif isinstance(out, Concordance):
                 print(out.format())
@@ -850,6 +854,12 @@ def interpreter(debug=False):
                 return
         objs.stored[name] = to_store
 
+    def toggle_this(tokens):
+        if tokens[0].startswith('conc'):
+            objs._do_conc = not objs._do_conc
+            s = 'on' if objs._do_conc else 'off'
+            print('Concordancing turned %s.' % s)
+
     def run_previous(tokens):
         import shlex
         output = list(reversed(objs.previous))[int(tokens[0]) - 1][0]
@@ -864,6 +874,7 @@ def interpreter(debug=False):
                    'export': export_result,
                    'redo': run_previous,
                    'sort': sort_something,
+                   'toggle': toggle_this,
                    'edit': edit_something,
                    'plot': plot_result,
                    'help': helper,
