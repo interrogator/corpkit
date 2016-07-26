@@ -643,11 +643,10 @@ def pipeline(f,
     df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
-    # need to get rid of brackets too ...
     if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
-        df = df[~df['w'].str.contains(r'^-.*b-$')]
-        # find way to reset the 'i' index ...
+        # remove brackets --- could it be done in one regex?
+        df = df[~df['w'].str.contains(r'^-.*B-$')]
 
     if kwargs.get('no_closed'):
         from corpkit.dictionaries import wordlists
