@@ -2,8 +2,8 @@
 Process CONLL formatted data
 
 todo:
-- adj and corefs back into pipeline
-- account for order
+- coref
+- code cleanup
 
 """
 

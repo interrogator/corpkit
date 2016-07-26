@@ -1,0 +1,66 @@
+# sent_id 1
+# parse=(ROOT (S (NP (NP (NNP Corpus) (NNS linguistics)) (CC and) (NP (JJ computational) (NNS linguistics))) (, ,) (PP (IN like) (NP (NP (NN concordancing)) (CC and) (NP (VBG interrogating)))) (, ,) (VP (VBP are) (VP (VBN situated) (PP (IN on) (NP (DT a) (JJ vast) (NN continuum))))) (. .)))
+# speaker=UNIDENTIFIED
+1	1	Corpus	Corpus	NNP	O	2	compound	0	1
+1	2	linguistics	linguistics	NNS	O	13	nsubjpass	1,3,5	1*
+1	3	and	and	CC	O	2	cc	0	1
+1	4	computational	computational	JJ	O	5	amod	0	1
+1	5	linguistics	linguistics	NNS	O	2	conj	4	1
+1	6	,	,	,	O	13	punct	0	_
+1	7	like	like	IN	O	8	case	0	_
+1	8	concordancing	concordancing	NN	O	13	nmod	7,9,10	4*
+1	9	and	and	CC	O	8	cc	0	4
+1	10	interrogating	interrogate	VBG	O	8	conj	0	4
+1	11	,	,	,	O	13	punct	0	_
+1	12	are	be	VBP	O	13	auxpass	0	_
+1	13	situated	situate	VBN	O	0	ROOT	2,6,8,11,12,17,18	_
+1	14	on	on	IN	O	17	case	0	_
+1	15	a	a	DT	O	17	det	0	6
+1	16	vast	vast	JJ	O	17	amod	0	6
+1	17	continuum	continuum	NN	O	13	nmod	14,15,16	6*
+1	18	.	.	.	O	13	punct	0	_
+
+# sent_id 2
+# parse=(ROOT (S (PP (IN In) (NP (DT both) (NNS cases))) (, ,) (NP (NNP Python)) (VP (MD can) (VP (VB act) (PP (IN as) (NP (DT a) (JJ fantastic) (NN conduit))))) (. .)))
+# speaker=UNIDENTIFIED
+2	1	In	in	IN	O	3	case	0	_
+2	2	both	both	DT	O	3	det	0	8
+2	3	cases	case	NNS	O	7	nmod	1,2	8*
+2	4	,	,	,	O	7	punct	0	_
+2	5	Python	Python	NNP	PERSON	7	nsubj	0	7*
+2	6	can	can	MD	O	7	aux	0	_
+2	7	act	act	VB	O	0	ROOT	3,4,5,6,11,12	_
+2	8	as	as	IN	O	11	case	0	_
+2	9	a	a	DT	O	11	det	0	9
+2	10	fantastic	fantastic	JJ	O	11	amod	0	9
+2	11	conduit	conduit	NN	O	7	nmod	8,9,10	9*
+2	12	.	.	.	O	7	punct	0	_
+
+# sent_id 3
+# parse=(ROOT (S (S (VP (ADVP (RB Just)) (VBG checking) (NP (PRP I)))) (VP (VBP 'm) (VP (VP (VBG getting) (S (VP (VBN noticed) (PP (IN during) (NP (NP (NN parsing)) (, ,) (NP (NN concordancing))))))) (CC and) (VP (VBG interrogating)))) (. .)))
+# speaker=NEWCOMER
+3	1	Just	just	RB	O	2	advmod	0	_
+3	2	checking	check	VBG	O	5	csubj	1,3	_
+3	3	I	I	PRP	O	2	dobj	0	10*
+3	4	'm	be	VBP	O	5	aux	0	_
+3	5	getting	get	VBG	O	0	ROOT	2,4,6,11,12,13	_
+3	6	noticed	notice	VBN	O	5	dep	8	_
+3	7	during	during	IN	O	8	case	0	_
+3	8	parsing	parsing	NN	O	6	nmod	7,9,10	11*
+3	9	,	,	,	O	8	punct	0	11
+3	10	concordancing	concordancing	NN	O	8	appos	0	11
+3	11	and	and	CC	O	5	cc	0	_
+3	12	interrogating	interrogate	VBG	O	5	conj	0	_
+3	13	.	.	.	O	5	punct	0	_
+
+# sent_id 4
+# parse=(ROOT (S (NP (DT This) (NN corpus) (NNS linguistics)) (VP (VBZ is) (NP (JJ hard) (NN work))) (. !)))
+# speaker=NEWCOMER
+4	1	This	this	DT	O	3	det	0	2
+4	2	corpus	corpus	NN	O	3	compound	0	2
+4	3	linguistics	linguistics	NNS	O	4	nsubj	1,2	2
+4	4	is	be	VBZ	O	0	ROOT	3,6,7	_
+4	5	hard	hard	JJ	O	6	amod	0	_
+4	6	work	work	NN	O	4	xcomp	5	_
+4	7	!	!	.	O	4	punct	0	_
+
