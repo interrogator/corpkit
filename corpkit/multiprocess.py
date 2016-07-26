@@ -248,6 +248,8 @@ def pmultiquery(corpus,
         concs = pd.concat([x for x in res])
         thetime = strftime("%H:%M:%S", localtime())
         concs = concs.reset_index(drop=True)
+        if kwargs.get('maxconc'):
+            concs = concs[:kwargs.get('maxconc')]
         lines = Concordance(concs)
         
         if save:
@@ -328,10 +330,16 @@ def pmultiquery(corpus,
         if len(out.results.columns) == 1:
             out.results = out.results.sort_index()   
         if kwargs.get('conc') is True:
-            concs = pd.concat([x.concordance for x in res], ignore_index=True)
-            concs = concs.sort_values(by='c')
-            concs = concs.reset_index(drop=True)
-            out.concordance = Concordance(concs)
+            try:
+                concs = pd.concat([x.concordance for x in res], ignore_index=True)
+                concs = concs.sort_values(by='c')
+                concs = concs.reset_index(drop=True)
+                if kwargs.get('maxconc'):
+                    concs = concs[:kwargs.get('maxconc')]
+                out.concordance = Concordance(concs)
+            except ValueError:
+                out.concordance = None
+
         thetime = strftime("%H:%M:%S", localtime())
         if terminal and print_info:
             with terminal.location(0, terminal.height):

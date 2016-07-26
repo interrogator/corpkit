@@ -1,5 +1,9 @@
 """
 Process CONLL formatted data
+
+todo:
+- adj and corefs back into pipeline
+- account for order
 """
 
 def parse_conll(f, first_time=False):
@@ -46,8 +50,11 @@ def parse_conll(f, first_time=False):
     df._metadata = metadata
     return df
 
-def get_dependents_of_id(df, sent_id, tok_id, repeat=False):
+def get_dependents_of_id(ind, df=False, repeat=False):
     """get governors of a token"""
+    
+    sent_id, tok_id = getattr(idx, 'name', idx)
+
     try:
         deps = df.ix[(sent_id, tok_id)]['d'].split(',')
         return [(sent_id, int(d)) for d in deps]
@@ -61,9 +68,13 @@ def get_dependents_of_id(df, sent_id, tok_id, repeat=False):
         else:
             return list(justgov.index)
 
-def get_governors_of_id(df, sent_id, tok_id, repeat=False):
-    """get dependents of a token"""
+def get_governors_of_id(idx, df=False, repeat=False, attr=False):
+    """get governors of a token"""
+    
+    sent_id, tok_id = getattr(idx, 'name', idx)
     govid = df.ix[sent_id, tok_id]['g']
+    if attr:
+        return getattr(df.ix[sent_id,govid], attr, 'root')
     return [(sent_id, govid)]
 
     #sent = df.xs(sent_id, level='s', drop_level=False)
@@ -73,9 +84,30 @@ def get_governors_of_id(df, sent_id, tok_id, repeat=False):
     #else:
     #    return res
 
-def get_match(df, sent_id, tok_id, repeat=False):
+def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
     """dummy function"""
+    sent_id, tok_id = getattr(idx, 'name', idx)
+    if attr:
+        #print(df[attr].ix[sent_id, tok_id])
+        return df[attr].ix[sent_id, tok_id]
     return [(sent_id, tok_id)]
+
+def get_head(idx, df=False, repeat=False):
+
+    sent_id, tok_id = getattr(idx, 'name', idx)
+
+    token = df.ix[sent_id, tok_id]
+    if not hasattr(token, 'c'):
+        # this should error, because the data isn't there at all
+        return [(sent_id, tok_id)]
+    elif token['c'] == '_':
+        return [(sent_id, tok_id)]
+    else:
+        just_same_coref = df.loc[df['c'] == token['c'] + '*']
+        if not just_same_coref.empty:
+            return [just_same_coref.iloc[0].name]
+        else:
+            return [(sent_id, tok_id)]
 
 def get_conc_start_end(df, only_format_match, show, idx, new_idx):
     """return the left and right context of a concordance line"""
@@ -113,15 +145,14 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
                 end.append(str(out[0]))
         return ' '.join(start), ' '.join(end)
 
-def get_all_corefs(df, idx, token):
-    if not hasattr(token, 'c'):
-        return [(idx, token, idx, token)]
-    elif token['c'] == '_':
-        return [(idx, token, idx, token)]
-    else:
-        just_same_coref = df.loc[df['c'] == token['c'] + '*']
-        return [(idx, token, i, t) for i, t in just_same_coref.iterrows()]
-
+def get_all_corefs(df, coref, s, i):
+    if not coref:
+        return [(s, i)]
+    try:
+        just_same_coref = df.loc[df['c'] == df.ix[s,i]['c'] + '*']
+        return list(just_same_coref.index)
+    except:
+        return [(s, i)]
 
 def get_adjacent_token(df, idx, adjacent, opposite=False):
             
@@ -151,96 +182,291 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     
     import re
     # this stores indexes (sent, token) of matches
+
+    # cut down to just tokens with matching attr
+    matches = df[df[attrib].str.contains(pattern)]
+
+    # functions for getting the needed object
+    revmapping = {'g': get_dependents_of_id,
+                  'd': get_governors_of_id,
+                  'm': get_match,
+                  'h': get_head}
+
+    getfunc = revmapping.get(obj)
+
+    # make a large flat list of all results, taking corefs into account
+    every_match = [get_all_corefs(df, coref, *idx) for idx in list(matches.index)]
+    every_match = [i for s in every_match for i in s]
+
     matches = []
 
-    # iterate over all tokens
-    for idx, token in df.iterrows():
-        sent_id, tok_id = idx
-
-        # if in adjacent mode, change the token being processed
-        # before changing it back later
-        if adjacent:
-            old_idx, old_token = idx, token
-            token, idx = get_adjacent_token(df, idx, adjacent)
-            if token is False:
-                continue
-
-            # so, if adj mode, now 'token' and 'idx' are the adjacent
-            # but we'll change back after the search is done ...
+    for idx in every_match:
         
-        # in weird cases where there is no lemma or something
-        if not hasattr(token, attrib):
-            continue
+        if adjacent:
+            idx = get_adjacent_token(df, idx, adjacent, opposite=True)
 
-        if coref:
-            to_iter = [(idx, token, idx, token)] + get_all_corefs(df, idx, token)
-        else:
-             to_iter = [(idx, token, idx, token)]
+        for mindex in getfunc(idx, df=df):
+            if mindex:
+                matches.append(mindex)
 
-        # if corefs, search the word and return the coref
-        # otherwise, we're just searching and returning word
+    return list(set(matches))
 
-        for idx, token, coref_idx, coref_token in to_iter:
-            if not re.search(pattern, token[attrib]):
-                continue
-
-            # adjacent mode, we add the original token, not the
-            # adjacent one ...
-
-            if adjacent and not coref:
-                coref_idx = old_idx
-
-            elif adjacent and coref:
-                coref_token, coref_idx = get_adjacent_token(df, coref_idx, adjacent, opposite=True)
-                if coref_token is False:
-                    continue
-
-            if obj == 'm':
-                matches.append(coref_idx)
-            elif obj == 'd':
-                govs = get_governors_of_id(df, *coref_idx)
-                for coref_idx in govs:
-                    matches.append(coref_idx)
-            elif obj == 'g':
-                deps = get_dependents_of_id(df, *coref_idx)
-                if not deps:
-                    matches.append(None)
-                for coref_idx in deps:
-                    matches.append(coref_idx)
-
-    return matches
-
-def get_head(df, sent_id, tok_id, repeat=False):
-    token = df.ix[sent_id, tok_id]
-    if not hasattr(token, 'c'):
-        # this should error, because the data isn't there at all
-        return [(sent_id, tok_id)]
-    elif token['c'] == '_':
-        return [(sent_id, tok_id)]
-    else:
-        just_same_coref = df.loc[df['c'] == token['c'] + '*']
-        if not just_same_coref.empty:
-            return [just_same_coref.iloc[0].name]
-        else:
-            return [(sent_id, tok_id)]
-
-def show_this(df, matches, show, metadata, conc=False, **kwargs):
+def show_fix(show):
     """show everything"""
     objmapping = {'d': get_dependents_of_id,
                   'g': get_governors_of_id,
                   'm': get_match,
                   'h': get_head}
 
-    easy_attrs = ['w', 'l', 'p', 'f']
+    out = []
+    for val in show:
+        adj, val = determine_adjacent(val)
+        obj, attr = val[0], val[-1]
+        obj_getter = objmapping.get(obj)
+        out.append(adj, val, obj, attr, obj_getter)
+    return out
+
+def dummy(x, *args, **kwargs):
+    return x
+
+def make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs):
+    """
+    df: all data
+    out_mx: indexes for each show val
+    out: processed bits for each show val
+    """
+
+    objmapping = {'d': get_dependents_of_id,
+                  'g': get_governors_of_id,
+                  'm': get_match,
+                  'h': get_head}
+
+    fname = kwargs.get('filename', '')
+    only_format_match = kwargs.get('only_format_match', False)
+
+    if not conc:
+        return []
+
+    def make_df_for_conc(df, show):
+        import pandas as pd
+        outs = []
+        grouped = df.groupby(df.index)
+        
+        for val in show:
+            obj, attr = val[0], val[-1]
+            func = objmapping.get(obj)
+            # a series of multi-index and a formatted token piece
+            ser = grouped.aggregate(func, df=df, attr=attr)
+            outs.append(ser)
+        return pd.concat(outs, axis=1)
+
+    conc_lines = []
+    dx = make_df_for_conc(df, show)
+    zipped = zip(zip(*out_mx), zip(*out))
+    for ixes, words in zipped:
+        sent = df.loc[ixes[0][0]] if only_format_match else dx.loc[ixes[0][0]].iloc[:,0]
+        if only_format_match:
+            sent = sent['w']
+        mid = '/'.join(words)
+        tok_pos = ixes[0][1]
+        # get end pos from adj mode...
+        if only_format_match:
+            start = ' '.join((sent.loc[:tok_pos-1]))
+            end = ' '.join((sent.loc[tok_pos+1:]))
+        else:
+            stoks = list(sent.loc[:tok_pos-1][0])
+            etoks = list(sent.loc[tok_pos+1:][0])
+
+            start = ' '.join('/'.join(stoks))
+            end = ' '.join('/'.join(etoks))
+        sname = metadata.get(ixes[0][0])['speaker']
+        line = [fname, sname, start, mid, end]
+        conc_lines.append(line)
+    return conc_lines
+
+def format_toks(to_process, show, df):
+
+    import pandas as pd
+
+    objmapping = {'d': get_dependents_of_id,
+                  'g': get_governors_of_id,
+                  'm': get_match,
+                  'h': get_head}
+    sers = []
+    for val in show:
+        obj, attr = val[0], val[-1]
+        func = objmapping.get(obj, dummy)
+        out = []
+        for ix in list(to_process.index):
+            if obj == 'm':
+                piece = df.loc[ix][attr]
+            else:
+                piece = func(ix, df=df, attr=attr)
+            out.append(piece)
+        ser = pd.Series(out, index=to_process.index)
+        #print(ser.values)
+        ser.name = val
+        sers.append(ser)
+
+    dx = pd.concat(sers, axis=1)
+    if len(dx.columns) == 1:
+        return dx.iloc[:,0]
+    else:
+        return dx.apply('/'.join, axis=1)
+
+def make_concx(series, matches, metadata, df, conc, **kwargs):
+    
+    conc_lines = []
+    fname = kwargs.get('filename', '')
+    if not conc:
+        return conc_lines
+    
+    #maxc, cconc = kwargs.get('maxconc', (False, False))
+    #if maxc and maxc < cconc:
+    #    return []
+
+    for s, i in matches:
+        sent = df.loc[s]
+        if kwargs.get('only_format_match'):
+            start = ' '.join(list(sent.loc[:i-1]['w']))
+            end = ' '.join(list(sent.loc[i+1:]['w']))
+        else:
+            start = ' '.join(list(series.loc[s,:i-1]))
+            end = ' '.join(list(series.loc[s,i+1:]))
+        middle = series[s, i]
+        sname = metadata[s]['speaker']
+        conc_lines.append([fname, sname, start, middle, end])
+
+    return conc_lines
+
+
+
+
+def show_this2(df, matches, show, metadata, conc=False, coref=False, **kwargs):
+    """slower method with apply"""
+
+    # attempt to leave really fast
+    if kwargs.get('countmode'):
+        return len(matches), []
+    if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
+        return list(df.loc[matches][show[0][-1]]), []
+    if not conc:
+
+        def simple(line, df=False, attr=False):
+            return line.name[1]
+
+        def get_gov(line, df=False, attr=False):
+            return df.ix[line.name]['g']
+
+        objmapping = {'d': get_dependents_of_id,
+                      'g': get_gov,
+                      'm': simple,
+                      'h': get_head}
+
+        out = []
+        dx = df.loc[matches]
+        for val in show:
+            obj, attr = val[0], val[-1]
+            func = objmapping.get(obj, dummy)
+            # this gives us a 
+            ress = dx.apply(func, df=df, attr=attr, axis=1).dropna()
+            mx = zip(ress.index._labels[0], ress.values)
+            #print(ress)
+            #mx = [func(idx, df=df) for idx in matches]    
+            #mx = [item for sublist in mx for item in sublist]
+            
+            # get the attributes
+            ress = list(df.loc[mx][attr.replace('x', 'p')].dropna())
+            
+            if val.endswith('x'):
+                from corpkit.dictionaries.word_transforms import taglemma
+                ress = [taglemma.get(x.lower(), x.lower()) for x in ress]
+            #out_mx.append(mx)
+            out.append(ress)
+
+        # make or don't make conc lines
+        conc_lines = make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs)
+
+        return ['/'.join(x) for x in zip(*out)], conc_lines
+
+
+def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
+
+    # attempt to leave really fast
+    if kwargs.get('countmode'):
+        return len(matches), []
+    if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
+        return list(df.loc[matches][show[0][-1]]), []
+#    if not conc:
+
+    def dummy(x, **kwargs):
+        return [x]
+
+    def get_gov(line, df=False, attr=False):
+        return getattr(df.ix[line.name[0], df.ix[line.name]['g']], attr, 'root')
+
+
+    objmapping = {'d': get_dependents_of_id,
+                  'g': get_governors_of_id,
+                  'm': dummy,
+                  'h': get_head}
+
+    out = []
+    for val in show:
+        obj, attr = val[0], val[-1]
+        func = objmapping.get(obj, dummy)
+        mx = [func(idx, df=df) for idx in matches]    
+        mx = [item for sublist in mx for item in sublist]
+        
+        # get the attributes
+        ress = list(df.loc[mx][attr.replace('x', 'p')].dropna())
+        
+        if val.endswith('x'):
+            from corpkit.dictionaries.word_transforms import taglemma
+            ress = [taglemma.get(x.lower(), x.lower()) for x in ress]
+        #out_mx.append(mx)
+        out.append(ress)
+
+    # make or don't make conc lines
+    #conc_lines = make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs)
+    conc_lines = []
+
+    return ['/'.join(x) for x in zip(*out)], conc_lines
+
+
+
+    # determine params
+    only_format_match = kwargs.get('only_format_match', True)
+    process_all = conc and not only_format_match
+
+    # tokens that need formatting
+    if not process_all:
+        to_process = df.loc[matches]
+    else:
+        to_process = df
+    
+    # make a series of formatted data
+    series = format_toks(to_process, show, df)
+ 
+    # make a series of tokens, nicely or not nicely formatted
+
+    # generate conc
+    conc_lines = make_concx(series, matches, metadata, df, conc, **kwargs)
+
+    return list(series), conc_lines
+
+    # from here on down is a total bottleneck, so it's not used right now.
+
+    easy_attrs = ['w', 'l', 'p', 'f', 'y', 'z']
     strings = []
     concs = []
     # for each index tuple
 
-    only_format_match = kwargs.get('only_format_match', True)
+    
 
     for idx in matches:
         # we have to iterate over if we have dependent showing
-        repeats = len(get_dependents_of_id(df, *idx)) if any(x.startswith('d') for x in show) else 1
+        repeats = len(get_dependents_of_id(idx, df=df)) if any(x.startswith('d') for x in show) else 1
         for repeat in range(1, repeats + 1):
             single_token_bits = []
             matched_idx = False
@@ -260,7 +486,7 @@ def show_this(df, matches, show, metadata, conc=False, **kwargs):
                     continue
 
                 # get idxs to show
-                matched_idx = obj_getter(df, *new_idx, repeat=repeat)
+                matched_idx = obj_getter(new_idx, df=df, repeat=repeat)
                 
                 # should it really return a list if we never use all bits?
                 if not matched_idx:
@@ -356,11 +582,14 @@ def determine_adjacent(original):
         adj = False
     return adj, original
 
-def process_df_for_speakers(df, metadata, just_speakers, return_trees=False):
+def process_df_for_speakers(df, metadata, just_speakers, coref=False):
     """
     keep just the correct speakers
     """
     if not just_speakers:
+        return df
+    # maybe could be sped up, but let's not for now:
+    if coref:
         return df
     import re
     good_sents = []
@@ -390,6 +619,15 @@ def pipeline(f,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
+    # make file into df, get metadata
+    # restrict for speakers
+    # remove punct/closed words
+    # get indexes of matches for every search
+    # remove if not enough matches or exclude is defined
+    # show: (bottleneck)
+    #
+    # issues: get dependents, coref, adjacent, conc, only_format_match
+
     all_matches = []
     all_exclude = []
 
@@ -399,9 +637,10 @@ def pipeline(f,
 
     df = parse_conll(f)
 
-    df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'))
+    df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
+    # need to get rid of brackets too ...
     if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
         # find way to reset the 'i' index ...
@@ -411,6 +650,7 @@ def pipeline(f,
         crit = wordlists.closedclass.as_regex(boundaries='l')
         df = df[~df['w'].str.lower.contains(crit)]
 
+    
     for k, v in search.items():
 
         adj, k = determine_adjacent(k)
@@ -437,7 +677,7 @@ def pipeline(f,
             except ValueError:
                 pass
 
-    return show_this(df, all_matches, show, metadata, conc, **kwargs)
+    return show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
 
 
 def load_raw_data(f):

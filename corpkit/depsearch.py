@@ -20,7 +20,7 @@ def dep_searcher(sents,
                  split_contractions=False,
                  window=2,
                  language_model=False,
-                 corefs=False,
+                 coref=False,
                  representative=True,
                  non_representative=True,
                  **kwargs
@@ -116,10 +116,10 @@ def dep_searcher(sents,
 
     def get_candidates(tok, justfirst=False):
         candidates = [tok]
-        if not corefs:
+        if not coref:
             return candidates
-        for coref in corefs:
-            for index, mention in enumerate(coref.mentions):
+        for cref in coref:
+            for index, mention in enumerate(cref.mentions):
                 if not representative and mention.representative:
                     continue
                 if not non_representative and not mention.representative:
@@ -129,7 +129,7 @@ def dep_searcher(sents,
                         return [mention.siblings[0].head]
                     else:
                         return candidates
-                # if current token is a coref chain
+                # if current token is a cref chain
                 if tok == mention.head:
                     for sibling in mention.siblings:
                         candidates.append(sibling.head)
@@ -149,7 +149,7 @@ def dep_searcher(sents,
         matches = []
 
         for tok in tokens:
-            if corefs and repeating:
+            if coref and repeating:
                 # get a list of tokens that could match, and pass those
                 # recursively into this function
                 candidates = get_candidates(tok)
@@ -340,15 +340,15 @@ def dep_searcher(sents,
         return next((i for i in tokens if i.id == op(tok.id, count)), 'none')
 
     def show_head(tok, _):
-        if not corefs:
+        if not coref:
             return 'none'
-        for coref in corefs:
-            for index, mention in enumerate(coref.mentions):
+        for cref in coref:
+            for index, mention in enumerate(cref.mentions):
                 if not representative and mention.representative:
                     continue
                 if not non_representative and not mention.representative:
                     continue
-                # if current token is a coref chain
+                # if current token is a cref chain
                 if tok == mention.head:
                     if index > 0:
                         return mention.siblings[0].head

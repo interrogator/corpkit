@@ -999,7 +999,7 @@ def interrogator(corpus,
                     conc_df = conc_df.reset_index(drop=True)
 
             locs['corpus'] = corpus.name
-            conc_df = Concordance(conc_df)
+            conc_df = Concordance(conc_df[:maxconc])
             try:
                 conc_df.query = locs
             except AttributeError:
@@ -1314,9 +1314,9 @@ def interrogator(corpus,
                     # methods. the reason is that there seem to be memory leaks. these
                     # may have been fixed already though.
                     if datatype == 'parse':
-                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=kwargs.get('coref'))
+                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=kwargs.pop('coref', False))
                     elif datatype == 'conll':
-                        sents, corefs = f.path, kwargs.get('coref')
+                        sents, corefs = f.path, kwargs.pop('coref', False)
                     
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
@@ -1336,10 +1336,13 @@ def interrogator(corpus,
                                              window=window,
                                              filename=f.name,
                                              language_model=language_model,
-                                             corefs=corefs,
+                                             coref=corefs,
+                                             countmode=countmode,
+                                             maxconc=(maxconc, numconc),
                                              is_a_word=is_a_word,
                                              **kwargs
                                             )
+
 
                     # garbage collection needed?
                     sents = None
@@ -1394,6 +1397,7 @@ def interrogator(corpus,
                     # add filename and do lowercasing for conc
                     if not no_conc:
                         for line in conc_res:
+
                             if searcher != slow_tregex and searcher != tgrep_searcher \
                                 and datatype != 'conll':
                                 line.insert(0, f.name)
