@@ -204,7 +204,13 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     for idx in every_match:
         
         if adjacent:
-            idx = get_adjacent_token(df, idx, adjacent, opposite=True)
+            if adjacent[0] == '+':
+                tomove = -int(adj[1])
+            elif adjacent[0] == '-':
+                tomove = int(adj[1])
+            idx = (idx[0], idx[1] + tomove)
+            
+            #idx = get_adjacent_token(df, idx, adjacent, opposite=True)
 
         for mindex in getfunc(idx, df=df):
             if mindex:
@@ -272,14 +278,27 @@ def format_toks(to_process, show, df):
                   'h': get_head}
     sers = []
     for val in show:
+        adj, val = determine_adjacent(val)
+        if adj:
+            if adj[0] == '+':
+                tomove = int(adj[1])
+            elif adj[0] == '-':
+                tomove = -int(adj[1])
+
         obj, attr = val[0], val[-1]
         func = objmapping.get(obj, dummy)
         out = []
         for ix in list(to_process.index):
-            if obj == 'm':
-                piece = df.loc[ix][attr]
-            else:
-                piece = func(ix, df=df, attr=attr)
+            piece = False
+            if adj:
+                ix = (ix[0], ix[1] + tomove)
+                if ix not in df.index:
+                    piece = 'none'
+            if not piece:
+                if obj == 'm':
+                    piece = df.loc[ix][attr]
+                else:
+                    piece = func(ix, df=df, attr=attr)
             out.append(piece)
         ser = pd.Series(out, index=to_process.index)
         #print(ser.values)
@@ -296,12 +315,32 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
     
     conc_lines = []
     fname = kwargs.get('filename', '')
+    ngram_mode = kwargs.get('ngram_mode')
+    
     if not conc:
         return conc_lines
     
     #maxc, cconc = kwargs.get('maxconc', (False, False))
     #if maxc and maxc < cconc:
     #    return []
+
+    if ngram_mode:
+        for s, i in matches:
+            mid_toks = []
+            for n in range(kwargs.get('gramsize') + 1):
+                mid_toks.append((s, i+n))
+            sent = df.loc[s]
+            first, last = mid_toks[0][1], mid_toks[-1][1]
+            if kwargs.get('only_format_match'):
+                start = ' '.join(list(sent.loc[:first]['w']))
+                end = ' '.join(list(sent.loc[last+1:]['w']))
+            else:
+                start = ' '.join(list(series.loc[s,:first]))
+                end = ' '.join(list(series.loc[s,last+1:]))
+            middle = ' '.join(series[s][first:last])
+            sname = metadata[s]['speaker']
+            conc_lines.append([fname, sname, start, middle, end])
+        return conc_lines
 
     for s, i in matches:
         sent = df.loc[s]
@@ -317,9 +356,6 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
 
     return conc_lines
 
-def make_simple_conc(df, matches, formatted):
-    return []
-
 def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
 
     matches = sorted(matches)
@@ -331,6 +367,10 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
         return list(df.loc[matches][show[0][-1]]), []
 
     only_format_match = kwargs.get('only_format_match', True)
+    ngram_mode = kwargs.get('ngram_mode', True)
+
+    if ngram_mode:
+        show = [x.lstrip('n') for x in show]
 
     if not conc:
         def dummy(x, **kwargs):
@@ -350,6 +390,13 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
         conc_out = defaultdict(list)
 
         for val in show:
+            # adj = ('+', int)
+            adj, val = determine_adjacent(val)
+            if adj:
+                if adj[0] == '+':
+                    tomove = int(adj[1])
+                elif adj[0] == '-':
+                    tomove = -int(adj[1])
             obj, attr = val[0], val[-1]
             func = objmapping.get(obj, dummy)
             
@@ -361,6 +408,9 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
             else:
                 newm = matches
 
+            if adj:
+                newm = [(s, i+tomove) for s, i in newm]
+
             mx = [func(idx, df=df) for idx in newm]    
             mx = [item for sublist in mx for item in sublist]
             
@@ -370,7 +420,7 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
             
             # if gotten_tok_bits contains every token, we can
             # get just the matches from it
-            if cut_short:
+            if cut_short or ngram_mode:
                 gotten = df.loc[matches]
             else:
                 gotten = gotten_tok_bits
@@ -387,6 +437,8 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
     # determine params
 
     process_all = conc and not only_format_match
+    if ngram_mode:
+        process_all = True
 
     # tokens that need formatting
     if not process_all:
@@ -397,12 +449,12 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
     # make a series of formatted data
     series = format_toks(to_process, show, df)
  
-    # make a series of tokens, nicely or not nicely formatted
-
     # generate conc
     conc_lines = make_concx(series, matches, metadata, df, conc, **kwargs)
-
-    return list(series), conc_lines
+    the_ser = list(series)
+    if ngram_mode:
+        the_ser = list([i[3] for i in conc_lines])
+    return the_ser, conc_lines
 
     # from here on down is a total bottleneck, so it's not used right now.
 
@@ -580,6 +632,8 @@ def pipeline(f,
     all_matches = []
     all_exclude = []
 
+    kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
+
     if isinstance(show, str):
         show = [show]
     show = [fix_show_bit(i) for i in show]
@@ -592,12 +646,13 @@ def pipeline(f,
     # need to get rid of brackets too ...
     if kwargs.get('no_punct', False):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
+        df = df[~df['w'].str.contains(r'^-.*b-$')]
         # find way to reset the 'i' index ...
 
     if kwargs.get('no_closed'):
         from corpkit.dictionaries import wordlists
-        crit = wordlists.closedclass.as_regex(boundaries='l')
-        df = df[~df['w'].str.lower.contains(crit)]
+        crit = wordlists.closedclass.as_regex(boundaries='l', case_sensitive=False)
+        df = df[~df['w'].str.contains(crit)]
 
     
     for k, v in search.items():
@@ -627,7 +682,6 @@ def pipeline(f,
                 pass
 
     return show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
-
 
 def load_raw_data(f):
     """loads the stripped and raw versions of a parsed file"""
