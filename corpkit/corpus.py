@@ -942,9 +942,15 @@ class File(Corpus):
         Show the sentences in a File as plaintext
         """
         text = []
-        doc = self.document
-        for i, sent in enumerate(doc.sentences):
-            text.append('%d: ' % i + ' '.join(i.word for i in sent.tokens))
+        if self.datatype == 'parse':
+            doc = self.document
+            for i, sent in enumerate(doc.sentences):
+                text.append('%d: ' % i + ' '.join(i.word for i in sent.tokens))
+            
+        elif self.datatype == 'conll':
+            doc = self.document
+            for sent in list(doc.index.levels[0]):
+                text.append('%d: ' % sent + ' '.join(list(doc.loc[sent]['w'])))
         return '\n'.join(text)
 
 class Datalist(object):

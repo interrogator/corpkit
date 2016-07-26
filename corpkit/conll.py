@@ -4,6 +4,7 @@ Process CONLL formatted data
 todo:
 - adj and corefs back into pipeline
 - account for order
+
 """
 
 def parse_conll(f, first_time=False):
@@ -229,58 +230,35 @@ def show_fix(show):
 def dummy(x, *args, **kwargs):
     return x
 
-def make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs):
+def make_not_ofm_concs(df, out, matches, conc, metadata, 
+               show, gotten_tok_bits, **kwargs):
     """
     df: all data
     out_mx: indexes for each show val
     out: processed bits for each show val
     """
-
-    objmapping = {'d': get_dependents_of_id,
-                  'g': get_governors_of_id,
-                  'm': get_match,
-                  'h': get_head}
-
     fname = kwargs.get('filename', '')
     only_format_match = kwargs.get('only_format_match', False)
+    conc_lines = []
 
     if not conc:
-        return []
+        return conc_lines
+    if only_format_match:
+        return conc_lines
 
-    def make_df_for_conc(df, show):
-        import pandas as pd
-        outs = []
-        grouped = df.groupby(df.index)
-        
-        for val in show:
-            obj, attr = val[0], val[-1]
-            func = objmapping.get(obj)
-            # a series of multi-index and a formatted token piece
-            ser = grouped.aggregate(func, df=df, attr=attr)
-            outs.append(ser)
-        return pd.concat(outs, axis=1)
-
-    conc_lines = []
-    dx = make_df_for_conc(df, show)
-    zipped = zip(zip(*out_mx), zip(*out))
-    for ixes, words in zipped:
-        sent = df.loc[ixes[0][0]] if only_format_match else dx.loc[ixes[0][0]].iloc[:,0]
+    df = df['w']
+    for (s, i), form in zip(matches, list(gotten_tok_bits)):
+        if (s, i) not in matches:
+            continue
         if only_format_match:
-            sent = sent['w']
-        mid = '/'.join(words)
-        tok_pos = ixes[0][1]
-        # get end pos from adj mode...
-        if only_format_match:
-            start = ' '.join((sent.loc[:tok_pos-1]))
-            end = ' '.join((sent.loc[tok_pos+1:]))
+            sent = df.loc[s]
+            start = ' '.join(list(sent.loc[:i-1][0]))
+            end = ' '.join(list(sent.loc[i+1:][0]))
         else:
-            stoks = list(sent.loc[:tok_pos-1][0])
-            etoks = list(sent.loc[tok_pos+1:][0])
-
-            start = ' '.join('/'.join(stoks))
-            end = ' '.join('/'.join(etoks))
-        sname = metadata.get(ixes[0][0])['speaker']
-        line = [fname, sname, start, mid, end]
+            sent = gotten_tok_bits.loc[s].sort_index()
+            start = list(sent.loc[:i-1])
+            end = list(sent.loc[i+1:])
+        line = [fname, metadata[s]['speaker'], start, [form], end]
         conc_lines.append(line)
     return conc_lines
 
@@ -339,104 +317,75 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
 
     return conc_lines
 
-
-
-
-def show_this2(df, matches, show, metadata, conc=False, coref=False, **kwargs):
-    """slower method with apply"""
-
-    # attempt to leave really fast
-    if kwargs.get('countmode'):
-        return len(matches), []
-    if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
-        return list(df.loc[matches][show[0][-1]]), []
-    if not conc:
-
-        def simple(line, df=False, attr=False):
-            return line.name[1]
-
-        def get_gov(line, df=False, attr=False):
-            return df.ix[line.name]['g']
-
-        objmapping = {'d': get_dependents_of_id,
-                      'g': get_gov,
-                      'm': simple,
-                      'h': get_head}
-
-        out = []
-        dx = df.loc[matches]
-        for val in show:
-            obj, attr = val[0], val[-1]
-            func = objmapping.get(obj, dummy)
-            # this gives us a 
-            ress = dx.apply(func, df=df, attr=attr, axis=1).dropna()
-            mx = zip(ress.index._labels[0], ress.values)
-            #print(ress)
-            #mx = [func(idx, df=df) for idx in matches]    
-            #mx = [item for sublist in mx for item in sublist]
-            
-            # get the attributes
-            ress = list(df.loc[mx][attr.replace('x', 'p')].dropna())
-            
-            if val.endswith('x'):
-                from corpkit.dictionaries.word_transforms import taglemma
-                ress = [taglemma.get(x.lower(), x.lower()) for x in ress]
-            #out_mx.append(mx)
-            out.append(ress)
-
-        # make or don't make conc lines
-        conc_lines = make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs)
-
-        return ['/'.join(x) for x in zip(*out)], conc_lines
-
+def make_simple_conc(df, matches, formatted):
+    return []
 
 def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
 
+    matches = sorted(matches)
+
     # attempt to leave really fast
     if kwargs.get('countmode'):
         return len(matches), []
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
         return list(df.loc[matches][show[0][-1]]), []
-#    if not conc:
 
-    def dummy(x, **kwargs):
-        return [x]
+    only_format_match = kwargs.get('only_format_match', True)
 
-    def get_gov(line, df=False, attr=False):
-        return getattr(df.ix[line.name[0], df.ix[line.name]['g']], attr, 'root')
+    if not conc:
+        def dummy(x, **kwargs):
+            return [x]
+
+        def get_gov(line, df=False, attr=False):
+            return getattr(df.ix[line.name[0], df.ix[line.name]['g']], attr, 'root')
 
 
-    objmapping = {'d': get_dependents_of_id,
-                  'g': get_governors_of_id,
-                  'm': dummy,
-                  'h': get_head}
+        objmapping = {'d': get_dependents_of_id,
+                      'g': get_governors_of_id,
+                      'm': dummy,
+                      'h': get_head}        
 
-    out = []
-    for val in show:
-        obj, attr = val[0], val[-1]
-        func = objmapping.get(obj, dummy)
-        mx = [func(idx, df=df) for idx in matches]    
-        mx = [item for sublist in mx for item in sublist]
-        
-        # get the attributes
-        ress = list(df.loc[mx][attr.replace('x', 'p')].dropna())
-        
-        if val.endswith('x'):
-            from corpkit.dictionaries.word_transforms import taglemma
-            ress = [taglemma.get(x.lower(), x.lower()) for x in ress]
-        #out_mx.append(mx)
-        out.append(ress)
+        out = []
+        from collections import defaultdict
+        conc_out = defaultdict(list)
 
-    # make or don't make conc lines
-    #conc_lines = make_concs(df, out_mx, out, matches, conc, metadata, show, **kwargs)
-    conc_lines = []
+        for val in show:
+            obj, attr = val[0], val[-1]
+            func = objmapping.get(obj, dummy)
+            
+            # process everything, if we have to 
+            cut_short = False
+            if conc and not only_format_match:
+                cut_short = True
+                newm = list(df.index)
+            else:
+                newm = matches
 
-    return ['/'.join(x) for x in zip(*out)], conc_lines
+            mx = [func(idx, df=df) for idx in newm]    
+            mx = [item for sublist in mx for item in sublist]
+            
+            # a pandas object with the token pieces, ready to join together
+            # but it contains all tokens if cut_short mode
+            gotten_tok_bits = df.loc[mx][attr.replace('x', 'p')].dropna()
+            
+            # if gotten_tok_bits contains every token, we can
+            # get just the matches from it
+            if cut_short:
+                gotten = df.loc[matches]
+            else:
+                gotten = gotten_tok_bits
+
+            # add out actual matches
+            out.append(list(gotten))
+
+        formatted = ['/'.join(x) for x in zip(*out)]
+
+        return formatted, []
 
 
 
     # determine params
-    only_format_match = kwargs.get('only_format_match', True)
+
     process_all = conc and not only_format_match
 
     # tokens that need formatting

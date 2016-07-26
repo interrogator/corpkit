@@ -387,7 +387,7 @@ def interpreter(debug=False):
                 withs[with_related[i+1].lower()] = False
                 skips.append(i+1)
             elif '=' not in token:
-                if len(with_related) >= i and with_related[i+1] == 'as':
+                if len(with_related) >= i+2 and with_related[i+1] == 'as':
                     val = with_related[i+2]
                     val = parse_pattern(val)
                     withs[token.lower()] = val

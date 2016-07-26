@@ -539,9 +539,9 @@ def as_regex(lst, boundaries='w', case_sensitive=False, inverse=False, compile=F
 
     if inverse:
         joinbit = r'%s|%s' % (boundary2, boundary1)
-        as_string = case + inverser1 + r'(' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
+        as_string = case + inverser1 + r'(?:' + boundary1 + joinbit.join(sorted(list(set([re.escape(w) for w in lst])))) + boundary2 + r')' + inverser2
     else:
-        as_string = case + boundary1 + inverser1 + r'(' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + inverser2 + boundary2
+        as_string = case + boundary1 + inverser1 + r'(?:' + r'|'.join(sorted(list(set([re.escape(w) for w in lst])))) + r')' + inverser2 + boundary2
     if compile:
         return re.compile(as_string)
     else:
