@@ -20,7 +20,6 @@ import rlcompleter
 
 import corpkit
 from corpkit import *
-from corpkit.cql import remake_special
 from corpkit.constants import transshow, transobjs
 
 size = pd.util.terminal.get_terminal_size()
@@ -70,6 +69,10 @@ def interpreter(debug=False):
 
         def __init__(self):
 
+            from corpkit.dictionaries import wordlists, processes, roles
+            wl = {k: v for k, v in wordlists.__dict__.items()}
+            wl.update(roles.__dict__)
+            wl.update(processes.__dict__)
             self.result = None
             self.previous = None
             self.edited = None
@@ -83,6 +86,8 @@ def interpreter(debug=False):
             self.totals = None
             self._previous_type = None
             self._do_conc = True
+            self.wordlists = wl
+            self.wordlist = None
 
     objs = Objects()
 
@@ -224,6 +229,11 @@ def interpreter(debug=False):
             kwargs = process_kwargs(args)
             getattr(objs, command).format(**kwargs)
 
+        elif command == 'wordlists':
+            show_this([command])
+        elif command == 'wordlist':
+            print(objs.wordlist)
+
         elif command == 'features':
             print(objs.features)
         elif command == 'wordclasses':
@@ -353,10 +363,18 @@ def interpreter(debug=False):
                  'false': False,
                  'none': None}
 
-        remade = remake_special(val)
-        
-        if remade != val:
-            return remade
+        if any(pattern.startswith(x) for x in poss.keys()) \
+            and any(x in [':', '.'] for x in pattern):
+            lis, attrib = pattern.split('.', 1) if '.' in pattern else pattern.split(':', 1)
+            customs = []
+            from corpkit.dictionaries import roles, processes, wordlists
+            mapped = {'roles': roles,
+                      'processes': processes}
+
+            if lis.startswith('wordlist'):
+                return objs.wordlists.get(attrib)
+            else:
+                return getattr(mapped.get(lis), attrib)
 
         if val.isdigit():
             return int(val)
@@ -520,6 +538,20 @@ def interpreter(debug=False):
             print ('\n'.join(dirs))
         elif tokens[0].startswith('store'):
             print(objs.stored)
+        elif tokens[0].startswith('wordlists'):
+            if '.' in tokens[0] or ':' in tokens[0]:
+                if ':' in tokens[0]:
+                    _, attr = tokens[0].split(':')
+                else:
+                    _, attr = tokens[0].split('.')
+                print(objs.wordlists.get(attr))
+            else:
+                for k, v in sorted(objs.wordlists.items()):
+                    showv = str(v[:5])
+                    if len(v) > 5:
+                        showv = showv.rstrip('] ') + ' ... ]'
+                    print('"%s": %s' % (k, showv))
+
         elif tokens[0] == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
@@ -756,13 +788,25 @@ def interpreter(debug=False):
         from corpkit.corpus import Corpus
         from corpkit.interrogation import Interrogation, Concordance
         
+        from_wl = False
         to_fetch = objs.stored.get(tokens[0], False)
         if not to_fetch:
-            print('Not in store: %s' % tokens[0])
-            return
+            to_fetch = objs.wordlists.get(tokens[0], False)
+            from_wl = True
+            if not to_fetch:
+                print('Not in store or wordlists: %s' % tokens[0])
+                return
 
         if unbound:
             return to_fetch
+
+        if from_wl:
+            objs.wordlist = to_fetch
+            showv = to_fetch[:5]
+            if len(to_fetch) > 5:
+                showv = str(showv).rstrip('] ') + ' ... ]'
+            print('%s (%s) fetched as wordlist.' % (repr(tokens[0]), showv))
+            return
 
         if len(tokens) < 3:
             if isinstance(to_fetch, Corpus):
@@ -786,7 +830,7 @@ def interpreter(debug=False):
         elif weneed == 'edited':
             objs.edited = to_fetch
 
-        print('%s fetched as %s.' % (repr(to_fetch), tokens[2]))
+        print('%s fetched as %s.' % (repr(to_fetch), weneed))
 
     def save_this(tokens, passedin=False):
         """
@@ -821,15 +865,49 @@ def interpreter(debug=False):
         if tokens[2] == 'edited':
             objs.edited = load(tokens[0])
 
-    def new_project(tokens):
+    def interactive_listmaker():
+        done_words = []
+        text = 'Enter words separated by spaces, or one per line. (Leave the line blank to end)\n\n\t> '
+        while True:
+            res = INPUTFUNC(text)
+            text = '\t> '
+            if res:
+                if ',' in res:
+                    words = [i.strip(', ') for i in res.split()]
+                    for w in words:
+                        done_words.append(w)
+                else:
+                    done_words.append(res.strip())
+            else:                    
+                return done_words
+    
+    def new_thing(tokens):
         """
         Start a new project with a name of your choice, then move into it
         """
-
-        from corpkit.other import new_project
-        new_project(tokens[-1])
-        os.chdir(tokens[-1])
-
+        if tokens[0] == 'project':
+            from corpkit.other import new_project
+            new_project(tokens[-1])
+            os.chdir(tokens[-1])
+        if tokens[0] == 'wordlist':
+            the_name = next((tokens[i+1] for i, t in enumerate(tokens) if t in ['called', 'named']), None)
+            if not the_name:
+                print('Syntax: new wordlist named <name>.')
+                return
+            if objs.wordlists.get(the_name):
+                print('"%s" already exists in wordlists.' % the_name)
+                return
+            filename = next((tokens[i+1] for i, t in enumerate(tokens) if t in ['from']), None)
+            if filename:
+                with open(filename, 'r') as fo:
+                    words = [i.strip() for i in fo.read().splitlines() if i]
+            else:
+                words = interactive_listmaker()
+            if words:
+                objs.wordlists[the_name] = words
+                objs.wordlist = words
+                print('Wordlist "%s" stored.' % the_name)
+                
     def store_this(tokens):
         """
         Send a result into storage
@@ -879,7 +957,7 @@ def interpreter(debug=False):
                    'plot': plot_result,
                    'help': helper,
                    'store': store_this,
-                   'new': new_project,
+                   'new': new_thing,
                    'fetch': fetch_this,
                    'save': save_this,
                    'load': load_this,
@@ -924,7 +1002,6 @@ def interpreter(debug=False):
             output = INPUTFUNC(get_prompt())
             
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
-                print('\n\tBye!\n')
                 break
 
             if not output:
