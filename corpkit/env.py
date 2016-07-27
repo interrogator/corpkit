@@ -70,6 +70,7 @@ def interpreter(debug=False):
         def __init__(self):
 
             from corpkit.dictionaries import wordlists, processes, roles
+            from collections import defaultdict
             wl = {k: v for k, v in wordlists.__dict__.items()}
             wl.update(roles.__dict__)
             wl.update(processes.__dict__)
@@ -88,6 +89,10 @@ def interpreter(debug=False):
             self._do_conc = True
             self.wordlists = wl
             self.wordlist = None
+            self.colors = None
+            self._old_concs = []
+            self._conc_colours = defaultdict(dict)
+            self._conc_kwargs = {}
 
     objs = Objects()
 
@@ -212,7 +217,6 @@ def interpreter(debug=False):
             cc = ret()
 
         elif command in ['result', 'edited', 'totals', 'previous']:
-
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
             if isinstance(toshow, (pd.DataFrame, pd.Series)):
@@ -227,7 +231,32 @@ def interpreter(debug=False):
 
         elif command == 'concordance':
             kwargs = process_kwargs(args)
-            getattr(objs, command).format(**kwargs)
+            if kwargs:
+                objs._conc_kwargs = kwargs
+            found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
+            if found_the_conc is None:
+                print('Nothing here yet.')
+                return
+            if objs._conc_colours.get(found_the_conc):
+                try:
+                    from colorama import Fore, Back, Style, init
+                    lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+                    for line in lines:
+                        num = line.strip().split(' ', 1)[0]
+                        gotnum = objs._conc_colours[found_the_conc].get(num, False)
+                        if gotnum:
+                            if gotnum.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
+                                thing_to_color = Style
+                            else:
+                                thing_to_color = Fore
+                            print(getattr(thing_to_color, gotnum.upper()) + line)
+                        else:
+                            print(line)
+                except ImportError:
+                    getattr(objs, command).format(**objs._conc_kwargs)
+
+            else:
+                getattr(objs, command).format(**objs._conc_kwargs)
 
         elif command == 'wordlists':
             show_this([command])
@@ -280,8 +309,12 @@ def interpreter(debug=False):
                     pass
 
         else:
-            print('Corpus not found: %s' % tokens[0])
-            return
+            try:
+                dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
+                set_corpus([dirs[int(tokens[-1])-1]])
+            except:
+                print('Corpus not found: %s' % tokens[0])
+                return
 
     def search_helper(text='search'):
         if text == 'search':
@@ -363,9 +396,9 @@ def interpreter(debug=False):
                  'false': False,
                  'none': None}
 
-        if any(pattern.startswith(x) for x in poss.keys()) \
-            and any(x in [':', '.'] for x in pattern):
-            lis, attrib = pattern.split('.', 1) if '.' in pattern else pattern.split(':', 1)
+        if any(val.startswith(x) for x in ['roles', 'processes', 'wordlists']) \
+            and any(x in [':', '.'] for x in val):
+            lis, attrib = val.split('.', 1) if '.' in val else val.split(':', 1)
             customs = []
             from corpkit.dictionaries import roles, processes, wordlists
             mapped = {'roles': roles,
@@ -642,6 +675,7 @@ def interpreter(debug=False):
             objs.query = out.query
             if objs._do_conc:
                 objs.concordance = out.concordance
+                objs._old_concs.append(objs.concordance)
             else:
                 objs.concordance = None
             # find out what is going on here
@@ -652,7 +686,7 @@ def interpreter(debug=False):
                 print('\n', out.results, '\n')
         
             elif isinstance(out, Concordance):
-                print(out.format())
+                print(out.format(**objs._conc_kwargs))
         else:
             if debug:
                 print('Done:', repr(out))
@@ -713,8 +747,22 @@ def interpreter(debug=False):
             objs.totals = objs.edited.totals
             return objs.edited
         else:
-            objs.concordance = thing_to_edit.sort_values(val[0], axis=0)
-            return objs.concordance
+            if val in ['scheme', 'color', 'colour']:
+                val = 'x'
+                num_col = objs._conc_colours[len(objs._old_concs)-1]
+                series = []
+                for i in range(len(thing_to_edit)):
+                    series.append(num_col.get(str(i), 'zzzzz'))
+                thing_to_edit['x'] = series
+            sorted_lines = thing_to_edit.sort_values(val[0], axis=0)
+            if val == 'x':
+                sorted_lines = sorted_lines.drop('x', axis=1)
+            
+            objs.concordance = Concordance(sorted_lines)
+
+            # do not add new entry to old concs for sorting :)
+            objs._old_concs[-1] = objs.concordance
+            show_help('concordance')
 
     def plot_result(tokens):
         """
@@ -790,10 +838,11 @@ def interpreter(debug=False):
         
         from_wl = False
         to_fetch = objs.stored.get(tokens[0], False)
-        if not to_fetch:
+
+        if to_fetch is False:
             to_fetch = objs.wordlists.get(tokens[0], False)
             from_wl = True
-            if not to_fetch:
+            if to_fetch is False:
                 print('Not in store or wordlists: %s' % tokens[0])
                 return
 
@@ -907,6 +956,42 @@ def interpreter(debug=False):
                 objs.wordlists[the_name] = words
                 objs.wordlist = words
                 print('Wordlist "%s" stored.' % the_name)
+
+    def annotate_conc(tokens):
+        from colorama import Fore, Back, Style, init
+        init(autoreset=True)
+        dflines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+
+        cols = []
+        for i, token in enumerate(tokens):
+            if '-' in token:
+                first, last = token.split('-', 1)
+                if not first:
+                    first = 0
+                if not last:
+                    last = len(dflines)
+                for n in range(int(first), int(last)+1):
+                    cols.append(str(n))
+            if token.isdigit():
+                cols.append(token)
+        color = tokens[-1]
+        
+        for line in dflines:
+            num = line.strip().split(' ', 1)[0]
+
+            if num in cols:
+                if color.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
+                    thing_to_color = Style
+                else:
+                    thing_to_color = Fore
+                print(getattr(thing_to_color, color.upper()) + line)
+                # store it to the dictionary
+                objs._conc_colours[len(objs._old_concs)-1][num] = color
+            elif num in objs._conc_colours[len(objs._old_concs)-1]:
+                print(getattr(Fore, objs._conc_colours[len(objs._old_concs)-1][num].upper()) + line)
+            else:
+                print(line)
+
                 
     def store_this(tokens):
         """
@@ -915,9 +1000,9 @@ def interpreter(debug=False):
 
         to_store = getattr(objs, tokens[0])
 
-        if not to_store:
-            print('Not storable:' % tokens[0])
-            return
+        #if not to_store:
+        #    print('Not storable:' % tokens[0])
+        #    return
 
         if tokens[1] == 'as':
             name = tokens[2]
@@ -931,6 +1016,7 @@ def interpreter(debug=False):
             if cont.lower().startswith('n'):
                 return
         objs.stored[name] = to_store
+        print('Stored: %s' % name)
 
     def toggle_this(tokens):
         if tokens[0].startswith('conc'):
@@ -951,6 +1037,7 @@ def interpreter(debug=False):
                    'parse': parse_corpus,
                    'export': export_result,
                    'redo': run_previous,
+                   'mark': annotate_conc,
                    'sort': sort_something,
                    'toggle': toggle_this,
                    'edit': edit_something,
@@ -1041,7 +1128,7 @@ def interpreter(debug=False):
             sys.exit(0)
         except SystemExit:
             raise
-        except Exception, err:
+        except Exception:
             traceback.print_exc()
 
 if __name__ == '__main__':

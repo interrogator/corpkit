@@ -159,6 +159,7 @@ def concprinter(dataframe, kind='string', n=100, window=35, columns='all', **kwa
         kwargs['sep'] = '\t'
 
     return_it = kwargs.pop('return_it', False)
+    print_it = kwargs.pop('print_it', True)
 
     if return_it:
         return functi(to_show, header=False, **kwargs)
