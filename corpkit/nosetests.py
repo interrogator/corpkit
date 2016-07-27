@@ -129,6 +129,8 @@ def test_interro_multiindex_tregex_justspeakers():
            labels=[[3, 3, 1, 1, 0, 0, 2, 2], [0, 1, 0, 1, 0, 1, 0, 1]],
            names=['corpus', 'subcorpus'])))
 
+test_interro_multiindex_tregex_justspeakers.slow = 1
+
 def test_conc():
     """Testing concordancer"""
     corp = Corpus(parsed_path)

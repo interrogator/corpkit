@@ -764,7 +764,7 @@ def classname(cls):
     """Create the class name str for __repr__"""
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
 
-def show_tree_as_per_option(show, tree, sent=False):
+def show_tree_as_per_option(show, tree, datatype, sent=False, df=False, sent_id=False):
     """
     Turn a ParentedTree into shown output
     """
@@ -779,13 +779,20 @@ def show_tree_as_per_option(show, tree, sent=False):
     if 'l' in show:
         # long way, better lemmatisation
         if 'whole' in show:
-            tree_vals['l'] = [sent.get_token_by_id(index + 1).lemma for index \
+            if datatype == 'parse':
+                tree_vals['l'] = [sent.get_token_by_id(index + 1).lemma for index \
                               in range(len(tree.leaves()))]
+            else:
+                tree_vals['l'] = list(df.loc[sent_id]['l'])
         else:
             lemmata = []
             for word_tag_tup in tree.pos():
                 index = tree.root().pos().index(word_tag_tup)
-                lemmata.append(sent.get_token_by_id(index + 1).lemma)
+                if datatype == 'parse':
+                    lemmata.append(sent.get_token_by_id(index + 1).lemma)
+                else:
+                    lemmata.append(df.loc[sent_id, index]['l'])
+
             tree_vals['l'] = lemmata
     if 'p' in show:
         tree_vals['p'] = [y for x, y in tree.pos()]
@@ -799,7 +806,7 @@ def show_tree_as_per_option(show, tree, sent=False):
         output.append('/'.join(tup))
     return ' '.join(output)
 
-def tgrep(sent, search):
+def tgrep(parse_string, search):
     """
     Uses tgrep to search a Sentence
 
@@ -811,8 +818,7 @@ def tgrep(sent, search):
     """
     from nltk.tree import ParentedTree
     from nltk.tgrep import tgrep_nodes, tgrep_positions
-    ps = sent.parse_string
-    pt = ParentedTree.fromstring(ps)
+    pt = ParentedTree.fromstring(parse_string)
     ptrees = [i for i in list(tgrep_nodes(search, [pt])) if i]
     return [item for sublist in ptrees for item in sublist]
 

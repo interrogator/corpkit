@@ -10,7 +10,10 @@ todo:
 def parse_conll(f, first_time=False):
     """take a file and return pandas dataframe with multiindex"""
     import pandas as pd
-    import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
 
     # go to corpkit.constants to modify the order of columns if yours are different
     from corpkit.constants import CONLL_COLUMNS as head
@@ -47,7 +50,7 @@ def parse_conll(f, first_time=False):
     data = data.replace('\n\n', '\n') + '\n'
 
     # open with sent and token as multiindex
-    df = pd.read_csv(StringIO.StringIO(data), sep='\t', header=None, names=head, index_col=['s', 'i'])
+    df = pd.read_csv(StringIO(data), sep='\t', header=None, names=head, index_col=['s', 'i'])
     df._metadata = metadata
     return df
 
