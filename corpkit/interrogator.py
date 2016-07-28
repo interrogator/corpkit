@@ -59,7 +59,6 @@ def interrogator(corpus,
     from time import localtime, strftime
     from collections import Counter
 
-    import corenlp_xml
     import pandas as pd
     from pandas import DataFrame, Series
 

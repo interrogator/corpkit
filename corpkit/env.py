@@ -89,7 +89,6 @@ def interpreter(debug=False):
             self._do_conc = True
             self.wordlists = wl
             self.wordlist = None
-            self.colors = None
             self._old_concs = []
             self._conc_colours = defaultdict(dict)
             self._conc_kwargs = {}
@@ -129,7 +128,7 @@ def interpreter(debug=False):
 
         if command == 'help':
             import pydoc
-            pydoc.pager(\
+            pydoc.pipepager(\
             "\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
             "and visualising corpora. It works through a combination of objects and commands:\n\n" \
             "Objects:\n\n\t" \
@@ -195,7 +194,7 @@ def interpreter(debug=False):
             " | `py`            | `py print('hello world')`                                                          | \n\t"\
             " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
             "\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
-            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n(Hit 'q' to exit help).\n\n") 
+            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n(Hit 'q' to exit help).\n\n", cmd='less -X -R') 
 
         if command == 'corpus':
             if not hasattr(objs.corpus, 'name'):
@@ -212,6 +211,7 @@ def interpreter(debug=False):
             s = generate_outprint()
 
             ret = InteractiveShellEmbed(header=s,
+                                        #colors='Linux',
                                         exit_msg='Switching back to corpkit environment ...',
                                         **objs.__dict__)
             cc = ret()
@@ -230,6 +230,8 @@ def interpreter(debug=False):
                     print('Nothing here yet.')
 
         elif command == 'concordance':
+            import pydoc
+            
             kwargs = process_kwargs(args)
             if kwargs:
                 objs._conc_kwargs = kwargs
@@ -239,6 +241,7 @@ def interpreter(debug=False):
                 return
             if objs._conc_colours.get(found_the_conc):
                 try:
+                    lines_to_print = []
                     from colorama import Fore, Back, Style, init
                     lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
                     for line in lines:
@@ -249,14 +252,16 @@ def interpreter(debug=False):
                                 thing_to_color = Style
                             else:
                                 thing_to_color = Fore
-                            print(getattr(thing_to_color, gotnum.upper()) + line)
+                            lines_to_print.append(getattr(thing_to_color, gotnum.upper()) + line)
                         else:
-                            print(line)
+                            lines_to_print.append(line)
+                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
                 except ImportError:
-                    getattr(objs, command).format(**objs._conc_kwargs)
+                    pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
 
             else:
-                getattr(objs, command).format(**objs._conc_kwargs)
+                pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
+            
 
         elif command == 'wordlists':
             show_this([command])
@@ -396,7 +401,7 @@ def interpreter(debug=False):
                  'false': False,
                  'none': None}
 
-        if any(val.startswith(x) for x in ['roles', 'processes', 'wordlists']) \
+        if any(val.startswith(x) for x in ['roles', 'processes', 'wordlist']) \
             and any(x in [':', '.'] for x in val):
             lis, attrib = val.split('.', 1) if '.' in val else val.split(':', 1)
             customs = []
@@ -747,14 +752,31 @@ def interpreter(debug=False):
             objs.totals = objs.edited.totals
             return objs.edited
         else:
-            if val in ['scheme', 'color', 'colour']:
-                val = 'x'
-                num_col = objs._conc_colours[len(objs._old_concs)-1]
-                series = []
-                for i in range(len(thing_to_edit)):
-                    series.append(num_col.get(str(i), 'zzzzz'))
-                thing_to_edit['x'] = series
-            sorted_lines = thing_to_edit.sort_values(val[0], axis=0)
+            if val.startswith('i'):
+                sorted_lines = thing_to_edit.sort_index()
+            else:
+                if val.startswith('l') or val.startswith('r'):
+                    l_or_r = objs.concordance[val[0]]
+                    ind = int(val[1])
+                    if val[0] == 'l':
+                        ind = -ind
+                    else:
+                        ind = ind-1
+                    import numpy as np
+                    to_sort_on = l_or_r.str.lower().split().tolist()
+                    to_sort_on = [i[ind] if i else np.nan for i in to_sort_on]
+                    thing_to_edit['x'] = to_sort_on
+                    val = 'x'
+
+                elif val in ['scheme', 'color', 'colour']:
+                    val = 'x'
+                    num_col = objs._conc_colours[len(objs._old_concs)-1]
+                    series = []
+                    for i in range(len(thing_to_edit)):
+                        series.append(num_col.get(str(i), 'zzzzz'))
+                    thing_to_edit['x'] = series
+                sorted_lines = thing_to_edit.sort_values(val[0], axis=0, na_position='first')
+            
             if val == 'x':
                 sorted_lines = sorted_lines.drop('x', axis=1)
             
@@ -773,6 +795,7 @@ def interpreter(debug=False):
         kinds = ['line', 'heatmap', 'bar', 'barh', 'pie', 'area']
         kind = next((x for x in tokens if x in kinds), 'line')
         kwargs = process_kwargs(tokens)
+        kwargs['tex'] = kwargs.get('tex', False)
         title = kwargs.pop('title', False)
         objs.figure = getattr(objs, tokens[0]).visualise(title=title, kind=kind, **kwargs)
         objs.figure.show()
@@ -806,7 +829,7 @@ def interpreter(debug=False):
         the_obj = getattr(objs, tokens[0])
         objs.edited = the_obj.edit(operation, denominator)
         objs.totals = objs.edited.totals
-        print('\nedited:\n\n', objs.edited.results, '\n')
+        #print('\nedited:\n\n', objs.edited.results, '\n')
         return objs.edited
 
     def parse_corpus(tokens):
@@ -976,6 +999,7 @@ def interpreter(debug=False):
                 cols.append(token)
         color = tokens[-1]
         
+        lines_to_print = []
         for line in dflines:
             num = line.strip().split(' ', 1)[0]
 
@@ -984,13 +1008,15 @@ def interpreter(debug=False):
                     thing_to_color = Style
                 else:
                     thing_to_color = Fore
-                print(getattr(thing_to_color, color.upper()) + line)
+                lines_to_print.append(getattr(thing_to_color, color.upper()) + line)
                 # store it to the dictionary
                 objs._conc_colours[len(objs._old_concs)-1][num] = color
             elif num in objs._conc_colours[len(objs._old_concs)-1]:
-                print(getattr(Fore, objs._conc_colours[len(objs._old_concs)-1][num].upper()) + line)
+                lines_to_print.append(getattr(Fore, objs._conc_colours[len(objs._old_concs)-1][num].upper()) + line)
             else:
-                print(line)
+                lines_to_print.append(line)
+        import pydoc
+        pydoc.pipepager('\n'.join(lines_to_print), cmd='less -X -R')
 
                 
     def store_this(tokens):
