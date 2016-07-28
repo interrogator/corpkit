@@ -91,15 +91,16 @@ def test_interro3():
     corp = Corpus(parsed_path)
     data = corp.interrogate({'w': r'^c'}, exclude={'l': r'check'}, show=['l', 'f'])
     st = {'can/aux',
-          'case/nmod',
           'computational/amod',
           'concordancing/appos',
-          'concordancing/nmod',
-          'conduit/nmod',
-          'continuum/nmod',
           'corpkit/nmod:poss',
           'corpus/compound',
-          'corpus/nsubjpass'}
+          'case/nmod:in',
+          'continuum/nmod:on',
+          'conduit/nmod:as',
+          'concordancing/nmod:like',
+          'corpus/nsubjpass',
+          }
     assert_equals(set(list(data.results.columns)), st)
 
 # skipping this for now, as who cares about tokens

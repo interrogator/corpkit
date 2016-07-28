@@ -78,6 +78,7 @@ def interpreter(debug=False):
             self.result = None
             self.previous = None
             self.edited = None
+            self.corpus = None
             self.concordance = None
             self.query = None
             self.features = None
@@ -85,10 +86,11 @@ def interpreter(debug=False):
             self.wordclasses = None
             self.stored = {}
             self.figure = None
+            self._in_a_project = None
             self.totals = None
             self._previous_type = None
             self._do_conc = True
-            self._autoshow = True
+            self._interactive = True
             self.wordlists = wl
             self.wordlist = None
             self._decimal = 3
@@ -99,9 +101,7 @@ def interpreter(debug=False):
     objs = Objects()
 
     proj_dirs = ['data', 'saved_interrogations', 'exported']
-    in_a_project = all(x in os.listdir('.') for x in proj_dirs)
-    if not in_a_project:
-        print("You aren't in a project yet. Use new project named <name> to make one and enter it.")
+    objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
 
     def generate_outprint():
         s = 'Switched to IPython ... defined variables:\n\n\t'
@@ -237,13 +237,14 @@ def interpreter(debug=False):
             toshow = getattr(getattr(objs, command), 'results', False)
             if isinstance(toshow, (pd.DataFrame, pd.Series)):
                 tabview.view(toshow.round(objs._decimal), column_width=10)
+                return
             elif toshow:
                 tabview.view(toshow.round(objs._decimal), column_width=10)
+                return
             else:
                 if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
                     tabview.view(getattr(objs, command).round(objs._decimal), column_width=10)
-                else:
-                    print('Nothing here yet.')
+                    return
 
         elif command == 'concordance':
             import pydoc
@@ -253,7 +254,7 @@ def interpreter(debug=False):
                 objs._conc_kwargs = kwargs
             found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
             if found_the_conc is None:
-                print('Nothing here yet.')
+                #print('Nothing here yet.')
                 return
             if objs._conc_colours.get(found_the_conc):
                 try:
@@ -306,6 +307,10 @@ def interpreter(debug=False):
         if tokens and tokens[0].startswith('decimal'):
             objs._decimal = int(tokens[2])
             print('Decimal places set to %d.' % objs._decimal) 
+            return
+
+        if not objs._in_a_project:
+            print("Must be in project to set corpus.")
             return
         
         from corpkit.other import load
@@ -589,6 +594,7 @@ def interpreter(debug=False):
 
         objs.result = objs.corpus.interrogate(**kwargs)
         objs.totals = objs.result.totals
+        print('')
         return objs.result
 
     def show_this(tokens):
@@ -636,6 +642,22 @@ def interpreter(debug=False):
     def get_info(tokens):
         pass
 
+    def edit_conc(kwargs):
+        from corpkit.interrogation import Concordance
+        for k, v in kwargs.items():
+            if k == 'just_subcorpora':
+                objs.concordance = objs.concordance[objs.concordance['c'].str.contains(v)]
+            elif k == 'skip_subcorpora':
+                objs.concordance = objs.concordance[~objs.concordance['c'].str.contains(v)]
+            elif k == 'just_entries':
+                objs.concordance = objs.concordance[objs.concordance['m'].str.contains(v)]
+            elif k == 'skip_entries':
+                objs.concordance = objs.concordance[~objs.concordance['m'].str.contains(v)]
+        objs.concordance = Concordance(objs.concordance)
+
+        return objs.concordance
+        #if objs._interactive:
+        #    show_this(['concordance'])
 
     def edit_something(tokens):
 
@@ -681,10 +703,20 @@ def interpreter(debug=False):
 
         if debug:
             print(kwargs)
-        objs.edited = thing_to_edit.edit(**kwargs)
-        objs.totals = objs.edited.totals
 
-        return objs.edited
+        from corpkit.interrogation import Concordance
+        if isinstance(thing_to_edit, Concordance):
+            edt = edit_conc(kwargs)
+        else:
+            edt = thing_to_edit.edit(**kwargs)
+        if isinstance(edt, Concordance):
+            objs.concordance = edt
+        else:
+            objs.edited = edt
+            if hasattr(objs.edited, 'totals'):
+                objs.totals = objs.edited.totals
+        return edt
+
 
     def run_command(tokens):
         command = get_command.get(tokens[0], unrecognised)        
@@ -703,8 +735,8 @@ def interpreter(debug=False):
                 return
             objs.result = out
             objs.previous = out
-            if objs._autoshow:
-                tabview.view(out.results.round(objs._decimal), column_width=10)
+            if objs._interactive:
+                show_this(['result'])
             objs.query = out.query
             if objs._do_conc:
                 objs.concordance = out.concordance
@@ -715,13 +747,14 @@ def interpreter(debug=False):
             objs.edited = False
         if command in [edit_something, sort_something, calculate_result]:
             from corpkit.interrogation import Concordance
-            if hasattr(out, 'results'):
-                if objs._autoshow:
-                    tabview.view(out.results.round(objs._decimal), column_width=10)
-        
-            elif isinstance(out, Concordance):
-                if objs._autoshow:
-                    pydoc.pipepager(out.format(print_it=False, **objs._conc_kwargs))
+            if isinstance(out, Concordance):
+                objs._old_concs[-1] = objs.concordance
+                if objs._interactive:
+                    show_this(['concordance'])
+            else:
+                if objs._interactive:
+                    show_this(['edited'])
+                    
         else:
             if debug:
                 print('Done:', repr(out))
@@ -803,7 +836,7 @@ def interpreter(debug=False):
                     import numpy as np
                     # this could be upgraded to use rjust ...
                     to_sort_on = l_or_r.str.split().tolist()
-                    to_sort_on = [i[ind].lower() if i else np.nan for i in to_sort_on]
+                    to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
 
@@ -823,7 +856,7 @@ def interpreter(debug=False):
 
             # do not add new entry to old concs for sorting :)
             objs._old_concs[-1] = objs.concordance
-            if objs._autoshow:
+            if objs._interactive:
                 single_command_print('concordance')
 
     def plot_result(tokens):
@@ -841,16 +874,24 @@ def interpreter(debug=False):
         objs.figure.show()
         return objs.figure
 
-
     def calculate_result(tokens):
         """
         Get relative frequencies, combine results, etc
         """
+
         calcs = ['k', '%', '+', '/', '-', '*', 'percentage']
         operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
         if not operation:
-            print('Bad operation ...')
-            return
+            if tokens[-1].startswith('conc'):
+                res = objs.concordance.calculate()
+                objs.result = res.results
+                objs.totals = res.totals
+                if objs._interactive:
+                    show_this('result')
+                return
+            else:
+                print('Bad operation.')
+                return
         denominator = tokens[-1]
         if denominator.startswith('features'):
             attr = denominator.split('.', 1)[-1]
@@ -868,7 +909,8 @@ def interpreter(debug=False):
             operation = '%'
         the_obj = getattr(objs, tokens[0])
         objs.edited = the_obj.edit(operation, denominator)
-        objs.totals = objs.edited.totals
+        if hasattr(objs.edited, 'totals'):
+            objs.totals = objs.edited.totals
         #print('\nedited:\n\n', objs.edited.results, '\n')
         return objs.edited
 
@@ -1107,8 +1149,8 @@ def interpreter(debug=False):
             s = 'on' if objs._do_conc else 'off'
             print('Concordancing turned %s.' % s)
         if tokens[0].startswith('autos'):
-            objs._autoshow = not objs._autoshow
-            s = 'on' if objs._autoshow else 'off'
+            objs._interactive = not objs._interactive
+            s = 'on' if objs._interactive else 'off'
             print('Auto showing of results and concordances turned %s.' % s)            
 
     def run_previous(tokens):
@@ -1162,31 +1204,31 @@ def interpreter(debug=False):
 
     import shlex
 
-    print(allig)
-
     if debug:
         try:
             objs.corpus = Corpus('jb-parsed')
         except:
-            objs.corpus = None
-    else:
-        objs.corpus = None
+            pass
+
+    def get_prompt():
+        folder = os.path.basename(os.getcwd())
+        proj_dirs = ['data', 'saved_interrogations', 'exported']
+        objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
+        end = '*' if not objs._in_a_project else ''
+        name = getattr(objs.corpus, 'name', 'no-corpus')
+        return 'corpkit@%s%s:%s> ' % (folder, end, name)
+
+    print(allig)
+
+    if not objs._in_a_project:
+        print("\nWARNING: You aren't in a project yet. Use 'new project named <name>' to make one and enter it.\n")
+
 
     def py(output):
         """
         Run text as Python code
         """
         exec(output)
-
-    def get_prompt():
-        folder = os.path.basename(os.getcwd())
-        proj_dirs = ['data', 'saved_interrogations', 'exported']
-        if all(x in os.listdir('.') for x in proj_dirs):
-            end = ''
-        else:
-            end = '*'
-        name = getattr(objs.corpus, 'name', 'no-corpus')
-        return 'corpkit@%s%s:%s> ' % (folder, end, name)
 
     while True:
         try:
