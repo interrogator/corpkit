@@ -777,7 +777,11 @@ def interpreter(debug=False):
 
         from corpkit.interrogation import Concordance
         if not isinstance(thing_to_edit, Concordance):
-            objs.edited = thing_to_edit.edit(sort_by=val)
+            sortedd = thing_to_edit.edit(sort_by=val)
+            if sortedd == 'linregress':
+                raise ValueError("scipy needs to be installed for linear regression sorting.")
+                return
+            objs.edited = sortedd
             objs.totals = objs.edited.totals
             return objs.edited
         else:
