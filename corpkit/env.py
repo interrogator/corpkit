@@ -25,6 +25,7 @@ from corpkit.constants import transshow, transobjs
 size = pd.util.terminal.get_terminal_size()
 pd.set_option('display.max_rows', 0)
 pd.set_option('display.max_columns', 0)
+pd.set_option('display.float_format', lambda x: '${:,.3f}'.format(x))
 
 readline.parse_and_bind('set editing-mode vi')
 
@@ -87,8 +88,10 @@ def interpreter(debug=False):
             self.totals = None
             self._previous_type = None
             self._do_conc = True
+            self._autoshow = True
             self.wordlists = wl
             self.wordlist = None
+            self._decimal = 3
             self._old_concs = []
             self._conc_colours = defaultdict(dict)
             self._conc_kwargs = {'n': 999}
@@ -229,12 +232,12 @@ def interpreter(debug=False):
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
             if isinstance(toshow, (pd.DataFrame, pd.Series)):
-                tabview.view(toshow, column_width=10)
+                tabview.view(toshow.round(objs._decimal), column_width=10)
             elif toshow:
-                tabview.view(toshow, column_width=10)
+                tabview.view(toshow.round(objs._decimal), column_width=10)
             else:
                 if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
-                    tabview.view(getattr(objs, command), column_width=10)
+                    tabview.view(getattr(objs, command).round(objs._decimal), column_width=10)
                 else:
                     print('Nothing here yet.')
 
@@ -296,6 +299,10 @@ def interpreter(debug=False):
 
         set junglebook-parsed
         """
+        if tokens[0].startswith('decimal'):
+            objs._decimal = int(tokens[2])
+            print('Decimal places set to %d.' % objs._decimal) 
+            return
         from corpkit.other import load
         if not tokens:
             show_this(['corpora'])
@@ -691,7 +698,8 @@ def interpreter(debug=False):
                 return
             objs.result = out
             objs.previous = out
-            tabview.view(out.results, column_width=10)
+            if objs._autoshow:
+                tabview.view(out.results.round(objs._decimal), column_width=10)
             objs.query = out.query
             if objs._do_conc:
                 objs.concordance = out.concordance
@@ -703,10 +711,12 @@ def interpreter(debug=False):
         if command in [edit_something, sort_something, calculate_result]:
             from corpkit.interrogation import Concordance
             if hasattr(out, 'results'):
-                tabview.view(out.results, column_width=10)
+                if objs._autoshow:
+                    tabview.view(out.results.round(objs._decimal), column_width=10)
         
             elif isinstance(out, Concordance):
-                pydoc.pipepager(out.format(print_it=False, **objs._conc_kwargs))
+                if objs._autoshow:
+                    pydoc.pipepager(out.format(print_it=False, **objs._conc_kwargs))
         else:
             if debug:
                 print('Done:', repr(out))
@@ -804,7 +814,8 @@ def interpreter(debug=False):
 
             # do not add new entry to old concs for sorting :)
             objs._old_concs[-1] = objs.concordance
-            single_command_print('concordance')
+            if objs._autoshow:
+                single_command_print('concordance')
 
     def plot_result(tokens):
         """
@@ -1006,35 +1017,33 @@ def interpreter(debug=False):
         dflines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
 
         cols = []
-        for i, token in enumerate(tokens):
-            # annotate range of tokens
-            if '-' in token:
-                first, last = token.split('-', 1)
-                if not first:
-                    first = 0
-                if not last:
-                    last = len(dflines)
-                for n in range(int(first), int(last)+1):
-                    cols.append(str(n))
-            # annotate single token by index
-            elif token.isdigit():
-                cols.append(token)
-            # should this be in the loop?
-            else:
-                # regex match only what's shown in the window
-                window = objs._conc_kwargs.get('window', 35)
-                if token.lower() == 'm':
-                    slic = slice(None, None)
-                elif token.lower() == 'l':
-                    slic = slice(-window, None)
-                elif token.lower() == 'r':
-                    slic = slice(None, window)
-                mx = max(objs.concordance[token.lower()].str.len()) if token.lower() == 'l' else 0
-                mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[i+2])]
-                matches = list(mtch.index)
-                for ind in matches:
-                    cols.append(str(ind))
-                break
+        token = tokens[0]
+        # annotate range of tokens
+        if '-' in token:
+            first, last = token.split('-', 1)
+            if not first:
+                first = 0
+            if not last:
+                last = len(dflines)
+            for n in range(int(first), int(last)+1):
+                cols.append(str(n))
+        # annotate single token by index
+        elif token.isdigit():
+            cols.append(token)
+        else:
+            # regex match only what's shown in the window
+            window = objs._conc_kwargs.get('window', 35)
+            if token.lower() == 'm':
+                slic = slice(None, None)
+            elif token.lower() == 'l':
+                slic = slice(-window, None)
+            elif token.lower() == 'r':
+                slic = slice(None, window)
+            mx = max(objs.concordance[token.lower()].str.len()) if token.lower() == 'l' else 0
+            mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[i+2])]
+            matches = list(mtch.index)
+            for ind in matches:
+                cols.append(str(ind))
 
         color = tokens[-1]
         
@@ -1088,6 +1097,10 @@ def interpreter(debug=False):
             objs._do_conc = not objs._do_conc
             s = 'on' if objs._do_conc else 'off'
             print('Concordancing turned %s.' % s)
+        if tokens[0].startswith('autos'):
+            objs._autoshow = not objs._autoshow
+            s = 'on' if objs._autoshow else 'off'
+            print('Auto showing of results and concordances turned %s.' % s)            
 
     def run_previous(tokens):
         import shlex
