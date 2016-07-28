@@ -56,5 +56,6 @@ setup(name='corpkit',
                         "blessings>=1.6",
                         "traitlets>=4.1.0"],
       dependency_links=['git+https://www.github.com/interrogator/corenlp-xml-lib#egg=corenlp-xml-lib',
+                        'git+https://www.github.com/interrogator/tabview.git@mdbartos-feat',
                         'git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable'])
   

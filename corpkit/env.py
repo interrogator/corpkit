@@ -91,7 +91,7 @@ def interpreter(debug=False):
             self.wordlist = None
             self._old_concs = []
             self._conc_colours = defaultdict(dict)
-            self._conc_kwargs = {}
+            self._conc_kwargs = {'n': 999}
 
     objs = Objects()
 
@@ -114,12 +114,19 @@ def interpreter(debug=False):
 
         print(getattr(func, '__doc__', 'Not written yet, sorry.'))
 
-    def show_help(command):
+    def single_command_print(command):
+
+        if command == 'ls':
+            import os
+            print('\n'.join(os.listdir()))
 
         args = []
         if isinstance(command, list):
             args = command[1:]
             command = command[0]
+
+        if command == 'clear':
+            print(chr(27) + "[2J")
 
         if command == 'history':
             import readline
@@ -131,70 +138,71 @@ def interpreter(debug=False):
             pydoc.pipepager(\
             "\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
             "and visualising corpora. It works through a combination of objects and commands:\n\n" \
-            "Objects:\n\n\t" \
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | Object        | Contains                                      | \n\t"\
-            " +===============+===============================================+ \n\t"\
-            " | `corpus`      | Dataset selected for parsing or searching     | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `results`     | Search output                                 | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `edited`      | Results after sorting, editing or calculating | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `concordance` | Concordance lines from search                 | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `features`    | General linguistic features of corpus         | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `wordclasses` | Distribution of word classes in corpus        | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `postags`     | Distribution of POS tags in corpus            | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `figure`      | Plotted data                                  | \n\t"\
-            " +---------------+-----------------------------------------------+ \n\t"\
-            " | `query`       | Values used to perform search or edit         | \n\t"\
+            "Objects:\n\n" \
+            " +---------------+-----------------------------------------------+ \n"\
+            " | Object        | Contains                                      | \n"\
+            " +===============+===============================================+ \n"\
+            " | `corpus`      | Dataset selected for parsing or searching     | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `results`     | Search output                                 | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `edited`      | Results after sorting, editing or calculating | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `concordance` | Concordance lines from search                 | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `features`    | General linguistic features of corpus         | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `wordclasses` | Distribution of word classes in corpus        | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `postags`     | Distribution of POS tags in corpus            | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `figure`      | Plotted data                                  | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `query`       | Values used to perform search or edit         | \n"\
             " +---------------+-----------------------------------------------+ "
-            "\n\nCommand examples:\n\n\t" \
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | Command         | Syntax                                                                             | \n\t"\
-            " +=================+====================================================================================+ \n\t"\
-            " | `new`           | `new project <name>`                                                               | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `set`           | `set <corpusname>`                                                                 | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `parse`         | `parse corpus with [options]*`                                                     | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `search`        | `search corpus for [feature matching pattern]* showing [feature]* with [options]*` | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `edit`          | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`   | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `calculate`     | `calculate result/edited as operation of denominator`                              | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `sort`          | `sort result/concordance by value`                                                 | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `plot`          | `plot result/edited as line chart with [options]*`                                 | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `show`          | `show object`                                                                      | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `export`        | `export result to string/csv/latex/file <filename>`                                | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `save`          | `save object to <filename>`                                                        | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `load`          | `load object as result`                                                            | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `store`         | `store object as <name>`                                                           | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `fetch`         | `fetch <name> as object`                                                           | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `help`          | `help command/object`                                                              | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `history`       | `history`                                                                          | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `ipython`       | `ipython`                                                                          | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            " | `py`            | `py print('hello world')`                                                          | \n\t"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n\t"\
-            "\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
-            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n(Hit 'q' to exit help).\n\n", cmd='less -X -R') 
+            "\n\nCommand examples:\n\n" \
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | Command         | Syntax                                                                             | \n"\
+            " +=================+====================================================================================+ \n"\
+            " | `new`           | `new project <name>`                                                               | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `set`           | `set <corpusname>`                                                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `parse`         | `parse corpus with [options]*`                                                     | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `search`        | `search corpus for [feature matching pattern]* showing [feature]* with [options]*` | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `edit`          | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`   | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `calculate`     | `calculate result/edited as operation of denominator`                              | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `sort`          | `sort result/concordance by value`                                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `plot`          | `plot result/edited as line chart with [options]*`                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `show`          | `show object`                                                                      | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `export`        | `export result to string/csv/latex/file <filename>`                                | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `save`          | `save object to <filename>`                                                        | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `load`          | `load object as result`                                                            | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `store`         | `store object as <name>`                                                           | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `fetch`         | `fetch <name> as object`                                                           | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `help`          | `help command/object`                                                              | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `history`       | `history`                                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `ipython`       | `ipython`                                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `py`            | `py print('hello world')`                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            "More information:\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
+            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n" \
+            "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n", cmd='less -X -R -S') 
 
         if command == 'corpus':
             if not hasattr(objs.corpus, 'name'):
@@ -217,15 +225,16 @@ def interpreter(debug=False):
             cc = ret()
 
         elif command in ['result', 'edited', 'totals', 'previous']:
+            import tabview
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
             if isinstance(toshow, (pd.DataFrame, pd.Series)):
-                print(toshow)
+                tabview.view(toshow, column_width=10)
             elif toshow:
-                print(toshow)
+                tabview.view(toshow, column_width=10)
             else:
                 if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
-                    print(getattr(objs, command))
+                    tabview.view(getattr(objs, command), column_width=10)
                 else:
                     print('Nothing here yet.')
 
@@ -418,6 +427,10 @@ def interpreter(debug=False):
             return int(val)
         elif val.lower() in trans.keys():
             return trans.get(val)
+        # interpret columns
+        elif all(i in ['c', 'f', 's', 'l', 'm', 'r'] for i in val.lower()) and len(val) <= 6:
+            return [i for i in val.lower()]
+
         else:
             if val in dir(__builtins__) + ['any', 'all']:
                 return val
@@ -604,7 +617,7 @@ def interpreter(debug=False):
             print(getattr(objs.corpus, tokens[0]))
 
         elif hasattr(objs, tokens[0]):
-            show_help(tokens)
+            single_command_print(tokens)
         else:
             print("No information about: %s" % tokens[0])
 
@@ -664,6 +677,8 @@ def interpreter(debug=False):
     def run_command(tokens):
         command = get_command.get(tokens[0], unrecognised)        
         out = command(tokens[1:])
+        import pydoc
+        import tabview
         
         # store the previous thing as previous
         attr = objmap.get(command, False)
@@ -676,7 +691,7 @@ def interpreter(debug=False):
                 return
             objs.result = out
             objs.previous = out
-            print('\n', out.results, '\n')
+            tabview.view(out.results, column_width=10)
             objs.query = out.query
             if objs._do_conc:
                 objs.concordance = out.concordance
@@ -688,10 +703,10 @@ def interpreter(debug=False):
         if command in [edit_something, sort_something, calculate_result]:
             from corpkit.interrogation import Concordance
             if hasattr(out, 'results'):
-                print('\n', out.results, '\n')
+                tabview.view(out.results, column_width=10)
         
             elif isinstance(out, Concordance):
-                print(out.format(**objs._conc_kwargs))
+                pydoc.pipepager(out.format(print_it=False, **objs._conc_kwargs))
         else:
             if debug:
                 print('Done:', repr(out))
@@ -712,7 +727,10 @@ def interpreter(debug=False):
                 buf = None
                 if tokens[i+1].startswith('f'):
                     buf = tokens[i+2]
+                    if os.pathsep not in buf:
+                        buf = os.path.join('exported', buf)
                     obj.to_csv(buf, sep='\t')
+                    print('Saved to: %s' % buf)
                     return
                 elif tokens[i+1].startswith('s'):
                     print(obj.to_string(buf))
@@ -723,6 +741,7 @@ def interpreter(debug=False):
                 elif tokens[i+1].startswith('l'):
                     print(obj.to_latex(buf))
                     return
+
 
     def interactive_edit(tokens):
         print('not done yet')
@@ -757,14 +776,15 @@ def interpreter(debug=False):
             else:
                 if val.startswith('l') or val.startswith('r'):
                     l_or_r = objs.concordance[val[0]]
-                    ind = int(val[1])
+                    ind = int(val[1:])
                     if val[0] == 'l':
                         ind = -ind
                     else:
                         ind = ind-1
                     import numpy as np
-                    to_sort_on = l_or_r.str.lower().split().tolist()
-                    to_sort_on = [i[ind] if i else np.nan for i in to_sort_on]
+                    # this could be upgraded to use rjust ...
+                    to_sort_on = l_or_r.str.split().tolist()
+                    to_sort_on = [i[ind].lower() if i else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
 
@@ -784,7 +804,7 @@ def interpreter(debug=False):
 
             # do not add new entry to old concs for sorting :)
             objs._old_concs[-1] = objs.concordance
-            show_help('concordance')
+            single_command_print('concordance')
 
     def plot_result(tokens):
         """
@@ -987,6 +1007,7 @@ def interpreter(debug=False):
 
         cols = []
         for i, token in enumerate(tokens):
+            # annotate range of tokens
             if '-' in token:
                 first, last = token.split('-', 1)
                 if not first:
@@ -995,8 +1016,26 @@ def interpreter(debug=False):
                     last = len(dflines)
                 for n in range(int(first), int(last)+1):
                     cols.append(str(n))
-            if token.isdigit():
+            # annotate single token by index
+            elif token.isdigit():
                 cols.append(token)
+            # should this be in the loop?
+            else:
+                # regex match only what's shown in the window
+                window = objs._conc_kwargs.get('window', 35)
+                if token.lower() == 'm':
+                    slic = slice(None, None)
+                elif token.lower() == 'l':
+                    slic = slice(-window, None)
+                elif token.lower() == 'r':
+                    slic = slice(None, window)
+                mx = max(objs.concordance[token.lower()].str.len()) if token.lower() == 'l' else 0
+                mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[i+2])]
+                matches = list(mtch.index)
+                for ind in matches:
+                    cols.append(str(ind))
+                break
+
         color = tokens[-1]
         
         lines_to_print = []
@@ -1016,7 +1055,7 @@ def interpreter(debug=False):
             else:
                 lines_to_print.append(line)
         import pydoc
-        pydoc.pipepager('\n'.join(lines_to_print), cmd='less -X -R')
+        pydoc.pipepager('\n'.join(lines_to_print), cmd='less -X -R -S')
 
                 
     def store_this(tokens):
@@ -1056,6 +1095,16 @@ def interpreter(debug=False):
         tokens = [i.rstrip(',') for i in shlex.split(output)]
         return run_command(tokens)
 
+    def ch_dir(tokens):
+        import os
+        os.chdir(tokens[0])
+        print(os.getcwd())
+        get_prompt()
+
+    def ls_dir(tokens):
+        import os
+        print('\n'.join(os.listdir(tokens[0])))
+
     get_command = {'set': set_corpus,
                    'show': show_this,
                    'search': search_corpus,
@@ -1067,6 +1116,8 @@ def interpreter(debug=False):
                    'sort': sort_something,
                    'toggle': toggle_this,
                    'edit': edit_something,
+                   'ls': ls_dir,
+                   'cd': ch_dir,
                    'plot': plot_result,
                    'help': helper,
                    'store': store_this,
@@ -1107,8 +1158,13 @@ def interpreter(debug=False):
 
     def get_prompt():
         folder = os.path.basename(os.getcwd())
+        proj_dirs = ['data', 'saved_interrogations', 'exported']
+        if all(x in os.listdir('.') for x in proj_dirs):
+            end = ''
+        else:
+            end = '*'
         name = getattr(objs.corpus, 'name', 'no-corpus')
-        return 'corpkit@%s:%s> ' % (folder, name)
+        return 'corpkit@%s%s:%s> ' % (folder, end, name)
 
     while True:
         try:
@@ -1141,7 +1197,7 @@ def interpreter(debug=False):
             if len(tokens) == 1:
                 if tokens[0] == 'set':
                     set_corpus([])
-                show_help(tokens[0])
+                single_command_print(tokens[0])
                 continue
 
             out = run_command(tokens)
