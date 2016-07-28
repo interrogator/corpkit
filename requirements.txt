@@ -11,4 +11,4 @@ chardet
 blessings>=1.6
 traitlets>=4.1.0
 tabview
--e git+https://github.com/interrogator/tabview.git@mdbartos-feat
+-e git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview
