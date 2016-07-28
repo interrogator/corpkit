@@ -11,7 +11,7 @@
 1	8	in	in	IN	O	11	case	0	_
 1	9	corpkit	corpkit	NN	O	11	nmod:poss	10	2
 1	10	's	's	POS	O	9	case	0	2
-1	11	tests	test	NNS	O	7	nmod	8,9	2*
+1	11	tests	test	NNS	O	7	nmod:in	8,9	2*
 1	12	.	.	.	O	1	punct	0	_
 
 # sent_id 2
@@ -21,7 +21,7 @@
 2	2	a	a	DT	O	3	det	0	_
 2	3	lot	lot	NN	O	7	nsubjpass	1,2,5	_
 2	4	of	of	IN	O	5	case	0	_
-2	5	data	datum	NNS	O	3	nmod	4	4*
+2	5	data	datum	NNS	O	3	nmod:of	4	4*
 2	6	is	be	VBZ	O	7	auxpass	0	_
 2	7	required	require	VBN	O	0	ROOT	3,6,8	_
 2	8	.	.	.	O	7	punct	0	_
