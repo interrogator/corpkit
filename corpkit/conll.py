@@ -756,9 +756,9 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
             for token in sent['tokens']:
                 index = str(token['index'])
                 governor, func = next((str(i['governor']), str(i['dep'])) \
-                                         for i in sent['basic-dependencies'] \
+                                         for i in sent['collapsed-ccprocessed-dependencies'] \
                                          if i['dependent'] == int(index))
-                depends = [str(i['dependent']) for i in sent['basic-dependencies'] if i['governor'] == int(index)]
+                depends = [str(i['dependent']) for i in sent['collapsed-ccprocessed-dependencies'] if i['governor'] == int(index)]
                 if not depends:
                     depends = '0'
                 #offsets = '%d,%d' % (token['characterOffsetBegin'], token['characterOffsetEnd'])

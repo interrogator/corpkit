@@ -213,7 +213,6 @@ def interpreter(debug=False):
                 return
         elif command == 'python' or command == 'ipython':
             from IPython import embed
-
             from IPython.terminal.embed import InteractiveShellEmbed
 
             # the theory is that somewhere we could get the locals from the embedded session
@@ -221,10 +220,15 @@ def interpreter(debug=False):
 
             s = generate_outprint()
 
+            for k, v in objs.__dict__.items():
+                if not k.startswith('_'):
+                    locals()[k] = v
+
             ret = InteractiveShellEmbed(header=s,
-                                        #colors='Linux',
-                                        exit_msg='Switching back to corpkit environment ...',
-                                        **objs.__dict__)
+                        dum='dum',
+                        #colors='Linux',
+                        exit_msg='Switching back to corpkit environment ...',
+                        local_ns=locals())
             cc = ret()
 
         elif command in ['result', 'edited', 'totals', 'previous']:
@@ -299,10 +303,11 @@ def interpreter(debug=False):
 
         set junglebook-parsed
         """
-        if tokens[0].startswith('decimal'):
+        if tokens and tokens[0].startswith('decimal'):
             objs._decimal = int(tokens[2])
             print('Decimal places set to %d.' % objs._decimal) 
             return
+        
         from corpkit.other import load
         if not tokens:
             show_this(['corpora'])
@@ -326,7 +331,7 @@ def interpreter(debug=False):
             for i in ['features', 'wordclasses', 'postags']:
                 try:
                     setattr(objs, i, load(objs.corpus.name + '-%s' % i))
-                except IOError:
+                except (UnicodeDecodeError, IOError):
                     pass
 
         else:
@@ -1044,7 +1049,7 @@ def interpreter(debug=False):
             elif token.lower() == 'r':
                 slic = slice(None, window)
             mx = max(objs.concordance[token.lower()].str.len()) if token.lower() == 'l' else 0
-            mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[i+2])]
+            mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[2])]
             matches = list(mtch.index)
             for ind in matches:
                 cols.append(str(ind))
