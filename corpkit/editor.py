@@ -546,7 +546,7 @@ def editor(interrogation,
             for entry in list(df.columns):
                 y = list(df[entry])
                 stats.append(list(linregress(x, y)))
-            sl = DataFrame(zip(*stats), index=statfields, columns=list(df.columns))
+            sl = DataFrame(list(zip(*stats)), index=statfields, columns=list(df.columns))
         df = df.append(sl)
         
         # drop infinites and nans
