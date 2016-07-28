@@ -102,6 +102,11 @@ def _top(self):
     max_col = pd.options.display.max_columns
     return self.iloc[:max_row, :max_col]
 
+def _tabview(self, **kwargs):
+    import pandas as pd
+    import tabview
+    tabview.view(self, **kwargs)
+
 # monkey patching things
 
 DataFrame.edit = _edit
@@ -109,6 +114,8 @@ Series.edit = _edit
 
 DataFrame.visualise = _plot
 Series.visualise = _plot
+
+DataFrame.tabview = _tabview
 
 DataFrame.multiplot = _multiplot
 Series.multiplot = _multiplot

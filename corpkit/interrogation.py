@@ -420,6 +420,10 @@ class Interrogation(object):
         from corpkit.other import quickview
         quickview(self, n=n)
 
+    def tabview(self, **kwargs):
+        import tabview
+        tabview.view(self.results, **kwargs)
+
     def rel(self):
         return self.edit('%', 'self')
 
@@ -574,6 +578,10 @@ class Concordance(pd.core.frame.DataFrame):
 
     def __repr__(self):
         return self.format(print_it=False)
+
+    def less(self, **kwargs):
+        import pydoc
+        pydoc.pipepager(self.format(print_it=False, **kwargs), cmd='less -X -R -S')
 
 class Interrodict(OrderedDict):
     """
