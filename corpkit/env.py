@@ -826,7 +826,7 @@ def interpreter(debug=False):
             if val.startswith('i'):
                 sorted_lines = thing_to_edit.sort_index()
             else:
-                if val.startswith('l') or val.startswith('r'):
+                if val.startswith('l') or val.startswith('r') or val.startswith('m'):
                     l_or_r = objs.concordance[val[0]]
                     ind = int(val[1:])
                     if val[0] == 'l':
@@ -834,8 +834,14 @@ def interpreter(debug=False):
                     else:
                         ind = ind-1
                     import numpy as np
-                    # this could be upgraded to use rjust ...
-                    to_sort_on = l_or_r.str.split().tolist()
+                    
+                    # bad arg parsing here!
+                    if 'slashsplit' in tokens:
+                        splitter = '/'
+                    else:
+                        splitter = ' '
+
+                    to_sort_on = l_or_r.str.split(splitter).tolist()
                     to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
@@ -873,6 +879,24 @@ def interpreter(debug=False):
         objs.figure = getattr(objs, tokens[0]).visualise(title=title, kind=kind, **kwargs)
         objs.figure.show()
         return objs.figure
+
+    def asciiplot_result(tokens):
+        """
+        Visualise an interrogation
+        """
+        obj, attr = tokens[0].split(':', 1) if ':' in tokens[0] else tokens[0].split('.', 1)
+        to_plot = getattr(objs, obj)
+        # if it said 'asciiplot result.this on axis 1', turn it into
+        # asciiplot result.this with axis as 1
+
+        if 'on' in tokens and not 'with' in tokens:
+            tokens[tokens.index('on')] = 'with'
+            if tokens[tokens.index('with')+1] == 'axis':
+                if tokens[tokens.index('with')+2] in [0, 1]:
+                    tokens.insert(tokens.index('with')+2, 'as')
+
+        kwargs = process_kwargs(tokens)
+        to_plot.asciiplot(attr, **kwargs)
 
     def calculate_result(tokens):
         """
@@ -1084,19 +1108,23 @@ def interpreter(debug=False):
         else:
             # regex match only what's shown in the window
             window = objs._conc_kwargs.get('window', 35)
-            if token.lower() == 'm':
-                slic = slice(None, None)
-            elif token.lower() == 'l':
-                slic = slice(-window, None)
-            elif token.lower() == 'r':
-                slic = slice(None, window)
-            mx = max(objs.concordance[token.lower()].str.len()) if token.lower() == 'l' else 0
-            mtch = objs.concordance[objs.concordance[token].str.rjust(mx).str[slic].str.contains(tokens[2])]
-            matches = list(mtch.index)
-            for ind in matches:
-                cols.append(str(ind))
+            token_bits = list(token)
+            for bit in token_bits:
+                if bit.lower() == 'm':
+                    slic = slice(None, None)
+                elif bit.lower() == 'l':
+                    slic = slice(-window, None)
+                elif bit.lower() == 'r':
+                    slic = slice(None, window)
+                mx = max(objs.concordance[bit.lower()].str.len()) if bit.lower() == 'l' else 0
+                mtch = objs.concordance[objs.concordance[bit].str.rjust(mx).str[slic].str.contains(tokens[2])]
+                matches = list(mtch.index)
+                for ind in matches:
+
+                    cols.append(str(ind))
 
         color = tokens[-1]
+        cols = set(cols)
         
         lines_to_print = []
         for line in dflines:
@@ -1107,6 +1135,8 @@ def interpreter(debug=False):
                     thing_to_color = Style
                 else:
                     thing_to_color = Fore
+                if tokens[-2].startswith('back'):
+                    thing_to_color = Back
                 lines_to_print.append(getattr(thing_to_color, color.upper()) + line)
                 # store it to the dictionary
                 objs._conc_colours[len(objs._old_concs)-1][num] = color
@@ -1116,7 +1146,6 @@ def interpreter(debug=False):
                 lines_to_print.append(line)
         import pydoc
         pydoc.pipepager('\n'.join(lines_to_print), cmd='less -X -R -S')
-
                 
     def store_this(tokens):
         """
@@ -1183,6 +1212,7 @@ def interpreter(debug=False):
                    'ls': ls_dir,
                    'cd': ch_dir,
                    'plot': plot_result,
+                   'asciiplot': asciiplot_result,
                    'help': helper,
                    'store': store_this,
                    'new': new_thing,

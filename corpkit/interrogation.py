@@ -424,6 +424,50 @@ class Interrogation(object):
         import tabview
         tabview.view(self.results, **kwargs)
 
+    def asciiplot(self,
+                  row_or_col_name,
+                  axis=0,
+                  colours=True,
+                  num_to_plot=100,
+                  line_length=120,
+                  min_graph_length=50,
+                  separator_length=4,
+                  multivalue=False,
+                  human_readable='si',
+                  graphsymbol='*',
+                  float_format='{:,.2f}',
+                  **kwargs):
+        """
+        A very quick ascii chart for result
+        """
+        from ascii_graph import Pyasciigraph
+        from ascii_graph.colors import Gre, Yel, Red, Blu
+        from ascii_graph.colordata import vcolor
+        from ascii_graph.colordata import hcolor
+        import pydoc
+
+        graph = Pyasciigraph(
+                            line_length=line_length,
+                            min_graph_length=min_graph_length,
+                            separator_length=separator_length,
+                            multivalue=multivalue,
+                            human_readable=human_readable,
+                            graphsymbol=graphsymbol
+                            )
+        if axis == 0:
+            dat = self.results.T[row_or_col_name]
+        else:
+            dat = self.results[row_or_col_name]
+        data = list(zip(dat.index, dat.values))[:num_to_plot]
+        if colours:
+            pattern = [Gre, Yel, Red]
+            data = vcolor(data, pattern)
+
+        out = []
+        for line in graph.graph(label=None, data=data, float_format=float_format):
+            out.append(line)
+        pydoc.pipepager('\n'.join(out), cmd='less -X -R -S')
+
     def rel(self):
         return self.edit('%', 'self')
 
