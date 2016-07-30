@@ -121,7 +121,7 @@ The most powerful thing about *corpkit* is its ability to search parsed corpora 
 Search examples
 --------------------
 
-.. code-block:: none
+.. code-block:: python
 
    > search corpus ### interactive search helper
    > search corpus for words matching ".*"
@@ -142,7 +142,7 @@ By default, every search also produces concordance lines. You can view them by t
 Showing concordance lines in different ways
 ---------------------------------------------
 
-.. code-block:: none
+.. code-block:: python
 
    # hide subcorpus name, speaker name
    > show concordance with columns as lmr
@@ -158,7 +158,7 @@ Editing, sorting and colouring
 
 To edit concordance lines, you use the same syntax as you would use to edit results:
 
-.. code-block:: none
+.. code-block:: python
 
    > edit concordance by skipping subcorpora matching '[123]$'
    > edit concordance by merging entries matching wordlist:people as 'people' 
@@ -169,7 +169,7 @@ Sorting can be by column, or by word
 
 One nice feature is that concordances can be coloured. This can be done through either indexing or regular expression matches. Note that ``background`` can be added to colour the background instead of the foreground, and ``reset`` can be used to retun things to normal.
 
-.. code-block:: none
+.. code-block:: python
 
    # indexing methods
    > mark 10 blue
@@ -179,7 +179,7 @@ One nice feature is that concordances can be coloured. This can be done through 
    # reset all
    > mark - reset
 
-.. code-block:: none
+.. code-block:: python
 
    # regular expression methods: specify column(s) to search
    > mark m '^PRP.*' yellow
@@ -193,7 +193,7 @@ One nice feature is that concordances can be coloured. This can be done through 
 Editing, calculating and sorting
 ----------------------------------
 
-.. code-block:: none
+.. code-block:: python
 
    > edit result by keeping subcorpora matching '[01234]'
    > edit result by skipping entries matching wordlists.closedclass
@@ -204,7 +204,7 @@ Editing, calculating and sorting
 Plotting
 ---------
 
-.. code-block:: none
+.. code-block:: python
 
    > plot edited as bar chart with title as 'Example plot' and x_label as 'Subcorpus'
    > plot edited as area chart with stacked and colours as Paired
