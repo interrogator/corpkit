@@ -5,7 +5,8 @@ todo:
 
 * documentation
 * handling of kwargs tuples etc
-* checking for bugs
+* checking for bugs, tests
+* merge entries with name
 
 """
 from __future__ import print_function

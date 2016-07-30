@@ -28,6 +28,9 @@ With corpkit installed, you can start the interpreter in a couple of ways:
    # or
    $ python -m corpkit.env
 
+.. note::
+
+   When using the interpreter, the prompt (the text to the left of where you type your command) displays the directory you are in (with an asterisk if it does not appear to be a *corpkit* project) and the currently active corpus. 
 
 Objects
 ---------------------
@@ -106,11 +109,21 @@ You do things to the objects via commands.
 
 In square brackets with asterisks are recursive parts of the syntax, which often also accept `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.
 
+Searching
+-----------
+
+The most powerful thing about *corpkit* is its ability to search parsed corpora for very complex constituency, dependency or token level features.
+
+.. note::
+   
+   By default, searching also produces concordance lines. If you don't need them, you can use ``toggle conc`` to switch them off, or on again. This can dramatically speed up processing time.
+
 Search examples
 --------------------
 
 .. code-block:: none
 
+   > search corpus ### interactive search helper
    > search corpus for words matching ".*"
    > search corpus for words matching "^[A-M]" showing lemma and word with case_sensitive
    > search corpus for cql matching '[pos="DT"] [pos="NN"]' showing pos and word with coref
@@ -120,6 +133,61 @@ Search examples
    > search corpus for trees matching '/NN.?/ >># NP'
    > search corpus for pos matching NNP showing ngram-word and pos with gramsize as 3
    > etc.
+
+Concordancing
+---------------
+
+By default, every search also produces concordance lines. You can view them by typing ``concordance``. This opens an interactive screen, which can be scrolled and searched---hit ``h`` to get help on possible commands.
+
+Showing concordance lines in different ways
+---------------------------------------------
+
+.. code-block:: none
+
+   # hide subcorpus name, speaker name
+   > show concordance with columns as lmr
+   # enlarge window
+   > show concordance with columns as lmr and window as 60
+   # limit number of results to 100
+   > show concordance with columns as lmr and window as 60 and n as 100
+
+The values you enter here are persistant---the window size, number of lines, etc. will remain the same until you shut down the interpreter or provide new values.
+
+Editing, sorting and colouring
+----------------------------------
+
+To edit concordance lines, you use the same syntax as you would use to edit results:
+
+.. code-block:: none
+
+   > edit concordance by skipping subcorpora matching '[123]$'
+   > edit concordance by merging entries matching wordlist:people as 'people' 
+   > edit concordance by keeping entries matching r'PRP'
+
+Sorting can be by column, or by word 
+
+
+One nice feature is that concordances can be coloured. This can be done through either indexing or regular expression matches. Note that ``background`` can be added to colour the background instead of the foreground, and ``reset`` can be used to retun things to normal.
+
+.. code-block:: none
+
+   # indexing methods
+   > mark 10 blue
+   > mark -10 background red
+   > mark 10-15 cyan
+   > mark 15- magenta
+   # reset all
+   > mark - reset
+
+.. code-block:: none
+
+   # regular expression methods: specify column(s) to search
+   > mark m '^PRP.*' yellow
+   > mark r '\bbeing\b' background green
+   > mark lm 'JJR$'
+   # reset via regex
+   > mark m '.*'' reset
+
 
 
 Editing, calculating and sorting
