@@ -249,7 +249,6 @@ def interpreter(debug=False):
 
         elif command == 'concordance':
             import pydoc
-            
             kwargs = process_kwargs(args)
             if kwargs:
                 objs._conc_kwargs = kwargs
@@ -270,6 +269,8 @@ def interpreter(debug=False):
                                 thing_to_color = Style
                             else:
                                 thing_to_color = Fore
+                            if any(i.startswith('back') for i in args):
+                                thing_to_color = Back
                             lines_to_print.append(getattr(thing_to_color, gotnum.upper()) + line)
                         else:
                             lines_to_print.append(line)
@@ -746,12 +747,15 @@ def interpreter(debug=False):
                 objs.concordance = None
             # find out what is going on here
             objs.edited = False
-        if command in [edit_something, sort_something, calculate_result]:
+
+        # either all or no showing should be done here 
+        if command in [edit_something, sort_something, calculate_result,
+                       annotate_conc, keep_conc, del_conc]:
             from corpkit.interrogation import Concordance
             if isinstance(out, Concordance):
                 objs._old_concs[-1] = objs.concordance
                 if objs._interactive:
-                    show_this(['concordance'])
+                    show_this(['concordance'] + tokens[1:])
             else:
                 if objs._interactive:
                     show_this(['edited'])
@@ -1087,11 +1091,7 @@ def interpreter(debug=False):
                 objs.wordlist = words
                 print('Wordlist "%s" stored.' % the_name)
 
-    def annotate_conc(tokens):
-        from colorama import Fore, Back, Style, init
-        init(autoreset=True)
-        dflines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
-
+    def get_matching_indices(tokens):
         cols = []
         token = tokens[0]
         # annotate range of tokens
@@ -1100,7 +1100,7 @@ def interpreter(debug=False):
             if not first:
                 first = 0
             if not last:
-                last = len(dflines)
+                last = len(len(objs.concordance.index))
             for n in range(int(first), int(last)+1):
                 cols.append(str(n))
         # annotate single token by index
@@ -1118,36 +1118,42 @@ def interpreter(debug=False):
                 elif bit.lower() == 'r':
                     slic = slice(None, window)
                 mx = max(objs.concordance[bit.lower()].str.len()) if bit.lower() == 'l' else 0
-                mtch = objs.concordance[objs.concordance[bit].str.rjust(mx).str[slic].str.contains(tokens[2])]
+                if 'matching' in tokens:
+                    the_regex = tokens[tokens.index('matching') + 1]
+                else:
+                    the_regex = tokens[1]
+                mtch = objs.concordance[objs.concordance[bit].str.rjust(mx).str[slic].str.contains(the_regex)]
                 matches = list(mtch.index)
                 for ind in matches:
-
                     cols.append(str(ind))
 
-        color = tokens[-1]
-        cols = set(cols)
-        
-        lines_to_print = []
-        for line in dflines:
-            num = line.strip().split(' ', 1)[0]
+        return set(cols)
 
-            if num in cols:
-                if color.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
-                    thing_to_color = Style
-                else:
-                    thing_to_color = Fore
-                if tokens[-2].startswith('back'):
-                    thing_to_color = Back
-                lines_to_print.append(getattr(thing_to_color, color.upper()) + line)
-                # store it to the dictionary
-                objs._conc_colours[len(objs._old_concs)-1][num] = color
-            elif num in objs._conc_colours[len(objs._old_concs)-1]:
-                lines_to_print.append(getattr(Fore, objs._conc_colours[len(objs._old_concs)-1][num].upper()) + line)
-            else:
-                lines_to_print.append(line)
-        import pydoc
-        pydoc.pipepager('\n'.join(lines_to_print), cmd='less -X -R -S')
-                
+    def annotate_conc(tokens):
+        from colorama import Fore, Back, Style, init
+        init(autoreset=True)
+        #dflines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+        cols = get_matching_indices(tokens)
+        color = tokens[-1]
+        for line in cols:
+            if int(line) in list(objs.concordance.index):
+                objs._conc_colours[len(objs._old_concs)-1][line] = color
+        single_command_print(['concordance'] + tokens)
+
+    def del_conc(tokens):
+        from corpkit.interrogation import Concordance
+        cols = get_matching_indices(tokens)
+        cols = [int(i) for i in cols]
+        objs.concordance = Concordance(objs.concordance.drop(cols, axis=0))
+        return objs.concordance
+
+    def keep_conc(tokens):
+        from corpkit.interrogation import Concordance
+        cols = get_matching_indices(tokens)
+        cols = [int(i) for i in cols]
+        objs.concordance = Concordance(objs.concordance.loc[cols])
+        return objs.concordance
+
     def store_this(tokens):
         """
         Send a result into storage
@@ -1207,6 +1213,8 @@ def interpreter(debug=False):
                    'export': export_result,
                    'redo': run_previous,
                    'mark': annotate_conc,
+                   'del': del_conc,
+                   'just': keep_conc,
                    'sort': sort_something,
                    'toggle': toggle_this,
                    'edit': edit_something,
