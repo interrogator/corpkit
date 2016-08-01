@@ -319,6 +319,11 @@ def plotter(df,
 
     # copy data, make series into df
     dataframe = df.copy()
+    if kind == 'heatmap':
+        try:
+            dataframe = dataframe.T
+        except:
+            pass
     was_series = False
     if isinstance(dataframe, Series):
         was_series = True
@@ -504,7 +509,7 @@ def plotter(df,
     if colours is not False and type(colours) == str:
         cmap_or_c = 'colormap'
     from matplotlib.colors import LinearSegmentedColormap
-    if type(colours)==LinearSegmentedColormap:
+    if type(colours) == LinearSegmentedColormap:
         cmap_or_c = 'colormap'
 
     # for heatmaps, it's always a colormap
@@ -752,7 +757,7 @@ def plotter(df,
 
         for i in ['vmin', 'vmax', 'linewidths', 'linecolor',
                   'robust', 'center', 'cbar_kws', 'cbar_ax',
-                  'square', 'mask']:
+                  'square', 'mask', 'norm']:
             if i in kwargs.keys():
                 hmargs[i] = kwargs.pop(i, None)
 
@@ -783,12 +788,15 @@ def plotter(df,
                     kwargs.pop('color', None)
                 ax = dataframe.plot(figsize=figsize, **kwargs)
             else:
-                plt.figure(figsize=figsize)
+                fg = plt.figure(figsize=figsize)
                 if title:
                     plt.title(title)
                 ax = kwargs.get('ax', plt.axes())
-                sns.heatmap(dataframe, ax=ax, **hmargs)
-                plt.yticks(rotation=0)
+                tmp = sns.heatmap(dataframe, ax=ax, **hmargs)
+                ax.set_title(title)
+                for item in tmp.get_yticklabels():
+                    item.set_rotation(0)
+                plt.close(fg)
 
             if areamode and not kwargs.get('ax'):
                 handles, labels = plt.gca().get_legend_handles_labels()
@@ -841,10 +849,13 @@ def plotter(df,
             for index, a in enumerate(axes):
                 labels = [item.get_text() for item in a.get_xticklabels()]
                 rotation = rotate_degrees(the_rotation, labels)                
-                if the_rotation == 0:
-                    ax.set_xticklabels(labels, rotation=rotation, ha='center')
-                else:
-                    ax.set_xticklabels(labels, rotation=rotation, ha='right')
+                try:
+                    if the_rotation == 0:
+                        ax.set_xticklabels(labels, rotation=rotation, ha='center')
+                    else:
+                        ax.set_xticklabels(labels, rotation=rotation, ha='right')
+                except AttributeError:
+                    pass
         else:
             if kind == 'heatmap':
                 labels = [item.get_text() for item in ax.get_xticklabels()]

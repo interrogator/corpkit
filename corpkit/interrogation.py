@@ -887,7 +887,7 @@ class Interrodict(OrderedDict):
         for (name, interro), ax in zip(self.items(), axes.flatten()):
             if kwargs.get('name_format'):
                 name = name_format.format(name)
-            plt = interro.visualise(name, ax=ax, **kwargs)
+            interro.visualise(name, ax=ax, **kwargs)
         return plt
 
     def copy(self):

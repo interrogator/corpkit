@@ -1078,7 +1078,7 @@ class Corpora(Datalist):
             if not os.path.isdir(data):
                 raise ValueError('Corpora(str) needs to point to a directory.')
             data = sorted([join(data, d) for d in os.listdir(data)
-                           if isdir(join(data, d))])
+                           if isdir(join(data, d)) and not d.startswith('.')])
         # otherwise, make a list of Corpus objects
         for index, i in enumerate(data):
             if isinstance(i, str):
