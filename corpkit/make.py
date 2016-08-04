@@ -13,6 +13,7 @@ def make_corpus(unparsed_corpus_path,
                 multiprocess=False,
                 split_texts=400,
                 outname=False,
+                metadata=False,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -164,7 +165,7 @@ def make_corpus(unparsed_corpus_path,
                     #newname = fp.replace('.txt', '-000.txt')
                     #os.rename(fp, newname)
 
-        if speaker_segmentation:
+        if speaker_segmentation or metadata:
             if outname:
                 newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
             else:
@@ -178,7 +179,7 @@ def make_corpus(unparsed_corpus_path,
             elif isdir(newpath) and root:
                 raise OSError('Path exists: %s' %newpath)
             print('Processing speaker IDs ...')
-            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped')
+            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped', metadata_mode=metadata)
             to_parse = unparsed_corpus_path + '-stripped'
         else:
             to_parse = unparsed_corpus_path
@@ -294,7 +295,8 @@ def make_corpus(unparsed_corpus_path,
             elif 'coref' in operations or 'dcoref' in operations:
                coref = True
 
-            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation, coref=coref)
+            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
+                                  coref=coref, metadata=metadata)
             #add_deps_to_corpus_path(newparsed)
 
         try:

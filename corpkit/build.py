@@ -511,14 +511,16 @@ def get_filepaths(a_path, ext='txt'):
             #        os.remove(os.path.join(root, f))
     return files
 
-def make_no_id_corpus(pth, newpth):
+def make_no_id_corpus(pth, newpth, metadata_mode=False):
     """make version of pth without ids"""
     import os
     import re
     import shutil
-    from build import get_filepaths
+    from corpkit.process import saferead
     # define regex broadly enough to accept timestamps, locations if need be
+
     idregex = re.compile(r'(^.*?):\s+(.*$)')
+
     try:
         shutil.copytree(pth, newpth)
     except OSError:
@@ -526,18 +528,22 @@ def make_no_id_corpus(pth, newpth):
         shutil.copytree(pth, newpth)
     files = get_filepaths(newpth)
     names = []
+    metadata = []
     for f in files:
         good_data = []
-        with open(f, 'r') as fo:
-            data = fo.read().splitlines()
-            for datum in data:
-                matched = re.search(idregex, datum)
-                if matched:
-                    names.append(matched.group(1))
-                    good_data.append(matched.group(2))
-                else:
-                    names.append('UNIDENTIFIED')
-                    good_data.append(datum)
+        fo, enc = saferead(f)
+        data = fo.splitlines()
+        for datum in data:
+            matched = re.search(idregex, datum)
+            if matched:
+                names.append(matched.group(1))
+                splitmet = matched.group(2).rsplit('<metadata ', 1)
+                good_data.append(splitmet[0])
+                #metadata.append(matched.group(3))
+            else:
+                names.append('UNIDENTIFIED')
+                splitmet = datum.rsplit('<metadata ', 1)
+                good_data.append(splitmet[0])
         with open(f, "w") as fo:
             fo.write('\n'.join(good_data))
 

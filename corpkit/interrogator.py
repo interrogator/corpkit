@@ -8,35 +8,35 @@ from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def interrogator(corpus, 
-                 search, 
-                 query='any',
-                 show='w',
-                 exclude=False,
-                 excludemode='any',
-                 searchmode='all',
-                 dep_type='collapsed-ccprocessed-dependencies',
-                 case_sensitive=False,
-                 save=False,
-                 just_speakers=False,
-                 preserve_case=False,
-                 lemmatag=False,
-                 files_as_subcorpora=False,
-                 only_unique=False,
-                 random=False,
-                 only_format_match=True,
-                 multiprocess=False,
-                 spelling=False,
-                 regex_nonword_filter=r'[A-Za-z0-9]',
-                 gramsize=2,
-                 split_contractions=False,
-                 conc=False,
-                 maxconc=9999,
-                 window=4,
-                 no_closed=False,
-                 no_punct=True,
-                 whitelist=False,
-                 **kwargs
-                ):
+    search, 
+    query='any',
+    show='w',
+    exclude=False,
+    excludemode='any',
+    searchmode='all',
+    dep_type='collapsed-ccprocessed-dependencies',
+    case_sensitive=False,
+    save=False,
+    just_speakers=False,
+    preserve_case=False,
+    lemmatag=False,
+    files_as_subcorpora=False,
+    only_unique=False,
+    random=False,
+    only_format_match=True,
+    multiprocess=False,
+    spelling=False,
+    regex_nonword_filter=r'[A-Za-z0-9]',
+    gramsize=2,
+    split_contractions=False,
+    conc=False,
+    maxconc=9999,
+    window=4,
+    no_closed=False,
+    no_punct=True,
+    whitelist=False,
+    **kwargs
+    ):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
@@ -44,6 +44,7 @@ def interrogator(corpus,
 
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
+    by_metadata = kwargs.pop('by_metadata', False)
 
     # store kwargs and locs
     locs = locals().copy()
@@ -1059,6 +1060,17 @@ def interrogator(corpus,
         corenlp_xml = None
         return sents, corefs
 
+    def postprocess_concline(line):
+        if searcher != slow_tregex and searcher != tgrep_searcher \
+            and datatype != 'conll':
+            line.insert(0, f.name)
+        else:
+            line[0] = f.name
+        if not preserve_case:
+            line[3:] = [x.lower() for x in line[3:]]
+        if spelling:
+            line = [correct_spelling(b) for b in line]
+        return line
 
 
     def make_progress_bar():
@@ -1197,9 +1209,10 @@ def interrogator(corpus,
     level = getattr(corpus, 'level', 'c')
         
     # store all results in here
-    results = {}
-    count_results = {}
-    conc_results = {}
+    from collections import defaultdict
+    results = defaultdict(Counter)
+    count_results = defaultdict(list)
+    conc_results = defaultdict(list)
 
     # check if just counting, turn off conc if so
     countmode = 'c' in show
@@ -1265,9 +1278,9 @@ def interrogator(corpus,
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
 
         # results for subcorpus go here
-        conc_results[subcorpus_name] = []
-        count_results[subcorpus_name] = []
-        results[subcorpus_name] = Counter()
+        #conc_results[subcorpus_name] = []
+        #count_results[subcorpus_name] = []
+        #results[subcorpus_name] = Counter()
 
         # get either everything (tree_to_text) or the search['t'] query
         if tree_to_text or simple_tregex_mode:
@@ -1354,9 +1367,27 @@ def interrogator(corpus,
                                              countmode=countmode,
                                              maxconc=(maxconc, numconc),
                                              is_a_word=is_a_word,
+                                             by_metadata=by_metadata,
                                              **kwargs
                                             )
-
+                    # deal with symbolic structures
+                    if by_metadata:
+                        for (k, v), concl in zip(res.items(), conc_res.values()):
+                            if spelling and not statsmode:
+                                v = [correct_spelling(r) for r in v]
+                            if searcher == slow_tregex:
+                                v = [i[-1].lower() for i in v]
+                            results[k] += Counter(v)
+                            for line in concl:
+                                if numconc < maxconc or not maxconc:
+                                    line = postprocess_concline(line)
+                                    conc_results[k].append(line)
+                                    numconc += 1
+                        
+                        current_iter += 1
+                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                        animator(p, current_iter, tstr, **par_args)
+                        continue
 
                     # garbage collection needed?
                     sents = None
@@ -1411,16 +1442,7 @@ def interrogator(corpus,
                     # add filename and do lowercasing for conc
                     if not no_conc:
                         for line in conc_res:
-
-                            if searcher != slow_tregex and searcher != tgrep_searcher \
-                                and datatype != 'conll':
-                                line.insert(0, f.name)
-                            else:
-                                line[0] = f.name
-                            if not preserve_case:
-                                line[3:] = [x.lower() for x in line[3:]]
-                            if spelling:
-                                line = [correct_spelling(b) for b in line]
+                            line = postprocess_concline(line)
                             if numconc < maxconc or not maxconc:
                                 conc_results[subcorpus_name].append(line)
                                 numconc += 1

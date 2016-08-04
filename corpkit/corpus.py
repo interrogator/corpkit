@@ -595,6 +595,7 @@ class Corpus(object):
               multiprocess=False,
               split_texts=400,
               outname=False,
+              metadata=False,
               *args,
               **kwargs
              ):

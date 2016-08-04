@@ -7,7 +7,7 @@ todo:
 
 """
 
-def parse_conll(f, first_time=False):
+def parse_conll(f, first_time=False, just_meta=False):
     """take a file and return pandas dataframe with multiindex"""
     import pandas as pd
     try:
@@ -23,10 +23,12 @@ def parse_conll(f, first_time=False):
     splitdata = []
     metadata = {}
     count = 1
-    for sent in data.split('\n\n'):
+    sents = data.split('\n\n')    
+    for sent in sents:
         metadata[count] = {}
         for line in sent.split('\n'):
-            if line and not line.startswith('#'):
+            if line and not line.startswith('#') \
+                and not just_meta:
                 splitdata.append('\n%s' % line)
             else:
                 line = line.lstrip('# ')
@@ -34,6 +36,8 @@ def parse_conll(f, first_time=False):
                     field, val = line.split('=', 1)
                     metadata[count][field] = val
         count += 1
+    if just_meta:
+        return metadata
 
     # determine the number of columns we need
     l = len(splitdata[0].strip('\t').split('\t'))
@@ -466,7 +470,6 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
     concs = []
     # for each index tuple
 
-    
 
     for idx in matches:
         # we have to iterate over if we have dependent showing
@@ -586,7 +589,7 @@ def determine_adjacent(original):
         adj = False
     return adj, original
 
-def process_df_for_speakers(df, metadata, just_speakers, coref=False):
+def process_df_for_speakers(df, metadata, just_speakers, coref=False, feature='speakers'):
     """
     keep just the correct speakers
     """
@@ -599,7 +602,9 @@ def process_df_for_speakers(df, metadata, just_speakers, coref=False):
     good_sents = []
     new_metadata = {}
     for sentid, data in sorted(metadata.items()):
-        speaker = data.get('speaker')
+        speaker = data.get(feature)
+        if not speaker:
+            continue
         if isinstance(just_speakers, list):
             if speaker in just_speakers:
                 good_sents.append(sentid)
@@ -620,6 +625,7 @@ def pipeline(f,
              excludemode='any',
              conc=False,
              coref=False,
+             from_df=False,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
@@ -635,13 +641,31 @@ def pipeline(f,
     all_matches = []
     all_exclude = []
 
+    if from_df is False or from_df is None:
+        df = parse_conll(f)
+    else:
+        df = from_df
+
+    # if working by metadata feature,
+    feature = kwargs.get('by_metadata', False)
+
+    if feature:
+        resultdict = {}
+        concresultdict = {}
+        for category in set([i.get(feature) for i in df._metadata.values() if i.get(feature)]):
+            df = process_df_for_speakers(df, df._metadata, category, feature=feature)
+            r, c = pipeline(False, search, show, exclude=exclude, searchmode=searchmode, excludemode=excludemode,
+                        conc=conc, coref=coref, from_df=df, by_metadata=False)
+            resultdict[category] = r
+            concresultdict[category] = c
+
+        return resultdict, concresultdict
+
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
 
     if isinstance(show, str):
         show = [show]
     show = [fix_show_bit(i) for i in show]
-
-    df = parse_conll(f)
 
     df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
@@ -683,24 +707,25 @@ def pipeline(f,
             except ValueError:
                 pass
 
-    return show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
+    out, conc_out = show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
+
+    return out, conc_out
 
 def load_raw_data(f):
     """loads the stripped and raw versions of a parsed file"""
+    from corpkit.process import saferead
 
     # open the unparsed version of the file, read into memory
     stripped_txtfile = f.replace('.conll', '').replace('-parsed', '-stripped')
-    with open(stripped_txtfile, 'r') as old_txt:
-        stripped_txtdata = old_txt.read()
+    stripped_txtdata, enc = saferead(stripped_txtfile)
 
     # open the unparsed version with speaker ids
     id_txtfile = f.replace('.conll', '').replace('-parsed', '')
-    with open(id_txtfile, 'r') as idttxt:
-        id_txtdata = idttxt.read()
+    id_txtdata, enc = saferead(id_txtfile)
 
     return stripped_txtdata, id_txtdata
 
-def get_speaker_from_offsets(stripped, plain, sent_offsets):
+def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False):
     if not stripped and not plain:
         return 'none'
     start, end = sent_offsets
@@ -711,7 +736,25 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets):
     line_index = cut_old_text.count('\n')
     # lookup this text
     with_id = plain.splitlines()[line_index]
+    
+    # parse xml tags in original file ...
+    if metadata_mode:
+        meta_dict = {}
+        metad = with_id.strip().rstrip('>').rsplit('<metadata ', 1)
+        
+        if len(metad) == 1:
+            return meta_dict
+        
+        import shlex
+        for m in shlex.split(metad[-1].encode('utf-8')):
+            m = m.decode('utf-8')
+            k, v = m.split('=')
+            v = v.replace(u"\u2018", "'").replace(u"\u2019", "'").strip("'").strip('"')
+            meta_dict[k] = v
+        return meta_dict
+
     split_line = with_id.split(': ', 1)
+    # handle multiple tags?
     if len(split_line) > 1:
         speakerid = split_line[0]
     else:
@@ -719,7 +762,7 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets):
     return speakerid
 
 
-def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
+def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadata=False):
     """
     take json corenlp output and convert to conll, with
     dependents, speaker ids and so on added.
@@ -733,7 +776,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
     
     for f in files:
 
-        if speaker_segmentation:
+        if speaker_segmentation or metadata:
             stripped, raw = load_raw_data(f)
         else:
             stripped, raw = None, None
@@ -752,7 +795,9 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
                             sent['tokens'][-1]['characterOffsetEnd'])
             speaker = get_speaker_from_offsets(stripped, raw, sent_offsets)
             output = '# sent_id %d\n# parse=%s\n# speaker=%s\n' % (idx, tree, speaker)
-            
+            metad = get_speaker_from_offsets(stripped, raw, sent_offsets, metadata_mode=True)
+            for k, v in metad.items():
+                output += '# %s=%s\n' % (k, v)
             for token in sent['tokens']:
                 index = str(token['index'])
                 governor, func = next((str(i['governor']), str(i['dep'])) \
@@ -819,6 +864,13 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False):
 
             main_out = '\n'.join(splitmain)
 
-        with open(f, 'w') as fo:
+        from corpkit.constants import PYTHON_VERSION
+        if PYTHON_VERSION == 3:
+            opener = open
+        else:
+            import codecs
+            opener = codecs.open        
+        with opener(f, 'w', encoding='utf-8') as fo:
+            main_out = main_out.replace(u"\u2018", "'").replace(u"\u2019", "'")
             fo.write(main_out)
 
