@@ -561,6 +561,9 @@ class Corpus(object):
                       than Tregex, and is slower, but can work without Java.
         :type tgrep: `bool`
 
+        :param by_metadata: Use a metadata attribute instead of subcorpus as structure
+        :type by_metadata: `str`/`list`/regex
+
         :param just_speakers: Limit search to paricular speakers. If 'each',
                               generate :class:`corpkit.interrogation.Interrodict`
                               for each speaker. If a `list` of speaker names, 
@@ -634,6 +637,9 @@ class Corpus(object):
 
         :param outname: Specify a name for the parsed corpus
         :type outname: `str`
+
+        :param metadata: Use if you have xml tags at the end of lines, contaning metadata
+        :type metadata: `bool`
 
         :Example:
 

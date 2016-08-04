@@ -602,9 +602,7 @@ def process_df_for_speakers(df, metadata, just_speakers, coref=False, feature='s
     good_sents = []
     new_metadata = {}
     for sentid, data in sorted(metadata.items()):
-        speaker = data.get(feature)
-        if not speaker:
-            continue
+        speaker = data.get(feature, 'none')
         if isinstance(just_speakers, list):
             if speaker in just_speakers:
                 good_sents.append(sentid)
@@ -649,16 +647,19 @@ def pipeline(f,
     # if working by metadata feature,
     feature = kwargs.get('by_metadata', False)
 
+    resultdict = {}
+    concresultdict = {}
+
     if feature:
-        resultdict = {}
-        concresultdict = {}
-        for category in set([i.get(feature) for i in df._metadata.values() if i.get(feature)]):
-            df = process_df_for_speakers(df, df._metadata, category, feature=feature)
+
+        # get all the possible values in the df for the feature of interest
+        all_cats = set([i.get(feature, 'none') for i in df._metadata.values()])
+        for category in all_cats:
+            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
             r, c = pipeline(False, search, show, exclude=exclude, searchmode=searchmode, excludemode=excludemode,
-                        conc=conc, coref=coref, from_df=df, by_metadata=False)
+                        conc=conc, coref=coref, from_df=new_df, by_metadata=False)
             resultdict[category] = r
             concresultdict[category] = c
-
         return resultdict, concresultdict
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
