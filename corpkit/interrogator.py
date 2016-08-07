@@ -35,6 +35,7 @@ def interrogator(corpus,
     no_closed=False,
     no_punct=True,
     whitelist=False,
+    subcorpora=False,
     **kwargs
     ):
     """
@@ -45,6 +46,8 @@ def interrogator(corpus,
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
     by_metadata = kwargs.pop('by_metadata', False)
+    if subcorpora:
+        by_metadata = subcorpora
 
     # store kwargs and locs
     locs = locals().copy()

@@ -23,9 +23,14 @@ import string
 import time
 import os
 import threading
-import tkMessageBox as messagebox
-import tkSimpleDialog as simpledialog
-import tkFileDialog as filedialog
+try:
+    import tkMessageBox as messagebox
+    import tkSimpleDialog as simpledialog
+    import tkFileDialog as filedialog
+except ImportError:
+    import tkinter.messagebox
+    import tkinter.filedialog
+    import tkinter.simpledialog
 try:
     import Tkinter as tkinter
     from Tkinter import *
@@ -253,8 +258,8 @@ class Notebook(Frame):
         
         # redirect stdout for log
         self.redir = RedirectText(self.status_text, self.log_stream)
-        sys.stdout = self.redir
-        sys.stderr = self.redir
+        #sys.stdout = self.redir
+        #sys.stderr = self.redir
 
         Frame.__init__(self)
         self.noteBookFrame.grid()

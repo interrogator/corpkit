@@ -79,9 +79,9 @@ def pmultiquery(corpus,
             import re
             just_speakers = re.compile(r'.*')
         else:
-            from corpkit.build import get_speaker_names_from_xml_corpus
+            from corpkit.build import get_speaker_names_from_parsed_corpus
             if just_speakers == 'each' or just_speakers == ['each']:
-                just_speakers = get_speaker_names_from_xml_corpus(corpus)
+                just_speakers = get_speaker_names_from_parsed_corpus(corpus)
             if len(just_speakers) == 0:
                 print('No speaker name data found.')
                 return

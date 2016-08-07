@@ -149,8 +149,8 @@ class Corpus(object):
     @lazyprop
     def speakerlist(self):
         """A list of speakers in the corpus"""
-        from corpkit.build import get_speaker_names_from_xml_corpus
-        return get_speaker_names_from_xml_corpus(self)
+        from corpkit.build import get_speaker_names_from_parsed_corpus
+        return get_speaker_names_from_parsed_corpus(self)
 
     @lazyprop
     def files(self):

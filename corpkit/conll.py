@@ -801,8 +801,9 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
             speaker = get_speaker_from_offsets(stripped, raw, sent_offsets)
             output = '# sent_id %d\n# parse=%s\n# speaker=%s\n' % (idx, tree, speaker)
             metad = get_speaker_from_offsets(stripped, raw, sent_offsets, metadata_mode=True)
-            for k, v in metad.items():
-                output += '# %s=%s\n' % (k, v)
+            if metad != 'none':
+                for k, v in metad.items():
+                    output += '# %s=%s\n' % (k, v)
             for token in sent['tokens']:
                 index = str(token['index'])
                 governor, func = next((str(i['governor']), str(i['dep'])) \

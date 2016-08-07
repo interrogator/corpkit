@@ -18,6 +18,7 @@ import pandas as pd
 import readline
 import atexit
 import rlcompleter
+from collections import deque
 
 import corpkit
 from corpkit import *
@@ -125,7 +126,8 @@ def interpreter(debug=False):
             print('\n'.join(os.listdir()))
 
         args = []
-        if isinstance(command, list):
+        
+        if isinstance(command, (list, deque)):
             args = command[1:]
             command = command[0]
 
@@ -231,6 +233,10 @@ def interpreter(debug=False):
                         exit_msg='Switching back to corpkit environment ...',
                         local_ns=locals())
             cc = ret()
+
+        elif command == 'gui':
+            from corpkit.gui import corpkit_gui
+            corpkit_gui(loadcurrent=True)
 
         elif command in ['result', 'edited', 'totals', 'previous']:
             import tabview
@@ -491,7 +497,6 @@ def interpreter(debug=False):
 
 
     def parse_search_args(tokens):
-        tokens = tokens[1:]
         if not tokens:
             search = search_helper(text='search')
             show = search_helper(text='show')
@@ -603,18 +608,19 @@ def interpreter(debug=False):
         """
         Show any object in a human-readable form
         """
-        if tokens[0] == 'corpora':
+        thing_to_show = tokens.popleft()
+        if thing_to_show == 'corpora':
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             dirs = ['\t%d: %s' % (i, x) for i, x in enumerate(dirs, start=1)]
             print ('\n'.join(dirs))
-        elif tokens[0].startswith('store'):
+        elif thing_to_show.startswith('store'):
             print(objs.stored)
-        elif tokens[0].startswith('wordlists'):
-            if '.' in tokens[0] or ':' in tokens[0]:
-                if ':' in tokens[0]:
-                    _, attr = tokens[0].split(':')
+        elif thing_to_show.startswith('wordlists'):
+            if '.' in thing_to_show or ':' in thing_to_show:
+                if ':' in thing_to_show:
+                    _, attr = thing_to_show.split(':')
                 else:
-                    _, attr = tokens[0].split('.')
+                    _, attr = thing_to_show.split('.')
                 print(objs.wordlists.get(attr))
             else:
                 for k, v in sorted(objs.wordlists.items()):
@@ -623,23 +629,23 @@ def interpreter(debug=False):
                         showv = showv.rstrip('] ') + ' ... ]'
                     print('"%s": %s' % (k, showv))
 
-        elif tokens[0] == 'saved':
+        elif thing_to_show == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
-        elif tokens[0] == 'query':
+        elif thing_to_show == 'query':
             print(objs.query)
-        elif tokens[0] == 'figure':
+        elif thing_to_show == 'figure':
             if hasattr(objs, 'figure') and objs.figure:
                 objs.figure.show()
             else:
                 print('Nothing here yet.')
-        elif tokens[0] in ['features', 'wordclasses', 'postags']:
-            print(getattr(objs.corpus, tokens[0]))
+        elif thing_to_show in ['features', 'wordclasses', 'postags']:
+            print(getattr(objs.corpus, thing_to_show))
 
-        elif hasattr(objs, tokens[0]):
+        elif hasattr(objs, thing_to_show):
             single_command_print(tokens)
         else:
-            print("No information about: %s" % tokens[0])
+            print("No information about: %s" % thing_to_show)
 
     def get_info(tokens):
         pass
@@ -663,7 +669,7 @@ def interpreter(debug=False):
 
     def edit_something(tokens):
 
-        thing_to_edit = get_thing_to_edit(tokens[0])
+        thing_to_edit = get_thing_to_edit(tokens.popleft())
 
         trans = {'skipping': 'skip',
                  'keeping':  'just',
@@ -721,8 +727,8 @@ def interpreter(debug=False):
 
 
     def run_command(tokens):
-        command = get_command.get(tokens[0], unrecognised)        
-        out = command(tokens[1:])
+        command = get_command.get(tokens.popleft(), unrecognised)        
+        out = command(tokens)
         import pydoc
         import tabview
         
@@ -766,14 +772,14 @@ def interpreter(debug=False):
         return out
         
     def export_result(tokens):
-        if tokens[0] == 'result':
+        thing_to_export = tokens.popleft()
+        if thing_to_export == 'result':
             obj = objs.result.results
-        elif tokens[0] == 'concordance':
+        elif thing_to_export == 'concordance':
             obj = objs.result.concordance
-        if len(tokens) == 1:
+        if not tokens:
             print(obj.to_string())
             return
-        tokens = tokens[1:]
 
         for i, token in enumerate(tokens):
             if token == 'to':
@@ -812,11 +818,13 @@ def interpreter(debug=False):
     def sort_something(tokens):
         """sort a result or concordance line"""
 
-        thing_to_edit = get_thing_to_edit(tokens[0])
+        thing_to_sort = tokens.popleft()
+
+        thing_to_edit = get_thing_to_edit(thing_to_sort)
 
         recog = ['by', 'with', 'from']
 
-        val = next((x for x in tokens[1:] if x not in recog), 'total')
+        val = next((x for x in tokens if x not in recog), 'total')
 
         from corpkit.interrogation import Concordance
         if not isinstance(thing_to_edit, Concordance):
@@ -889,7 +897,8 @@ def interpreter(debug=False):
         """
         Visualise an interrogation
         """
-        obj, attr = tokens[0].split(':', 1) if ':' in tokens[0] else tokens[0].split('.', 1)
+        thing_to_split = tokens.popleft()
+        obj, attr = thing_to_plit.split(':', 1) if ':' in thing_to_plit else thing_to_plit.split('.', 1)
         to_plot = getattr(objs, obj)
         # if it said 'asciiplot result.this on axis 1', turn it into
         # asciiplot result.this with axis as 1
@@ -1293,7 +1302,7 @@ def interpreter(debug=False):
                         setattr(objs, k, v)
                 continue
 
-            tokens = shlex.split(output)
+            tokens = deque(shlex.split(output))
             if debug:
                 print('command', tokens)
             

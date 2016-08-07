@@ -571,8 +571,8 @@ def parse_just_speakers(just_speakers, corpus):
         just_speakers = [just_speakers]
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
-            from build import get_speaker_names_from_xml_corpus
-            just_speakers = get_speaker_names_from_xml_corpus(corpus)
+            from build import get_speaker_names_from_parsed_corpus
+            just_speakers = get_speaker_names_from_parsed_corpus(corpus)
     return just_speakers
 
 
