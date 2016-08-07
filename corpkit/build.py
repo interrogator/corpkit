@@ -53,12 +53,16 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
         else:
             poss_zips = glob.glob(os.path.join(downloaded_dir, 'stanford-corenlp-full*.zip'))
             if poss_zips:
-                fullfile = poss_zips[-1]   
-                the_zip_file = zipfile.ZipFile(fullfile)
-                ret = the_zip_file.testzip()
-                if ret is None:
-                    return downloaded_dir, fullfile
-                else:
+                fullfile = poss_zips[-1]
+                from zipfile import BadZipfile
+                try:
+                    the_zip_file = zipfile.ZipFile(fullfile)                    
+                    ret = the_zip_file.testzip()
+                    if ret is None:
+                        return downloaded_dir, fullfile
+                    else:
+                        os.remove(fullfile)
+                except BadZipfile:
                     os.remove(fullfile)
             #else:
             #    shutil.rmtree(downloaded_dir)
