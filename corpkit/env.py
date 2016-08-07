@@ -37,12 +37,19 @@ history_path = os.path.expanduser("~/.pyhistory")
 
 def save_history(history_path=history_path):
     import readline
-    readline.remove_history_item(readline.get_current_history_length() - 1)
+    try:
+        readline.remove_history_item(readline.get_current_history_length() - 1)
+    except ValueError:
+        pass
+
     readline.write_history_file(history_path)
 
 if os.path.exists(history_path):
-    readline.read_history_file(history_path)
-    readline.set_history_length(1000)
+    try:
+        readline.read_history_file(history_path)
+        readline.set_history_length(1000)
+    except IOError:
+        pass
 
 atexit.register(save_history)
 
@@ -72,12 +79,10 @@ def interpreter(debug=False):
 
         def __init__(self):
 
-            from corpkit.dictionaries import wordlists, processes, roles
+            from corpkit.dictionaries import processes, roles
+            from corpkit.dictionaries.wordlists import wordlists
             from collections import defaultdict
-            wl = {k: v for k, v in wordlists.__dict__.items()}
-            wl.update(roles.__dict__)
-            wl.update(processes.__dict__)
-            self.result = None
+            wl = wordlists._asdict()
             self.previous = None
             self.edited = None
             self.corpus = None
