@@ -18,7 +18,6 @@ import pandas as pd
 import readline
 import atexit
 import rlcompleter
-from collections import deque
 
 import corpkit
 from corpkit import *
@@ -37,15 +36,16 @@ history_path = os.path.expanduser("~/.pyhistory")
 
 def save_history(history_path=history_path):
     import readline
+
     try:
         readline.remove_history_item(readline.get_current_history_length() - 1)
     except ValueError:
         pass
-
     readline.write_history_file(history_path)
 
 if os.path.exists(history_path):
     try:
+        readline.set_history_length(1000)
         readline.read_history_file(history_path)
         readline.set_history_length(1000)
     except IOError:
@@ -83,6 +83,9 @@ def interpreter(debug=False):
             from corpkit.dictionaries.wordlists import wordlists
             from collections import defaultdict
             wl = wordlists._asdict()
+            wl.update(roles.__dict__)
+            wl.update(processes.__dict__)
+            self.result = None
             self.previous = None
             self.edited = None
             self.corpus = None
@@ -131,8 +134,7 @@ def interpreter(debug=False):
             print('\n'.join(os.listdir()))
 
         args = []
-        
-        if isinstance(command, (list, deque)):
+        if isinstance(command, list):
             args = command[1:]
             command = command[0]
 
@@ -223,6 +225,10 @@ def interpreter(debug=False):
             from IPython import embed
             from IPython.terminal.embed import InteractiveShellEmbed
 
+        elif command == 'gui':
+            from corpkit.gui import corpkit_gui
+            corpkit_gui(loadcurrent=True)
+
             # the theory is that somewhere we could get the locals from the embedded session
             # atexit_operations could be the answer
 
@@ -238,10 +244,6 @@ def interpreter(debug=False):
                         exit_msg='Switching back to corpkit environment ...',
                         local_ns=locals())
             cc = ret()
-
-        elif command == 'gui':
-            from corpkit.gui import corpkit_gui
-            corpkit_gui(loadcurrent=True)
 
         elif command in ['result', 'edited', 'totals', 'previous']:
             import tabview
@@ -502,6 +504,7 @@ def interpreter(debug=False):
 
 
     def parse_search_args(tokens):
+        tokens = tokens[1:]
         if not tokens:
             search = search_helper(text='search')
             show = search_helper(text='show')
@@ -613,19 +616,18 @@ def interpreter(debug=False):
         """
         Show any object in a human-readable form
         """
-        thing_to_show = tokens.popleft()
-        if thing_to_show == 'corpora':
+        if tokens[0] == 'corpora':
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             dirs = ['\t%d: %s' % (i, x) for i, x in enumerate(dirs, start=1)]
             print ('\n'.join(dirs))
-        elif thing_to_show.startswith('store'):
+        elif tokens[0].startswith('store'):
             print(objs.stored)
-        elif thing_to_show.startswith('wordlists'):
-            if '.' in thing_to_show or ':' in thing_to_show:
-                if ':' in thing_to_show:
-                    _, attr = thing_to_show.split(':')
+        elif tokens[0].startswith('wordlists'):
+            if '.' in tokens[0] or ':' in tokens[0]:
+                if ':' in tokens[0]:
+                    _, attr = tokens[0].split(':')
                 else:
-                    _, attr = thing_to_show.split('.')
+                    _, attr = tokens[0].split('.')
                 print(objs.wordlists.get(attr))
             else:
                 for k, v in sorted(objs.wordlists.items()):
@@ -634,23 +636,23 @@ def interpreter(debug=False):
                         showv = showv.rstrip('] ') + ' ... ]'
                     print('"%s": %s' % (k, showv))
 
-        elif thing_to_show == 'saved':
+        elif tokens[0] == 'saved':
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
-        elif thing_to_show == 'query':
+        elif tokens[0] == 'query':
             print(objs.query)
-        elif thing_to_show == 'figure':
+        elif tokens[0] == 'figure':
             if hasattr(objs, 'figure') and objs.figure:
                 objs.figure.show()
             else:
                 print('Nothing here yet.')
-        elif thing_to_show in ['features', 'wordclasses', 'postags']:
-            print(getattr(objs.corpus, thing_to_show))
+        elif tokens[0] in ['features', 'wordclasses', 'postags']:
+            print(getattr(objs.corpus, tokens[0]))
 
-        elif hasattr(objs, thing_to_show):
+        elif hasattr(objs, tokens[0]):
             single_command_print(tokens)
         else:
-            print("No information about: %s" % thing_to_show)
+            print("No information about: %s" % tokens[0])
 
     def get_info(tokens):
         pass
@@ -674,7 +676,7 @@ def interpreter(debug=False):
 
     def edit_something(tokens):
 
-        thing_to_edit = get_thing_to_edit(tokens.popleft())
+        thing_to_edit = get_thing_to_edit(tokens[0])
 
         trans = {'skipping': 'skip',
                  'keeping':  'just',
@@ -732,8 +734,8 @@ def interpreter(debug=False):
 
 
     def run_command(tokens):
-        command = get_command.get(tokens.popleft(), unrecognised)        
-        out = command(tokens)
+        command = get_command.get(tokens[0], unrecognised)        
+        out = command(tokens[1:])
         import pydoc
         import tabview
         
@@ -777,14 +779,14 @@ def interpreter(debug=False):
         return out
         
     def export_result(tokens):
-        thing_to_export = tokens.popleft()
-        if thing_to_export == 'result':
+        if tokens[0] == 'result':
             obj = objs.result.results
-        elif thing_to_export == 'concordance':
+        elif tokens[0] == 'concordance':
             obj = objs.result.concordance
-        if not tokens:
+        if len(tokens) == 1:
             print(obj.to_string())
             return
+        tokens = tokens[1:]
 
         for i, token in enumerate(tokens):
             if token == 'to':
@@ -823,13 +825,11 @@ def interpreter(debug=False):
     def sort_something(tokens):
         """sort a result or concordance line"""
 
-        thing_to_sort = tokens.popleft()
-
-        thing_to_edit = get_thing_to_edit(thing_to_sort)
+        thing_to_edit = get_thing_to_edit(tokens[0])
 
         recog = ['by', 'with', 'from']
 
-        val = next((x for x in tokens if x not in recog), 'total')
+        val = next((x for x in tokens[1:] if x not in recog), 'total')
 
         from corpkit.interrogation import Concordance
         if not isinstance(thing_to_edit, Concordance):
@@ -902,8 +902,7 @@ def interpreter(debug=False):
         """
         Visualise an interrogation
         """
-        thing_to_split = tokens.popleft()
-        obj, attr = thing_to_plit.split(':', 1) if ':' in thing_to_plit else thing_to_plit.split('.', 1)
+        obj, attr = tokens[0].split(':', 1) if ':' in tokens[0] else tokens[0].split('.', 1)
         to_plot = getattr(objs, obj)
         # if it said 'asciiplot result.this on axis 1', turn it into
         # asciiplot result.this with axis as 1
@@ -1307,7 +1306,7 @@ def interpreter(debug=False):
                         setattr(objs, k, v)
                 continue
 
-            tokens = deque(shlex.split(output))
+            tokens = shlex.split(output)
             if debug:
                 print('command', tokens)
             

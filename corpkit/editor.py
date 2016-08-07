@@ -525,7 +525,7 @@ def editor(interrogation,
             from scipy.stats import linregress
         except ImportError:
             thetime = strftime("%H:%M:%S", localtime())
-            print('%s: sort type not available in this verion of corpkit.' % thetime)
+            print('%s: sort type not available in this version of corpkit.' % thetime)
             return False
 
         indices = list(df.index)
