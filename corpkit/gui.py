@@ -258,8 +258,8 @@ class Notebook(Frame):
         
         # redirect stdout for log
         self.redir = RedirectText(self.status_text, self.log_stream)
-        #sys.stdout = self.redir
-        #sys.stderr = self.redir
+        sys.stdout = self.redir
+        sys.stderr = self.redir
 
         Frame.__init__(self)
         self.noteBookFrame.grid()
@@ -678,11 +678,22 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             """helper for load settings"""
             dict1 = {}
             options = cnfg.options(section)
+            # todo: this loops over too many times
             for option in options:
                 try:
-                    dict1[option] = cnfg.get(section, option)
-                    if dict1[option] == -1:
-                        DebugPrint("skip: %s" % option)
+                    op = cnfg.get(section, option)
+                    if opt == '0':
+                        opt = False
+                    elif opt == '1':
+                        opt = True
+                    elif opt.isdigit():
+                        opt = int(opt)
+                    if isinstance(opt, str) and opt.lower() == 'none':
+                        opt = False
+                    if not opt:
+                        opt = 0
+
+                    dict1[option] = opt
                 except:
                     print(("exception on %s!" % option))
                     dict1[option] = None
@@ -1284,7 +1295,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             Label(pref_pop, text='').grid(row=0, column=0, pady=2)
             
             def quit_coding(*args):
-                save_tool_prefs(printout = True)
+                save_tool_prefs(printout=True)
                 pref_pop.destroy()
 
             tmp = Checkbutton(pref_pop, text='Automatically check for updates', variable=do_auto_update, onvalue=1, offvalue=0)
@@ -1476,7 +1487,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                                  'df1_always_df': True,
                                  'conc': doing_concondancing,
                                  'only_format_match': not bool(only_format_match.get()),
-                                 'dep_type': depdict[kind_of_dep.get()],
+                                 'dep_type': depdict.get(kind_of_dep.get(), 'CC-processed'),
                                  'nltk_data_path': nltk_data_path,
                                  'regex': regex,
                                  'coref': coref.get(),
@@ -4968,7 +4979,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 in_a_project.set(1)
                 if project_fullpath.get() not in most_recent_projects:
                     most_recent_projects.append(project_fullpath.get())
-                save_tool_prefs(printout = False)
+                save_tool_prefs(printout=False)
                 #update_available_corpora()
             else:
                 in_a_project.set(0)
@@ -5299,16 +5310,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         def convert_speakdict_to_string(dictionary):
             """turn speaker info dict into a string for configparser"""
-            if len(list(dictionary.keys())) == 0:
-                return None
+            if not dictionary:
+                return 'none'
             out = []
             for k, v in list(dictionary.items()):
                 out.append('%s:%s' % (k, ','.join([i.replace(',', '').replace(':', '').replace(';', '') for i in v])))
-            return ';'.join(out)
+            if not out:
+                return 'none'
+            else:
+                return ';'.join(out)
 
         def parse_speakdict(string):
             """turn configparser's speaker info back into a dict"""
-            if string is None:
+            if string is 'none' or not string:
                 return {}
             redict = {}
             corps = string.split(';')
@@ -5348,7 +5362,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             Config = configparser.ConfigParser()
             f = os.path.join(project_fullpath.get(), 'settings.ini')
             Config.read(f)
-
+            # errors here
             plot_style.set(conmap(Config, "Visualise")['plot style'])
             texuse.set(conmap(Config, "Visualise")['use tex'])
             x_axis_l.set(conmap(Config, "Visualise")['x axis title'])
@@ -5358,9 +5372,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 files_as_subcorpora.set(conmap(Config, "Interrogate")['treat files as subcorpora'])
             except KeyError:
                 files_as_subcorpora.set(False)
-            corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
+            if rel_corpuspath:
+                corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
+                current_corpus.set(os.path.basename(corpa))
             #corpus_fullpath.set(corpa)
-            current_corpus.set(os.path.basename(corpa))
+            
             spk = conmap(Config, "Interrogate")['speakers']
             corpora_speakers = parse_speakdict(spk)
             for i, v in list(corpora_speakers.items()):
@@ -6196,30 +6212,30 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 timestring('No settings file found.')
                 return
 
+            # parsing for ints is causing errors?
             Config.add_section('Projects')
             Config.set('Projects','most recent', ';'.join(most_recent_projects[-5:]).lstrip(';'))
             Config.add_section('CoreNLP')
             Config.set('CoreNLP','Parser path', corenlppath.get())
-            Config.set('CoreNLP','Memory allocation', parser_memory.get())
+            Config.set('CoreNLP','Memory allocation', str(parser_memory.get()))
             Config.add_section('Appearance')
-            Config.set('Appearance','Spreadsheet row header width', row_label_width.get())
-            Config.set('Appearance','Spreadsheet cell width', cell_width.get())
+            Config.set('Appearance','Spreadsheet row header width', str(row_label_width.get()))
+            Config.set('Appearance','Spreadsheet cell width', str(cell_width.get()))
             Config.add_section('Other')
-            Config.set('Other','Truncate concordance lines', truncate_conc_after.get())
-            Config.set('Other','Truncate spreadsheets', truncate_spreadsheet_after.get())
-            Config.set('Other','Automatic update check', do_auto_update.get())
-            Config.set('Other','do concordancing', do_concordancing.get())
-            Config.set('Other','Only format middle concordance column', only_format_match.get())
-            Config.set('Other','p value', p_val.get())
+            Config.set('Other','Truncate concordance lines', str(truncate_conc_after.get()))
+            Config.set('Other','Truncate spreadsheets', str(truncate_spreadsheet_after.get()))
+            Config.set('Other','Automatic update check', str(do_auto_update.get()))
+            Config.set('Other','do concordancing', str(do_concordancing.get()))
+            Config.set('Other','Only format middle concordance column', str(only_format_match.get()))
+            Config.set('Other','p value', str(p_val.get()))
             cfgfile = open(settingsfile ,'w')
             Config.write(cfgfile)
 
-            cell_width.get()
-            row_label_width.get()
-            truncate_conc_after.get()
-            truncate_spreadsheet_after.get()
-            do_auto_update.get()
-
+            #cell_width.get()
+            #row_label_width.get()
+            #truncate_conc_after.get()
+            #truncate_spreadsheet_after.get()
+            #do_auto_update.get()
 
             if printout:
                 timestring('Tool preferences saved.')
@@ -6242,16 +6258,23 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             def tryer(config, var, section, name):
                 """attempt to load a value, fail gracefully if not there"""
                 try:
-                    if config.has_option(section,name):
-                        var.set(conmap(config, section)[name])
+                    if config.has_option(section, name):
+                        bit = conmap(config, section).get(name, False)
+                        if name in ['memory allocation', 'truncate spreadsheets', 
+                                    'truncate concordance lines', 'p value']:
+                            bit = int(bit)
+                        else:
+                            bit = bool(bit)
+
+                        var.set(bit)
                 except:
                     pass
 
             Config = configparser.ConfigParser()
             Config.read(settingsfile)
             tryer(Config, parser_memory, "CoreNLP", "memory allocation")
-            tryer(Config, row_label_width, "Appearance", 'spreadsheet row header width')
-            tryer(Config, cell_width, "Appearance", 'spreadsheet cell width')
+            #tryer(Config, row_label_width, "Appearance", 'spreadsheet row header width')
+            #tryer(Config, cell_width, "Appearance", 'spreadsheet cell width')
             tryer(Config, do_auto_update, "Other", 'automatic update check')
             #tryer(Config, conc_when_int, "Other", 'concordance when interrogating')
             tryer(Config, only_format_match, "Other", 'only format middle concordance column')
@@ -6294,23 +6317,23 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             Config.set('Interrogate','Corpus path', relcorpuspath)
             Config.set('Interrogate','Speakers', convert_speakdict_to_string(corpus_names_and_speakers))
             Config.set('Interrogate','dependency type', kind_of_dep.get())
-            Config.set('Interrogate','Treat files as subcorpora', files_as_subcorpora.get())
+            Config.set('Interrogate','Treat files as subcorpora', str(files_as_subcorpora.get()))
 
             Config.add_section('Edit')
             Config.add_section('Visualise')
             Config.set('Visualise','Plot style', plot_style.get())
-            Config.set('Visualise','Use TeX', texuse.get())
+            Config.set('Visualise','Use TeX', str(texuse.get()))
             Config.set('Visualise','x axis title', x_axis_l.get())
             Config.set('Visualise','Colour scheme', chart_cols.get())
             Config.add_section('Concordance')
-            Config.set('Concordance','font size', fsize.get())
+            Config.set('Concordance','font size', str(fsize.get()))
             #Config.set('Concordance','dependency type', conc_kind_of_dep.get())
             Config.set('Concordance','coding scheme', codscheme)
             if win.get() == 'Window':
                 window = 70
             else:
                 window = int(win.get())
-            Config.set('Concordance','window', window)
+            Config.set('Concordance','window', str(window))
             Config.add_section('Manage')
             Config.set('Manage','Project path',project_fullpath.get())
 
