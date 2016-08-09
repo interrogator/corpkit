@@ -1124,7 +1124,7 @@ class Corpora(Datalist):
         """
         from corpkit.corpus import Corpora
         objs = []
-        for k, v in self.items():
+        for v in list(self):
             objs.append(v.parse(**kwargs))
         return Corpora(objs)
 
