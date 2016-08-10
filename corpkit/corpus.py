@@ -681,11 +681,6 @@ class Corpus(object):
                           )
         if not corp:
             return
-        #if outname:
-        #    import shutil
-        #    newpath = os.path.join(os.path.dirname(corp), outname)
-        #    shutil.move(corp, newpath)
-        #    corp = newpath
 
         if os.path.isfile(corp):
             return File(corp)
