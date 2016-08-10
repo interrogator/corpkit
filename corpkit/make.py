@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from corpkit.constants import INPUTFUNC
+from corpkit.constants import INPUTFUNC, PYTHON_VERSION
 def make_corpus(unparsed_corpus_path,
                 project_path=None,
                 parse=True,
@@ -53,7 +53,7 @@ def make_corpus(unparsed_corpus_path,
     import codecs
     from corpkit.build import folderise, can_folderise
     from corpkit.process import saferead
-    pyver = sys.version_info.major
+    
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 

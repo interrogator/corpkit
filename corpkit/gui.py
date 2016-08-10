@@ -19,10 +19,13 @@
 from __future__ import print_function
 
 import sys
+# is string used?
 import string
 import time
 import os
+# is threading used?
 import threading
+
 try:
     import tkMessageBox as messagebox
     import tkSimpleDialog as simpledialog
@@ -680,23 +683,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             options = cnfg.options(section)
             # todo: this loops over too many times
             for option in options:
-                try:
-                    op = cnfg.get(section, option)
-                    if opt == '0':
-                        opt = False
-                    elif opt == '1':
-                        opt = True
-                    elif opt.isdigit():
-                        opt = int(opt)
-                    if isinstance(opt, str) and opt.lower() == 'none':
-                        opt = False
-                    if not opt:
-                        opt = 0
-
-                    dict1[option] = opt
-                except:
-                    print(("exception on %s!" % option))
-                    dict1[option] = None
+                #try:
+                opt = cnfg.get(section, option)
+                if opt == '0':
+                    opt = False
+                elif opt == '1':
+                    opt = True
+                elif opt.isdigit():
+                    opt = int(opt)
+                if isinstance(opt, str) and opt.lower() == 'none':
+                    opt = False
+                if not opt:
+                    opt = 0
+                dict1[option] = opt
             return dict1
 
         def convert_pandas_dict_to_ints(dict_obj):
@@ -848,7 +847,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             recs = model.getAllCells()
             colnames = model.columnNames
             collabels = model.columnlabels
-            row=[]
+            row = []
             csv_data = []
             for c in colnames:
                 row.append(collabels[c])
@@ -867,18 +866,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 #csv_data.append('\n')
                 #writer.writerow(recs[row])
             csv = '\n'.join(csv_data)
-            uc = unicode(csv, errors = 'ignore')
+            uc = unicode(csv, errors='ignore')
             newdata = pandas.read_csv(StringIO(uc), index_col=0, header=0)
-            newdata = pandas.DataFrame(newdata, dtype = object)
+            newdata = pandas.DataFrame(newdata, dtype=object)
             newdata = newdata.T
-            newdata = newdata.drop('Total', errors = 'ignore')
+            newdata = newdata.drop('Total', errors='ignore')
             newdata = add_tkt_index(newdata)
             if need_make_totals(newdata):
                 newdata = make_df_totals(newdata)
             return newdata
 
-        def color_saved(lb, savepath = False, colour1 = '#D9DDDB', colour2 = 'white', 
-                        ext = '.p', lists = False):
+        def color_saved(lb, savepath=False, colour1='#D9DDDB', colour2='white', 
+                        ext='.p', lists=False):
             """make saved items in listbox have colour background
 
             lb: listbox to colour
@@ -1527,13 +1526,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 interrogator_args['just_speakers'] = jspeak
             
             # translate lemmatag
-            tagdict = {'Noun': 'n',
+            tagdict = {'Noun':      'n',
                        'Adjective': 'a',
-                       'Verb': 'v',
-                       'Adverb': 'r',
-                       'None': False,
-                       '': False,
-                       'Off': False}
+                       'Verb':      'v',
+                       'Adverb':    'r',
+                       'None':      False,
+                       '':          False,
+                       'Off':       False}
 
             interrogator_args['lemmatag'] = tagdict[lemtag.get()]
 
@@ -1617,8 +1616,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     all_conc[nm] = r.concordance
 
             # show most recent (alphabetically last) interrogation spreadsheet
-            recent_interrogation_name = dict_of_results.keys()[0]
-            recent_interrogation_data = dict_of_results.values()[0]
+            recent_interrogation_name = list(dict_of_results.keys())[0]
+            recent_interrogation_data = list(dict_of_results.values())[0]
 
             if queryd == {'v': 'any'}:
                 conc = False
@@ -2173,16 +2172,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # boolean interrogation arguments need fixing, right now use 0 and 1
         #lem = IntVar()
-        #lbut = Checkbutton(interro_opt, text="Lemmatise", variable=lem, onvalue = True, offvalue = False)
+        #lbut = Checkbutton(interro_opt, text="Lemmatise", variable=lem, onvalue=True, offvalue=False)
         #lbut.grid(column=0, row=8, sticky=W)
         #phras = IntVar()
-        #mwbut = Checkbutton(interro_opt, text="Multiword results", variable=phras, onvalue = True, offvalue = False)
+        #mwbut = Checkbutton(interro_opt, text="Multiword results", variable=phras, onvalue=True, offvalue=False)
         #mwbut.grid(column=1, row=8, sticky=E)
         #tit_fil = IntVar()
-        #tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue = True, offvalue = False)
+        #tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue=True, offvalue=False)
         #tfbut.grid(row=9, column=0, sticky=W)
         case_sensitive = IntVar()
-        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue = True, offvalue = False).grid(row=13, column=0, sticky=W)
+        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue=True, offvalue=False).grid(row=13, column=0, sticky=W)
 
         global ngmsize
         Label(interro_opt, text='Ngrams:').grid(row=7, column=0, sticky=W) 
@@ -2193,7 +2192,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         global split_contract
         split_contract = IntVar(root)
         split_contract.set(False)
-        split_contract_but = Checkbutton(interro_opt, text='Split contractions', variable=split_contract, onvalue = True, offvalue = False)
+        split_contract_but = Checkbutton(interro_opt, text='Split contractions', variable=split_contract, onvalue=True, offvalue=False)
         split_contract_but.grid(row=7, column=1, sticky=E) 
 
         Label(interro_opt, text='Spelling:').grid(row=6, column=1, sticky=E, padx=(0, 75))
@@ -2328,7 +2327,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         Label(interro_return_frm, text='     Tree', font=("Courier New", 13)).grid(row=5, column=4, sticky=E)
         return_token = StringVar()
         return_token.set('')
-        ck1 = Checkbutton(interro_return_frm, variable=return_token, onvalue = 'w', offvalue = '')
+        ck1 = Checkbutton(interro_return_frm, variable=return_token, onvalue='w', offvalue = '')
         ck1.select()
         ck1.grid(row=1, column=1, sticky=E)
 
@@ -2342,7 +2341,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         return_lemma = StringVar()
         return_lemma.set('')
-        ck2 = Checkbutton(interro_return_frm, anchor=E, variable=return_lemma, onvalue = 'l', offvalue = '')
+        ck2 = Checkbutton(interro_return_frm, anchor=E, variable=return_lemma, onvalue='l', offvalue = '')
         ck2.grid(row=1, column=2, sticky=E)
 
         def return_lemma_callback(*args):
@@ -2358,7 +2357,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         return_pos = StringVar()
         return_pos.set('')
-        ck3 = Checkbutton(interro_return_frm, variable=return_pos, onvalue = 'p', offvalue = '')
+        ck3 = Checkbutton(interro_return_frm, variable=return_pos, onvalue='p', offvalue = '')
         ck3.grid(row=1, column=3, sticky=E)
 
         def return_pos_callback(*args):
@@ -2371,12 +2370,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         return_function = StringVar()
         return_function.set('')
-        ck7 = Checkbutton(interro_return_frm, variable=return_function, onvalue = 'f', offvalue = '')
+        ck7 = Checkbutton(interro_return_frm, variable=return_function, onvalue='f', offvalue = '')
         ck7.grid(row=1, column=4, sticky=E)
 
         return_tree = StringVar()
         return_tree.set('')
-        ck4 = Checkbutton(interro_return_frm, anchor=E, variable=return_tree, onvalue = 't', offvalue = '')
+        ck4 = Checkbutton(interro_return_frm, anchor=E, variable=return_tree, onvalue='t', offvalue = '')
         ck4.grid(row=6, column=4, sticky=E)
 
         def return_tree_callback(*args):
@@ -2391,17 +2390,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         return_index = StringVar()
         return_index.set('')
-        ck5 = Checkbutton(interro_return_frm, anchor=E, variable=return_index, onvalue = 'i', offvalue = '')
+        ck5 = Checkbutton(interro_return_frm, anchor=E, variable=return_index, onvalue='i', offvalue = '')
         ck5.grid(row=6, column=2, sticky=E)
 
         return_distance = StringVar()
         return_distance.set('')
-        ck6 = Checkbutton(interro_return_frm, anchor=E, variable=return_distance, onvalue = 'r', offvalue = '')
+        ck6 = Checkbutton(interro_return_frm, anchor=E, variable=return_distance, onvalue='r', offvalue = '')
         ck6.grid(row=6, column=3, sticky=E)
 
         return_count = StringVar()
         return_count.set('')
-        ck8 = Checkbutton(interro_return_frm, variable=return_count, onvalue = 'c', offvalue = '')
+        ck8 = Checkbutton(interro_return_frm, variable=return_count, onvalue='c', offvalue = '')
         ck8.grid(row=6, column=1, sticky=E)
 
         def countmode(*args):
@@ -2432,73 +2431,73 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         return_gov = StringVar()
         return_gov.set('')
         ck9 = Checkbutton(interro_return_frm, variable=return_gov, 
-                          onvalue = 'g', offvalue = '')
+                          onvalue='g', offvalue = '')
         ck9.grid(row=2, column=1, sticky=E)
 
         return_gov_lemma = StringVar()
         return_gov_lemma.set('')
         ck10 = Checkbutton(interro_return_frm, variable=return_gov_lemma, 
-                          onvalue = 'gl', offvalue = '')
+                          onvalue='gl', offvalue = '')
         ck10.grid(row=2, column=2, sticky=E)
 
         return_gov_pos = StringVar()
         return_gov_pos.set('')
         ck11 = Checkbutton(interro_return_frm, variable=return_gov_pos, 
-                          onvalue = 'gp', offvalue = '')
+                          onvalue='gp', offvalue = '')
         ck11.grid(row=2, column=3, sticky=E)
 
         return_gov_func = StringVar()
         return_gov_func.set('')
         ck12 = Checkbutton(interro_return_frm, variable=return_gov_func, 
-                          onvalue = 'gf', offvalue = '')
+                          onvalue='gf', offvalue = '')
         ck12.grid(row=2, column=4, sticky=E)
 
         return_dep = StringVar()
         return_dep.set('')
         ck13 = Checkbutton(interro_return_frm, variable=return_dep, 
-                          onvalue = 'd', offvalue = '')
+                          onvalue='d', offvalue = '')
         ck13.grid(row=3, column=1, sticky=E)
 
         return_dep_lemma = StringVar()
         return_dep_lemma.set('')
         ck14 = Checkbutton(interro_return_frm, variable=return_dep_lemma, 
-                          onvalue = 'dl', offvalue = '')
+                          onvalue='dl', offvalue = '')
         ck14.grid(row=3, column=2, sticky=E)
 
         return_dep_pos = StringVar()
         return_dep_pos.set('')
         ck15 = Checkbutton(interro_return_frm, variable=return_dep_pos, 
-                          onvalue = 'dp', offvalue = '')
+                          onvalue='dp', offvalue = '')
         ck15.grid(row=3, column=3, sticky=E)
 
         return_dep_func = StringVar()
         return_dep_func.set('')
         ck16 = Checkbutton(interro_return_frm, variable=return_dep_func, 
-                          onvalue = 'df', offvalue = '')
+                          onvalue='df', offvalue = '')
         ck16.grid(row=3, column=4, sticky=E)
 
         return_ngm = StringVar()
         return_ngm.set('')
         ck17 = Checkbutton(interro_return_frm, variable=return_ngm, 
-                          onvalue = 'n', offvalue = '')
+                          onvalue='n', offvalue = '')
         ck17.grid(row=4, column=1, sticky=E)
 
         return_ngm_lemma = StringVar()
         return_ngm_lemma.set('')
         ck18 = Checkbutton(interro_return_frm, variable=return_ngm_lemma, 
-                          onvalue = 'nl', offvalue = '')
+                          onvalue='nl', offvalue = '')
         ck18.grid(row=4, column=2, sticky=E)
 
         return_ngm_pos = StringVar()
         return_ngm_pos.set('')
         ck19 = Checkbutton(interro_return_frm, variable=return_ngm_pos, 
-                          onvalue = 'np', offvalue = '')
+                          onvalue='np', offvalue = '')
         ck19.grid(row=4, column=3, sticky=E)
 
         return_ngm_func = StringVar()
         return_ngm_func.set('')
         ck20 = Checkbutton(interro_return_frm, variable=return_ngm_func, 
-                          onvalue = 'npl', offvalue = '', state=DISABLED)
+                          onvalue='npl', offvalue = '', state=DISABLED)
         ck20.grid(row=4, column=4, sticky=E)
 
         return_ngm.trace("w", ngram_callback)
@@ -2990,7 +2989,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # transpose
         transpose = IntVar()
-        trans_but = Checkbutton(editor_buttons, text="Transpose", variable=transpose, onvalue = True, offvalue = False)
+        trans_but = Checkbutton(editor_buttons, text="Transpose", variable=transpose, onvalue=True, offvalue=False)
         trans_but.grid(column=1, row=8, sticky=E)
 
         # entries + entry field for regex, off, skip, keep, merge
@@ -3773,26 +3772,26 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # transpose
         transpose_vis = IntVar()
-        trans_but_vis = Checkbutton(plot_option_frame, text="Transpose", variable=transpose_vis, onvalue = True, offvalue = False, width=13)
+        trans_but_vis = Checkbutton(plot_option_frame, text="Transpose", variable=transpose_vis, onvalue=True, offvalue=False, width=13)
         trans_but_vis.grid(column=1, row=11, sticky=E)
 
         cumul = IntVar()
-        cumulbutton = Checkbutton(plot_option_frame, text="Cumulative", variable=cumul, onvalue = True, offvalue = False)
+        cumulbutton = Checkbutton(plot_option_frame, text="Cumulative", variable=cumul, onvalue=True, offvalue=False)
         cumulbutton.grid(column=0, row=11, sticky=W)
 
         bw = IntVar()
-        Checkbutton(plot_option_frame, text="Black and white", variable=bw, onvalue = True, offvalue = False).grid(column=0, row=12, sticky=W)
+        Checkbutton(plot_option_frame, text="Black and white", variable=bw, onvalue=True, offvalue=False).grid(column=0, row=12, sticky=W)
         texuse = IntVar()
-        tbut = Checkbutton(plot_option_frame, text="Use TeX", variable=texuse, onvalue = True, offvalue = False, width=13)
+        tbut = Checkbutton(plot_option_frame, text="Use TeX", variable=texuse, onvalue=True, offvalue=False, width=13)
         tbut.grid(column=1, row=12, sticky=E)
         tbut.deselect()
         if not py_script:
             tbut.config(state=DISABLED)
 
         rl = IntVar()
-        Checkbutton(plot_option_frame, text="Reverse legend", variable=rl, onvalue = True, offvalue = False).grid(column=0, row=13, sticky=W)
+        Checkbutton(plot_option_frame, text="Reverse legend", variable=rl, onvalue=True, offvalue=False).grid(column=0, row=13, sticky=W)
         sbplt = IntVar()
-        sbpl_but = Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue = True, offvalue = False, width=13)
+        sbpl_but = Checkbutton(plot_option_frame, text="Subplots", variable=sbplt, onvalue=True, offvalue=False, width=13)
         sbpl_but.grid(column=1, row=13, sticky=E)
 
         def sbplt_callback(*args):
@@ -3808,22 +3807,22 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
 
         gridv = IntVar()
-        gridbut = Checkbutton(plot_option_frame, text="Grid", variable=gridv, onvalue = True, offvalue = False)
+        gridbut = Checkbutton(plot_option_frame, text="Grid", variable=gridv, onvalue=True, offvalue=False)
         gridbut.select()
         gridbut.grid(column=0, row=14, sticky=W)
 
         stackd = IntVar()
-        stackbut = Checkbutton(plot_option_frame, text="Stacked", variable=stackd, onvalue = True, offvalue = False, width=13)
+        stackbut = Checkbutton(plot_option_frame, text="Stacked", variable=stackd, onvalue=True, offvalue=False, width=13)
         stackbut.grid(column=1, row=14, sticky=E)
         stackbut.config(state=DISABLED)
 
         part_pie = IntVar()
-        ppie_but = Checkbutton(plot_option_frame, text="Partial pie", variable=part_pie, onvalue = True, offvalue = False)
+        ppie_but = Checkbutton(plot_option_frame, text="Partial pie", variable=part_pie, onvalue=True, offvalue=False)
         ppie_but.grid(column=0, row=15, sticky=W)
         ppie_but.config(state=DISABLED)
 
         filledvar = IntVar()
-        filledbut = Checkbutton(plot_option_frame, text="Filled", variable=filledvar, onvalue = True, offvalue = False, width=13)
+        filledbut = Checkbutton(plot_option_frame, text="Filled", variable=filledvar, onvalue=True, offvalue=False, width=13)
         filledbut.grid(column=1, row=15, sticky=E)
         filledbut.config(state=DISABLED)
 
@@ -4273,12 +4272,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             customs = convert(custom_special_dict)
             special_qs = [processes, roles, wordlists]
             for kind in special_qs:
-                types = [k for k in list(kind.__dict__.keys())]
+                try:
+                    types = [k for k in list(kind.__dict__.keys())]
+                except AttributeError:
+                    types = [k for k in list(kind._asdict().keys())]
+
                 for t in types:
                     if kind == roles:
-                        all_preset_types[t.upper() + '_ROLE'] = kind.__dict__[t]
+                        all_preset_types[t.upper() + '_ROLE'] = kind._asdict()[t]
                     else:
-                        all_preset_types[t.upper()] = kind.__dict__[t]
+                        try:
+                            all_preset_types[t.upper()] = kind.__dict__[t]
+                        except AttributeError:
+                            all_preset_types[t.upper()] = kind._asdict()[t]
             return all_preset_types
         
         predict = make_dict_from_existing_wordlists()
@@ -4349,7 +4355,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             for index, (k, v) in enumerate(popt.items()):
                 tmp = StringVar()
-                but = Checkbutton(poptions, text=k, variable=tmp, onvalue = v, offvalue = False)
+                but = Checkbutton(poptions, text=k, variable=tmp, onvalue=v, offvalue=False)
                 but.grid(sticky=W)
                 if k != 'Referent tracking' and k != 'Named entity recognition' and k != 'Clean XML':
                     but.select()
@@ -4358,7 +4364,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 butbut[index] = but
                 butvar[index] = tmp
             
-            Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue = True, offvalue = False).grid(sticky=W)
+            Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue=True, offvalue=False).grid(sticky=W)
 
             def optionspicked(*args):
                 vals = [i.get() for i in list(butvar.values()) if i.get() is not False and i.get() != 0 and i.get() != '0']
@@ -5621,7 +5627,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             renamebut = Button(manage_pop, text='Rename', command=lambda: rename_one_or_more(kind = the_current_kind.get()))
             renamebut.grid(padx=15, sticky=W, column=0, row=5)
 
-            #Checkbutton(manage_pop, text="Permanently", variable=perm, onvalue = True, offvalue = False).grid(column=1, row=16, padx=15, sticky=W)
+            #Checkbutton(manage_pop, text="Permanently", variable=perm, onvalue=True, offvalue=False).grid(column=1, row=16, padx=15, sticky=W)
             exportbut = Button(manage_pop, text='Export', command=lambda: export_interrogation(kind = the_current_kind.get()))
             exportbut.grid(padx=15, sticky=E, column=1, row=3)
             #Label(manage_pop, text='Remove selected: '()).grid(padx=15, sticky=W, row=4, column=0)
@@ -6286,7 +6292,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             try:
                 parspath = conmap(Config, "CoreNLP")['parser path']
             except:
-                parspath == 'default'
+                parspath = 'default'
             try:
                 mostrec = conmap(Config, "Projects")['most recent'].lstrip(';').split(';')
                 for i in mostrec:
