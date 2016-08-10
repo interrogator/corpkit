@@ -675,6 +675,7 @@ class Corpus(object):
                            multiprocess=multiprocess,
                            split_texts=split_texts,
                            outname=outname,
+                           metadata=metadata,
                            *args,
                            **kwargs
                           )

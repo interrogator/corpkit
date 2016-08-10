@@ -270,9 +270,13 @@ def parse_corpus(proj_path=False,
     # this caused errors when multiprocessing
     # it used to be isdir, but supposedly there was a file there
     # i don't see how it's possible ...
+    # i think it is a 'race condition', so we'll also put a try/except there
     
     if not os.path.exists(new_corpus_path):
-        os.makedirs(new_corpus_path)
+        try:
+            os.makedirs(new_corpus_path)
+        except OSError:
+            pass
     else:
         if not os.path.isfile(new_corpus_path):
             fs = get_filepaths(new_corpus_path, ext=False)
