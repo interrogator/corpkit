@@ -553,7 +553,10 @@ def make_no_id_corpus(pth, newpth, metadata_mode=False):
                 splitmet = datum.rsplit('<metadata ', 1)
                 good_data.append(splitmet[0])
         with open(f, "w") as fo:
-            fo.write('\n'.join(good_data))
+            if PYTHON_VERSION == 2:
+                fo.write('\n'.join(good_data).encode('utf-8'))
+            else:
+                fo.write('\n'.join(good_data))
 
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
