@@ -79,11 +79,15 @@ def interpreter(debug=False):
 
         def __init__(self):
 
-            from corpkit.dictionaries import processes, roles
+            from corpkit.dictionaries.roles import roles
             from corpkit.dictionaries.wordlists import wordlists
+            from corpkit.dictionaries.process_types import processes
             from collections import defaultdict
             wl = wordlists._asdict()
-            wl.update(roles.__dict__)
+            try:
+                wl.update(roles.__dict__)
+            except AttributeError:
+                wl.update(roles._asdict())
             wl.update(processes.__dict__)
             self.result = None
             self.previous = None
