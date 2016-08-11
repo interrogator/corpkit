@@ -874,7 +874,11 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                         try:
                             ix = dct[(snum, i)]
                             fixed_line = splitmain[ix].rstrip('\t_') + '\t%s' % numstring
-                            gov_s = int(fixed_line.split('\t')[6])
+                            gv = fixed_line.split('\t')[6]
+                            try:
+                                gov_s = int(gv)
+                            except ValueError:
+                                continue
                             if gov_s < d['startIndex'] or gov_s > d['endIndex']:
                                 fixed_line += '*'
                             splitmain[ix] = fixed_line
