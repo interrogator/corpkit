@@ -199,8 +199,8 @@ class Label2(Frame):
         self.height = height
         
         Frame.__init__(self, master, width=self.width, height=self.height)
-        self.label_widget = Text(self, height=1, **kwargs)
-        self.label_widget.pack(expand=YES, fill='x')
+        self.label_widget = Text(self, width=1, **kwargs)
+        self.label_widget.pack(fill='both', expand=True)
         #self.label_widget.config(state=DISABLED)
 
     def pack(self, *args, **kwargs):
@@ -291,17 +291,19 @@ class Notebook(Frame):
         #self.progspace = Frame(self.statusbar, width=int(kw.get('width') * 0.4))
         #self.progspace.grid(sticky=E)
         #self.statusbar.grid_columnconfigure(2, weight=5)
-
-        self.progbar = Progressbar(self.statusbar, orient='horizontal', 
-                           length=620, mode='determinate', variable=self.progvar, 
-                           style="TProgressbar")
         self.text = Label2(self.statusbar, #textvariable=self.status_text,
-                          width=kw.get('width'), height=1, font=("Courier New", 13))
+                          width=int(kw.get('width') * 0.65), height=24, font=("Courier New", 13))
+        self.progbar = Progressbar(self.statusbar, orient='horizontal', 
+                           length=int(kw.get('width') * 0.35),
+                           mode='determinate', variable=self.progvar, 
+                           style="TProgressbar")
+
         #self.statusbar.grid_columnconfigure(1, weight=2)
+        self.statusbar.grid(row=2, column=0)
 
         #self.progbar.pack(anchor=E, fill='x')
-        self.text.grid(sticky='we', row=0, column=0)
-        self.progbar.grid(sticky='ew', row=0, column=1)
+        self.text.pack(side=LEFT)
+        self.progbar.pack(side=RIGHT, expand=True)
         #self.statusbar.grid_propagate()
         
         # redirect stdout for log
@@ -313,7 +315,6 @@ class Notebook(Frame):
         self.noteBookFrame.grid()
         self.BFrame.grid(row=0, column=0, columnspan=27, sticky=N) # ", column=13)" puts the tabs in the middle!
         self.noteBook.grid(row=1, column=0, columnspan=27)
-        self.statusbar.grid(row=2, column=0)
 
         
         
@@ -418,8 +419,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             pass
 
         # compress some things for a small screen ...
-        #small_screen = root.winfo_screenheight() < 800
-        small_screen = True
+        small_screen = root.winfo_screenheight() < 800
+        #small_screen = True
         
         ## add tregex and some other bits to path
         paths = ['', 'dictionaries', 'corpkit', 'nltk_data']
@@ -775,7 +776,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
             return dict_obj
 
-        def update_spreadsheet(frame_to_update, df_to_show=None, model = False, 
+        def update_spreadsheet(frame_to_update, df_to_show=None, model=False, 
                                height=140, width=False, indexwidth=70):
             """refresh a spreadsheet"""
             from collections import OrderedDict
@@ -797,7 +798,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if df_to_show is not None:
                 # for abs freq, make total
                 model = TableModel()
-                df_to_show = pandas.DataFrame(df_to_show, dtype = object)
+                df_to_show = pandas.DataFrame(df_to_show, dtype=object)
                 #if need_make_totals(df_to_show):
                 df_to_show = make_df_totals(df_to_show)
                 
@@ -827,9 +828,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     except:
                         pass
                 if 'Total' in list(df_to_show.index):
-                    table.sortTable(columnName = 'Total', reverse = True)
+                    table.sortTable(columnName='Total', reverse=True)
                 elif len(df_to_show.index) == 1:
-                    table.sortTable(columnIndex = 0, reverse = True)
+                    table.sortTable(columnIndex=0, reverse=True)
 
                 else:
                     #nm = os.path.basename(corpus_fullpath.get().rstrip('/'))
@@ -1109,7 +1110,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 elif hasattr(newdata, 'results') and newdata.results is not None:
                     toshow = newdata.results
                     if hasattr(newdata, 'totals') and newdata.results is not None:
-                        toshowt = pandas.DataFrame(newdata.totals, dtype = object)
+                        toshowt = pandas.DataFrame(newdata.totals, dtype=object)
                 update_spreadsheet(interro_results, toshow, height=340)
                 update_spreadsheet(interro_totals, toshowt, height=10)
                 refresh()
@@ -1145,7 +1146,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     if hasattr(newdata, 'totals') and newdata.results is not None:
                         toshowt = newdata.totals
                 update_spreadsheet(interro_results, toshow, height=340)
-                totals_as_df = pandas.DataFrame(toshowt, dtype = object)
+                totals_as_df = pandas.DataFrame(toshowt, dtype=object)
                 update_spreadsheet(interro_totals, toshowt, height=10)
                 refresh()
             else:
@@ -1222,25 +1223,25 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             else:
                 exchange_interro_branch(name_of_interrogation, newdata, branch = 'totals')
 
-        def update_all_interrogations(pane = 'interrogate'):
+        def update_all_interrogations(pane='interrogate'):
             import pandas
             """update all_interrogations within spreadsheet data
             need a very serious cleanup!"""
             # to do: only if they are there!
             if pane == 'interrogate':
-                update_interrogation(interro_results, id = 0)
-                update_interrogation(interro_totals, id = 0, is_total = True)
+                update_interrogation(interro_results, id=0)
+                update_interrogation(interro_totals, id=0, is_total=True)
             if pane == 'edit':
                 update_interrogation(o_editor_results, id = 1)
-                update_interrogation(o_editor_totals, id = 1, is_total = True)
+                update_interrogation(o_editor_totals, id = 1, is_total=True)
                 # update new editor sheet if it's there
                 if name_of_n_ed_spread.get() != '':
                     update_interrogation(n_editor_results, id = 2)
-                    update_interrogation(n_editor_totals, id = 2, is_total = True)
+                    update_interrogation(n_editor_totals, id = 2, is_total=True)
             timestring('Updated interrogations with manual data.')
             if pane == 'interrogate':
                 the_data = all_interrogations[name_of_interro_spreadsheet.get()]
-                tot = pandas.DataFrame(the_data.totals, dtype = object)
+                tot = pandas.DataFrame(the_data.totals, dtype=object)
                 
                 if the_data.results is not None:
                     update_spreadsheet(interro_results, the_data.results, height=340)
@@ -1258,15 +1259,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     pass
                 if the_data.results is not None:
                     update_spreadsheet(o_editor_results, the_data.results, height=140)
-                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype = object), height=10)
+                update_spreadsheet(o_editor_totals, pandas.DataFrame(the_data.totals, dtype=object), height=10)
                 if there_is_new_data:
                     if newdata != 'None' and newdata != '':
                         if the_data.results is not None:
                             update_spreadsheet(n_editor_results, newdata.results, height=140)
-                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype = object), height=10)
+                        update_spreadsheet(n_editor_totals, pandas.DataFrame(newdata.totals, dtype=object), height=10)
                 if name_of_o_ed_spread.get() == name_of_interro_spreadsheet.get():
                     the_data = all_interrogations[name_of_interro_spreadsheet.get()]
-                    tot = pandas.DataFrame(the_data.totals, dtype = object)
+                    tot = pandas.DataFrame(the_data.totals, dtype=object)
                     if the_data.results is not None:
                         update_spreadsheet(interro_results, the_data.results, height=340)
                     update_spreadsheet(interro_totals, tot, height=10)
@@ -2628,41 +2629,44 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         
         # make spreadsheet frames for interrogate pane
 
-        interro_right = Frame(tab1)
+        wdth = int(root.winfo_width() * 0.50)
+        interro_right = Frame(tab1, width=wdth)
         interro_right.grid(row=0, column=1, sticky=N)
 
-        interro_results = Frame(interro_right, height=40, width=25, borderwidth=2)
-        interro_results.grid(column=0, row=0, padx=20, pady=(20,0), sticky='N')
+        interro_results = Frame(interro_right, height=40, width=wdth, borderwidth=2)
+        interro_results.grid(column=0, row=0, padx=20, pady=(20,0), sticky='N', columnspan=4)
 
         interro_totals = Frame(interro_right, height=1, width=20, borderwidth=2)
-        interro_totals.grid(column=0, row=1, padx=20)
+        interro_totals.grid(column=0, row=1, padx=20, columnspan=4)
 
         llab = Label(interro_right, textvariable=i_resultname, 
               font=("Helvetica", 13, "bold"))
 
         llab.grid(row=0, column=0, sticky='NW', padx=20, pady=0)
         llab.lift()
-
-        # show nothing in them yet
-        update_spreadsheet(interro_results, df_to_show=None, height=450, width=760)
-        update_spreadsheet(interro_totals, df_to_show=None, height=10, width=760)
+        
+        # show nothing yet        
+        update_spreadsheet(interro_results, df_to_show=None, height=450, width=wdth)
+        update_spreadsheet(interro_totals, df_to_show=None, height=10, width=wdth)
 
         #global prev
-        prev = Button(interro_right, text='Previous', command=show_prev)
-        prev.grid(row=3, column=0, sticky=W, padx=(120, 0), pady=(5,0))
+        four_interro_under = Frame(interro_right, width=wdth)
+        four_interro_under.grid(row=3, column=0, sticky='ew', padx=(20,0))
+        prev = Button(four_interro_under, text='Previous', command=show_prev)
+        prev.pack(side='left', expand=True)
         #global nex
-        nex = Button(interro_right, text='Next', command=show_next)
-        nex.grid(row=3, column=0, sticky=W, padx=(220, 0), pady=(5,0))
+        nex = Button(four_interro_under, text='Next', command=show_next)
+        nex.pack(side='left', expand=True, padx=(0,50))
         if len(list(all_interrogations.keys())) < 2:
             nex.configure(state=DISABLED)
             prev.configure(state=DISABLED)
 
-        savdict = Button(interro_right, text='Save as dictionary', command=save_as_dictionary)
+        savdict = Button(four_interro_under, text='Save as dictionary', command=save_as_dictionary)
         savdict.config(state=DISABLED)
-        savdict.grid(row=3, column=0, sticky=W, padx=(500,0), pady=(5,0))
+        savdict.pack(side='right', expand=True)
 
-        updbut = Button(interro_right, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
-        updbut.grid(row=3, column=0, sticky=W, padx=(650,0), pady=(5,0))
+        updbut = Button(four_interro_under, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
+        updbut.pack(side='right', expand=True)
         updbut.config(state=DISABLED)
 
         ##############    ##############     ##############     ##############     ############## 
@@ -2889,7 +2893,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             most_recent = all_interrogations[list(all_interrogations.keys())[-1]]
             if most_recent.results is not None:
                 update_spreadsheet(n_editor_results, most_recent.results, height=140)
-            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype = object), height=10)
+            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype=object), height=10)
                         
             # finish up
             refresh()
@@ -3181,6 +3185,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
 
         # show spreadsheets
+        e_wdth = int(root.winfo_width() * 0.55)
         editor_sheets = Frame(tab2)
         editor_sheets.grid(column=1, row=0, sticky='NE')
         resultname = StringVar()
@@ -3198,8 +3203,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                #column=1, sticky=W, pady=0)
         o_editor_totals = Frame(editor_sheets, height=1, width=20)
         o_editor_totals.grid(column=1, row=1, rowspan=1, padx=(20,0), sticky=N, pady=(220,0))
-        update_spreadsheet(o_editor_results, df_to_show=None, height=160, width=800)
-        update_spreadsheet(o_editor_totals, df_to_show=None, height=10, width=800)
+        update_spreadsheet(o_editor_results, df_to_show=None, height=160, width=e_wdth)
+        update_spreadsheet(o_editor_totals, df_to_show=None, height=10, width=e_wdth)
         editoname = StringVar()
         name_of_n_ed_spread = StringVar()
         name_of_n_ed_spread.set('')
@@ -3214,8 +3219,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                #column=1, sticky=W, padx=20, pady=0)
         n_editor_totals = Frame(editor_sheets, height=1, width=20)
         n_editor_totals.grid(column=1, row=1, rowspan=1, padx=(20,0), pady=(500,0))
-        update_spreadsheet(n_editor_results, df_to_show=None, height=160, width=800)
-        update_spreadsheet(n_editor_totals, df_to_show=None, height=10, width=800)
+        update_spreadsheet(n_editor_results, df_to_show=None, height=160, width=e_wdth)
+        update_spreadsheet(n_editor_totals, df_to_show=None, height=10, width=e_wdth)
 
         # add button to update
         upd_ed_but = Button(editor_sheets, text='Update interrogation(s)', command=lambda: update_all_interrogations(pane='edit'))
@@ -4177,6 +4182,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 sort_way = toggle()
             df = current_conc[0]
             prev_sortval[0] = sortval.get()
+
             # sorting by first column is easy, so we don't need pandas
             if sortval.get() == 'M1':
                 low = [l.lower() for l in df['m']]
@@ -4191,7 +4197,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 themelist = get_list_of_themes(df)
                 #df.insert(1, 't', themelist)
                 df.insert(1, 'tosorton', themelist)
-            elif sortval.get() == 'Index':
+            elif sortval.get() == 'Index' or sortval.get() == 'Sort':
                 df = df.sort(ascending=sort_way)
             elif sortval.get() == 'Subcorpus':
                 sbs = [l.lower() for l in df['c']]
@@ -4256,7 +4262,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 # append list to df
                 df['tosorton'] = just_sortword
 
-            if sortval.get() != 'Index' and sortval.get() != 'Random':
+            if sortval.get() not in ['Index', 'Random', 'Sort']:
                 df = df.sort(['tosorton'], ascending=sort_way)
                 df = df.drop(['tosorton'], axis=1, errors='ignore')
             if show_filenames.get() == 0:
@@ -4645,15 +4651,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         fsize = IntVar()
         fsize.set(12)
         conc_height = 510 if small_screen else 565
-        cfrm = Frame(tab4, height=conc_height, width=1360)
-        cfrm.grid(column=0, columnspan=60, row=0)
+        cfrm = Frame(tab4, height=conc_height, width=root.winfo_width() - 10)
+        cfrm.grid(column=0, row=0, sticky='nw')
         cscrollbar = Scrollbar(cfrm)
-        cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
+        cscrollbarx = Scrollbar(cfrm, orient=HORIZONTAL)
         cscrollbar.pack(side=RIGHT, fill=Y)
         cscrollbarx.pack(side=BOTTOM, fill=X)
         conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief=SUNKEN, bg='#F4F4F4',
                               xscrollcommand=cscrollbarx.set, height=conc_height, 
-                              width=1050, font=('Courier New', fsize.get()), 
+                              width=root.winfo_width() - 10, font=('Courier New', fsize.get()), 
                               selectmode = EXTENDED)
         conclistbox.pack(fill=BOTH)
         cscrollbar.config(command=conclistbox.yview)
@@ -4722,11 +4728,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         conc_right_button_frame.grid(row=1, column=0, padx=(10,0), sticky='N', pady=(5, 0))
 
         # edit conc lines
-        editbuts = Frame(conc_right_button_frame)
-        editbuts.grid(row=1, column=0, columnspan=6, sticky='W')
-        Button(editbuts, text='Delete selected', command=lambda: delete_conc_lines(), ).grid(row=0, column=0, sticky=W)
-        Button(editbuts, text='Just selected', command=lambda: delete_reverse_conc_lines(), ).grid(row=0, column=1)
-        #Button(editbuts, text='Sort', command=lambda: conc_sort()).grid(row=0, column=4)
+        conc_left_buts = Frame(conc_right_button_frame)
+        conc_left_buts.grid(row=1, column=0, columnspan=6, sticky='W')
+        Button(conc_left_buts, text='Delete selected', command=lambda: delete_conc_lines(), ).grid(row=0, column=0, sticky=W)
+        Button(conc_left_buts, text='Just selected', command=lambda: delete_reverse_conc_lines(), ).grid(row=0, column=1)
+        #Button(conc_left_buts, text='Sort', command=lambda: conc_sort()).grid(row=0, column=4)
 
         def toggle_filenames(*args):
             if type(current_conc[0]) == str:
@@ -4917,7 +4923,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         win = StringVar()
         win.set('Window')
-        wind_size = OptionMenu(editbuts, win, *tuple(('Window', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+        wind_size = OptionMenu(conc_left_buts, win, *tuple(('Window', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
         wind_size.config(width=10)
         wind_size.grid(row=0, column=5)
         win.trace("w", conc_sort)
@@ -4927,24 +4933,36 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         sortval = StringVar()
         sortval.set('Sort')
         prev_sortval = ['None']
-        srtkind = OptionMenu(editbuts, sortval, *sort_vals)
+        srtkind = OptionMenu(conc_left_buts, sortval, *sort_vals)
         srtkind.config(width=10)
         srtkind.grid(row=0, column=3)
         sortval.trace("w", conc_sort)
 
         # export to csv
-        Button(editbuts, text='Export', command=lambda: conc_export()).grid(row=0, column=6)
+        Button(conc_left_buts, text='Export', command=lambda: conc_export()).grid(row=0, column=6)
 
-        Label(conc_right_button_frame, text='Stored concordances', font=("Helvetica", 13, "bold")).grid(row=0, column=6, sticky=E, padx=(380,0))
+        store_label = Label(conc_right_button_frame, text='Stored concordances', font=("Helvetica", 13, "bold"))
+
 
         prev_conc = Frame(conc_right_button_frame)
         prev_conc.grid(row=0, column=7, rowspan = 3, columnspan=2, sticky=E, padx=(10,0), pady=(4,0))
         prevcbar = Scrollbar(prev_conc)
         prevcbar.pack(side=RIGHT, fill=Y)
-        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width=20, height=4, relief=SUNKEN, bg='#F4F4F4',
+        prev_conc_lb_size = 20
+        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width=prev_conc_lb_size, height=4, relief=SUNKEN, bg='#F4F4F4',
                                     yscrollcommand=prevcbar.set, exportselection=False)
         prev_conc_listbox.pack()
         cscrollbar.config(command=prev_conc_listbox.yview)
+        
+        root.update()
+
+        # this laziness is dynamic calculation of how far apart the left and right
+        # button sets should be in the conc pane. i don't want to go reframing 
+        # everything, so instead, we figure out the best distance by nonsensical math
+
+        padd = (root.winfo_width() - showbuts.winfo_width() - showbuts.winfo_width()) * 2
+
+        store_label.grid(row=0, column=6, sticky=E, padx=(padd,0))
 
         ##############     ##############     ##############     ##############     ############## 
         # MANAGE TAB #     # MANAGE TAB #     # MANAGE TAB #     # MANAGE 'TAB' #     # MANAGE TAB # 
