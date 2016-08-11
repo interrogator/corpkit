@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import math
 import os
-import nltk
+from nltk import ngrams, sent_tokenize, word_tokenize
 
 from corpkit.constants import PYTHON_VERSION, STRINGTYPE
 
@@ -27,7 +27,7 @@ class LanguageModel(object):
             # the issue is that this stays stable when it's supposed
             # to change as per 'order'. to fix it, sent
             gram = tuple(ngram.split('-spl-it-'))
-            wordNGrams = nltk.ngrams(gram, order)
+            wordNGrams = ngrams(gram, order)
             for wordNGram in wordNGrams:
                 self.counts[wordNGram] += count
                 # add to lexicon
@@ -92,9 +92,9 @@ class MultiModel(dict):
         elif isinstance(data, STRINGTYPE) and not \
             os.path.exists(data):
             dat = []
-            sents = nltk.sent_tokenize(data)
+            sents = sent_tokenize(data)
             for sent in sents:
-                dat.append('-spl-it-'.join(nltk.word_tokenize(sent)))
+                dat.append('-spl-it-'.join(word_tokenize(sent)))
             counted_sents = Counter(dat)
             counts = LanguageModel(self.order, kwargs.get('alpha', 0.4), counted_sents).counts
         tempscores = {}
