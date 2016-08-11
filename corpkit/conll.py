@@ -748,14 +748,21 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False)
         
         import shlex
         from corpkit.constants import PYTHON_VERSION
-        shxed = shlex.split(metad[-1].encode('utf-8')) if PYTHON_VERSION == 2 \
-                else shlex.split(metad[-1]) 
+        try:
+            shxed = shlex.split(metad[-1].encode('utf-8')) if PYTHON_VERSION == 2 \
+                else shlex.split(metad[-1])
+        except:
+            shxed = i.split("' ")
         for m in shxed:
             if PYTHON_VERSION == 2:
                 m = m.decode('utf-8')
-            k, v = m.split('=')
-            v = v.replace(u"\u2018", "'").replace(u"\u2019", "'").strip("'").strip('"')
-            meta_dict[k] = v
+            # in rare cases of weirdly formatted xml:
+            try:
+                k, v = m.split('=', 1)
+                v = v.replace(u"\u2018", "'").replace(u"\u2019", "'").strip("'").strip('"')
+                meta_dict[k] = v
+            except ValueError:
+                continue
         return meta_dict
 
     split_line = with_id.split(': ', 1)
