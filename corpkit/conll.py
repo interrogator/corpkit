@@ -100,7 +100,7 @@ def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
         return df[attr].ix[sent_id, tok_id]
     return [(sent_id, tok_id)]
 
-def get_head(idx, df=False, repeat=False):
+def get_head(idx, df=False, repeat=False, **kwargs):
 
     sent_id, tok_id = getattr(idx, 'name', idx)
 
@@ -157,6 +157,9 @@ def get_all_corefs(df, coref, s, i):
     if not coref:
         return [(s, i)]
     try:
+        # corefs have a number, and the head of the coref has an asterisk too
+        # so, get all everything in the df with the same number plus the star
+
         just_same_coref = df.loc[df['c'] == df.ix[s,i]['c'] + '*']
         return list(just_same_coref.index)
     except:
@@ -752,7 +755,7 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False)
             shxed = shlex.split(metad[-1].encode('utf-8')) if PYTHON_VERSION == 2 \
                 else shlex.split(metad[-1])
         except:
-            shxed = i.split("' ")
+            shxed = metad[-1].split("' ")
         for m in shxed:
             if PYTHON_VERSION == 2:
                 m = m.decode('utf-8')

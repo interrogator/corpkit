@@ -152,7 +152,7 @@ class SplashScreen(object):
 class RedirectText(object):
     """Send text to app from stdout, for the log and the status bar"""
 
-    def __init__(self, text_ctrl, log_text):
+    def __init__(self, text_ctrl, log_text, text_widget):
         """Constructor"""
         
         def dumfun():
@@ -163,6 +163,7 @@ class RedirectText(object):
         self.log = log_text
         self.flush = dumfun
         self.fileno = dumfun
+        self.text_widget = text_widget
  
     def write(self, string):
         """Add stdout and stderr to log and/or to console""" 
@@ -176,11 +177,40 @@ class RedirectText(object):
             if not re.match(show_reg, string):
                 string = re.sub(del_reg, '', string)
                 self.log.append(string.rstrip('\n'))
+                self.text_widget.config(state='normal')
+                self.text_widget.delete(1.0, 'end')
+                self.text_widget.insert('end', string.rstrip('\n'))
+
+                self.text_widget.config(state='disabled')
         if not re.match(show_reg, string):
             if not string.lstrip().startswith('#') and not string.lstrip().startswith('import'):
                 string = re.sub(del_reg, '', string).rstrip('\n').rstrip()
                 string = string.split('\n')[-1]
                 self.output.set(string.lstrip().rstrip('\n').rstrip())
+                self.text_widget.config(state='normal')
+                self.text_widget.delete(1.0, 'end')
+                self.text_widget.insert('end', string.lstrip().rstrip('\n').rstrip())
+                self.text_widget.config(state='disabled')
+
+class Label2(Frame):
+    """a label whose size can be specified in pixels"""
+    def __init__(self, master, width=0, height=0, **kwargs):
+        self.width = width
+        self.height = height
+        
+        Frame.__init__(self, master, width=self.width, height=self.height)
+        self.label_widget = Text(self, height=1, **kwargs)
+        self.label_widget.pack(expand=YES, fill='x')
+        #self.label_widget.config(state=DISABLED)
+
+    def pack(self, *args, **kwargs):
+        Frame.pack(self, *args, **kwargs)
+        self.pack_propagate(False)
+
+    def grid(self, *args, **kwargs):
+        Frame.grid(self, *args, **kwargs)
+        self.grid_propagate(False)
+
 
 class HyperlinkManager:
     """Hyperlinking for About"""
@@ -211,9 +241,9 @@ class HyperlinkManager:
 
 class Notebook(Frame):
     """Notebook Widget"""
-    def __init__(self, parent, activerelief = RAISED, inactiverelief = FLAT, 
-                xpad = 4, ypad = 6, activefg = 'black', inactivefg = 'black', 
-                activefc = ("Helvetica", 14, "bold"), inactivefc = ("Helvetica", 14), **kw):
+    def __init__(self, parent, activerelief=RAISED, inactiverelief=FLAT, 
+                xpad=4, ypad=6, activefg='black', inactivefg='black', 
+                activefc=("Helvetica", 14, "bold"), inactivefc=("Helvetica", 14), **kw):
         """Construct a Notebook Widget
 
         Notebook(self, parent, activerelief = RAISED, inactiverelief = RIDGE, 
@@ -233,12 +263,11 @@ class Notebook(Frame):
         self.inactivefg = inactivefg
         self.activefc = activefc
         self.inactivefc = inactivefc
-        self.deletedTabs = []        
+        self.deletedTabs = []
         self.xpad = xpad
         self.ypad = ypad
         self.activerelief = activerelief
-        self.inactiverelief = inactiverelief                                               
-        self.kwargs = kw                                                                   
+        self.inactiverelief = inactiverelief                                                           
         self.tabVars = {}                                 
         self.tabs = 0                                                                              
         self.progvar = DoubleVar()
@@ -250,37 +279,45 @@ class Notebook(Frame):
         self.tabVars = {}
         self.tabs = 0    
         # the notebook, with its tabs, middle, status bars
-        self.noteBookFrame = Frame(parent, bg='#c5c5c5')                              
+        self.noteBookFrame = Frame(parent, bg='#c5c5c5')                            
         self.BFrame = Frame(self.noteBookFrame, bg='#c5c5c5')
-        self.statusbar = Frame(self.noteBookFrame, bd=2, height=10, bg='#F4F4F4')  
-        self.progbarspace = Frame(self.noteBookFrame, relief=RAISED, bd=2, height=25)
-        self.noteBook = Frame(self.noteBookFrame, relief=RAISED, bd=2, **kw)          
+        self.statusbar = Frame(self.noteBookFrame, bd=2, height=24, width=kw.get('width'), bg='#F4F4F4')
+        self.noteBook = Frame(self.noteBookFrame, relief=RAISED, bd=2, **kw)
         self.noteBook.grid_propagate(0)
         # status bar text and log
         self.status_text=StringVar()
         self.log_stream = []
-        #self.imagewatched = StringVar()
 
-        self.text=Label(self.statusbar, textvariable=self.status_text, 
-                         height=1, font=("Courier New", 13), width=135, 
-                         anchor=W, bg='#F4F4F4')
-        self.text.grid(sticky=W)
-        self.progbar = Progressbar(self.progbarspace, orient='horizontal', 
-                           length = 500, mode='determinate', variable=self.progvar, 
+        #self.progspace = Frame(self.statusbar, width=int(kw.get('width') * 0.4))
+        #self.progspace.grid(sticky=E)
+        #self.statusbar.grid_columnconfigure(2, weight=5)
+
+        self.progbar = Progressbar(self.statusbar, orient='horizontal', 
+                           length=620, mode='determinate', variable=self.progvar, 
                            style="TProgressbar")
-        self.progbar.grid(sticky=E)
+        self.text = Label2(self.statusbar, #textvariable=self.status_text,
+                          width=kw.get('width'), height=1, font=("Courier New", 13))
+        #self.statusbar.grid_columnconfigure(1, weight=2)
+
+        #self.progbar.pack(anchor=E, fill='x')
+        self.text.grid(sticky='we', row=0, column=0)
+        self.progbar.grid(sticky='ew', row=0, column=1)
+        #self.statusbar.grid_propagate()
         
         # redirect stdout for log
-        self.redir = RedirectText(self.status_text, self.log_stream)
+        self.redir = RedirectText(self.status_text, self.log_stream, self.text.label_widget)
         sys.stdout = self.redir
-        sys.stderr = self.redir
+        #sys.stderr = self.redir
 
         Frame.__init__(self)
         self.noteBookFrame.grid()
         self.BFrame.grid(row=0, column=0, columnspan=27, sticky=N) # ", column=13)" puts the tabs in the middle!
         self.noteBook.grid(row=1, column=0, columnspan=27)
-        self.statusbar.grid(row=2, column=0, padx=(0, 273))
-        self.progbarspace.grid(row=2, column=0, padx=(273, 0), sticky=E)
+        self.statusbar.grid(row=2, column=0)
+
+        
+        
+        #self.progbarspace.grid(row=2, column=0, padx=(273, 0), sticky=E)
 
     def change_tab(self, IDNum):
         """Internal Function"""
@@ -380,8 +417,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         except:
             pass
 
-        small_screen = root.winfo_screenheight() > 600
-
+        # compress some things for a small screen ...
+        #small_screen = root.winfo_screenheight() < 800
+        small_screen = True
+        
         ## add tregex and some other bits to path
         paths = ['', 'dictionaries', 'corpkit', 'nltk_data']
         for p in paths:
@@ -408,7 +447,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         root.imagewatched = StringVar()
         #root.overrideredirect(True)
         root.resizable(FALSE,FALSE)
-        note=Notebook(root, width= 1365, height=660, activefg = '#000000', inactivefg = '#585555')  #Create a Note book Instance
+        note_height = 600 if small_screen else 660
+        #wid = 1365
+        note = Notebook(root, width=root.winfo_screenwidth(), height=note_height,
+                        activefg='#000000', inactivefg='#585555')  #Create a Note book Instance
         note.grid()
         tab0 = note.add_tab(text="Build")
         tab1 = note.add_tab(text="Interrogate")
@@ -2585,15 +2627,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         i_resultname.set('Interrogation results: %s' % str(name_of_interro_spreadsheet.get()))  
         
         # make spreadsheet frames for interrogate pane
-        interro_results = Frame(tab1, height=45, width=25, borderwidth=2)
-        interro_results.grid(column=2, row=0, rowspan=5, padx=20, pady=(20,0), sticky='N')
 
-        interro_totals = Frame(tab1, height=1, width=20, borderwidth=2)
-        interro_totals.grid(column=2, row=0, rowspan=1, padx=20, pady=(530,0), sticky='N')
+        interro_right = Frame(tab1)
+        interro_right.grid(row=0, column=1, sticky=N)
 
-        llab = Label(tab1, textvariable=i_resultname, 
+        interro_results = Frame(interro_right, height=40, width=25, borderwidth=2)
+        interro_results.grid(column=0, row=0, padx=20, pady=(20,0), sticky='N')
+
+        interro_totals = Frame(interro_right, height=1, width=20, borderwidth=2)
+        interro_totals.grid(column=0, row=1, padx=20)
+
+        llab = Label(interro_right, textvariable=i_resultname, 
               font=("Helvetica", 13, "bold"))
-        llab.grid(row=0, column=2, sticky='NW', padx=20, pady=0)
+
+        llab.grid(row=0, column=0, sticky='NW', padx=20, pady=0)
         llab.lift()
 
         # show nothing in them yet
@@ -2601,21 +2648,21 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         update_spreadsheet(interro_totals, df_to_show=None, height=10, width=760)
 
         #global prev
-        prev = Button(tab1, text='Previous', command=show_prev)
-        prev.grid(row=1, column=2, sticky=W, padx=(120, 0), pady=(10,0))
+        prev = Button(interro_right, text='Previous', command=show_prev)
+        prev.grid(row=3, column=0, sticky=W, padx=(120, 0), pady=(5,0))
         #global nex
-        nex = Button(tab1, text='Next', command=show_next)
-        nex.grid(row=1, column=2, sticky=W, padx=(220, 0), pady=(10,0))
+        nex = Button(interro_right, text='Next', command=show_next)
+        nex.grid(row=3, column=0, sticky=W, padx=(220, 0), pady=(5,0))
         if len(list(all_interrogations.keys())) < 2:
             nex.configure(state=DISABLED)
             prev.configure(state=DISABLED)
 
-        savdict = Button(tab1, text='Save as dictionary', command=save_as_dictionary)
+        savdict = Button(interro_right, text='Save as dictionary', command=save_as_dictionary)
         savdict.config(state=DISABLED)
-        savdict.grid(row=1, column=2, sticky=W, padx=(500,0), pady=(10,0))
+        savdict.grid(row=3, column=0, sticky=W, padx=(500,0), pady=(5,0))
 
-        updbut = Button(tab1, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
-        updbut.grid(row=1, column=2, sticky=W, padx=(650,0), pady=(10,0))
+        updbut = Button(interro_right, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
+        updbut.grid(row=3, column=0, sticky=W, padx=(650,0), pady=(5,0))
         updbut.config(state=DISABLED)
 
         ##############    ##############     ##############     ##############     ############## 
@@ -3171,8 +3218,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         update_spreadsheet(n_editor_totals, df_to_show=None, height=10, width=800)
 
         # add button to update
-        upd_ed_but = Button(editor_sheets, text='Update interrogation(s)', command=lambda: update_all_interrogations(pane = 'edit'))
-        upd_ed_but.grid(row=1, column=1, sticky=E, padx=(0, 40), pady=(594, 0))
+        upd_ed_but = Button(editor_sheets, text='Update interrogation(s)', command=lambda: update_all_interrogations(pane='edit'))
+        if not small_screen:
+            upd_ed_but.grid(row=1, column=1, sticky=E, padx=(0, 40), pady=(594, 0))
+        else:
+            upd_ed_but.grid(row=0, column=1, sticky='NE', padx=(20,0))
         upd_ed_but.config(state=DISABLED)
 
         #################       #################      #################      #################  
@@ -5974,7 +6024,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # a listbox of subcorpora
         Label(tab0, text='Subcorpora', font=("Helvetica", 13, "bold")).grid(row=7, column=0, sticky=W)
-        height = 18 if small_screen else 24
+        height = 21 if small_screen else 24
         build_sub_f = Frame(tab0, width=24, height=height)
         build_sub_f.grid(row=8, column=0, sticky=W, rowspan = 2, padx=(8,0))
         build_sub_sb = Scrollbar(build_sub_f)
@@ -6151,7 +6201,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # a listbox of files
         Label(tab0, textvariable=f_in_s, font=("Helvetica", 13, "bold")).grid(row=0, column=1, sticky='NW', padx=(30, 0))
-        height = 27 if small_screen else 36
+        height = 31 if small_screen else 36
         build_f_box = Frame(tab0, height=height)
         build_f_box.grid(row=1, column=1, rowspan = 9, padx=(20, 0), pady=(10, 0))
         build_f_sb = Scrollbar(build_f_box)
@@ -6884,7 +6934,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
     except:
         pass
     root.wm_state('normal')
-    root.resizable(TRUE,TRUE)
+    #root.resizable(TRUE,TRUE)
 
     # overwrite quitting behaviour, prompt to save settings
     root.createcommand('exit', quitfunc)
