@@ -229,10 +229,6 @@ def interpreter(debug=False):
             from IPython import embed
             from IPython.terminal.embed import InteractiveShellEmbed
 
-        elif command == 'gui':
-            from corpkit.gui import corpkit_gui
-            corpkit_gui(loadcurrent=True)
-
             # the theory is that somewhere we could get the locals from the embedded session
             # atexit_operations could be the answer
 
@@ -248,6 +244,11 @@ def interpreter(debug=False):
                         exit_msg='Switching back to corpkit environment ...',
                         local_ns=locals())
             cc = ret()
+
+        elif command == 'gui':
+            import subprocess
+            import os
+            subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
         elif command in ['result', 'edited', 'totals', 'previous']:
             import tabview
@@ -933,7 +934,7 @@ def interpreter(debug=False):
                 objs.result = res.results
                 objs.totals = res.totals
                 if objs._interactive:
-                    show_this('result')
+                    show_this(['result'])
                 return
             else:
                 print('Bad operation.')
@@ -1286,10 +1287,10 @@ def interpreter(debug=False):
         """
         exec(output)
 
+    in_gui = False
     while True:
         try:
             output = INPUTFUNC(get_prompt())
-            
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
                 break
 
@@ -1335,5 +1336,23 @@ def interpreter(debug=False):
 
 if __name__ == '__main__':
     import sys
+    import pip
+    import importlib
+    import traceback
+
+    def install(name, loc):
+        """if we don't have a module, download it"""
+        try:
+            importlib.import_module(name)
+        except ImportError:
+            pip.main(['install', loc])
+
+    tabview = ('tabview', 'git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview')
+    colorama = ('colorama', 'colorama')
+
+    if not any(arg.lower() == 'noinstall' for arg in sys.argv):
+        install(*tabview)
+        install(*colorama)
+
     debug = sys.argv[-1] == 'debug'
     interpreter(debug=debug)

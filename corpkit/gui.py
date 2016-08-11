@@ -6965,6 +6965,9 @@ if __name__ == "__main__":
     import pip
     import importlib
     import traceback
+    import os
+
+    lc = sys.argv[-1] if os.path.isdir(sys.argv[-1]) else False
 
     def install(name, loc):
         """if we don't have a module, download it"""
@@ -6983,7 +6986,7 @@ if __name__ == "__main__":
             install(*pilcode)
 
     try:
-        corpkit_gui()
+        corpkit_gui(loadcurrent=lc)
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print("*** print_tb:")
