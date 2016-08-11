@@ -245,16 +245,16 @@ class Notebook(Frame):
         self.progvar.set(0)
         self.style = Style()
         self.style.theme_use("default")
-        self.style.configure("TProgressbar", thickness=15, foreground = '#347DBE', background = '#347DBE')
-        self.kwargs = kw                                                                   
-        self.tabVars = {}                                                                  #This dictionary holds the label and frame instances of each tab
-        self.tabs = 0                                                                      #Keep track of the number of tabs                                                                             
+        self.style.configure("TProgressbar", thickness=15, foreground='#347DBE', background='#347DBE')
+        self.kwargs = kw 
+        self.tabVars = {}
+        self.tabs = 0    
         # the notebook, with its tabs, middle, status bars
-        self.noteBookFrame = Frame(parent, bg='#c5c5c5')                                 #Create a frame to hold everything together
+        self.noteBookFrame = Frame(parent, bg='#c5c5c5')                              
         self.BFrame = Frame(self.noteBookFrame, bg='#c5c5c5')
-        self.statusbar = Frame(self.noteBookFrame, bd=2, height=25, bg='#F4F4F4')    #Create a frame to put the "tabs" in
+        self.statusbar = Frame(self.noteBookFrame, bd=2, height=10, bg='#F4F4F4')  
         self.progbarspace = Frame(self.noteBookFrame, relief=RAISED, bd=2, height=25)
-        self.noteBook = Frame(self.noteBookFrame, relief=RAISED, bd=2, **kw)           #Create the frame that will parent the frames for each tab
+        self.noteBook = Frame(self.noteBookFrame, relief=RAISED, bd=2, **kw)          
         self.noteBook.grid_propagate(0)
         # status bar text and log
         self.status_text=StringVar()
@@ -348,7 +348,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
     # generate splash
     with SplashScreen(root, 'loading_image.png', 1.0):
         # set app size
-        root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+        #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
         import warnings
         warnings.filterwarnings("ignore")
         import traceback
@@ -379,6 +379,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             from scipy.stats import linregress
         except:
             pass
+
+        small_screen = root.winfo_screenheight() > 600
 
         ## add tregex and some other bits to path
         paths = ['', 'dictionaries', 'corpkit', 'nltk_data']
@@ -1019,7 +1021,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             """add order to df for tkintertable"""
             import pandas
             df = df.T
-            df = df.drop('tkintertable-order', errors = 'ignore', axis = 1)
+            df = df.drop('tkintertable-order', errors = 'ignore', axis=1)
             df['tkintertable-order'] = pandas.Series([index for index, data in enumerate(list(df.index))], index = list(df.index))
             df = df.T
             return df
@@ -1144,14 +1146,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             namedtup = all_interrogations[namedtupname]
             the_branch = getattr(namedtup, branch)
             if branch == 'results':
-                the_branch.drop(the_branch.index, inplace = True)
-                the_branch.drop(the_branch.columns, axis = 1, inplace = True)
+                the_branch.drop(the_branch.index, inplace=True)
+                the_branch.drop(the_branch.columns, axis=1, inplace=True)
                 for i in list(newdata.columns):
                     the_branch[i] = i
                 for index, i in enumerate(list(newdata.index)):
                     the_branch.loc[i] = newdata.ix[index]
             elif branch == 'totals':
-                the_branch.drop(the_branch.index, inplace = True)
+                the_branch.drop(the_branch.index, inplace=True)
                 for index, datum in zip(newdata.index, newdata.iloc[:,0].values):
                     the_branch.set_value(index, datum)
             all_interrogations[namedtupname] = namedtup
@@ -1963,8 +1965,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
-        speaker_listbox = Listbox(spk_scrl, selectmode = EXTENDED, width=32, height=4, relief = SUNKEN, bg='#F4F4F4',
-                                  yscrollcommand=spk_sbar.set, exportselection = False)
+        slist_height = 2 if small_screen else 4
+        speaker_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
+                                  relief=SUNKEN, bg='#F4F4F4',
+                                  yscrollcommand=spk_sbar.set, exportselection=False)
         speaker_listbox.pack()
         speaker_listbox.configure(state=DISABLED)
         spk_sbar.config(command=speaker_listbox.yview)
@@ -1990,7 +1994,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         Label(interro_opt, text='Query:').grid(row=3, column=0, sticky='NW', pady=(5,0))
         entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-        qa = Text(interro_opt, width=40, height=4, borderwidth=0.5, 
+        qa_height = 2 if small_screen else 4
+        qa = Text(interro_opt, width=40, height=qa_height, borderwidth=0.5, 
                   font=("Courier New", 14), undo=True, relief=SUNKEN, wrap=WORD, highlightthickness=0)
         qa.insert(END, entrytext.get())
         qa.grid(row=3, column=0, columnspan=2, sticky=E, pady=(5,0), padx=(0, 4))
@@ -2588,8 +2593,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         llab = Label(tab1, textvariable=i_resultname, 
               font=("Helvetica", 13, "bold"))
-        llab.grid(row=0, 
-               column=2, sticky='NW', padx=20, pady=0)
+        llab.grid(row=0, column=2, sticky='NW', padx=20, pady=0)
         llab.lift()
 
         # show nothing in them yet
@@ -2598,20 +2602,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         #global prev
         prev = Button(tab1, text='Previous', command=show_prev)
-        prev.grid(row=0, column=2, sticky=W, padx=(120, 0), pady=(607,0))
+        prev.grid(row=1, column=2, sticky=W, padx=(120, 0), pady=(10,0))
         #global nex
         nex = Button(tab1, text='Next', command=show_next)
-        nex.grid(row=0, column=2, sticky=W, padx=(220, 0), pady=(607,0))
+        nex.grid(row=1, column=2, sticky=W, padx=(220, 0), pady=(10,0))
         if len(list(all_interrogations.keys())) < 2:
             nex.configure(state=DISABLED)
             prev.configure(state=DISABLED)
 
         savdict = Button(tab1, text='Save as dictionary', command=save_as_dictionary)
         savdict.config(state=DISABLED)
-        savdict.grid(row=0, column=2, sticky=W, padx=(500,0), pady=(607,0))
+        savdict.grid(row=1, column=2, sticky=W, padx=(500,0), pady=(10,0))
 
-        updbut = Button(tab1, text='Update interrogation', command=lambda: update_all_interrogations(pane = 'interrogate'))
-        updbut.grid(row=0, column=2, sticky=W, padx=(650,0), pady=(607,0))
+        updbut = Button(tab1, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
+        updbut.grid(row=1, column=2, sticky=W, padx=(650,0), pady=(10,0))
         updbut.config(state=DISABLED)
 
         ##############    ##############     ##############     ##############     ############## 
@@ -2811,7 +2815,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             # results should now always be dataframes, so this if is redundant
             if type(r.results) == pandas.core.frame.DataFrame:
                 large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
-                r.results.drop(large, axis = 1, inplace = True)
+                r.results.drop(large, axis=1, inplace=True)
 
             timestring('Result editing completed successfully.')
             
@@ -3085,8 +3089,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         edit_sub_f.grid(row=14, column=1, rowspan = 5, sticky=E, pady=(20,0))
         edsub_scbr = Scrollbar(edit_sub_f)
         edsub_scbr.pack(side=RIGHT, fill=Y)
-        subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height=5, relief = SUNKEN, bg='#F4F4F4',
-                               yscrollcommand=edsub_scbr.set, exportselection = False)
+        subc_listbox = Listbox(edit_sub_f, selectmode = EXTENDED, height=5, relief=SUNKEN, bg='#F4F4F4',
+                               yscrollcommand=edsub_scbr.set, exportselection=False)
         subc_listbox.pack(fill=BOTH)
         edsub_scbr.config(command=subc_listbox.yview)
 
@@ -3263,39 +3267,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                                            case_sensitive=case_sensitive.get())
                 d['explode'] = explval
             
-            texu = texuse.get()
-            if texu == 0:
-                d['tex'] = False
-            else:
-                d['tex'] = True
-
-            d['black_and_white'] = bw.get()
-
-            if rl.get() == 1:
-                d['reverse_legend'] = True
-            
-            if sbplt.get() == 1:
-                d['subplots'] = True
+            # this code is ridiculous
+            d['tex'] = bool(texuse.get())
+            d['black_and_white'] = bool(bw.get())
+            d['reverse_legend'] = bool(rl.get())
+            d['subplots'] = bool(sbplt.get())
+            if bool(sbplt.get()):
                 d['layout'] = (int(lay1.get()), int(lay2.get()))
 
-            if gridv.get() == 1:
-                d['grid'] = True
-            else:
-                d['grid'] = False
-
-            if stackd.get() == 1:
-                d['stacked'] = True
-
-            if part_pie.get() == 1:
-                d['partial_pie'] = True
-
-            if filledvar.get() == 1:
-                d['filled'] = True
-
-            if log_x.get() == 1:
-                d['logx'] = True
-            if log_y.get() == 1:
-                d['logy'] = True
+            d['grid'] = bool(gridv.get())
+            d['stacked'] = bool(stackd.get())
+            d['partial_pie'] = bool(part_pie.get())
+            d['filled'] = bool(filledvar.get())
+            d['logx'] = bool(log_x.get())
+            d['logy'] = bool(log_y.get())
 
             if x_axis_l.get() != '':
                 d['x_label'] = x_axis_l.get()
@@ -3306,8 +3291,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if y_axis_l.get() == 'None':
                 d['y_label'] = False
 
-            if cumul.get():
-                d['cumulative'] = True
+            d['cumulative'] = bool(cumul.get())
 
             d['colours'] = chart_cols.get()
 
@@ -3317,13 +3301,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             else:
                 d['legend_pos'] = legend_loc
 
-            show_totals_in_plot = showtot.get()
-            if show_totals_in_plot == 'plot':
-                d['show_totals'] = 'plot'
-            if show_totals_in_plot == 'legend':
-                d['show_totals'] = 'legend'
-            if show_totals_in_plot == 'legend + plot':
+            if showtot.get() == 'legend + plot':
                 d['show_totals'] = 'both'
+            else:
+                df['show_totals'] = showtot.get()
 
             d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
             f = plotter(what_to_plot, plotnametext.get(), **d)
@@ -3359,7 +3340,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 frame.grid(column=1, row=0, rowspan = 1, padx=(15, 15), pady=(40, 0), columnspan=3, sticky='NW')
                 #frame.rowconfigure(0, weight=9)
                 #frame.columnconfigure(0, weight=9)
-                canvas = Canvas(frame, width=980, height=500)
+                fig_frame_height = 440 if small_screen else 500
+                canvas = Canvas(frame, width=980, height=fig_frame_height)
                 xScrollbar = Scrollbar(frame, orient=HORIZONTAL)
                 yScrollbar = Scrollbar(frame)
                 xScrollbar.pack(side=BOTTOM,fill=X)
@@ -3526,12 +3508,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         savedplot = StringVar()
         savedplot.set('View saved images: ')
-        Label(tab3, textvariable=savedplot, font=("Helvetica", 13, "bold")).grid(row=0, column=1, padx=(40,0), pady=(566,0), sticky=W)
-        pbut = Button(tab3, text='Previous', command=lambda: move(direction = 'back'))
-        pbut.grid(row=0, column=1, padx=(40,0), pady=(616,0), sticky=W)
+        tmp = Label(tab3, textvariable=savedplot, font=("Helvetica", 13, "bold"))
+        padding = 555 if small_screen else 616
+        tmp.grid(row=0, column=1, padx=(40,0), pady=(padding-50,0), sticky=W)
+        pbut = Button(tab3, text='Previous', command=lambda: move(direction='back'))
+        pbut.grid(row=0, column=1, padx=(40,0), pady=(padding, 0), sticky=W)
         pbut.config(state=DISABLED)
         nbut = Button(tab3, text='Next', command=lambda: move(direction = 'forward'))
-        nbut.grid(row=0, column=1, padx=(160,0), pady=(616,0), sticky=W)
+        nbut.grid(row=0, column=1, padx=(160,0), pady=(padding, 0), sticky=W)
         nbut.config(state=DISABLED)
 
         # not in use while using the toolbar instead...
@@ -3768,11 +3752,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         tmp.grid(row=8, column=1, sticky=E)
         all_text_widgets.append(tmp)
 
-        Label(plot_option_frame, text='Explode:').grid(row=9, column=0, sticky=W)
+        tmp = Label(plot_option_frame, text='Explode:')
+        if not small_screen:
+            tmp.grid(row=9, column=0, sticky=W)
         explval = StringVar()
         explval.set('')
         explbox = Entry(plot_option_frame, textvariable=explval, font=("Courier New", 14), width=18)
-        explbox.grid(row=9, column=1, sticky=E)
+        if not small_screen:
+            explbox.grid(row=9, column=1, sticky=E)
         all_text_widgets.append(explbox)
         explbox.config(state=DISABLED)
 
@@ -3831,12 +3818,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         part_pie = IntVar()
         ppie_but = Checkbutton(plot_option_frame, text="Partial pie", variable=part_pie, onvalue=True, offvalue=False)
-        ppie_but.grid(column=0, row=15, sticky=W)
+        if not small_screen:
+            ppie_but.grid(column=0, row=15, sticky=W)
         ppie_but.config(state=DISABLED)
 
         filledvar = IntVar()
         filledbut = Checkbutton(plot_option_frame, text="Filled", variable=filledvar, onvalue=True, offvalue=False, width=13)
-        filledbut.grid(column=1, row=15, sticky=E)
+        if not small_screen:
+            filledbut.grid(column=1, row=15, sticky=E)
         filledbut.config(state=DISABLED)
 
 
@@ -3858,13 +3847,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         ch_col.config(width=17)
         ch_col.grid(row=16, column=1, sticky=E)
         chart_cols.set('viridis')
+        
         # style
-        if not py_script and not from_py:
-            mplsty_path = os.path.join(rd, 'matplotlib', 'mpl-data', 'stylelib')
-            stys = tuple(sorted([i.split('.')[0] for i in os.listdir(mplsty_path) if i.endswith('.mplstyle')]))
-        else:
+        from matplotlib import style
+        try:
+            stys = tuple(stys.available)
+        except:
             stys = tuple(('ggplot', 'fivethirtyeight', 'bmh', 'matplotlib', \
-                          'mpl-white', 'seaborn-dark', 'classic', 'seaborn-talk'))
+                          'mpl-white', 'classic', 'seaborn-talk'))
         plot_style = StringVar(root)
         plot_style.set('ggplot')
         Label(plot_option_frame, text='Plot style:').grid(row=17, column=0, sticky=W)
@@ -3939,7 +3929,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #     # CONCORDANCE TAB #
         ###################     ###################     ###################     ###################
 
-        def add_conc_lines_to_window(data, loading = False, preserve_colour=True):
+        def add_conc_lines_to_window(data, loading=False, preserve_colour=True):
             import pandas as pd
             import re
             #pd.set_option('display.height', 1000)
@@ -3967,16 +3957,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             subc = show_subcorpora.get()
 
             if not fnames:
-                data = data.drop('f', axis = 1, errors = 'ignore')
+                data = data.drop('f', axis=1, errors = 'ignore')
             if not them:
-                data = data.drop('t', axis = 1, errors = 'ignore')
+                data = data.drop('t', axis=1, errors = 'ignore')
             if not spk:
-                data = data.drop('s', axis = 1, errors = 'ignore')
+                data = data.drop('s', axis=1, errors = 'ignore')
             if not subc:
-                data = data.drop('c', axis = 1, errors = 'ignore')
+                data = data.drop('c', axis=1, errors = 'ignore')
 
             if them:
-                data = data.drop('t', axis = 1, errors = 'ignore')
+                data = data.drop('t', axis=1, errors = 'ignore')
                 themelist = get_list_of_themes(data)
                 if any(t != '' for t in themelist):
                     data.insert(0, 't', themelist)
@@ -4021,8 +4011,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             else:
                 timestring('Concordancing done: %d results.' % len(lines))
 
-        
-        
         def delete_conc_lines(*args):
             if type(current_conc[0]) == str:
                 return
@@ -4052,7 +4040,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             global conc_saved
             conc_saved = False
 
-        def conc_export(data = 'default'):
+        def conc_export(data='default'):
             """export conc lines to csv"""
             import os
             import pandas
@@ -4411,7 +4399,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             custom_words.grid(row=1, column=0, padx=5)
             cwscrbar = Scrollbar(custom_words)
             cwscrbar.pack(side=RIGHT, fill=Y)
-            tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief = SUNKEN,
+            tb = Text(custom_words, yscrollcommand=cwscrbar.set, relief=SUNKEN,
                       bg='#F4F4F4', width=20, height=26, font=("Courier New", 13))
             cwscrbar.config(command=tb.yview)
             bind_textfuncts_to_widgets([tb, scheme_name_field])
@@ -4431,8 +4419,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             pwlscrbar = Scrollbar(other_custom_queries)
             pwlscrbar.pack(side=RIGHT, fill=Y)
             global cust_spec
-            cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height=24, relief = SUNKEN, bg='#F4F4F4',
-                                        yscrollcommand=pwlscrbar.set, exportselection = False, width=20,
+            cust_spec = Listbox(other_custom_queries, selectmode = EXTENDED, height=24, relief=SUNKEN, bg='#F4F4F4',
+                                        yscrollcommand=pwlscrbar.set, exportselection=False, width=20,
                                         font=("Courier New", 13))
             pwlscrbar.config(command=cust_spec.yview)
             cust_spec.pack()
@@ -4606,14 +4594,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         # conc box needs to be defined up here
         fsize = IntVar()
         fsize.set(12)
-        cfrm = Frame(tab4, height=565, width=1360)
+        conc_height = 510 if small_screen else 565
+        cfrm = Frame(tab4, height=conc_height, width=1360)
         cfrm.grid(column=0, columnspan=60, row=0)
         cscrollbar = Scrollbar(cfrm)
         cscrollbarx = Scrollbar(cfrm, orient = HORIZONTAL)
         cscrollbar.pack(side=RIGHT, fill=Y)
         cscrollbarx.pack(side=BOTTOM, fill=X)
-        conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief = SUNKEN, bg='#F4F4F4',
-                              xscrollcommand=cscrollbarx.set, height=565, 
+        conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief=SUNKEN, bg='#F4F4F4',
+                              xscrollcommand=cscrollbarx.set, height=conc_height, 
                               width=1050, font=('Courier New', fsize.get()), 
                               selectmode = EXTENDED)
         conclistbox.pack(fill=BOTH)
@@ -4702,9 +4691,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             df = current_conc[0]
 
             if show_filenames.get() == 0:
-                df = df.drop('f', axis = 1, errors = 'ignore')
+                df = df.drop('f', axis=1, errors = 'ignore')
             if show_themes.get() == 0:
-                df = df.drop('t', axis = 1, errors = 'ignore')
+                df = df.drop('t', axis=1, errors = 'ignore')
 
             ix_to_keep = []
             lines = conclistbox.get(0, END)
@@ -4781,7 +4770,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 if toget != ():
                     nm = prev_conc_listbox.get(toget[0])
                     df = all_conc[nm]
-                    add_conc_lines_to_window(df, loading = True, preserve_colour=False)
+                    add_conc_lines_to_window(df, loading=True, preserve_colour=False)
             else:
                 return
 
@@ -4789,7 +4778,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         fourbuts = Frame(conc_right_button_frame)
         fourbuts.grid(row=1, column=6, columnspan=1, sticky='E')
         Button(fourbuts, text='Store as', command=concsave).grid(row=0, column=0)
-        Button(fourbuts, text='Remove', command= lambda: remove_one_or_more(window = 'conc', kind = 'concordance')).grid(row=0, column=1)
+        Button(fourbuts, text='Remove', command= lambda: remove_one_or_more(window='conc', kind='concordance')).grid(row=0, column=1)
         Button(fourbuts, text='Merge', command=merge_conclines).grid(row=0, column=2)
         Button(fourbuts, text='Load', command=load_saved_conc).grid(row=0, column=3)
 
@@ -4902,8 +4891,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         prev_conc.grid(row=0, column=7, rowspan = 3, columnspan=2, sticky=E, padx=(10,0), pady=(4,0))
         prevcbar = Scrollbar(prev_conc)
         prevcbar.pack(side=RIGHT, fill=Y)
-        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width=20, height=4, relief = SUNKEN, bg='#F4F4F4',
-                                    yscrollcommand=prevcbar.set, exportselection = False)
+        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width=20, height=4, relief=SUNKEN, bg='#F4F4F4',
+                                    yscrollcommand=prevcbar.set, exportselection=False)
         prev_conc_listbox.pack()
         cscrollbar.config(command=prev_conc_listbox.yview)
 
@@ -5615,7 +5604,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             manag_frame.grid(column=0, row=1, rowspan = 1, columnspan=2, sticky='NW', padx=10)
             manage_scroll = Scrollbar(manag_frame)
             manage_scroll.pack(side=RIGHT, fill=Y)
-            manage_listbox = Listbox(manag_frame, selectmode = SINGLE, height=30, width=30, relief = SUNKEN, bg='#F4F4F4',
+            manage_listbox = Listbox(manag_frame, selectmode = SINGLE, height=30, width=30, relief=SUNKEN, bg='#F4F4F4',
                                             yscrollcommand=manage_scroll.set, exportselection=False)
             manage_listbox.pack(fill=BOTH)
             manage_listbox.select_set(0)
@@ -5985,12 +5974,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # a listbox of subcorpora
         Label(tab0, text='Subcorpora', font=("Helvetica", 13, "bold")).grid(row=7, column=0, sticky=W)
-
-        build_sub_f = Frame(tab0, width=24, height=24)
+        height = 18 if small_screen else 24
+        build_sub_f = Frame(tab0, width=24, height=height)
         build_sub_f.grid(row=8, column=0, sticky=W, rowspan = 2, padx=(8,0))
         build_sub_sb = Scrollbar(build_sub_f)
         build_sub_sb.pack(side=RIGHT, fill=Y)
-        subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height=24, state=DISABLED, relief = SUNKEN, bg='#F4F4F4',
+        subc_listbox_build = Listbox(build_sub_f, selectmode = SINGLE, height=height, state=DISABLED, relief=SUNKEN, bg='#F4F4F4',
                                      yscrollcommand=build_sub_sb.set, exportselection=False, width=24)
         subc_listbox_build.pack(fill=BOTH)
         xxy = subc_listbox_build.bind('<<ListboxSelect>>', onselect_subc_build)
@@ -6012,7 +6001,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             # make a frame attached to tab0
             #cf = CanvasFrame(tab0, width=200, height=200)
             
-            cf = Canvas(tab0, width=800, height=400, bd = 5)
+            cf = Canvas(tab0, width=800, height=400, bd=5)
             buildbits['treecanvas'] = cf
             cf.grid(row=5, column=2, rowspan = 11, padx=(0,0))
             if cf not in boxes:
@@ -6162,12 +6151,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # a listbox of files
         Label(tab0, textvariable=f_in_s, font=("Helvetica", 13, "bold")).grid(row=0, column=1, sticky='NW', padx=(30, 0))
-        build_f_box = Frame(tab0, height=36)
+        height = 27 if small_screen else 36
+        build_f_box = Frame(tab0, height=height)
         build_f_box.grid(row=1, column=1, rowspan = 9, padx=(20, 0), pady=(10, 0))
         build_f_sb = Scrollbar(build_f_box)
         build_f_sb.pack(side=RIGHT, fill=Y)
-        f_view = Listbox(build_f_box, selectmode = EXTENDED, height=36, state=DISABLED, relief = SUNKEN, bg='#F4F4F4',
-                         exportselection = False, yscrollcommand=build_f_sb.set)
+        f_view = Listbox(build_f_box, selectmode = EXTENDED, height=height, state=DISABLED, relief=SUNKEN, bg='#F4F4F4',
+                         exportselection=False, yscrollcommand=build_f_sb.set)
         f_view.pack(fill=BOTH)
         xxyy = f_view.bind('<<ListboxSelect>>', onselect_f)
         f_view.select_set(0)
@@ -6888,13 +6878,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
     root.deiconify()
     root.lift()
-    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+    #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     try:
         root._splash.__exit__()
     except:
         pass
     root.wm_state('normal')
-    #root.resizable(TRUE,TRUE)
+    root.resizable(TRUE,TRUE)
 
     # overwrite quitting behaviour, prompt to save settings
     root.createcommand('exit', quitfunc)
