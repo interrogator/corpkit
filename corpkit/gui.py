@@ -72,10 +72,15 @@ class SplashScreen(object):
     A simple splash screen to display before corpkit is loaded.
     """
     
-    def __init__( self, tkRoot, imageFilename, minSplashTime=0):
+    def __init__(self, tkRoot, imageFilename, minSplashTime=0):
         import os
-        from PIL import Image
-        from PIL import ImageTk
+        self._can_operate = True
+        try:
+            from PIL import Image
+            from PIL import ImageTk
+        except ImportError:
+            self._can_operate = False
+            return
         self._root = tkRoot
         fname = os.path.join(rd, imageFilename)
         if os.path.isfile(fname):
@@ -89,8 +94,12 @@ class SplashScreen(object):
         # Remove the app window from the display
         #self._root.withdraw( )
 
+        if not self._can_operate:
+            return
+
         if not self._image:
             return
+
         
         # Calculate the geometry to center the splash image
         scrnWt = self._root.winfo_screenwidth()
@@ -121,9 +130,11 @@ class SplashScreen(object):
         self._splash.lift()
         self._splash.update( )
    
-    def __exit__( self, exc_type, exc_value, traceback ):
+    def __exit__(self, exc_type, exc_value, traceback ):
         # Make sure the minimum splash time has elapsed
 
+        if not self._can_operate:
+            return
 
         if not self._image:
             return
@@ -3413,12 +3424,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         images = {'the_current_fig': -1}
 
-        def move(direction = 'forward'):
+        def move(direction='forward'):
             import os
-            from PIL import Image
-            from PIL import ImageTk
-            
-            import tkinter
+            try:
+                from PIL import Image
+                from PIL import ImageTk
+            except ImportError:
+                timestring("You need PIL/Pillow installed to do this.")
+                return
 
             for i in oldplotframe:
                 i.destroy()
@@ -6881,7 +6894,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
     except:
         pass
     root.wm_state('normal')
-    root.resizable(TRUE,TRUE)
+    #root.resizable(TRUE,TRUE)
 
     # overwrite quitting behaviour, prompt to save settings
     root.createcommand('exit', quitfunc)
@@ -6907,7 +6920,9 @@ if __name__ == "__main__":
 
     if not any(arg.lower() == 'noinstall' for arg in sys.argv):
         install(*tkintertablecode)
-        install(*pilcode)
+        from corpkit.constants import PYTHON_VERSION
+        if PYTHON_VERSION == 2:
+            install(*pilcode)
 
     try:
         corpkit_gui()
