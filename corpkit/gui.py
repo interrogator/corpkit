@@ -4960,7 +4960,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         # button sets should be in the conc pane. i don't want to go reframing 
         # everything, so instead, we figure out the best distance by nonsensical math
 
-        padd = (root.winfo_width() - showbuts.winfo_width() - showbuts.winfo_width()) * 2
+        padd = root.winfo_width() - showbuts.winfo_width() - 150
+        if padd < 0:
+            pad = 250
 
         store_label.grid(row=0, column=6, sticky=E, padx=(padd,0))
 
