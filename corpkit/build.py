@@ -519,7 +519,7 @@ def get_filepaths(a_path, ext='txt'):
             #        os.remove(os.path.join(root, f))
     return files
 
-def make_no_id_corpus(pth, newpth, metadata_mode=False):
+def make_no_id_corpus(pth, newpth, metadata_mode=False, speaker_segmentation=False):
     """make version of pth without ids"""
     import os
     import re
@@ -541,17 +541,22 @@ def make_no_id_corpus(pth, newpth, metadata_mode=False):
         good_data = []
         fo, enc = saferead(f)
         data = fo.splitlines()
+        # for each line in the file, remove speaker and metadata
         for datum in data:
-            matched = re.search(idregex, datum)
-            if matched:
-                names.append(matched.group(1))
-                splitmet = matched.group(2).rsplit('<metadata ', 1)
-                good_data.append(splitmet[0])
-                #metadata.append(matched.group(3))
-            else:
-                names.append('UNIDENTIFIED')
+            if speaker_segmentation:
+                matched = re.search(idregex, datum)
+                if matched:
+                    names.append(matched.group(1))
+                    datum = matched.group(2)
+            if metadata_mode:
                 splitmet = datum.rsplit('<metadata ', 1)
-                good_data.append(splitmet[0])
+                # for the impossibly rare case of a line that is '<metadata '
+                if not splitmet:
+                    continue
+                datum = splitmet[0]
+            if datum:
+                good_data.append(datum)
+
         with open(f, "w") as fo:
             if PYTHON_VERSION == 2:
                 fo.write('\n'.join(good_data).encode('utf-8'))
@@ -560,7 +565,7 @@ def make_no_id_corpus(pth, newpth, metadata_mode=False):
 
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
-    if len(names) == 0:
+    if speaker_segmentation and len(names) == 0:
         print('%s: No speaker names found. Turn off speaker segmentation.' % thetime)
         shutil.rmtree(newpth)
     else:

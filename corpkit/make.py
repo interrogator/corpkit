@@ -179,7 +179,8 @@ def make_corpus(unparsed_corpus_path,
             elif isdir(newpath) and root:
                 raise OSError('Path exists: %s' %newpath)
             print('Processing speaker IDs ...')
-            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped', metadata_mode=metadata)
+            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped',
+                              metadata_mode=metadata, speaker_segmentation=speaker_segmentation)
             to_parse = unparsed_corpus_path + '-stripped'
         else:
             to_parse = unparsed_corpus_path
