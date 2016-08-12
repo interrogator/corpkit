@@ -46,6 +46,9 @@ def interrogator(corpus,
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
     by_metadata = kwargs.pop('by_metadata', False)
+    
+    coref = kwargs.pop('coref', False)
+
     if subcorpora:
         by_metadata = subcorpora
 
@@ -823,7 +826,7 @@ def interrogator(corpus,
             return 'Bad query'
         matches = re.findall(compiled_pattern, plaintext_data)
         if concordancing:
-            matches = [list(m) for m in matches]
+            matches = [[m[0], m[1], m[-1]] for m in matches]
         if not concordancing:
             for index, i in enumerate(matches):
                 if isinstance(i, tuple):
@@ -1053,7 +1056,7 @@ def interrogator(corpus,
             sents = corenlp_xml.sentences
 
         # get coreferences
-        if kwargs.get('coref') or any(x.startswith('h') for x in show):
+        if coref or any(x.startswith('h') for x in show):
             if just_speakers:
                 corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
             else:
@@ -1340,13 +1343,11 @@ def interrogator(corpus,
                 if datatype in ['parse', 'conll'] and not tree_to_text:
                     from corpkit.process import parse_just_speakers
                     just_speakers = parse_just_speakers(just_speakers, corpus)
-                    # right now, this is not using the File class's read() or document
-                    # methods. the reason is that there seem to be memory leaks. these
-                    # may have been fixed already though.
+
                     if datatype == 'parse':
-                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=kwargs.pop('coref', False))
+                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=coref)
                     elif datatype == 'conll':
-                        sents, corefs = f.path, kwargs.pop('coref', False)
+                        sents, corefs = f.path, coref
                     
                     res, conc_res = searcher(sents, search=search, show=show,
                                              dep_type=dep_type,
