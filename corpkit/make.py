@@ -14,6 +14,7 @@ def make_corpus(unparsed_corpus_path,
                 split_texts=400,
                 outname=False,
                 metadata=False,
+                restart=False,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -65,6 +66,7 @@ def make_corpus(unparsed_corpus_path,
     
     if project_path is None:
         project_path = os.getcwd()
+
 
     fileparse = isfile(unparsed_corpus_path)
     if fileparse:
@@ -177,14 +179,17 @@ def make_corpus(unparsed_corpus_path,
                 newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
             else:
                 newpath = unparsed_corpus_path + '-parsed'
+            if restart:
+                restart = newpath
             if isdir(newpath) and not root:
-                ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
-                if ans.lower().strip()[0] == 'y':
-                    shutil.rmtree(newpath)
-                else:
-                    return
+                if not restart:
+                    ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
+                    if ans.lower().strip()[0] == 'y':
+                        shutil.rmtree(newpath)
+                    else:
+                        return
             elif isdir(newpath) and root:
-                raise OSError('Path exists: %s' %newpath)
+                raise OSError('Path exists: %s' % newpath)
             print('Processing speaker IDs ...')
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped',
                               metadata_mode=metadata, speaker_segmentation=speaker_segmentation)
@@ -197,14 +202,18 @@ def make_corpus(unparsed_corpus_path,
 
         if not fileparse:
             pp = os.path.dirname(unparsed_corpus_path)
+            # if restart mode, the filepaths won't include those already parsed...
             filelist = get_corpus_filepaths(projpath=pp, 
-                                            corpuspath=to_parse)
+                                            corpuspath=to_parse,
+                                            restart=restart,
+                                            out_ext=kwargs.get('output_format'))
 
         else:
             filelist = unparsed_corpus_path.replace('.txt', '-filelist.txt')
             with open(filelist, 'w') as fo:
                 fo.write(unparsed_corpus_path + '\n')
 
+        # split up filelists
         if multiprocess is not False:
 
             if multiprocess is True:
@@ -320,7 +329,7 @@ def make_corpus(unparsed_corpus_path,
 
     else:
         filelist = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
-                                        corpuspath=unparsed_corpus_path)
+                                        corpuspath=unparsed_corpus_path, restart=restart)
 
     if tokenise:
         newtok = parse_corpus(proj_path=project_path, 

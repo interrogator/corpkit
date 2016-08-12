@@ -157,15 +157,28 @@ def extract_cnlp(fullfilepath, corenlppath=False, root=False):
     time = strftime("%H:%M:%S", localtime())
     print('%s: CoreNLP extracted. ' % time)
 
-def get_corpus_filepaths(projpath=False, corpuspath=False):
+def get_corpus_filepaths(projpath=False, corpuspath=False, restart=False, out_ext='conll'):
+    """
+    get a list of filepaths, a la find . -type f
+
+    restart mode will look in restart dir and remove any existing files
+
+    """
     import corpkit
     import fnmatch
     import os
     matches = []
 
+    # get a list of done files minus their paths and extensions
+    # this handles if they have been moved to the right dir or not
+
+    already_done = get_filepaths(restart, out_ext) if restart else []
+    already_done = [os.path.splitext(os.path.basename(x))[0] for x in already_done]
+
     for root, dirnames, filenames in os.walk(corpuspath):
         for filename in fnmatch.filter(filenames, '*.txt'):
-            matches.append(os.path.join(root, filename))
+            if filename not in already_done:
+                matches.append(os.path.join(root, filename))
     if len(matches) == 0:
         return False
     matchstring = '\n'.join(matches)
