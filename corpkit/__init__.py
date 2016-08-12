@@ -39,7 +39,7 @@ for p in [corpath, baspat]:
 
 # import classes
 from corpkit.corpus import Corpus, File, Corpora
-from corpkit.model import MultiModel
+#from corpkit.model import MultiModel
 
 from corpkit.other import (load, loader, load_all_results, 
                            quickview, as_regex, new_project)
