@@ -207,21 +207,27 @@ def make_corpus(unparsed_corpus_path,
             # split old file into n parts
             data, enc = saferead(filelist)
             fs = [i for i in data.splitlines() if i]
+            if len(fs) <= multiprocess:
+                multiprocess = len(fs)
             # make generator with list of lists
-            divl = len(fs) / multiprocess
-            fgen = chunks(fs, divl)
+            divl = int(len(fs) / multiprocess)
             filelists = []
-            # for each list, make new file
-            for index, flist in enumerate(fgen):
-                as_str = '\n'.join(flist) + '\n'
-                new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
-                filelists.append(new_fpath)
-                with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
-                    fo.write(as_str.encode('utf-8'))
-            try:
-                os.remove(filelist)
-            except:
-                pass
+            if not divl:
+                filelists.append(filelist)
+            else:
+                fgen = chunks(fs, divl)
+            
+                # for each list, make new file
+                for index, flist in enumerate(fgen):
+                    as_str = '\n'.join(flist) + '\n'
+                    new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
+                    filelists.append(new_fpath)
+                    with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
+                        fo.write(as_str.encode('utf-8'))
+                try:
+                    os.remove(filelist)
+                except:
+                    pass
 
             ds = []
             for listpath in filelists:
