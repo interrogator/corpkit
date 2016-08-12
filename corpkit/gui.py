@@ -4962,10 +4962,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # width of window - width of left buttons - with of prev conc and 'stored concordances' label (approx)
         padd = root.winfo_width() - showbuts.winfo_width() - (prev_conc.winfo_width() * 2)
-        
+
         # for now, just a guess!
         if padd < 0:
-            pad = 250
+            padd = 250
 
         store_label.grid(row=0, column=6, sticky=E, padx=(padd,0))
 
