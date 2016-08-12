@@ -156,9 +156,16 @@ def make_corpus(unparsed_corpus_path,
                     chk = chunks(data, split_texts)
                     for index, c in enumerate(chk):
                         newname = fp.replace('.txt', '-%s.txt' % str(index + 1).zfill(3))
-                        with codecs.open(newname, 'w', encoding='utf-8') as fo:
-                            txt = '\n'.join(c) + '\n'
-                            fo.write(txt.encode('utf-8'))
+                        # does this work?
+                        if PYTHON_VERSION == 2:
+                            with codecs.open(newname, 'w', encoding=enc) as fo:
+                                txt = '\n'.join(c) + '\n'
+                                fo.write(txt.encode(enc))
+                        else:
+                            with open(newname, 'w', encoding=enc) as fo:
+                                txt = '\n'.join(c) + '\n'
+                                fo.write(txt)
+
                     os.remove(fp)
                 else:
                     pass
