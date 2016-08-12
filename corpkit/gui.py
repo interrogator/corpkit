@@ -4945,11 +4945,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
 
         prev_conc = Frame(conc_right_button_frame)
-        prev_conc.grid(row=0, column=7, rowspan = 3, columnspan=2, sticky=E, padx=(10,0), pady=(4,0))
+        prev_conc.grid(row=0, column=7, rowspan=3, columnspan=2, sticky=E, padx=(10,0), pady=(4,0))
         prevcbar = Scrollbar(prev_conc)
         prevcbar.pack(side=RIGHT, fill=Y)
         prev_conc_lb_size = 20
-        prev_conc_listbox = Listbox(prev_conc, selectmode = EXTENDED, width=prev_conc_lb_size, height=4, relief=SUNKEN, bg='#F4F4F4',
+        prev_conc_listbox = Listbox(prev_conc, selectmode=EXTENDED, width=prev_conc_lb_size, height=4, relief=SUNKEN, bg='#F4F4F4',
                                     yscrollcommand=prevcbar.set, exportselection=False)
         prev_conc_listbox.pack()
         cscrollbar.config(command=prev_conc_listbox.yview)
@@ -4958,9 +4958,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         # this laziness is dynamic calculation of how far apart the left and right
         # button sets should be in the conc pane. i don't want to go reframing 
-        # everything, so instead, we figure out the best distance by nonsensical math
+        # everything, so instead, we figure out the best distance by math
 
-        padd = root.winfo_width() - showbuts.winfo_width() - 150
+        # width of window - width of left buttons - with of prev conc and 'stored concordances' label (approx)
+        padd = root.winfo_width() - showbuts.winfo_width() - (prev_conc.winfo_width() * 2)
+        
+        # for now, just a guess!
         if padd < 0:
             pad = 250
 
