@@ -100,20 +100,85 @@ def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
         return df[attr].ix[sent_id, tok_id]
     return [(sent_id, tok_id)]
 
-def get_head(idx, df=False, repeat=False, **kwargs):
+def get_head(idx, df=False, repeat=False, attr=False, **kwargs):
+    """
+    Get the head of a 'constituent'---'
+    for 'corpus linguistics', if 'corpus' is searched, return 'linguistics'
+    """
 
     sent_id, tok_id = getattr(idx, 'name', idx)
 
+    sent = df.ix[sent_id]
+
+    token = df.ix[sent_id, tok_id]
+    if not hasattr(token, 'c'):
+        # this should error, because the data isn't there at all
+        lst_of_ixs = [(sent_id, tok_id)]
+    elif token['c'] == '_':
+        lst_of_ixs = [(sent_id, tok_id)]
+    elif token['c'].endswith('*'):
+        lst_of_ixs = [(sent_id, tok_id)]
+    else:
+        just_same_coref = sent[sent['c'] == token['c'] + '*']
+        if not just_same_coref.empty:
+            lst_of_ixs = [(sent_id, i) for i in just_same_coref.index]
+        else:
+            lst_of_ixs = [(sent_id, tok_id)]
+    if attr:
+        lst_of_ixs = [df.ix[i[1]][attr] for i in lst_of_ixs]
+    return lst_of_ixs
+
+def get_representative(idx, df=False, repeat=False, attr=False, **kwargs):
+    """
+    Get the representative coref head
+    """
+    sent_id, tok_id = getattr(idx, 'name', idx)
+
+    token = df.ix[sent_id, tok_id]
+    # if no corefs at all
+    if not hasattr(token, 'c'):
+        # this should error, because the data isn't there at all
+        lst_of_ixs = [(sent_id, tok_id)]     
+    # if no coref available
+    elif token['c'] == '_':
+        lst_of_ixs = [(sent_id, tok_id)]
+    else:
+        just_same_coref = df.loc[df['c'] == token['c'] + '*']
+        if not just_same_coref.empty:
+            lst_of_ixs = [just_same_coref.iloc[0].name]
+        else:
+            lst_of_ixs = [(sent_id, tok_id)]
+    
+    if attr:
+        lst_of_ixs = [df.ix[i][attr] for i in lst_of_ixs]
+
+    return lst_of_ixs
+
+
+
+
+def get_unhead(idx, df=False, repeat=False, **kwargs):
+    """
+    When searching for head matching something, we limit to just heads
+    # and then we get sibling heads. this seems identical to get_all_corefs()
+
+    """
+
+
+    sent_id, tok_id = getattr(idx, 'name', idx)
     token = df.ix[sent_id, tok_id]
     if not hasattr(token, 'c'):
         # this should error, because the data isn't there at all
         return [(sent_id, tok_id)]
     elif token['c'] == '_':
         return [(sent_id, tok_id)]
+    elif not token['c'].endswith('*'):
+        return [(sent_id, tok_id)]
+
     else:
-        just_same_coref = df.loc[df['c'] == token['c'] + '*']
+        just_same_coref = df.loc[df['c'] == token['c']]
         if not just_same_coref.empty:
-            return [just_same_coref.iloc[0].name]
+            return list(just_same_coref.index)
         else:
             return [(sent_id, tok_id)]
 
@@ -154,13 +219,15 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
         return ' '.join(start), ' '.join(end)
 
 def get_all_corefs(df, coref, s, i):
+    # if not in coref mode, skuip
     if not coref:
         return [(s, i)]
+    # if the word was not a head, forget it
+    if not df.ix[s,i]['c'].endswith('*'):
+        return [(s, i)]
     try:
-        # corefs have a number, and the head of the coref has an asterisk too
-        # so, get all everything in the df with the same number plus the star
-
-        just_same_coref = df.loc[df['c'] == df.ix[s,i]['c'] + '*']
+        # get any other mention head for this coref chain
+        just_same_coref = df.loc[df['c'] == df.ix[s,i]['c']]
         return list(just_same_coref.index)
     except:
         return [(s, i)]
@@ -192,7 +259,11 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     """search the dataframe for a single criterion"""
     
     import re
-    # this stores indexes (sent, token) of matches
+    out = []
+
+    # if searching by head, they need to be heads
+    if obj == 'r':
+        df = df.loc[df['c'].endswith('*')]
 
     # cut down to just tokens with matching attr
     matches = df[df[attrib].str.contains(pattern)]
@@ -201,18 +272,13 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     revmapping = {'g': get_dependents_of_id,
                   'd': get_governors_of_id,
                   'm': get_match,
-                  'h': get_head}
+                  'h': get_all_corefs,
+                  'r': get_representative}
 
     getfunc = revmapping.get(obj)
 
-    # make a large flat list of all results, taking corefs into account
-    every_match = [get_all_corefs(df, coref, *idx) for idx in list(matches.index)]
-    every_match = [i for s in every_match for i in s]
+    for idx in list(matches.index):
 
-    matches = []
-
-    for idx in every_match:
-        
         if adjacent:
             if adjacent[0] == '+':
                 tomove = -int(adj[1])
@@ -220,13 +286,12 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
                 tomove = int(adj[1])
             idx = (idx[0], idx[1] + tomove)
             
-            #idx = get_adjacent_token(df, idx, adjacent, opposite=True)
-
         for mindex in getfunc(idx, df=df):
-            if mindex:
-                matches.append(mindex)
 
-    return list(set(matches))
+            if mindex:
+                out.append(mindex)
+
+    return list(set(out))
 
 def show_fix(show):
     """show everything"""
@@ -309,9 +374,12 @@ def format_toks(to_process, show, df):
                     piece = df.loc[ix][attr]
                 else:
                     piece = func(ix, df=df, attr=attr)
+                    # for now:
+                    if isinstance(piece, list):
+                        piece = piece[0]
+            
             out.append(piece)
         ser = pd.Series(out, index=to_process.index)
-        #print(ser.values)
         ser.name = val
         sers.append(ser)
 
@@ -382,18 +450,20 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
     if ngram_mode:
         show = [x.lstrip('n') for x in show]
 
+    # maintaining different show code for conc and non conc for speed
     if not conc:
+
         def dummy(x, **kwargs):
             return [x]
 
         def get_gov(line, df=False, attr=False):
             return getattr(df.ix[line.name[0], df.ix[line.name]['g']], attr, 'root')
 
-
         objmapping = {'d': get_dependents_of_id,
                       'g': get_governors_of_id,
                       'm': dummy,
-                      'h': get_head}        
+                      'h': get_head,
+                      'r': get_representative}        
 
         out = []
         from collections import defaultdict
@@ -427,7 +497,7 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
             # a pandas object with the token pieces, ready to join together
             # but it contains all tokens if cut_short mode
             gotten_tok_bits = df.loc[mx][attr.replace('x', 'p')].dropna()
-            
+
             # if gotten_tok_bits contains every token, we can
             # get just the matches from it
             if cut_short or ngram_mode:
@@ -435,27 +505,25 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
             else:
                 gotten = gotten_tok_bits
 
-            # add out actual matches
+            # addactual matches
             out.append(list(gotten))
 
         formatted = ['/'.join(x) for x in zip(*out)]
-
         return formatted, []
 
 
-
-    # determine params
-
+    # do we need to format every token?
     process_all = conc and not only_format_match
     if ngram_mode:
         process_all = True
 
     # tokens that need formatting
+    # i.e. just matches, or the whole thing
     if not process_all:
         to_process = df.loc[matches]
     else:
         to_process = df
-    
+
     # make a series of formatted data
     series = format_toks(to_process, show, df)
  
@@ -467,7 +535,6 @@ def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
     return the_ser, conc_lines
 
     # from here on down is a total bottleneck, so it's not used right now.
-
     easy_attrs = ['w', 'l', 'p', 'f', 'y', 'z']
     strings = []
     concs = []
