@@ -563,16 +563,20 @@ def make_no_id_corpus(pth, newpth, metadata_mode=False, speaker_segmentation=Fal
             else:
                 fo.write('\n'.join(good_data))
 
-    from time import localtime, strftime
-    thetime = strftime("%H:%M:%S", localtime())
-    if speaker_segmentation and len(names) == 0:
-        print('%s: No speaker names found. Turn off speaker segmentation.' % thetime)
-        shutil.rmtree(newpth)
-    else:
-        if len(sorted(set(names))) < 19:
-            print('%s: Speaker names found: %s' % (thetime, ', '.join(sorted(set(names)))))
+    if speaker_segmentation:
+        from time import localtime, strftime
+        thetime = strftime("%H:%M:%S", localtime())
+        if len(names) == 0:
+            print('%s: No speaker names found. Turn off speaker segmentation.' % thetime)
+            shutil.rmtree(newpth)
         else:
-            print('%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20])))))
+            try:
+                if len(sorted(set(names))) < 19:
+                    print('%s: Speaker names found: %s' % (thetime, ', '.join(sorted(set(names)))))
+                else:
+                    print('%s: Speaker names found: %s ... ' % (thetime, ', '.join(sorted(set(names[:20])))))
+            except:
+                pass
 
 def add_ids_to_xml(corpuspath, root=False, note=False, originalname=False):
     """
@@ -697,7 +701,6 @@ def add_ids_to_conll(corpuspath, root=False, note=False):
         # how to add speakers to conll? by sent?
         from corpkit.conll import get_dependents_of_id, parse_conll
         df = parse_conll(f)
-
 
     return
 
