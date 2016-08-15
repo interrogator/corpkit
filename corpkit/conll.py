@@ -58,7 +58,7 @@ def parse_conll(f, first_time=False, just_meta=False):
     df._metadata = metadata
     return df
 
-def get_dependents_of_id(ind, df=False, repeat=False):
+def get_dependents_of_id(idx, df=False, repeat=False, coref=False):
     """get governors of a token"""
     
     sent_id, tok_id = getattr(idx, 'name', idx)
@@ -76,7 +76,7 @@ def get_dependents_of_id(ind, df=False, repeat=False):
         else:
             return list(justgov.index)
 
-def get_governors_of_id(idx, df=False, repeat=False, attr=False):
+def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     """get governors of a token"""
     
     sent_id, tok_id = getattr(idx, 'name', idx)
@@ -107,25 +107,27 @@ def get_head(idx, df=False, repeat=False, attr=False, **kwargs):
     """
 
     sent_id, tok_id = getattr(idx, 'name', idx)
-
-    sent = df.ix[sent_id]
-
+    #sent = df.ix[sent_id]
     token = df.ix[sent_id, tok_id]
+
     if not hasattr(token, 'c'):
         # this should error, because the data isn't there at all
         lst_of_ixs = [(sent_id, tok_id)]
+
     elif token['c'] == '_':
         lst_of_ixs = [(sent_id, tok_id)]
+    # if it is the head, return it
     elif token['c'].endswith('*'):
         lst_of_ixs = [(sent_id, tok_id)]
     else:
-        just_same_coref = sent[sent['c'] == token['c'] + '*']
+        # should be able to speed this one up!
+        just_same_coref = df.loc[sent_id][df.loc[sent_id]['c'] == token['c'] + '*']
         if not just_same_coref.empty:
             lst_of_ixs = [(sent_id, i) for i in just_same_coref.index]
         else:
             lst_of_ixs = [(sent_id, tok_id)]
     if attr:
-        lst_of_ixs = [df.ix[i[1]][attr] for i in lst_of_ixs]
+        lst_of_ixs = [df.loc[i][attr] for i in lst_of_ixs]
     return lst_of_ixs
 
 def get_representative(idx, df=False, repeat=False, attr=False, **kwargs):
@@ -155,15 +157,12 @@ def get_representative(idx, df=False, repeat=False, attr=False, **kwargs):
     return lst_of_ixs
 
 
-
-
 def get_unhead(idx, df=False, repeat=False, **kwargs):
     """
     When searching for head matching something, we limit to just heads
     # and then we get sibling heads. this seems identical to get_all_corefs()
 
     """
-
 
     sent_id, tok_id = getattr(idx, 'name', idx)
     token = df.ix[sent_id, tok_id]
@@ -218,8 +217,8 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
                 end.append(str(out[0]))
         return ' '.join(start), ' '.join(end)
 
-def get_all_corefs(df, coref, s, i):
-    # if not in coref mode, skuip
+def get_all_corefs(s, i, df, coref=False):
+    # if not in coref mode, skip
     if not coref:
         return [(s, i)]
     # if the word was not a head, forget it
@@ -285,8 +284,8 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
             elif adjacent[0] == '-':
                 tomove = int(adj[1])
             idx = (idx[0], idx[1] + tomove)
-            
-        for mindex in getfunc(idx, df=df):
+        
+        for mindex in getfunc(idx, df=df, coref=coref):
 
             if mindex:
                 out.append(mindex)
@@ -371,7 +370,10 @@ def format_toks(to_process, show, df):
                     piece = 'none'
             if not piece:
                 if obj == 'm':
-                    piece = df.loc[ix][attr]
+                    piece = df.loc[ix][attr.replace('x', 'p')]
+                    if attr == 'x':
+                        from corpkit.dictionaries.word_transforms import taglemma
+                        piece = taglemma.get(piece.lower(), piece.lower())
                 else:
                     piece = func(ix, df=df, attr=attr)
                     # for now:
