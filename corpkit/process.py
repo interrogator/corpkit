@@ -518,8 +518,8 @@ def animator(progbar,
             pass
     if not init:
         try:
-            from ipywidgets.widgets.widget_box import FlexBox
-            if isinstance(progbar, FlexBox):
+            from ipywidgets.widgets.widget_box import Box
+            if isinstance(progbar, Box):
                 label, progress, goodbye = progbar.children
                 progress.value = count
                 if count == length:
