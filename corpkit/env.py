@@ -133,14 +133,14 @@ def interpreter(debug=False):
 
     def single_command_print(command):
 
-        if command == 'ls':
-            import os
-            print('\n'.join(os.listdir()))
-
         args = []
         if isinstance(command, list):
             args = command[1:]
             command = command[0]
+
+        if command == 'ls':
+            import os
+            print('\n'.join(os.listdir('.')))
 
         if command == 'clear':
             print(chr(27) + "[2J")
@@ -245,6 +245,18 @@ def interpreter(debug=False):
                         local_ns=locals())
             cc = ret()
 
+        elif command.startswith('jupyter') or command == 'notebook':
+            comm = ["jupyter", "notebook"]
+            import subprocess
+            if args:
+                import os
+                nbfile = args[-1]
+                if not nbfile.endswith('.ipynb'):
+                    nbfile = nbfile + '.ipynb'
+                if os.path.isfile(nbfile):
+                    comm.append(nbfile)
+            subprocess.call(comm)            
+
         elif command == 'gui':
             import subprocess
             import os
@@ -270,6 +282,9 @@ def interpreter(debug=False):
             kwargs = process_kwargs(args)
             if kwargs:
                 objs._conc_kwargs = kwargs
+            if objs.concordance is None:
+                print("There's no concordance here right now, sorry.")
+                return
             found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
             if found_the_conc is None:
                 #print('Nothing here yet.')
@@ -405,6 +420,8 @@ def interpreter(debug=False):
         transshow['ngram'] = 'n'
         transshow['distances'] = 'r'
         transshow['ngrams'] = 'n'
+        transshow['wordclass'] = 'x'
+        transshow['wordclasses'] = 'x'
 
         transshow.update(showplurals)
         transobjs.update(objsplurals)
@@ -1110,20 +1127,43 @@ def interpreter(debug=False):
                 print('Wordlist "%s" stored.' % the_name)
 
     def get_matching_indices(tokens):
+        """
+        Find concordance indices matching some criteria in tokens
+
+        This can be:
+
+            - an int as index: "20"
+            - a pseudo index: "5-10"
+            - a column and regex: "l matching 'regex'"
+            - a colour name
+
+        :returns: a `set` of matching indices
+
+        """
+        # what's missing from this list?
+        # hard coding in case user doesn't have colorama
+        colours = ['red', 'yellow', 'magenta', 'lightmagenta_ex', 'black',
+                   'white', 'lightcyan_ex', 'reset', 'green', 'lightyellow_ex',
+                   'lightblack_ex', 'lightwhite_ex', 'blue', 'lightblue_ex',
+                   'lightgreen_ex', 'cyan', 'lightred_ex']
         cols = []
         token = tokens[0]
+        if token in colours:
+            colourdict = objs._conc_colours[len(objs._old_concs)-1]
+            return set([k for k, v in colourdict.items() if token == v])  
+            #objs._conc_colours[len(objs._old_concs)-1][line] = color
         # annotate range of tokens
         if '-' in token:
             first, last = token.split('-', 1)
             if not first:
                 first = 0
             if not last:
-                last = len(len(objs.concordance.index))
+                last = len(objs.concordance.index)
             for n in range(int(first), int(last)+1):
                 cols.append(str(n))
-        # annotate single token by index
+        # get by index/indices
         elif token.isdigit():
-            cols.append(token)
+            cols = [i for i in tokens if i.isdigit()]
         else:
             # regex match only what's shown in the window
             window = objs._conc_kwargs.get('window', 35)
@@ -1135,12 +1175,16 @@ def interpreter(debug=False):
                     slic = slice(-window, None)
                 elif bit.lower() == 'r':
                     slic = slice(None, window)
+                # get slice for left window
                 mx = max(objs.concordance[bit.lower()].str.len()) if bit.lower() == 'l' else 0
+                # get the regex criteria
                 if 'matching' in tokens:
-                    the_regex = tokens[tokens.index('matching') + 1]
+                    rgx = tokens[tokens.index('matching') + 1]
                 else:
-                    the_regex = tokens[1]
-                mtch = objs.concordance[objs.concordance[bit].str.rjust(mx).str[slic].str.contains(the_regex)]
+                    rgx = tokens[1]
+                # get the window size of context, and reduce to just windows
+                trues = objs.concordance[bit].str.rjust(mx).str[slic].str.contains(rgx)
+                mtch = objs.concordance[trues]
                 matches = list(mtch.index)
                 for ind in matches:
                     cols.append(str(ind))
@@ -1278,8 +1322,9 @@ def interpreter(debug=False):
     print(allig)
 
     if not objs._in_a_project:
-        print("\nWARNING: You aren't in a project yet. Use 'new project named <name>' to make one and enter it.\n")
-
+        print("\nWARNING: You aren't in a project yet. "\
+              "Use 'new project named <name>' to make one and enter it.\n"\
+              "Alternatively, you can `cd` into an existing project now.\n")
 
     def py(output):
         """
@@ -1315,10 +1360,11 @@ def interpreter(debug=False):
             if debug:
                 print('command', tokens)
             
-            if len(tokens) == 1:
+            if len(tokens) == 1 or tokens[0] == 'jupyter':
                 if tokens[0] == 'set':
                     set_corpus([])
-                single_command_print(tokens[0])
+                else:
+                    single_command_print(tokens)
                 continue
 
             out = run_command(tokens)
