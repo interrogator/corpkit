@@ -706,10 +706,10 @@ def plotter(df,
                     n = pandas.PeriodIndex([d for d in list(dataframe.index)], freq='A')
                     dataframe = dataframe.set_index(n)
 
-        if kwargs.get('filled'):
-            if areamode or kind.startswith('bar'):
-                dataframe = filler(dataframe)
-            kwargs.pop('filled', None)
+    if kwargs.get('filled'):
+        if areamode or kind.startswith('bar'):
+            dataframe = filler(dataframe)
+        kwargs.pop('filled', None)
 
     MARKERSIZE = 4
     COLORMAP = {
@@ -770,6 +770,8 @@ def plotter(df,
             return False
 
     with plt.style.context((style)) if style != 'matplotlib' else dummy_context_mgr():
+
+        kwargs.pop('filled', None)
 
         if not sbplt:
             # check if negative values, no stacked if so

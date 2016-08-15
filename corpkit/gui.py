@@ -309,7 +309,7 @@ class Notebook(Frame):
         # redirect stdout for log
         self.redir = RedirectText(self.status_text, self.log_stream, self.text.label_widget)
         sys.stdout = self.redir
-        #sys.stderr = self.redir
+        sys.stderr = self.redir
 
         Frame.__init__(self)
         self.noteBookFrame.grid()
@@ -3359,7 +3359,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             if showtot.get() == 'legend + plot':
                 d['show_totals'] = 'both'
             else:
-                df['show_totals'] = showtot.get()
+                d['show_totals'] = showtot.get()
 
             d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
             f = plotter(what_to_plot, plotnametext.get(), **d)
@@ -3938,14 +3938,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         # figure size
         Label(plot_option_frame, text='Figure size:').grid(row=19, column=0, sticky=W)
         figsiz1 = StringVar(root)
-        figsiz1.set('12')
+        figsiz1.set('10')
         figsizes = tuple(('2', '4', '6', '8', '10', '12', '14', '16', '18'))
         fig1 = OptionMenu(plot_option_frame, figsiz1, *figsizes)
         fig1.configure(width=6)
         fig1.grid(row=19, column=1, sticky=W, padx=(27, 0))
         Label(plot_option_frame, text="x").grid(row=19, column=1, padx=(30, 0))
         figsiz2 = StringVar(root)
-        figsiz2.set('6')
+        figsiz2.set('4')
         fig2 = OptionMenu(plot_option_frame, figsiz2, *figsizes)
         fig2.configure(width=6)
         fig2.grid(row=19, column=1, sticky=E)
@@ -5053,7 +5053,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         def recentchange(*args):
             """if user clicks a recent project, open it"""
             if recent_project.get() != '':
-                project_fullpath.set(recent_project.get())            
+                project_fullpath.set(recent_project.get())
                 load_project(path=project_fullpath.get())
 
         def projchange(*args):
@@ -6993,7 +6993,10 @@ if __name__ == "__main__":
             install(*pilcode)
 
     try:
-        corpkit_gui(loadcurrent=lc)
+        if lc:
+            corpkit_gui(loadcurrent=lc)
+        else:
+            corpkit_gui()
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print("*** print_tb:")
