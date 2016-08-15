@@ -67,11 +67,14 @@ class Corpus(object):
             for r, d, f in os.walk(self.path):
                 if not f:
                     continue
+                if isinstance(f, str) and f.startswith('.'):
+                    continue
                 if f[0].endswith('xml'):
                     self.datatype = 'parse'
+                    break
                 elif f[0].endswith('conll'):
                     self.datatype = 'conll'
-                break
+                    break
 
             if len([d for d in os.listdir(self.path)
                     if isdir(join(self.path, d))]) > 0:
