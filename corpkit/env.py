@@ -260,6 +260,7 @@ def interpreter(debug=False):
         elif command == 'gui':
             import subprocess
             import os
+            print('Loading graphical interface ... ')
             subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
         elif command in ['result', 'edited', 'totals', 'previous']:

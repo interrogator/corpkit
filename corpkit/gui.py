@@ -6039,7 +6039,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 newsub = os.path.join(newp, subc_sel_vals_build[0])
             else:
                 newsub = newp
-            fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml') or f.endswith('.p')]
+            fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml') or f.endswith('.p') or f.endswith('.conll')]
             for e in fs:
                 f_view.insert(END, e)
             if selected_corpus_has_no_subcorpora.get() == 0:      
@@ -6174,9 +6174,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 buildbits['but'] = but
                 if but not in boxes:
                     boxes.append(but)
-            elif chosen_f[0].endswith('.xml'):
+
+            elif chosen_f[0].endswith('.xml') or chosen_f[0].endswith('.conll'):
+
                 import re
-                parsematch = re.compile(r'^\s*<parse>(.*)<.parse>')
+                if chosen_f[0].endswith('.conll'):
+                    parsematch = re.compile(r'^# parse=(.*)')
+                else:
+                    parsematch = re.compile(r'^\s*<parse>(.*)<.parse>')
                 newp = path_to_new_unparsed_corpus.get()
                 if selected_corpus_has_no_subcorpora.get() == 0:
                     fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
@@ -6195,6 +6200,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                 if vieweditxml not in boxes:
                     boxes.append(vieweditxml)
                 trees = []
+
                 def flatten_treestring(tree):
                     import re
                     tree = re.sub(r'\(.*? ', '', tree).replace(')', '')
