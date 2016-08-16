@@ -263,7 +263,8 @@ def interpreter(debug=False):
             print('Loading graphical interface ... ')
             subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
-        elif command in ['result', 'edited', 'totals', 'previous']:
+        elif command in ['result', 'edited', 'totals', 'previous',
+                         'features', 'postags', 'wordclasses']:
             import tabview
             # this horrible code accounts for cases where we modify with exec
             toshow = getattr(getattr(objs, command), 'results', False)
@@ -320,13 +321,12 @@ def interpreter(debug=False):
             show_this([command])
         elif command == 'wordlist':
             print(objs.wordlist)
-
-        elif command == 'features':
-            print(objs.features)
-        elif command == 'wordclasses':
-            print(objs.wordclasses)
-        elif command == 'postags':
-            print(objs.postags)
+        #elif command == 'features':
+        #    print(objs.features)
+        #elif command == 'wordclasses':
+        #    print(objs.wordclasses)
+        #elif command == 'postags':
+        #    print(objs.postags)
         elif command == 'query':
             show_this([command])
         else:
@@ -371,7 +371,10 @@ def interpreter(debug=False):
             objs.corpus = Corpus(path, load_saved=loadsaved)
             for i in ['features', 'wordclasses', 'postags']:
                 try:
-                    setattr(objs, i, load(objs.corpus.name + '-%s' % i))
+                    dat = load(objs.corpus.name + '-%s' % i)
+                    if hasattr(dat, 'results'):
+                        dat = dat.results
+                    setattr(objs, i, dat)
                 except (UnicodeDecodeError, IOError):
                     pass
 
@@ -632,6 +635,13 @@ def interpreter(debug=False):
 
         objs.result = objs.corpus.interrogate(**kwargs)
         objs.totals = objs.result.totals
+        # this should be done for pos and wordclasses too
+        if kwargs['search'] == {'v': 'any'}:
+            try:
+                from corpkit.other import save
+                save(objs.result.results, 'features')
+            except:
+                pass
         print('')
         return objs.result
 
