@@ -305,7 +305,7 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.xml'
         
-        move_parsed_files(project_path, to_parse, newparsed, ext=kwargs.get('output_format', 'xml'))
+        move_parsed_files(project_path, to_parse, newparsed, ext=kwargs.get('output_format', 'conll'))
         outpath = newparsed
         if speaker_segmentation and kwargs.get('output_format', 'xml') == 'xml':
             add_ids_to_xml(newparsed, originalname=to_parse)
