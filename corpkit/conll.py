@@ -930,8 +930,8 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                     l, t = match.group(1), match.group(2)
                     dct[(int(l), int(t))] = i
             
-            # for each coref chain
-            for numstring, list_of_dicts in sorted(data['corefs'].items()):
+            # for each coref chain, if there are corefs
+            for numstring, list_of_dicts in sorted(data.get('corefs', {}).items()):
                 # for each mention
                 for d in list_of_dicts:
                     snum = d['sentNum']
