@@ -71,9 +71,10 @@ class SplashScreen(object):
     """
     A simple splash screen to display before corpkit is loaded.
     """
-    
     def __init__(self, tkRoot, imageFilename, minSplashTime=0):
         import os
+        # if there is some PIL issue, just don't show GUI
+        # todo: this would also need to disable display of previous figures
         self._can_operate = True
         try:
             from PIL import Image
@@ -100,7 +101,6 @@ class SplashScreen(object):
         if not self._image:
             return
 
-        
         # Calculate the geometry to center the splash image
         scrnWt = self._root.winfo_screenwidth()
         scrnHt = self._root.winfo_screenheight()
@@ -259,7 +259,7 @@ class Notebook(Frame):
         color the text on the tabs when they are selected, and when they are not
 
         """
-        self.activefg = activefg                                                           
+        self.activefg = activefg
         self.inactivefg = inactivefg
         self.activefc = activefc
         self.inactivefc = inactivefc
@@ -267,9 +267,9 @@ class Notebook(Frame):
         self.xpad = xpad
         self.ypad = ypad
         self.activerelief = activerelief
-        self.inactiverelief = inactiverelief                                                           
+        self.inactiverelief = inactiverelief
         self.tabVars = {}                                 
-        self.tabs = 0                                                                              
+        self.tabs = 0
         self.progvar = DoubleVar()
         self.progvar.set(0)
         self.style = Style()
@@ -324,19 +324,19 @@ class Notebook(Frame):
         """Internal Function"""
         
         for i in (a for a in range(0, len(list(self.tabVars.keys())))):
-            if not i in self.deletedTabs:                                                  #Make sure tab hasen't been deleted
-                if i != IDNum:                                                             #Check to see if the tab is the one that is currently selected
-                    self.tabVars[i][1].grid_remove()                                       #Remove the Frame corresponding to each tab that is not selected
-                    self.tabVars[i][0]['relief'] = self.inactiverelief                     #Change the relief of all tabs that are not selected to "Groove"
-                    self.tabVars[i][0]['fg'] = self.inactivefg                             #Set the fg of the tab, showing it is selected, default is black
+            if not i in self.deletedTabs:                                                  
+                if i != IDNum:
+                    self.tabVars[i][1].grid_remove()                                       
+                    self.tabVars[i][0]['relief'] = self.inactiverelief                     
+                    self.tabVars[i][0]['fg'] = self.inactivefg                             
                     self.tabVars[i][0]['font'] = self.inactivefc
                     self.tabVars[i][0]['bg'] = '#c5c5c5'
-                else:                                                                      #When on the tab that is currently selected...
-                    self.tabVars[i][1].grid()                                              #Re-grid the frame that corresponds to the tab                      
-                    self.tabVars[IDNum][0]['relief'] = self.activerelief                   #Change the relief to "Raised" to show the tab is selected
+                else:
+                    self.tabVars[i][1].grid()                                              
+                    self.tabVars[IDNum][0]['relief'] = self.activerelief                   
                     self.tabVars[i][0]['fg'] = self.activefg
                     self.tabVars[i][0]['font'] = self.activefc
-                    self.tabVars[i][0]['bg'] = 'white'                               #Set the fg of the tab, showing it is not selected, default is black
+                    self.tabVars[i][0]['bg'] = 'white'                                     
 
     def add_tab(self, width=2, **kw):
         import tkinter
@@ -344,41 +344,50 @@ class Notebook(Frame):
         """
         
         temp = self.tabs
-        self.tabVars[self.tabs] = [Label(self.BFrame, relief = RIDGE, **kw)]               #Create the tab
-        self.tabVars[self.tabs][0].bind("<Button-1>", lambda Event:self.change_tab(temp))  #Makes the tab "clickable"
-        self.tabVars[self.tabs][0].pack(side = LEFT, ipady=self.ypad, ipadx=self.xpad) #Packs the tab as far to the left as possible
-        self.tabVars[self.tabs].append(Frame(self.noteBook, **self.kwargs))                #Create Frame, and append it to the dictionary of tabs
-        self.tabVars[self.tabs][1].grid(row=0, column=0)                               #Grid the frame ontop of any other already existing frames
-        self.change_tab(0)                                                                 #Set focus to the first tab
-        self.tabs += 1                                                                     #Update the tab count
-        return self.tabVars[temp][1]                                                       #Return a frame to be used as a parent to other widgets
+        self.tabVars[self.tabs] = [Label(self.BFrame, relief = RIDGE, **kw)]
+        self.tabVars[self.tabs][0].bind("<Button-1>", lambda Event:self.change_tab(temp))  
+        self.tabVars[self.tabs][0].pack(side = LEFT, ipady=self.ypad, ipadx=self.xpad)     
+        self.tabVars[self.tabs].append(Frame(self.noteBook, **self.kwargs))
+        self.tabVars[self.tabs][1].grid(row=0, column=0)
+        self.change_tab(0)
+        self.tabs += 1
+        return self.tabVars[temp][1]
 
     def destroy_tab(self, tab):
         """Delete a tab from the notebook, as well as it's corresponding frame
         """
         
-        self.iteratedTabs = 0                                                              #Keep track of the number of loops made
-        for b in list(self.tabVars.values()):                                                    #Iterate through the dictionary of tabs
-            if b[1] == tab:                                                                #Find the NumID of the given tab
-                b[0].destroy()                                                             #Destroy the tab's frame, along with all child widgets
-                self.tabs -= 1                                                             #Subtract one from the tab count
-                self.deletedTabs.append(self.iteratedTabs)                                 #Apend the NumID of the given tab to the list of deleted tabs
-                break                                                                      #Job is done, exit the loop
-            self.iteratedTabs += 1                                                         #Add one to the loop count
+        self.iteratedTabs = 0
+        for b in list(self.tabVars.values()):
+            if b[1] == tab:
+                b[0].destroy()
+                self.tabs -= 1
+                self.deletedTabs.append(self.iteratedTabs)
+                break
+            self.iteratedTabs += 1
     
     def focus_on(self, tab):
         """Locate the IDNum of the given tab and use
         change_tab to give it focus
         """
-        self.iteratedTabs = 0                                                              #Keep track of the number of loops made
-        for b in list(self.tabVars.values()):                                                    #Iterate through the dictionary of tabs
-            if b[1] == tab:                                                                #Find the NumID of the given tab
-                self.change_tab(self.iteratedTabs)                                         #send the tab's NumID to change_tab to set focus, mimicking that of each tab's event bindings
-                break                                                                      #Job is done, exit the loop
-            self.iteratedTabs += 1                                                         #Add one to the loop count
+        self.iteratedTabs = 0
+        for b in list(self.tabVars.values()):
+            if b[1] == tab:
+                self.change_tab(self.iteratedTabs)
+                break
+            self.iteratedTabs += 1
 
 def corpkit_gui(noupdate=False, loadcurrent=False):
-    
+    """
+    The actual code for the application
+
+    :param noupdate: prevent auto update checking
+    :type noupdate: bool 
+
+    :param loadcurrent: load this path as the project
+    :type loadcurrent: str
+    """
+
     # make app
     root=Tk()
     #minimise it
@@ -401,9 +410,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
         from pandas import Series, DataFrame
         
         # stop warning when insecure download is performed
+        # this somehow raised an attribute error for anrej,
+        # so we'll allow it to pass ...
+
         import requests
-        requests.packages.urllib3.disable_warnings()
-        
+        try:
+            requests.packages.urllib3.disable_warnings()
+        except AttributeError:
+            pass
+
         # unused in the gui, dummy imports for pyinstaller
         #import seaborn
         import locale
@@ -4923,13 +4938,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
         win = StringVar()
         win.set('Window')
-        wind_size = OptionMenu(conc_left_buts, win, *tuple(('Window', '20', '30', '40', '50', '60', '70', '80', '90', '100')))
+        wind_size = OptionMenu(conc_left_buts, win, *tuple(('Window', '20', '30', '40', 
+                                                            '50', '60', '70', '80', '90', '100')))
         wind_size.config(width=10)
         wind_size.grid(row=0, column=5)
         win.trace("w", conc_sort)
 
         # possible sort
-        sort_vals = ('Index', 'Subcorpus', 'File', 'Speaker', 'Colour', 'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
+        sort_vals = ('Index', 'Subcorpus', 'File', 'Speaker', 'Colour', 
+                     'Scheme', 'Random', 'L5', 'L4', 'L3', 'L2', 'L1', 
+                     'M1', 'M2', 'M-2', 'M-1', 'R1', 'R2', 'R3', 'R4', 'R5')
         sortval = StringVar()
         sortval.set('Sort')
         prev_sortval = ['None']
@@ -6959,7 +6977,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
 
     root.deiconify()
     root.lift()
-    #root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     try:
         root._splash.__exit__()
     except:
