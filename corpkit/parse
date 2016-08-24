@@ -4,6 +4,11 @@ from __future__ import print_function
 
 """
 A script to parse using corpkit
+
+:Example:
+
+parse junglebook --speaker-segmentation True
+
 """
 
 import sys

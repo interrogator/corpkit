@@ -84,7 +84,10 @@ def keywords(target_corpus,
             return threshold
 
     def calc_keywords(target_corpus, reference_corpus):
-        """get keywords in target corpus compared to reference corpus"""
+        """
+        get keywords in target corpus compared to reference corpus
+        this should probably become some kind of row-wise df.apply method
+        """
         # get total num words in ref corpus
         key_scores = {}
         ref_sum = sum(reference_corpus.values())
