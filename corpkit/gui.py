@@ -242,7 +242,7 @@ class HyperlinkManager:
 class Notebook(Frame):
     """Notebook Widget"""
     def __init__(self, parent, activerelief=RAISED, inactiverelief=FLAT, 
-                xpad=4, ypad=6, activefg='black', inactivefg='black', 
+                xpad=4, ypad=6, activefg='black', inactivefg='black', debug=False,
                 activefc=("Helvetica", 14, "bold"), inactivefc=("Helvetica", 14), **kw):
         """Construct a Notebook Widget
 
@@ -467,7 +467,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         note_height = 600 if small_screen else 660
         #wid = 1365
         note = Notebook(root, width=root.winfo_screenwidth(), height=note_height,
-                        activefg='#000000', inactivefg='#585555')  #Create a Note book Instance
+                        activefg='#000000', inactivefg='#585555', debug=debug)  #Create a Note book Instance
         note.grid()
         tab0 = note.add_tab(text="Build")
         tab1 = note.add_tab(text="Interrogate")
