@@ -308,8 +308,9 @@ class Notebook(Frame):
         
         # redirect stdout for log
         self.redir = RedirectText(self.status_text, self.log_stream, self.text.label_widget)
-        sys.stdout = self.redir
-        sys.stderr = self.redir
+        if not debug:
+            sys.stdout = self.redir
+            sys.stderr = self.redir
 
         Frame.__init__(self)
         self.noteBookFrame.grid()
@@ -377,7 +378,7 @@ class Notebook(Frame):
                 break
             self.iteratedTabs += 1
 
-def corpkit_gui(noupdate=False, loadcurrent=False):
+def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
     """
     The actual code for the application
 
@@ -1645,7 +1646,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
                     interrodata.save('features', savedir=savedinterro_fullpath.get())
             
             # make sure we're redirecting stdout again
-            sys.stdout = note.redir
+            if not debug:
+                sys.stdout = note.redir
 
             # update spreadsheets
             if not isinstance(interrodata, (Interrogation, Interrodict)):
@@ -5820,10 +5822,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False):
             filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
             corp = Corpus(unparsed_corpus_path)
             parsed = corp.tokenise(root=root, 
-                                  stdout = sys.stdout, 
+                                  stdout=sys.stdout, 
                                   note=note, 
-                                  only_tokenise = True,
-                                  nltk_data_path = nltk_data_path)
+                                  only_tokenise=True,
+                                  nltk_data_path=nltk_data_path)
             #corpus_fullpath.set(outdir)
             outdir = parsed.path
             current_corpus.set(parsed.name)
@@ -6998,6 +7000,7 @@ if __name__ == "__main__":
     import os
 
     lc = sys.argv[-1] if os.path.isdir(sys.argv[-1]) else False
+    debugmode = 'debug' in list(sys.argv)
 
     def install(name, loc):
         """if we don't have a module, download it"""
@@ -7017,11 +7020,11 @@ if __name__ == "__main__":
 
     try:
         if lc:
-            corpkit_gui(loadcurrent=lc)
+            corpkit_gui(loadcurrent=lc, debug=debugmode)
         else:
-            corpkit_gui()
+            corpkit_gui(debug=debugmode)
     except:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_type, exc_value, exc_traceback=sys.exc_info()
         print("*** print_tb:")
         traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
         print("*** print_exception:")
