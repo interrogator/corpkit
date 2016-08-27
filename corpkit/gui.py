@@ -4406,7 +4406,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             popt = OrderedDict()
             for k, v in [('Tokenise', 'tokenize'),
-                         ('Clean XML', 'cleanxml')
+                         ('Clean XML', 'cleanxml'),
                          ('Sentence splitting', 'ssplit'),
                          ('POS tagging', 'pos'),
                          ('Lemmatisation', 'lemma'),

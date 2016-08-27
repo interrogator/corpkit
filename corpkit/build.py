@@ -339,7 +339,14 @@ def parse_corpus(proj_path=False,
         os.chdir(corenlppath)
         if root:
             root.update_idletasks()
-            reload(sys)
+            # not sure why reloading sys, but seems needed
+            # in order to show files in the gui
+            try:
+                reload(sys)
+            except NameError:
+                import importlib
+                importlib.reload(sys)
+                pass
         if memory_mb is False:
             memory_mb = 2024
         if operations is False:
@@ -386,7 +393,7 @@ def parse_corpus(proj_path=False,
             sys.stdout = stdout
             thetime = strftime("%H:%M:%S", localtime())
             if not fileparse:
-                num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith('.xml')])  
+                num_parsed = len([f for f in os.listdir(new_corpus_path) if f.endswith(out_ext)])  
                 if num_parsed == 0:
                     if root:
                         print('%s: Initialising parser ... ' % (thetime))

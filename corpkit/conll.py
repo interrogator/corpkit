@@ -901,7 +901,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                         token['word'],
                         token['lemma'],
                         token['pos'],
-                        token['ner'],
+                        token.get('ner', '_'),
                         governor,
                         func,
                         ','.join(depends)]
