@@ -1537,12 +1537,22 @@ def interrogator(corpus,
     # if we're doing files as subcorpora,  we can remove the .txt.xml etc
     if isinstance(df, DataFrame) and files_as_subcorpora:
         cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
-        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.xml', ''),
+        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.(xml|conll)', ''),
                  (r'-%s(-stripped)?(-parsed)?' % cname, '')]
         from corpkit.editor import editor
         df = editor(df, replace_subcorpus_names=edits).results
         tot = df.sum(axis=1)
         total_total = df.sum().sum()
+
+    if conc_df is not None and conc_df is not False:
+        # removed 'f' from here for now
+        for col in ['c']:
+            for pat in ['.txt', '.xml', '.conll']:
+                conc_df[col] = conc_df[col].str.replace(pat, '')
+            conc_df[col] = conc_df[col].str.replace(r'-[0-9][0-9][0-9]$', '')
+
+        #df.index = df.index.str.replace('w', 'this')
+    
 
     # sort by total
     if isinstance(df, DataFrame):
