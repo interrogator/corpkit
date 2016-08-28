@@ -14,7 +14,7 @@ A quick demo for each interface is provided in this document.
 
 ## Feature summary
 
-From all three interfaces, you can do a lot of neat things:
+From all three interfaces, you can do a lot of neat things. In general:
 
 ### Parsing
 
@@ -26,7 +26,7 @@ From all three interfaces, you can do a lot of neat things:
 * Multiprocessing
 * Store dependency parsed texts, parse trees and metadata in CONLL-U format
 
-### Interrogating
+### Interrogating corpora
 
 > Interrogating a corpus produces an `Interrogation` object, with results as Pandas DataFrame attributes.
 
@@ -50,7 +50,7 @@ From all three interfaces, you can do a lot of neat things:
 * Simple multiprocessing available for parsing and interrogating
 * Results are Pandas objects, so you can do fast, good statistical work on them
 
-### Visualising
+### Visualising results
 
 > The `visualise` method of `Interrogation` objects uses matplotlib and seaborn if installed to produce high quality figures.
 
@@ -67,7 +67,7 @@ From all three interfaces, you can do a lot of neat things:
 * Recalculate results from edited concordance lines (great for removing false positives)
 * Format lines for publication with TeX
 
-### Other
+### Other stuff
 
 * Language modelling
 * Save and load results, images, concordances
@@ -124,7 +124,7 @@ You can create projects via the graphical interface as well.
 
 ## Ways to use *corpkit*
 
-As explained earlier, there are three ways to use the tool. Each is demonstrated briefly below.
+As explained earlier, there are three ways to use the tool. Each has unique strengths and weaknesses. To summarise them, the Python API is the most powerful, but has the steepest learning curve. The GUI is the least powerful, but easy to learn (though it is still arguably the most powerful linguistics GUI available). The interpreter strikes a happy middle ground, especially for those who are not familiar with Python.
 
 ## Interpreter
 
@@ -135,63 +135,81 @@ cd junglebook
 corpkit
 ```
 
-You can now enter commands.
+You'll get a lovely new prompt into which you can type commands: 
+
+```none
+corpkit@junglebook:no-corpus> 
+```
+
+Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. 
 
 ### Making corpora
 
 ```python
 # specify corpus to work on
-set chapters as corpus
+> set chapters as corpus
+
 # parse the corpus
-parse corpus with speaker_segmentation and metadata and multiprocess as 2
+> parse corpus with speaker_segmentation and metadata and multiprocess as 2
 ```
 
 ### Searching and concordancing
 
 ```
 # search and exclude
-search corpus for governor-function matching root excluding governor-lemma matching 'be'
+> search corpus for governor-function matching 'root' \
+... excluding governor-lemma matching 'be'
+
 # show pos, lemma, index, (e.g. 'NNS/thing/3')
-search corpus for pos matching '^N' showing pos and lemma and index
+> search corpus for pos matching '^N' showing pos and lemma and index
+
 # further arguments and dynamic structuring
-search corpus for word matching any with pagenum as subcorpora and preserve_case
+> search corpus for word matching any \
+... with pagenum as subcorpora and preserve_case
+
 # show concordance lines
-show concordance with window as 50 and columns as LMR
+> show concordance with window as 50 and columns as LMR
+
 # colouring concordances
-mark m matching 'have' blue
+> mark m matching 'have' blue
+
 # recalculate results
-calculate result from concordance
+> calculate result from concordance
 ```
 
 ### Editing results
 
 ```
-# skip some numeritcal subcorpora
-edit result by skipping subcorpora matching [1,2,3,4,5]
-calculate result as percentage of self
+# skip some numerical subcorpora
+> edit result by skipping subcorpora matching [1,2,3,4,5]
+> calculate result as percentage of self
+# use scipy to calculate trends and sort by them
+> sort edited by decrease
 ```
 
 ### Visualise edited results
 
 ```
-plot edited as line chart with x_label as 'Subcorpus' and y_label as 'Frequency' and colours as 'summer'
+> plot edited as line chart \
+... with x_label as 'Subcorpus' and \
+... y_label as 'Frequency' and \
+... colours as 'summer'
 ```
 
 ### Switching interfaces
 
 ```shell
 # open graphical interface
-gui
+> gui
 # enter ipython with current namespace
-ipython
-# use a jupyter notebook
-jupyter notebook findings.ipynb
+> ipython
+# use a new/existing jupyter notebook
+> jupyter notebook findings.ipynb
 ```
 
 ## API
 
-Using straight Python is the most powerful way to use *corpkit*, because you can manipulate results with Pandas syntax, construct loops and recursive queries. Here is a simple example of the API syntax:
-
+Using straight Python is the most powerful way to use *corpkit*, because you can manipulate results with Pandas syntax, construct loops, make recursive queries, and so on. Here are some simple examples of the API syntax:
 
 ### Instantiate and search a parsed corpus
 
@@ -219,14 +237,27 @@ The variables `L`, `F` and so on are imported during `from corpkit import *`. Th
 ```python
 ### calculate and sort---this sort requires scipy
 >>> proc = proc.edit('%', SELF, sort_by='increase')
+
 ### make line subplots for the first nine results
 >>> plt = proc.visualise('Processes, increasing', subplots=True, layout=(3,3))
 ### Tweak figure directly here if you need to, before showing it
 >>> plt.show()
 ```
 
-There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/rst_docs/API-README.md). This documen is fairly thorough, but now deprecated.
+There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/rst_docs/API-README.md). This document is fairly thorough, but now deprecated, because the docs are now over at [ReadTheDocs](https://readthedocs.org/projects/corpkit).
 
 ## Graphical interface
 
-Screenshots coming soonW
+Screenshots coming soon! For now, just head [here](http://interrogator.github.io/corpkit/).
+
+## Contact
+
+Twitter: [@interro_gator](https://twitter.com/interro_gator)
+
+## Cite
+
+> `McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
+
+```
+
+```
