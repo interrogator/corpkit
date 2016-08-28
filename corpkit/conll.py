@@ -96,7 +96,6 @@ def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
     """dummy function"""
     sent_id, tok_id = getattr(idx, 'name', idx)
     if attr:
-        #print(df[attr].ix[sent_id, tok_id])
         return df[attr].ix[sent_id, tok_id]
     return [(sent_id, tok_id)]
 
@@ -436,7 +435,8 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
 
     return conc_lines
 
-def show_this(df, matches, show, metadata, conc=False, coref=False, **kwargs):
+def show_this(df, matches, show, metadata,
+              conc=False, coref=False, **kwargs):
 
     matches = sorted(matches)
 
@@ -779,6 +779,9 @@ def pipeline(f,
                 all_matches.remove(i)
             except ValueError:
                 pass
+
+    # get rid of NA results
+    all_matches = [i for i in all_matches if i in list(df.index)]
 
     out, conc_out = show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
 
