@@ -1433,8 +1433,11 @@ def interpreter(debug=False):
         objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
         end = '*' if not objs._in_a_project else ''
         name = getattr(objs.corpus, 'name', 'no-corpus')
-        realend = '...' if backslashed else '>'
-        return 'corpkit@%s%s:%s%s ' % (folder, end, name, realend)
+        txt = 'corpkit@%s%s:%s> ' % (folder, end, name)
+        if not backslashed:
+            return txt
+        else:
+            return '... '.rjust(len(txt))
 
     print(allig)
 
@@ -1449,33 +1452,42 @@ def interpreter(debug=False):
         """
         exec(output)
 
-    in_gui = False
+    # backslashed allows line breaks with backslashes ala python.
+    # it's a bit of a hack, but seems to work pretty well
 
     backslashed = ''
  
+    # the main loop, with exception handling
     while True:
         try:
             output = INPUTFUNC(get_prompt(backslashed))
+
+            # terminate
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
                 break
 
+            # do nothing
             if not output:
                 output = True
                 continue
- 
+            
+            # append line to previous backslashed line
             if backslashed:
                 output = backslashed + output
+                backslashed = ''
+            
+            # add to stack if backslashed or delete stack otherwise
             if output.strip().endswith("\\"):
                 backslashed += output.rstrip('\\')
                 continue
             else:
                 backslashed = ''
 
+             # is this just a terrible idea?
             if output.startswith('py '):
 
                 output = output[3:].strip().strip("'").strip('"')
-                
-                # is this just a terrible idea?
+            
                 for k, v in objs.__dict__.items():
                     locals()[k] = v
                 exec(output, globals(), locals())
@@ -1484,10 +1496,13 @@ def interpreter(debug=False):
                         setattr(objs, k, v)
                 continue
 
+            # tokenise command with quotations preserved
             tokens = shlex.split(output)
+
             if debug:
                 print('command', tokens)
             
+            # give info if it is an info command
             if len(tokens) == 1 or tokens[0] == 'jupyter':
                 if tokens[0] == 'set':
                     set_corpus([])
@@ -1495,10 +1510,13 @@ def interpreter(debug=False):
                     single_command_print(tokens)
                 continue
 
+            # otherwise, run the command and reset the stack
             out = run_command(tokens)
+            backslashed = ''
 
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
+            backslashed = ''
         except EOFError:
             import sys
             print('\n\nBye!\n')
