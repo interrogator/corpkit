@@ -23,18 +23,23 @@ import corpkit
 from corpkit import *
 from corpkit.constants import transshow, transobjs
 
+# pandas display setup, though this is rarely used when LESS
+# and tabview are available
 size = pd.util.terminal.get_terminal_size()
 pd.set_option('display.max_rows', 0)
 pd.set_option('display.max_columns', 0)
 pd.set_option('display.float_format', lambda x: '${:,.3f}'.format(x))
 
+# allow ctrl-r, etc
 readline.parse_and_bind('set editing-mode vi')
-
 
 # this code makes it possible to remember history from previous sessions
 history_path = os.path.expanduser("~/.pyhistory")
 
 def save_history(history_path=history_path):
+    """
+    On exit, add previous commands to history file
+    """
     import readline
 
     try:
@@ -51,12 +56,13 @@ if os.path.exists(history_path):
     except IOError:
         pass
 
+# bind to exit
 atexit.register(save_history)
 
+# tab completion
 readline.parse_and_bind('tab: complete')
 
 del os, atexit, readline, rlcompleter, save_history, history_path
-
 
 
 def interpreter(debug=False):
@@ -73,12 +79,15 @@ def interpreter(debug=False):
              "                          _____..'  .'\n    "\
              "                         '-._____.-'\n"
 
-    # globally accessed
-
     class Objects(object):
+        """
+        In here are all of the major variables being used by the interpreter
+        This is much nicer than using globals
+        """
 
         def __init__(self):
 
+            # get dict of all possible wordlists
             from corpkit.dictionaries.roles import roles
             from corpkit.dictionaries.wordlists import wordlists
             from corpkit.dictionaries.process_types import processes
@@ -89,6 +98,8 @@ def interpreter(debug=False):
             except AttributeError:
                 wl.update(roles._asdict())
             wl.update(processes.__dict__)
+
+            # main variables the user might access
             self.result = None
             self.previous = None
             self.edited = None
@@ -100,29 +111,40 @@ def interpreter(debug=False):
             self.wordclasses = None
             self.stored = {}
             self.figure = None
-            self._in_a_project = None
             self.totals = None
-            self._previous_type = None
-            self._do_conc = True
-            self._interactive = True
             self.wordlists = wl
             self.wordlist = None
-            self._decimal = 3
+
+            # system toggles and references to older data
+            self._in_a_project = None
+            self._previous_type = None
             self._old_concs = []
             self._conc_colours = defaultdict(dict)
             self._conc_kwargs = {'n': 999}
 
+            # user settings  (more to come?)
+            self._do_conc = True
+            self._interactive = True
+            self._decimal = 3
+
     objs = Objects()
 
+    # basic way to check that we're currently in a project, because i'm lazy
     proj_dirs = ['data', 'saved_interrogations', 'exported']
     objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
 
     def generate_outprint():
+        """
+        Text to appear when switching to IPython
+        """
         s = 'Switched to IPython ... defined variables:\n\n\t'
         s += 'corpus, results, concordance, edited ...\n\n\tType "quit" to return to corpkit environment'
         return s
 
     def helper(tokens):
+        """
+        Give user help if they enter a command alone
+        """
         func = get_command.get(tokens[0], False)
 
         if not func:
@@ -132,6 +154,16 @@ def interpreter(debug=False):
         print(getattr(func, '__doc__', 'Not written yet, sorry.'))
 
     def single_command_print(command):
+        """
+        If the user enters just a single token, show them that token
+        This function also processes multiword tokens sometimes, which is inconsistent.
+        """
+
+        helpable = ['calculate', 'plot', 'search', 'fetch', 'store', 'save', 'edit',
+                    'export', 'sort', 'loead', 'mark', 'del']
+
+        if isinstance(command, list) and len(command) == 1 and command[0] in helpable:
+            helper(command)
 
         args = []
         if isinstance(command, list):
@@ -225,26 +257,26 @@ def interpreter(debug=False):
             if not hasattr(objs.corpus, 'name'):
                 print('Corpus not set. use "set <corpusname>".')
                 return
+            else:
+                print(objs.corpus)
+        
+        # switch to IPython
         elif command == 'python' or command == 'ipython':
             from IPython import embed
             from IPython.terminal.embed import InteractiveShellEmbed
-
-            # the theory is that somewhere we could get the locals from the embedded session
-            # atexit_operations could be the answer
-
             s = generate_outprint()
-
             for k, v in objs.__dict__.items():
                 if not k.startswith('_'):
                     locals()[k] = v
 
             ret = InteractiveShellEmbed(header=s,
-                        dum='dum',
+                        babaii='babaii',
                         #colors='Linux',
                         exit_msg='Switching back to corpkit environment ...',
                         local_ns=locals())
             cc = ret()
 
+        # switch to jupyter notebook
         elif command.startswith('jupyter') or command == 'notebook':
             comm = ["jupyter", "notebook"]
             import subprocess
@@ -257,12 +289,14 @@ def interpreter(debug=False):
                     comm.append(nbfile)
             subprocess.call(comm)            
 
+        # switch to gui
         elif command == 'gui':
             import subprocess
             import os
             print('Loading graphical interface ... ')
             subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
+        
         elif command in ['result', 'edited', 'totals', 'previous',
                          'features', 'postags', 'wordclasses']:
             import tabview
@@ -386,33 +420,49 @@ def interpreter(debug=False):
                 print('Corpus not found: %s' % tokens[0])
                 return
 
-    def search_helper(text='search'):
-        if text == 'search':
-            search_or_show = {}
-        else:
-            search_or_show = []
-        while True:
-            out = INPUTFUNC('\n    %s (words, lemma, pos, func ... ) > ' % text)
-            out = out.lower()
-            if not out:
-                continue
-            if out.startswith('done'):
-                break
-            if out == 'cql':
-                cql = INPUTFUNC('\n        CQL query > ')
-                return cql.strip()
-            if text == 'show':
-                search_or_show.append(out)
-                continue
-            val = INPUTFUNC('\n        value (regex) > ')
-            if not val:
-                continue
-            if val.startswith('done'):
-                break
-            search_or_show[out.lower()[0]] = val
-        return search_or_show
+    def parse_search_related(search_related):
+        """
+        parse the capitalised tokens in
+        'search corpus FOR GOVERNOR-LEMMA MATCHING .* AND LEMMA MATCHING .* showing ...'
+        """
+        search = {}
+        exclude = {}   
+        searchmode = 'all'
+        cqlmode = False
+        featuresmode = False
+        if search_related[0] != 'for':
+            search_related.insert(0, 'for')
+        
+        for i, token in enumerate(search_related):
+            if token in ['for', 'and', 'not', 'or']:
+                if token == 'or':
+                    searchmode = 'any'
+                if search_related[i+1] == 'not':
+                    continue
+                if search_related[i+1] == 'features':
+                    search = {'v': 'any'}
+                    featuresmode = True
+                    break
+                k = search_related[i+1]
+                if k == 'cql':
+                    cqlmode = True
+                    aquery = next((i for i in search_related[i+2:] if i not in ['matching']), False)
+                    if aquery:
+                        search = aquery
+                        break
+                k = process_long_key(k)
+                v = search_related[i+3].strip("'")
+                v = parse_pattern(v)
+                if token == 'not':
+                    exclude[k] = v
+                else:
+                    search[k] = v
+        return search, exclude, searchmode, cqlmode, featuresmode
 
     def process_long_key(srch):
+        """
+        turn governor-lemma into 'gl', etc.
+        """
         from corpkit.constants import transshow, transobjs
         
         transobjs = {v.lower(): k.replace(' ', '-') for k, v in transobjs.items()}
@@ -463,7 +513,9 @@ def interpreter(debug=False):
             return string
 
     def parse_pattern(val):
-        """Parses the token after 'matching'"""
+        """
+        Parse the token after 'matching'---that is, the search criteria
+        """
         trans = {'true': True,
                  'false': False,
                  'none': None}
@@ -497,7 +549,43 @@ def interpreter(debug=False):
             except (SyntaxError, NameError):
                 return val
 
+    def search_helper(text='search'):
+        """
+        Interactive mode for search, exclude or show
+        """
+        if text in ['search', 'exclude']:
+            search_or_show = {}
+        else:
+            search_or_show = []
+        while True:
+            out = INPUTFUNC('\n    %s (words, lemma, pos, function ... ) > ' % text)
+            out = out.lower()
+            if not out:
+                break
+            if out.startswith('done'):
+                break
+            if out == 'cql':
+                cql = INPUTFUNC('\n        CQL query > ')
+                return cql.strip()
+            if text == 'show':
+                out = out.replace(', ', ' ').replace(',', ' ').replace('/', ' ')
+                return out.split(' ')
+                #search_or_show.append(out)
+                #continue
+            val = INPUTFUNC('\n        value (regex, wordlist) > ')
+            if not val:
+                continue
+            if val.startswith('done'):
+                break
+            out = process_long_key(out)
+            search_or_show[out] = parse_pattern(val)
+
+        return search_or_show
+
     def process_kwargs(tokens):
+        """
+        Turn the last part of a command into a dict of kwargs
+        """
 
         if 'with' in tokens:
             start = tokens.index('with')
@@ -530,23 +618,40 @@ def interpreter(debug=False):
 
 
     def parse_search_args(tokens):
+        """
+        Put all search arguments together---search, exclude, show, and kwargs
+        """
         tokens = tokens[1:]
+        
+        # interactive mode
         if not tokens:
             search = search_helper(text='search')
+            exclude = search_helper(text='exclude')
             show = search_helper(text='show')
-            kwargs = {'search': search, 'show': show,
-                      'cql': isinstance(search, str), 'conc': True}
+            show = [process_long_key(i) for i in show]
+            kwargs = {'search': search, 'show': show, 'exclude': exclude,
+                      'cql': isinstance(search, str), 'conc': objs._do_conc}
             return kwargs
 
         search_related = []
         for token in tokens:
             search_related.append(token)
-            if token in [',', 'showing', 'with']:
+            if token in [',', 'showing', 'with', 'excluding']:
                 break
-            
+
+        if 'excluding' in tokens:
+            start = tokens.index('excluding')
+            ex_related = tokens[start+1:]
+            end = ex_related.index('showing') if 'showing' in ex_related else False
+            if end is False:
+                end = ex_related.index('with') if 'with' in ex_related else False
+            if end:
+                ex_related = ex_related[:end]
+        else:
+            ex_related = {}
+
         if 'showing' in tokens:
             start = tokens.index('showing')
-            
             show_related = tokens[start+1:]
             end = show_related.index('with') if 'with' in show_related else False
             if end:
@@ -560,35 +665,10 @@ def interpreter(debug=False):
         else:
             with_related = []
 
-        search = {}
-        exclude = {}
+        search, exclude, searchmode, cqlmode, featuresmode = parse_search_related(search_related)
+        if not exclude:
+            exclude, _, _, _, _ = parse_search_related(ex_related)
 
-        cqlmode = False
-        featuresmode = False
-        
-        for i, token in enumerate(search_related):
-            if token in ['for', 'and', 'not']:
-                if search_related[i+1] == 'not':
-                    continue
-                if search_related[i+1] == 'features':
-                    search = {'v': 'any'}
-                    featuresmode = True
-                    break
-                k = search_related[i+1]
-                if k == 'cql':
-                    cqlmode = True
-                    aquery = next((i for i in search_related[i+2:] if i not in ['matching']), False)
-                    if aquery:
-                        search = aquery
-                        break
-                k = process_long_key(k)
-                v = search_related[i+3].strip("'")
-                v = parse_pattern(v)
-                if token == 'not':
-                    exclude[k] = v
-                else:
-                    search[k] = v
-        
         show = []
         if show_related:
             for token in show_related:
@@ -603,7 +683,7 @@ def interpreter(debug=False):
         withs = process_kwargs(tokens)
 
         kwargs = {'search': search, 'exclude': exclude, 'df1_always_df': True,
-                  'show': show, 'cql': cqlmode, 'conc': objs._do_conc}
+                  'show': show, 'cql': cqlmode, 'conc': objs._do_conc, 'searchmode': searchmode}
         kwargs.update(withs)
         return kwargs
 
@@ -673,7 +753,8 @@ def interpreter(debug=False):
             ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
         elif tokens[0] == 'query':
-            print(objs.query)
+            for k, v in sorted(objs.query.items()):
+                print('%s: %s' % (str(k), str(v)))
         elif tokens[0] == 'figure':
             if hasattr(objs, 'figure') and objs.figure:
                 objs.figure.show()
@@ -843,7 +924,7 @@ def interpreter(debug=False):
 
 
     def interactive_edit(tokens):
-        print('not done yet')
+        print('Not done yet')
         pass
 
     def get_thing_to_edit(token):
@@ -856,7 +937,9 @@ def interpreter(debug=False):
         return thing_to_edit
 
     def sort_something(tokens):
-        """sort a result or concordance line"""
+        """
+        Sort a result or concordance line
+        """
 
         thing_to_edit = get_thing_to_edit(tokens[0])
 
@@ -951,9 +1034,19 @@ def interpreter(debug=False):
 
     def calculate_result(tokens):
         """
-        Get relative frequencies, combine results, etc
-        """
+        Get relative frequencies, combine results, do keywording
 
+        :Syntax:
+
+        calculate <result>/<edited> as <operation> of <denominator>
+
+        :Examples:
+
+           > calculate result as percentage of self
+           > calculate edited as percentage of features.clauses
+           > calculate result as percentage of stored.myname
+
+        """
         calcs = ['k', '%', '+', '/', '-', '*', 'percentage']
         operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
         if not operation:
@@ -1162,7 +1255,7 @@ def interpreter(debug=False):
         if token in colours:
             colourdict = objs._conc_colours[len(objs._old_concs)-1]
             return set([k for k, v in colourdict.items() if token == v])  
-            #objs._conc_colours[len(objs._old_concs)-1][line] = color
+            
         # annotate range of tokens
         if '-' in token:
             first, last = token.split('-', 1)
@@ -1205,7 +1298,6 @@ def interpreter(debug=False):
     def annotate_conc(tokens):
         from colorama import Fore, Back, Style, init
         init(autoreset=True)
-        #dflines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
         cols = get_matching_indices(tokens)
         color = tokens[-1]
         for line in cols:
@@ -1253,11 +1345,20 @@ def interpreter(debug=False):
         print('Stored: %s' % name)
 
     def toggle_this(tokens):
+        """
+        Toggle a specified option
+
+        Currently available:
+
+        - toggle conc
+        - toggle interactive
+
+        """
         if tokens[0].startswith('conc'):
             objs._do_conc = not objs._do_conc
             s = 'on' if objs._do_conc else 'off'
             print('Concordancing turned %s.' % s)
-        if tokens[0].startswith('autos'):
+        if tokens[0].startswith('interactive'):
             objs._interactive = not objs._interactive
             s = 'on' if objs._interactive else 'off'
             print('Auto showing of results and concordances turned %s.' % s)            
