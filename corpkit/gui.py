@@ -4396,7 +4396,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         speakseg = IntVar()
 
         def parser_options():
-            """a popup with corenlp options, to display before parsing.
+            """
+            A popup with corenlp options, to display before parsing.
             this is a good candidate for 'preferences'"""
             from tkinter import Toplevel
             global poptions
@@ -4413,7 +4414,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                          ('Named entity recognition', 'ner'),
                          ('Parse', 'parse'),
                          ('Referent tracking', 'dcoref')]:
-                         popt[k] = v
+                popt[k] = v
 
             butvar = {}
             butbut = {}
@@ -4431,7 +4432,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 tmp = StringVar()
                 but = Checkbutton(poptions, text=k, variable=tmp, onvalue=v, offvalue=False)
                 but.grid(sticky=W)
-                if k != 'Referent tracking' and k != 'Named entity recognition' and k != 'Clean XML':
+                if k != 'Clean XML':
                     but.select()
                 else:
                     but.deselect()
