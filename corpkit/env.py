@@ -553,6 +553,7 @@ def interpreter(debug=False):
         """
         Interactive mode for search, exclude or show
         """
+
         if text in ['search', 'exclude']:
             search_or_show = {}
         else:
@@ -560,10 +561,13 @@ def interpreter(debug=False):
         while True:
             out = INPUTFUNC('\n    %s (words, lemma, pos, function ... ) > ' % text)
             out = out.lower()
+            
             if not out:
                 break
             if out.startswith('done'):
                 break
+
+
             if out == 'cql':
                 cql = INPUTFUNC('\n        CQL query > ')
                 return cql.strip()
@@ -648,7 +652,7 @@ def interpreter(debug=False):
             if end:
                 ex_related = ex_related[:end]
         else:
-            ex_related = {}
+            ex_related = []
 
         if 'showing' in tokens:
             start = tokens.index('showing')
@@ -666,7 +670,7 @@ def interpreter(debug=False):
             with_related = []
 
         search, exclude, searchmode, cqlmode, featuresmode = parse_search_related(search_related)
-        if not exclude:
+        if not exclude and ex_related:
             exclude, _, _, _, _ = parse_search_related(ex_related)
 
         show = []
@@ -1423,13 +1427,14 @@ def interpreter(debug=False):
         except:
             pass
 
-    def get_prompt():
+    def get_prompt(backslashed=False):
         folder = os.path.basename(os.getcwd())
         proj_dirs = ['data', 'saved_interrogations', 'exported']
         objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
         end = '*' if not objs._in_a_project else ''
         name = getattr(objs.corpus, 'name', 'no-corpus')
-        return 'corpkit@%s%s:%s> ' % (folder, end, name)
+        realend = '...' if backslashed else '>'
+        return 'corpkit@%s%s:%s%s ' % (folder, end, name, realend)
 
     print(allig)
 
@@ -1445,16 +1450,27 @@ def interpreter(debug=False):
         exec(output)
 
     in_gui = False
+
+    backslashed = ''
+ 
     while True:
         try:
-            output = INPUTFUNC(get_prompt())
+            output = INPUTFUNC(get_prompt(backslashed))
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
                 break
 
             if not output:
                 output = True
                 continue
-            
+ 
+            if backslashed:
+                output = backslashed + output
+            if output.strip().endswith("\\"):
+                backslashed += output.rstrip('\\')
+                continue
+            else:
+                backslashed = ''
+
             if output.startswith('py '):
 
                 output = output[3:].strip().strip("'").strip('"')
