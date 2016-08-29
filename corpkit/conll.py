@@ -960,13 +960,8 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
 
             main_out = '\n'.join(splitmain)
 
-        from corpkit.constants import PYTHON_VERSION
-        if PYTHON_VERSION == 3:
-            opener = open
-        else:
-            import codecs
-            opener = codecs.open        
-        with opener(f, 'w', encoding='utf-8') as fo:
+        from corpkit.constants import OPENER       
+        with OPENER(f, 'w', encoding='utf-8') as fo:
             main_out = main_out.replace(u"\u2018", "'").replace(u"\u2019", "'")
             fo.write(main_out)
 

@@ -1,8 +1,10 @@
 import sys
+import codecs
 
 PYTHON_VERSION = sys.version_info.major
 STRINGTYPE = str if PYTHON_VERSION == 3 else basestring
 INPUTFUNC = input if PYTHON_VERSION == 3 else raw_input
+OPENER = open if PYTHON_VERSION == 3 else codecs.open
 
 # quicker access to search, exclude, show types
 from itertools import product
