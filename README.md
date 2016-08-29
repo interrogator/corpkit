@@ -141,7 +141,7 @@ You'll get a lovely new prompt into which you can type commands:
 corpkit@junglebook:no-corpus> 
 ```
 
-Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. 
+Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
 
 ### Making corpora
 
@@ -155,7 +155,7 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 ### Searching and concordancing
 
-```
+```shell
 # search and exclude
 > search corpus for governor-function matching 'root' \
 ... excluding governor-lemma matching 'be'
@@ -179,7 +179,7 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 ### Editing results
 
-```
+```shell
 # skip some numerical subcorpora
 > edit result by skipping subcorpora matching [1,2,3,4,5]
 > calculate result as percentage of self
@@ -189,7 +189,7 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 ### Visualise edited results
 
-```
+```shell
 > plot edited as line chart \
 ... with x_label as 'Subcorpus' and \
 ... y_label as 'Frequency' and \

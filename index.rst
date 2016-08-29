@@ -149,7 +149,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    rst_docs/corpkit.visualising.rst
    rst_docs/corpkit.langmodel.rst
    rst_docs/corpkit.managing.rst
-   rst_docs/corpkit.interpreter.rst
+   
    rst_docs/corpkit.about.rst
 
 .. toctree::
@@ -160,6 +160,19 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    rst_docs/corpkit.interrogation.rst
    rst_docs/corpkit.other.rst
    rst_docs/corpkit.dictionaries.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Interpreter
+
+   rst_docs/corpkit.interpreter.overview.rst
+   rst_docs/corpkit.interpreter.setup.rst
+   rst_docs/corpkit.interpreter.making.rst
+   rst_docs/corpkit.interpreter.interrogating.rst
+   rst_docs/corpkit.interpreter.concordancing.rst
+   rst_docs/corpkit.interpreter.editing.rst
+   rst_docs/corpkit.interpreter.visualising.rst
+   rst_docs/corpkit.interpreter.managing.rst
 
 .. toctree::
    :maxdepth: 2
