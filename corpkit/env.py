@@ -177,6 +177,96 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
         print(getattr(func, '__doc__', 'Not written yet, sorry.'))
 
+    def switch_to_ipython(args):
+        from IPython import embed
+        from IPython.terminal.embed import InteractiveShellEmbed
+        s = generate_outprint()
+        for k, v in objs.__dict__.items():
+            if not k.startswith('_'):
+                locals()[k] = v
+
+        ret = InteractiveShellEmbed(header=s,
+                    babaii='babaii',
+                    #colors='Linux',
+                    exit_msg='Switching back to corpkit environment ...',
+                    local_ns=locals())
+        cc = ret()
+
+    def switch_to_jupyter(args):
+        comm = ["jupyter", "notebook"]
+        import subprocess
+        if args:
+            import os
+            nbfile = args[-1]
+            if not nbfile.endswith('.ipynb'):
+                nbfile = nbfile + '.ipynb'
+            if os.path.isfile(nbfile):
+                comm.append(nbfile)
+        subprocess.call(comm)            
+
+
+    def switch_to_gui(args):
+        import subprocess
+        import os
+        print('Loading graphical interface ... ')
+        subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
+
+
+    def show_concordance(args, kwargs):
+
+        import pydoc
+        kwargs = process_kwargs(args)
+        if kwargs:
+            objs._conc_kwargs = kwargs
+        if objs.concordance is None:
+            print("There's no concordance here right now, sorry.")
+            return
+        found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
+        if found_the_conc is None:
+            #print('Nothing here yet.')
+            return
+        if objs._conc_colours.get(found_the_conc):
+            try:
+                lines_to_print = []
+                from colorama import Fore, Back, Style, init
+                lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+                for line in lines:
+                    num = line.strip().split(' ', 1)[0]
+                    gotnum = objs._conc_colours[found_the_conc].get(num, False)
+                    if gotnum:
+                        if gotnum.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
+                            thing_to_color = Style
+                        else:
+                            thing_to_color = Fore
+                        if any(i.startswith('back') for i in args):
+                            thing_to_color = Back
+                        lines_to_print.append(getattr(thing_to_color, gotnum.upper()) + line)
+                    else:
+                        lines_to_print.append(line)
+                pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
+            except ImportError:
+                pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
+
+        else:
+            pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
+
+
+    def show_table(command):
+        import tabview
+        # this horrible code accounts for cases where we modify with exec
+        toshow = getattr(getattr(objs, command), 'results', False)
+        if isinstance(toshow, (pd.DataFrame, pd.Series)):
+            tabview.view(toshow.round(objs._decimal), column_width=10)
+            return
+        elif toshow:
+            tabview.view(toshow.round(objs._decimal), column_width=10)
+            return
+        else:
+            if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
+                tabview.view(getattr(objs, command).round(objs._decimal), column_width=10)
+                return
+
+
     def single_command_print(command):
         """
         If the user enters just a single token, show them that token
@@ -239,6 +329,8 @@ def interpreter(debug=False, fromscript=False, quiet=False):
             " +=================+====================================================================================+ \n"\
             " | `new`           | `new project <name>`                                                               | \n"\
             " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `add`           | `add '../corpus'`                                                                  | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
             " | `set`           | `set <corpusname>`                                                                 | \n"\
             " +-----------------+------------------------------------------------------------------------------------+ \n"\
             " | `parse`         | `parse corpus with [options]*`                                                     | \n"\
@@ -274,7 +366,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
             " | `py`            | `py print('hello world')`                                                          | \n"\
             " +-----------------+------------------------------------------------------------------------------------+ \n"\
             "More information:\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
-            "http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html.\n\n" \
+            "http://corpkit.readthedocs.io/en/latest\n\n" \
             "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n", cmd='less -X -R -S') 
 
         if command == 'corpus':
@@ -284,107 +376,28 @@ def interpreter(debug=False, fromscript=False, quiet=False):
             else:
                 print(objs.corpus)
         
-        # switch to IPython
+
         elif command == 'python' or command == 'ipython':
-            from IPython import embed
-            from IPython.terminal.embed import InteractiveShellEmbed
-            s = generate_outprint()
-            for k, v in objs.__dict__.items():
-                if not k.startswith('_'):
-                    locals()[k] = v
+            switch_to_ipython(args)
 
-            ret = InteractiveShellEmbed(header=s,
-                        babaii='babaii',
-                        #colors='Linux',
-                        exit_msg='Switching back to corpkit environment ...',
-                        local_ns=locals())
-            cc = ret()
-
-        # switch to jupyter notebook
         elif command.startswith('jupyter') or command == 'notebook':
-            comm = ["jupyter", "notebook"]
-            import subprocess
-            if args:
-                import os
-                nbfile = args[-1]
-                if not nbfile.endswith('.ipynb'):
-                    nbfile = nbfile + '.ipynb'
-                if os.path.isfile(nbfile):
-                    comm.append(nbfile)
-            subprocess.call(comm)            
+            switch_to_jupyter(args)
 
-        # switch to gui
         elif command == 'gui':
-            import subprocess
-            import os
-            print('Loading graphical interface ... ')
-            subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
-
+            switch_to_gui(args)
         
         elif command in ['result', 'edited', 'totals', 'previous',
                          'features', 'postags', 'wordclasses']:
-            import tabview
-            # this horrible code accounts for cases where we modify with exec
-            toshow = getattr(getattr(objs, command), 'results', False)
-            if isinstance(toshow, (pd.DataFrame, pd.Series)):
-                tabview.view(toshow.round(objs._decimal), column_width=10)
-                return
-            elif toshow:
-                tabview.view(toshow.round(objs._decimal), column_width=10)
-                return
-            else:
-                if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
-                    tabview.view(getattr(objs, command).round(objs._decimal), column_width=10)
-                    return
+
+            show_table(command)
 
         elif command == 'concordance':
-            import pydoc
-            kwargs = process_kwargs(args)
-            if kwargs:
-                objs._conc_kwargs = kwargs
-            if objs.concordance is None:
-                print("There's no concordance here right now, sorry.")
-                return
-            found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
-            if found_the_conc is None:
-                #print('Nothing here yet.')
-                return
-            if objs._conc_colours.get(found_the_conc):
-                try:
-                    lines_to_print = []
-                    from colorama import Fore, Back, Style, init
-                    lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
-                    for line in lines:
-                        num = line.strip().split(' ', 1)[0]
-                        gotnum = objs._conc_colours[found_the_conc].get(num, False)
-                        if gotnum:
-                            if gotnum.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
-                                thing_to_color = Style
-                            else:
-                                thing_to_color = Fore
-                            if any(i.startswith('back') for i in args):
-                                thing_to_color = Back
-                            lines_to_print.append(getattr(thing_to_color, gotnum.upper()) + line)
-                        else:
-                            lines_to_print.append(line)
-                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
-                except ImportError:
-                    pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
-
-            else:
-                pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
-            
+            show_concordance(args, kwargs)
 
         elif command == 'wordlists':
             show_this([command])
         elif command == 'wordlist':
             print(objs.wordlist)
-        #elif command == 'features':
-        #    print(objs.features)
-        #elif command == 'wordclasses':
-        #    print(objs.wordclasses)
-        #elif command == 'postags':
-        #    print(objs.postags)
         elif command == 'query':
             show_this([command])
         else:
@@ -396,7 +409,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
         :Example:
 
-        set junglebook-parsed
+           `set junglebook-parsed`
         """
         if tokens and tokens[0].startswith('decimal'):
             objs._decimal = int(tokens[2])
@@ -818,6 +831,14 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         #    show_this(['concordance'])
 
     def edit_something(tokens):
+        """
+        Edit an interrogation or concordance
+
+        :Example:
+
+           `edit result by skippings subcorpora matching [1,2,3] with keep_top as 5`
+
+        """
 
         thing_to_edit = get_thing_to_edit(tokens[0])
 
@@ -877,6 +898,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
 
     def run_command(tokens):
+        """
+        Run command and send output to objs class
+        """
+
         command = get_command.get(tokens[0], unrecognised)        
         out = command(tokens[1:])
         import pydoc
@@ -922,6 +947,15 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         return out
         
     def export_result(tokens):
+        """
+        Send a result, edited result or concordance to file
+
+        :Example:
+
+           `export result as csv to out.csv`
+           `export concordance as latex to concs.tex`
+
+        """
         import os
         obj = getattr(objs, tokens[0])
         if tokens[0] == 'result':
@@ -962,7 +996,6 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         pass
 
     def get_thing_to_edit(token):
-
         thing_to_edit = objs.result
         if token == 'concordance':
             thing_to_edit = objs.concordance
@@ -973,6 +1006,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     def sort_something(tokens):
         """
         Sort a result or concordance line
+
         """
 
         thing_to_edit = get_thing_to_edit(tokens[0])
@@ -1035,7 +1069,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
     def plot_result(tokens):
         """
-        Visualise an interrogation
+        Visualise an interrogation using matplotlib
         """
         
         import matplotlib.pyplot as plt
@@ -1050,7 +1084,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
     def asciiplot_result(tokens):
         """
-        Visualise an interrogation
+        Visualise an interrogation with a simple ascii line chart
         """
         obj, attr = tokens[0].split(':', 1) if ':' in tokens[0] else tokens[0].split('.', 1)
         to_plot = getattr(objs, obj)
@@ -1119,6 +1153,11 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     def parse_corpus(tokens):
         """
         Parse an unparsed corpus
+
+        :Example:
+
+           `parse corpus with speaker_segmentation and metadata and multiprocess as 2`
+
         """
         if tokens[0] != 'corpus':
             print('Command not understood. Use "set <corpusname>" and "parse corpus"')
@@ -1138,6 +1177,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     def fetch_this(tokens, unbound=False):
         """
         Get something from storage
+
+        :Example:
+
+           `fetch my_result as result`
         """
 
         from corpkit.corpus import Corpus
@@ -1191,6 +1234,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     def save_this(tokens, passedin=False):
         """
         Save a result or concordance
+
+        :Example:
+
+           `save result as 'non_pronoun_actors'`
         """
         if passedin:
             to_save = passedin
@@ -1202,10 +1249,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                 save_this(['as', k], passedin=v)
 
         if tokens[0] == 'figure' or hasattr(to_save, 'savefig'):
-            tokens[2] = os.path.join('images', tokens[2])
-            to_save.savefig(tokens[2])
+            tokens[-1] = os.path.join('images', tokens[-1])
+            to_save.savefig(tokens[-1])
         else:
-            to_save.save(tokens[2])
+            to_save.save(tokens[-1])
 
 
     def load_this(tokens):
@@ -1330,6 +1377,13 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         return set(cols)
 
     def annotate_conc(tokens):
+        """
+        Annotate concordance lines matching criteria with a colour or style
+
+        :Example:
+
+           `mark m matching 'ing$' red
+        """
         from colorama import Fore, Back, Style, init
         init(autoreset=True)
         cols = get_matching_indices(tokens)
@@ -1340,10 +1394,27 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         single_command_print(['concordance'] + tokens)
 
     def add_corpus(tokens):
+        """
+        Copy a folder to the ./data directory of a project
+
+        :Example:
+
+           `add '../../data'`
+        """
         import shutil
-        shutil.copytree(tokens[-1], 'data')
+        import os
+        outf = os.path.join(os.getcwd(), 'data', os.path.basename(tokens[-1]))
+        shutil.copytree(tokens[-1], outf)
+        print('%s added to %s.' % (tokens[-1], outf))
 
     def del_conc(tokens):
+        """
+        Delete concordance lines matching criteria
+
+        :Example:
+
+           `del m matching 'ing$'`
+        """
         from corpkit.interrogation import Concordance
         cols = get_matching_indices(tokens)
         cols = [int(i) for i in cols]
@@ -1351,6 +1422,13 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         return objs.concordance
 
     def keep_conc(tokens):
+        """
+        Keep concordance lines matching criteria
+
+        :Example:
+
+           `keep m matching 'ing$'`
+        """
         from corpkit.interrogation import Concordance
         cols = get_matching_indices(tokens)
         cols = [int(i) for i in cols]
@@ -1360,6 +1438,11 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     def store_this(tokens):
         """
         Send a result into storage
+
+        :Example:
+
+           `store result as 'processes'`
+
         """
 
         to_store = getattr(objs, tokens[0])
@@ -1408,14 +1491,31 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         return run_command(tokens)
 
     def ch_dir(tokens):
+        """
+        Change directory
+
+        :Example:
+
+           `cd essays`
+
+        """
         import os
         os.chdir(tokens[0])
         print(os.getcwd())
         get_prompt()
 
     def ls_dir(tokens):
+        """
+        List directory contents
+        
+        :Example:
+
+           `ls data`
+
+        """
         import os
-        print('\n'.join(os.listdir(tokens[0])))
+        nonhidden = [i for i in os.listdir(tokens[0]) if not i.startswith('.')]
+        print('\n'.join(nonhidden))
 
     get_command = {'set': set_corpus,
                    'show': show_this,

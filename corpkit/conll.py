@@ -390,8 +390,13 @@ def format_toks(to_process, show, df):
     else:
         return dx.apply('/'.join, axis=1)
 
+
 def make_concx(series, matches, metadata, df, conc, **kwargs):
-    
+    """
+    Make concordance lines
+
+    Speed this up?
+    """
     conc_lines = []
     fname = kwargs.get('filename', '')
     ngram_mode = kwargs.get('ngram_mode')
