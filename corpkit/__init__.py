@@ -5,7 +5,7 @@ A toolkit for corpus linguistics
 from __future__ import print_function
 
 #metadata
-__version__ = "2.2.9"
+__version__ = "2.3.0"
 __author__ = "Daniel McDonald"
 __license__ = "MIT"
 
