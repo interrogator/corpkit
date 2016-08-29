@@ -7,9 +7,9 @@
 corpkit documentation
 ========================================
 
-*corpkit* is a Python-based tool for doing more sophisticated corpus linguistics.
+*corpkit* is a Python-based tool for doing more sophisticated corpus linguistics. It exists as a graphical interface, a Python API, and a natural language interpreter. The API and interpreter are documented here.
 
-It does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can create structured corpora with speaker ID labels, and easily restrict searches to individual speakers, subcorpora or groups of files. 
+*corpkit* does a lot of the usual things, like parsing, interrogating, concordancing and keywording, but also extends their potential significantly: you can create structured corpora with speaker ID labels, and easily restrict searches to individual speakers, subcorpora or groups of files. 
 
 You can interrogate parse trees, CoreNLP dependencies, lists of tokens or plain text for combinations of lexical and grammatical features. Results can be quickly edited, sorted and visualised in complex ways, saved and loaded within projects, or exported to formats that can be handled by other tools.
 
@@ -17,7 +17,7 @@ Concordancing is extended to allow the user to query and display grammatical fea
 
 *corpkit* leverages `Stanford CoreNLP`_, NLTK_ and pattern_ for the linguistic heavy lifting, and pandas_ and matplotlib_ for storing, editing and visualising interrogation results. Multiprocessing is available via joblib_, and Python 2 and 3 are both supported.
 
-.. rubric:: Example
+.. rubric:: API example
 
 Here's a basic workflow, using a corpus of news articles published between 1987 and 2014, structured like this:
 
@@ -127,7 +127,7 @@ Alternatively, the GUI is available (alongside documentation) as a standalone OS
 
 And then start working with natural language commands:
 
-.. code-block:: none
+.. code-block:: bash
 
    > set junglebook as corpus
    > parse junglebook with outname as jb
@@ -140,7 +140,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
 
 .. toctree::
    :maxdepth: 1
-   :caption: User guide
+   :caption: API user guide
 
    rst_docs/corpkit.building.rst
    rst_docs/corpkit.interrogating.rst
@@ -163,7 +163,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Interpreter
+   :caption: Interpreter user guide
 
    rst_docs/corpkit.interpreter.overview.rst
    rst_docs/corpkit.interpreter.setup.rst
