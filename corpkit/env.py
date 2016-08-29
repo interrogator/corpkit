@@ -1339,6 +1339,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                 objs._conc_colours[len(objs._old_concs)-1][line] = color
         single_command_print(['concordance'] + tokens)
 
+    def add_corpus(tokens):
+        import shutil
+        shutil.copytree(tokens[-1], 'data')
+
     def del_conc(tokens):
         from corpkit.interrogation import Concordance
         cols = get_matching_indices(tokens)
@@ -1436,7 +1440,8 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                    'fetch': fetch_this,
                    'save': save_this,
                    'load': load_this,
-                   'calculate': calculate_result}
+                   'calculate': calculate_result,
+                   'add': add_corpus}
 
     objmap = {search_corpus: 'result',
               edit_something: 'edited',
