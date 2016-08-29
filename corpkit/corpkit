@@ -5,5 +5,20 @@ A script start corpkit environment
 """
 
 import sys
+import os
+
 from corpkit.env import interpreter
-interpreter()
+
+if len(sys.argv) > 1 and os.path.isfile(sys.argv[-1]):
+    fromscript = sys.argv[-1]
+else:
+    fromscript = False
+
+debug = sys.argv[-1] == 'debug'
+
+if '-q' in sys.argv or '--quiet' in sys.argv:
+    quiet = True
+else:
+    quiet = False
+
+interpreter(debug=debug, fromscript=fromscript, quiet=quiet)

@@ -65,8 +65,16 @@ readline.parse_and_bind('tab: complete')
 del os, atexit, readline, rlcompleter, save_history, history_path
 
 
-def interpreter(debug=False):
+def interpreter(debug=False, fromscript=False, quiet=False):
     import os
+
+    #def noprint(*args, **kwargs):
+    #    pass
+
+    #if quiet:
+    #    print = noprint
+    #else:
+    #    print = print
 
     allig = '\n   Welcome!\n'
     allig += "               .-._   _ _ _ _ _ _ _ _\n    " \
@@ -140,6 +148,22 @@ def interpreter(debug=False):
         s = 'Switched to IPython ... defined variables:\n\n\t'
         s += 'corpus, results, concordance, edited ...\n\n\tType "quit" to return to corpkit environment'
         return s
+
+    def read_script(fname):
+        """
+        If a sript was passed to corpkit, get lines in it, minus comments
+        """
+        from corpkit.constants import OPENER
+        with OPENER(fname, 'r') as fo:
+            data = fo.read()
+        data = data.splitlines()
+        data = [i for i in data if i.strip() and i.strip()[0] != '#']
+        
+        # turn off concordancing if it's never used in the script
+        if 'concordance' not in ' '.join(data):
+            objs._do_conc = False
+
+        return list(reversed(data))
 
     def helper(tokens):
         """
@@ -713,6 +737,7 @@ def interpreter(debug=False):
             return
 
         kwargs = parse_search_args(tokens)
+        kwargs['quiet'] = quiet
         
         if debug:
             print(kwargs)
@@ -897,35 +922,40 @@ def interpreter(debug=False):
         return out
         
     def export_result(tokens):
+        import os
+        obj = getattr(objs, tokens[0])
         if tokens[0] == 'result':
-            obj = objs.result.results
-        elif tokens[0] == 'concordance':
-            obj = objs.result.concordance
+            obj = getattr(obj, 'results', obj)
         if len(tokens) == 1:
             print(obj.to_string())
             return
         tokens = tokens[1:]
 
-        for i, token in enumerate(tokens):
-            if token == 'to':
-                buf = None
-                if tokens[i+1].startswith('f'):
-                    buf = tokens[i+2]
-                    if os.pathsep not in buf:
-                        buf = os.path.join('exported', buf)
-                    obj.to_csv(buf, sep='\t')
-                    print('Saved to: %s' % buf)
-                    return
-                elif tokens[i+1].startswith('s'):
-                    print(obj.to_string(buf))
-                    return
-                elif tokens[i+1].startswith('c'):
-                    print(obj.to_csv(buf, sep='\t'))
-                    return
-                elif tokens[i+1].startswith('l'):
-                    print(obj.to_latex(buf))
-                    return
+        if 'as' in tokens:
+            formt = tokens[tokens.index('as') + 1][0]
+            tokens = tokens[tokens.index('as') + 2:]
+        else:
+            formt = 'c'
 
+        buf = tokens[-1]
+
+        if buf == formt:
+            buf = None
+        
+        if os.pathsep not in buf:
+            buf = os.path.join('exported', buf)
+        if formt == 'c':
+            obj.to_csv(buf, sep='\t')
+        elif formt == 's':
+            obj.to_string(buf)
+        elif formt == 'l':
+            obj.to_latex(buf)
+
+        if buf:
+            if os.path.isfile(buf):
+                print('Saved to: %s' % buf)
+            else:
+                print('Problem exporting file.')
 
     def interactive_edit(tokens):
         print('Not done yet')
@@ -1439,6 +1469,20 @@ def interpreter(debug=False):
         else:
             return '... '.rjust(len(txt))
 
+    def nest_on_semicolon(tokens):
+        """
+        Take a tokenised command and make a nested list,
+        which accounts for ';' breaks
+        """
+        if ';' not in tokens:
+            return [tokens]
+        nested = []
+        while tokens:
+            s_ix = next((i for i, x in enumerate(tokens) if x == ';'), len(tokens))
+            nested.append(tokens[:s_ix])
+            tokens = tokens[s_ix+1:]
+        return nested
+
     print(allig)
 
     if not objs._in_a_project:
@@ -1456,11 +1500,20 @@ def interpreter(debug=False):
     # it's a bit of a hack, but seems to work pretty well
 
     backslashed = ''
- 
+
+    if fromscript:
+        commands = read_script(fromscript)
+        objs._interactive = False
+    
     # the main loop, with exception handling
     while True:
         try:
-            output = INPUTFUNC(get_prompt(backslashed))
+            if not fromscript:
+                output = INPUTFUNC(get_prompt(backslashed))
+            else:
+                if not commands:
+                    break
+                output = commands.pop()
 
             # terminate
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
@@ -1499,20 +1552,23 @@ def interpreter(debug=False):
             # tokenise command with quotations preserved
             tokens = shlex.split(output)
 
-            if debug:
-                print('command', tokens)
-            
-            # give info if it is an info command
-            if len(tokens) == 1 or tokens[0] == 'jupyter':
-                if tokens[0] == 'set':
-                    set_corpus([])
-                else:
-                    single_command_print(tokens)
-                continue
+            nested_tokens = nest_on_semicolon(tokens)
 
-            # otherwise, run the command and reset the stack
-            out = run_command(tokens)
-            backslashed = ''
+            for tokens in nested_tokens:
+                if debug:
+                    print('command', tokens)
+                
+                # give info if it is an info command
+                if len(tokens) == 1 or tokens[0] == 'jupyter':
+                    if tokens[0] == 'set':
+                        set_corpus([])
+                    else:
+                        single_command_print(tokens)
+                    continue
+
+                # otherwise, run the command and reset the stack
+                out = run_command(tokens)
+                backslashed = ''
 
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
@@ -1531,6 +1587,7 @@ if __name__ == '__main__':
     import pip
     import importlib
     import traceback
+    import os
 
     def install(name, loc):
         """if we don't have a module, download it"""
@@ -1546,5 +1603,10 @@ if __name__ == '__main__':
         install(*tabview)
         install(*colorama)
 
+    if len(sys.argv) > 1 and os.path.isfile(sys.argv[-1]):
+        fromscript = sys.argv[-1]
+    else:
+        fromscript = False
+
     debug = sys.argv[-1] == 'debug'
-    interpreter(debug=debug)
+    interpreter(debug=debug, fromscript=fromscript)
