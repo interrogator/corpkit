@@ -46,7 +46,7 @@ def interrogator(corpus,
     # in case old kwarg is used
     conc = kwargs.get('do_concordancing', conc)
     by_metadata = kwargs.pop('by_metadata', False)
-    
+    quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
 
     if subcorpora:
@@ -1090,6 +1090,7 @@ def interrogator(corpus,
         par_args = {'printstatus': kwargs.get('printstatus', True),
                     'root': root, 
                     'note': note,
+                    'quiet': quiet,
                     'length': total_files,
                     'startnum': kwargs.get('startnum'),
                     'denom': kwargs.get('denominator', 1)}

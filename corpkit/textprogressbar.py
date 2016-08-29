@@ -7,26 +7,28 @@ class TextProgressBar:
        no need for user to call"""
     from time import localtime, strftime
         
-    def __init__(self, iterations, dirname = False):
+    def __init__(self, iterations, dirname=False, quiet=False):
         from time import localtime, strftime
         self.iterations = iterations
         self.prog_bar = '[]'
         self.fill_char = '*'
         self.width = 60
-        self.__update_amount(0, dirname = dirname)
+        self.quiet = quiet
+        self.__update_amount(0, dirname=dirname)
         self.animate = self.animate_ipython
 
-    def animate_ipython(self, iter, dirname = None):
+    def animate_ipython(self, iter, dirname=None, quiet=False):
         from time import localtime, strftime
         import sys
-        print(str(self) + '\r', end='')
+        if not self.quiet:
+            print(str(self) + '\r', end='')
         try:
             sys.stdout.flush()
         except:
             pass
         self.update_iteration(iter + 1, dirname)
 
-    def update_iteration(self, elapsed_iter, dirname = None):
+    def update_iteration(self, elapsed_iter, dirname=None):
         from time import localtime, strftime
         num = float(self.iterations)
         if num != 0:
@@ -35,7 +37,7 @@ class TextProgressBar:
             self.__update_amount(0 * 100.0, dirname)
         self.prog_bar += ' ' # + ' %d of %s complete' % (elapsed_iter, self.iterations)
 
-    def __update_amount(self, new_amount, dirname = None):
+    def __update_amount(self, new_amount, dirname=None):
         from time import localtime, strftime
         percent_done = int(round((new_amount / 100.0) * 100.0, 2))
         all_full = self.width - 2

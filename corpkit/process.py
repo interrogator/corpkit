@@ -479,6 +479,7 @@ def animator(progbar,
              terminal=False,
              init=False,
              length=False,
+             quiet=False,
              **kwargs
             ):
     """
@@ -551,15 +552,15 @@ def animator(progbar,
     try:
         with terminal.location(0, terminal.height - (linenum + 1)):
             if tot_string:
-                progbar.animate(count, tot_string)
+                progbar.animate(count, tot_string, quiet=quiet)
             else:
-                progbar.animate(count)
+                progbar.animate(count, quiet=quiet)
     # typeerror for nose
     except:
         if tot_string:
-            progbar.animate(count, tot_string)
+            progbar.animate(count, tot_string, quiet=quiet)
         else:
-            progbar.animate(count)
+            progbar.animate(count, quiet=quiet)
 
 
 def parse_just_speakers(just_speakers, corpus):
