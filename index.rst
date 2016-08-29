@@ -140,7 +140,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
 
 .. toctree::
    :maxdepth: 1
-   :caption: API user guide
+   :caption: API
 
    rst_docs/corpkit.building.rst
    rst_docs/corpkit.interrogating.rst
@@ -150,20 +150,9 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    rst_docs/corpkit.langmodel.rst
    rst_docs/corpkit.managing.rst
    
-   rst_docs/corpkit.about.rst
-
 .. toctree::
    :maxdepth: 2
-   :caption: API documentation
-
-   rst_docs/corpkit.corpus.rst
-   rst_docs/corpkit.interrogation.rst
-   rst_docs/corpkit.other.rst
-   rst_docs/corpkit.dictionaries.rst
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Interpreter user guide
+   :caption: Interpreter
 
    rst_docs/corpkit.interpreter.overview.rst
    rst_docs/corpkit.interpreter.setup.rst
@@ -176,11 +165,21 @@ Information about the syntax is available at the :ref:`interpreter-page`.
 
 .. toctree::
    :maxdepth: 2
-   :caption: External links
+   :caption: API reference
+
+   rst_docs/corpkit.corpus.rst
+   rst_docs/corpkit.interrogation.rst
+   rst_docs/corpkit.other.rst
+   rst_docs/corpkit.dictionaries.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Other
    :hidden:
 
    Graphical interface <http://interrogator.github.io/corpkit>
    GitHub <https://github.com/interrogator/corpkit>
+   rst_docs/corpkit.about.rst
 
 .. rubric:: Cite
 
