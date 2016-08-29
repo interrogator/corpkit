@@ -7,7 +7,7 @@
 The basic workflow involves making corpora, parsing them, and searching them. The results of searches are Pandas objects, which can be edited, visualised or exported in a lot of ways. The tool has three interfaces, each with its own documentation:
 
 1. [A Python API](https://readthedocs.org/projects/corpkit)
-2. [A natural language interpreter](http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.html)
+2. [A natural language interpreter](http://corpkit.readthedocs.io/en/latest/rst_docs/corpkit.interpreter.overview.html)
 3. [A graphical interface](http://interrogator.github.io/corpkit/)
 
 A quick demo for each interface is provided in this document.
