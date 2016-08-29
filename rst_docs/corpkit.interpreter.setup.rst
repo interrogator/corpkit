@@ -39,16 +39,16 @@ You can start it from a Python session, too:
 
 .. code-block:: python
 
-   > from corpkit import env
-   > env()
+   >>> from corpkit import env
+   >>> env()
 
 The prompt
 ------------
 
 When using the interpreter, the prompt (the text to the left of where you type your command) displays the directory you are in (with an asterisk if it does not appear to be a *corpkit* project) and the currently active corpus, if any:
 
-```none
-corpkit@junglebook:no-corpus> 
-```
+.. code-block:: none
+
+   corpkit@junglebook:no-corpus> 
 
 When you see it, *corpkit* is ready to accept commands!

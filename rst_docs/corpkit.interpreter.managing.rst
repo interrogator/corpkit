@@ -40,7 +40,7 @@ You can also write and run scripts. If you make a file, `participants.cki`, cont
 ```shell
 #!/usr/bin/env corpkit
 
-set mydata-parsed
+set mydata-parsed as corpus
 search corpus for function matching roles.participant showing lemma
 export result as csv to part.csv
 ```
@@ -49,7 +49,7 @@ You can run it from the terminal with:
 
 ```shell
 corpkit participants.cki
-# or
+# or, directly, if there's a shebang and chmod +x:
 ./participants.cki
 ```
 

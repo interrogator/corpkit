@@ -47,8 +47,8 @@ One nice feature is that concordances can be coloured. This can be done through 
 
    # regular expression methods: specify column(s) to search
    > mark m '^PRP.*' yellow
-   > mark r '\bbeing\b' background green
-   > mark lm 'JJR$'
+   > mark r 'be(ing)' background green
+   > mark lm 'JJR$' blue
    # reset via regex
-   > mark m '.*'' reset
+   > mark m '.*' reset
 

@@ -204,16 +204,13 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                 comm.append(nbfile)
         subprocess.call(comm)            
 
-
     def switch_to_gui(args):
         import subprocess
         import os
         print('Loading graphical interface ... ')
         subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
-
-    def show_concordance(args, kwargs):
-
+    def show_concordance(command, args):
         import pydoc
         kwargs = process_kwargs(args)
         if kwargs:
@@ -392,8 +389,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
             show_table(command)
 
         elif command == 'concordance':
-            show_concordance(args, kwargs)
-
+            show_concordance(command, args)
         elif command == 'wordlists':
             show_this([command])
         elif command == 'wordlist':

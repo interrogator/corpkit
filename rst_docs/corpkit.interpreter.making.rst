@@ -7,7 +7,7 @@ Once you're in *corpkit*, the command below will create a new project called `ir
 
 .. code-block:: bash
 
-   new project named iran-news
+   > new project named iran-news
 
 Adding a corpus
 ----------------
@@ -16,4 +16,4 @@ Adding a corpus simply copies it to the project's data directory. The syntax is 
 
 .. code-block:: bash
 
-   add '../../my_corpus'
+   > add '../../my_corpus'
