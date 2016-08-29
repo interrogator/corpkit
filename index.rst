@@ -151,7 +151,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    rst_docs/corpkit.managing.rst
    
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Interpreter
 
    rst_docs/corpkit.interpreter.overview.rst
