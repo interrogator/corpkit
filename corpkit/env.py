@@ -212,34 +212,43 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
     def show_concordance(command, args):
         import pydoc
+        # update the showing parameters 
         kwargs = process_kwargs(args)
         if kwargs:
-            objs._conc_kwargs = kwargs
+            objs._conc_kwargs.update(kwargs)
+        
         if objs.concordance is None:
             print("There's no concordance here right now, sorry.")
             return
-        found_the_conc = next((i for i, c in enumerate(objs._old_concs) if c.equals(objs.concordance)), None)
+        # retrieve the correct concordances, so we can colour them
+        found_the_conc = next((i for i, c in enumerate(objs._old_concs) \
+                               if c.equals(objs.concordance)), None)
         if found_the_conc is None:
-            #print('Nothing here yet.')
             return
+        # if colours have been saved for these lines, try to fill them in 
         if objs._conc_colours.get(found_the_conc):
             try:
                 lines_to_print = []
                 from colorama import Fore, Back, Style, init
                 lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+                # for each concordance line
                 for line in lines:
+                    # get index as str
                     num = line.strip().split(' ', 1)[0]
-                    gotnum = objs._conc_colours[found_the_conc].get(num, False)
-                    if gotnum:
-                        if gotnum.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
+                    # get dict of style and colour for line
+                    gotnums = objs._conc_colours[found_the_conc].get(num, {})
+                    highstr = ''
+                    for sty, col in gotnums.items():
+                        if col.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
                             thing_to_color = Style
+                        elif sty == 'Back':
+                            thing_to_color = Back
                         else:
                             thing_to_color = Fore
-                        if any(i.startswith('back') for i in args):
-                            thing_to_color = Back
-                        lines_to_print.append(getattr(thing_to_color, gotnum.upper()) + line)
-                    else:
-                        lines_to_print.append(line)
+                        highstr += getattr(thing_to_color, col.upper())
+                    highstr += line    
+                    lines_to_print.append(highstr)
+
                 pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
             except ImportError:
                 pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
@@ -1329,9 +1338,16 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                    'lightgreen_ex', 'cyan', 'lightred_ex']
         cols = []
         token = tokens[0]
+        # for something like del red
         if token in colours:
+            if tokens[-1].lower() == 'back':
+                sty = 'Back'
+            elif tokens[-1].lower() in ['dim', 'bright', 'normal', 'reset']:
+                sty = 'Style'
+            else:
+                sty = 'Fore'
             colourdict = objs._conc_colours[len(objs._old_concs)-1]
-            return set([k for k, v in colourdict.items() if token == v])  
+            return set([k for k, v in colourdict.items() if v.get(sty) == token])  
             
         # annotate range of tokens
         if '-' in token:
@@ -1363,9 +1379,15 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                     rgx = tokens[tokens.index('matching') + 1]
                 else:
                     rgx = tokens[1]
+
+                pol = not 'not' in tokens
+                
                 # get the window size of context, and reduce to just windows
                 trues = objs.concordance[bit].str.rjust(mx).str[slic].str.contains(rgx)
-                mtch = objs.concordance[trues]
+                if pol:
+                    mtch = objs.concordance[trues]
+                else:
+                    mtch = objs.concordance[~trues]
                 matches = list(mtch.index)
                 for ind in matches:
                     cols.append(str(ind))
@@ -1384,9 +1406,20 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         init(autoreset=True)
         cols = get_matching_indices(tokens)
         color = tokens[-1]
+        if tokens[-2].lower() in ['back', 'dim', 'fore', 'normal', 'bright']:
+            sty = tokens[-2].title()
+        else:
+            sty = 'Fore'
         for line in cols:
-            if int(line) in list(objs.concordance.index):
-                objs._conc_colours[len(objs._old_concs)-1][line] = color
+            if not int(line) in list(objs.concordance.index):
+                continue
+            # if there is already info for this line number, add present info
+            if objs._conc_colours[len(objs._old_concs)-1].get(line):
+                objs._conc_colours[len(objs._old_concs)-1][line][sty] = color
+            else:
+                objs._conc_colours[len(objs._old_concs)-1][line] = {}
+                objs._conc_colours[len(objs._old_concs)-1][line][sty] = color
+
         single_command_print(['concordance'] + tokens)
 
     def add_corpus(tokens):
