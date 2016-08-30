@@ -950,6 +950,34 @@ def interpreter(debug=False, fromscript=False, quiet=False):
             if debug:
                 print('Done:', repr(out))
         return out
+
+    def add_colour_to_conc_df(conc):
+        """
+        Exporting conc lines needs to preserve colouring
+        """
+        colourdict = objs._conc_colours[len(objs._old_concs)-1]
+        print(colourdict)
+        fores = []
+        backs = []
+        stys = [] 
+        for index in list(conc.index):
+            line = colourdict.get(str(index))
+            if not line:
+                fores.append('')
+                backs.append('')
+                stys.append('')
+            else:
+                fores.append(line.get('Fore', ''))
+                backs.append(line.get('Back', ''))
+                stys.append(line.get('Style', ''))
+
+        if any(i != '' for i in fores):
+            conc['Foreground'] = fores
+        if any(i != '' for i in backs):
+            conc['Background'] = backs
+        if any(i != '' for i in stys):
+            conc['Style'] = stys
+        return conc
         
     def export_result(tokens):
         """
@@ -963,6 +991,10 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         """
         import os
         obj = getattr(objs, tokens[0])
+        
+        if tokens[0].startswith('conc'):
+            obj = add_colour_to_conc_df(obj.copy())
+
         if tokens[0] == 'result':
             obj = getattr(obj, 'results', obj)
         if len(tokens) == 1:
@@ -1406,10 +1438,15 @@ def interpreter(debug=False, fromscript=False, quiet=False):
         init(autoreset=True)
         cols = get_matching_indices(tokens)
         color = tokens[-1]
-        if tokens[-2].lower() in ['back', 'dim', 'fore', 'normal', 'bright']:
-            sty = tokens[-2].title()
+        if color in ['dim', 'normal', 'bright']:
+            sty = 'Style'
+        elif 'back' in tokens or 'background' in tokens:
+            sty = 'Back'
         else:
             sty = 'Fore'
+        #if tokens[-2].lower() in ['back', 'dim', 'fore', 'normal', 'bright', 'background', 'foreground']:
+        #    sty = tokens[-2].title().replace('ground', '')
+
         for line in cols:
             if not int(line) in list(objs.concordance.index):
                 continue
