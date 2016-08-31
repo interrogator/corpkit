@@ -249,12 +249,23 @@ def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False)
                     highstr += line    
                     lines_to_print.append(highstr)
 
-                pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
+                if objs._interactive:
+                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
+                else:
+                    print('\n'.join(lines_to_print))
             except ImportError:
-                pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
+                formatted = getattr(objs, command).format(print_it=False, **objs._conc_kwargs)  
+                if objs._interactive:
+                    pydoc.pipepager(formatted, cmd="less -X -R")
+                else:
+                    print(formatted)
 
         else:
-            pydoc.pipepager(getattr(objs, command).format(print_it=False, **objs._conc_kwargs), cmd="less -X -R")
+            formatted = getattr(objs, command).format(print_it=False, **objs._conc_kwargs)
+            if objs._interactive:
+                pydoc.pipepager(formatted, cmd="less -X -R")
+            else:
+                print(formatted)
 
 
     def show_table(command):
@@ -1764,6 +1775,10 @@ def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False)
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
             backslashed = ''
+            if python_c_mode:
+                import sys
+                sys.exit(0)
+
         except EOFError:
             import sys
             print('\n\nBye!\n')
