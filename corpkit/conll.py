@@ -58,23 +58,24 @@ def parse_conll(f, first_time=False, just_meta=False):
     df._metadata = metadata
     return df
 
-def get_dependents_of_id(idx, df=False, repeat=False, coref=False):
-    """get governors of a token"""
-    
-    sent_id, tok_id = getattr(idx, 'name', idx)
+def get_dependents_of_id(idx, df=False, repeat=False, attr=False, coref=False):
+    """get dependents of a token"""
 
-    try:
-        deps = df.ix[(sent_id, tok_id)]['d'].split(',')
-        return [(sent_id, int(d)) for d in deps]
-    except:
-        justgov = df.loc[df['g'] == tok_id].xs(sent_id, level='s', drop_level=False)
-        #print(df.ix[sent_id, tok_id]['w'])
-        #for i, x in list(justgov.index):
-        #    print(df.ix[sent_id, tok_id]['w'], df.ix[i, x]['w'])
-        if repeat is not False:
-            return [justgov.index[repeat - 1]]
+    sent_id, tok_id = getattr(idx, 'name', idx)
+    deps = df.ix[sent_id, tok_id]['d'].split(',')
+    out = []
+    for govid in deps:
+        if attr:
+            # might not exist...
+            try:
+                tok = getattr(df.ix[sent_id,int(govid)], attr, False)
+                if tok:
+                    out.append(tok)
+            except (KeyError, IndexError):
+                pass
         else:
-            return list(justgov.index)
+            out.append((sent_id, int(govid)))
+    return out
 
 def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     """get governors of a token"""
@@ -342,6 +343,9 @@ def make_not_ofm_concs(df, out, matches, conc, metadata,
     return conc_lines
 
 def format_toks(to_process, show, df):
+    """
+    Format matches by show values
+    """
 
     import pandas as pd
 
@@ -349,7 +353,14 @@ def format_toks(to_process, show, df):
                   'g': get_governors_of_id,
                   'm': get_match,
                   'h': get_head}
+
     sers = []
+
+    dmode = any(x.startswith('d') for x in show)
+    if dmode:
+        from collections import defaultdict
+        dicts = defaultdict(dict)
+
     for val in show:
         adj, val = determine_adjacent(val)
         if adj:
@@ -360,7 +371,7 @@ def format_toks(to_process, show, df):
 
         obj, attr = val[0], val[-1]
         func = objmapping.get(obj, dummy)
-        out = []
+        out = defaultdict(dict) if dmode else []
         for ix in list(to_process.index):
             piece = False
             if adj:
@@ -373,23 +384,40 @@ def format_toks(to_process, show, df):
                     if attr == 'x':
                         from corpkit.dictionaries.word_transforms import taglemma
                         piece = taglemma.get(piece.lower(), piece.lower())
+                    piece = [piece]
                 else:
                     piece = func(ix, df=df, attr=attr)
-                    # for now:
-                    if isinstance(piece, list):
-                        piece = piece[0]
-            
-            out.append(piece)
-        ser = pd.Series(out, index=to_process.index)
-        ser.name = val
-        sers.append(ser)
+                    if not isinstance(piece, list):
+                        piece = [piece]
+                if dmode:
+                    dicts[ix][val] = piece
+                else:
+                    out.append(piece[0])
 
-    dx = pd.concat(sers, axis=1)
-    if len(dx.columns) == 1:
-        return dx.iloc[:,0]
+        if not dmode:
+            ser = pd.Series(out, index=to_process.index)
+            ser.name = val
+            sers.append(ser)
+
+    if not dmode:
+        dx = pd.concat(sers, axis=1)
+        if len(dx.columns) == 1:
+            return dx.iloc[:,0]
+        else:
+            return dx.apply('/'.join, axis=1)
     else:
-        return dx.apply('/'.join, axis=1)
+        index = []
+        data = []
+        for ix, dct in dicts.items():
+            max_key, max_value = max(dct.items(), key=lambda x: len(x[1]))
+            for val, pieces in dct.items():
+                if len(pieces) == 1:
+                    dicts[ix][val] = pieces * len(max_value)
 
+            for tup in list(zip(*[i for i in dct.values()])):
+                index.append(ix)
+                data.append('/'.join(tup))
+        return pd.Series(data, index=pd.MultiIndex.from_tuples(index))
 
 def make_concx(series, matches, metadata, df, conc, **kwargs):
     """
@@ -397,6 +425,8 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
 
     Speed this up?
     """
+    import pandas as pd
+
     conc_lines = []
     fname = kwargs.get('filename', '')
     ngram_mode = kwargs.get('ngram_mode')
@@ -409,7 +439,7 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
     #    return []
 
     if ngram_mode:
-        for s, i in matches:
+        for s, i in set(matches):
             mid_toks = []
             for n in range(kwargs.get('gramsize') + 1):
                 mid_toks.append((s, i+n))
@@ -426,7 +456,8 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
             conc_lines.append([fname, sname, start, middle, end])
         return conc_lines
 
-    for s, i in matches:
+    for s, i in sorted(set(matches)):
+        #thecount = matches.count((s, i))
         sent = df.loc[s]
         if kwargs.get('only_format_match'):
             start = ' '.join(list(sent.loc[:i-1]['w']))
@@ -434,9 +465,13 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
         else:
             start = ' '.join(list(series.loc[s,:i-1]))
             end = ' '.join(list(series.loc[s,i+1:]))
-        middle = series[s, i]
+        middles = series[s, i]
         sname = metadata[s]['speaker']
-        conc_lines.append([fname, sname, start, middle, end])
+
+        if not isinstance(middles, pd.core.series.Series):
+            middles = [middles]
+        for middle in middles:        
+            conc_lines.append([fname, sname, start, middle, end])
 
     return conc_lines
 
@@ -533,6 +568,8 @@ def show_this(df, matches, show, metadata,
 
     # make a series of formatted data
     series = format_toks(to_process, show, df)
+
+    matches = list(series.index)
  
     # generate conc
     conc_lines = make_concx(series, matches, metadata, df, conc, **kwargs)
