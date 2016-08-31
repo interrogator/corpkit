@@ -92,35 +92,32 @@ python setup.py install
 
 ## Creating a project
 
-Once you've got everything installed, you'll want to create a project---this is just a folder hierarchy that stores your corpora, saved results, figures and so on. You can do it from the command line:
+Once you've got everything installed, you'll want to create a project---this is just a folder hierarchy that stores your corpora, saved results, figures and so on. You can do this in a number of ways:
+
+### Shell
 
 ```shell
 new_project junglebook
-```
-
-Or, from Python:
-
-```python
->>> from corpkit import new_project
->>> new_project('junglebook')
-```
-
-### Adding data
-
-Once you've made a new project, you'll want to add a corpus of texts to the `<project>/data` folder.
-
-```shell
 cp -R chapters junglebook/data
 ```
 
-Or, if you really want, from Python:
+### Interpreter
+
+```shell
+> new project named junglebook
+> add ../chapters
+```
+
+### Python
 
 ```python
 >>> import shutil
->>> shutil.copytree('/Users/me/Documents/transcripts', 'junglebook/data')
+>>> from corpkit import new_project
+>>> new_project('junglebook')
+>>> shutil.copytree('../chapters', 'junglebook/data')
 ```
 
-You can create projects via the graphical interface as well.
+You can create projects and add data via the file menu of the graphical interface as well.
 
 ## Ways to use *corpkit*
 
@@ -143,12 +140,15 @@ corpkit@junglebook:no-corpus>
 
 Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
 
-### Making corpora
+### Making projects and parsing corpora
 
-```python
+```shell
+# make new project
+> new project named junglebook
+# add folder of (subfolders of) text files
+> add '../chapters'
 # specify corpus to work on
 > set chapters as corpus
-
 # parse the corpus
 > parse corpus with speaker_segmentation and metadata and multiprocess as 2
 ```
