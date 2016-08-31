@@ -14,6 +14,7 @@ def editor(interrogation,
            threshold='medium',
            just_entries=False,
            skip_entries=False,
+           span_entries=False,
            merge_entries=False,
            just_subcorpora=False,
            skip_subcorpora=False,
@@ -270,6 +271,57 @@ def editor(interrogation,
 
         return df, totals
 
+    def skip_keep_merge_span(df):
+        """
+        Do all skipping, keeping, merging and spanning
+        """
+        from corpkit.dictionaries.process_types import Wordlist
+        if skip_entries:
+            if isinstance(skip_entries, (list, Wordlist)):
+                df = df.drop(list(skip_entries), axis=1)
+            else:
+                df = df.loc[:,~df.columns.str.contains(skip_entries)]
+        if just_entries:
+            if isinstance(just_entries, (list, Wordlist)):
+                df = df[list(just_entries)]
+            else:
+                df = df.loc[:,df.columns.str.contains(just_entries)]
+        if merge_entries:
+            for newname, crit in merge_entries.items():
+                if isinstance(merge_entries, (list, Wordlist)):
+                    summed = df[list(crit)].sum()
+                    df = df.drop(list(crit), axis=1)
+                else:
+                    summed = df.loc[:,df.columns.str.contains(crit)].sum(axis=1)
+                    df = df.loc[:,~df.columns.str.contains(crit)]
+                df.insert(0, newname, summed, allow_duplicates=True)
+        if span_entries:
+            df = df.iloc[:,span_entries[0]:span_entries[1]]
+        if skip_subcorpora:
+            if isinstance(skip_subcorpora, (list, Wordlist)):
+                df = df.drop(list(skip_subcorpora), axis=0)
+            else:
+                df = df[~df.index.str.contains(skip_subcorpora)]
+        if just_subcorpora:
+            if isinstance(just_subcorpora, (list, Wordlist)):
+                df = df.loc[list(just_subcorpora)]
+            else:
+                df = df[df.index.str.contains(just_subcorpora)]
+        if merge_subcorpora:
+            df = df.T
+            for newname, crit in merge_subcorpora.items():
+                if isinstance(crit, (list, Wordlist)):    
+                    summed = df[list(crit)].sum()
+                    df = df.drop(list(crit), axis=1)
+                else:
+                    summed = df.loc[:,df.columns.str.contains(crit)].sum(axis=1)
+                    df = df.loc[:,~df.columns.str.contains(crit)]                
+                df.insert(0, newname, summed, allow_duplicates=True)
+            df = df.T
+        if span_subcorpora:
+            df = df.iloc[span_subcorpora[0]:span_subcorpora[1],:]
+        return df
+
     def parse_input(df, the_input):
         """turn whatever has been passed in into list of words that can 
            be used as pandas indices---maybe a bad way to go about it"""
@@ -374,29 +426,6 @@ def editor(interrogation,
         df = merge_duplicates(df, print_info=False)
         return df
 
-    def just_these_entries(df, parsed_input, prinf=True):
-        entries = [word for word in list(df) if word not in parsed_input]
-        if prinf:
-            print('Keeping %d entries:\n    %s' % \
-                (len(parsed_input), '\n    '.join(parsed_input[:10])))
-            if len(parsed_input) > 10:
-                print('... and %d more ... \n' % (len(parsed_input) - 10))
-            else:
-                print('')
-        df = df.drop(entries, axis=1)
-        return df
-
-    def skip_these_entries(df, parsed_input, prinf=True):
-        if prinf:     
-            print('Skipping %d entries:\n    %s' % \
-                (len(parsed_input), '\n    '.join(parsed_input[:10])))
-            if len(parsed_input) > 10:
-                print('... and %d more ... \n' % (len(parsed_input) - 10))
-            else:
-                print('')
-        df = df.drop(parsed_input, axis=1)
-        return df
-
     def newname_getter(df, parsed_input, newname='combine', prinf=True, merging_subcorpora=False):
         """makes appropriate name for merged entries"""
         if merging_subcorpora:
@@ -423,81 +452,6 @@ def editor(interrogation,
         if not isinstance(the_newname, STRINGTYPE):
             the_newname = str(the_newname, errors='ignore')
         return the_newname
-
-    def merge_these_entries(df, parsed_input, the_newname, prinf=True, merging='entries'):
-        # make new entry with sum of parsed input
-        if len(parsed_input) == 0:
-            import warnings
-            warnings.warn('No %s could be automatically merged.\n' % merging)
-        else:
-            if prinf:
-                print('Merging %d %s as "%s":\n    %s' % \
-                    (len(parsed_input), merging, the_newname, '\n    '.join(parsed_input[:10])))
-                if len(parsed_input) > 10:
-                    print('... and %d more ... \n' % (len(parsed_input) - 10))
-                else:
-                    print('')
-        # remove old entries
-        temp = sum([df[i] for i in parsed_input])
-
-        if isinstance(df, Series):
-            df = df.drop(parsed_input, errors='ignore')
-            nms = list(df.index)
-        else:
-            df = df.drop(parsed_input, axis=1, errors='ignore')
-            nms = list(df.columns)
-        if the_newname in nms:
-            df[the_newname] = df[the_newname] + temp
-        else:
-            df[the_newname] = temp
-        return df
-
-    def just_these_subcorpora(df, lst_of_subcorpora, prinf=True):        
-        if isinstance(lst_of_subcorpora[0], int):
-            lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
-        good_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        if prinf:
-            print('Keeping %d subcorpora:\n    %s' % (len(good_years), '\n    '.join(good_years[:10])))
-            if len(good_years) > 10:
-                print('... and %d more ... \n' % (len(good_years) - 10))
-            else:
-                print('')
-        df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus not in good_years], axis=0)
-        return df
-
-    def skip_these_subcorpora(df, lst_of_subcorpora, prinf=True):
-        if isinstance(lst_of_subcorpora, int):
-            lst_of_subcorpora = [lst_of_subcorpora]
-        if isinstance(lst_of_subcorpora[0], int):
-            lst_of_subcorpora = [str(l) for l in lst_of_subcorpora]
-        bad_years = [subcorpus for subcorpus in list(df.index) if subcorpus in lst_of_subcorpora]
-        if len(bad_years) == 0:
-            import warnings
-            warnings.warn('No subcorpora skipped.\n')
-        else:
-            if prinf:       
-                print('Skipping %d subcorpora:\n    %s' % (len(bad_years), '\n    '.join([str(i) for i in bad_years[:10]])))
-                if len(bad_years) > 10:
-                    print('... and %d more ... \n' % (len(bad_years) - 10))
-                else:
-                    print('')
-        df = df.drop([subcorpus for subcorpus in list(df.index) if subcorpus in bad_years], axis=0)
-        return df
-
-    def span_these_subcorpora(df, lst_of_subcorpora, prinf=True):
-        """select only a span of suborpora (first, last)"""
-
-        fir, sec = lst_of_subcorpora
-        if len(lst_of_subcorpora) == 0:
-            import warnings
-            warnings.warn('Span not identified.\n')
-        else:        
-            if prinf:        
-                print('Keeping subcorpora:\n    %d--%d\n' % (int(fir), int(sec)))
-        sbs = list(df.index)
-        df = df.ix[sbs.index(fir):sbs.index(sec) + 1]
-
-        return df
 
     def projector(df, list_of_tuples, prinf=True):
         """project abs values"""
@@ -829,79 +783,15 @@ def editor(interrogation,
             continue
 
         try:
-
             df2 = df2.drop(name, axis=ax, errors='ignore')
         except:
             pass
 
-    # merging: make dicts if they aren't already, so we can iterate
-    if merge_entries:
-        if not isinstance(merge_entries, list):
-            if isinstance(merge_entries, STRINGTYPE):
-                merge_entries = {'combine': merge_entries}
-            # for newname, criteria    
-            for name, the_input in sorted(merge_entries.items()):
-                pin = parse_input(df, the_input)
-                the_newname = newname_getter(df, pin, newname=name, prinf=print_info)
-                df = merge_these_entries(df, pin, the_newname, prinf=print_info)
-                if not single_totals:
-                    pin2 = parse_input(df2, the_input)
-                    df2 = merge_these_entries(df2, pin2, the_newname, prinf=False)
-        else:
-            for i in merge_entries:
-                pin = parse_input(df, merge_entries)
-                the_newname = newname_getter(df, pin, prinf=print_info)
-                df = merge_these_entries(df, pin, the_newname, prinf=print_info)
-                if not single_totals:
-                    pin2 = parse_input(df2, merge_entries)
-                    df2 = merge_these_entries(df2, pin2, the_newname, prinf=False)
-    
-    if merge_subcorpora:
-        if not isinstance(merge_subcorpora, dict):
-            if isinstance(merge_subcorpora, list):
-                if isinstance(merge_subcorpora[0], tuple):
-                    merge_subcorpora = {x: y for x, y in merge_subcorpora}
-                elif isinstance(merge_subcorpora[0], STRINGTYPE):
-                    merge_subcorpora = {'combine': [x for x in merge_subcorpora]}
-                elif isinstance(merge_subcorpora[0], int):
-                    merge_subcorpora = {'combine': [str(x) for x in merge_subcorpora]}
-            else:
-                merge_subcorpora = {'combine': merge_subcorpora}
-        for name, the_input in sorted(merge_subcorpora.items()):
-            pin = parse_input(df.T, the_input)
-            the_newname = newname_getter(df.T, pin, newname=name, \
-                merging_subcorpora=True, prinf=print_info)
-            df = merge_these_entries(df.T, pin, the_newname, merging='subcorpora', 
-                                     prinf=print_info).T
-            if using_totals:
-                pin2 = parse_input(df2.T, the_input)
-                df2 = merge_these_entries(df2.T, pin2, the_newname, merging='subcorpora', 
-                                          prinf=False).T
-
-    if just_subcorpora:
-        df = just_these_subcorpora(df, just_subcorpora, prinf=print_info)
-        if using_totals:
-            df2 = just_these_subcorpora(df2, just_subcorpora, prinf=False)
-    
-    if skip_subcorpora:
-        df = skip_these_subcorpora(df, skip_subcorpora, prinf=print_info)
-        if using_totals:
-            df2 = skip_these_subcorpora(df2, skip_subcorpora, prinf=False)
-    
-    if span_subcorpora:
-        df = span_these_subcorpora(df, span_subcorpora, prinf=print_info)
-        if using_totals:
-            df2 = span_these_subcorpora(df2, span_subcorpora, prinf=False)
-
-    if just_entries:
-        df = just_these_entries(df, parse_input(df, just_entries), prinf=print_info)
-        if not single_totals:
-            df2 = just_these_entries(df2, parse_input(df2, just_entries), prinf=False)
-    
-    if skip_entries:
-        df = skip_these_entries(df, parse_input(df, skip_entries), prinf=print_info)
-        if not single_totals:
-            df2 = skip_these_entries(df2, parse_input(df2, skip_entries), prinf=False)
+    df = skip_keep_merge_span(df)
+    try:
+        df2 = skip_keep_merge_span(df2)
+    except:
+        pass
 
     # drop infinites and nans
     df = df.replace([np.inf, -np.inf], np.nan)
