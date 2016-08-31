@@ -115,7 +115,7 @@ Alternatively, the GUI is available (alongside documentation) as a standalone OS
 
 .. rubric:: Interpreter
 
-*corpkt* also has its own interpreter, a bit like CQP, but with more features. You can open it with:
+*corpkit* also has its own interpreter, a bit like the `Corpus Workbench`_, but with more features. You can open it with:
 
 .. code-block:: bash
 
@@ -133,6 +133,8 @@ And then start working with natural language commands:
    > search corpus for governor-lemma matching processes:verbal showing pos and lemma
    > calculate result as percentage of self
    > plot result as line chart with title as 'Example figure'
+
+From the interpreter, you can enter ``ipython``, ``jupyter notebook`` or ``gui`` to switch between interfaces, preserving the local namespace and data where possible.
 
 Information about the syntax is available at the :ref:`interpreter-page`.
 
@@ -196,3 +198,4 @@ If you'd like to cite *corpkit*, you can use:
 .. _pattern: http://www.clips.ua.ac.be/pages/pattern-en/
 .. _matplotlib: http://matplotlib.org/
 .. _joblib: http://pythonhosted.org/joblib/
+.. _Corpus Workbench: http://cwb.sourceforge.net/

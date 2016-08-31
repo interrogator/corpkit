@@ -9,7 +9,79 @@ todo:
 * merge entries with name
 
 """
+
 from __future__ import print_function
+
+help_text = "\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
+            "and visualising corpora. It works through a combination of objects and commands:\n\n" \
+            "Objects:\n\n" \
+            " +---------------+-----------------------------------------------+ \n"\
+            " | Object        | Contains                                      | \n"\
+            " +===============+===============================================+ \n"\
+            " | `corpus`      | Dataset selected for parsing or searching     | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `results`     | Search output                                 | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `edited`      | Results after sorting, editing or calculating | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `concordance` | Concordance lines from search                 | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `features`    | General linguistic features of corpus         | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `wordclasses` | Distribution of word classes in corpus        | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `postags`     | Distribution of POS tags in corpus            | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `figure`      | Plotted data                                  | \n"\
+            " +---------------+-----------------------------------------------+ \n"\
+            " | `query`       | Values used to perform search or edit         | \n"\
+            " +---------------+-----------------------------------------------+ "\
+            "\n\nCommand examples:\n\n" \
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | Command         | Syntax                                                                             | \n"\
+            " +=================+====================================================================================+ \n"\
+            " | `new`           | `new project <name>`                                                               | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `add`           | `add '../corpus'`                                                                  | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `set`           | `set <corpusname>`                                                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `parse`         | `parse corpus with [options]*`                                                     | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `search`        | `search corpus for [feature matching pattern]* showing [feature]* with [options]*` | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `edit`          | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`   | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `calculate`     | `calculate result/edited as operation of denominator`                              | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `sort`          | `sort result/concordance by value`                                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `plot`          | `plot result/edited as line chart with [options]*`                                 | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `show`          | `show object`                                                                      | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `export`        | `export result to string/csv/latex/file <filename>`                                | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `save`          | `save object to <filename>`                                                        | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `load`          | `load object as result`                                                            | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `store`         | `store object as <name>`                                                           | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `fetch`         | `fetch <name> as object`                                                           | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `help`          | `help command/object`                                                              | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `history`       | `history`                                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `ipython`       | `ipython`                                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            " | `py`            | `py print('hello world')`                                                          | \n"\
+            " +-----------------+------------------------------------------------------------------------------------+ \n"\
+            "\nMore information:\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
+            "http://corpkit.readthedocs.io/en/latest\n\n" \
+            "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n"
+
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 import os
@@ -65,16 +137,12 @@ readline.parse_and_bind('tab: complete')
 del os, atexit, readline, rlcompleter, save_history, history_path
 
 
-def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False):
+def interpreter(debug=False,
+                fromscript=False,
+                quiet=False,
+                python_c_mode=False):
+
     import os
-
-    #def noprint(*args, **kwargs):
-    #    pass
-
-    #if quiet:
-    #    print = noprint
-    #else:
-    #    print = print
 
     allig = '\n   Welcome!\n'
     allig += "               .-._   _ _ _ _ _ _ _ _\n    " \
@@ -324,76 +392,7 @@ def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False)
 
         if command == 'help':
             import pydoc
-            pydoc.pipepager(\
-            "\nThis is a dedicated interpreter for corpkit, a tool for creating, searching\n" \
-            "and visualising corpora. It works through a combination of objects and commands:\n\n" \
-            "Objects:\n\n" \
-            " +---------------+-----------------------------------------------+ \n"\
-            " | Object        | Contains                                      | \n"\
-            " +===============+===============================================+ \n"\
-            " | `corpus`      | Dataset selected for parsing or searching     | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `results`     | Search output                                 | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `edited`      | Results after sorting, editing or calculating | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `concordance` | Concordance lines from search                 | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `features`    | General linguistic features of corpus         | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `wordclasses` | Distribution of word classes in corpus        | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `postags`     | Distribution of POS tags in corpus            | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `figure`      | Plotted data                                  | \n"\
-            " +---------------+-----------------------------------------------+ \n"\
-            " | `query`       | Values used to perform search or edit         | \n"\
-            " +---------------+-----------------------------------------------+ "
-            "\n\nCommand examples:\n\n" \
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | Command         | Syntax                                                                             | \n"\
-            " +=================+====================================================================================+ \n"\
-            " | `new`           | `new project <name>`                                                               | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `add`           | `add '../corpus'`                                                                  | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `set`           | `set <corpusname>`                                                                 | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `parse`         | `parse corpus with [options]*`                                                     | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `search`        | `search corpus for [feature matching pattern]* showing [feature]* with [options]*` | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `edit`          | `edit result by [skipping subcorpora/entries matching pattern]* with [options]*`   | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `calculate`     | `calculate result/edited as operation of denominator`                              | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `sort`          | `sort result/concordance by value`                                                 | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `plot`          | `plot result/edited as line chart with [options]*`                                 | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `show`          | `show object`                                                                      | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `export`        | `export result to string/csv/latex/file <filename>`                                | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `save`          | `save object to <filename>`                                                        | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `load`          | `load object as result`                                                            | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `store`         | `store object as <name>`                                                           | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `fetch`         | `fetch <name> as object`                                                           | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `help`          | `help command/object`                                                              | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `history`       | `history`                                                                          | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `ipython`       | `ipython`                                                                          | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            " | `py`            | `py print('hello world')`                                                          | \n"\
-            " +-----------------+------------------------------------------------------------------------------------+ \n"\
-            "More information:\n\nYou can access more specific help by doing 'help <command>', or by visiting\n" \
-            "http://corpkit.readthedocs.io/en/latest\n\n" \
-            "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n", cmd='less -X -R -S') 
+            pydoc.pipepager(help_text, cmd='less -X -R -S') 
 
         if command == 'corpus':
             if not hasattr(objs.corpus, 'name'):
@@ -1171,7 +1170,15 @@ def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False)
            > calculate result as percentage of stored.myname
 
         """
-        calcs = ['k', '%', '+', '/', '-', '*', 'percentage']
+        # todo: use real syntax for keyness
+        if 'k' in tokens or 'keyness' in tokens:
+            operation = 'k'
+
+        dd = {'percentage': '%',
+              'key': 'k',
+              'keyness': 'k'}
+
+        calcs = ['k', '%', '+', '/', '-', '*', 'percentage', 'keyness']
         operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
         if not operation:
             if tokens[-1].startswith('conc'):
@@ -1197,8 +1204,9 @@ def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False)
         elif denominator.startswith('stored'):
             attr = denominator.split('.', 1)[-1]
             denominator = fetch_this([attr], unbound=True)
-        if operation == 'percentage':
-            operation = '%'
+        
+        operation = dd.get(operation, operation)
+
         the_obj = getattr(objs, tokens[0])
         objs.edited = the_obj.edit(operation, denominator)
         if hasattr(objs.edited, 'totals'):
