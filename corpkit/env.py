@@ -874,7 +874,8 @@ def interpreter(debug=False,
                  'merging':  'merge',
                  'spanning': 'span'}
 
-        recog = ['not', 'matching', 'result', 'entry', 'entries', 'results', 'subcorpus', 'subcorpora', 'edited']
+        recog = ['not', 'matching', 'result', 'entry', 'entries',
+                 'results', 'subcorpus', 'subcorpora', 'edited']
 
         # skip, keep, merge
         by_related = []
@@ -897,6 +898,9 @@ def interpreter(debug=False,
                     print('v not found')
                     return
                 v = parse_pattern(v)
+                if token == 'merging':
+                    newname = next(tokens[i+1] for i, t in enumerate(tokens) if t == 'as')
+                    v = {newname: v}
                 kwargs[k] = v
                 #for x in range(i, ind+1):
                 #    skips.append(x)
