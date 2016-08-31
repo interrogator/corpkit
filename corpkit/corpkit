@@ -7,20 +7,29 @@ A script start corpkit environment
 import sys
 import os
 
-from corpkit.env import interpreter
-
+# determine if we're running a script
 if len(sys.argv) > 1 and os.path.isfile(sys.argv[-1]):
     fromscript = sys.argv[-1]
 else:
     fromscript = False
 
-debug = sys.argv[-1] == 'debug'
+# debug mode
+debug = '--debug' in sys.argv or '-d' in sys.argv or 'debug' in sys.argv
 
+# quiet mode
 if '-q' in sys.argv or '--quiet' in sys.argv:
     quiet = True
 else:
     quiet = False
 
+# run a command a la python -c
 command = sys.argv[sys.argv.index('-c') + 1] if '-c' in sys.argv else False
-interpreter(debug=debug, fromscript=fromscript,
-            quiet=quiet, python_c_mode=command)
+
+if '-h' in sys.argv or '--h' in sys.argv:
+    from corpkit.env import help_text
+    import pydoc
+    pydoc.pipepager(help_text, cmd='less -X -R -S') 
+else:
+    from corpkit.env import interpreter
+    interpreter(debug=debug, fromscript=fromscript,
+                quiet=quiet, python_c_mode=command)
