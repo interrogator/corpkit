@@ -115,7 +115,7 @@ Alternatively, the GUI is available (alongside documentation) as a standalone OS
 
 .. rubric:: Interpreter
 
-*corpkit* also has its own interpreter, a bit like the `Corpus Workbench`_, but with more features. You can open it with:
+*corpkit* also has its own interpreter, a bit like the `Corpus Workbench`_. You can open it with:
 
 .. code-block:: bash
 

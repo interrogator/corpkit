@@ -134,6 +134,9 @@ atexit.register(save_history)
 # tab completion
 readline.parse_and_bind('tab: complete')
 
+# ctrl r search
+readline.parse_and_bind("bind ^R em-inc-search-prev")
+
 del os, atexit, readline, rlcompleter, save_history, history_path
 
 
