@@ -240,7 +240,6 @@ The variables `L`, `F` and so on are imported during `from corpkit import *`. Th
 
 ### make line subplots for the first nine results
 >>> plt = proc.visualise('Processes, increasing', subplots=True, layout=(3,3))
-### Tweak figure directly here if you need to, before showing it
 >>> plt.show()
 ```
 

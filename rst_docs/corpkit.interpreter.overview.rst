@@ -3,11 +3,32 @@
 Overview
 =======================
 
-The syntax of the interpreter is based around *objects*, which you do things to, and *commands*, which are actions. The example below uses the `search` command on a `corpus` object, which produces a `result`, `concordance`, `totals` and `query` object. More specifically, the `corpus` is searched for lemmata starting with the letter `t`, whose POS is verbal:
+The syntax of the interpreter is based around *objects*, which you do things to, and *commands*, which are actions performed upon the objects. The example below uses the `search` command on a `corpus` object, which produces new objects, called `result`, `concordance`, `totals` and `query`. As you can see, very complex searches can be performed using an English-like syntax:
 
 .. code-block:: bash
 
-   search corpus for lemma matching '^t' and pos matching 'VB'
+   > search corpus for lemma matching '^t' and pos matching 'VB' \
+   ... excluding words matching 'try' \
+   ... showing word and dependent-word \
+   ... with preserve_case
+   > result
+
+This shows us results for each subcorpus:
+
+.. code-block:: none
+
+   .         I/think  I/thought  and/turned  me/told  and/took  I/told   ...
+   chapter1        5          3           2        2         1       3   ...
+   chapter2        7          2           5        3         0       2   ...
+   chapter3        5          5           4        4         1       0   ...
+   chapter4        3          7           1        0         3       1   ...
+   chapter5        7          7           2        1         4       2   ...
+   chapter6        2          0           0        2         1       0   ...
+   chapter7        6          2           6        1         1       3   ...
+   chapter8        3          1           2        2         1       1   ...
+   chapter9        5          7           1        4         6       3   ...
+
+
 
 Objects
 ---------
@@ -19,7 +40,7 @@ The most common objects you'll be using are:
 +===============+===============================================+
 | `corpus`      | Dataset selected for parsing or searching     |
 +---------------+-----------------------------------------------+
-| `results`     | Search output                                 |
+| `result`     | Search output                                 |
 +---------------+-----------------------------------------------+
 | `edited`      | Results after sorting, editing or calculating |
 +---------------+-----------------------------------------------+
