@@ -65,7 +65,7 @@ readline.parse_and_bind('tab: complete')
 del os, atexit, readline, rlcompleter, save_history, history_path
 
 
-def interpreter(debug=False, fromscript=False, quiet=False):
+def interpreter(debug=False, fromscript=False, quiet=False, python_c_mode=False):
     import os
 
     #def noprint(*args, **kwargs):
@@ -258,18 +258,27 @@ def interpreter(debug=False, fromscript=False, quiet=False):
 
 
     def show_table(command):
-        import tabview
-        # this horrible code accounts for cases where we modify with exec
+        """
+        Print or tabview a Pandas object
+        """
+        if objs._interactive:
+            import tabview
+            showfunc = tabview.view
+            kwa = {'column_width': 10}
+        else:
+            showfunc = print
+            kwa = {}
+
         toshow = getattr(getattr(objs, command), 'results', False)
         if isinstance(toshow, (pd.DataFrame, pd.Series)):
-            tabview.view(toshow.round(objs._decimal), column_width=10)
+            showfunc(toshow.round(objs._decimal), **kwa)
             return
         elif toshow:
-            tabview.view(toshow.round(objs._decimal), column_width=10)
+            showfunc(toshow.round(objs._decimal), **kwa)
             return
         else:
             if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
-                tabview.view(getattr(objs, command).round(objs._decimal), column_width=10)
+                showfunc(getattr(objs, command).round(objs._decimal), **kwa)
                 return
 
 
@@ -923,8 +932,7 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                 return
             objs.result = out
             objs.previous = out
-            if objs._interactive:
-                show_this(['result'])
+            show_this(['result'])
             objs.query = out.query
             if objs._do_conc:
                 objs.concordance = out.concordance
@@ -1675,16 +1683,25 @@ def interpreter(debug=False, fromscript=False, quiet=False):
     if fromscript:
         commands = read_script(fromscript)
         objs._interactive = False
+
+    if python_c_mode:
+        objs._interactive = False
     
     # the main loop, with exception handling
     while True:
         try:
-            if not fromscript:
+            if not fromscript and not python_c_mode:
                 output = INPUTFUNC(get_prompt(backslashed))
-            else:
+            
+            elif fromscript:
                 if not commands:
                     break
                 output = commands.pop()
+            
+            elif python_c_mode:
+                if 'concordance' not in python_c_mode:
+                    objs._do_conc = False
+                output = python_c_mode
 
             # terminate
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
@@ -1740,6 +1757,9 @@ def interpreter(debug=False, fromscript=False, quiet=False):
                 # otherwise, run the command and reset the stack
                 out = run_command(tokens)
                 backslashed = ''
+
+            if python_c_mode:
+                break
 
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')

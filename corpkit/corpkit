@@ -21,4 +21,6 @@ if '-q' in sys.argv or '--quiet' in sys.argv:
 else:
     quiet = False
 
-interpreter(debug=debug, fromscript=fromscript, quiet=quiet)
+command = sys.argv[sys.argv.index('-c') + 1] if '-c' in sys.argv else False
+interpreter(debug=debug, fromscript=fromscript,
+            quiet=quiet, python_c_mode=command)
