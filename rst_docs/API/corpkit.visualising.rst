@@ -52,23 +52,23 @@ The visualise method allows ``line``, ``bar``, horizontal bar (``barh``), ``area
    >>> data.visualise(kind='heatmap', robust=True, figsize=(4,12),
    ...                x_label='Subcorpus', y_label='Event').show()
 
-.. figure:: ../images/event-heatmap.png
+.. figure:: ../../images/event-heatmap.png
    :width: 50%
-   :target: ../images/event-heatmap.png
+   :target: ../../images/event-heatmap.png
    :align: center
 
    Heatmap example
 
 Stacked area/line plots can be made with ``stacked=True``. You can also use ``filled=True`` to attempt to make all values sum to 100. Cumulative plotting can be done with ``cumulative=True``. Below is an area plot beside an area plot where ``filled=True``. Both use the ``vidiris`` colour scheme.
 
-.. image:: ../images/area.png
+.. image:: ../../images/area.png
    :width: 45%
-   :target: ../images/area.png
+   :target: ../../images/area.png
    :align: left
 
-.. image:: ../images/area-filled.png
+.. image:: ../../images/area-filled.png
    :width: 45%
-   :target: ../images/area-filled.png
+   :target: ../../images/area-filled.png
    :align: right
    
 Plot style
@@ -99,9 +99,9 @@ Subplots
 
    >>> data.visualise(subplots=True, layout=(2,3)).show()
 
-.. figure:: ../images/subplots.png
+.. figure:: ../../images/subplots.png
    :width: 60%
-   :target: ../images/subplots.png
+   :target: ../../images/subplots.png
    :align: center
 
    Line charts using subplots and layout specification
@@ -223,9 +223,9 @@ There is also `layout`, which you can use to choose an overall grid design. You 
    >>>                'y_label': 'Percentage of all results'},
    >>>                {'kind': 'line'}, layout=5)
 
-.. figure:: ../images/inc-risk-obj.png
+.. figure:: ../../images/inc-risk-obj.png
    :width: 50%
-   :target: ../images/inc-risk-obj.png
+   :target: ../../images/inc-risk-obj.png
    :align: center
 
    `multiplot` example
