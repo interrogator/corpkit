@@ -142,44 +142,43 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    :maxdepth: 1
    :caption: API
 
-   rst_docs/corpkit.building.rst
-   rst_docs/corpkit.interrogating.rst
-   rst_docs/corpkit.concordancing.rst
-   rst_docs/corpkit.editing.rst
-   rst_docs/corpkit.visualising.rst
-   rst_docs/corpkit.langmodel.rst
-   rst_docs/corpkit.managing.rst
+   rst_docs/API/corpkit.building.rst
+   rst_docs/API/corpkit.interrogating.rst
+   rst_docs/API/corpkit.concordancing.rst
+   rst_docs/API/corpkit.editing.rst
+   rst_docs/API/corpkit.visualising.rst
+   rst_docs/API/corpkit.langmodel.rst
+   rst_docs/API/corpkit.managing.rst
    
 .. toctree::
    :maxdepth: 1
    :caption: Interpreter
 
-   rst_docs/corpkit.interpreter.overview.rst
-   rst_docs/corpkit.interpreter.setup.rst
-   rst_docs/corpkit.interpreter.making.rst
-   rst_docs/corpkit.interpreter.interrogating.rst
-   rst_docs/corpkit.interpreter.concordancing.rst
-   rst_docs/corpkit.interpreter.editing.rst
-   rst_docs/corpkit.interpreter.visualising.rst
-   rst_docs/corpkit.interpreter.managing.rst
+   rst_docs/interpreter/corpkit.interpreter.overview.rst
+   rst_docs/interpreter/corpkit.interpreter.setup.rst
+   rst_docs/interpreter/corpkit.interpreter.making.rst
+   rst_docs/interpreter/corpkit.interpreter.interrogating.rst
+   rst_docs/interpreter/corpkit.interpreter.concordancing.rst
+   rst_docs/interpreter/corpkit.interpreter.editing.rst
+   rst_docs/interpreter/corpkit.interpreter.visualising.rst
+   rst_docs/interpreter/corpkit.interpreter.managing.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: API reference
 
-   rst_docs/corpkit.corpus.rst
-   rst_docs/corpkit.interrogation.rst
-   rst_docs/corpkit.other.rst
-   rst_docs/corpkit.dictionaries.rst
+   rst_docs/API-ref/corpkit.corpus.rst
+   rst_docs/API-ref/corpkit.interrogation.rst
+   rst_docs/API-ref/corpkit.other.rst
+   rst_docs/API-ref/corpkit.dictionaries.rst
 
 .. toctree::
    :maxdepth: 2
-   :caption: Other
+   :caption: External links
    :hidden:
 
    Graphical interface <http://interrogator.github.io/corpkit>
    GitHub <https://github.com/interrogator/corpkit>
-   rst_docs/corpkit.about.rst
 
 .. rubric:: Cite
 
