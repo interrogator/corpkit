@@ -6,7 +6,7 @@ The interpreter can do a number of other useful things. They are outlined here.
 Managing data
 ---------------
 
-You should be able to store most of the objects you create in memory:
+You should be able to store most of the objects you create in memory using the ``store`` command:
 
 .. code-block:: bash
 
@@ -19,6 +19,23 @@ A more permanent solution is to use `save` and `load`:
    > save result as 'good_result'
    > ls saved_interrogations
    > load 'good_result' as result
+
+An alternative approach is to create variables using the ``call`` command
+
+.. code-block:: bash
+
+   > search corpus for words matching any
+   > call result anyword
+   > calculate anyword as percentage of self
+
+A variable can also be a simple string, which you can then add into searches:
+
+.. code-block:: bash
+
+   > call '/NN.?/ >># NP' headnoun
+   > search corpus for trees matching headnoun
+
+To forget a variable, just do `remove <name>`.
 
 Toggles and settings
 ---------------------

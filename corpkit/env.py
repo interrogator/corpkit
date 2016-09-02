@@ -180,6 +180,13 @@ def interpreter(debug=False,
                 wl.update(roles._asdict())
             wl.update(processes.__dict__)
 
+            self._protected = ['result', 'previous', 'edited', 'corpus', 'concordance',
+                              'query', 'features', 'postags', 'wordclasses', 'stored',
+                              'figure', 'totals', 'wordlists', 'wordlist',
+                              '_in_a_project', '_previous_type', '_old_concs',
+                              '_conc_colours', '_conc_kwargs', '_do_conc',
+                              '_interactive', '_decimal', '_protected']
+                              
             # main variables the user might access
             self.result = None
             self.previous = None
@@ -195,6 +202,7 @@ def interpreter(debug=False,
             self.totals = None
             self.wordlists = wl
             self.wordlist = None
+            self.named = {}
 
             # system toggles and references to older data
             self._in_a_project = None
@@ -207,6 +215,27 @@ def interpreter(debug=False,
             self._do_conc = True
             self._interactive = True
             self._decimal = 3
+
+        def _get(self, name):
+            """
+            Get an object, item from store or wordlist
+            """
+            if name.startswith('wordlist') or name.startswith('stored'):
+                ob, attr = name.split('.', 1) if '.' in name else name.split(':', 1)
+                return ob, getattr(self, ob).get(attr)
+            elif name.startswith('features'):
+                attr = name.split('.', 1)[-1]
+                return 'features', objs.features[attr.title()]
+            elif name.startswith('wordclasses'):
+                attr = name.split('.', 1)[-1]
+                return 'wordclasses', objs.wordclasses[attr.title()]
+            elif name.startswith('postags'):
+                attr = name.split('.', 1)[-1]
+                return 'postags', objs.postags[attr.upper()]
+            elif name in self._protected:
+                return name, getattr(self, name, None)
+            else:
+                return self.named.get(name, (None, None))
 
     objs = Objects()
 
@@ -257,6 +286,8 @@ def interpreter(debug=False,
         for k, v in objs.__dict__.items():
             if not k.startswith('_'):
                 locals()[k] = v
+        for k, v in objs.named.items():
+            locals()[k] = v
 
         ret = InteractiveShellEmbed(header=s,
                     babaii='babaii',
@@ -283,19 +314,19 @@ def interpreter(debug=False,
         print('Loading graphical interface ... ')
         subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
-    def show_concordance(command, args):
+    def show_concordance(obj, command, args):
         import pydoc
         # update the showing parameters 
         kwargs = process_kwargs(args)
         if kwargs:
             objs._conc_kwargs.update(kwargs)
         
-        if objs.concordance is None:
+        if obj is None:
             print("There's no concordance here right now, sorry.")
             return
         # retrieve the correct concordances, so we can colour them
         found_the_conc = next((i for i, c in enumerate(objs._old_concs) \
-                               if c.equals(objs.concordance)), None)
+                               if c.equals(obj)), None)
         if found_the_conc is None:
             return
         # if colours have been saved for these lines, try to fill them in 
@@ -303,7 +334,7 @@ def interpreter(debug=False,
             try:
                 lines_to_print = []
                 from colorama import Fore, Back, Style, init
-                lines = objs.concordance.format(print_it=False, **objs._conc_kwargs).splitlines()
+                lines = obj.format(print_it=False, **objs._conc_kwargs).splitlines()
                 # for each concordance line
                 for line in lines:
                     # get index as str
@@ -327,21 +358,21 @@ def interpreter(debug=False,
                 else:
                     print('\n'.join(lines_to_print))
             except ImportError:
-                formatted = getattr(objs, command).format(print_it=False, **objs._conc_kwargs)  
+                formatted = obj.format(print_it=False, **objs._conc_kwargs)  
                 if objs._interactive:
                     pydoc.pipepager(formatted, cmd="less -X -R")
                 else:
                     print(formatted)
 
         else:
-            formatted = getattr(objs, command).format(print_it=False, **objs._conc_kwargs)
+            formatted = obj.format(print_it=False, **objs._conc_kwargs)
             if objs._interactive:
                 pydoc.pipepager(formatted, cmd="less -X -R")
             else:
                 print(formatted)
 
 
-    def show_table(command):
+    def show_table(obj, objtype):
         """
         Print or tabview a Pandas object
         """
@@ -353,18 +384,17 @@ def interpreter(debug=False,
             showfunc = print
             kwa = {}
 
-        toshow = getattr(getattr(objs, command), 'results', False)
-        if isinstance(toshow, (pd.DataFrame, pd.Series)):
-            showfunc(toshow.round(objs._decimal), **kwa)
+        obj = getattr(obj, 'results', obj)
+        if isinstance(obj, (pd.DataFrame, pd.Series)):
+            showfunc(obj.round(objs._decimal), **kwa)
             return
-        elif toshow:
-            showfunc(toshow.round(objs._decimal), **kwa)
+        elif obj:
+            showfunc(obj.round(objs._decimal), **kwa)
             return
         else:
-            if isinstance(getattr(objs, command, False), (pd.DataFrame, pd.Series)):
-                showfunc(getattr(objs, command).round(objs._decimal), **kwa)
+            if isinstance(objs._get(command)[1], (pd.DataFrame, pd.Series)):
+                showfunc(objs._get(command)[1].round(objs._decimal), **kwa)
                 return
-
 
     def single_command_print(command):
         """
@@ -383,55 +413,64 @@ def interpreter(debug=False,
             args = command[1:]
             command = command[0]
 
-        if command == 'ls':
+        if command in objs.named.keys():
+            objtype, obj = objs.named.get(command)
+            if isinstance(obj, str):
+                print('%s: %s' % (command, obj))
+                return
+        else:
+            objtype, obj = objs._get(command)
+            if not objtype:
+                objtype = command
+
+        if objtype == 'ls':
             import os
             print('\n'.join(os.listdir('.')))
 
-        if command == 'clear':
+        if objtype == 'clear':
             print(chr(27) + "[2J")
 
-        if command == 'history':
+        if objtype == 'history':
             import readline
             for i in range(readline.get_current_history_length()):
                 print(readline.get_history_item(i + 1))
 
-        if command == 'help':
+        if objtype == 'help':
             import pydoc
             pydoc.pipepager(help_text, cmd='less -X -R -S') 
 
-        if command == 'corpus':
-            if not hasattr(objs.corpus, 'name'):
+        if objtype == 'corpus':
+            if not hasattr(obj, 'name'):
                 print('Corpus not set. use "set <corpusname>".')
                 return
             else:
-                print(objs.corpus)
+                print(obj)
         
-
-        elif command == 'python' or command == 'ipython':
+        elif objtype == 'python' or objtype == 'ipython':
             switch_to_ipython(args)
 
-        elif command.startswith('jupyter') or command == 'notebook':
+        elif objtype.startswith('jupyter') or objtype == 'notebook':
             switch_to_jupyter(args)
 
-        elif command == 'gui':
+        elif objtype == 'gui':
             switch_to_gui(args)
         
-        elif command in ['result', 'edited', 'totals', 'previous',
+        elif objtype in ['result', 'edited', 'totals', 'previous',
                          'features', 'postags', 'wordclasses']:
 
-            show_table(command)
+            show_table(obj, objtype)
 
-        elif command == 'concordance':
-            show_concordance(command, args)
-        elif command == 'wordlists':
-            show_this([command])
-        elif command == 'wordlist':
+        elif objtype == 'concordance':
+            show_concordance(obj, objtype, args)
+        elif objtype == 'wordlists':
+            show_this([objtype])
+        elif objtype == 'wordlist':
             print(objs.wordlist)
-        elif command.startswith('wordlist'):
-            o, l = command.split('.', 1) if '.' in command else command.split(':', 1)
+        elif objtype.startswith('wordlist'):
+            o, l = objtype.split('.', 1) if '.' in objtype else objtype.split(':', 1)
             print(getattr(objs.wordlists, l))
-        elif command == 'query':
-            show_this([command])
+        elif objtype == 'query':
+            show_this([objtype])
         else:
             pass
 
@@ -589,6 +628,11 @@ def interpreter(debug=False,
         trans = {'true': True,
                  'false': False,
                  'none': None}
+
+        # this means that if the query is a variable, the variable is returned
+        # maybe this is not ideal behaviour.
+        if val in objs.named.keys():
+            return objs.named[val]
 
         if any(val.startswith(x) for x in ['roles', 'processes', 'wordlist']) \
             and any(x in [':', '.'] for x in val):
@@ -843,7 +887,7 @@ def interpreter(debug=False,
         elif tokens[0] in ['features', 'wordclasses', 'postags']:
             print(getattr(objs.corpus, tokens[0]))
 
-        elif hasattr(objs, tokens[0]):
+        elif objs._get(tokens[0]):
             single_command_print(tokens)
         else:
             print("No information about: %s" % tokens[0])
@@ -1026,7 +1070,7 @@ def interpreter(debug=False,
 
         """
         import os
-        obj = getattr(objs, tokens[0])
+        obj = objs._get(tokens[0])[1]
         
         if tokens[0].startswith('conc'):
             obj = add_colour_to_conc_df(obj.copy())
@@ -1069,12 +1113,10 @@ def interpreter(debug=False,
         pass
 
     def get_thing_to_edit(token):
-        thing_to_edit = objs.result
-        if token == 'concordance':
-            thing_to_edit = objs.concordance
-        elif token == 'edited':
-            thing_to_edit = objs.edited
-        return thing_to_edit
+        thing = objs._get(token)[1]
+        if thing is None:
+            thing = objs.result
+        return thing
 
     def sort_something(tokens):
         """
@@ -1101,7 +1143,7 @@ def interpreter(debug=False,
                 sorted_lines = thing_to_edit.sort_index()
             else:
                 if val.startswith('l') or val.startswith('r') or val.startswith('m'):
-                    l_or_r = objs.concordance[val[0]]
+                    l_or_r = thing_to_edit[val[0]]
                     ind = int(val[1:])
                     if val[0] == 'l':
                         ind = -ind
@@ -1150,7 +1192,7 @@ def interpreter(debug=False,
         kwargs = process_kwargs(tokens)
         kwargs['tex'] = kwargs.get('tex', False)
         title = kwargs.pop('title', False)
-        objs.figure = getattr(objs, tokens[0]).visualise(title=title, kind=kind, **kwargs)
+        objs.figure =objs._get(tokens[0])[1].visualise(title=title, kind=kind, **kwargs)
         objs.figure.show()
         return objs.figure
 
@@ -1159,7 +1201,7 @@ def interpreter(debug=False,
         Visualise an interrogation with a simple ascii line chart
         """
         obj, attr = tokens[0].split(':', 1) if ':' in tokens[0] else tokens[0].split('.', 1)
-        to_plot = getattr(objs, obj)
+        to_plot = objs._get(obj)[1]
         # if it said 'asciiplot result.this on axis 1', turn it into
         # asciiplot result.this with axis as 1
 
@@ -1208,28 +1250,14 @@ def interpreter(debug=False,
             else:
                 print('Bad operation.')
                 return
-        denominator = tokens[-1]
-        if denominator.startswith('features'):
-            attr = denominator.split('.', 1)[-1]
-            denominator = objs.features[attr.title()]
-        elif denominator.startswith('wordclasses'):
-            attr = denominator.split('.', 1)[-1]
-            denominator = objs.wordclasses[attr.title()]
-        elif denominator.startswith('postags'):
-            attr = denominator.split('.', 1)[-1]
-            denominator = objs.postags[attr.upper()]
-        elif denominator.startswith('stored'):
-            if '[' in denominator:
-                attr = denominator.split('[', 1)[-1]
-                attr = denominator.rstrip("]").strip('"').strip("'")
-            else:
-                attr = denominator.split('.', 1)[-1]
-            denominator = fetch_this([attr], unbound=True)
-            print(denominator)
+        objtype, denominator = objs._get(tokens[-1])
         
+        if tokens[-1] == 'self':
+            denominator = 'self'
+
         operation = dd.get(operation, operation)
 
-        the_obj = getattr(objs, tokens[0])
+        the_obj = objs._get(tokens[0])[1]
         objs.edited = the_obj.edit(operation, denominator)
         if hasattr(objs.edited, 'totals'):
             objs.totals = objs.edited.totals
@@ -1328,7 +1356,7 @@ def interpreter(debug=False,
         if passedin:
             to_save = passedin
         else:
-            to_save = getattr(objs, tokens[0])
+            to_save = objs._get(tokens[0])[1]
 
         if to_save == 'store' and not passedin:
             for k, v in objs.stored.items():
@@ -1571,7 +1599,7 @@ def interpreter(debug=False,
 
         """
 
-        to_store = getattr(objs, tokens[0])
+        to_store = objs._get(tokens[0])[1]
 
         #if not to_store:
         #    print('Not storable:' % tokens[0])
@@ -1608,7 +1636,36 @@ def interpreter(debug=False,
         if tokens[0].startswith('interactive'):
             objs._interactive = not objs._interactive
             s = 'on' if objs._interactive else 'off'
-            print('Auto showing of results and concordances turned %s.' % s)            
+            print('Auto showing of results and concordances turned %s.' % s)
+
+    def remove_something(tokens):
+        if len(tokens) == 1:
+            objs.named.pop(tokens[0])
+        else:
+            frm = getattr(objs, tokens[-1])
+            frm.pop(tokens[0])
+        print('Forgot %s.' % tokens[0])
+
+    def name_something(tokens):
+        """
+        Basically, make a variable. In reality,
+        it is a key-value pair in objs.named
+
+        """
+        thing = objs._get(tokens[0])[1]
+        if thing is None or thing is False:
+            thing = tokens[0]
+            originally_was = 'string'
+            #print('Nothing stored in %s to name.' % tokens[0])
+            #return
+        if tokens[0] in objs._protected:
+            originally_was = tokens[0]
+        elif tokens[0] in objs.named.keys():
+            originally_was, thing = thing
+        from corpkit.process import makesafe
+        name = makesafe(tokens[-1])
+        objs.named[name] = (originally_was, thing)
+        print('%s named "%s".' % (tokens[0], name))
 
     def run_previous(tokens):
         import shlex
@@ -1664,6 +1721,8 @@ def interpreter(debug=False,
                    'store': store_this,
                    'new': new_thing,
                    'fetch': fetch_this,
+                   'call': name_something,
+                   'remove': remove_something,
                    'save': save_this,
                    'load': load_this,
                    'calculate': calculate_result,
