@@ -24,6 +24,7 @@ else:
 
 # run a command a la python -c
 command = sys.argv[sys.argv.index('-c') + 1] if '-c' in sys.argv else False
+profile = '--profile' in sys.argv or '-p' in sys.argv
 
 if '-h' in sys.argv or '--h' in sys.argv:
     from corpkit.env import help_text
@@ -32,4 +33,4 @@ if '-h' in sys.argv or '--h' in sys.argv:
 else:
     from corpkit.env import interpreter
     interpreter(debug=debug, fromscript=fromscript,
-                quiet=quiet, python_c_mode=command)
+                quiet=quiet, python_c_mode=command, profile=profile)
