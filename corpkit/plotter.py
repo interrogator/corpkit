@@ -479,11 +479,11 @@ def plotter(df,
             warnings.warn('No p-values calculated to show.\n\nUse keep_stats kwarg while editing to generate these values.')
     else:
         if there_are_p_vals:
-            dataframe.drop(statfields, axis=0, inplace = True, errors='ignore')
+            dataframe.drop(statfields, axis=0, inplace=True, errors='ignore')
 
     # make and set y label
     absolutes = True
-    if type(dataframe) == DataFrame:
+    if isinstance(dataframe, DataFrame):
         try:
             if not all([s.is_integer() for s in dataframe.iloc[0,:].values]):
                 absolutes = False
@@ -506,24 +506,24 @@ def plotter(df,
     
     # assume it's a single color, unless string denoting map
     cmap_or_c = 'color'
-    if colours is not False and type(colours) == str:
+    if isinstance(colours, str):
         cmap_or_c = 'colormap'
     from matplotlib.colors import LinearSegmentedColormap
-    if type(colours) == LinearSegmentedColormap:
+    if isinstance(colours, LinearSegmentedColormap):
         cmap_or_c = 'colormap'
 
     # for heatmaps, it's always a colormap
     if kind == 'heatmap':
         cmap_or_c = 'cmap'
         # if it's a defaulty string, set accordingly
-        if type(colours) == str:
+        if isinstance(colours, str):
             if colours.lower().startswith('diverg'):
                 colours = sns.diverging_palette(10, 133, as_cmap=True)
 
             # if default not set, do diverge for any df with a number < 0
             elif colours.lower() == 'default':
                 mn = dataframe.min()
-                if type(mn) == Series:
+                if isinstance(mn, Series):
                     mn = mn.min()
                 if mn < 0:
                     colours = sns.diverging_palette(10, 133, as_cmap=True)
@@ -626,9 +626,9 @@ def plotter(df,
                         'center': 10, 'o r': 2, 'outside right': 2, 'outside upper right': 2, 
                         'outside center right': 'center left', 'outside lower right': 'lower left'}
 
-            if type(legend_pos) == int:
+            if isinstance(legend_pos, int):
                 the_loc = legend_pos
-            elif type(legend_pos) == str:
+            elif isinstance(legend_pos, str):
                 try:
                     the_loc = possible[legend_pos]
                 except KeyError:
@@ -644,7 +644,7 @@ def plotter(df,
                 leg_options['bbox_to_anchor'] = (0.5, 0.5)
         
         # a bit of distance between legend and plot for outside legends
-        if type(legend_pos) == str:
+        if isinstance(legend_pos, str):
             if legend_pos.startswith('o'):
                 leg_options['borderaxespad'] = 1
 
@@ -945,7 +945,7 @@ def plotter(df,
     # add x label
     # this could be revised now!
     # if time series period, it's year for now
-    if type(dataframe.index) == pandas.tseries.period.PeriodIndex:
+    if isinstance(dataframe.index, pandas.tseries.period.PeriodIndex):
         x_label = 'Year'
 
     y_l = False
