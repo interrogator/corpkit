@@ -144,7 +144,8 @@ def interpreter(debug=False,
                 fromscript=False,
                 quiet=False,
                 python_c_mode=False,
-                profile=False):
+                profile=False,
+                loadcurrent=False):
 
     import os
 
@@ -1737,6 +1738,9 @@ def interpreter(debug=False,
 
     if python_c_mode:
         objs._interactive = False
+
+    if loadcurrent:
+        load_this(['all'])
     
     # the main loop, with exception handling
     while True:
