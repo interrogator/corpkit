@@ -100,7 +100,7 @@ from corpkit.constants import transshow, transobjs
 size = pd.util.terminal.get_terminal_size()
 pd.set_option('display.max_rows', 0)
 pd.set_option('display.max_columns', 0)
-pd.set_option('display.float_format', lambda x: '${:,.3f}'.format(x))
+pd.set_option('display.float_format', lambda x: '{:,.3f}'.format(x))
 
 # allow ctrl-r, etc
 readline.parse_and_bind('set editing-mode vi')
@@ -143,7 +143,8 @@ del os, atexit, readline, rlcompleter, save_history, history_path
 def interpreter(debug=False,
                 fromscript=False,
                 quiet=False,
-                python_c_mode=False):
+                python_c_mode=False,
+                profile=False):
 
     import os
 
@@ -425,6 +426,9 @@ def interpreter(debug=False,
             show_this([command])
         elif command == 'wordlist':
             print(objs.wordlist)
+        elif command.startswith('wordlist'):
+            o, l = command.split('.', 1) if '.' in command else command.split(':', 1)
+            print(getattr(objs.wordlists, l))
         elif command == 'query':
             show_this([command])
         else:
@@ -540,6 +544,7 @@ def interpreter(debug=False,
         transshow['ngrams'] = 'n'
         transshow['wordclass'] = 'x'
         transshow['wordclasses'] = 'x'
+        transshow['count'] = 'c'
 
         transshow.update(showplurals)
         transobjs.update(objsplurals)
@@ -593,9 +598,13 @@ def interpreter(debug=False,
                       'processes': processes}
 
             if lis.startswith('wordlist'):
-                return objs.wordlists.get(attrib)
+                lst = objs.wordlists.get(attrib)
             else:
-                return getattr(mapped.get(lis), attrib)
+                lst = getattr(mapped.get(lis), attrib)
+            if lst:
+                return lst
+            else:
+                print('Wordlist "%s" unrecognised.' % attrib)
 
         if val.isdigit():
             return int(val)
@@ -803,7 +812,8 @@ def interpreter(debug=False,
             dirs = ['\t%d: %s' % (i, x) for i, x in enumerate(dirs, start=1)]
             print ('\n'.join(dirs))
         elif tokens[0].startswith('store'):
-            print(objs.stored)
+            for k, v in objs.stored.items():
+                print(k, v)
         elif tokens[0].startswith('wordlists'):
             if '.' in tokens[0] or ':' in tokens[0]:
                 if ':' in tokens[0]:
@@ -1082,7 +1092,6 @@ def interpreter(debug=False,
             sortedd = thing_to_edit.edit(sort_by=val)
             if sortedd == 'linregress':
                 raise ValueError("scipy needs to be installed for linear regression sorting.")
-                return
             objs.edited = sortedd
             objs.totals = objs.edited.totals
             return objs.edited
@@ -1209,8 +1218,13 @@ def interpreter(debug=False,
             attr = denominator.split('.', 1)[-1]
             denominator = objs.postags[attr.upper()]
         elif denominator.startswith('stored'):
-            attr = denominator.split('.', 1)[-1]
+            if '[' in denominator:
+                attr = denominator.split('[', 1)[-1]
+                attr = denominator.rstrip("]").strip('"').strip("'")
+            else:
+                attr = denominator.split('.', 1)[-1]
             denominator = fetch_this([attr], unbound=True)
+            print(denominator)
         
         operation = dd.get(operation, operation)
 
@@ -1332,12 +1346,17 @@ def interpreter(debug=False,
         """
 
         from corpkit.other import load
-        if tokens[2] == 'result':
+        if tokens[-1] == 'result':
             objs.result = load(tokens[0])
-        if tokens[2] == 'concordance':
+        if tokens[-1] == 'concordance':
             objs.concordance = load(tokens[0])
-        if tokens[2] == 'edited':
+        if tokens[-1] == 'edited':
             objs.edited = load(tokens[0])
+        if 'all' in tokens:
+            from corpkit.other import load_all_results
+            loaded = load_all_results()
+            for k, v in loaded.items():
+                objs.stored[k] = v
 
     def interactive_listmaker():
         done_words = []
@@ -1348,6 +1367,10 @@ def interpreter(debug=False,
             if res:
                 if ',' in res:
                     words = [i.strip(', ') for i in res.split()]
+                    for w in words:
+                        done_words.append(w)
+                elif ' ' in res.strip():
+                    words = res.split()
                     for w in words:
                         done_words.append(w)
                 else:
@@ -1543,6 +1566,8 @@ def interpreter(debug=False,
 
            `store result as 'processes'`
 
+        To view the contents of the store, do `show store`.
+
         """
 
         to_store = getattr(objs, tokens[0])
@@ -1716,7 +1741,7 @@ def interpreter(debug=False,
     # the main loop, with exception handling
     while True:
         try:
-            if not fromscript and not python_c_mode:
+            if not fromscript and not python_c_mode and not profile:
                 output = INPUTFUNC(get_prompt(backslashed))
             
             elif fromscript:
@@ -1728,6 +1753,9 @@ def interpreter(debug=False,
                 if 'concordance' not in python_c_mode:
                     objs._do_conc = False
                 output = python_c_mode
+
+            elif profile:
+                output = 'quit'
 
             # terminate
             if output.lower() in ['exit', 'quit', 'exit()', 'quit()']:
