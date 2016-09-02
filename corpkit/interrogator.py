@@ -1222,7 +1222,7 @@ def interrogator(corpus,
     conc_results = defaultdict(list)
 
     # check if just counting, turn off conc if so
-    countmode = 'c' in show
+    countmode = 'c' in show or 'mc' in show
     if countmode:
         no_conc = True
         only_conc = False
