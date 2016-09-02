@@ -278,7 +278,7 @@ def editor(interrogation,
         from corpkit.dictionaries.process_types import Wordlist
         if skip_entries:
             if isinstance(skip_entries, (list, Wordlist)):
-                df = df.drop(list(skip_entries), axis=1)
+                df = df.drop(list(skip_entries), axis=1, errors='ignore')
             else:
                 df = df.loc[:,~df.columns.str.contains(skip_entries)]
         if just_entries:
@@ -288,9 +288,10 @@ def editor(interrogation,
                 df = df.loc[:,df.columns.str.contains(just_entries)]
         if merge_entries:
             for newname, crit in merge_entries.items():
-                if isinstance(merge_entries, (list, Wordlist)):
-                    summed = df[list(crit)].sum()
-                    df = df.drop(list(crit), axis=1)
+                if isinstance(crit, (list, Wordlist)):
+                    crit = [i for i in list(crit) if i in list(df.columns)]
+                    summed = df[list(crit)].sum(axis=1)
+                    df = df.drop(list(crit), axis=1, errors='ignore')
                 else:
                     summed = df.loc[:,df.columns.str.contains(crit)].sum(axis=1)
                     df = df.loc[:,~df.columns.str.contains(crit)]
@@ -299,7 +300,7 @@ def editor(interrogation,
             df = df.iloc[:,span_entries[0]:span_entries[1]]
         if skip_subcorpora:
             if isinstance(skip_subcorpora, (list, Wordlist)):
-                df = df.drop(list(skip_subcorpora), axis=0)
+                df = df.drop(list(skip_subcorpora), axis=0, errors='ignore')
             else:
                 df = df[~df.index.str.contains(skip_subcorpora)]
         if just_subcorpora:
@@ -310,9 +311,10 @@ def editor(interrogation,
         if merge_subcorpora:
             df = df.T
             for newname, crit in merge_subcorpora.items():
-                if isinstance(crit, (list, Wordlist)):    
-                    summed = df[list(crit)].sum()
-                    df = df.drop(list(crit), axis=1)
+                if isinstance(crit, (list, Wordlist)):
+                    crit = [i for i in list(crit) if i in list(df.columns)]
+                    summed = df[list(crit)].sum(axis=1)
+                    df = df.drop(list(crit), axis=1, errors='ignore')
                 else:
                     summed = df.loc[:,df.columns.str.contains(crit)].sum(axis=1)
                     df = df.loc[:,~df.columns.str.contains(crit)]                
@@ -700,7 +702,7 @@ def editor(interrogation,
             if len(df2.columns) > 1:
                 single_totals = False
             else:
-                df2 = Series(df2)
+                df2 = Series(df2.iloc[:,0])
         elif isinstance(df2, Series):
             single_totals = True
             #if operation == 'k':
@@ -931,16 +933,16 @@ def editor(interrogation,
             df = DataFrame(df)
 
     # delete non-appearing conc lines
-    if not hasattr(interrogation, 'concordance'):
-        lns = None
-    elif hasattr(interrogation, 'concordance') and interrogation.concordance is None:
-        lns = None
-    else:
-        col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
-        ind_crit = interrogation.concordance['c'].map(lambda x: x in list(df.index))
-        lns = interrogation.concordance[col_crit]
-        lns = lns.loc[ind_crit]
-        lns = Concordance(lns)
+    lns = None
+    if isinstance(getattr(interrogation, 'concordance', None), Concordance):
+        try:
+            col_crit = interrogation.concordance['m'].map(lambda x: x in list(df.columns))
+            ind_crit = interrogation.concordance['c'].map(lambda x: x in list(df.index))
+            lns = interrogation.concordance[col_crit]
+            lns = lns.loc[ind_crit]
+            lns = Concordance(lns)
+        except ValueError:
+            lns = None
     
     output = Interrogation(results=df, totals=total, query=locs, concordance=lns)
 
