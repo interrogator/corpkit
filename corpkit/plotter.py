@@ -613,7 +613,7 @@ def plotter(df,
     if legend:
         if num_to_plot > 6:
             if not kwargs.get('ncol'):
-                kwargs['ncol'] = int(num_to_plot / 7)
+                kwargs['ncol'] = num_to_plot // 7
         # kwarg options go in leg_options
         leg_options = {'framealpha': leg_alpha,
                        'shadow': kwargs.get('shadow', False),
