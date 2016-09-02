@@ -1,0 +1,26 @@
+.TH corpkit 1
+.SH NAME
+corpkit \- corpus linguistics interface
+.SH SYNOPSIS
+.B corpkit
+[\fB\-c\fR \fICOMMAND\fR]
+[\fB\-d\fR]
+[\fB\-h\fR]
+.IR [file]
+.SH DESCRIPTION
+.B corpkit
+builds and searches parsed and/or structured linguistic corpora. It also edits and visualises results, and manages projects.
+.SH OPTIONS
+.TP
+.BR " \-\-c COMMAND"\fR
+A quoted command or series of commands to pass to the corpkit interpreter. Use a semicolon to delimit each command. Disables interactivity and exits on completion.
+.TP
+.IR "file"\fR
+Pass in a script for the interpeter to run.
+.TP
+.BR "\-d, " \-\-debug\fR
+Debug mode: print info about how command was parsed.
+
+.TP
+.BR "\-h, " \-\-help\fR
+Show help.
