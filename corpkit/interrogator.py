@@ -1328,9 +1328,10 @@ def interrogator(corpus,
             if countmode:
                 count_results[subcorpus_name] += [result]            
             else:
-                _, _, result = zip(*result)
-                result = Counter(result)
-                results[subcorpus_name] += result
+                if result:
+                    results[subcorpus_name] += Counter([i[-1] for i in result])
+                else:
+                    results[subcorpus_name] += Counter()
 
             # update progress bar
             current_iter += 1
