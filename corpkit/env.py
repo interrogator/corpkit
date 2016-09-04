@@ -895,19 +895,23 @@ def interpreter(debug=False,
     def get_info(tokens):
         pass
 
-    def edit_conc(kwargs):
+    def edit_conc(conc, kwargs, varname=False):
         from corpkit.interrogation import Concordance
         for k, v in kwargs.items():
             if k == 'just_subcorpora':
-                objs.concordance = objs.concordance[objs.concordance['c'].str.contains(v)]
+                objs.concordance = conc[conc['c'].str.contains(v)]
             elif k == 'skip_subcorpora':
-                objs.concordance = objs.concordance[~objs.concordance['c'].str.contains(v)]
+                objs.concordance = conc[~conc['c'].str.contains(v)]
             elif k == 'just_entries':
-                objs.concordance = objs.concordance[objs.concordance['m'].str.contains(v)]
+                objs.concordance = conc[conc['m'].str.contains(v)]
             elif k == 'skip_entries':
-                objs.concordance = objs.concordance[~objs.concordance['m'].str.contains(v)]
+                objs.concordance = conc[~conc['m'].str.contains(v)]
         objs.concordance = Concordance(objs.concordance)
-
+        
+        # should this really happen?
+        if varname and varname in objs._protected.keys():
+            objs.named[varname] = objs.concordance
+        
         return objs.concordance
         #if objs._interactive:
         #    show_this(['concordance'])
@@ -971,7 +975,7 @@ def interpreter(debug=False,
 
         from corpkit.interrogation import Concordance
         if isinstance(thing_to_edit, Concordance):
-            edt = edit_conc(kwargs)
+            edt = edit_conc(thing_to_edit, kwargs, varnam=tokens[0])
         else:
             edt = thing_to_edit.edit(**kwargs)
         if isinstance(edt, Concordance):
@@ -1192,7 +1196,7 @@ def interpreter(debug=False,
         kwargs = process_kwargs(tokens)
         kwargs['tex'] = kwargs.get('tex', False)
         title = kwargs.pop('title', False)
-        objs.figure =objs._get(tokens[0])[1].visualise(title=title, kind=kind, **kwargs)
+        objs.figure = objs._get(tokens[0])[1].visualise(title=title, kind=kind, **kwargs)
         objs.figure.show()
         return objs.figure
 
@@ -1273,17 +1277,19 @@ def interpreter(debug=False,
            `parse corpus with speaker_segmentation and metadata and multiprocess as 2`
 
         """
-        if tokens[0] != 'corpus':
+        typ, to_parse = objs._get(tokens[0])
+        if typ != 'corpus':
             print('Command not understood. Use "set <corpusname>" and "parse corpus"')
-        if not objs.corpus:
+        if not to_parse:
             print('Corpus not set. use "set <corpusname>" on an unparsed corpus.')
             return
 
-        if objs.corpus.datatype != 'plaintext':
+        if to_parse.datatype != 'plaintext':
             print('Corpus is not plain text.')
             return
+
         kwargs = process_kwargs(tokens)
-        parsed = objs.corpus.parse(**kwargs)
+        parsed = to_parse.parse(**kwargs)
         if parsed:
             objs.corpus = parsed
         return
