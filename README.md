@@ -243,7 +243,7 @@ The variables `L`, `F` and so on are imported during `from corpkit import *`. Th
 >>> plt.show()
 ```
 
-There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/rst_docs/API-README.md). This document is fairly thorough, but now deprecated, because the docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
+There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/API-README.md). This document is fairly thorough, but now deprecated, because the docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
 
 ## Graphical interface
 
