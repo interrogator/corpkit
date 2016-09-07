@@ -1,23 +1,12 @@
 Setup
 ==============================
 
-*corpkit* comes with a dedicated interpreter, which receives commands in a natural language syntax like these:
-
-.. code-block:: bash
-
-   set mydata as corpus
-   search corpus for pos matching 'JJ.*'
-   plot result as line chart with title 'Ajectives'
-
-
-It's a little less powerful than the full Python API, but it is easier to use, especially if you don't know Python. You can also switch instantly from the interpreter to the full API, so you only need the API for the really tricky stuff.
+.. contents::
+   :local:
 
 .. note::
 
    Interpreter pages under construction.
-
-.. contents::
-   :local:
 
 Dependencies
 -------------
