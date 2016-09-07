@@ -944,10 +944,18 @@ class File(Corpus):
     
     @lazyprop
     def trees(self):
-        from nltk import Tree
-        from collections import OrderedDict
-        return OrderedDict({k: Tree.fromstring(v['parse']) \
-                            for k, v in sorted(self.document._metadata.items())})
+        """
+        Get an OrderedDict of Tree objects in a File
+        """
+        if self.datatype == 'conll':
+            from nltk import Tree
+            from collections import OrderedDict
+            return OrderedDict({k: Tree.fromstring(v['parse']) \
+                                for k, v in sorted(self.document._metadata.items())})
+        elif self.datatype == 'parse':
+            raise NotImplementedError('Not done yet, sorry.')
+        else:
+            raise AttributeError('Data must be parsed to get trees.')
 
     @lazyprop
     def plain(self):
