@@ -20,7 +20,7 @@ A more permanent solution is to use `save` and `load`:
    > ls saved_interrogations
    > load 'good_result' as result
 
-An alternative approach is to create variables using the ``call`` command
+An alternative approach is to create variables using the ``call`` command:
 
 .. code-block:: bash
 

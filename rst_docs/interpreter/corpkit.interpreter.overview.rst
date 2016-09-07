@@ -3,6 +3,19 @@
 Overview
 =======================
 
+*corpkit* comes with a dedicated interpreter, which receives commands in a natural language syntax like these:
+
+.. code-block:: bash
+
+   > set mydata as corpus
+   > search corpus for pos matching 'JJ.*'
+   > call result 'adjectives'
+   > edit adjectives by skipping subcorpora matching 'books'
+   > plot edited as line chart with title 'Adjectives'
+
+
+It's a little less powerful than the full Python API, but it is easier to use, especially if you don't know Python. You can also switch instantly from the interpreter to the full API, so you only need the API for the really tricky stuff.
+
 The syntax of the interpreter is based around *objects*, which you do things to, and *commands*, which are actions performed upon the objects. The example below uses the `search` command on a `corpus` object, which produces new objects, called `result`, `concordance`, `totals` and `query`. As you can see, very complex searches can be performed using an English-like syntax:
 
 .. code-block:: bash
@@ -27,7 +40,6 @@ This shows us results for each subcorpus:
    chapter7        6          2           6        1         1       3   ...
    chapter8        3          1           2        2         1       1   ...
    chapter9        5          7           1        4         6       3   ...
-
 
 
 Objects
@@ -59,7 +71,7 @@ The most common objects you'll be using are:
 | `previous`    | Object created before last                    |
 +---------------+-----------------------------------------------+
 
-When you start the interperter, these are all empty. You'll need to use commands to put data in their namespace.
+When you start the interperter, these are all empty. You'll need to use commands to put data in their namespace. You can also create your own object names using the ``call`` command. 
 
 Commands 
 -----------
@@ -86,6 +98,8 @@ You do things to the objects via commands. Each command has its own syntax, desi
 | `plot`          | Visualise result or edited result                            | `plot result/edited as line chart with [options]*`                                         |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `show`          | Show any object                                              | `show object`                                                                              |
++-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| `call`          | Name an object                                               | `call object 'name'`                                                                       |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `export`        | Export result, edited result or concordance to string/file   | `export result to string/csv/latex/file <filename>`                                        |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
