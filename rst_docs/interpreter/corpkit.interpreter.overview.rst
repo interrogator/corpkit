@@ -52,7 +52,7 @@ The most common objects you'll be using are:
 +===============+===============================================+
 | `corpus`      | Dataset selected for parsing or searching     |
 +---------------+-----------------------------------------------+
-| `result`     | Search output                                 |
+| `result`      | Search output                                 |
 +---------------+-----------------------------------------------+
 | `edited`      | Results after sorting, editing or calculating |
 +---------------+-----------------------------------------------+
