@@ -11,7 +11,7 @@ Overview
    > search corpus for pos matching 'JJ.*'
    > call result 'adjectives'
    > edit adjectives by skipping subcorpora matching 'books'
-   > plot edited as line chart with title 'Adjectives'
+   > plot edited as line chart with title as 'Adjectives'
 
 
 It's a little less powerful than the full Python API, but it is easier to use, especially if you don't know Python. You can also switch instantly from the interpreter to the full API, so you only need the API for the really tricky stuff.
@@ -21,9 +21,9 @@ The syntax of the interpreter is based around *objects*, which you do things to,
 .. code-block:: bash
 
    > search corpus for lemma matching '^t' and pos matching 'VB' \
-   ... excluding words matching 'try' \
-   ... showing word and dependent-word \
-   ... with preserve_case
+   ...     excluding words matching 'try' \
+   ...     showing word and dependent-word \
+   ...     with preserve_case
    > result
 
 This shows us results for each subcorpus:
@@ -99,7 +99,7 @@ You do things to the objects via commands. Each command has its own syntax, desi
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `show`          | Show any object                                              | `show object`                                                                              |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| `call`          | Name an object                                               | `call object 'name'`                                                                       |
+| `call`          | Name an object (i.e. make a variable)                        | `call object '<name>'`                                                                     |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `export`        | Export result, edited result or concordance to string/file   | `export result to string/csv/latex/file <filename>`                                        |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
