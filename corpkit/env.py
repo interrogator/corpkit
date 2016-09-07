@@ -1792,6 +1792,13 @@ def interpreter(debug=False,
         """
         exec(output)
 
+    def do_bash(output):
+        """
+        Run text as shell command
+        """
+        import os
+        os.system(output.lstrip('! '))
+
     # backslashed allows line breaks with backslashes ala python.
     # it's a bit of a hack, but seems to work pretty well
 
@@ -1846,6 +1853,10 @@ def interpreter(debug=False,
                 continue
             else:
                 backslashed = ''
+
+            if output.startswith('!'):
+                do_bash(output)
+                continue
 
              # is this just a terrible idea?
             if output.startswith('py '):
