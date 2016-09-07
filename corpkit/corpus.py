@@ -941,6 +941,13 @@ class File(Corpus):
             return parse_conll(self.path)
         else:
             return self.read()
+    
+    @lazyprop
+    def trees(self):
+        from nltk import Tree
+        from collections import OrderedDict
+        return OrderedDict({k: Tree.fromstring(v['parse']) \
+                            for k, v in sorted(self.document._metadata.items())})
 
     @lazyprop
     def plain(self):
