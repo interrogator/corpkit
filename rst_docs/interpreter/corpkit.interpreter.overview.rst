@@ -13,8 +13,12 @@ Overview
    > edit adjectives by skipping subcorpora matching 'books'
    > plot edited as line chart with title as 'Adjectives'
 
-
 It's a little less powerful than the full Python API, but it is easier to use, especially if you don't know Python. You can also switch instantly from the interpreter to the full API, so you only need the API for the really tricky stuff.
+
+.. note::
+
+   Interpreter documentation still under construction. For now, feel free to file an Issue on GitHub if there's something you think really needs explanation!
+   
 
 The syntax of the interpreter is based around *objects*, which you do things to, and *commands*, which are actions performed upon the objects. The example below uses the `search` command on a `corpus` object, which produces new objects, called `result`, `concordance`, `totals` and `query`. As you can see, very complex searches can be performed using an English-like syntax:
 
@@ -128,7 +132,7 @@ Prompt features
 -----------
 
 * You can use `history`, `clear`, `ls` and `cd` commands as you would in the shell
-* You can execute arbitrary bash commands by beginning the line with an exclamation point (e.g. `!rm data/*`)
+* You can execute arbitrary bash commands by beginning the line with an exclamation point (e.g. ``!rm data/*``)
 * You can use semicolons to put multiple commands on a line (currently needs a space **before and after** the semicolon)
 * There is no piping or output redirection (yet), but you can use the `export` and `save` commands to export results
 * You can use backslashes to continue writing on the next line
@@ -137,6 +141,7 @@ The below is therefore a possible (but terrible) way to write code in *corpkit*:
 
 .. code-block:: bash
 
-   > !du -h data ; set mycorp ; search corpus for words matching any \
-   ... excluding wordlists.closedclass
+   > !du -h data ; set mycorp ; search corpus for words \
+   ... matching any \
+   ... excluding wordlists.closedclass \
    ... showing lemma and pos ; concordance

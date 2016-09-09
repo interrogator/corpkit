@@ -4,10 +4,6 @@ Setup
 .. contents::
    :local:
 
-.. note::
-
-   Interpreter pages under construction.
-
 Dependencies
 -------------
 
