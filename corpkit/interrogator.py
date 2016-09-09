@@ -1020,6 +1020,11 @@ def interrogator(corpus,
                     conc_df = conc_df.reset_index(drop=True)
 
             locs['corpus'] = corpus.name
+
+            # there is an error in xml conc that duplicates results
+            # i'm not maintaining it anymore, but i'll fix it with this
+            if datatype == 'parse':
+                conc_df = conc_df.drop_duplicates().reset_index()
             conc_df = Concordance(conc_df[:maxconc])
             try:
                 conc_df.query = locs

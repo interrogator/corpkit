@@ -23,3 +23,24 @@ Search examples
    > search corpus for pos matching NNP showing ngram-word and pos with gramsize as 3
    > etc.
 
+Under the surface, what you are doing is selecting a `Corpus` object to search, and then generating arguments for the :func:`~corpkit.corpus.Corpus.interrogate` method. These arguments, in order, are:
+
+1. `search` criteria
+2. `exclude` criteria
+3. `show` values
+4. Keyword arguments
+
+Here is a syntax example that might help you see how the command gets parsed. Note that there are two ways of setting `exclude` criteria.
+
+.. code-block:: bash
+
+   > search corpus \                                    # select object
+   ... for words matching r'ing$' and \                 # search criterion
+   ... not lemma matching 'being' and \                 # exclude criterion
+   ... pos matching 'NN' \                              # seach criterion
+   ... excluding words matching wordlists.closedclass \ # exclude criterion
+   ... showing lemma and pos and function \             # show values
+   ... with preserve_case and \                         # boolean keyword arg
+   ... not no_punct and \                               # bool keyword arg
+   ... excludemode as 'all'                             # keyword arg
+

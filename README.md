@@ -138,7 +138,7 @@ You'll get a lovely new prompt into which you can type commands:
 corpkit@junglebook:no-corpus> 
 ```
 
-Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
+Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. As in `IPython`, any command beginning with an exclamation mark will be executed by the shell. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
 
 ### Making projects and parsing corpora
 
@@ -165,7 +165,7 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 # further arguments and dynamic structuring
 > search corpus for word matching any \
-... with pagenum as subcorpora and preserve_case
+... with subcorpora as pagenum and preserve_case
 
 # show concordance lines
 > show concordance with window as 50 and columns as LMR
