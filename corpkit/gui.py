@@ -3788,10 +3788,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 ppie_but.config(state=DISABLED)
 
             if charttype.get().startswith('bar'):
-                stackbut.config(state=NORMAL)
+                #stackbut.config(state=NORMAL)
                 filledbut.config(state=NORMAL)
             else:
-                stackbut.config(state=DISABLED)
+                #stackbut.config(state=DISABLED)
                 filledbut.config(state=DISABLED)
 
             # can't do log y with area according to mpl
@@ -3890,7 +3890,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         stackd = IntVar()
         stackbut = Checkbutton(plot_option_frame, text="Stacked", variable=stackd, onvalue=True, offvalue=False, width=13)
         stackbut.grid(column=1, row=14, sticky=E)
-        stackbut.config(state=DISABLED)
+        #stackbut.config(state=DISABLED)
 
         part_pie = IntVar()
         ppie_but = Checkbutton(plot_option_frame, text="Partial pie", variable=part_pie, onvalue=True, offvalue=False)
