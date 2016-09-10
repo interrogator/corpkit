@@ -966,9 +966,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             for index, item in enumerate(all_items):
                 # check if saved
                 if not lists:
-                    issavedfile = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
-                    issaveddir = os.path.isdir(os.path.join(savepath, urlify(item)))
-                    if issaveddir or issavedfile:
+                    # files or directories with current corpus in name or without
+                    newn = current_corpus.get() + '-' + urlify(item) + ext
+                    a = os.path.isfile(os.path.join(savepath, urlify(item) + ext))
+                    b = os.path.isdir(os.path.join(savepath, urlify(item)))
+                    c = os.path.isfile(os.path.join(savepath, newn))
+                    d = os.path.isdir(os.path.join(savepath, newn))
+                    if any(x for x in [a, b, c, d]):
                         issaved = True
                     else:
                         issaved = False
@@ -3792,7 +3796,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             # can't do log y with area according to mpl
             if charttype.get() == 'area':
-                logybut.unselect()
+                logybut.deselect()
                 logybut.config(state=DISABLED)
                 filledbut.config(state=NORMAL)
             else:
