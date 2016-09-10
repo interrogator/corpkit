@@ -196,7 +196,7 @@ def interrogator(corpus,
             speak_tree = [(x['speaker'], x['parse']) for x in df._metadata.values()]
             
         if speak_tree:
-            speak, tree = zip(*speak_tree)
+            speak, tree = list(zip(*speak_tree))
         else:
             speak, tree = [], []
         
@@ -372,7 +372,7 @@ def interrogator(corpus,
 
         word_index = show.index('w') if 'w' in show else 0
 
-        for (f, sk, whole), mid in zip(wholes, middle_column_result):
+        for (f, sk, whole), mid in list(zip(wholes, middle_column_result)):
             mid = mid[-1]
             joined = '-join-'.join([f, sk, whole, mid])
             if joined not in duplicates:
@@ -382,7 +382,7 @@ def interrogator(corpus,
 
         # split into start, middle and end, dealing with multiple occurrences
         # this fails when multiple show values are given, because they are slash separated...
-        for (f, sk, whole), mid in zip(unique_wholes, unique_middle_column_result):
+        for (f, sk, whole), mid in list(zip(unique_wholes, unique_middle_column_result)):
             mid = mid.split('/')[word_index]
             reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', \
                              re.IGNORECASE | re.UNICODE)
@@ -505,7 +505,7 @@ def interrogator(corpus,
             lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
         else:
             lemmata = [None for i in results]
-        for word, lemma in zip(results, lemmata):
+        for word, lemma in list(zip(results, lemmata)):
             bits = []
             if exclude and exclude.get('w'):
                 if len(list(exclude.keys())) == 1 or excludemode == 'any':
@@ -552,7 +552,7 @@ def interrogator(corpus,
             joined = '/'.join(bits)
             done.append(joined)
 
-        done = zip(fnames, snames, done)
+        done = list(zip(fnames, snames, done))
         
         return done
 
