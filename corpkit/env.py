@@ -87,9 +87,13 @@ from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 import os
 import traceback
 import pandas as pd
-import readline
+try:
+    import gnureadline as readline
+except ImportError:
+    import readline
+
 import atexit
-import rlcompleter
+#import rlcompleter
 
 import corpkit
 from corpkit import *
@@ -105,6 +109,18 @@ pd.set_option('display.float_format', lambda x: '{:,.3f}'.format(x))
 # allow ctrl-r, etc
 readline.parse_and_bind('set editing-mode vi')
 
+# command completion
+poss = ['testing', 'search', 'concordance']
+from corpkit.completer import Completer
+
+import gnureadline as readline
+
+completer = Completer(poss)
+
+readline.set_completer(completer.complete)
+
+readline.parse_and_bind('tab: complete')
+
 # this code makes it possible to remember history from previous sessions
 history_path = os.path.expanduser("~/.pyhistory")
 
@@ -112,7 +128,10 @@ def save_history(history_path=history_path):
     """
     On exit, add previous commands to history file
     """
-    import readline
+    try:
+        import gnureadline as readline
+    except ImportError:
+        import readline
 
     try:
         readline.remove_history_item(readline.get_current_history_length() - 1)
@@ -132,12 +151,92 @@ if os.path.exists(history_path):
 atexit.register(save_history)
 
 # tab completion
-readline.parse_and_bind('tab: complete')
 
 # ctrl r search
 readline.parse_and_bind("bind ^R em-inc-search-prev")
 
-del os, atexit, readline, rlcompleter, save_history, history_path
+del os, atexit, save_history, history_path
+#del rlcompleter
+
+class Objects(object):
+    """
+    In here are all of the major variables being used by the interpreter
+    This is much nicer than using globals
+    """
+
+    def __init__(self):
+
+        # get dict of all possible wordlists
+        from corpkit.dictionaries.roles import roles
+        from corpkit.dictionaries.wordlists import wordlists
+        from corpkit.dictionaries.process_types import processes
+        from collections import defaultdict
+        wl = wordlists._asdict()
+        try:
+            wl.update(roles.__dict__)
+        except AttributeError:
+            wl.update(roles._asdict())
+        wl.update(processes.__dict__)
+
+        self._protected = ['result', 'previous', 'edited', 'corpus', 'concordance',
+                          'query', 'features', 'postags', 'wordclasses', 'stored',
+                          'figure', 'totals', 'wordlists', 'wordlist', 'matching',
+                          'showing', 'excluding', 'not', 'as', 'with', 'and', 'by',
+                          'm', 'l', 'r', 'conc', 'keeping', 'skipping', 'entries', 'subcorpora',
+                          'merging', 'k'
+                          '_in_a_project', '_previous_type', '_old_concs',
+                          '_conc_colours', '_conc_kwargs', '_do_conc',
+                          '_interactive', '_decimal', '_protected']
+                          
+        # main variables the user might access
+        self.result = None
+        self.previous = None
+        self.edited = None
+        self.corpus = None
+        self.concordance = None
+        self.query = None
+        self.features = None
+        self.postags = None
+        self.wordclasses = None
+        self.stored = {}
+        self.figure = None
+        self.totals = None
+        self.wordlists = wl
+        self.wordlist = None
+        self.named = {}
+
+        # system toggles and references to older data
+        self._in_a_project = None
+        self._previous_type = None
+        self._old_concs = []
+        self._conc_colours = defaultdict(dict)
+        self._conc_kwargs = {'n': 999}
+
+        # user settings  (more to come?)
+        self._do_conc = True
+        self._interactive = True
+        self._decimal = 3
+
+    def _get(self, name):
+        """
+        Get an object, item from store or wordlist
+        """
+        if name.startswith('wordlist') or name.startswith('stored'):
+            ob, attr = name.split('.', 1) if '.' in name else name.split(':', 1)
+            return ob, getattr(self, ob).get(attr)
+        elif name.startswith('features'):
+            attr = name.split('.', 1)[-1]
+            return 'features', objs.features[attr.title()]
+        elif name.startswith('wordclasses'):
+            attr = name.split('.', 1)[-1]
+            return 'wordclasses', objs.wordclasses[attr.title()]
+        elif name.startswith('postags'):
+            attr = name.split('.', 1)[-1]
+            return 'postags', objs.postags[attr.upper()]
+        elif name in self._protected:
+            return name, getattr(self, name, None)
+        else:
+            return self.named.get(name, (None, None))
 
 
 def interpreter(debug=False,
@@ -159,83 +258,6 @@ def interpreter(debug=False,
              "                            (((-'\ .' /\n    "\
              "                          _____..'  .'\n    "\
              "                         '-._____.-'\n"
-
-    class Objects(object):
-        """
-        In here are all of the major variables being used by the interpreter
-        This is much nicer than using globals
-        """
-
-        def __init__(self):
-
-            # get dict of all possible wordlists
-            from corpkit.dictionaries.roles import roles
-            from corpkit.dictionaries.wordlists import wordlists
-            from corpkit.dictionaries.process_types import processes
-            from collections import defaultdict
-            wl = wordlists._asdict()
-            try:
-                wl.update(roles.__dict__)
-            except AttributeError:
-                wl.update(roles._asdict())
-            wl.update(processes.__dict__)
-
-            self._protected = ['result', 'previous', 'edited', 'corpus', 'concordance',
-                              'query', 'features', 'postags', 'wordclasses', 'stored',
-                              'figure', 'totals', 'wordlists', 'wordlist',
-                              '_in_a_project', '_previous_type', '_old_concs',
-                              '_conc_colours', '_conc_kwargs', '_do_conc',
-                              '_interactive', '_decimal', '_protected']
-                              
-            # main variables the user might access
-            self.result = None
-            self.previous = None
-            self.edited = None
-            self.corpus = None
-            self.concordance = None
-            self.query = None
-            self.features = None
-            self.postags = None
-            self.wordclasses = None
-            self.stored = {}
-            self.figure = None
-            self.totals = None
-            self.wordlists = wl
-            self.wordlist = None
-            self.named = {}
-
-            # system toggles and references to older data
-            self._in_a_project = None
-            self._previous_type = None
-            self._old_concs = []
-            self._conc_colours = defaultdict(dict)
-            self._conc_kwargs = {'n': 999}
-
-            # user settings  (more to come?)
-            self._do_conc = True
-            self._interactive = True
-            self._decimal = 3
-
-        def _get(self, name):
-            """
-            Get an object, item from store or wordlist
-            """
-            if name.startswith('wordlist') or name.startswith('stored'):
-                ob, attr = name.split('.', 1) if '.' in name else name.split(':', 1)
-                return ob, getattr(self, ob).get(attr)
-            elif name.startswith('features'):
-                attr = name.split('.', 1)[-1]
-                return 'features', objs.features[attr.title()]
-            elif name.startswith('wordclasses'):
-                attr = name.split('.', 1)[-1]
-                return 'wordclasses', objs.wordclasses[attr.title()]
-            elif name.startswith('postags'):
-                attr = name.split('.', 1)[-1]
-                return 'postags', objs.postags[attr.upper()]
-            elif name in self._protected:
-                return name, getattr(self, name, None)
-            else:
-                return self.named.get(name, (None, None))
 
     objs = Objects()
 
@@ -1658,20 +1680,29 @@ def interpreter(debug=False,
         it is a key-value pair in objs.named
 
         """
-        thing = objs._get(tokens[0])[1]
+        # get the object if it exists somewhere
+        originally_was, thing = objs._get(tokens[0])
+
         if thing is None or thing is False:
             thing = tokens[0]
             originally_was = 'string'
             #print('Nothing stored in %s to name.' % tokens[0])
             #return
+        
+        # this should just be objects!
         if tokens[0] in objs._protected:
             originally_was = tokens[0]
-        elif tokens[0] in objs.named.keys():
-            originally_was, thing = thing
+        
+        #elif tokens[0] in objs.named.keys():
+        #    pass
+        
         from corpkit.process import makesafe
         name = makesafe(tokens[-1])
-        objs.named[name] = (originally_was, thing)
-        print('%s named "%s".' % (tokens[0], name))
+        if name in objs._protected + list(get_command.keys()):
+            print('The name "%s" is protected, sorry.' % name)
+        else:
+            objs.named[name] = (originally_was, thing)
+            print('%s named "%s".' % (tokens[0], name))
 
     def run_previous(tokens):
         import shlex
@@ -1813,7 +1844,7 @@ def interpreter(debug=False,
 
     if loadcurrent:
         load_this(['all'])
-    
+
     # the main loop, with exception handling
     while True:
         try:
@@ -1904,7 +1935,7 @@ def interpreter(debug=False,
 
         except EOFError:
             import sys
-            print('\n\nBye!\n')
+            #print('\n\nBye!\n')
             sys.exit(0)
         except SystemExit:
             raise
