@@ -420,10 +420,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         except AttributeError:
             pass
 
+        import locale
+        if sys.platform == 'win32':
+            try:
+                locale.setlocale(locale.LC_ALL, 'english-usa')
+            except:
+                pass
+        else:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
         # unused in the gui, dummy imports for pyinstaller
         #import seaborn
-        import locale
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
         from hashlib import md5
         import chardet
         import pyparsing
