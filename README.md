@@ -128,8 +128,8 @@ As explained earlier, there are three ways to use the tool. Each has unique stre
 The first way to use *corpkit* is by entering its natural language interpreter. To activate it, use the `corpkit` command:
 
 ```shell
-cd junglebook
-corpkit
+$ cd junglebook
+$ corpkit
 ```
 
 You'll get a lovely new prompt into which you can type commands: 
@@ -138,7 +138,7 @@ You'll get a lovely new prompt into which you can type commands:
 corpkit@junglebook:no-corpus> 
 ```
 
-Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, and `ls` and `cd` commands. As in `IPython`, any command beginning with an exclamation mark will be executed by the shell. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
+Generally speaking, it has the comforts of home, such as history, search, backslash line breaking, variable creation and `ls` and `cd` commands. As in `IPython`, any command beginning with an exclamation mark will be executed by the shell. You can also write scripts and execute them with `corpkit script.ck`, or `./script.ck` if you have a shebang.
 
 ### Making projects and parsing corpora
 
@@ -158,14 +158,14 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 ```shell
 # search and exclude
 > search corpus for governor-function matching 'root' \
-... excluding governor-lemma matching 'be'
+...    excluding governor-lemma matching 'be'
 
 # show pos, lemma, index, (e.g. 'NNS/thing/3')
 > search corpus for pos matching '^N' showing pos and lemma and index
 
 # further arguments and dynamic structuring
 > search corpus for word matching any \
-... with subcorpora as pagenum and preserve_case
+...    with subcorpora as pagenum and preserve_case
 
 # show concordance lines
 > show concordance with window as 50 and columns as LMR
@@ -177,12 +177,16 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 > calculate result from concordance
 ```
 
-### Editing results
+### Variables, editing results
 
 ```shell
+
+# variable naming
+> call result root_deps
 # skip some numerical subcorpora
-> edit result by skipping subcorpora matching [1,2,3,4,5]
-> calculate result as percentage of self
+> edit root_deps by skipping subcorpora matching [1,2,3,4,5]
+# make relative frequencies
+> calculate edited as percentage of self
 # use scipy to calculate trends and sort by them
 > sort edited by decrease
 ```
@@ -191,9 +195,9 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 ```shell
 > plot edited as line chart \
-... with x_label as 'Subcorpus' and \
-... y_label as 'Frequency' and \
-... colours as 'summer'
+...    with x_label as 'Subcorpus' and \
+...    y_label as 'Frequency' and \
+...    colours as 'summer'
 ```
 
 ### Switching interfaces
@@ -277,7 +281,3 @@ Twitter: [@interro_gator](https://twitter.com/interro_gator)
 ## Cite
 
 > `McDonald, D. (2015). corpkit: a toolkit for corpus linguistics. Retrieved from https://www.github.com/interrogator/corpkit. DOI: http://doi.org/10.5281/zenodo.28361`
-
-```
-
-```

@@ -130,7 +130,8 @@ def make_corpus(unparsed_corpus_path,
     check_do_folderise = False
     do_folderise = kwargs.get('folderise', None)
     if can_folderise(unparsed_corpus_path):
-        if do_folderise is None:
+        import __main__ as main
+        if do_folderise is None and not hasattr(main, '__file__'):
             check_do_folderise = INPUTFUNC("Your corpus has multiple files, but no subcorpora. "\
                                  "Would you like each file to be treated as a subcorpus? (y/n) ")
         if check_do_folderise or do_folderise:
@@ -183,7 +184,8 @@ def make_corpus(unparsed_corpus_path,
             if restart:
                 restart = newpath
             if isdir(newpath) and not root:
-                if not restart:
+                import __main__ as main
+                if not restart and not hasattr(main, '__file__'):
                     ans = INPUTFUNC('\n Path exists: %s. Do you want to overwrite? (y/n)\n' %newpath)
                     if ans.lower().strip()[0] == 'y':
                         shutil.rmtree(newpath)
