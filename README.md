@@ -221,29 +221,50 @@ Using straight Python is the most powerful way to use *corpkit*, because you can
 ### instantiate corpus
 >>> corp = Corpus('chapters-parsed')
 
-### search for processes, excluding closed class words,
+### search for anything participant with a governor that is 
+### a process, excluding closed class words
 ### and showing lemma forms alongside dependency function
 ### also, generate a concordance
->>> proc = corp.interrogate(search={F: roles.process},
+
+>>> sch = {GF: roles.process, F: roles.actor}
+>>> part = corp.interrogate(search=sch,
 ...                         exclude={W: wordlists.closedclass},
-...                         show=[L, F],
+...                         show=[L],
 ...                         conc=True)
 ```
 
-The variables `L`, `F` and so on are imported during `from corpkit import *`. They are simply lowercase strings (i.e. `L == 'l'`)
+You get an `Interrogation` object back, with a `results` attribute that is a Pandas DataFrame: 
+
+```
+          daisy  gatsby  tom  wilson  eye  man  jordan  voice  michaelis  \
+chapter1     13       2    6       0    3    3       0      2          0   
+chapter2      1       0   12      10    1    1       0      0          0   
+chapter3      0       3    0       0    3    8       6      1          0   
+chapter4      6       9    2       0    1    3       1      1          0   
+chapter5      8      14    0       0    3    3       0      2          0   
+chapter6      7      14    9       0    1    2       0      3          0   
+chapter7     26      20   35      10   12    3      16      9          5   
+chapter8      5       4    1      10    2    2       0      1         10   
+chapter9      1       1    1       0    3    3       1      1          0   
+```
 
 ### Edit and visualise the result
 
+Below, we make normalised frequencies and plot:
+
 ```python
 ### calculate and sort---this sort requires scipy
->>> proc = proc.edit('%', SELF, sort_by='increase')
+>>> part = part.edit('%', SELF)
 
 ### make line subplots for the first nine results
->>> plt = proc.visualise('Processes, increasing', subplots=True, layout=(3,3))
+>>> plt = part.visualise('Processes, increasing', subplots=True, layout=(3,3))
 >>> plt.show()
 ```
 
-There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/API-README.md). This document is fairly thorough, but now deprecated, because the docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
+<img style="float:left" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/actors.png" />
+<br>
+
+There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/API-README.md). This document is fairly thorough, but now deprecated, because the official docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
 
 ## Graphical interface
 
