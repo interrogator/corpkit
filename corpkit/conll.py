@@ -430,6 +430,7 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
     conc_lines = []
     fname = kwargs.get('filename', '')
     ngram_mode = kwargs.get('ngram_mode')
+    add_meta = kwargs.get('show_conc_metadata')
     
     if not conc:
         return conc_lines
@@ -452,8 +453,18 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
                 start = ' '.join(list(series.loc[s,:first]))
                 end = ' '.join(list(series.loc[s,last+1:]))
             middle = ' '.join(series[s][first:last])
+
             sname = metadata[s]['speaker']
-            conc_lines.append([fname, sname, start, middle, end])
+            lin = [fname, sname, start, middle, end]
+            for k, v in sorted(metadata[s].items()):
+                if k in ['speaker', 'parse', 'sent_id']:
+                    continue
+                if isinstance(add_meta, list):
+                    if k in add_meta:
+                        lin.append(v)
+                elif add_meta:
+                    lin.append(v)
+            conc_lines.append(lin)
         return conc_lines
 
     for s, i in sorted(set(matches)):
@@ -470,8 +481,21 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
 
         if not isinstance(middles, pd.core.series.Series):
             middles = [middles]
-        for middle in middles:        
-            conc_lines.append([fname, sname, start, middle, end])
+        for middle in middles:
+           
+            lin = [fname, sname, start, middle, end]
+
+            for k, v in sorted(metadata[s].items()):
+
+                if k in ['speaker', 'parse', 'sent_id']:
+                    continue
+                if isinstance(add_meta, list):
+                    if k in add_meta:
+                        lin.append(v)
+                elif add_meta:
+                    lin.append(v)
+
+            conc_lines.append(lin)
 
     return conc_lines
 
@@ -760,6 +784,7 @@ def pipeline(f,
 
     # if working by metadata feature,
     feature = kwargs.get('by_metadata', False)
+    show_conc_metadata = kwargs.get('show_conc_metadata')
 
     resultdict = {}
     concresultdict = {}
@@ -770,8 +795,15 @@ def pipeline(f,
         all_cats = set([i.get(feature, 'none') for i in df._metadata.values()])
         for category in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
-            r, c = pipeline(False, search, show, exclude=exclude, searchmode=searchmode, excludemode=excludemode,
-                        conc=conc, coref=coref, from_df=new_df, by_metadata=False)
+            r, c = pipeline(False, search, show,
+                            exclude=exclude,
+                            searchmode=searchmode,
+                            excludemode=excludemode,
+                            conc=conc,
+                            coref=coref,
+                            from_df=new_df,
+                            by_metadata=False,
+                            show_conc_metadata=show_conc_metadata)
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict

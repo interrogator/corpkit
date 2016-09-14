@@ -48,6 +48,7 @@ def interrogator(corpus,
     by_metadata = kwargs.pop('by_metadata', False)
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
+    show_conc_metadata = kwargs.pop('show_conc_metadata', False)
 
     if subcorpora:
         by_metadata = subcorpora
@@ -56,6 +57,11 @@ def interrogator(corpus,
     locs = locals().copy()
     locs.update(kwargs)
     locs.pop('kwargs', None)
+
+    # so you can do corpus.search('features')
+    if search == 'features':
+        search = 'v'
+        query = 'any'
 
     if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')
@@ -979,12 +985,37 @@ def interrogator(corpus,
         else:
             print(finalstring)
 
+    def determine_conc_colnames(f):
+    
+        if PYTHON_VERSION == 2:
+            base = 'c f s l m r'.encode('utf-8').split()
+        else:
+            base = 'c f s l m r'.split() 
+        
+        if show_conc_metadata:
+            from corpkit.conll import parse_conll
+            meta = parse_conll(f.path)._metadata[1]
+
+            if isinstance(show_conc_metadata, list):
+                meta = [i for i in list(meta.keys()) if i in show_conc_metadata]
+            elif show_conc_metadata is True:
+                meta = list(meta.keys())
+            for i in meta:
+                if i in ['speaker', 'sent_id', 'parse']:
+                    continue
+                if PYTHON_VERSION == 2:
+                    base.append(i.encode('utf-8'))
+                else:
+                    base.append(i)
+        return base
 
     def make_conc_obj_from_conclines(conc_results):
         """
         Turn conclines into DataFrame
         """
         from corpkit.interrogation import Concordance
+
+        pindex = conc_col_names
         all_conc_lines = []
         for sc_name, resu in sorted(conc_results.items()):
             if only_unique:
@@ -992,15 +1023,12 @@ def interrogator(corpus,
             else:
                 unique_results = resu
             #make into series
-            if PYTHON_VERSION == 2:
-                pindex = 'c f s l m r'.encode('utf-8').split()
-            else:
-                pindex = 'c f s l m r'.split()
-            for fname, spkr, start, word, end in unique_results:
+            for lin in unique_results:
                 #spkr = str(spkr, errors = 'ignore')
-                fname = os.path.basename(fname)
-                ser = [sc_name, fname, spkr, start, word, end]
-                all_conc_lines.append(Series(ser, index=pindex))
+                if not subcorpora:
+                    lin[0] = os.path.basename(lin[0])
+                lin.insert(0, sc_name)
+                all_conc_lines.append(Series(lin, index=pindex))
 
         if random:
             from random import shuffle
@@ -1078,11 +1106,10 @@ def interrogator(corpus,
         else:
             line[0] = f.name
         if not preserve_case:
-            line[3:] = [x.lower() for x in line[3:]]
+            line[2:5] = [x.lower() for x in line[2:5]]
         if spelling:
-            line = [correct_spelling(b) for b in line]
+            line[2:5] = [correct_spelling(b) for b in line[2:5]]
         return line
-
 
     def make_progress_bar():
         """generate a progress bar"""
@@ -1286,6 +1313,11 @@ def interrogator(corpus,
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar()
 
+    if conc:
+        first_f = list(to_iterate_over.values())[0][0]
+        conc_col_names = determine_conc_colnames(first_f)
+
+
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
 
@@ -1379,6 +1411,7 @@ def interrogator(corpus,
                                              maxconc=(maxconc, numconc),
                                              is_a_word=is_a_word,
                                              by_metadata=by_metadata,
+                                             show_conc_metadata=show_conc_metadata,
                                              **kwargs
                                             )
                     # deal with symbolic structures
@@ -1467,7 +1500,6 @@ def interrogator(corpus,
                                         res = [i[-1].lower() for i in res]
                                     else:
                                         res = [i.lower() for i in res]
-
                         if spelling:
                             if not statsmode:
                                 res = [correct_spelling(r) for r in res]

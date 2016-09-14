@@ -23,7 +23,6 @@ class Corpus(object):
         import glob
         import os
         from os.path import join, isfile, isdir, abspath, dirname, basename
-
         from corpkit.process import determine_datatype
 
         # levels are 'c' for corpus, 's' for subcorpus and 'f' for file. Which
@@ -31,10 +30,10 @@ class Corpus(object):
         # assume it is a full corpus to begin with.
 
         self.data = None
-
         level = kwargs.pop('level', 'c')
         self.datatype = kwargs.pop('datatype', None)
-        print_info = kwargs.get('print_info', True)
+        self.print_info = kwargs.pop('print_info', True)
+        self.symbolic = kwargs.pop('subcorpora', False)
 
         if isinstance(path, (list, Datalist)):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
@@ -115,17 +114,17 @@ class Corpus(object):
                     variable_safe = makesafe(not_filename)
                     try:
                         setattr(self, variable_safe, load(filename))
-                        if print_info:
+                        if self.print_info:
                             print(
                                 '\tLoaded %s as %s attribute.' %
                                 (filename, variable_safe))
                     except AttributeError:
-                        if print_info:
+                        if self.print_info:
                             print(
                                 '\tFailed to load %s as %s attribute. Name conflict?' %
                                 (filename, variable_safe))
 
-        if print_info:
+        if self.print_info:
             print('Corpus: %s' % self.path)
 
     @lazyprop
@@ -135,7 +134,7 @@ class Corpus(object):
         import os
         import operator
         from os.path import join, isdir
-        if self.data.__class__ == Datalist or isinstance(self.data, list):
+        if self.data.__class__ == Datalist or isinstance(self.data, (Datalist, list)):
             return self.data
         if self.level == 'c':
             variable_safe_r = re.compile(r'[\W0-9_]+', re.UNICODE)
@@ -162,6 +161,7 @@ class Corpus(object):
         >>> corpus.subcorpora[0].files
 
         """
+
         import re
         import os
         import operator
@@ -251,7 +251,7 @@ class Corpus(object):
             except AttributeError:
                 return load(self.name + '-features')
         else:
-            feat = interrogator(self, 'v', 'any').results
+            feat = interrogator(self, 'v', 'any', subcorpora=self.symbolic).results
             if isdir(savedir):
                 feat.save(self.name + '-features')
             return feat
@@ -293,7 +293,7 @@ class Corpus(object):
                 merge_entries=mergetags,
                 sort_by='total').results
         else:
-            feat = interrogator(self, 't', 'any', show='pl').results
+            feat = interrogator(self, 't', 'any', show='x', subcorpora=self.symbolic).results
             if isdir(savedir):
                 feat.save(self.name + '-wordclasses')
             return feat
@@ -327,7 +327,10 @@ class Corpus(object):
             except AttributeError:
                 return load(self.name + '-postags')
         else:
-            feat = interrogator(self, 't', 'any', show='p', preserve_case=True).results
+            feat = interrogator(self, 't', 'any',
+                                show='p',
+                                preserve_case=True,
+                                subcorpora=self.symbolic).results
             if isdir(savedir):
                 feat.save(self.name + '-postags')
                 wordclss = feat.edit(
@@ -360,7 +363,7 @@ class Corpus(object):
                 return load(self.name + '-lexicon')
             except AttributeError:
                 pass
-        dat = self.interrogate('w', show=show, **kwargs).results
+        dat = self.interrogate('w', show=show, subcorpora=self.symbolic, **kwargs).results
         if isdir(savedir):
             dat.save(self.name + '-lexicon')
         return dat
@@ -395,7 +398,7 @@ class Corpus(object):
 
         :returns: :class:`corpkit.interrogation.Interrodict`
         """
-
+        kwargs['subcorpora'] = self.symbolic
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
@@ -584,13 +587,27 @@ class Corpus(object):
         from corpkit.interrogator import interrogator
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
+        
+        # handle symbolic structures
+        if self.symbolic:
+            subcorpora = self.symbolic
+        if kwargs.get('subcorpora', False):
+            subcorpora = kwargs.pop('subcorpora')
+        if subcorpora in ['default', 'folder', 'folders']:
+            subcorpora = False
+        if subcorpora in ['file', 'files']:
+            subcorpora = False
+            kwargs['files_as_subcorpora'] = True
+
         if par and self.subcorpora:
             if isinstance(par, int):
                 kwargs['multiprocess'] = par
-            return interrogator(self.subcorpora, search, *args, **kwargs)
+            return interrogator(self.subcorpora, search,
+                                subcorpora=subcorpora, *args, **kwargs)
         else:
             kwargs['multiprocess'] = par
-            return interrogator(self, search, *args, **kwargs)
+            return interrogator(self, search,
+                                subcorpora=subcorpora, *args, **kwargs)
 
     def parse(self,
               corenlppath=False,
@@ -819,6 +836,13 @@ class Corpus(object):
             namep = name + '.p'
         else:
             namep = name
+
+        # handle symbolic structures
+        if self.symbolic:
+            subcorpora = self.symbolic
+        if kwargs.get('subcorpora', False):
+            subcorpora = kwargs.pop('subcorpora')
+
         pth = os.path.join('models', namep)
         if os.path.isfile(pth):
             print('Returning saved model: %s' % pth)
@@ -830,6 +854,7 @@ class Corpus(object):
 
         res = self.interrogate(search,
                                language_model=langmod,
+                               subcorpora=subcorpora
                                **kwargs)
 
         return res.language_model(name, search=search, **kwargs)
