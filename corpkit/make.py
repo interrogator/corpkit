@@ -127,6 +127,7 @@ def make_corpus(unparsed_corpus_path,
     unparsed_corpus_path = newp
 
     # ask to folderise?
+    check_do_folderise = False
     do_folderise = kwargs.get('folderise', None)
     if can_folderise(unparsed_corpus_path):
         if do_folderise is None:
@@ -190,7 +191,8 @@ def make_corpus(unparsed_corpus_path,
                         return
             elif isdir(newpath) and root:
                 raise OSError('Path exists: %s' % newpath)
-            print('Processing speaker IDs ...')
+            if speaker_segmentation:
+                print('Processing speaker IDs ...')
             make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped',
                               metadata_mode=metadata, speaker_segmentation=speaker_segmentation)
             to_parse = unparsed_corpus_path + '-stripped'

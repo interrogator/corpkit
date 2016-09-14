@@ -225,7 +225,7 @@ Using straight Python is the most powerful way to use *corpkit*, because you can
 ### and showing lemma forms alongside dependency function
 ### also, generate a concordance
 >>> proc = corp.interrogate(search={F: roles.process},
-...                         exclude=wordlists.closedclass,
+...                         exclude={W: wordlists.closedclass},
 ...                         show=[L, F],
 ...                         conc=True)
 ```

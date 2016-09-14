@@ -88,3 +88,14 @@ Recalculating results from concordance lines
 
 If you've deleted some concordance lines, you can update the ``result`` object to reflect these changes with `calculate result from concordance`.
 
+
+Working with metadata
+------------------------
+
+You can use ``show_conc_metadata`` when interrogating or concordancing to collect and display metadata alongside concordance results:
+
+.. code-block:: shell
+
+   > search corpus for words matching any with show_conc_metadata
+   > concordance
+
