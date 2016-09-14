@@ -113,13 +113,19 @@ readline.parse_and_bind('set editing-mode vi')
 poss = ['testing', 'search', 'concordance']
 from corpkit.completer import Completer
 
-import gnureadline as readline
+try:
+    import gnureadline as readline
+except ImportError:
+    import readline as readline
 
 completer = Completer(poss)
 
 readline.set_completer(completer.complete)
 
-readline.parse_and_bind('tab: complete')
+if 'libedit' in readline.__doc__:
+    readline.parse_and_bind("bind ^I rl_complete")
+else:
+    readline.parse_and_bind("tab: complete")
 
 # this code makes it possible to remember history from previous sessions
 history_path = os.path.expanduser("~/.pyhistory")
@@ -131,8 +137,7 @@ def save_history(history_path=history_path):
     try:
         import gnureadline as readline
     except ImportError:
-        import readline
-
+        import readline as readline
     try:
         readline.remove_history_item(readline.get_current_history_length() - 1)
     except ValueError:
@@ -153,7 +158,7 @@ atexit.register(save_history)
 # tab completion
 
 # ctrl r search
-readline.parse_and_bind("bind ^R em-inc-search-prev")
+#readline.parse_and_bind("bind ^R em-inc-search-prev")
 
 del os, atexit, save_history, history_path
 #del rlcompleter
@@ -440,6 +445,8 @@ def interpreter(debug=False,
             if isinstance(obj, str):
                 print('%s: %s' % (command, obj))
                 return
+            elif objtype == 'eval':
+                print('%s: ' % command, obj)
         else:
             objtype, obj = objs._get(command)
             if not objtype:
@@ -509,6 +516,16 @@ def interpreter(debug=False,
             print('Decimal places set to %d.' % objs._decimal) 
             return
 
+        # set subcorpora as attribute of corpus object ... is this ideal?
+        if tokens and tokens[0].startswith('subcorp'):
+            from corpkit.corpus import Corpus
+            if tokens[-1] in ['false', 'none', 'normal', 'off',
+                              'folder', 'folders', 'False', 'None']:
+                tokens[-1] = False
+            objs.corpus = Corpus(objs.corpus, subcorpora=tokens[-1], print_info=False)
+            print('Set subcorpora of %s to "%s".' % (objs.corpus.name, tokens[-1]))
+            return
+
         if not objs._in_a_project:
             print("Must be in project to set corpus.")
             return
@@ -531,8 +548,15 @@ def interpreter(debug=False,
         path = tokens[0]
         loadsaved = len(tokens) > 1 and tokens[1].startswith('load')
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
-            
-            objs.corpus = Corpus(path, load_saved=loadsaved)
+            from corpkit.corpus import Corpus
+            if 'subcorpora' in tokens:
+                if tokens[-1] == 'subcorpora':
+                    subcorpora = tokens[-3]
+                else:
+                    subcorpora = tokens[-1]
+            else:
+                subcorpora = False
+            objs.corpus = Corpus(path, load_saved=loadsaved, subcorpora=subcorpora)
             for i in ['features', 'wordclasses', 'postags']:
                 try:
                     dat = load(objs.corpus.name + '-%s' % i)
@@ -1583,8 +1607,9 @@ def interpreter(debug=False,
         """
         import shutil
         import os
-        outf = os.path.join(os.getcwd(), 'data', os.path.basename(tokens[-1]))
-        shutil.copytree(tokens[-1], outf)
+        the_path = os.path.expanduser(tokens[-1])
+        outf = os.path.join(os.getcwd(), 'data', os.path.basename(the_path))
+        shutil.copytree(the_path, outf)
         print('%s added to %s.' % (tokens[-1], outf))
 
     def del_conc(tokens):
@@ -1685,7 +1710,12 @@ def interpreter(debug=False,
 
         if thing is None or thing is False:
             thing = tokens[0]
-            originally_was = 'string'
+            if thing == 'py':
+                thing = eval(tokens[1])
+                originally_was = 'eval'
+                tokens = tokens[1:]
+            else:
+                originally_was = 'string'
             #print('Nothing stored in %s to name.' % tokens[0])
             #return
         

@@ -18,6 +18,8 @@ def interrogator(corpus,
     case_sensitive=False,
     save=False,
     just_speakers=False,
+    just_metadata=False,
+    skip_metadata=False,
     preserve_case=False,
     lemmatag=False,
     files_as_subcorpora=False,
@@ -1431,6 +1433,8 @@ def interrogator(corpus,
                                              is_a_word=is_a_word,
                                              by_metadata=by_metadata,
                                              show_conc_metadata=show_conc_metadata,
+                                             just_metadata=just_metadata,
+                                             skip_metadata=skip_metadata,
                                              **kwargs
                                             )
 

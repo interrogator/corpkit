@@ -177,8 +177,11 @@ class Corpus(object):
         """String representation of corpus"""
         show = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (
             self.path, self.datatype, len(self.subcorpora))
+        val = self.symbolic if self.symbolic else 'default'
+        show += 'Subcorpora: %s\n' % val
         if self.singlefile:
             show += '\nCorpus is a single file.\n'
+
         #if hasattr(self, 'features'):
         #    if not self.singlefile:
         #        cols = list(self.features.columns)[:10]

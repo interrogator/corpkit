@@ -727,11 +727,12 @@ def determine_adjacent(original):
         adj = False
     return adj, original
 
-def process_df_for_speakers(df, metadata, just_speakers, coref=False, feature='speakers'):
+def process_df_for_speakers(df, metadata, criteria, coref=False,
+                            feature='speakers', reverse=False):
     """
     keep just the correct speakers
     """
-    if not just_speakers:
+    if not criteria:
         return df
     # maybe could be sped up, but let's not for now:
     if coref:
@@ -739,16 +740,27 @@ def process_df_for_speakers(df, metadata, just_speakers, coref=False, feature='s
     import re
     good_sents = []
     new_metadata = {}
+    # could make the below more elegant ...
     for sentid, data in sorted(metadata.items()):
-        speaker = data.get(feature, 'none')
-        if isinstance(just_speakers, list):
-            if speaker in just_speakers:
-                good_sents.append(sentid)
-                new_metadata[sentid] = data
-        elif isinstance(just_speakers, (re._pattern_type, str)):
-            if re.search(just_speakers, speaker):
-                good_sents.append(sentid)
-                new_metadata[sentid] = data
+        meta_value = data.get(feature, 'none')
+        if isinstance(criteria, list):
+            if not reverse:
+                if meta_value not in criteria:
+                    good_sents.append(sentid)
+                    new_metadata[sentid] = data
+            else:
+                if meta_value in criteria:
+                    good_sents.append(sentid)
+                    new_metadata[sentid] = data
+        elif isinstance(criteria, (re._pattern_type, str)):
+            if not reverse:
+                if re.search(criteria, meta_value):
+                    good_sents.append(sentid)
+                    new_metadata[sentid] = data
+            else:
+                if not re.search(criteria, meta_value):
+                    good_sents.append(sentid)
+                    new_metadata[sentid] = data
     df = df.loc[good_sents]
     df._metadata = new_metadata
     return df
@@ -762,6 +774,8 @@ def pipeline(f,
              conc=False,
              coref=False,
              from_df=False,
+             just_metadata=False,
+             skip_metadata=False,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
@@ -789,8 +803,14 @@ def pipeline(f,
     resultdict = {}
     concresultdict = {}
 
-    if feature:
+    if just_metadata:
+        for k, v in just_metadata.items():
+            df = process_df_for_speakers(df, df._metadata, v, feature=k)
+    if skip_metadata:
+        for k, v in skip_metadata.items():
+            df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
 
+    if feature:
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in df._metadata.values()])
         for category in all_cats:
@@ -817,7 +837,7 @@ def pipeline(f,
     df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
-    if kwargs.get('no_punct', False):
+    if kwargs.get('no_punct', True):
         df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
         # remove brackets --- could it be done in one regex?
         df = df[~df['w'].str.contains(r'^-.*B-$')]
