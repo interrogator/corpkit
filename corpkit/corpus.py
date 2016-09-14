@@ -589,6 +589,7 @@ class Corpus(object):
         kwargs.pop('corpus', None)
         
         # handle symbolic structures
+        subcorpora = False
         if self.symbolic:
             subcorpora = self.symbolic
         if kwargs.get('subcorpora', False):

@@ -506,9 +506,9 @@ def show_this(df, matches, show, metadata,
 
     # attempt to leave really fast
     if kwargs.get('countmode'):
-        return len(matches), []
+        return len(matches), {}
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
-        return list(df.loc[matches][show[0][-1]]), []
+        return list(df.loc[matches][show[0][-1]]), {}
 
     only_format_match = kwargs.get('only_format_match', True)
     ngram_mode = kwargs.get('ngram_mode', True)
@@ -575,7 +575,7 @@ def show_this(df, matches, show, metadata,
             out.append(list(gotten))
 
         formatted = ['/'.join(x) for x in zip(*out)]
-        return formatted, []
+        return formatted, {}
 
 
     # do we need to format every token?

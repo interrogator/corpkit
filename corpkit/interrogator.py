@@ -258,18 +258,11 @@ def interrogator(corpus,
         import string
         return all(c in string.punctuation for c in s)
 
-    def get_stats_conll(filepath, **dummy_args):
-        """get a bunch of frequencies on interpersonal phenomena"""
+
+    def make_statsdict_from_df(df, to_open):
+
         from collections import Counter
         statsmode_results = Counter()
-        from corpkit.conll import parse_conll
-        df = parse_conll(filepath)
-        if dummy_args.get('just_speakers'):
-            from corpkit.conll import process_df_for_speakers
-            df = process_df_for_speakers(df, df._metadata, just_speakers)
-            to_open = '\n'.join([i['parse'] for i in df._metadata.values()])
-        else:
-            to_open = filepath
 
         statsmode_results['Sentences'] = len(list(df.index.levels[0]))
         statsmode_results['Passives'] = len(df[df['f'] == 'nsubjpass'])
@@ -307,7 +300,33 @@ def interrogator(corpus,
             statsmode_results[name] += int(res)
             if root:
                 root.update()
-        return statsmode_results, []
+        return statsmode_results
+
+    def get_stats_conll(filepath, **dummy_args):
+        """
+        Get a bunch of frequencies
+        """
+
+        resultdict = {}
+        concdict = {}
+        # parse the file
+        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
+        df = parse_conll(filepath)
+
+        # if symbolic, get all possible categories in file and return dict
+        if subcorpora:
+            # get all the possible values in the df for the feature of interest
+            all_cats = set([i.get(subcorpora, 'none') for i in df._metadata.values()])
+            for category in all_cats:
+                new_df = process_df_for_speakers(df, df._metadata, category, feature=subcorpora)
+                to_open = to_open = '\n'.join([i['parse'] for i in df._metadata.values()])
+                stat = make_statsdict_from_df(new_df, to_open)
+                resultdict[category] = stat
+                concdict[category] = {}
+            return resultdict, concdict
+        else:
+            stat = make_statsdict_from_df(df, filepath)
+            return stat, {}
 
     def get_stats_xml(sents, **dummy_args):
         """get a bunch of frequencies on interpersonal phenomena"""
@@ -1414,6 +1433,7 @@ def interrogator(corpus,
                                              show_conc_metadata=show_conc_metadata,
                                              **kwargs
                                             )
+
                     # deal with symbolic structures
                     if by_metadata:
                         for (k, v), concl in zip(res.items(), conc_res.values()):
@@ -1421,6 +1441,7 @@ def interrogator(corpus,
                                 v = [correct_spelling(r) for r in v]
                             if searcher == slow_tregex:
                                 v = [i[-1].lower() for i in v]
+
                             results[k] += Counter(v)
                             for line in concl:
                                 if numconc < maxconc or not maxconc:
