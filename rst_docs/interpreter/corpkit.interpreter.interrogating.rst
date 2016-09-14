@@ -1,7 +1,14 @@
 Interrogating corpora
-==================
+=======================
 
 The most powerful thing about *corpkit* is its ability to search parsed corpora for very complex constituency, dependency or token level features.
+
+Before we begin, make sure you've ``set`` the corpus as the thing to search:
+
+.. code-block:: bash
+
+   > set nyt-parsed as corpus
+   # you could also try just typing `set` ...
 
 .. note::
    
@@ -35,7 +42,7 @@ Here is a syntax example that might help you see how the command gets parsed. No
 .. code-block:: bash
 
    > search corpus \                                    # select object
-   ... for words matching r'ing$' and \                 # search criterion
+   ... for words matching 'ing$' and \                  # search criterion
    ... not lemma matching 'being' and \                 # exclude criterion
    ... pos matching 'NN' \                              # seach criterion
    ... excluding words matching wordlists.closedclass \ # exclude criterion
@@ -43,4 +50,34 @@ Here is a syntax example that might help you see how the command gets parsed. No
    ... with preserve_case and \                         # boolean keyword arg
    ... not no_punct and \                               # bool keyword arg
    ... excludemode as 'all'                             # keyword arg
+
+
+Working with metadata
+----------------------
+
+By default, *corpkit* treats folders within your corpus as subcorpora. If you want to treat files, rather than folders, as subcorpora, you can do:
+
+
+.. code-block:: bash
+
+   > search corpus for words matching 'ing$' with subcorpora as files
+
+If you have metadata in your corpus, you can use the metadata value as the subcorpora:
+
+.. code-block:: bash
+
+   > search corpus for words matching 'ing$' with subcorpora as speaker
+
+If you don't want to keep specifying the subcorpus structure every time you search the corpus, you can set the default subcorpus value with ``set``:
+
+.. code-block:: bash
+
+   # use speaker metadata as subcorpora
+   > set subcorpora as speaker
+   # ignore folders, use files as subcorpora
+   > set subcorpora as files
+   # you can also set the subcorpus value when you set the corpus
+   > set mydata-parsed as corpus with year as subcorpora
+   # return to normal
+   > set subcorpora as default
 
