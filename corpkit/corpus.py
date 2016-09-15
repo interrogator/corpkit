@@ -34,6 +34,8 @@ class Corpus(object):
         self.datatype = kwargs.pop('datatype', None)
         self.print_info = kwargs.pop('print_info', True)
         self.symbolic = kwargs.pop('subcorpora', False)
+        self.skip = kwargs.pop('skip', False)
+        self.just = kwargs.pop('just', False)
 
         if isinstance(path, (list, Datalist)):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
@@ -602,6 +604,18 @@ class Corpus(object):
         if subcorpora in ['file', 'files']:
             subcorpora = False
             kwargs['files_as_subcorpora'] = True
+
+        if self.skip:
+            if kwargs.get('skip_metadata'):
+                kwargs['skip_metadata'].update(self.skip)
+            else:
+                kwargs['skip_metadata'] = self.skip
+
+        if self.just:
+            if kwargs.get('just_metadata'):
+                kwargs['just_metadata'].update(self.just)
+            else:
+                kwargs['just_metadata'] = self.just
 
         if par and self.subcorpora:
             if isinstance(par, int):

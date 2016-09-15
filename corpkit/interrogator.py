@@ -55,6 +55,8 @@ def interrogator(corpus,
     if subcorpora:
         by_metadata = subcorpora
 
+    nosubmode = subcorpora is None
+
     # store kwargs and locs
     locs = locals().copy()
     locs.update(kwargs)
@@ -160,7 +162,9 @@ def interrogator(corpus,
         #if isinstance(query, list):
         #    if query != list(search.values())[0] or len(list(search.keys())) > 1:
         #        query = {c.title(): c for c in query}
-        
+        if subcorpora and multiprocess:
+            is_mul = 'subcorpora'
+
         if isinstance(query, (dict, OrderedDict)):
             is_mul = 'namedqueriessingle'
         if just_speakers:
@@ -1249,6 +1253,7 @@ def interrogator(corpus,
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
     locs['multiple'] = im
+    locs['subcorpora'] = subcorpora
 
     # send to multiprocess function
     if im:
@@ -1341,6 +1346,8 @@ def interrogator(corpus,
 
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
+        if nosubmode:
+            subcorpus_name = '_nosubmode'
 
         # results for subcorpus go here
         #conc_results[subcorpus_name] = []
@@ -1583,7 +1590,7 @@ def interrogator(corpus,
 
     # turn df into series if all conditions met
     if not countmode:
-        if level == 's' or singlefile:
+        if level == 's' or singlefile or nosubmode:
             if not files_as_subcorpora:
                 if not kwargs.get('df1_always_df'):
                     df = Series(df.ix[0])

@@ -13,13 +13,15 @@ def pmultiquery(corpus,
                 root=False,
                 note=False,
                 print_info=True,
+                subcorpora=False,
                 **kwargs
                ):
     """
     - Parallel process multiple queries or corpora.
     - This function is used by corpkit.interrogator.interrogator()
     - for multiprocessing.
-    - There's no reason to call this function yourself."""
+    - There's no reason to call this function yourself.
+    """
     import os
     from pandas import DataFrame, Series
     import pandas as pd
@@ -86,12 +88,25 @@ def pmultiquery(corpus,
                 print('No speaker name data found.')
                 return
 
+    if subcorpora:
+        subval = str(subcorpora)
+        if subcorpora is True:
+            import re
+            subcorpora = re.compile(r'.*')
+        else:
+            from corpkit.build import get_speaker_names_from_parsed_corpus
+            subcorpora = get_speaker_names_from_parsed_corpus(corpus, feature=subcorpora)
+            if len(subcorpora) == 0:
+                print('No %s metadata found.' % str(subcorpora))
+                return
+
     mapcores = {'datalist': [corpus, 'corpus'],
                 'multiplecorpora': [corpus, 'corpus'],
                 'namedqueriessingle': [query, 'query'],
                 'eachspeaker': [just_speakers, 'just_speakers'],
                 'multiplespeaker': [just_speakers, 'just_speakers'],
-                'namedqueriesmultiple': [search, 'search']}
+                'namedqueriesmultiple': [search, 'search'],
+                'subcorpora': [subcorpora, 'subcorpora']}
 
     # a is a dummy, just to produce default one
     toiter, itsname = mapcores.get(multiple, [False, False])
@@ -116,7 +131,6 @@ def pmultiquery(corpus,
     # make sure saves are right type
     if save is True:
         raise ValueError('save must be string when multiprocessing.')
-    
 
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
@@ -129,21 +143,28 @@ def pmultiquery(corpus,
     if multiple == 'multiplespeaker':
         locs['multispeaker'] = True
 
+    # make the default query
     locs = {k: v for k, v in locs.items() if canpickle(v)}
+    # make a new dict for every iteration
     ds = [dict(**locs) for i in range(denom)]
     for index, (d, bit) in enumerate(zip(ds, toiter)):
         d['paralleling'] = index
         if multiple in ['namedqueriessingle', 'namedqueriesmultiple']:
             d[itsname] = bit[1]
             d['outname'] = bit[0]
-        else:    
-            if multiple in ['multiplecorpora', 'datalist']:
-                d['outname'] = bit.name.replace('-parsed', '')
-            else:
-                d['outname'] = bit
-                if multiple in ['eachspeaker', 'multiplespeaker']:
-                    d['just_speakers'] = bit
+        elif multiple in ['multiplecorpora', 'datalist']:
+            d['outname'] = bit.name.replace('-parsed', '')
             d[itsname] = bit
+        elif multiple in ['eachspeaker', 'multiplespeaker']:
+            d[itsname] = bit
+            d['just_speakers'] = bit
+            d['outname'] = bit
+        elif multiple in ['subcorpora']:
+            d[itsname] = bit
+            d['just_metadata'] = {subval: bit}
+            d['outname'] = bit
+            d['by_metadata'] = False
+            d['subcorpora'] = None
 
     # message printer should be a function...
     if kwargs.get('conc') is False:
@@ -156,7 +177,6 @@ def pmultiquery(corpus,
     time = strftime("%H:%M:%S", localtime())
     from corpkit.process import dictformat
     
-
     if print_info:
 
         # proper printing for plurals
@@ -183,6 +203,9 @@ def pmultiquery(corpus,
                "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, add_es, corpus.name, sformat, message)))
 
         elif multiple in ['eachspeaker', 'multiplespeaker']:
+            print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
+               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
+        elif multiple in ['subcorpora']:
             print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
                "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
 
@@ -307,8 +330,10 @@ def pmultiquery(corpus,
             # this sorts subcorpora, which are cls
             out = out[sorted(list(out.columns))]
             # puts subcorpora in the right place
-            if not mult_corp_are_subs:
+            if not mult_corp_are_subs and multiple != 'subcorpora':
                 out = out.T
+            if multiple == 'subcorpora':
+                out = out.sort_index()
             out = out.fillna(0) # nan to zero
             out = out.astype(int)
             if 'c' in show and mult_corp_are_subs:

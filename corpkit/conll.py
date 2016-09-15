@@ -733,9 +733,11 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     keep just the correct speakers
     """
     if not criteria:
+        df._metadata = metadata
         return df
     # maybe could be sped up, but let's not for now:
     if coref:
+        df._metadata = metadata
         return df
     import re
     good_sents = []
@@ -762,6 +764,7 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
     df = df.loc[good_sents]
+    df = df.fillna('')
     df._metadata = new_metadata
     return df
 
