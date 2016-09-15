@@ -183,6 +183,12 @@ class Corpus(object):
         show += 'Subcorpora: %s\n' % val
         if self.singlefile:
             show += '\nCorpus is a single file.\n'
+        #if getattr(self, 'symbolic'):
+        #    show += 'Symbolic subcorpora: %s\n' % str(self.symbolic)
+        if getattr(self, 'skip'):
+            show += 'Skip: %s\n' % str(self.skip)
+        if getattr(self, 'just'):
+            show += 'Just: %s\n' % str(self.just)
 
         #if hasattr(self, 'features'):
         #    if not self.singlefile:

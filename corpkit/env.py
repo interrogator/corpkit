@@ -503,7 +503,7 @@ def interpreter(debug=False,
         else:
             pass
 
-    def set_corpus(tokens):
+    def set_something(tokens):
         """
         Set the active corpus:
 
@@ -526,6 +526,23 @@ def interpreter(debug=False,
             print('Set subcorpora of %s to "%s".' % (objs.corpus.name, tokens[-1]))
             return
 
+        if tokens and tokens[0] in ['skip', 'just']:
+            attr = tokens[0]
+            if tokens[-1] in ['none', 'None', 'off', 'default']:
+                setattr(objs.corpus, attr, False)
+                print("Reset %s filter" % attr)
+                return
+            metfeat = tokens[1]
+            crit = tokens[-1]
+            if isinstance(getattr(objs.corpus, attr, False), dict):
+                d = getattr(objs.corpus, attr)
+                d[metfeat] = parse_pattern(crit)
+                setattr(objs.corpus, attr, d)
+            else:
+                setattr(objs.corpus, attr, {metfeat: parse_pattern(crit)})
+            print("Current %s filter: %s" % (attr, getattr(objs.corpus, attr)))
+            return
+
         if not objs._in_a_project:
             print("Must be in project to set corpus.")
             return
@@ -538,11 +555,12 @@ def interpreter(debug=False,
             if not selected:
                 return
             elif selected.isdigit():
-                dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
-                set_corpus([dirs[int(selected)-1]])
+                dirs = [x for x in os.listdir('data') \
+                        if os.path.isdir(os.path.join('data', x))]
+                set_something([dirs[int(selected)-1]])
                 return
             else:
-                set_corpus([selected])
+                set_something([selected])
                 return
 
         path = tokens[0]
@@ -569,7 +587,7 @@ def interpreter(debug=False,
         else:
             try:
                 dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
-                set_corpus([dirs[int(tokens[-1])-1]])
+                set_something([dirs[int(tokens[-1])-1]])
             except:
                 print('Corpus not found: %s' % tokens[0])
                 return
@@ -600,7 +618,8 @@ def interpreter(debug=False,
                 k = search_related[i+1]
                 if k == 'cql':
                     cqlmode = True
-                    aquery = next((i for i in search_related[i+2:] if i not in ['matching']), False)
+                    aquery = next((i for i in search_related[i+2:] \
+                                  if i not in ['matching']), False)
                     if aquery:
                         search = aquery
                         break
@@ -899,12 +918,18 @@ def interpreter(debug=False,
         Show any object in a human-readable form
         """
         if tokens[0] == 'corpora':
-            dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
+            dirs = [x for x in os.listdir('data') if \
+                     os.path.isdir(os.path.join('data', x))]
             dirs = ['\t%d: %s' % (i, x) for i, x in enumerate(dirs, start=1)]
             print ('\n'.join(dirs))
         elif tokens[0].startswith('store'):
             for k, v in objs.stored.items():
                 print(k, v)
+        elif tokens[0].startswith('filter'):
+            print('Skip:', getattr(objs.corpus, 'skip', 'none'))
+            print('Just:', getattr(objs.corpus, 'just', 'none'))
+        elif tokens[0].startswith('subcorp'):
+            print('Symbolic structure:', getattr(objs.corpus, 'symbolic', 'none'))
         elif tokens[0].startswith('wordlists'):
             if '.' in tokens[0] or ':' in tokens[0]:
                 if ':' in tokens[0]:
@@ -920,7 +945,8 @@ def interpreter(debug=False,
                     print('"%s": %s' % (k, showv))
 
         elif tokens[0] == 'saved':
-            ss = [i for i in os.listdir('saved_interrogations') if not i.startswith('.')]
+            ss = [i for i in os.listdir('saved_interrogations') \
+                   if not i.startswith('.')]
             print ('\t' + '\n\t'.join(ss))
         elif tokens[0] == 'query':
             for k, v in sorted(objs.query.items()):
@@ -1543,7 +1569,8 @@ def interpreter(debug=False,
                 elif bit.lower() == 'r':
                     slic = slice(None, window)
                 # get slice for left window
-                mx = max(objs.concordance[bit.lower()].str.len()) if bit.lower() == 'l' else 0
+                mx = max(objs.concordance[bit.lower()].str.len()) \
+                         if bit.lower() == 'l' else 0
                 # get the regex criteria
                 if 'matching' in tokens:
                     rgx = tokens[tokens.index('matching') + 1]
@@ -1767,7 +1794,7 @@ def interpreter(debug=False,
         nonhidden = [i for i in os.listdir(tokens[0]) if not i.startswith('.')]
         print('\n'.join(nonhidden))
 
-    get_command = {'set': set_corpus,
+    get_command = {'set': set_something,
                    'show': show_this,
                    'search': search_corpus,
                    'info': get_info,
@@ -1800,7 +1827,7 @@ def interpreter(debug=False,
               calculate_result: 'edited',
               sort_something: 'edited',
               plot_result: 'figure',
-              set_corpus: 'corpus',
+              set_something: 'corpus',
               load_this: 'result'}
 
     def unrecognised(*args, **kwargs):
@@ -1943,7 +1970,7 @@ def interpreter(debug=False,
                 # give info if it is an info command
                 if len(tokens) == 1 or tokens[0] == 'jupyter':
                     if tokens[0] == 'set':
-                        set_corpus([])
+                        set_something([])
                     else:
                         single_command_print(tokens)
                     continue

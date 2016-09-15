@@ -1445,7 +1445,8 @@ def interrogator(corpus,
                                              **kwargs
                                             )
 
-                    # deal with symbolic structures
+                    # deal with symbolic structures---that is, rather than adding
+                    # results by subcorpora, add them by metadata value
                     if by_metadata:
                         for (k, v), concl in zip(res.items(), conc_res.values()):
                             if spelling and not statsmode:

@@ -38,7 +38,10 @@ Metadata should take the form of an XML tag at the end of a line, which could be
 
 .. code-block:: xml
 
-   I hope everyone is hanging in with this blasted heat. As we all know being hot, sticky, stressed and irritated can bring on a mood swing super fast. So please make sure your all takeing your meds and try to stay out of the heat. <metadata username="Emz45" totalposts="5063" currentposts="4051" date="2011-07-13" postnum="0" threadlength="1">
+   I hope everyone is hanging in with this blasted heat. As we all know being hot, sticky,
+   stressed and irritated can bring on a mood swing super fast. So please make sure your 
+   all takeing your meds and try to stay out of the heat. <metadata username="Emz45" 
+   totalposts="5063" currentposts="4051" date="2011-07-13" postnum="0" threadlength="1">
 
 
 Then, parse with metadata:
