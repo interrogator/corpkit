@@ -15,6 +15,7 @@ def make_corpus(unparsed_corpus_path,
                 outname=False,
                 metadata=False,
                 restart=False,
+                coref=True,
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -263,6 +264,7 @@ def make_corpus(unparsed_corpus_path,
                      'note': note,
                      'stdout': stdout,
                      'outname': outname,
+                     'coref': coref,
                      'output_format': kwargs.get('output_format', 'xml')
                     }
                 ds.append(d)
@@ -294,7 +296,7 @@ def make_corpus(unparsed_corpus_path,
                                      stdout=stdout,
                                      fileparse=fileparse,
                                      outname=outname,
-                                     output_format=kwargs.get('output_format', 'xml'))
+                                     output_format=kwargs.get('output_format', 'conll'))
 
         if not newparsed:
             return 
@@ -307,11 +309,12 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(splitext(unparsed_corpus_path)[0])
             if isfile(unparsed_corpus_path.replace('.txt', '-filelist.txt')):
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
-            return unparsed_corpus_path + '.xml'
+            return unparsed_corpus_path + '.conll'
         
-        move_parsed_files(project_path, to_parse, newparsed, ext=kwargs.get('output_format', 'conll'))
+        move_parsed_files(project_path, to_parse, newparsed,
+                          ext=kwargs.get('output_format', 'conll'), restart=restart)
         outpath = newparsed
-        if speaker_segmentation and kwargs.get('output_format', 'xml') == 'xml':
+        if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
             add_ids_to_xml(newparsed, originalname=to_parse)
         if kwargs.get('output_format') == 'conll':
             #from corpkit.build import add_deps_to_corpus_path

@@ -55,3 +55,7 @@ transobjs = {'g': 'Governor',
 
 # default: sent, index, word, lem, pos, ner, gov, func, deps, coref, custom * 3
 CONLL_COLUMNS = ['s', 'i', 'w', 'l', 'p', 'n', 'g', 'f', 'd', 'c', 'y', 'z']
+
+# what the longest possible speaker ID is. this prevents huge lines with colons
+# from getting matched unintentionally
+MAX_SPEAKERNAME_SIZE = 40

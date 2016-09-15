@@ -1815,6 +1815,11 @@ def interpreter(debug=False,
             pass
 
     def get_prompt(backslashed=False):
+        """
+        Create the prompt, based on being in project etc.
+
+        :param backslashed: is when there is a line continuation
+        """
         folder = os.path.basename(os.getcwd())
         proj_dirs = ['data', 'saved_interrogations', 'exported']
         objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
@@ -1846,12 +1851,6 @@ def interpreter(debug=False,
         print("\nWARNING: You aren't in a project yet. "\
               "Use 'new project named <name>' to make one and enter it.\n"\
               "Alternatively, you can `cd` into an existing project now.\n")
-
-    def py(output):
-        """
-        Run text as Python code
-        """
-        exec(output)
 
     def do_bash(output):
         """
@@ -1953,9 +1952,11 @@ def interpreter(debug=False,
                 out = run_command(tokens)
                 backslashed = ''
 
+            # terminate if c mode
             if python_c_mode:
                 break
 
+        # exception handling: interrupt, exit or raise error...
         except KeyboardInterrupt:
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
             backslashed = ''

@@ -953,6 +953,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
     import re
     from corpkit.build import get_filepaths
 
+
     files = get_filepaths(path, ext='conll')
     
     for f in files:
@@ -963,8 +964,13 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
             stripped, raw = None, None
 
         main_out = ''
+        # if the file has already been converted, don't worry about it
+        # untested?
         with open(f, 'r') as fo:
-            data = json.load(fo)
+            try:
+                data = json.load(fo)
+            except ValueError:
+                continue
 
         ref = 1
         for idx, sent in enumerate(data['sentences'], start=1):
@@ -983,7 +989,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
             for token in sent['tokens']:
                 index = str(token['index'])
                 # this got a stopiteration on rsc data
-                governor, func = next(((str(i['governor']), str(i['dep'])) \
+                governor, func = next(((i['governor'], i['dep']) \
                                          for i in sent['collapsed-ccprocessed-dependencies'] \
                                          if i['dependent'] == int(index)), ('_', '_'))
                 if governor is '_':
@@ -993,7 +999,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                 if not depends:
                     depends = '0'
                 #offsets = '%d,%d' % (token['characterOffsetBegin'], token['characterOffsetEnd'])
-                line = [str(idx),
+                line = [idx,
                         index,
                         token['word'],
                         token['lemma'],
@@ -1002,13 +1008,18 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                         governor,
                         func,
                         ','.join(depends)]
-                #if coref:
-                #    refmatch = get_corefs(data, idx, token['index'] + 1, ref)
-                #    if refmatch != '_':
-                #        ref += 1
-                #    sref = str(refmatch)
-                #    line.append(sref)
-                
+                # no ints
+                line = [str(l) if isinstance(l, int) else l for l in line]
+
+                from corpkit.constants import PYTHON_VERSION
+                if PYTHON_VERSION == 2:
+                    try:
+                        [unicode(l, errors='ignore') for l in line]
+                    except TypeError:
+                        pass
+                else:
+                    line = [l.encode('utf-8', errors='ignore') for l in line]
+
                 output += '\t'.join(line) + '\n'
             main_out += output + '\n'
 

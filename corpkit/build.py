@@ -75,7 +75,8 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
     fullfile = os.path.join(downloaded_dir, file_name)
 
     if actually_download:
-        if not root:
+        import __main__ as main
+        if not root and not hasattr(main, '__file__'):
             txt = 'CoreNLP not found. Download latest version (%s)? (y/n) ' % url
             
             selection = INPUTFUNC(txt)
@@ -222,6 +223,7 @@ def parse_corpus(proj_path=False,
                  copula_head=True,
                  multiprocessing=False,
                  outname=False,
+                 coref=True,
                  **kwargs
                 ):
     """
@@ -349,8 +351,13 @@ def parse_corpus(proj_path=False,
                 pass
         if memory_mb is False:
             memory_mb = 2024
+
+
+        # you can pass in 'coref' as kwarg now
+        cof = ',dcoref' if coref else ''
         if operations is False:
-            operations = 'tokenize,ssplit,pos,lemma,parse,ner,dcoref'
+            operations = 'tokenize,ssplit,pos,lemma,parse,ner' + cof
+
         if isinstance(operations, list):
             operations = ','.join([i.lower() for i in operations])
 
@@ -452,7 +459,8 @@ def parse_corpus(proj_path=False,
     os.chdir(curdir)
     return new_corpus_path
 
-def move_parsed_files(proj_path, corpuspath, new_corpus_path, ext='xml'):
+def move_parsed_files(proj_path, old_corpus_path, new_corpus_path,
+                      ext='conll', restart=False):
     """
     Make parsed files follow existing corpus structure
     """
@@ -461,35 +469,47 @@ def move_parsed_files(proj_path, corpuspath, new_corpus_path, ext='xml'):
     import os
     import fnmatch
     cwd = os.getcwd()
-    basecp = os.path.basename(corpuspath)
+    basecp = os.path.basename(old_corpus_path)
     dir_list = []
-
     # go through old path, make file list
-    for path, dirs, files in os.walk(corpuspath):
+    for path, dirs, files in os.walk(old_corpus_path):
         for bit in dirs:
             # is the last bit of the line below windows safe?
-            dir_list.append(os.path.join(path, bit).replace(corpuspath, '')[1:])
-
-    os.chdir(new_corpus_path)
+            dir_list.append(os.path.join(path, bit).replace(old_corpus_path, '')[1:])
     for d in dir_list:
-        os.makedirs(d)
-    os.chdir(cwd)
-    # make list of xml filenames
+        if not restart:
+            os.makedirs(os.path.join(new_corpus_path, d))
+        else:
+            try:
+                os.makedirs(os.path.join(new_corpus_path, d))
+            except OSError:
+                pass
+    # make list of parsed filenames that haven't been moved already
     parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.%s' % ext)]
     # make a dictionary of the right paths
     pathdict = {}
-    for rootd, dirnames, filenames in os.walk(corpuspath):
+    for rootd, dirnames, filenames in os.walk(old_corpus_path):
         for filename in fnmatch.filter(filenames, '*.txt'):
             pathdict[filename] = rootd
-
     # move each file
     for f in parsed_fs:
         noxml = f.replace('.%s' % ext, '')
-        right_dir = pathdict[noxml].replace(corpuspath, new_corpus_path)
+        right_dir = pathdict[noxml].replace(old_corpus_path, new_corpus_path)
+        print(f, right_dir)
         # get rid of the temp adding of dirname to fname
         #short_name = f.replace('-%s.txt.xml' % os.path.basename(right_dir), '.txt.xml')
-        os.rename(os.path.join(new_corpus_path, f), 
-                  os.path.join(new_corpus_path, right_dir, f))
+        frm = os.path.join(new_corpus_path, f)
+        tom = os.path.join(right_dir, f)
+        # forgive errors on restart mode, because some files 
+        # might already have been moved into place
+        if restart:
+            try:
+                os.rename(frm, tom)
+            except OSError:
+                pass
+        else:
+            os.rename(frm, tom)
+
     return new_corpus_path
 
 def corenlp_exists(corenlppath=False):
@@ -546,8 +566,9 @@ def make_no_id_corpus(pth, newpth, metadata_mode=False, speaker_segmentation=Fal
     import shutil
     from corpkit.process import saferead
     # define regex broadly enough to accept timestamps, locations if need be
-
-    idregex = re.compile(r'(^.*?):\s+(.*$)')
+    
+    from corpkit.constants import MAX_SPEAKERNAME_SIZE
+    idregex = re.compile(r'(^.{,%d}?):\s+(.*$)' % MAX_SPEAKERNAME_SIZE)
 
     try:
         shutil.copytree(pth, newpth)
@@ -699,7 +720,6 @@ def add_ids_to_conll(corpuspath, root=False, note=False):
     print('%s: Processing speaker IDs ...' % thetime)
     if root:
         root.update()
-
     for i, f in enumerate(files):
         if note:
             note.progvar.set(i * 100.0 / len(files))
@@ -707,21 +727,17 @@ def add_ids_to_conll(corpuspath, root=False, note=False):
         print('%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files)))
         if root:
             root.update()
-
         # open the unparsed version of the file, read into memory
         stripped_txtfile = f.replace('.conll', '').replace('-parsed', '-stripped')
         with open(stripped_txtfile, 'r') as old_txt:
             stripped_txtdata = old_txt.read()
-
         # open the unparsed version with speaker ids
         id_txtfile = f.replace('.conll', '').replace('-parsed', '')
         with open(id_txtfile, 'r') as idttxt:
             id_txtdata = idttxt.read()
-
         # how to add speakers to conll? by sent?
         from corpkit.conll import get_dependents_of_id, parse_conll
         df = parse_conll(f)
-
     return
 
 def add_deps_to_corpus_path(path):

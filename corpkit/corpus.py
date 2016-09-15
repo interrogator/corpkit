@@ -623,6 +623,7 @@ class Corpus(object):
               split_texts=400,
               outname=False,
               metadata=False,
+              coref=True,
               *args,
               **kwargs
              ):
@@ -700,6 +701,7 @@ class Corpus(object):
                            split_texts=split_texts,
                            outname=outname,
                            metadata=metadata,
+                           coref=coref,
                            *args,
                            **kwargs
                           )
