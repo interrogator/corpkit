@@ -98,4 +98,5 @@ You can use ``show_conc_metadata`` when interrogating or concordancing to collec
 
    > search corpus for words matching any with show_conc_metadata
    > concordance
+   
 

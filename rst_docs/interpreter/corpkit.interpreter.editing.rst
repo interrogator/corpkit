@@ -3,7 +3,7 @@ Editing results
 
 Once you have generated a `result` object via the `search` command, you can edit the result in a number of ways. You can delete, merge or otherwise alter entries or subcorpora; you can do statistics, and you can sort results.
 
-Editing, calculating and sorting each create a new object, called `edited`. This means that if you make a mistake, you still have access to the original `result` object.
+Editing, calculating and sorting each create a new object, called `edited`. This means that if you make a mistake, you still have access to the original `result` object, without needing to run the search again.
 
 The edit command
 ------------------
@@ -14,11 +14,13 @@ When using the `edit` command, the main things you'll want to do is skip, keep, 
 
    > edit result by keeping subcorpora matching '[01234]'
    > edit result by skipping entries matching wordlists.closedclass
+   # merge has a slightly different syntax, because you need
+   # to specify the name to merge under
    > edit result by merging entries matching 'be|have' as 'aux'
 
 .. note::
 
-    The syntax above works for concordance lines too, if you change `result` to `concordance`. Merging, of course, is not possible.
+    The syntax above works for concordance lines too, if you change `result` to `concordance`. Merging is not possible.
 
 Doing basic statistics 
 ------------------------

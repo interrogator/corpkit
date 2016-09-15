@@ -8,5 +8,6 @@ You can plot results and edited results using the `plot` method, which interface
 
    > plot edited as bar chart with title as 'Example plot' and x_label as 'Subcorpus'
    > plot edited as area chart with stacked and colours as Paired
-   > plot edited with style as seaborn-talk
+   > plot edited with style as seaborn-talk # defaults to line chart
 
+There are many possible arguments for customising the figure

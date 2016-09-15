@@ -57,7 +57,6 @@ Working with metadata
 
 By default, *corpkit* treats folders within your corpus as subcorpora. If you want to treat files, rather than folders, as subcorpora, you can do:
 
-
 .. code-block:: bash
 
    > search corpus for words matching 'ing$' with subcorpora as files
@@ -68,7 +67,7 @@ If you have metadata in your corpus, you can use the metadata value as the subco
 
    > search corpus for words matching 'ing$' with subcorpora as speaker
 
-If you don't want to keep specifying the subcorpus structure every time you search the corpus, you can set the default subcorpus value with ``set``:
+If you don't want to keep specifying the subcorpus structure every time you search the corpus, you can set the default subcorpus value with for the session with ``set``:
 
 .. code-block:: bash
 
@@ -76,7 +75,7 @@ If you don't want to keep specifying the subcorpus structure every time you sear
    > set subcorpora as speaker
    # ignore folders, use files as subcorpora
    > set subcorpora as files
-   # you can also set the subcorpus value when you set the corpus
+   # or, set the subcorpus value when you set the corpus
    > set mydata-parsed as corpus with year as subcorpora
    # return to normal
    > set subcorpora as default
