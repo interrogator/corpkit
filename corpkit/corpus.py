@@ -177,8 +177,15 @@ class Corpus(object):
 
     def __str__(self):
         """String representation of corpus"""
-        show = 'Corpus at %s:\n\nData type: %s\nNumber of subcorpora: %d\n' % (
-            self.path, self.datatype, len(self.subcorpora))
+        showing = 'subcorpora'
+        if getattr(self, 'subcorpora', False):
+            sclen = len(self.subcorpora)
+        else:
+            showing = 'files'
+            sclen = len(self.files)
+
+        show = 'Corpus at %s:\n\nData type: %s\nNumber of %s: %d\n' % (
+            self.path, self.datatype, showing, sclen)
         val = self.symbolic if self.symbolic else 'default'
         show += 'Subcorpora: %s\n' % val
         if self.singlefile:

@@ -1363,7 +1363,7 @@ def interpreter(debug=False,
         kwargs = process_kwargs(tokens)
         parsed = to_parse.parse(**kwargs)
         if parsed:
-            objs.corpus = parsed
+            setattr(objs, 'corpus', parsed)
         return
 
     def fetch_this(tokens, unbound=False):
