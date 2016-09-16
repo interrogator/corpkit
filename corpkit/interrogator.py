@@ -1444,6 +1444,10 @@ def interrogator(corpus,
                                              skip_metadata=skip_metadata,
                                              **kwargs
                                             )
+                    print(res)
+
+                    if res is None and conc_res is None:
+                        cont
 
                     # deal with symbolic structures---that is, rather than adding
                     # results by subcorpora, add them by metadata value

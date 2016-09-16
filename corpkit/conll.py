@@ -39,6 +39,10 @@ def parse_conll(f, first_time=False, just_meta=False):
     if just_meta:
         return metadata
 
+    # happens with empty files
+    if not splitdata:
+        return
+
     # determine the number of columns we need
     l = len(splitdata[0].strip('\t').split('\t'))
     head = head[:l]
@@ -54,7 +58,11 @@ def parse_conll(f, first_time=False, just_meta=False):
     data = data.replace('\n\n', '\n') + '\n'
 
     # open with sent and token as multiindex
-    df = pd.read_csv(StringIO(data), sep='\t', header=None, names=head, index_col=['s', 'i'])
+    try:
+        df = pd.read_csv(StringIO(data), sep='\t', header=None,
+                         names=head, index_col=['s', 'i'])
+    except ValueError:
+        return
     df._metadata = metadata
     return df
 
@@ -803,17 +811,23 @@ def pipeline(f,
     feature = kwargs.get('by_metadata', False)
     show_conc_metadata = kwargs.get('show_conc_metadata')
 
-    resultdict = {}
-    concresultdict = {}
-
-    if just_metadata:
-        for k, v in just_metadata.items():
-            df = process_df_for_speakers(df, df._metadata, v, feature=k)
-    if skip_metadata:
-        for k, v in skip_metadata.items():
-            df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
+    if df is not None:
+        if just_metadata:
+            for k, v in just_metadata.items():
+                df = process_df_for_speakers(df, df._metadata, v, feature=k)
+        if skip_metadata:
+            for k, v in skip_metadata.items():
+                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
 
     if feature:
+
+        if df is None:
+            print('Problem reading data from %s.' % f)
+            return {}, {}
+
+        resultdict = {}
+        concresultdict = {}
+
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in df._metadata.values()])
         for category in all_cats:
@@ -830,6 +844,10 @@ def pipeline(f,
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict
+
+    if df is None:
+        print('Problem reading data from %s.' % f)
+        return [], []
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
 
@@ -900,7 +918,7 @@ def load_raw_data(f):
 
 def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False):
     if not stripped and not plain:
-        return 'none'
+        return {}
     start, end = sent_offsets
     sent = stripped[start:end]
     # find out line number
@@ -943,13 +961,16 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False)
         speakerid = split_line[0]
     else:
         speakerid = 'UNIDENTIFIED'
-    return speakerid
+    return {'speaker': speakerid}
 
 
 def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadata=False):
     """
     take json corenlp output and convert to conll, with
     dependents, speaker ids and so on added.
+
+    Path is for the parsed corpus
+    Might need to fix if outname used?
     """
 
     import json
@@ -983,12 +1004,16 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
             # offsets for speaker_id
             sent_offsets = (sent['tokens'][0]['characterOffsetBegin'], \
                             sent['tokens'][-1]['characterOffsetEnd'])
-            speaker = get_speaker_from_offsets(stripped, raw, sent_offsets)
-            output = '# sent_id %d\n# parse=%s\n# speaker=%s\n' % (idx, tree, speaker)
+            
             metad = get_speaker_from_offsets(stripped, raw, sent_offsets, metadata_mode=True)
-            if metad != 'none':
-                for k, v in metad.items():
-                    output += '# %s=%s\n' % (k, v)
+            
+            if 'speaker' not in list(metad.keys()):
+                sd = get_speaker_from_offsets(stripped, raw, sent_offsets)
+                metad.update(sd)
+                
+            output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
+            for k, v in metad.items():
+                output += '# %s=%s\n' % (k, v)
             for token in sent['tokens']:
                 index = str(token['index'])
                 # this got a stopiteration on rsc data
@@ -1020,9 +1045,7 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
                         [unicode(l, errors='ignore') for l in line]
                     except TypeError:
                         pass
-                else:
-                    line = [l.encode('utf-8', errors='ignore') for l in line]
-
+                
                 output += '\t'.join(line) + '\n'
             main_out += output + '\n'
 
