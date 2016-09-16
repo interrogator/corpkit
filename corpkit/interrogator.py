@@ -1051,7 +1051,7 @@ def interrogator(corpus,
             for lin in unique_results:
                 #spkr = str(spkr, errors = 'ignore')
                 if not subcorpora:
-                    lin[0] = os.path.basename(lin[0])
+                    lin[0] = lin[0]
                 lin.insert(0, sc_name)
                 all_conc_lines.append(Series(lin, index=pindex))
 
@@ -1123,6 +1123,19 @@ def interrogator(corpus,
             corefs = []
         corenlp_xml = None
         return sents, corefs
+
+    def lowercase_result(res):       
+        if not preserve_case:
+            if not statsmode:
+                if res:
+                    if searcher == slow_tregex:
+                        res = [i[-1].lower() for i in res]
+                    else:
+                        res = [i.lower() for i in res]
+        if spelling:
+            if not statsmode:
+                res = [correct_spelling(r) for r in res]
+        return res
 
     def postprocess_concline(line):
         if searcher != slow_tregex and searcher != tgrep_searcher \
@@ -1432,7 +1445,7 @@ def interrogator(corpus,
                                              just_speakers=just_speakers,
                                              split_contractions=split_contractions,
                                              window=window,
-                                             filename=f.name,
+                                             filename=f.path,
                                              language_model=language_model,
                                              coref=corefs,
                                              countmode=countmode,
@@ -1452,10 +1465,14 @@ def interrogator(corpus,
                     # results by subcorpora, add them by metadata value
                     if by_metadata:
                         for (k, v), concl in zip(res.items(), conc_res.values()):
-                            if spelling and not statsmode:
-                                v = [correct_spelling(r) for r in v]
-                            if searcher == slow_tregex:
-                                v = [i[-1].lower() for i in v]
+                            #if spelling and not statsmode:
+                            #    v = [correct_spelling(r) for r in v]
+                            #if searcher == slow_tregex:
+                            #    v = [i[-1].lower() for i in v]
+                            #else:
+                            #    v = [i.lower() for i in v]
+                            
+                            v = lowercase_result(v)
 
                             results[k] += Counter(v)
                             for line in concl:
@@ -1529,16 +1546,7 @@ def interrogator(corpus,
 
                     # do lowercasing and spelling
                     if not only_conc:
-                        if not preserve_case:
-                            if not statsmode:
-                                if res:
-                                    if searcher == slow_tregex:
-                                        res = [i[-1].lower() for i in res]
-                                    else:
-                                        res = [i.lower() for i in res]
-                        if spelling:
-                            if not statsmode:
-                                res = [correct_spelling(r) for r in res]
+                        res = lowercase_result(res)
                         #if not statsmode:
                         results[subcorpus_name] += Counter(res)
                         #else:
