@@ -1649,6 +1649,8 @@ def interpreter(debug=False,
         # right now, you can't delete just a value...
         if tokens[-1] == 'field':
             to_remove = {to_remove: r'.*'}
+        if to_remove == 'all' and tokens[-1].startswith('tag'):
+            to_remove = {'tags': r'.*'}
         #elif tokens[-1] == 'tag':
 
         annotator(df_or_corpus=objs.corpus,

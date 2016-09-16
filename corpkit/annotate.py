@@ -29,8 +29,11 @@ def make_string_to_add(annotation, lin, replace=False):
     start = str()
     for k, v in annotation.items():
         # these are special names---add more?
-        v = process_special_annotation(v, lin)  
-        start += '# %s=%s\n' % (k, v)
+        v = process_special_annotation(v, lin) 
+        if replace:
+            start = '%s\n' % v
+        else:
+            start += '# %s=%s\n' % (k, v)
     return start
 
 def get_line_number_for_entry(filepath, si, ti, annotation):
@@ -47,22 +50,25 @@ def get_line_number_for_entry(filepath, si, ti, annotation):
         data = fo.read()
     lnum = data.split(partstart)[0].count('\n') + 2
     sent = data.split(partstart)[1].split(partend)[0]
+    field = 'tags' if isinstance(annotation, str) else list(annotation.keys())[0]
     ixx = next((i for i, l in enumerate(sent.splitlines()) \
-               if l.startswith('# tags=')), False)
+               if l.startswith('# %s=' % field)), False)
     
     if ixx is False:
         return lnum, False
     else:
-        repla = not isinstance(annotation, dict)
-        return lnum + ixx - 2, repla
+        return lnum + ixx - 2, True
 
 
-def make_contents(filepath, place, text, do_replace=False):    
+def make_contents(filepath, place, text, do_replace=False):
+    """ 
+    Open file, read lines, add or replace the line with the good one
+    """   
     from corpkit.constants import OPENER
     with OPENER(filepath, 'r', encoding='utf-8') as fo:
         contents = fo.readlines()
     if do_replace:
-        contents[place] = contents[place].rstrip('\n') + ',' + text
+        contents[place] = contents[place].rstrip('\n').replace(text + ',', '') + ',' + text
     else:
         contents.insert(place, text)
     return contents
@@ -150,7 +156,7 @@ def delete_lines(corpus, annotation, dry_run=True, colour={}):
 
         if dry_run:
             if tagmode:
-                repl_str = r'\1 <=======\n%s\2\3 <=======' % colour.get('green', '')
+                repl_str = r'\1 <=======\n%s\2\3 <=======\n' % colour.get('green', '')
             else:
                 repl_str = r'\1 <=======\n'
             try:
@@ -207,12 +213,17 @@ def annotator(df_or_corpus, annotation, dry_run=True, deletemode=False):
 
     file_sent_words = df_or_corpus.reset_index()[['index', 'f', 'i']].values.tolist()
     out = []
+    #todo: annotate file wise, not match wise
+    from collections import defaultdict
+    outt = defaultdict(list)
     for index, fn, ix in file_sent_words:
         s, i = ix.split(',', 1)
         out.append((index, fn, int(s), int(i)))
+        outt[fn].append((index, int(s), i))
     file_sent_words = set(out)
     
     # for each unique entry, get line number, make annotation and add
+
     for i, (index, fpath, si, ti) in enumerate(sorted(file_sent_words), start=1):
         line_num, do_replace = get_line_number_for_entry(fpath, si, ti, annotation)
         anno_text = make_string_to_add(annotation, df_or_corpus.ix[index], replace=do_replace)
