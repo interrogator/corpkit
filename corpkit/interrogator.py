@@ -1444,7 +1444,6 @@ def interrogator(corpus,
                                              skip_metadata=skip_metadata,
                                              **kwargs
                                             )
-                    print(res)
 
                     if res is None and conc_res is None:
                         cont
