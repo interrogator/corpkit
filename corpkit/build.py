@@ -758,6 +758,42 @@ def add_deps_to_corpus_path(path):
         df['d'] = all_deps
         df.to_csv(f, sep='\t', header=False)
 
+def get_all_metadata_fields(corpus):
+    from corpkit.constants import OPENER, PYTHON_VERSION
+
+    fs = []
+    import os
+    for root, dirnames, filenames in os.walk(corpus):
+        for filename in filenames:
+            fs.append(os.path.join(root, filename))
+
+    fields = []
+    for f in fs:
+        if PYTHON_VERSION == 2:
+            from corpkit.process import saferead
+            lines = saferead(f)[0].splitlines()
+        else:
+            with open(f, 'rb') as fo:
+                lines = fo.read().decode('utf-8', errors='ignore')
+                lines = lines.strip('\n')
+                lines = lines.splitlines()
+
+        lines = [l[2:].split('=', 1)[0] for l in lines if l.startswith('# ') \
+                 if not l.startswith('# sent_id')]
+        for l in lines:
+            if l not in fields and l not in ['parse', 'sent_id', 'speaker']:
+                fields.append(l)
+    return fields
+
+
+def get_names(filepath, speakid):
+    """get a list of speaker names from a file"""
+    with open(filepath, 'r') as fo:
+        txt = fo.read()
+        res = re.findall(speakid, txt)
+        if res:
+            return sorted(list(set([i.strip() for i in res])))
+
 def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     """
     Use regex to get speaker names from xml without parsing it
@@ -774,16 +810,9 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
         # parsing html with regular expression! :)
         speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
     else:
-        speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
-
-    def get_names(filepath):
-        """get a list of speaker names from a file"""
-        with open(filepath, 'r') as fo:
-            txt = fo.read()
-            res = re.findall(speakid, txt)
-            if res:
-                return sorted(list(set([i.strip() for i in res])))
-
+        if feature == 'speaker':
+            speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
+    
     # if passed a dir, do it for every file
     if os.path.isdir(path):
         for (root, dirs, fs) in os.walk(path):
@@ -793,7 +822,7 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
         list_of_files.append(path)
 
     for filepath in list_of_files:
-        res = get_names(filepath)
+        res = get_names(filepath, speakid)
         if not res:
             continue
         for i in res:

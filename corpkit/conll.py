@@ -213,6 +213,7 @@ def get_conc_start_end(df, only_format_match, show, idx, new_idx):
         # iterate over the words in the sentence
         for t in list(sent.index):
             # show them as we did the match
+            #todo: category here?
             out = show_this(df, [(sent_id, t)], show, df._metadata, conc=False)
             if not out:
                 continue
@@ -318,38 +319,6 @@ def show_fix(show):
 def dummy(x, *args, **kwargs):
     return x
 
-def make_not_ofm_concs(df, out, matches, conc, metadata, 
-               show, gotten_tok_bits, **kwargs):
-    """
-    df: all data
-    out_mx: indexes for each show val
-    out: processed bits for each show val
-    """
-    fname = kwargs.get('filename', '')
-    only_format_match = kwargs.get('only_format_match', False)
-    conc_lines = []
-
-    if not conc:
-        return conc_lines
-    if only_format_match:
-        return conc_lines
-
-    df = df['w']
-    for (s, i), form in zip(matches, list(gotten_tok_bits)):
-        if (s, i) not in matches:
-            continue
-        if only_format_match:
-            sent = df.loc[s]
-            start = ' '.join(list(sent.loc[:i-1][0]))
-            end = ' '.join(list(sent.loc[i+1:][0]))
-        else:
-            sent = gotten_tok_bits.loc[s].sort_index()
-            start = list(sent.loc[:i-1])
-            end = list(sent.loc[i+1:])
-        line = [fname, metadata[s]['speaker'], start, [form], end]
-        conc_lines.append(line)
-    return conc_lines
-
 def format_toks(to_process, show, df):
     """
     Format matches by show values
@@ -427,7 +396,9 @@ def format_toks(to_process, show, df):
                 data.append('/'.join(tup))
         return pd.Series(data, index=pd.MultiIndex.from_tuples(index))
 
-def make_concx(series, matches, metadata, df, conc, **kwargs):
+def make_concx(series, matches, metadata, df, 
+               conc, fsi_index=False, category=False, show_conc_metadata=False,
+               only_format_match=True, **kwargs):
     """
     Make concordance lines
 
@@ -438,7 +409,7 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
     conc_lines = []
     fname = kwargs.get('filename', '')
     ngram_mode = kwargs.get('ngram_mode')
-    add_meta = kwargs.get('show_conc_metadata')
+    add_meta = show_conc_metadata
     
     if not conc:
         return conc_lines
@@ -454,7 +425,7 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
                 mid_toks.append((s, i+n))
             sent = df.loc[s]
             first, last = mid_toks[0][1], mid_toks[-1][1]
-            if kwargs.get('only_format_match'):
+            if only_format_match:
                 start = ' '.join(list(sent.loc[:first]['w']))
                 end = ' '.join(list(sent.loc[last+1:]['w']))
             else:
@@ -478,37 +449,40 @@ def make_concx(series, matches, metadata, df, conc, **kwargs):
     for s, i in sorted(set(matches)):
         #thecount = matches.count((s, i))
         sent = df.loc[s]
-        if kwargs.get('only_format_match'):
+        if only_format_match:
             start = ' '.join(list(sent.loc[:i-1]['w']))
             end = ' '.join(list(sent.loc[i+1:]['w']))
         else:
             start = ' '.join(list(series.loc[s,:i-1]))
             end = ' '.join(list(series.loc[s,i+1:]))
         middles = series[s, i]
+        #print(start, end)
         sname = metadata[s]['speaker']
 
         if not isinstance(middles, pd.core.series.Series):
             middles = [middles]
+        
         for middle in middles:
-           
-            lin = [fname, sname, start, middle, end]
+            ix = '%d,%d' % (s, i)    
+            lin = [ix, category, fname, sname, start, middle, end]
 
             for k, v in sorted(metadata[s].items()):
 
                 if k in ['speaker', 'parse', 'sent_id']:
                     continue
+
                 if isinstance(add_meta, list):
                     if k in add_meta:
                         lin.append(v)
-                elif add_meta:
+                elif add_meta is True:
                     lin.append(v)
 
             conc_lines.append(lin)
 
     return conc_lines
 
-def show_this(df, matches, show, metadata,
-              conc=False, coref=False, **kwargs):
+def show_this(df, matches, show, metadata, conc=False,
+              coref=False, category=False, show_conc_metadata=False, **kwargs):
 
     matches = sorted(matches)
 
@@ -518,7 +492,7 @@ def show_this(df, matches, show, metadata,
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
         return list(df.loc[matches][show[0][-1]]), {}
 
-    only_format_match = kwargs.get('only_format_match', True)
+    only_format_match = kwargs.pop('only_format_match', True)
     ngram_mode = kwargs.get('ngram_mode', True)
 
     if ngram_mode:
@@ -604,7 +578,10 @@ def show_this(df, matches, show, metadata,
     matches = list(series.index)
  
     # generate conc
-    conc_lines = make_concx(series, matches, metadata, df, conc, **kwargs)
+    conc_lines = make_concx(series, matches, metadata, df,
+                             conc, only_format_match=only_format_match,
+                             category=category,
+                             show_conc_metadata=show_conc_metadata, **kwargs)
     the_ser = list(series)
     if ngram_mode:
         the_ser = list([i[3] for i in conc_lines])
@@ -787,6 +764,8 @@ def pipeline(f,
              from_df=False,
              just_metadata=False,
              skip_metadata=False,
+             category=False,
+             show_conc_metadata=False,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
@@ -808,8 +787,7 @@ def pipeline(f,
         df = from_df
 
     # if working by metadata feature,
-    feature = kwargs.get('by_metadata', False)
-    show_conc_metadata = kwargs.get('show_conc_metadata')
+    feature = kwargs.pop('by_metadata', False)
 
     if df is not None:
         if just_metadata:
@@ -840,7 +818,9 @@ def pipeline(f,
                             coref=coref,
                             from_df=new_df,
                             by_metadata=False,
-                            show_conc_metadata=show_conc_metadata)
+                            category=category,
+                            show_conc_metadata=show_conc_metadata,
+                            **kwargs)
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict
@@ -898,7 +878,10 @@ def pipeline(f,
     # get rid of NA results
     all_matches = [i for i in all_matches if i in list(df.index)]
 
-    out, conc_out = show_this(df, all_matches, show, metadata, conc, coref=coref, **kwargs)
+    out, conc_out = show_this(df, all_matches, show, metadata, conc, 
+                              coref=coref, category=category, 
+                              show_conc_metadata=show_conc_metadata,
+                              **kwargs)
 
     return out, conc_out
 

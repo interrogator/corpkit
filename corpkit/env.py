@@ -99,6 +99,9 @@ import corpkit
 from corpkit import *
 from corpkit.constants import transshow, transobjs
 
+import warnings
+warnings.simplefilter(action="ignore", category=UserWarning)
+
 # pandas display setup, though this is rarely used when LESS
 # and tabview are available
 size = pd.util.terminal.get_terminal_size()
@@ -221,6 +224,7 @@ class Objects(object):
         self._do_conc = True
         self._interactive = True
         self._decimal = 3
+        self._annotation_unlocked = False
 
     def _get(self, name):
         """
@@ -381,20 +385,20 @@ def interpreter(debug=False,
                     lines_to_print.append(highstr)
 
                 if objs._interactive:
-                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R")
+                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R -S")
                 else:
                     print('\n'.join(lines_to_print))
             except ImportError:
                 formatted = obj.format(print_it=False, **objs._conc_kwargs)  
                 if objs._interactive:
-                    pydoc.pipepager(formatted, cmd="less -X -R")
+                    pydoc.pipepager(formatted, cmd="less -X -R -S")
                 else:
                     print(formatted)
 
         else:
             formatted = obj.format(print_it=False, **objs._conc_kwargs)
             if objs._interactive:
-                pydoc.pipepager(formatted, cmd="less -X -R")
+                pydoc.pipepager(formatted, cmd="less -X -R -S")
             else:
                 print(formatted)
 
@@ -418,10 +422,10 @@ def interpreter(debug=False,
         elif obj:
             showfunc(obj.round(objs._decimal), **kwa)
             return
-        else:
-            if isinstance(objs._get(command)[1], (pd.DataFrame, pd.Series)):
-                showfunc(objs._get(command)[1].round(objs._decimal), **kwa)
-                return
+        #else:
+        #    if isinstance(objs._get(command)[1], (pd.DataFrame, pd.Series)):
+        #        showfunc(objs._get(command)[1].round(objs._decimal), **kwa)
+        #        return
 
     def single_command_print(command):
         """
@@ -534,12 +538,15 @@ def interpreter(debug=False,
                 return
             metfeat = tokens[1]
             crit = tokens[-1]
-            if isinstance(getattr(objs.corpus, attr, False), dict):
-                d = getattr(objs.corpus, attr)
-                d[metfeat] = parse_pattern(crit)
-                setattr(objs.corpus, attr, d)
+            if crit.startswith('tag'):
+                setattr(objs.corpus, attr, {'tags': parse_pattern(crit)})
             else:
-                setattr(objs.corpus, attr, {metfeat: parse_pattern(crit)})
+                if isinstance(getattr(objs.corpus, attr, False), dict):
+                    d = getattr(objs.corpus, attr)
+                    d[metfeat] = parse_pattern(crit)
+                    setattr(objs.corpus, attr, d)
+                else:
+                    setattr(objs.corpus, attr, {metfeat: parse_pattern(crit)})
             print("Current %s filter: %s" % (attr, getattr(objs.corpus, attr)))
             return
 
@@ -583,14 +590,18 @@ def interpreter(debug=False,
                     setattr(objs, i, dat)
                 except (UnicodeDecodeError, IOError):
                     pass
+                except ValueError:
+                    print('Warning: could not load saved interrogations. Different Pythons?')
+                    pass
 
         else:
-            try:
-                dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
-                set_something([dirs[int(tokens[-1])-1]])
-            except:
-                print('Corpus not found: %s' % tokens[0])
-                return
+
+            dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
+            corpname = dirs[int(tokens[0])-1]
+            set_something([corpname])
+
+                #print('Corpus not found: %s' % tokens[0])
+                #return
 
     def parse_search_related(search_related):
         """
@@ -718,10 +729,19 @@ def interpreter(debug=False,
 
         if val.isdigit():
             return int(val)
+        elif val.startswith('[') and val.endswith(']'):
+            val = val.lstrip('[').rstrip(']')
+            if ', ' in val:
+                return val.strip('"').strip("'").split(', ')
+            elif ',' in val:
+                return val.strip('"').strip("'").split(',')
+            elif ' ' in val:
+                return val.strip('"').strip("'").split()
+
         elif val.lower() in trans.keys():
             return trans.get(val)
         # interpret columns
-        elif all(i in ['c', 'f', 's', 'l', 'm', 'r'] for i in val.lower()) and len(val) <= 6:
+        elif all(i in ['i', 'c', 'f', 's', 'l', 'm', 'r'] for i in val.lower()) and len(val) <= 6:
             return [i for i in val.lower()]
 
         else:
@@ -1091,8 +1111,7 @@ def interpreter(debug=False,
             objs.edited = False
 
         # either all or no showing should be done here 
-        if command in [edit_something, sort_something, calculate_result,
-                       annotate_conc, keep_conc, del_conc]:
+        if command in [edit_something, sort_something, calculate_result]:
             from corpkit.interrogation import Concordance
             if isinstance(out, Concordance):
                 objs._old_concs[-1] = objs.concordance
@@ -1219,6 +1238,7 @@ def interpreter(debug=False,
                 sorted_lines = thing_to_edit.sort_index()
             else:
                 if val.startswith('l') or val.startswith('r') or val.startswith('m'):
+                    val = val[0]
                     l_or_r = thing_to_edit[val[0]]
                     ind = int(val[1:])
                     if val[0] == 'l':
@@ -1234,7 +1254,8 @@ def interpreter(debug=False,
                         splitter = ' '
 
                     to_sort_on = l_or_r.str.split(splitter).tolist()
-                    to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) else np.nan for i in to_sort_on]
+                    to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) \
+                                  else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
 
@@ -1245,7 +1266,7 @@ def interpreter(debug=False,
                     for i in range(len(thing_to_edit)):
                         series.append(num_col.get(str(i), 'zzzzz'))
                     thing_to_edit['x'] = series
-                sorted_lines = thing_to_edit.sort_values(val[0], axis=0, na_position='first')
+                sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='first')
             
             if val == 'x':
                 sorted_lines = sorted_lines.drop('x', axis=1)
@@ -1522,6 +1543,7 @@ def interpreter(debug=False,
             - a pseudo index: "5-10"
             - a column and regex: "l matching 'regex'"
             - a colour name
+            - 'all'
 
         :returns: a `set` of matching indices
 
@@ -1534,6 +1556,7 @@ def interpreter(debug=False,
                    'lightgreen_ex', 'cyan', 'lightred_ex']
         cols = []
         token = tokens[0]
+
         # for something like del red
         if token in colours:
             if tokens[-1].lower() == 'back':
@@ -1546,7 +1569,10 @@ def interpreter(debug=False,
             return set([k for k, v in colourdict.items() if v.get(sty) == token])  
             
         # annotate range of tokens
-        if '-' in token:
+        if token == 'all':
+            return [str(i) for i in list(objs.concordance.index)]
+
+        elif '-' in token:
             first, last = token.split('-', 1)
             if not first:
                 first = 0
@@ -1560,7 +1586,12 @@ def interpreter(debug=False,
         else:
             # regex match only what's shown in the window
             window = objs._conc_kwargs.get('window', 35)
-            token_bits = list(token)
+            if token in list(objs.concordance.columns) \
+                and token not in ['l', 'm', 'r']:
+                token_bits = [token]
+            else:
+                token_bits = list(token)
+            slic = slice(None, None)
             for bit in token_bits:
                 if bit.lower() == 'm':
                     slic = slice(None, None)
@@ -1576,11 +1607,16 @@ def interpreter(debug=False,
                     rgx = tokens[tokens.index('matching') + 1]
                 else:
                     rgx = tokens[1]
+                rgx = parse_pattern(rgx)
 
                 pol = not 'not' in tokens
                 
                 # get the window size of context, and reduce to just windows
-                trues = objs.concordance[bit].str.rjust(mx).str[slic].str.contains(rgx)
+                if isinstance(rgx, list):
+                    trues = objs.concordance[bit].str.rjust(mx).str[slic].isin(rgx)
+                else:
+                    trues = objs.concordance[bit].str.rjust(mx).str[slic].str.contains(rgx)
+                
                 if pol:
                     mtch = objs.concordance[trues]
                 else:
@@ -1591,13 +1627,75 @@ def interpreter(debug=False,
 
         return set(cols)
 
+    def parse_anno_with(tokens):
+        if tokens[0] == 'tag':
+            return tokens[-1]
+        elif tokens[0] == 'field':
+            tokens = tokens[1:]
+            nx = next((i for i, w in enumerate(tokens) if w != 'as'), 0)
+            return {tokens[nx]: tokens[-1]}
+
+    def unannotate_corpus(tokens):
+        """
+        Remove annotations from a corpus
+
+        :Example:
+
+           `unannotate character field`
+           `unannotate friend tag`
+        """
+        to_remove = tokens[0]
+        from corpkit.annotate import annotator
+        # right now, you can't delete just a value...
+        if tokens[-1] == 'field':
+            to_remove = {to_remove: r'.*'}
+        #elif tokens[-1] == 'tag':
+
+        annotator(df_or_corpus=objs.corpus,
+                  annotation=to_remove,
+                  dry_run=not objs._annotation_unlocked,
+                  deletemode=True)
+        if not objs._annotation_unlocked:
+            print("\nIf you really want to delete these annotations from the corpus, " \
+                  "do `toggle annotation` and run the previous command again.\n")
+        else:
+            print('Deleted %s annotations.' % tokens[0])
+
+    def annotate_corpus(tokens):
+        """
+        Add annotations to the corpus
+
+        :Example:
+
+           `annotate m matching 'ing$' with tag as 'mytag'`
+           `annotate m matching 'ing$' with field as 'person' and value as 'daisy'`
+        """
+
+        cols = get_matching_indices(tokens)
+        from corpkit.interrogation import Concordance
+        df = objs.concordance.ix[[int(i) for i in list(cols)]]
+
+        if 'with' in tokens:
+            start = tokens.index('with')
+            with_related = tokens[start+1:]
+        else:
+            with_related = []
+        annotation = parse_anno_with(with_related)
+        from corpkit.annotate import annotator
+        annotator(df, annotation, dry_run=not objs._annotation_unlocked)
+        if not objs._annotation_unlocked:
+            print("\nWhen you're ready to actually add annotations to the files, " \
+                  "do `toggle annotation` and run the previous command again.\n")
+        else:
+            print('Corpus annotated (%d additions).' % len(df.index))
+
     def annotate_conc(tokens):
         """
         Annotate concordance lines matching criteria with a colour or style
 
         :Example:
 
-           `mark m matching 'ing$' red
+           `mark m matching 'ing$' red`
         """
         from colorama import Fore, Back, Style, init
         init(autoreset=True)
@@ -1717,6 +1815,10 @@ def interpreter(debug=False,
             objs._interactive = not objs._interactive
             s = 'on' if objs._interactive else 'off'
             print('Auto showing of results and concordances turned %s.' % s)
+        if tokens[0].startswith('anno'):
+            objs._annotation_unlocked = not objs._annotation_unlocked
+            s = 'on' if objs._annotation_unlocked else 'off'
+            print('Annotation mode %s.' % s)
 
     def remove_something(tokens):
         if len(tokens) == 1:
@@ -1761,6 +1863,8 @@ def interpreter(debug=False,
             objs.named[name] = (originally_was, thing)
             print('%s named "%s".' % (tokens[0], name))
 
+
+
     def run_previous(tokens):
         import shlex
         output = list(reversed(objs.previous))[int(tokens[0]) - 1][0]
@@ -1802,6 +1906,8 @@ def interpreter(debug=False,
                    'export': export_result,
                    'redo': run_previous,
                    'mark': annotate_conc,
+                   'annotate': annotate_corpus,
+                   'unannotate': unannotate_corpus,
                    'del': del_conc,
                    'just': keep_conc,
                    'sort': sort_something,

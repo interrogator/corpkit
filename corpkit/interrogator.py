@@ -51,6 +51,7 @@ def interrogator(corpus,
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
     show_conc_metadata = kwargs.pop('show_conc_metadata', False)
+    fsi_index = kwargs.pop('fsi_index', True)
 
     if subcorpora:
         by_metadata = subcorpora
@@ -1010,22 +1011,28 @@ def interrogator(corpus,
         else:
             print(finalstring)
 
-    def determine_conc_colnames(f):
+    def determine_conc_colnames(corpus, fsi_index=False):
     
-        if PYTHON_VERSION == 2:
-            base = 'c f s l m r'.encode('utf-8').split()
-        else:
-            base = 'c f s l m r'.split() 
+        fields = []
+        base = 'c f s l m r'
         
+        if fsi_index:
+            base = 'i ' + base
+        
+        if PYTHON_VERSION == 2:
+            base = base.encode('utf-8').split()
+        else:
+            base = base.split() 
+
         if show_conc_metadata:
-            from corpkit.conll import parse_conll
-            meta = parse_conll(f.path)._metadata[1]
+            from corpkit.build import get_all_metadata_fields
+            meta = get_all_metadata_fields(corpus.path)
 
             if isinstance(show_conc_metadata, list):
-                meta = [i for i in list(meta.keys()) if i in show_conc_metadata]
-            elif show_conc_metadata is True:
-                meta = list(meta.keys())
-            for i in meta:
+                meta = [i for i in meta if i in show_conc_metadata]
+            #elif show_conc_metadata is True:
+            #    pass
+            for i in sorted(meta):
                 if i in ['speaker', 'sent_id', 'parse']:
                     continue
                 if PYTHON_VERSION == 2:
@@ -1034,13 +1041,13 @@ def interrogator(corpus,
                     base.append(i)
         return base
 
-    def make_conc_obj_from_conclines(conc_results):
+    def make_conc_obj_from_conclines(conc_results, fsi_index=False):
         """
         Turn conclines into DataFrame
         """
         from corpkit.interrogation import Concordance
+        #fsi_place = 2 if fsi_index else 0
 
-        pindex = conc_col_names
         all_conc_lines = []
         for sc_name, resu in sorted(conc_results.items()):
             if only_unique:
@@ -1050,43 +1057,46 @@ def interrogator(corpus,
             #make into series
             for lin in unique_results:
                 #spkr = str(spkr, errors = 'ignore')
-                if not subcorpora:
-                    lin[0] = lin[0]
-                lin.insert(0, sc_name)
-                all_conc_lines.append(Series(lin, index=pindex))
+                #if not subcorpora:
+                #    lin[fsi_place] = lin[fsi_place]
+                #lin.insert(fsi_place, sc_name)
+
+                if len(lin) < len(conc_col_names):
+                    diff = len(conc_col_names) - len(lin)
+                    lin.extend(['none'] * diff)
+
+
+                all_conc_lines.append(Series(lin, index=conc_col_names))
 
         if random:
             from random import shuffle
             shuffle(all_conc_lines)
 
+        conc_df = pd.concat(all_conc_lines, axis=1).T
+
+        if all(x == '' for x in list(conc_df['s'].values)) or \
+           all(x == 'none' for x in list(conc_df['s'].values)):
+            conc_df.drop('s', axis=1, inplace=True)
+        
+        if show_collocates:
+            if not language_model:
+                counted = Counter(conc_df['m'])
+                indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
+                conc_df = conc_df.ix[indices]
+                conc_df = conc_df.reset_index(drop=True)
+
+        locs['corpus'] = corpus.name
+
+        # there is an error in xml conc that duplicates results
+        # i'm not maintaining it anymore, but i'll fix it with this
+        if datatype == 'parse':
+            conc_df = conc_df.drop_duplicates().reset_index()
+        conc_df = Concordance(conc_df[:maxconc])
         try:
-            conc_df = pd.concat(all_conc_lines, axis=1).T
-            if all(x == '' for x in list(conc_df['s'].values)) or \
-               all(x == 'none' for x in list(conc_df['s'].values)):
-                conc_df.drop('s', axis=1, inplace=True)
-            
-            if show_collocates:
-                if not language_model:
-                    counted = Counter(conc_df['m'])
-                    indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
-                    conc_df = conc_df.ix[indices]
-                    conc_df = conc_df.reset_index(drop=True)
-
-            locs['corpus'] = corpus.name
-
-            # there is an error in xml conc that duplicates results
-            # i'm not maintaining it anymore, but i'll fix it with this
-            if datatype == 'parse':
-                conc_df = conc_df.drop_duplicates().reset_index()
-            conc_df = Concordance(conc_df[:maxconc])
-            try:
-                conc_df.query = locs
-            except AttributeError:
-                pass
-            return conc_df
-
-        except ValueError:
-            return
+            conc_df.query = locs
+        except AttributeError:
+            pass
+        return conc_df
 
 
     def turn_file_into_sents_corefs(f, show, just_speakers, coref=False):
@@ -1137,16 +1147,20 @@ def interrogator(corpus,
                 res = [correct_spelling(r) for r in res]
         return res
 
-    def postprocess_concline(line):
-        if searcher != slow_tregex and searcher != tgrep_searcher \
-            and datatype != 'conll':
-            line.insert(0, f.name)
-        else:
-            line[0] = f.name
+    def postprocess_concline(line, fsi_index=False):
+        # todo: are these right?
+        subc, star, en = 0, 2, 5
+        if fsi_index:
+            subc, star, en = 2, 4, 7
+        #if searcher != slow_tregex and searcher != tgrep_searcher \
+        #    and datatype != 'conll':
+        #    line.insert(subc, f.name)
+        #else:
+        #    line[subc] = f.name
         if not preserve_case:
-            line[2:5] = [x.lower() for x in line[2:5]]
+            line[star:en] = [x.lower() for x in line[star:en]]
         if spelling:
-            line[2:5] = [correct_spelling(b) for b in line[2:5]]
+            line[star:en] = [correct_spelling(b) for b in line[star:en]]
         return line
 
     def make_progress_bar():
@@ -1353,9 +1367,8 @@ def interrogator(corpus,
     p, outn, total_files, par_args = make_progress_bar()
 
     if conc:
-        first_f = list(to_iterate_over.values())[0][0]
-        conc_col_names = determine_conc_colnames(first_f)
-
+        
+        conc_col_names = determine_conc_colnames(corpus, fsi_index=fsi_index)
 
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
@@ -1455,6 +1468,8 @@ def interrogator(corpus,
                                              show_conc_metadata=show_conc_metadata,
                                              just_metadata=just_metadata,
                                              skip_metadata=skip_metadata,
+                                             fsi_index=fsi_index,
+                                             category=subcorpus_name,
                                              **kwargs
                                             )
 
@@ -1477,7 +1492,8 @@ def interrogator(corpus,
                             results[k] += Counter(v)
                             for line in concl:
                                 if numconc < maxconc or not maxconc:
-                                    line = postprocess_concline(line)
+                                    line = postprocess_concline(line,
+                                        fsi_index=fsi_index)
                                     conc_results[k].append(line)
                                     numconc += 1
                         
@@ -1539,7 +1555,8 @@ def interrogator(corpus,
                     # add filename and do lowercasing for conc
                     if not no_conc:
                         for line in conc_res:
-                            line = postprocess_concline(line)
+                            line = postprocess_concline(line,
+                                fsi_index=fsi_index)
                             if numconc < maxconc or not maxconc:
                                 conc_results[subcorpus_name].append(line)
                                 numconc += 1
@@ -1560,7 +1577,7 @@ def interrogator(corpus,
     # Get concordances into DataFrame, return if just conc
     if not no_conc:
         # fail on this line with typeerror if no results?
-        conc_df = make_conc_obj_from_conclines(conc_results)
+        conc_df = make_conc_obj_from_conclines(conc_results, fsi_index=fsi_index)
 
         if only_conc:
             locs = sanitise_dict(locs)

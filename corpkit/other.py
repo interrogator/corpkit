@@ -97,7 +97,8 @@ def quickview(results, n=25):
         else:
             print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
-def concprinter(dataframe, kind='string', n=100, window=35, columns='all', **kwargs):
+def concprinter(dataframe, kind='string', n=100,
+                window=35, columns='all', **kwargs):
     """
     Print conc lines nicely, to string, latex or csv
 
@@ -158,14 +159,23 @@ def concprinter(dataframe, kind='string', n=100, window=35, columns='all', **kwa
         functi = pd.DataFrame.to_csv
         kwargs['sep'] = '\t'
 
+    # automatically basename subcorpus for show
+    if 'c' in list(df.columns):
+        import os
+        df['c'] = df['c'].apply(os.path.basename)
+
+    if 'f' in list(df.columns):
+        import os
+        df['f'] = df['f'].apply(os.path.basename)
+
     return_it = kwargs.pop('return_it', False)
     print_it = kwargs.pop('print_it', True)
 
     if return_it:
-        return functi(to_show, header=False, **kwargs)
+        return functi(to_show, header=kwargs.get('header', False), **kwargs)
     else:
         print('\n')
-        print(functi(to_show, header=False, **kwargs))
+        print(functi(to_show, header=kwargs.get('header', False), **kwargs))
         print('\n')
 
 def save(interrogation, savename, savedir='saved_interrogations', **kwargs):

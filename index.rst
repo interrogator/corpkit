@@ -159,6 +159,7 @@ Information about the syntax is available at the :ref:`interpreter-page`.
    rst_docs/interpreter/corpkit.interpreter.making.rst
    rst_docs/interpreter/corpkit.interpreter.interrogating.rst
    rst_docs/interpreter/corpkit.interpreter.concordancing.rst
+   rst_docs/interpreter/corpkit.interpreter.annotating.rst
    rst_docs/interpreter/corpkit.interpreter.editing.rst
    rst_docs/interpreter/corpkit.interpreter.visualising.rst
    rst_docs/interpreter/corpkit.interpreter.managing.rst
