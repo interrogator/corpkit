@@ -1111,7 +1111,8 @@ def interpreter(debug=False,
             objs.edited = False
 
         # either all or no showing should be done here 
-        if command in [edit_something, sort_something, calculate_result]:
+        if command in [edit_something, sort_something, calculate_result,
+                       keep_conc, del_conc]:
             from corpkit.interrogation import Concordance
             if isinstance(out, Concordance):
                 objs._old_concs[-1] = objs.concordance

@@ -60,3 +60,13 @@ The moment these values have been added to your text, you can do really powerful
 
 Now, the subcorpora will be the different processes (*verbal*, *mental* and *none*), and any sentence annotated as containing the ``gatsby`` ``character``, or the ``passive`` ``tag``, will be ignored.
 
+Removing annotations
+-----------------------
+
+To remove a ``tag`` or a ``field`` across the dataset, the commands are very simple. Note that again, you
+
+.. code-block:: shell
+
+   > unannotate character field
+   > unannotate typo tag
+   > unannotate all tags

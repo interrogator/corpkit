@@ -88,10 +88,12 @@ def get_dependents_of_id(idx, df=False, repeat=False, attr=False, coref=False):
 def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     """get governors of a token"""
     
+    # it can be a series or a tuple
     sent_id, tok_id = getattr(idx, 'name', idx)
-    govid = df.ix[sent_id, tok_id]['g']
+    # get the governor id
+    govid = df['g'].loc[sent_id, tok_id]
     if attr:
-        return getattr(df.ix[sent_id,govid], attr, 'root')
+        return getattr(df.loc[sent_id,govid], attr, 'root')
     return [(sent_id, govid)]
 
     #sent = df.xs(sent_id, level='s', drop_level=False)
@@ -481,8 +483,109 @@ def make_concx(series, matches, metadata, df,
 
     return conc_lines
 
+def func(ser, df=False, obj=False, att=False):
+    """
+    To apply to a DataFrame to add complex criteria, like 'gf'
+    """
+    if obj == 'd':
+        idxs = [(ser.name[0], int(i)) for i in ser[obj].split(',')]
+    elif obj == 'g':
+        idxs = (ser.name[0], ser[obj])
+    if obj == 'g' and idxs[1] == 0:
+        return 'root'
+    else:
+        try:
+            return df[att].loc[idxs]
+        except:
+            return ''
+
+def fast_simple_conc(dfss, idxs, show, metadata, add_meta, 
+                     fname, category, only_format_match):
+    """
+    Fast, simple concordancer
+
+    todo: add gov dep gets in here...
+    """
+
+    conc_res = []
+
+    # todo: add support for adjacent, ngram, coll, gov, dep, coref
+    simple = all(i.startswith('m') for i in show)
+
+    df = dfss.copy()
+
+    # why not just add columns to the dataframe?
+    # needs only format match
+    if not simple:
+        for i in show:
+            if i.startswith('m'):
+                continue
+            ob, att = i[0], i[-1]
+            dfx = df[[ob, att]]
+            #print(dfx)
+            #print(dfx, ob, att)
+            ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
+            df[i] = ser
+
+    df.columns = ['m' + i if len(i) == 1 else i for i in list(df.columns)]
+
+    if only_format_match and len(show) == 1:
+        bit = show[0]
+        matches = df[bit].loc[idxs]
+        df = df[bit]
+
+    elif only_format_match and len(show) > 1:
+        matches = df.loc[idxs]
+        if any(i.endswith('i') for i in show):
+            matchesx = matches.reset_index()
+        else:
+            matchesx = matches
+        llist = [matchesx[i] for i in show[1:]]
+        matches = matchesx[show[0]].str.cat(others=llist, sep='/')
+        df = df['mw']
+        
+    elif not only_format_match and len(show) == 1:
+        bit = show[0]
+        df = df[bit]
+        matches = df.loc[idxs]
+
+    elif not only_format_match and len(show) > 1:
+        if any(i.endswith('i') for i in show):
+            dfx = df.reset_index()
+        else:
+            dfx = df
+        llist = [dfx[i] for i in show[1:]]
+        from pandas import Series
+        df = Series(dfx[show[0]].str.cat(others=llist, sep='/'), index=df.index)
+        #todo: is values faster ?
+        matches = df.loc[idxs]
+
+    for mid, (s, i) in zip(matches, idxs):
+        meta = metadata[s]
+        ix = '%d,%d' % (s, i)
+        sent = df.loc[s]
+        start = ' '.join(sent.loc[:i-1].values)
+        end = ' '.join(sent.loc[i+1:].values)
+        sname = meta['speaker']
+        lin = [ix, category, fname, sname, start, mid, end]
+        #res.append(mid)
+        if add_meta:
+            for k, v in sorted(meta.items()):
+                if k in ['speaker', 'parse', 'sent_id']:
+                    continue
+                if isinstance(add_meta, list):
+                    if k in add_meta:
+                        lin.append(v)
+                elif add_meta is True:
+                    lin.append(v)
+        conc_res.append(lin)
+    return list(matches), conc_res
+
 def show_this(df, matches, show, metadata, conc=False,
               coref=False, category=False, show_conc_metadata=False, **kwargs):
+
+    only_format_match = kwargs.pop('only_format_match', True)
+    ngram_mode = kwargs.get('ngram_mode', True)
 
     matches = sorted(matches)
 
@@ -491,9 +594,18 @@ def show_this(df, matches, show, metadata, conc=False,
         return len(matches), {}
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
         return list(df.loc[matches][show[0][-1]]), {}
-
-    only_format_match = kwargs.pop('only_format_match', True)
-    ngram_mode = kwargs.get('ngram_mode', True)
+    
+    # todo: make work for other bits
+    elif all(i[0] in ['m', 'g'] for i in show) and conc:
+        #smatches = list(df.loc[matches][show[0][-1]])
+        return fast_simple_conc(df,
+                                matches,
+                                show,
+                                metadata,
+                                show_conc_metadata,
+                                kwargs.get('filename', ''),
+                                category,
+                                only_format_match)
 
     if ngram_mode:
         show = [x.lstrip('n') for x in show]
@@ -518,7 +630,7 @@ def show_this(df, matches, show, metadata, conc=False,
         conc_out = defaultdict(list)
 
         for val in show:
-            # adj = ('+', int)
+            # todo: make into function
             adj, val = determine_adjacent(val)
             if adj:
                 if adj[0] == '+':
@@ -587,92 +699,6 @@ def show_this(df, matches, show, metadata, conc=False,
         the_ser = list([i[3] for i in conc_lines])
     return the_ser, conc_lines
 
-    # from here on down is a total bottleneck, so it's not used right now.
-    easy_attrs = ['w', 'l', 'p', 'f', 'y', 'z']
-    strings = []
-    concs = []
-    # for each index tuple
-
-
-    for idx in matches:
-        # we have to iterate over if we have dependent showing
-        repeats = len(get_dependents_of_id(idx, df=df)) if any(x.startswith('d') for x in show) else 1
-        for repeat in range(1, repeats + 1):
-            single_token_bits = []
-            matched_idx = False
-            for val in show:
-                
-                adj, val = determine_adjacent(val)
-                
-                obj, attr = val[0], val[-1]
-                obj_getter = objmapping.get(obj)
-                
-                if adj:
-                    new_token, new_idx = get_adjacent_token(df, idx, adj)
-                else:
-                    new_idx = idx
-
-                if not new_idx in df.index:
-                    continue
-
-                # get idxs to show
-                matched_idx = obj_getter(new_idx, df=df, repeat=repeat)
-                
-                # should it really return a list if we never use all bits?
-                if not matched_idx:
-                    single_token_bits.append('none')
-                else:
-                    matched_idx = matched_idx[0]
-                    piece = False
-                    if attr == 's':
-                        piece = str(matched_idx[0])
-                    elif attr == 'i':
-                        piece = str(matched_idx[1])
-                    
-                    # this deals
-                    if matched_idx[1] == 0:
-                        if df.ix[matched_idx].name == 'w':
-                            if len(show) == 1:
-                                continue
-                            else:
-                                piece = 'none'
-                        elif attr in easy_attrs:
-                            piece = 'root'
-                    else:
-                        if not piece:
-                            wcmode = False
-                            if attr == 'x':
-                                wcmode = True
-                                attr = 'p'
-                            try:
-                                piece = df.ix[matched_idx]
-                                if not hasattr(piece, attr):
-                                    continue
-                                piece = piece[attr].replace('/', '-slash-')
-                            except IndexError:
-                                continue
-                            except KeyError:
-                                continue
-                            if wcmode:
-                                from corpkit.dictionaries.word_transforms import taglemma
-                                piece = taglemma.get(piece.lower(), piece.lower())
-                    single_token_bits.append(piece)
-
-            out = '/'.join(single_token_bits)
-            strings.append(out)
-            if conc and matched_idx:
-                start, end = get_conc_start_end(df, only_format_match, show, idx, new_idx)
-                fname = kwargs.get('filename', '')
-                sname = metadata[idx[0]].get('speaker', 'none')
-                if all(x == 'none' for x in out.split('/')):
-                    continue
-                if not out:
-                    continue
-                concs.append([fname, sname, start, out, end])
-
-    strings = [i for i in strings if i and not all(x == 'none' for x in i.split('/'))]
-    return strings, concs
-
 def fix_show_bit(show_bit):
     """take a single search/show_bit type, return match"""
     #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
@@ -686,7 +712,6 @@ def fix_show_bit(show_bit):
     if show_bit[0] not in starts:
         show_bit.insert(0, 'm')
     return ''.join(show_bit)
-
 
 def remove_by_mode(matches, mode, criteria):
     """if mode is all, remove any entry that occurs < len(criteria)"""
@@ -877,6 +902,7 @@ def pipeline(f,
 
     # get rid of NA results
     all_matches = [i for i in all_matches if i in list(df.index)]
+    #all_matches = list(df.loc[all_matches].index)
 
     out, conc_out = show_this(df, all_matches, show, metadata, conc, 
                               coref=coref, category=category, 

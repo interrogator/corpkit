@@ -1478,6 +1478,7 @@ def interrogator(corpus,
 
                     # deal with symbolic structures---that is, rather than adding
                     # results by subcorpora, add them by metadata value
+                    # todo: sorting?
                     if by_metadata:
                         for (k, v), concl in zip(res.items(), conc_res.values()):
                             #if spelling and not statsmode:
@@ -1618,15 +1619,19 @@ def interrogator(corpus,
         total_total = df.sum().sum()
 
     # turn df into series if all conditions met
-    if not countmode:
-        if level == 's' or singlefile or nosubmode:
-            if not files_as_subcorpora:
-                if not kwargs.get('df1_always_df'):
-                    df = Series(df.ix[0])
-                    df.sort_values(ascending=False, inplace=True)
-                    tot = df.sum()
-                    numentries = len(df.index)
-                    total_total = tot
+    conds = [countmode,
+             files_as_subcorpora,
+             subcorpora,
+             kwargs.get('df1_always_df')]
+    anyxs = [level == 's',
+             singlefile,
+             nosubmode]
+    if all(not x for x in conds) and any(x for x in anyxs):
+        df = Series(df.ix[0])
+        df.sort_values(ascending=False, inplace=True)
+        tot = df.sum()
+        numentries = len(df.index)
+        total_total = tot
 
     # turn data into DF for GUI if need be
     if isinstance(df, Series) and kwargs.get('df1_always_df'):
