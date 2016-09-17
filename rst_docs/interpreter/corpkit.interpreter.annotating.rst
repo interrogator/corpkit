@@ -1,13 +1,9 @@
 Annotating your corpus
 ========================
 
-Another thing you might like to do is add metadata or annotations to your corpus. This can be done by simply editing corpus files.
+Another thing you might like to do is add metadata or annotations to your corpus. This can be done by simply editing corpus files, which are stored in a human-readable format. You can also automate annotation, however.
 
-You can also automate annotation, however. To do this, you first run a ``search`` command and generate a ``concordance`.
-
-Then, you edit and colour this concordance however you like.
-
-Then, you can use the ``annotate`` command. It works a lot like the ``mark``, ``keep``, and ``del`` commands to begin with, but has some special syntax at the end.
+To do annotation, you first run a ``search`` command and generate a ``concordance``.  Then, you can use the ``annotate`` command to save to disk a scheme based on the generated concordance lines. ``annotate` works a lot like the ``mark``, ``keep``, and ``del`` commands to begin with, but has some special syntax at the end.
 
 Tagging sentences
 -------------------
@@ -19,9 +15,12 @@ The first way of annotating is to add a **tag** to one or more sentences:
    > search corpus for pos matching NNP and word matching 'daisy'
    > annotate m matching '^daisy$' with tag 'has_daisy'
 
+You can use `all` to annotate every single concordance line:
+
 .. code-block:: shell
 
-   > search corpus for governor-function matching nsubjpass showing governor-lemma and lemma
+   > search corpus for governor-function matching nsubjpass \
+   ...    showing governor-lemma and lemma
    > annotate all with tag 'passive'
 
 If you try to run this code, you actually get a `dry run`, showing you what would be modified in your corpus. Once you're happy with it, you can do ``toggle annotation`` to turn file writing on, and then run the previous line again (use the up arrow to get it!).
