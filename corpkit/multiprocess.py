@@ -89,15 +89,16 @@ def pmultiquery(corpus,
                 return
 
     if subcorpora:
-        subval = str(subcorpora)
+        second_sub = subcorpora[-1] if hasattr(subcorpora, '__iter__') else None
+        subval = subcorpora if not second_sub else subcorpora[0]
         if subcorpora is True:
             import re
             subcorpora = re.compile(r'.*')
         else:
             from corpkit.build import get_speaker_names_from_parsed_corpus
-            subcorpora = get_speaker_names_from_parsed_corpus(corpus, feature=subcorpora)
+            subcorpora = get_speaker_names_from_parsed_corpus(corpus, feature=subval)
             if len(subcorpora) == 0:
-                print('No %s metadata found.' % str(subcorpora))
+                print('No %s metadata found.' % str(subval))
                 return
 
     mapcores = {'datalist': [corpus, 'corpus'],
@@ -164,7 +165,9 @@ def pmultiquery(corpus,
             d['just_metadata'] = {subval: bit}
             d['outname'] = bit
             d['by_metadata'] = False
-            d['subcorpora'] = None
+            d['subcorpora'] = second_sub
+            if second_sub:
+                d['print_info'] = False
 
     # message printer should be a function...
     if kwargs.get('conc') is False:

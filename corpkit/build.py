@@ -158,7 +158,8 @@ def extract_cnlp(fullfilepath, corenlppath=False, root=False):
     time = strftime("%H:%M:%S", localtime())
     print('%s: CoreNLP extracted. ' % time)
 
-def get_corpus_filepaths(projpath=False, corpuspath=False, restart=False, out_ext='conll'):
+def get_corpus_filepaths(projpath=False, corpuspath=False,
+                         restart=False, out_ext='conll'):
     """
     get a list of filepaths, a la find . -type f
 
@@ -191,11 +192,12 @@ def get_corpus_filepaths(projpath=False, corpuspath=False, restart=False, out_ex
     corpname = os.path.basename(corpuspath)
 
     fp = os.path.join(projpath, 'data', corpname + '-filelist.txt')
+    # definitely not good.
     if os.path.join('data', 'data') in fp:
         fp = fp.replace(os.path.join('data', 'data'), 'data')
     with open(fp, "w") as f:
         f.write(matchstring + '\n')
-    return fp
+    return fp, matchstring
 
 def check_jdk():
     """Check for a Java/OpenJDK"""
@@ -788,6 +790,7 @@ def get_all_metadata_fields(corpus):
 
 def get_names(filepath, speakid):
     """get a list of speaker names from a file"""
+    import re
     with open(filepath, 'r') as fo:
         txt = fo.read()
         res = re.findall(speakid, txt)
@@ -810,8 +813,7 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
         # parsing html with regular expression! :)
         speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
     else:
-        if feature == 'speaker':
-            speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
+        speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
     
     # if passed a dir, do it for every file
     if os.path.isdir(path):

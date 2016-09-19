@@ -166,6 +166,9 @@ def interrogator(corpus,
         if subcorpora and multiprocess:
             is_mul = 'subcorpora'
 
+        if hasattr(subcorpora, '__iter__'):
+            is_mul = 'subcorpora'
+
         if isinstance(query, (dict, OrderedDict)):
             is_mul = 'namedqueriessingle'
         if just_speakers:
