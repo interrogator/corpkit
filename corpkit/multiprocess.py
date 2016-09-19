@@ -300,17 +300,17 @@ def pmultiquery(corpus,
         idict = Interrodict(out)
         
         if print_info:
-            time = strftime("%H:%M:%S", localtime())
-            print("\n\n%s: Finished! Output is a dict-like object with keys:\n\n         '%s'\n" % \
-                (time, "'\n         '".join(sorted(out.keys()))))
-
+            thetime = strftime("%H:%M:%S", localtime())
+            print("\n\n%s: Finished! Output is multiindexed." % thetime)
         idict.query = qlocs
 
         if save:
             idict.save(save, print_info=print_info)
 
-        return idict
-    
+        if kwargs.get('use_interrodict'):
+            return idict
+        else:
+            return idict.multiindex()
 
     # make query and total branch, save, return
     # todo: standardise this so we don't have to guess transposes
