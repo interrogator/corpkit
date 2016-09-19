@@ -588,10 +588,13 @@ def make_multi(interrogation, indexnames=None):
         import numpy as np
 
         flat = [[], [], []]
+        
         for name, data in list(interrogation.items()):
             for subcorpus in list(data.results.index):
+                # make multiindex
                 flat[0].append(name)
                 flat[1].append(subcorpus)
+                # add results
                 flat[2].append(data.results.ix[subcorpus])
 
         flat[0] = np.array(flat[0])
@@ -604,7 +607,9 @@ def make_multi(interrogation, indexnames=None):
         df = df.fillna(0)
         df = df.T
         df[('Total', 'Total')] = df.sum(axis=1)
-        df = df.sort_values(by=('Total', 'Total'), ascending=False).drop(('Total', 'Total'), axis=1).T
+        df = df.sort_values(by=('Total', 'Total'), 
+                            ascending=False).drop(('Total', 'Total'),
+                            axis=1).T
         try:
             df = df.astype(int)
         except:

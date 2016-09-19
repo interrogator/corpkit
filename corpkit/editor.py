@@ -475,8 +475,15 @@ def editor(interrogation,
             print('')
         return df
 
+    def lingres(ser, index):
+        from scipy.stats import linregress
+        from pandas import Series
+        ix = ['slope', 'intercept', 'r', 'p', 'stderr']
+        return Series(linregress(index, ser.values), index=ix)
+
     def do_stats(df):
         """do linregress and add to df"""
+
         try: 
             from scipy.stats import linregress
         except ImportError:
@@ -490,24 +497,11 @@ def editor(interrogation,
             x = [int(y) - int(first_year) for y in indices]
         except ValueError:
             x = list(range(len(indices)))
-        
-        statfields = ['slope', 'intercept', 'r', 'p', 'stderr']
 
-        stats = []
-        if isinstance(df, Series):
-            y = list(df.values)
-            sl = Series(list(linregress(x, y)), index=statfields)
+        stats = df.apply(lingres, axis=0, index=x)
+        df = df.append(stats)
+        df = df.replace([np.inf, -np.inf], 0.0)
 
-        else:    
-            for entry in list(df.columns):
-                y = list(df[entry])
-                stats.append(list(linregress(x, y)))
-            sl = DataFrame(list(zip(*stats)), index=statfields, columns=list(df.columns))
-        df = df.append(sl)
-        
-        # drop infinites and nans
-        df = df.replace([np.inf, -np.inf], np.nan)
-        df = df.fillna(0.0)
         return df
 
     def resort(df, sort_by = False, keep_stats = False):
@@ -902,7 +896,10 @@ def editor(interrogation,
         total = tots
 
     if isinstance(df, DataFrame):
-        datatype = df.iloc[0].dtype
+        if df.empty:
+            datatype = 'object'
+        else:
+            datatype = df.iloc[0].dtype
     else:
         datatype = df.dtype
     locs['datatype'] = datatype

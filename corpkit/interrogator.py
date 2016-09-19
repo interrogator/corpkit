@@ -190,8 +190,8 @@ def interrogator(corpus,
             if all(isinstance(i, dict) for i in list(search.values())):
                 is_mul = 'namedqueriesmultiple'
         # cannot recursive multiquery
-        if outname:
-            is_mul = False
+        #if outname:
+        #    is_mul = False
         return is_mul, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **dummy_args):

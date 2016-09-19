@@ -88,13 +88,15 @@ def pmultiquery(corpus,
                 print('No speaker name data found.')
                 return
 
+    non_first_sub = None
     if subcorpora:
-        second_sub = subcorpora[-1] if hasattr(subcorpora, '__iter__') else None
-        subval = subcorpora if not second_sub else subcorpora[0]
+        non_first_sub = subcorpora[1:] if isinstance(subcorpora, list) else None
+        subval = subcorpora if not non_first_sub else subcorpora[0]
+        #print(subcorpora, non_first_sub, subval)
         if subcorpora is True:
             import re
             subcorpora = re.compile(r'.*')
-        else:
+        else: 
             from corpkit.build import get_speaker_names_from_parsed_corpus
             subcorpora = get_speaker_names_from_parsed_corpus(corpus, feature=subval)
             if len(subcorpora) == 0:
@@ -144,6 +146,9 @@ def pmultiquery(corpus,
     if multiple == 'multiplespeaker':
         locs['multispeaker'] = True
 
+    if isinstance(non_first_sub, list) and len(non_first_sub) == 1:
+        non_first_sub = non_first_sub[0]
+
     # make the default query
     locs = {k: v for k, v in locs.items() if canpickle(v)}
     # make a new dict for every iteration
@@ -162,11 +167,17 @@ def pmultiquery(corpus,
             d['outname'] = bit
         elif multiple in ['subcorpora']:
             d[itsname] = bit
-            d['just_metadata'] = {subval: bit}
+            jmd = {subval: bit}
+            # put this earlier
+            j2 = kwargs.get('just_metadata', False)
+            if not j2:
+                j2 = {}
+            jmd.update(j2)
+            d['just_metadata'] = jmd
             d['outname'] = bit
             d['by_metadata'] = False
-            d['subcorpora'] = second_sub
-            if second_sub:
+            d['subcorpora'] = non_first_sub
+            if non_first_sub:
                 d['print_info'] = False
 
     # message printer should be a function...
@@ -286,7 +297,9 @@ def pmultiquery(corpus,
 
         return lines
 
-    if not all(isinstance(i.results, Series) for i in res):
+    from corpkit.interrogation import Interrodict
+
+    if isinstance(res[0], Interrodict) or not all(isinstance(i.results, Series) for i in res):
         out = OrderedDict()
         for interrog, d in zip(res, ds):
             for unpicklable in ['note', 'root']:
@@ -296,21 +309,17 @@ def pmultiquery(corpus,
             except KeyError:
                 out[d['outname']] = interrog
 
-        from corpkit.interrogation import Interrodict
         idict = Interrodict(out)
         
         if print_info:
             thetime = strftime("%H:%M:%S", localtime())
-            print("\n\n%s: Finished! Output is multiindexed." % thetime)
+            print("\n\n%s: Finished! Output is multi-indexed." % thetime)
         idict.query = qlocs
 
         if save:
             idict.save(save, print_info=print_info)
 
-        if kwargs.get('use_interrodict'):
-            return idict
-        else:
-            return idict.multiindex()
+        return idict
 
     # make query and total branch, save, return
     # todo: standardise this so we don't have to guess transposes

@@ -487,17 +487,60 @@ def func(ser, df=False, obj=False, att=False):
     """
     To apply to a DataFrame to add complex criteria, like 'gf'
     """
-    if obj == 'd':
+    # working
+    from pandas import Series
+    if obj == 'g':
+        idxs = [(ser.name[0], ser[obj])]
+        if idxs[0][1] == 0:
+            return Series(['root'])
+        else:
+            ss = Series(list(df[att].loc[idxs]))
+            return ss
+
+    elif obj == 'd':
         idxs = [(ser.name[0], int(i)) for i in ser[obj].split(',')]
-    elif obj == 'g':
-        idxs = (ser.name[0], ser[obj])
-    if obj == 'g' and idxs[1] == 0:
-        return 'root'
-    else:
-        try:
-            return df[att].loc[idxs]
-        except:
-            return ''
+        ss = Series(list(df[att].loc[idxs]))
+        return ss
+
+    elif obj == 'r': # get the representative
+        cohead = ser['c'].rstrip('*')
+        refs = df[df['c'] == cohead + '*']
+        return Series(refs[att].ix[0])
+
+    elif obj == 'h': # get head
+        cohead = ser['c']
+        if cohead.endswith('*'):
+            return ser[att]
+        else:
+            sent = df[att].loc[ser.name[0]]
+            return sent[sent['c'] == cohead + '*']
+
+    elif obj == 's': # get whole phrase"
+        cohead = ser['c']
+        sent = df[att].loc[ser.name[0]]
+        return sent[sent['c'] == cohead.rstrip('*')].values
+    
+
+def joiner(ser):
+    return ser.str.cat(sep='/') 
+
+def make_new_for_dep(dfmain, dfdep, name):
+    import pandas as pd
+    import numpy as np
+    new = []
+    newd = []
+    index = []
+    for (i, ml), (_, dl) in zip(dfmain.iterrows(), dfdep.iterrows()):
+        for bit in dl:
+            if pd.isnull(bit):
+                continue
+            index.append(i)
+            new.append(ml)
+            newd.append(bit)
+    index = pd.MultiIndex.from_tuples(index, names=['s', 'i'])
+    newdf = pd.DataFrame(new, index=index)
+    newdf[name] = newd
+    return newdf
 
 def fast_simple_conc(dfss, idxs, show, metadata, add_meta, 
                      fname, category, only_format_match):
@@ -507,32 +550,46 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     todo: add gov dep gets in here...
     """
 
+    # setup
     conc_res = []
-
-    # todo: add support for adjacent, ngram, coll, gov, dep, coref
     simple = all(i.startswith('m') for i in show)
-
-    df = dfss.copy()
-
-    # why not just add columns to the dataframe?
-    # needs only format match
-    if not simple:
-        for i in show:
-            if i.startswith('m'):
-                continue
-            ob, att = i[0], i[-1]
-            dfx = df[[ob, att]]
-            #print(dfx)
-            #print(dfx, ob, att)
-            ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
-            df[i] = ser
-
+    df = dfss.copy() if not simple else dfss
     df.columns = ['m' + i if len(i) == 1 else i for i in list(df.columns)]
 
+    # this is the data needed for concordancing
+    df_for_lr = df['mw'] if not only_format_match else df
+    
+    # this is data for matches
+    matches = df.loc[idxs]
+
+    # now, we need to add any non-simple columns to the df
+    # how can this handle only_format_match to be fast?
+    if not simple:
+        for i in show:
+            # it's already there:
+            if i.startswith('m'):
+                continue
+            # cut df down to just needed bits
+            ob, att = i[0], i[-1]
+            if ob in ['c', 'h', 's']:
+                dfx = df[['c', att]]
+            else:
+                dfx = df[[ob, att]]
+            # make a new column
+            to_proc = matches if only_format_match else dfx
+            # is either a nice neat series
+            # or a df with variable number of results
+            ser = to_proc.apply(func, df=dfx, obj=ob, att=att, axis=1)
+            
+            if ob in ['d']:
+                df = make_new_for_dep(to_proc, ser, i)
+            else:
+                to_proc[i] = ser
+            
     if only_format_match and len(show) == 1:
         bit = show[0]
         matches = df[bit].loc[idxs]
-        df = df[bit]
+        #df = df[bit]
 
     elif only_format_match and len(show) > 1:
         matches = df.loc[idxs]
@@ -542,12 +599,12 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
             matchesx = matches
         llist = [matchesx[i] for i in show[1:]]
         matches = matchesx[show[0]].str.cat(others=llist, sep='/')
-        df = df['mw']
+        #df = df['mw']
         
     elif not only_format_match and len(show) == 1:
         bit = show[0]
         df = df[bit]
-        matches = df.loc[idxs]
+        df_for_lr = df.loc[idxs]
 
     elif not only_format_match and len(show) > 1:
         if any(i.endswith('i') for i in show):
@@ -557,13 +614,13 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         llist = [dfx[i] for i in show[1:]]
         from pandas import Series
         df = Series(dfx[show[0]].str.cat(others=llist, sep='/'), index=df.index)
-        #todo: is values faster ?
-        matches = df.loc[idxs]
+        df_for_lr = df.loc[idxs]
 
+    # do concordancing as fast as possible
     for mid, (s, i) in zip(matches, idxs):
         meta = metadata[s]
         ix = '%d,%d' % (s, i)
-        sent = df.loc[s]
+        sent = df_for_lr.loc[s]
         start = ' '.join(sent.loc[:i-1].values)
         end = ' '.join(sent.loc[i+1:].values)
         sname = meta['speaker']
@@ -579,6 +636,11 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
                 elif add_meta is True:
                     lin.append(v)
         conc_res.append(lin)
+
+    # do we need dropping?
+    #df = df[[m for m in list(df.columns) if m.startswith('m')]]
+    #df.columns = oldcols
+
     return list(matches), conc_res
 
 def show_this(df, matches, show, metadata, conc=False,

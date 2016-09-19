@@ -698,7 +698,8 @@ class Interrodict(OrderedDict):
         from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
-    def multiindex(self, indexnames=None):
+    def multiindex(self):
+
         """Create a `pandas.MultiIndex` version of results.
 
         :Example:
@@ -726,8 +727,49 @@ class Interrodict(OrderedDict):
 
         :returns: A :class:`corpkit.interrogation.Interrogation`
         """
-        from corpkit.other import make_multi
-        return make_multi(self, indexnames=indexnames)
+
+        import pandas as pd
+        import numpy as np
+        from itertools import product
+        from corpkit.interrogation import Interrodict, Interrogation
+
+        query = self.query
+
+        def trav(dct, parents={}, level=0, colset=set(), results=list()):
+            columns = False
+            if hasattr(dct, 'items'):
+                parents[level] = list(dct.keys())
+                level += 1
+                for k, v in dct.items():
+                    trav(v, parents=parents, level=level, results=results)
+                    
+            else:
+                parents[level] = list(dct.results.index)
+                if not dct.results.empty:
+                    for n, ser in dct.results.iterrows():
+                        results.append(ser)
+                    for c in list(dct.results.columns):
+                        colset.add(c)
+                    level += 1
+                else:
+                    for x in dct.results.columns:
+                        results.append(pd.Series())
+
+            return parents, level+1, colset, results
+
+        parents, level, colset, data = trav(self)
+        index = list(product(*list(parents.values())))
+        # todo: better default for speakers?
+        if self.query['subcorpora']:
+            nms = {'names': self.query['subcorpora']}
+        else:
+            nms = {} 
+        ix = pd.MultiIndex.from_tuples(index, **nms)
+        df = pd.DataFrame(data, index=ix)
+        # should sort by total too!
+        df = df.fillna(0)
+        totals = df.sum(axis=1)
+        return Interrogation(results=df, totals=totals, query=query)
 
     def save(self, savename, savedir='saved_interrogations', **kwargs):
         """

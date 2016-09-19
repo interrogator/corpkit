@@ -5831,7 +5831,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if speakseg.get():
                 timestring('Speaker segmentation has no effect when tokenising corpus.')
                 #unparsed_corpus_path = unparsed_corpus_path + '-stripped'
-            filelist = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
+            filelist, _ = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
             corp = Corpus(unparsed_corpus_path)
             parsed = corp.tokenise(root=root, 
                                   stdout=sys.stdout, 

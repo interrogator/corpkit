@@ -633,12 +633,18 @@ class Corpus(object):
         if par and self.subcorpora:
             if isinstance(par, int):
                 kwargs['multiprocess'] = par
-            return interrogator(self.subcorpora, search,
+            res = interrogator(self.subcorpora, search,
                                 subcorpora=subcorpora, *args, **kwargs)
         else:
             kwargs['multiprocess'] = par
-            return interrogator(self, search,
+            res = interrogator(self, search,
                                 subcorpora=subcorpora, *args, **kwargs)
+        
+        from corpkit.interrogation import Interrodict
+        if isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
+            #try:
+            return res.multiindex()
+        return res
 
     def parse(self,
               corenlppath=False,

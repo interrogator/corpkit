@@ -55,12 +55,13 @@ def make_corpus(unparsed_corpus_path,
     import codecs
     from corpkit.build import folderise, can_folderise
     from corpkit.process import saferead
-    
+
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
                                add_ids_to_xml, 
                                rename_all_files,
                                make_no_id_corpus, parse_corpus, move_parsed_files)
+    from corpkit.constants import REPEAT_PARSE_ATTEMPTS
 
     if parse is True and tokenise is True:
         raise ValueError('Select either parse or tokenise, not both.')
@@ -142,11 +143,12 @@ def make_corpus(unparsed_corpus_path,
     if join('data', 'data') in unparsed_corpus_path:
         unparsed_corpus_path = unparsed_corpus_path.replace(join('data', 'data'), 'data')
 
-    if parse:
+    def chunks(l, n):
+        for i in range(0, len(l), n):
+            yield l[i:i+n]
 
-        def chunks(l, n):
-            for i in range(0, len(l), n):
-                yield l[i:i+n]
+    if parse:
+        
 
         # this loop shortens files containing more than 500 lines, for corenlp memory sake
         # maybe user needs a warning or something in case s/he is doing coref
@@ -205,98 +207,114 @@ def make_corpus(unparsed_corpus_path,
         if not fileparse:
             print('Making list of files ... ')
 
-        if not fileparse:
-            pp = os.path.dirname(unparsed_corpus_path)
-            # if restart mode, the filepaths won't include those already parsed...
-            filelist = get_corpus_filepaths(projpath=pp, 
-                                            corpuspath=to_parse,
-                                            restart=restart,
-                                            out_ext=kwargs.get('output_format'))
+        # now we enter a while loop while not all files are parsed
 
-        else:
-            filelist = unparsed_corpus_path.replace('.txt', '-filelist.txt')
-            with open(filelist, 'w') as fo:
-                fo.write(unparsed_corpus_path + '\n')
+        while REPEAT_PARSE_ATTEMPTS:
 
-        # split up filelists
-        if multiprocess is not False:
+            if not fileparse:
+                pp = os.path.dirname(unparsed_corpus_path)
+                # if restart mode, the filepaths won't include those already parsed...
+                filelist, fs = get_corpus_filepaths(projpath=pp, 
+                                                corpuspath=to_parse,
+                                                restart=restart,
+                                                out_ext=kwargs.get('output_format'))
 
-            if multiprocess is True:
-                import multiprocessing
-                multiprocess = multiprocessing.cpu_count()
-            from joblib import Parallel, delayed
-            # split old file into n parts
-            data, enc = saferead(filelist)
-            fs = [i for i in data.splitlines() if i]
-            if len(fs) <= multiprocess:
-                multiprocess = len(fs)
-            # make generator with list of lists
-            divl = int(len(fs) / multiprocess)
-            filelists = []
-            if not divl:
-                filelists.append(filelist)
             else:
-                fgen = chunks(fs, divl)
-            
-                # for each list, make new file
-                for index, flist in enumerate(fgen):
-                    as_str = '\n'.join(flist) + '\n'
-                    new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
-                    filelists.append(new_fpath)
-                    with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
-                        fo.write(as_str.encode('utf-8'))
-                try:
-                    os.remove(filelist)
-                except:
-                    pass
+                filelist = unparsed_corpus_path.replace('.txt', '-filelist.txt')
+                with open(filelist, 'w') as fo:
+                    fo.write(unparsed_corpus_path + '\n')
 
-            ds = []
-            for listpath in filelists:
-                d = {'proj_path': project_path, 
-                     'corpuspath': to_parse,
-                     'filelist': listpath,
-                     'corenlppath': corenlppath,
-                     'nltk_data_path': nltk_data_path,
-                     'operations': operations,
-                     'copula_head': cop_head,
-                     'multiprocessing': True,
-                     'root': root,
-                     'note': note,
-                     'stdout': stdout,
-                     'outname': outname,
-                     'coref': coref,
-                     'output_format': kwargs.get('output_format', 'xml')
-                    }
-                ds.append(d)
+            # split up filelists
+            if multiprocess is not False:
 
-            res = Parallel(n_jobs=multiprocess)(delayed(parse_corpus)(**x) for x in ds)
-            if len(res) > 0:
-                newparsed = res[0]
+                if multiprocess is True:
+                    import multiprocessing
+                    multiprocess = multiprocessing.cpu_count()
+                from joblib import Parallel, delayed
+                # split old file into n parts
+                data, enc = saferead(filelist)
+                fs = [i for i in data.splitlines() if i]
+                # if there's nothing here, we're done
+                if not fs:
+                    # double dutch
+                    REPEAT_PARSE_ATTEMPTS = 0
+                    break
+                if len(fs) <= multiprocess:
+                    multiprocess = len(fs)
+                # make generator with list of lists
+                divl = int(len(fs) / multiprocess)
+                filelists = []
+                if not divl:
+                    filelists.append(filelist)
+                else:
+                    fgen = chunks(fs, divl)
+                
+                    # for each list, make new file
+                    for index, flist in enumerate(fgen):
+                        as_str = '\n'.join(flist) + '\n'
+                        new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
+                        filelists.append(new_fpath)
+                        with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
+                            fo.write(as_str.encode('utf-8'))
+                    try:
+                        os.remove(filelist)
+                    except:
+                        pass
+
+                ds = []
+                for listpath in filelists:
+                    d = {'proj_path': project_path, 
+                         'corpuspath': to_parse,
+                         'filelist': listpath,
+                         'corenlppath': corenlppath,
+                         'nltk_data_path': nltk_data_path,
+                         'operations': operations,
+                         'copula_head': cop_head,
+                         'multiprocessing': True,
+                         'root': root,
+                         'note': note,
+                         'stdout': stdout,
+                         'outname': outname,
+                         'coref': coref,
+                         'output_format': kwargs.get('output_format', 'xml')
+                        }
+                    ds.append(d)
+
+                res = Parallel(n_jobs=multiprocess)(delayed(parse_corpus)(**x) for x in ds)
+                if len(res) > 0:
+                    newparsed = res[0]
+                else:
+                    return
+                if all(r is False for r in res):
+                    return
+
+                for i in filelists:
+                    try:
+                        os.remove(i)
+                    except:
+                        pass
+
             else:
-                return
-            if all(r is False for r in res):
-                return
+                newparsed = parse_corpus(proj_path=project_path, 
+                                         corpuspath=to_parse,
+                                         filelist=filelist,
+                                         corenlppath=corenlppath,
+                                         nltk_data_path=nltk_data_path,
+                                         operations=operations,
+                                         copula_head=cop_head,
+                                         root=root,
+                                         note=note,
+                                         stdout=stdout,
+                                         fileparse=fileparse,
+                                         outname=outname,
+                                         output_format=kwargs.get('output_format', 'conll'))
 
-            for i in filelists:
-                try:
-                    os.remove(i)
-                except:
-                    pass
-
-        else:
-            newparsed = parse_corpus(proj_path=project_path, 
-                                     corpuspath=to_parse,
-                                     filelist=filelist,
-                                     corenlppath=corenlppath,
-                                     nltk_data_path=nltk_data_path,
-                                     operations=operations,
-                                     copula_head=cop_head,
-                                     root=root,
-                                     note=note,
-                                     stdout=stdout,
-                                     fileparse=fileparse,
-                                     outname=outname,
-                                     output_format=kwargs.get('output_format', 'conll'))
+            if not restart:
+                REPEAT_PARSE_ATTEMPTS = 0
+            else:
+                REPEAT_PARSE_ATTEMPTS -= 1
+                print('Repeating parsing due to missing files. '\
+                      '%d iterations remaining.' % REPEAT_PARSE_ATTEMPTS)
 
         if not newparsed:
             return 
@@ -335,7 +353,7 @@ def make_corpus(unparsed_corpus_path,
             pass
 
     else:
-        filelist = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
+        filelist, fs = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
                                         corpuspath=unparsed_corpus_path, restart=restart)
 
     if tokenise:
