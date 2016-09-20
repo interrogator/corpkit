@@ -557,7 +557,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     df.columns = ['m' + i if len(i) == 1 else i for i in list(df.columns)]
 
     # this is the data needed for concordancing
-    df_for_lr = df['mw'] if not only_format_match else df
+    df_for_lr = df['mw'] if only_format_match else df
     
     # this is data for matches
     matches = df.loc[idxs]
@@ -593,28 +593,36 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
 
     elif only_format_match and len(show) > 1:
         matches = df.loc[idxs]
+        # if we want to show index, we have to do this
         if any(i.endswith('i') for i in show):
             matchesx = matches.reset_index()
         else:
             matchesx = matches
+        # get requested cols and make slash sep
         llist = [matchesx[i] for i in show[1:]]
         matches = matchesx[show[0]].str.cat(others=llist, sep='/')
         #df = df['mw']
         
     elif not only_format_match and len(show) == 1:
         bit = show[0]
-        df = df[bit]
-        df_for_lr = df.loc[idxs]
+        #df = df[bit]
+        df_for_lr = df[bit]
+        matches = df[bit].loc[idxs]
+
+        #df_for_lr = df.loc[idxs]
 
     elif not only_format_match and len(show) > 1:
+        
+        # fix index
         if any(i.endswith('i') for i in show):
             dfx = df.reset_index()
         else:
             dfx = df
+        
         llist = [dfx[i] for i in show[1:]]
         from pandas import Series
-        df = Series(dfx[show[0]].str.cat(others=llist, sep='/'), index=df.index)
-        df_for_lr = df.loc[idxs]
+        df_for_lr = Series(dfx[show[0]].str.cat(others=llist, sep='/'), index=df.index)
+        matches = df_for_lr.loc[idxs]
 
     # do concordancing as fast as possible
     for mid, (s, i) in zip(matches, idxs):
