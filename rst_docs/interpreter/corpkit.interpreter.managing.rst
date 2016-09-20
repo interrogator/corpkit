@@ -54,21 +54,23 @@ Running scripts
 
 You can also write and run scripts. If you make a file, `participants.cki`, containing:
 
-```shell
-#!/usr/bin/env corpkit
+.. code-block:: bash
+   
+   #!/usr/bin/env corpkit
 
-set mydata-parsed as corpus
-search corpus for function matching roles.participant showing lemma
-export result as csv to part.csv
-```
+   set mydata-parsed as corpus
+   search corpus for function matching roles.participant showing lemma
+   export result as csv to part.csv
+
 
 You can run it from the terminal with:
 
-```shell
-corpkit participants.cki
-# or, directly, if there's a shebang and chmod +x:
-./participants.cki
-```
+.. code-block:: bash
+
+   corpkit participants.cki
+   # or, directly, if there's a shebang and chmod +x:
+   ./participants.cki
+
 
 which will leave you with a CSV file at `exported/part.csv`. This approach can be handy if you need to pipe `stdout` or `stderr`, or if you want to call *corpkit* within a shell script.
 
