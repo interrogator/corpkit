@@ -57,6 +57,9 @@ def parse_conll(f, first_time=False, just_meta=False):
     data = '\n'.join(splitdata)
     data = data.replace('\n\n', '\n') + '\n'
 
+    # remove slashes as early as possible
+    data = data.replace('/', '-slash-')
+
     # open with sent and token as multiindex
     try:
         df = pd.read_csv(StringIO(data), sep='\t', header=None,
@@ -554,7 +557,9 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     conc_res = []
     simple = all(i.startswith('m') for i in show)
     df = dfss.copy() if not simple else dfss
-    df.columns = ['m' + i if len(i) == 1 else i for i in list(df.columns)]
+    lst = ['s', 'i', 'w', 'l', 'f', 'p']
+    df.columns = ['m' + i if len(i) == 1 and i in lst \
+                  else i for i in list(df.columns)]
 
     # this is the data needed for concordancing
     df_for_lr = df['mw'] if only_format_match else df
@@ -564,6 +569,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
 
     # now, we need to add any non-simple columns to the df
     # how can this handle only_format_match to be fast?
+    formatted = []
     if not simple:
         for i in show:
             # it's already there:
@@ -574,17 +580,37 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
             if ob in ['c', 'h', 's']:
                 dfx = df[['c', att]]
             else:
+                lst = ['s', 'i', 'w', 'l', 'f', 'p']
+                if att in lst:
+                    att = 'm' + att
                 dfx = df[[ob, att]]
             # make a new column
-            to_proc = matches if only_format_match else dfx
+
+            #to_proc = matches.copy() if only_format_match else dfx.copy()
             # is either a nice neat series
             # or a df with variable number of results
-            ser = to_proc.apply(func, df=dfx, obj=ob, att=att, axis=1)
-            
-            if ob in ['d']:
-                df = make_new_for_dep(to_proc, ser, i)
+            if only_format_match:
+                ser = matches.apply(func, df=dfx, obj=ob, att=att, axis=1)
             else:
-                to_proc[i] = ser
+                ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
+
+            # todo
+            ser.name = i
+            formatted.append(ser)
+            continue
+
+            # todo: figure out what on earth to do with deps
+            if ob in ['d']:
+                if only_format_match:
+                    df = make_new_for_dep(matches, ser, i)
+                else:
+                    df = make_new_for_dep(df, ser, i)
+            
+    for l in formatted:
+        if only_format_match:
+            matches[l.name] = l
+        else:
+            df[l.name] = l
             
     if only_format_match and len(show) == 1:
         bit = show[0]
@@ -592,7 +618,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         #df = df[bit]
 
     elif only_format_match and len(show) > 1:
-        matches = df.loc[idxs]
+        matches = matches.loc[idxs]
         # if we want to show index, we have to do this
         if any(i.endswith('i') for i in show):
             matchesx = matches.reset_index()
@@ -609,8 +635,6 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         df_for_lr = df[bit]
         matches = df[bit].loc[idxs]
 
-        #df_for_lr = df.loc[idxs]
-
     elif not only_format_match and len(show) > 1:
         
         # fix index
@@ -618,10 +642,10 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
             dfx = df.reset_index()
         else:
             dfx = df
-        
         llist = [dfx[i] for i in show[1:]]
         from pandas import Series
-        df_for_lr = Series(dfx[show[0]].str.cat(others=llist, sep='/'), index=df.index)
+        df_for_lr = Series(dfx[show[0]].str.cat(others=llist, \
+                           sep='/'), index=df.index)
         matches = df_for_lr.loc[idxs]
 
     # do concordancing as fast as possible
@@ -633,7 +657,6 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         end = ' '.join(sent.loc[i+1:].values)
         sname = meta['speaker']
         lin = [ix, category, fname, sname, start, mid, end]
-        #res.append(mid)
         if add_meta:
             for k, v in sorted(meta.items()):
                 if k in ['speaker', 'parse', 'sent_id']:
@@ -645,7 +668,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
                     lin.append(v)
         conc_res.append(lin)
 
-    # do we need dropping?
+    # do we need dropping? if not doing copy ...
     #df = df[[m for m in list(df.columns) if m.startswith('m')]]
     #df.columns = oldcols
 
