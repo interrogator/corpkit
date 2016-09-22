@@ -1,10 +1,5 @@
 """
-Process CONLL formatted data
-
-todo:
-- coref
-- code cleanup
-
+corpkit: process CONLL formatted data
 """
 
 def parse_conll(f, first_time=False, just_meta=False):
@@ -486,11 +481,15 @@ def make_concx(series, matches, metadata, df,
 
     return conc_lines
 
-def func(ser, df=False, obj=False, att=False):
+def func(ser, df=False, obj=False, att=False, adj=False, tomove=False):
     """
     To apply to a DataFrame to add complex criteria, like 'gf'
     """
-    # working
+    # todo:
+    # collocation?
+    # ngram
+    # adjacent
+    # dep
     from pandas import Series
     if obj == 'g':
         idxs = [(ser.name[0], ser[obj])]
@@ -528,21 +527,33 @@ def joiner(ser):
     return ser.str.cat(sep='/') 
 
 def make_new_for_dep(dfmain, dfdep, name):
+    """
+    If showind dependent, we have to make a whole new dataframe
+    """
     import pandas as pd
     import numpy as np
     new = []
     newd = []
     index = []
     for (i, ml), (_, dl) in zip(dfmain.iterrows(), dfdep.iterrows()):
-        for bit in dl:
-            if pd.isnull(bit):
-                continue
+        if all(pd.isnull(i) for i in dl.values):
             index.append(i)
             new.append(ml)
-            newd.append(bit)
+            newd.append('none')
+            continue
+        else:
+            for bit in dl:
+                if pd.isnull(bit):
+                    continue
+                index.append(i)
+                new.append(ml)
+                newd.append(bit)
+    
+    #todo: account for no matches
     index = pd.MultiIndex.from_tuples(index, names=['s', 'i'])
     newdf = pd.DataFrame(new, index=index)
     newdf[name] = newd
+    newdf.fillna('none')
     return newdf
 
 def fast_simple_conc(dfss, idxs, show, metadata, add_meta, 
@@ -554,6 +565,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     """
 
     # setup
+    import pandas as pd
     conc_res = []
     simple = all(i.startswith('m') for i in show)
     df = dfss.copy() if not simple else dfss
@@ -570,55 +582,91 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     # now, we need to add any non-simple columns to the df
     # how can this handle only_format_match to be fast?
     formatted = []
+    dmode = any(x.startswith('d') for x in show)
+
     if not simple:
         for i in show:
+            adj, tomove, adjname = False, False, ''
             # it's already there:
+            #todo: is it viable to add d here and postprocess later?
             if i.startswith('m'):
                 continue
+            # figure out if adjacent
+            # todo: make into func
+            adj, i = determine_adjacent(i)
+            adjname = ''.join(adj) if hasattr(adj, '__iter__') else ''
+            if adj:
+                if adj[0] == '+':
+                    tomove = int(adj[1])
+                elif adj[0] == '-':
+                    tomove = -int(adj[1])
             # cut df down to just needed bits
             ob, att = i[0], i[-1]
             if ob in ['c', 'h', 's']:
                 dfx = df[['c', att]]
             else:
                 lst = ['s', 'i', 'w', 'l', 'f', 'p']
-                if att in lst:
+                if att in lst and ob != 'm':
                     att = 'm' + att
-                dfx = df[[ob, att]]
+                if ob == 'm':
+                    dfx = df[['m' + att]]
+                else:
+                    dfx = df[[ob, att]]
             # make a new column
+            #todo: 
+            #newm = [(s, i+tomove) for s, i in newm]
 
             #to_proc = matches.copy() if only_format_match else dfx.copy()
             # is either a nice neat series
             # or a df with variable number of results
+
             if only_format_match:
-                ser = matches.apply(func, df=dfx, obj=ob, att=att, axis=1)
+                if ob == 'm':
+                    ser = df['m' + att]
+                else:
+                    ser = matches.apply(func, df=dfx, obj=ob, att=att, axis=1)
             else:
-                ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
+                if ob == 'm':
+                    ser = df['m' + att]
+                else:
+                    ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
+            if adj:
+                ser = ser.shift(tomove)
+                ser = ser.fillna('none')
+                #ser = pd.Series(new_values, index=ser.index)
 
-            # todo
-            ser.name = i
-            formatted.append(ser)
-            continue
-
-            # todo: figure out what on earth to do with deps
+            # todo: what about when there are two dep options?
             if ob in ['d']:
                 if only_format_match:
                     df = make_new_for_dep(matches, ser, i)
                 else:
                     df = make_new_for_dep(df, ser, i)
-            
-    for l in formatted:
-        if only_format_match:
-            matches[l.name] = l
-        else:
-            df[l.name] = l
-            
+            else:
+
+                ser.name = adjname + i
+                formatted.append(ser)
+                continue
+                
+    if not dmode:
+        for l in formatted:
+            if only_format_match:
+                matches[l.name] = l
+            else:
+                df[l.name] = l
+    else:
+        matches = df.loc[idxs]
+        matches = matches.fillna('none')
+        idxs = list(matches.index)
+
     if only_format_match and len(show) == 1:
         bit = show[0]
         matches = df[bit].loc[idxs]
         #df = df[bit]
 
     elif only_format_match and len(show) > 1:
-        matches = matches.loc[idxs]
+        # not sure why this worked
+        if not dmode:
+            matches = matches.loc[idxs]
         # if we want to show index, we have to do this
         if any(i.endswith('i') for i in show):
             matchesx = matches.reset_index()
@@ -689,7 +737,7 @@ def show_this(df, matches, show, metadata, conc=False,
         return list(df.loc[matches][show[0][-1]]), {}
     
     # todo: make work for other bits
-    elif all(i[0] in ['m', 'g'] for i in show) and conc:
+    elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show) and conc:
         #smatches = list(df.loc[matches][show[0][-1]])
         return fast_simple_conc(df,
                                 matches,
