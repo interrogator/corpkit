@@ -2068,7 +2068,7 @@ def interpreter(debug=False,
                 continue
 
             # tokenise command with quotations preserved
-            tokens = shlex.split(output)
+            tokens = shlex.split(output, comments=True)
 
             nested_tokens = nest_on_semicolon(tokens)
 
