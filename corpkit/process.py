@@ -1017,7 +1017,6 @@ def pat_format(pat, case_sensitive=False, root=False):
             pat = re.compile(pat, re.IGNORECASE)
     return pat
 
-
 def make_name_to_query_dict(existing={}):
     from corpkit.constants import transshow, transobjs
     for l, o in transobjs.items():
@@ -1032,3 +1031,21 @@ def make_name_to_query_dict(existing={}):
                 p = p.lower()
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
+
+def get_index_name(corpus, subcorpora, just_speakers):
+    """
+    Name df index---just_speakers will be deprecated soon
+    """
+    lst = []
+    if subcorpora:
+        return subcorpora
+    elif just_speakers == 'each' or just_speakers == ['each']:
+        lst.append('speaker')
+    if corpus.level == 'c':
+        lst.append('folder')
+    elif corpus.level == 's':
+        lst.append('file')
+    if len(lst) == 1:
+        return lst[0]
+    else:
+        return lst

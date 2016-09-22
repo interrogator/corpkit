@@ -1660,12 +1660,6 @@ def interrogator(corpus,
             conc_df[col] = conc_df[col].str.replace(r'-[0-9][0-9][0-9]$', '')
 
         #df.index = df.index.str.replace('w', 'this')
-    
-
-    # sort by total
-    if isinstance(df, DataFrame):
-        if not df.empty:   
-            df = df[list(df.sum().sort_values(ascending=False).index)]
 
     # make interrogation object
     locs['corpus'] = corpus.path
