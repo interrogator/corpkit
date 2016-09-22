@@ -3,7 +3,7 @@ Annotating your corpus
 
 Another thing you might like to do is add metadata or annotations to your corpus. This can be done by simply editing corpus files, which are stored in a human-readable format. You can also automate annotation, however.
 
-To do annotation, you first run a ``search`` command and generate a ``concordance``.  Then, you can use the ``annotate`` command to save to disk a scheme based on the generated concordance lines. ``annotate` works a lot like the ``mark``, ``keep``, and ``del`` commands to begin with, but has some special syntax at the end.
+To do annotation, you first run a ``search`` command and generate a ``concordance``.  Then, you can use the ``annotate`` command to perman based on the generated concordance lines. ``annotate` works a lot like the ``mark``, ``keep``, and ``del`` commands to begin with, but has some special syntax at the end.
 
 Tagging sentences
 -------------------
