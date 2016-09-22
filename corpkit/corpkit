@@ -29,4 +29,5 @@ if any(i in sys.argv for i in ['--help', '-h']):
 else:
     from corpkit.env import interpreter
     interpreter(debug=debug, fromscript=fromscript,
-                quiet=quiet, python_c_mode=command, profile=profile, loadcurrent=load)
+                quiet=quiet, python_c_mode=command,
+                profile=profile, loadcurrent=load)
