@@ -564,7 +564,7 @@ class Corpus(object):
         :param multiprocess: How many parallel processes to run
         :type multiprocess: `int`/`bool` (`bool` determines automatically)
 
-        :param files_as_subcorpora: Treat each file as a subcorpus, ignoring 
+        :param files_as_subcorpora: (**Deprecated, use subcorpora=files**). Treat each file as a subcorpus, ignoring 
                                     actual subcorpora if present
         :type files_as_subcorpora: `bool`
 
@@ -597,12 +597,25 @@ class Corpus(object):
                               with each speaker matching the regex conflated.
         :type just_speakers: `str`/`each`/`list`/`regex`
 
+        :param subcorpora: Use a metadata value as subcorpora. 
+                           Passing a list will create a multiindex.
+                           `'file'` and `'folder'`/`'default'` are also possible values.
+        :type subcorpora: `str`/`list`
+
+        :param just_metadata: A field and regex/list to filter sentences by.
+                              Only those matching will be kept
+        :type just_metadata: `dict`
+
+        :param skip_metadata: A field and regex/list to filter sentences by.
+                              Those matching will be skipped.
+        :type skip_metadata: `dict`
+
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
                   `.query`, `.results`, `.totals` attributes. If multiprocessing is 
-                  invoked, result may be a :class:`corpkit.interrogation.Interrodict` 
-                  containing corpus names, queries or speakers as keys.
+                  invoked, result may be multiindexed.
         """
         from corpkit.interrogator import interrogator
+        import pandas as pd
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
         
@@ -644,6 +657,29 @@ class Corpus(object):
         if isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
             #try:
             return res.multiindex()
+        else:
+            from corpkit.process import get_index_name
+            js = kwargs.get('just_speakers', False)
+            ixnames = get_index_name(self, subcorpora, js)
+            res.results.index.name = ixnames
+
+        # sort by total
+
+        ind = list(res.results.index)
+        if isinstance(res.results, pd.DataFrame):
+            if not res.results.empty:   
+                res.results = res.results[list(res.results.sum().sort_values(ascending=False).index)]
+
+            # sort index
+            #if all(i.isdigit() for i in ind):
+            #    res.results.index = [int(i) for i in ind]
+            #    res.results = res.results.sort_index()
+
+            if all(i == 'none' or i.isdigit() for i in ind):
+                longest = max([len(i) if i.isdigit() else 1 for i in ind])
+                res.results.index = [i.zfill(longest) for i in ind]
+                res.results = res.results.sort_index()
+        
         return res
 
     def parse(self,
