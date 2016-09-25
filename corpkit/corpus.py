@@ -665,7 +665,7 @@ class Corpus(object):
             #    res.results.index = [int(i) for i in ind]
             #    res.results = res.results.sort_index()
 
-            if all(i == 'none' or i.isdigit() for i in ind):
+            if all(i == 'none' or str(i).isdigit() for i in ind):
                 longest = max([len(i) if i.isdigit() else 1 for i in ind])
                 res.results.index = [i.zfill(longest) for i in ind]
                 res.results = res.results.sort_index()
