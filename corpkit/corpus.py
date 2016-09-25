@@ -196,21 +196,12 @@ class Corpus(object):
             show += 'Skip: %s\n' % str(self.skip)
         if getattr(self, 'just'):
             show += 'Just: %s\n' % str(self.just)
-
-        #if hasattr(self, 'features'):
-        #    if not self.singlefile:
-        #        cols = list(self.features.columns)[:10]
-        #        show += '\nFeatures:\n\n' + \
-        #            self.features.head(10).to_string(columns=cols)
-        #    else:
-        #        show += '\nFeatures:\n\n' + \
-        #            self.features.head(10).to_string()
-        #else:
-        #    show += '\nFeatures not analysed yet. Use .features to calculate them.\n'
         return show
 
     def __repr__(self):
-        """object representation of corpus"""
+        """
+        Object representation of corpus
+        """
         import os
         if not self.subcorpora:
             ssubcorpora = ''
@@ -239,7 +230,6 @@ class Corpus(object):
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
-    # METHODS
     @lazyprop
     def features(self):
         """

@@ -20,9 +20,11 @@ debug = any(i in sys.argv for i in ['--debug', '-d', 'debug'])
 quiet = any(i in sys.argv for i in ['--q', '--quiet'])
 load = any(i in sys.argv for i in ['--load', '-l'])
 profile = any(i in sys.argv for i in ['--profile', '-p'])
-
-
-if any(i in sys.argv for i in ['--help', '-h']):
+version = any(i in sys.argv for i in ['--version', '-v'])
+if version:
+    import corpkit
+    print(corpkit.__version__)
+elif any(i in sys.argv for i in ['--help', '-h']):
     from corpkit.env import help_text
     import pydoc
     pydoc.pipepager(help_text, cmd='less -X -R -S') 
