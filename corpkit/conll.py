@@ -667,7 +667,7 @@ def show_this(df, matches, show, metadata, conc=False,
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
         return list(df.loc[matches][show[0][-1]]), {}
     
-    # todo: make work for other bits
+    # todo: make work for ngram, collocate and coref
     elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show) and conc:
         #smatches = list(df.loc[matches][show[0][-1]])
         return fast_simple_conc(df,
