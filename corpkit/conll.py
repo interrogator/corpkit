@@ -2,8 +2,12 @@
 corpkit: process CONLL formatted data
 """
 
-def parse_conll(f, first_time=False, just_meta=False):
-    """take a file and return pandas dataframe with multiindex"""
+def parse_conll(f,
+                first_time=False,
+                just_meta=False):
+    """
+    Take a file and return pandas dataframe with multiindex and metadata
+    """
     import pandas as pd
     try:
         from StringIO import StringIO
@@ -65,7 +69,9 @@ def parse_conll(f, first_time=False, just_meta=False):
     return df
 
 def get_dependents_of_id(idx, df=False, repeat=False, attr=False, coref=False):
-    """get dependents of a token"""
+    """
+    Get dependents of a token
+    """
 
     sent_id, tok_id = getattr(idx, 'name', idx)
     deps = df.ix[sent_id, tok_id]['d'].split(',')
@@ -84,7 +90,9 @@ def get_dependents_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     return out
 
 def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
-    """get governors of a token"""
+    """
+    Get governors of a token
+    """
     
     # it can be a series or a tuple
     sent_id, tok_id = getattr(idx, 'name', idx)
@@ -102,7 +110,9 @@ def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     #    return res
 
 def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
-    """dummy function"""
+    """
+    Dummy function, for the most part
+    """
     sent_id, tok_id = getattr(idx, 'name', idx)
     if attr:
         return df[attr].ix[sent_id, tok_id]
@@ -138,7 +148,11 @@ def get_head(idx, df=False, repeat=False, attr=False, **kwargs):
         lst_of_ixs = [df.loc[i][attr] for i in lst_of_ixs]
     return lst_of_ixs
 
-def get_representative(idx, df=False, repeat=False, attr=False, **kwargs):
+def get_representative(idx,
+                       df=False,
+                       repeat=False,
+                       attr=False,
+                       **kwargs):
     """
     Get the representative coref head
     """
@@ -164,68 +178,6 @@ def get_representative(idx, df=False, repeat=False, attr=False, **kwargs):
 
     return lst_of_ixs
 
-
-def get_unhead(idx, df=False, repeat=False, **kwargs):
-    """
-    When searching for head matching something, we limit to just heads
-    # and then we get sibling heads. this seems identical to get_all_corefs()
-
-    """
-
-    sent_id, tok_id = getattr(idx, 'name', idx)
-    token = df.ix[sent_id, tok_id]
-    if not hasattr(token, 'c'):
-        # this should error, because the data isn't there at all
-        return [(sent_id, tok_id)]
-    elif token['c'] == '_':
-        return [(sent_id, tok_id)]
-    elif not token['c'].endswith('*'):
-        return [(sent_id, tok_id)]
-
-    else:
-        just_same_coref = df.loc[df['c'] == token['c']]
-        if not just_same_coref.empty:
-            return list(just_same_coref.index)
-        else:
-            return [(sent_id, tok_id)]
-
-def get_conc_start_end(df, only_format_match, show, idx, new_idx):
-    """return the left and right context of a concordance line"""
-
-    sent_id, tok_id = idx
-    new_sent, new_tok = new_idx
-    
-    # potentially need to re-enable for head search
-    #sent = df.xs(sent_id, level='s', drop_level=False)
-    sent = df.ix[sent_id]
-
-    if only_format_match:
-
-        # very optimised by trial and error!
-        start = ' '.join(sent['w'][:tok_id])
-        end = ' '.join(sent['w'][new_tok+1:])
-
-        return start, end
-    # if formatting the whole line, we have to be recursive
-    else:
-        start = []
-        end = []
-        # iterate over the words in the sentence
-        for t in list(sent.index):
-            # show them as we did the match
-            #todo: category here?
-            out = show_this(df, [(sent_id, t)], show, df._metadata, conc=False)
-            if not out:
-                continue
-            else:
-                out = out[0]
-            # are these exactly right?
-            if t < tok_id:
-                start.append(str(out[0]))
-            elif t > new_tok:
-                end.append(str(out[0]))
-        return ' '.join(start), ' '.join(end)
-
 def get_all_corefs(s, i, df, coref=False):
     # if not in coref mode, skip
     if not coref:
@@ -240,31 +192,10 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def get_adjacent_token(df, idx, adjacent, opposite=False):
-            
-    import operator
-    
-    if opposite:
-        mapping = {'-': operator.add, '+': operator.sub}
-    else:
-        mapping = {'+': operator.add, '-': operator.sub}
-    
-    # save the old bits
-    # get the new idx by going back a few spaces
-    # is this ok with no_punct? 
-    op, spaces = adjacent[0], int(adjacent[1])
-    op = mapping.get(op)
-    new_idx = (idx[0], op(idx[1], spaces))
-    # if it doesn't exist, move on. maybe wrong?
-    try:
-        new_token = df.ix[new_idx]
-    except IndexError:
-        return False, False
-
-    return new_token, new_idx
-
 def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
-    """search the dataframe for a single criterion"""
+    """
+    Search the dataframe for a single criterion
+    """
     
     import re
     out = []
@@ -433,7 +364,7 @@ def make_concx(series, matches, metadata, df,
                 end = ' '.join(list(series.loc[s,last+1:]))
             middle = ' '.join(series[s][first:last])
 
-            sname = metadata[s]['speaker']
+            sname = metadata[s].get('speaker', 'none')
             lin = [fname, sname, start, middle, end]
             for k, v in sorted(metadata[s].items()):
                 if k in ['speaker', 'parse', 'sent_id']:
@@ -457,7 +388,7 @@ def make_concx(series, matches, metadata, df,
             end = ' '.join(list(series.loc[s,i+1:]))
         middles = series[s, i]
         #print(start, end)
-        sname = metadata[s]['speaker']
+        sname = metadata[s].get('speaker', 'none')
 
         if not isinstance(middles, pd.core.series.Series):
             middles = [middles]
@@ -703,7 +634,7 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         sent = df_for_lr.loc[s]
         start = ' '.join(sent.loc[:i-1].values)
         end = ' '.join(sent.loc[i+1:].values)
-        sname = meta['speaker']
+        sname = meta.get('speaker', 'none')
         lin = [ix, category, fname, sname, start, mid, end]
         if add_meta:
             for k, v in sorted(meta.items()):
@@ -1066,7 +997,11 @@ def load_raw_data(f):
 
     return stripped_txtdata, id_txtdata
 
-def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False):
+def get_speaker_from_offsets(stripped, plain, sent_offsets,
+                             metadata_mode=False, speaker_segmentation=False):
+    """
+    Take offsets and get a speaker ID from them
+    """
     if not stripped and not plain:
         return {}
     start, end = sent_offsets
@@ -1079,15 +1014,15 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False)
     with_id = plain.splitlines()[line_index]
     
     # parse xml tags in original file ...
+    meta_dict = {'speaker': 'none'}
+
     if metadata_mode:
-        meta_dict = {}
+
         metad = with_id.strip().rstrip('>').rsplit('<metadata ', 1)
-        
-        if len(metad) == 1:
-            return meta_dict
         
         import shlex
         from corpkit.constants import PYTHON_VERSION
+        
         try:
             shxed = shlex.split(metad[-1].encode('utf-8')) if PYTHON_VERSION == 2 \
                 else shlex.split(metad[-1])
@@ -1103,18 +1038,22 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets, metadata_mode=False)
                 meta_dict[k] = v
             except ValueError:
                 continue
-        return meta_dict
 
-    split_line = with_id.split(': ', 1)
-    # handle multiple tags?
-    if len(split_line) > 1:
-        speakerid = split_line[0]
-    else:
-        speakerid = 'UNIDENTIFIED'
-    return {'speaker': speakerid}
+    if speaker_segmentation:
+        split_line = with_id.split(': ', 1)
+        # handle multiple tags?
+        if len(split_line) > 1:
+            speakerid = split_line[0]
+        else:
+            speakerid = 'UNIDENTIFIED'
+        meta_dict['speaker'] = speaderid
 
+    return meta_dict
 
-def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadata=False):
+def convert_json_to_conll(path,
+                          speaker_segmentation=False,
+                          coref=False,
+                          metadata=False):
     """
     take json corenlp output and convert to conll, with
     dependents, speaker ids and so on added.
@@ -1126,7 +1065,6 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
     import json
     import re
     from corpkit.build import get_filepaths
-
 
     files = get_filepaths(path, ext='conll')
     
@@ -1155,12 +1093,12 @@ def convert_json_to_conll(path, speaker_segmentation=False, coref=False, metadat
             sent_offsets = (sent['tokens'][0]['characterOffsetBegin'], \
                             sent['tokens'][-1]['characterOffsetEnd'])
             
-            metad = get_speaker_from_offsets(stripped, raw, sent_offsets, metadata_mode=True)
-            
-            if 'speaker' not in list(metad.keys()):
-                sd = get_speaker_from_offsets(stripped, raw, sent_offsets)
-                metad.update(sd)
-                
+            metad = get_speaker_from_offsets(stripped,
+                                             raw,
+                                             sent_offsets,
+                                             metadata_mode=True,
+                                             speaker_segmentation=speaker_segmentation)
+                            
             output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
             for k, v in metad.items():
                 output += '# %s=%s\n' % (k, v)

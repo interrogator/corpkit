@@ -562,7 +562,9 @@ def get_filepaths(a_path, ext='txt'):
     return files
 
 def make_no_id_corpus(pth, newpth, metadata_mode=False, speaker_segmentation=False):
-    """make version of pth without ids"""
+    """
+    Make version of pth without ids
+    """
     import os
     import re
     import shutil
@@ -712,35 +714,6 @@ def add_ids_to_xml(corpuspath, root=False, note=False, originalname=False):
 
     if note:
         note.progvar.set(100)
-
-def add_ids_to_conll(corpuspath, root=False, note=False):
-    """unused now"""
-    files = get_filepaths(corpuspath, ext='conll')
-    if note:
-        note.progvar.set(0)
-    thetime = strftime("%H:%M:%S", localtime())
-    print('%s: Processing speaker IDs ...' % thetime)
-    if root:
-        root.update()
-    for i, f in enumerate(files):
-        if note:
-            note.progvar.set(i * 100.0 / len(files))
-        thetime = strftime("%H:%M:%S", localtime())
-        print('%s: Processing speaker IDs (%d/%d)' % (thetime, i, len(files)))
-        if root:
-            root.update()
-        # open the unparsed version of the file, read into memory
-        stripped_txtfile = f.replace('.conll', '').replace('-parsed', '-stripped')
-        with open(stripped_txtfile, 'r') as old_txt:
-            stripped_txtdata = old_txt.read()
-        # open the unparsed version with speaker ids
-        id_txtfile = f.replace('.conll', '').replace('-parsed', '')
-        with open(id_txtfile, 'r') as idttxt:
-            id_txtdata = idttxt.read()
-        # how to add speakers to conll? by sent?
-        from corpkit.conll import get_dependents_of_id, parse_conll
-        df = parse_conll(f)
-    return
 
 def add_deps_to_corpus_path(path):
     """add a column to a conll file with dependents"""
