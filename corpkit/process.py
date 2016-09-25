@@ -904,7 +904,9 @@ def gui():
 
 
 def dictformat(d, query=False):
-    """Format a dict search query"""
+    """
+    Format a dict search query
+    """
     from corpkit.constants import transshow, transobjs
     if isinstance(d, STRINGTYPE) and isinstance(query, dict):
         newd = {}
@@ -922,7 +924,7 @@ def dictformat(d, query=False):
             sformat += '             ' + k + ':'
             sformat += dictformat(v)
         return sformat
-    if len(d) == 1 and d.get('s'):
+    if len(d) == 1 and d.get('v'):
         return 'Features'
     sformat = '\n'
     for k, v in d.items():

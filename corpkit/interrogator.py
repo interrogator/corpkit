@@ -277,9 +277,10 @@ def interrogator(corpus,
         statsmode_results['Sentences'] = len(list(df.index.levels[0]))
         statsmode_results['Passives'] = len(df[df['f'] == 'nsubjpass'])
         statsmode_results['Tokens'] = len(df)
-        statsmode_results['Words'] = len([w for w in list(df['w']) if not ispunct(w)])
-        statsmode_results['Characters'] = sum([len(x) for x in list(df['w'])])
-        statsmode_results['Open class'] = sum([1 for x in list(df['p']) if x[0] in ['N', 'J', 'V', 'R']])
+        # the below has returned a float before. i assume actually a nan?
+        statsmode_results['Words'] = len([w for w in list(df['w']) if w and not ispunct(str(w))])
+        statsmode_results['Characters'] = sum([len(str(w)) for w in list(df['w']) if w])
+        statsmode_results['Open class'] = sum([1 for x in list(df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
         statsmode_results['Punctuation'] = statsmode_results['Tokens'] - statsmode_results['Words']
         statsmode_results['Closed class'] = statsmode_results['Words'] - statsmode_results['Open class']
         
