@@ -840,7 +840,7 @@ class Interrodict(OrderedDict):
         # join on keys ... probably shouldn't transpose like this though!
         if axis.lower()[0] not in ['x', 'y']:
             df = self.values()[0].results
-            others = [i.results.T for i in self.values()[1:]]
+            others = [i.results.T for i in list(self.values())[1:]]
             try:
                 df = df.T.join(others).T
             except ValueError:
