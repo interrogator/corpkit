@@ -487,8 +487,13 @@ def make_new_for_dep(dfmain, dfdep, name):
     newdf.fillna('none')
     return newdf
 
-def fast_simple_conc(dfss, idxs, show, metadata, add_meta, 
-                     fname, category, only_format_match):
+def fast_simple_conc(dfss, idxs, show,
+                     metadata=False,
+                     add_meta=False, 
+                     fname=False,
+                     category=False,
+                     only_format_match=True,
+                     no_conc=False):
     """
     Fast, simple concordancer
 
@@ -508,7 +513,10 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
     df_for_lr = df['mw'] if only_format_match else df
     
     # this is data for matches
-    matches = df.loc[idxs]
+    if idxs:
+        matches = df.loc[idxs]
+    else:
+        matches = df
 
     # now, we need to add any non-simple columns to the df
     # how can this handle only_format_match to be fast?
@@ -626,6 +634,9 @@ def fast_simple_conc(dfss, idxs, show, metadata, add_meta,
         df_for_lr = Series(dfx[show[0]].str.cat(others=llist, \
                            sep='/'), index=df.index)
         matches = df_for_lr.loc[idxs]
+
+    if no_conc:
+        return list(matches)
 
     # do concordancing as fast as possible
     for mid, (s, i) in zip(matches, idxs):
@@ -827,24 +838,26 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     # could make the below more elegant ...
     for sentid, data in sorted(metadata.items()):
         meta_value = data.get(feature, 'none')
+        lst_met_vl = meta_value.split(';')
         if isinstance(criteria, list):
             if not reverse:
-                if meta_value not in criteria:
+                if not any(i in criteria for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
             else:
-                if meta_value in criteria:
+                if any(i in criteria for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
         elif isinstance(criteria, (re._pattern_type, str)):
             if not reverse:
-                if re.search(criteria, meta_value):
+                if any(re.search(criteria, i) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
             else:
-                if not re.search(criteria, meta_value):
+                if not any(re.search(criteria, i) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
+
     df = df.loc[good_sents]
     df = df.fillna('')
     df._metadata = new_metadata

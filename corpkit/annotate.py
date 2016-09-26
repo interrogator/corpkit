@@ -68,7 +68,7 @@ def make_contents(filepath, place, text, do_replace=False):
     with OPENER(filepath, 'r', encoding='utf-8') as fo:
         contents = fo.readlines()
     if do_replace:
-        contents[place] = contents[place].rstrip('\n').replace(text + ',', '') + ',' + text
+        contents[place] = contents[place].rstrip('\n').replace(text + ';', '') + ';' + text
     else:
         contents.insert(place, text)
     return contents
@@ -138,7 +138,7 @@ def delete_lines(corpus, annotation, dry_run=True, colour={}):
         if annotation in no_can_do:
             print("You aren't allowed to delete '%s', sorry." % k)
             return
-        regex = re.compile(r'((# tags=.*?)%s,?(.*?))\n' % annotation, re.MULTILINE)
+        regex = re.compile(r'((# tags=.*?)%s;?(.*?))\n' % annotation, re.MULTILINE)
 
     fs = []
     for (root, dirs, fls) in os.walk(corpus):
