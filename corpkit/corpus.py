@@ -175,6 +175,49 @@ class Corpus(object):
             fls = sorted(fls, key=operator.attrgetter('name'))
             return Datalist(fls)
 
+    @lazyprop
+    def all_filepaths(self):
+        """
+        Lazy-load a list of all filepaths in a corpus
+        """
+        if self.level == 'f':
+            return [self.path]
+        if self.files:
+            return [i.path for i in self.files]
+        fs = []
+        for sc in self.subcorpora:
+            for f in sc.files:
+                fs.append(f.path)
+        return fs
+
+    def tfidf(self, search={'w': 'any'}, show=['w'], **kwargs):
+        """
+        Generate TF-IDF vector representation of corpus
+        using interrogate method. All args and kwargs go to 
+        :func:`~corpkit.corpus.Corpus.interrogate`
+
+        :returns: the vectoriser and matrix
+        """
+
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        vectoriser = TfidfVectorizer(input='content',
+                                     tokenizer=lambda x: x.split())
+
+        res = self.interrogate(search=search,
+                               show=show,
+                               **kwargs).results
+
+        # there is also a string repeat method which could be better
+        def dupe_string(line):
+            """Duplicate line name by line count and return string"""
+            return ''.join([(w + ' ') * line[w] for w in line.index])
+
+        ser = res.apply(dupe_string, axis=1)
+        vec = vectoriser.fit_transform(ser.values)
+        #todo: subcorpora names are lost?
+        return vectoriser, vec
+
+
     def __str__(self):
         """String representation of corpus"""
         showing = 'subcorpora'
@@ -354,7 +397,7 @@ class Corpus(object):
         and save to disk for next time.
 
         :param kwargs: Arguments to pass to the 
-                       :func:`~corpkit.interrogation.Interrogation.interrogate` method
+                       :func:`~corpkit.corpus.Corpus.interrogate` method
         :type kwargs: `keyword arguments`
 
         :returns: a `DataFrame` of tokens and counts
@@ -383,7 +426,7 @@ class Corpus(object):
         common subjects, objects, modifiers (etc.) of 'see':
 
         :param search: Similar to `search` in the 
-                       :func:`~corpkit.interrogation.Interrogation.interrogate` 
+                       :func:`~corpkit.corpus.Corpus.interrogate` 
                        method.
 
                        Valid keys are:
@@ -820,7 +863,7 @@ class Corpus(object):
            3   01  1-01.txt.xml                      So I  felt     like i recognized li
            ...                                                                       ...
 
-        Arguments are the same as :func:`~corpkit.interrogation.Interrogation.interrogate`, 
+        Arguments are the same as :func:`~corpkit.corpus.Corpus.interrogate`, 
         plus a few extra parameters:
 
         :param only_format_match: If `True`, left and right window will just be
