@@ -273,6 +273,11 @@ def interrogator(corpus,
 
         from collections import Counter
         statsmode_results = Counter()
+        # a rare, but possible error found on trn_fla-parsed
+        if df is None:
+            return statsmode_results
+        if isinstance(df, DataFrame) and df.empty:
+            return statsmode_results
 
         statsmode_results['Sentences'] = len(list(df.index.levels[0]))
         statsmode_results['Passives'] = len(df[df['f'] == 'nsubjpass'])
