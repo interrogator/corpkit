@@ -188,15 +188,15 @@ class Wordlist(list):
             return
 
     def as_regex(self, boundaries='w', case_sensitive=False, inverse=False, compile=False):
-        """turn list into regular expression matching any item in list"""
-        if self.kwargs.get('single'):
-            from corpkit import as_regex
-            return as_regex(get_both_spellings(self.data),
-                            boundaries=boundaries,
-                            case_sensitive=case_sensitive,
-                            inverse=inverse,
-                            compile=compile
-                           )
+        """
+        Turn list into regular expression matching any item in list
+        """
+        from corpkit.other import as_regex
+        return as_regex(get_both_spellings(self.data),
+                        boundaries=boundaries,
+                        case_sensitive=case_sensitive,
+                        inverse=inverse,
+                        compile=compile)          
 
 class Processes(object):
     """Process types: relational, verbal, mental, material"""
