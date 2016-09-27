@@ -142,6 +142,7 @@ def pmultiquery(corpus,
     locs['df1_always_df'] = False
     locs['files_as_subcorpora'] = False
     locs['just_speakers'] = just_speakers
+    locs['corpus'] = corpus
 
     if multiple == 'multiplespeaker':
         locs['multispeaker'] = True
@@ -232,6 +233,7 @@ def pmultiquery(corpus,
     terminal = False
     used_joblib = False
     #ds = ds[::-1]
+    #todo: the number of blank lines to print can be way wrong
     if not root and print_info:
         from blessings import Terminal
         terminal = Terminal()
