@@ -270,8 +270,9 @@ def interrogator(corpus,
 
 
     def make_statsdict_from_df(df, to_open):
-
+        import re
         from collections import Counter
+        from corpkit.dictionaries.process_types import processes
         statsmode_results = Counter()
         # a rare, but possible error found on trn_fla-parsed
         if df is None:
@@ -288,9 +289,8 @@ def interrogator(corpus,
         statsmode_results['Open class'] = sum([1 for x in list(df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
         statsmode_results['Punctuation'] = statsmode_results['Tokens'] - statsmode_results['Words']
         statsmode_results['Closed class'] = statsmode_results['Words'] - statsmode_results['Open class']
-        
-        from corpkit.dictionaries.process_types import processes
-        from corpkit.other import as_regex
+
+        #todo: speed up by 
         tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
                      'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
                      'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
@@ -300,19 +300,23 @@ def interrogator(corpus,
                      #'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
                      'Clauses': r'/^S/ < __',
                      'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.mental, boundaries='w'),
-                     'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.verbal, boundaries='w'),
-                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.relational, boundaries='w'),
-                     'Verbless clause': r'/^S/ !<< /^VB.?/'}
+                     'Processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /VB.?/)'}
 
         for name, q in sorted(tregex_qs.items()):
+            options = ['-o', '-t'] if name == 'Processes' else ['-o', '-C']
             res = tregex_engine(query=q, 
-                                options=['-o', '-C'], 
+                                options=options,
                                 corpus=to_open,  
                                 root=root)
+            if name == 'Processes':
+                non_mat = 0
+                for ptype in ['mental', 'relational', 'verbal']:
+                    reg = getattr(processes, ptype).words.as_regex(boundaries='l')
+                    count = len([i for i in res if re.search(reg, i[-1])])
+                    non_mat += count
+                    statsmode_results[ptype.title() + ' processes'] += count
+                statsmode_results['Material processes'] += len(res) - non_mat
+                res = len(res)
             statsmode_results[name] += int(res)
             if root:
                 root.update()
