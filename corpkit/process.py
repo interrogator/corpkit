@@ -868,8 +868,12 @@ def saferead(path):
     import sys
     if sys.version_info.major == 3:
         enc = 'utf-8'
-        with open(path, 'r', encoding=enc) as fo:
-            data = fo.read()
+        try:
+            with open(path, 'r', encoding=enc) as fo:
+                data = fo.read()
+        except:
+            with open(path, 'rb') as fo:
+                data = fo.read().decode('utf-8', errors='ignore')
         return data, enc
     else:
         with open(path, 'r') as fo:

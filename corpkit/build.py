@@ -764,11 +764,11 @@ def get_all_metadata_fields(corpus):
 def get_names(filepath, speakid):
     """get a list of speaker names from a file"""
     import re
-    with open(filepath, 'r') as fo:
-        txt = fo.read()
-        res = re.findall(speakid, txt)
-        if res:
-            return sorted(list(set([i.strip() for i in res])))
+    from corpkit.process import saferead
+    txt, enc = saferead(filepath)
+    res = re.findall(speakid, txt)
+    if res:
+        return sorted(list(set([i.strip() for i in res])))
 
 def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     """
