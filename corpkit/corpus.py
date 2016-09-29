@@ -29,13 +29,19 @@ class Corpus(object):
         # one is determined automatically below, and processed accordingly. We
         # assume it is a full corpus to begin with.
 
+        def get_symbolics(self):
+            return {'skip': self.skip,
+                    'just': self.just,
+                    'symbolic': self.symbolic}
+
         self.data = None
         level = kwargs.pop('level', 'c')
         self.datatype = kwargs.pop('datatype', None)
         self.print_info = kwargs.pop('print_info', True)
-        self.symbolic = kwargs.pop('subcorpora', False)
-        self.skip = kwargs.pop('skip', False)
-        self.just = kwargs.pop('just', False)
+        self.symbolic = kwargs.get('subcorpora', False)
+        self.skip = kwargs.get('skip', False)
+        self.just = kwargs.get('just', False)
+        self.kwa = get_symbolics(self)
 
         if isinstance(path, (list, Datalist)):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
@@ -140,10 +146,10 @@ class Corpus(object):
             return self.data
         if self.level == 'c':
             variable_safe_r = re.compile(r'[\W0-9_]+', re.UNICODE)
-            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype)
+            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype, **self.kwa)
                                    for d in os.listdir(self.path)
                                    if isdir(join(self.path, d))],
-                                  key=operator.attrgetter('name')))
+                                  key=operator.attrgetter('name')), **self.kwa)
             for subcorpus in sbs:
                 variable_safe = re.sub(variable_safe_r, '',
                                        subcorpus.name.lower().split(',')[0])
@@ -169,11 +175,10 @@ class Corpus(object):
         import operator
         from os.path import join, isdir
         if self.level == 's':
-
             fls = [f for f in os.listdir(self.path) if not f.startswith('.')]
-            fls = [File(f, self.path, self.datatype) for f in fls]
+            fls = [File(f, self.path, self.datatype, **self.kwa) for f in fls]
             fls = sorted(fls, key=operator.attrgetter('name'))
-            return Datalist(fls)
+            return Datalist(fls, **self.kwa)
 
     @lazyprop
     def all_filepaths(self):
@@ -254,15 +259,19 @@ class Corpus(object):
             classname(self), os.path.basename(self.path), len(ssubcorpora))
 
     def __getitem__(self, key):
+        """
+        Get attributes from corpus
+        todo: symbolic stuff for item selection
+        """
         from corpkit.process import makesafe
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
             if hasattr(self, 'subcorpora') and self.subcorpora:
                 return Datalist([self[ii] for ii in range(
-                    *key.indices(len(self.subcorpora)))])
+                    *key.indices(len(self.subcorpora)))], **self.kwa)
             elif hasattr(self, 'files') and self.files:
                 return Datalist([self[ii] for ii in range(
-                    *key.indices(len(self.files)))])                
+                    *key.indices(len(self.files)))], **self.kwa)                
         elif isinstance(key, int):
             return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
         else:
@@ -295,16 +304,20 @@ class Corpus(object):
         from corpkit.other import load
         from corpkit.dictionaries import mergetags
 
+        subc = self.symbolic if self.symbolic else ''
+        if subc in ['default', 'folders', 'folder']:
+            subc = ''
+
         savedir = 'saved_interrogations'
-        if isfile(join(savedir, self.name + '-features.p')):
+        if isfile(join(savedir, self.name + '-features-%s.p' % subc)):
             try:
-                return load(self.name + '-features').results
+                return load(self.name + '-features-%s' % subc).results
             except AttributeError:
-                return load(self.name + '-features')
+                return load(self.name + '-features-%s' % subc)
         else:
-            feat = interrogator(self, 'v', 'any', subcorpora=self.symbolic).results
+            feat = interrogator(self, 'features', subcorpora=subc).results
             if isdir(savedir):
-                feat.save(self.name + '-features')
+                feat.save(self.name + '-features-%s' % subc)
             return feat
 
     @lazyprop
@@ -676,6 +689,8 @@ class Corpus(object):
             else:
                 kwargs['just_metadata'] = self.just
 
+        kwargs.pop('subcorpora', False)
+
         if par and self.subcorpora:
             if isinstance(par, int):
                 kwargs['multiprocess'] = par
@@ -946,11 +961,13 @@ class Corpus(object):
             namep = name
 
         # handle symbolic structures
+        subcorpora = False
         if self.symbolic:
             subcorpora = self.symbolic
         if kwargs.get('subcorpora', False):
             subcorpora = kwargs.pop('subcorpora')
-
+        kwargs.pop('subcorpora', False)
+        
         pth = os.path.join('models', namep)
         if os.path.isfile(pth):
             print('Returning saved model: %s' % pth)
@@ -962,7 +979,7 @@ class Corpus(object):
 
         res = self.interrogate(search,
                                language_model=langmod,
-                               subcorpora=subcorpora
+                               subcorpora=subcorpora,
                                **kwargs)
 
         return res.language_model(name, search=search, **kwargs)
@@ -976,9 +993,11 @@ class Subcorpus(Corpus):
     :class:`corpkit.corpus.Corpus`.
     """
 
-    def __init__(self, path, datatype):
+    def __init__(self, path, datatype, **kwa):
         self.path = path
         kwargs = {'print_info': False, 'level': 's', 'datatype': datatype}
+        kwargs.update(kwa)
+        self.kwargs = kwargs
         Corpus.__init__(self, self.path, **kwargs)
 
     def __str__(self):
@@ -994,7 +1013,7 @@ class Subcorpus(Corpus):
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
             return Datalist([self[ii]
-                             for ii in range(*key.indices(len(self.files)))])
+                             for ii in range(*key.indices(len(self.files)))], self.kwargs)
         elif isinstance(key, int):
             return self.files.__getitem__(makesafe(self.files[key]))
         else:
@@ -1015,7 +1034,7 @@ class File(Corpus):
     directly as a `str`, or as a *CoreNLP XML* `Document`.
     """
 
-    def __init__(self, path, dirname=False, datatype=False):
+    def __init__(self, path, dirname=False, datatype=False, **kwa):
         import os
         from os.path import join, isfile, isdir
         if dirname:
@@ -1023,6 +1042,7 @@ class File(Corpus):
         else:
             self.path = path
         kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
+        kwargs.update(kwa)
         Corpus.__init__(self, self.path, **kwargs)
         if self.path.endswith('.p'):
             self.datatype = 'tokens'
@@ -1117,7 +1137,7 @@ class Datalist(object):
     same as for :class:`corpkit.corpus.Corpus`
     """
 
-    def __init__(self, data):
+    def __init__(self, data, **kwargs):
         import re
         import os
         from os.path import join, isfile, isdir
@@ -1132,6 +1152,9 @@ class Datalist(object):
             for subcorpus in data:
                 safe_var = makesafe(subcorpus)
                 setattr(self, safe_var, subcorpus)
+        self.symbolic = kwargs.get('symbolic')
+        self.just = kwargs.get('just')
+        self.skip = kwargs.get('skip')
 
     def __str__(self):
         stringform = []
@@ -1178,7 +1201,7 @@ class Datalist(object):
     def __len__(self):
         return len(self.data)
 
-    def __next__(self):  # Python 3: def __next__(self)
+    def __next__(self):
         if self.current > self.high:
             raise StopIteration
         else:
@@ -1189,6 +1212,11 @@ class Datalist(object):
         """
         Interrogate the corpus using :func:`~corpkit.corpus.Corpus.interrogate`
         """
+        
+        kwargs['just'] = self.just
+        kwargs['skip'] = self.skip
+        kwargs['subcorpora'] = self.symbolic
+
         from corpkit.interrogator import interrogator
         return interrogator(self, *args, **kwargs)
 
@@ -1196,6 +1224,10 @@ class Datalist(object):
         """
         Concordance the corpus using :func:`~corpkit.corpus.Corpus.concordance`
         """
+        kwargs['just'] = self.just
+        kwargs['skip'] = self.skip
+        kwargs['subcorpora'] = self.symbolic
+
         from corpkit.interrogator import interrogator
         return interrogator(self, conc='only', *args, **kwargs)
 
@@ -1203,6 +1235,10 @@ class Datalist(object):
         """
         Get a configuration using :func:`~corpkit.corpus.Corpus.configurations`
         """
+        kwargs['just'] = self.just
+        kwargs['skip'] = self.skip
+        kwargs['subcorpora'] = self.symbolic
+
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
@@ -1239,7 +1275,7 @@ class Corpora(Datalist):
                 data[index] = Corpus(i, **kwargs)
 
         # now turn it into a Datalist
-        Datalist.__init__(self, data)
+        Datalist.__init__(self, data, **kwargs)
 
     def __repr__(self):
         return "<%s instance: %d items>" % (classname(self), len(self))
@@ -1249,7 +1285,7 @@ class Corpora(Datalist):
         from corpkit.process import makesafe
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
-            return Corpora([self[ii] for ii in range(*key.indices(len(self)))])
+            return Corpora([self[ii] for ii in range(*key.indices(len(self)))], **kwargs)
         elif isinstance(key, int):
             return self.__getitem__(makesafe(self.data[key]))
         else:
