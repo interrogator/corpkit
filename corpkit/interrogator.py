@@ -300,7 +300,7 @@ def interrogator(corpus,
                      #'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
                      'Clauses': r'/^S/ < __',
                      'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /VB.?/)'}
+                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) > /^(S|ROOT)/)'}
 
         for name, q in sorted(tregex_qs.items()):
             options = ['-o', '-t'] if name == 'Processes' else ['-o', '-C']
@@ -339,7 +339,7 @@ def interrogator(corpus,
             all_cats = set([i.get(subcorpora, 'none') for i in df._metadata.values()])
             for category in all_cats:
                 new_df = process_df_for_speakers(df, df._metadata, category, feature=subcorpora)
-                to_open = to_open = '\n'.join([i['parse'] for i in df._metadata.values()])
+                to_open = to_open = '\n'.join([i['parse'] for i in new_df._metadata.values()])
                 stat = make_statsdict_from_df(new_df, to_open)
                 resultdict[category] = stat
                 concdict[category] = {}
@@ -1104,7 +1104,10 @@ def interrogator(corpus,
         # i'm not maintaining it anymore, but i'll fix it with this
         if datatype == 'parse':
             conc_df = conc_df.drop_duplicates().reset_index()
-        conc_df = Concordance(conc_df[:maxconc])
+        if maxconc:
+            conc_df = Concordance(conc_df[:maxconc])
+        else:
+            conc_df = Concordance(conc_df)
         try:
             conc_df.query = locs
         except AttributeError:
@@ -1424,7 +1427,7 @@ def interrogator(corpus,
                 # make conc lines from conc results
                 conc_result = make_conc_lines_from_whole_mid(whole_result, result)
                 for lin in conc_result:
-                    if numconc < maxconc or not maxconc:
+                    if maxconc is False or numconc < maxconc:
                         conc_results[subcorpus_name].append(lin)
                     numconc += 1
 
@@ -1472,7 +1475,6 @@ def interrogator(corpus,
                                              split_contractions=split_contractions,
                                              window=window,
                                              filename=f.path,
-                                             language_model=language_model,
                                              coref=corefs,
                                              countmode=countmode,
                                              maxconc=(maxconc, numconc),
@@ -1505,7 +1507,7 @@ def interrogator(corpus,
 
                             results[k] += Counter(v)
                             for line in concl:
-                                if numconc < maxconc or not maxconc:
+                                if maxconc is False or numconc < maxconc:
                                     line = postprocess_concline(line,
                                         fsi_index=fsi_index)
                                     conc_results[k].append(line)
@@ -1571,7 +1573,7 @@ def interrogator(corpus,
                         for line in conc_res:
                             line = postprocess_concline(line,
                                 fsi_index=fsi_index)
-                            if numconc < maxconc or not maxconc:
+                            if maxconc is False or numconc < maxconc:
                                 conc_results[subcorpus_name].append(line)
                                 numconc += 1
 
