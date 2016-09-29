@@ -744,7 +744,9 @@ class Interrodict(OrderedDict):
                 parents[level] = list(dct.keys())
                 level += 1
                 for k, v in dct.items():
-                    pars = [*myparname, k]
+                    pars = myparname + [k]
+                    # the below is only for python3
+                    #pars = [*myparname, k]
                     trav(v, parents=parents, level=level, results=results, myparname=pars)
                     
             else:
@@ -754,7 +756,8 @@ class Interrodict(OrderedDict):
                     parents[level] = set(dct.results.index)
                 if not dct.results.empty:
                     for n, ser in dct.results.iterrows():
-                        ser.name = (*myparname, ser.name)
+                        ser.name = tuple(myparname + [ser.name])
+                        #ser.name = (*myparname, ser.name)
                         results.append(ser)
                     for c in list(dct.results.columns):
                         colset.add(c)
