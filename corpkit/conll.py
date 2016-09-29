@@ -205,7 +205,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
         df = df.loc[df['c'].endswith('*')]
 
     # cut down to just tokens with matching attr
-    matches = df[df[attrib].str.contains(pattern)]
+    matches = df[df[attrib].fillna('').str.contains(pattern)]
 
     # functions for getting the needed object
     revmapping = {'g': get_dependents_of_id,
@@ -536,9 +536,9 @@ def fast_simple_conc(dfss, idxs, show,
             adjname = ''.join(adj) if hasattr(adj, '__iter__') else ''
             if adj:
                 if adj[0] == '+':
-                    tomove = int(adj[1])
-                elif adj[0] == '-':
                     tomove = -int(adj[1])
+                elif adj[0] == '-':
+                    tomove = int(adj[1])
             # cut df down to just needed bits
             ob, att = i[0], i[-1]
             if ob in ['c', 'h', 's']:
@@ -570,6 +570,8 @@ def fast_simple_conc(dfss, idxs, show,
                 else:
                     ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
             if adj:
+                #todo: this shift adds the next sent first words to end
+                # of the previous sentence
                 ser = ser.shift(tomove)
                 ser = ser.fillna('none')
                 #ser = pd.Series(new_values, index=ser.index)
@@ -949,7 +951,7 @@ def pipeline(f,
     metadata = df._metadata
 
     if kwargs.get('no_punct', True):
-        df = df[df['w'].str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
+        df = df[df['w'].fillna('').str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
         # remove brackets --- could it be done in one regex?
         df = df[~df['w'].str.contains(r'^-.*B-$')]
 
@@ -1094,6 +1096,10 @@ def convert_json_to_conll(path,
         with open(f, 'r') as fo:
             try:
                 data = json.load(fo)
+            # todo: differentiate between json errors
+            # rsc corpus had one json file with an error
+            # outputted by corenlp, and the conversion
+            # failed silently here
             except ValueError:
                 continue
 
