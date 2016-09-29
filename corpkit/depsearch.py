@@ -1,6 +1,11 @@
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE
 
+"""
+Note: this method is deprecated. All current development uses conll,
+rather than XML.
+"""
+
 def dep_searcher(sents,
                  search,
                  show=['w'],

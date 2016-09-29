@@ -865,6 +865,16 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     df._metadata = new_metadata
     return df
 
+def cut_df_by_meta(df, just_metadata, skip_metadata):
+    if df is not None:
+        if just_metadata:
+            for k, v in just_metadata.items():
+                df = process_df_for_speakers(df, df._metadata, v, feature=k)
+        if skip_metadata:
+            for k, v in skip_metadata.items():
+                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
+    return df
+
 def pipeline(f,
              search,
              show,
@@ -888,7 +898,7 @@ def pipeline(f,
     # remove if not enough matches or exclude is defined
     # show: (bottleneck)
     #
-    # issues: get dependents, coref, adjacent, conc, only_format_match
+    # issues: get dependents, coref
 
     all_matches = []
     all_exclude = []
@@ -901,13 +911,7 @@ def pipeline(f,
     # if working by metadata feature,
     feature = kwargs.pop('by_metadata', False)
 
-    if df is not None:
-        if just_metadata:
-            for k, v in just_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k)
-        if skip_metadata:
-            for k, v in skip_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
+    df = cut_df_by_meta(df, just_metadata, skip_metadata)
 
     if feature:
 

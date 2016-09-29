@@ -702,7 +702,9 @@ class Corpus(object):
                                 subcorpora=subcorpora, *args, **kwargs)
         
         from corpkit.interrogation import Interrodict
-        if isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
+        if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
+            return res
+        elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
             #try:
             return res.multiindex()
         else:

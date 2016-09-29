@@ -735,30 +735,42 @@ class Interrodict(OrderedDict):
 
         query = self.query
 
-        def trav(dct, parents={}, level=0, colset=set(), results=list()):
+        def trav(dct, parents={}, level=0, colset=set(),
+                 results=list(), myparname=[]):
+            from collections import defaultdict
+
             columns = False
             if hasattr(dct, 'items'):
                 parents[level] = list(dct.keys())
                 level += 1
                 for k, v in dct.items():
-                    trav(v, parents=parents, level=level, results=results)
+                    pars = [*myparname, k]
+                    trav(v, parents=parents, level=level, results=results, myparname=pars)
                     
             else:
-                parents[level] = list(dct.results.index)
+                if parents.get(level):
+                    parents[level] |= set(dct.results.index)
+                else:
+                    parents[level] = set(dct.results.index)
                 if not dct.results.empty:
                     for n, ser in dct.results.iterrows():
+                        ser.name = (*myparname, ser.name)
                         results.append(ser)
                     for c in list(dct.results.columns):
                         colset.add(c)
                     level += 1
-                else:
-                    for x in dct.results.columns:
-                        results.append(pd.Series())
+                #else:
+                #    for x in dct.results.columns:
+                #        ns = pd.Series()
+                #        #ns.name = 'noname'
+                #        #print(ns.name)
+                #        results.append(ns)
 
-            return parents, level+1, colset, results
+            return results
 
-        parents, level, colset, data = trav(self)
-        index = list(product(*list(parents.values())))
+        data = trav(self)
+        index = [i.name for i in data]
+
         # todo: better default for speakers?
         if self.query['subcorpora']:
             nms = {'names': self.query['subcorpora']}
@@ -766,8 +778,8 @@ class Interrodict(OrderedDict):
             nms = {} 
         ix = pd.MultiIndex.from_tuples(index, **nms)
         df = pd.DataFrame(data, index=ix)
-        # should sort by total too!
         df = df.fillna(0)
+        df = df[df.sum().sort_values(ascending=False).index]
         totals = df.sum(axis=1)
         return Interrogation(results=df, totals=totals, query=query)
 

@@ -148,25 +148,15 @@ def interrogator(corpus,
         do some retyping if need be as well"""
         is_mul = False
         from collections import OrderedDict
-        #if hasattr(corpus, '__iter__'):
-        #    is_mul = True
-        # so we can do search = 't', query = ['NP', 'VP']:
         from corpkit.dictionaries.process_types import Wordlist
         
-        #if isinstance(search, dict) and query in ['any', False, None]:
-        #    if not all(k.islower() and k.isalpha() and len(k) < 4 for k in search.keys()):
-        #        is_mul = 'namedqueriesmultiple'
         if isinstance(query, Wordlist):
             query = list(query)
 
-        # what on earth is this?
-        #if isinstance(query, list):
-        #    if query != list(search.values())[0] or len(list(search.keys())) > 1:
-        #        query = {c.title(): c for c in query}
         if subcorpora and multiprocess:
             is_mul = 'subcorpora'
 
-        if hasattr(subcorpora, '__iter__'):
+        if isinstance(subcorpora, (list, tuple)):
             is_mul = 'subcorpora'
 
         if isinstance(query, (dict, OrderedDict)):
@@ -194,22 +184,30 @@ def interrogator(corpus,
         #    is_mul = False
         return is_mul, corpus, search, query, just_speakers
 
-    def slow_tregex(sents, **dummy_args):
-        """do the speaker-specific version of tregex queries"""
-        speakr = dummy_args.get('speaker', '')
-        import os
+    def slow_tregex(sents, **kwargs):
+        """
+        Do the metadata specific version of tregex queries
+        """
+        speakr = kwargs.get('speaker', '')
+        subcorpora = kwargs.get('by_metadata')
+        just_metadata = kwargs.get('just_metadata')
+        skip_metadata = kwargs.get('skip_metadata')
+        search = kwargs.get('search')['t']
+        translated_option = kwargs.get('translated_option')
+
         from corpkit.process import tregex_engine
-        # first, put the relevant trees into temp file
-        #to_open = '\n'.join(sent.parse_string.strip() for sent in sents \
-        #                      if sent.parse_string is not None)
-        # make tuple with speakername...
+        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
+
+        # if symbolic, get all possible categories in file and return dict
+
         if corpus.datatype == 'parse':
             speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
                           if sent.parse_string is not None]
         else:
-            from corpkit.conll import parse_conll
+            from corpkit.conll import parse_conll, cut_df_by_meta
             df = parse_conll(sents)
-            speak_tree = [(x['speaker'], x['parse']) for x in df._metadata.values()]
+            df = cut_df_by_meta(df, just_metadata, skip_metadata)
+            speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
             
         if speak_tree:
             speak, tree = list(zip(*speak_tree))
@@ -222,18 +220,23 @@ def interrogator(corpus,
         to_open = '\n'.join(tree)
         concs = []
 
-        q = list(search.values())[0]
-        ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
+        if not to_open.strip('\n'):
+            if subcorpora:
+                return {}, {}
 
-        res = tregex_engine(query=q, 
+        ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
+        res = tregex_engine(query=search, 
                             options=ops, 
                             corpus=to_open,
                             root=root,
                             preserve_case=True,
-                            speaker_data=speak
-                           )
+                            speaker_data=speak)
 
         res = format_tregex(res, speaker_data=speak)
+        if not res:
+            if subcorpora:
+                return {}, {}
+
         
         if not no_conc:
             ops += ['-w']
@@ -242,10 +245,7 @@ def interrogator(corpus,
                                       corpus=to_open,
                                       root=root,
                                       preserve_case=True,
-                                      speaker_data=speak
-                                     )
-            #for line in whole_res:
-            #    line.insert(1, speakr) 
+                                      speaker_data=speak)
 
             # format match too depending on option
             if not only_format_match:
@@ -253,9 +253,26 @@ def interrogator(corpus,
 
             # make conc lines from conc results
             concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
+        else:
+            concs = [False for i in res]
 
         if root:
             root.update()
+
+        if subcorpora:
+            from collections import defaultdict
+            outres = defaultdict(list)
+            outconc = defaultdict(list)
+            for (_, met, r), line in zip(res, concs):
+                outres[met].append(r)
+                outconc[met].append(line)
+            if countmode:
+                outres = {k: len(v) for k, v in outres.items()}
+                outconc = {}
+            if no_conc:
+                outconc = {k: [] for k, v in outres.items()}
+            return outres, outconc
+
         if countmode:
             if isinstance(res, int):
                 return res, False
@@ -300,7 +317,7 @@ def interrogator(corpus,
                      #'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
                      'Clauses': r'/^S/ < __',
                      'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) > /^(S|ROOT)/)'}
+                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
 
         for name, q in sorted(tregex_qs.items()):
             options = ['-o', '-t'] if name == 'Processes' else ['-o', '-C']
@@ -326,7 +343,6 @@ def interrogator(corpus,
         """
         Get a bunch of frequencies
         """
-
         resultdict = {}
         concdict = {}
         # parse the file
@@ -339,7 +355,7 @@ def interrogator(corpus,
             all_cats = set([i.get(subcorpora, 'none') for i in df._metadata.values()])
             for category in all_cats:
                 new_df = process_df_for_speakers(df, df._metadata, category, feature=subcorpora)
-                to_open = to_open = '\n'.join([i['parse'] for i in new_df._metadata.values()])
+                to_open = '\n'.join([i['parse'] for i in new_df._metadata.values()])
                 stat = make_statsdict_from_df(new_df, to_open)
                 resultdict[category] = stat
                 concdict[category] = {}
@@ -396,8 +412,7 @@ def interrogator(corpus,
 
     def make_conc_lines_from_whole_mid(wholes,
                                        middle_column_result,
-                                       filename=False
-                                      ):
+                                       filename=False):
         """
         Create concordance line output from tregex output
         """
@@ -411,9 +426,6 @@ def interrogator(corpus,
         unique_wholes = []
         unique_middle_column_result = []
         duplicates = []
-        
-        #if filename:
-        #    wholes = [[filename] + list(x) for x in wholes]
 
         word_index = show.index('w') if 'w' in show else 0
 
@@ -716,7 +728,14 @@ def interrogator(corpus,
         statsmode = False
         tree_to_text = False
 
-        if search.get('t') and not just_speakers and not kwargs.get('tgrep') and not files_as_subcorpora:
+        simp_crit = all(not i for i in [just_speakers,
+                                        kwargs.get('tgrep'),
+                                        files_as_subcorpora,
+                                        by_metadata,
+                                        just_metadata,
+                                        skip_metadata])
+
+        if search.get('t') and simp_crit:
             if have_java:
                 simple_tregex_mode = True
                 searcher = None
@@ -1024,12 +1043,17 @@ def interrogator(corpus,
         else:
             print(finalstring)
 
-    def determine_conc_colnames(corpus, fsi_index=False):
+    def get_conc_colnames(corpus,
+                          fsi_index=False,
+                          simple_tregex_mode=False):
     
         fields = []
         base = 'c f s l m r'
         
-        if fsi_index:
+        if simple_tregex_mode:
+            base = base.replace('f ', '')
+
+        if fsi_index and not simple_tregex_mode:
             base = 'i ' + base
         
         if PYTHON_VERSION == 2:
@@ -1154,10 +1178,7 @@ def interrogator(corpus,
         if not preserve_case:
             if not statsmode:
                 if res:
-                    if searcher == slow_tregex:
-                        res = [i[-1].lower() for i in res]
-                    else:
-                        res = [i.lower() for i in res]
+                    res = [i.lower() for i in res]
         if spelling:
             if not statsmode:
                 res = [correct_spelling(r) for r in res]
@@ -1344,6 +1365,7 @@ def interrogator(corpus,
         conc = False
 
     # Set some Tregex-related values
+    translated_option = False
     if search.get('t'):
         if show_ngram:
             raise ValueError("Can't search trees for n-grams---use a dependency search.")
@@ -1383,8 +1405,9 @@ def interrogator(corpus,
     p, outn, total_files, par_args = make_progress_bar()
 
     if conc:
-        
-        conc_col_names = determine_conc_colnames(corpus, fsi_index=fsi_index)
+        conc_col_names = get_conc_colnames(corpus,
+                                           fsi_index=fsi_index,
+                                           simple_tregex_mode=simple_tregex_mode)
 
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
@@ -1485,6 +1508,7 @@ def interrogator(corpus,
                                              skip_metadata=skip_metadata,
                                              fsi_index=fsi_index,
                                              category=subcorpus_name,
+                                             translated_option=translated_option,
                                              **kwargs
                                             )
 
@@ -1495,16 +1519,8 @@ def interrogator(corpus,
                     # results by subcorpora, add them by metadata value
                     # todo: sorting?
                     if by_metadata:
-                        for (k, v), concl in zip(res.items(), conc_res.values()):
-                            #if spelling and not statsmode:
-                            #    v = [correct_spelling(r) for r in v]
-                            #if searcher == slow_tregex:
-                            #    v = [i[-1].lower() for i in v]
-                            #else:
-                            #    v = [i.lower() for i in v]
-                            
+                        for (k, v), concl in zip(res.items(), conc_res.values()):                            
                             v = lowercase_result(v)
-
                             results[k] += Counter(v)
                             for line in concl:
                                 if maxconc is False or numconc < maxconc:
