@@ -56,11 +56,10 @@ def get_line_number_for_entry(data, si, ti, annotation):
         return lnum + ixx - 2, True
 
 
-def make_contents(data, place, text, do_replace=False):
+def update_contents(contents, place, text, do_replace=False):
     """ 
     Open file, read lines, add or replace the line with the good one
     """ 
-    contents = [i + '\n' for i in data.split('\n')]
     if do_replace:
         contents[place] = contents[place].rstrip('\n').replace(text + ';', '') + ';' + text
     else:
@@ -91,13 +90,13 @@ def annotate(open_file, contents):
     """
     Add annotation to a single file
     """
-    #contents = make_contents(data, place, text, do_replace=do_replace)
-
     from corpkit.constants import PYTHON_VERSION
     contents = ''.join(contents)
     if PYTHON_VERSION == 2:
         contents = contents.encode('utf-8', errors='ignore')
+    open_file.seek(0)
     open_file.write(contents)
+    open_file.truncate()
 
 def delete_lines(corpus, annotation, dry_run=True, colour={}):
     """
@@ -177,10 +176,7 @@ def annotator(df_or_corpus, annotation, dry_run=True, deletemode=False):
 
     :param corpus: a Corpus object containing the files
     :param annotation: a str or dict containing annotation text
-    :param file_sent_words: filepath-sent-word tuples to annotate
-
     """
-    # get (fname, sent-ix, token-ix) list
     import re
     import os
     from corpkit.constants import OPENER, STRINGTYPE, PYTHON_VERSION
@@ -196,41 +192,32 @@ def annotator(df_or_corpus, annotation, dry_run=True, deletemode=False):
         return
 
     file_sent_words = df_or_corpus.reset_index()[['index', 'f', 'i']].values.tolist()
-    #out = []
     from collections import defaultdict
     outt = defaultdict(list)
     for index, fn, ix in file_sent_words:
         s, i = ix.split(',', 1)
-        #out.append((index, fn, int(s), int(i)))
-        outt[fn].append((index, int(s), int(i)))
-    #file_sent_words = set(out)
+        outt[fn].append((int(s), int(i), index))
     
     for i, (fname, entries) in enumerate(sorted(outt.items()), start=1):    
         with OPENER(fname, 'r+') as fo:
             data = fo.read()
-            for index, si, ti in set(entries):
+            contents = [i + '\n' for i in data.split('\n')]
+            for si, ti, index in list(reversed(sorted(set(entries)))):
                 line_num, do_replace = get_line_number_for_entry(data, si, ti, annotation)
                 anno_text = make_string_to_add(annotation, df_or_corpus.ix[index], replace=do_replace)
-                contents = make_contents(data, line_num, anno_text, do_replace=do_replace)
+                contents = update_contents(contents, line_num, anno_text, do_replace=do_replace)
                 if dry_run and i < 50:
                     dry_run_text(fname,
                                  contents,
                                  line_num,
                                  colours=colour)
-                elif not dry_run:
-                    annotate(fo, contents=contents)
+            if not dry_run:
+                annotate(fo, contents=contents)
         if not dry_run:
             print('%d annotations made in %s' % (len(entries), fname))
         if dry_run and i > 50:
             break
 
-    #for i, (index, fpath, si, ti) in enumerate(sorted(file_sent_words), start=1):
-    #    line_num, do_replace = get_line_number_for_entry(fpath, si, ti, annotation)
-    #    anno_text = make_string_to_add(annotation, df_or_corpus.ix[index], replace=do_replace)
-    #    annotate(fpath, line_num, anno_text, num_done=i, filepath=fpath,
-    #         do_replace=do_replace, dry_run=dry_run, colours=colour)
-    #    if dry_run and i > 50:
-    #        break
     if dry_run:
         if len(file_sent_words) > 50:
             n = len(file_sent_words) - 50
