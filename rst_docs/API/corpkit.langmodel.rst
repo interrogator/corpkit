@@ -1,6 +1,11 @@
 Using language models 
 ======================
 
+.. warning::
+
+   Language modelling is currently deprecated, while the tool is updated to use `CONLL` formatted data, rather than `CoreNLP XML`. Sorry!
+
+
 Language models are probability distributions over sequences of words. They are common in a number of natural language processing tasks. In corpus linguistics, they can be used to judge the similarity between texts.
 
 *corpkit*'s :func:`~corpkit.corpus.Corpus.make_language_model` method makes it very easy to generate a language model:
