@@ -178,6 +178,7 @@ class Objects(object):
         from corpkit.dictionaries.roles import roles
         from corpkit.dictionaries.wordlists import wordlists
         from corpkit.dictionaries.process_types import processes
+        from corpkit.dictionaries.verblist import allverbs
         from collections import defaultdict
         wl = wordlists._asdict()
         try:
@@ -185,6 +186,7 @@ class Objects(object):
         except AttributeError:
             wl.update(roles._asdict())
         wl.update(processes.__dict__)
+        wl['anyverb'] = allverbs
 
         self._protected = ['result', 'previous', 'edited', 'corpus', 'concordance',
                           'query', 'features', 'postags', 'wordclasses', 'stored',
@@ -606,7 +608,7 @@ def interpreter(debug=False,
     def parse_search_related(search_related):
         """
         parse the capitalised tokens in
-        'search corpus FOR GOVERNOR-LEMMA MATCHING .* AND LEMMA MATCHING .* showing ...'
+        'search corpus FOR GOVERNOR-LEMMA MATCHING XYZ AND LEMMA MATCHING .* showing ...'
         """
         search = {}
         exclude = {}   
@@ -703,6 +705,8 @@ def interpreter(debug=False,
         """
         trans = {'true': True,
                  'false': False,
+                 'on': True,
+                 'off': False,
                  'none': None}
 
         # this means that if the query is a variable, the variable is returned
@@ -710,7 +714,7 @@ def interpreter(debug=False,
         if val in objs.named.keys():
             return objs.named[val]
 
-        if any(val.startswith(x) for x in ['roles', 'processes', 'wordlist']) \
+        if any(val.startswith(x) for x in ['role', 'process', 'wordlist']) \
             and any(x in [':', '.'] for x in val):
             lis, attrib = val.split('.', 1) if '.' in val else val.split(':', 1)
             customs = []
@@ -739,11 +743,10 @@ def interpreter(debug=False,
                 return val.strip('"').strip("'").split()
 
         elif val.lower() in trans.keys():
-            return trans.get(val)
+            return trans.get(val.lower())
         # interpret columns
         elif all(i in ['i', 'c', 'f', 's', 'l', 'm', 'r'] for i in val.lower()) and len(val) <= 6:
             return [i for i in val.lower()]
-
         else:
             if val in dir(__builtins__) + ['any', 'all']:
                 return val
@@ -751,6 +754,7 @@ def interpreter(debug=False,
                 return eval(val)
             except (SyntaxError, NameError):
                 return val
+
 
     def search_helper(text='search'):
         """
