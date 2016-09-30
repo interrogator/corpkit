@@ -124,11 +124,11 @@ def test_interro_multiindex_tregex_justspeakers():
 
 test_interro_multiindex_tregex_justspeakers.slow = 1
 
-def test_conc():
-    """Testing concordancer"""
-    corp = Corpus(parsed_path)
-    data = corp.concordance({'f': 'amod'})
-    assert_equals(data.ix[0]['m'], 'small')
+#def test_conc():
+#    """Testing concordancer"""
+#    corp = Corpus(parsed_path)
+#    data = corp.concordance({'f': 'amod'})
+#    assert_equals(data.ix[0]['m'], 'small')
 
 # this syntax isn't recognised by tgrep, so we'll skip it in tests
 def test_edit():
