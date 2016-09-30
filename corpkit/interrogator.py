@@ -38,8 +38,7 @@ def interrogator(corpus,
     no_punct=True,
     whitelist=False,
     subcorpora=False,
-    **kwargs
-    ):
+    **kwargs):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
@@ -285,29 +284,60 @@ def interrogator(corpus,
         import string
         return all(c in string.punctuation for c in s)
 
-
-    def make_statsdict_from_df(df, to_open):
+    def get_stats_conll(fname, **kwargs):
+        """
+        Do the metadata specific version of tregex queries
+        """
         import re
-        from collections import Counter
         from corpkit.dictionaries.process_types import processes
-        statsmode_results = Counter()
-        # a rare, but possible error found on trn_fla-parsed
-        if df is None:
-            return statsmode_results
-        if isinstance(df, DataFrame) and df.empty:
-            return statsmode_results
+        from collections import Counter, defaultdict
+        from corpkit.process import tregex_engine
+        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers, cut_df_by_meta
 
-        statsmode_results['Sentences'] = len(list(df.index.levels[0]))
-        statsmode_results['Passives'] = len(df[df['f'] == 'nsubjpass'])
-        statsmode_results['Tokens'] = len(df)
-        # the below has returned a float before. i assume actually a nan?
-        statsmode_results['Words'] = len([w for w in list(df['w']) if w and not ispunct(str(w))])
-        statsmode_results['Characters'] = sum([len(str(w)) for w in list(df['w']) if w])
-        statsmode_results['Open class'] = sum([1 for x in list(df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
-        statsmode_results['Punctuation'] = statsmode_results['Tokens'] - statsmode_results['Words']
-        statsmode_results['Closed class'] = statsmode_results['Words'] - statsmode_results['Open class']
+        speakr = kwargs.get('speaker', '')
+        subcorpora = kwargs.get('by_metadata')
+        just_metadata = kwargs.get('just_metadata')
+        skip_metadata = kwargs.get('skip_metadata')
 
-        #todo: speed up by 
+        translated_option = kwargs.get('translated_option')
+
+        sub_res = {}
+
+        df = parse_conll(fname)
+        df = cut_df_by_meta(df, just_metadata, skip_metadata)
+        speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
+        
+        if speak_tree:
+            speak, tree = list(zip(*speak_tree))
+        else:
+            speak, tree = [], []
+        if subcorpora:
+            all_cats = set(speak)
+        else:
+            all_cats = ['none']
+
+        for cat in all_cats:
+            new_df = process_df_for_speakers(df, df._metadata, cat, feature=subcorpora)
+            sub_res[cat] = Counter()
+            sub_res[cat]['Sentences'] = len(list(new_df.index.levels[0]))
+            sub_res[cat]['Passives'] = len(new_df[new_df['f'] == 'nsubjpass'])
+            sub_res[cat]['Tokens'] = len(new_df)
+            # the below has returned a float before. i assume actually a nan?
+            sub_res[cat]['Words'] = len([w for w in list(new_df['w']) if w and not ispunct(str(w))])
+            sub_res[cat]['Characters'] = sum([len(str(w)) for w in list(new_df['w']) if w])
+            sub_res[cat]['Open class'] = sum([1 for x in list(new_df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
+            sub_res[cat]['Punctuation'] = sub_res[cat]['Tokens'] - sub_res[cat]['Words']
+            sub_res[cat]['Closed class'] = sub_res[cat]['Words'] - sub_res[cat]['Open class']
+
+        if all(not x for x in speak):
+            speak = False
+
+        to_open = '\n'.join(tree)
+
+        if not to_open.strip('\n'):
+            if subcorpora:
+                return {}, {}
+
         tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
                      'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
                      'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
@@ -320,95 +350,44 @@ def interrogator(corpus,
                      'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
 
         for name, q in sorted(tregex_qs.items()):
-            options = ['-o', '-t'] if name == 'Processes' else ['-o', '-C']
+            options = ['-o', '-t', '-n'] if name == 'Processes' else ['-o', '-n']
+            # c option removed, could cause memory problems
+            #ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
             res = tregex_engine(query=q, 
                                 options=options,
                                 corpus=to_open,  
-                                root=root)
-            if name == 'Processes':
-                non_mat = 0
-                for ptype in ['mental', 'relational', 'verbal']:
-                    reg = getattr(processes, ptype).words.as_regex(boundaries='l')
-                    count = len([i for i in res if re.search(reg, i[-1])])
-                    non_mat += count
-                    statsmode_results[ptype.title() + ' processes'] += count
-                statsmode_results['Material processes'] += len(res) - non_mat
-                res = len(res)
-            statsmode_results[name] += int(res)
-            if root:
-                root.update()
-        return statsmode_results
+                                root=root,
+                                speaker_data=speak)
 
-    def get_stats_conll(filepath, **dummy_args):
-        """
-        Get a bunch of frequencies
-        """
-        resultdict = {}
-        concdict = {}
-        # parse the file
-        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
-        df = parse_conll(filepath)
+            res = format_tregex(res, speaker_data=speak)
+            if not res:
+                continue
+            concs = [False for i in res]
+            for (_, met, r), line in zip(res, concs):
+                sub_res[met][name] = len(res)
+            if name != 'Processes':
+                continue
+            non_mat = 0
+            for ptype in ['mental', 'relational', 'verbal']:
+                reg = getattr(processes, ptype).words.as_regex(boundaries='l')
+                count = len([i for i in res if re.search(reg, i[-1])])
+                nname = ptype.title() + ' processes'
+                sub_res[met][nname] = count
 
-        # if symbolic, get all possible categories in file and return dict
-        if subcorpora:
-            # get all the possible values in the df for the feature of interest
-            all_cats = set([i.get(subcorpora, 'none') for i in df._metadata.values()])
-            for category in all_cats:
-                new_df = process_df_for_speakers(df, df._metadata, category, feature=subcorpora)
-                to_open = '\n'.join([i['parse'] for i in new_df._metadata.values()])
-                stat = make_statsdict_from_df(new_df, to_open)
-                resultdict[category] = stat
-                concdict[category] = {}
-            return resultdict, concdict
-        else:
-            stat = make_statsdict_from_df(df, filepath)
-            return stat, {}
+        if not res:
+            if subcorpora:
+                return {}, {}
+        
+        if root:
+            root.update()
 
-    def get_stats_xml(sents, **dummy_args):
-        """get a bunch of frequencies on interpersonal phenomena"""
-        from collections import Counter
-        statsmode_results = Counter()  
+        fake_conc = {k: [] for k in sub_res.keys()}
 
-        for sent in sents:
-            statsmode_results['Sentences'] += 1
-            deps = get_deps(sent, dep_type)
-            numpass = len([x for x in deps.links if x.type.endswith('pass')])
-            statsmode_results['Passives'] += numpass
-            statsmode_results['Tokens'] += len(sent.tokens)
-            words = [w.word for w in sent.tokens if w.word is not None and w.word.isalnum()]
-            statsmode_results['Words'] += len(words)
-            statsmode_results['Characters'] += len(''.join(words))
+        if list(sub_res.keys()) == ['none']:
+            sub_res = sub_res['none']
+            fake_conc = fake_conc['none']
 
-        to_open = '\n'.join(s.parse_string.strip() for s in sents)
-
-        from corpkit.dictionaries.process_types import processes
-        from corpkit.other import as_regex
-        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
-                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                     'Open class': r'/^(NN|JJ|VB|RB)/ < __',
-                     'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
-                     'Clauses': r'/^S/ < __',
-                     'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Mental processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.mental, boundaries='w'),
-                     'Verbal processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.verbal, boundaries='w'),
-                     'Relational processes': r'VP > /^(S|ROOT)/ <+(VP) (VP <<# /%s/)' % \
-                         as_regex(processes.relational, boundaries='w'),
-                     'Verbless clause': r'/^S/ !<< /^VB.?/'}
-
-        for name, q in sorted(tregex_qs.items()):
-            res = tregex_engine(query=q, 
-                                options=['-o', '-C'], 
-                                corpus=to_open,  
-                                root=root)
-            statsmode_results[name] += int(res)
-            if root:
-                root.update()
-        return statsmode_results, []
+        return sub_res, fake_conc
 
     def make_conc_lines_from_whole_mid(wholes,
                                        middle_column_result,
@@ -792,20 +771,20 @@ def interrogator(corpus,
                         searcher = tgrep_searcher
                     optiontext = 'Searching parse trees'
                 elif any(i.endswith('v') for i in search.keys()):
-                    searcher = get_stats_xml if datatype == 'parse' else get_stats_conll
+                    searcher = get_stats_conll
                     statsmode = True
                     optiontext = 'General statistics'
                 elif any(i.endswith('r') for i in search.keys()):
-                    searcher = dep_searcher if datatype == 'parse' else pipeline
+                    searcher = pipeline
                     optiontext = 'Distance from root'
                 else:
-                    searcher = dep_searcher if datatype == 'parse' else pipeline
+                    searcher = pipeline
                     optiontext = 'Dependency querying'
                 
                 # ngram mode for parsed data
                 if show_ngram:
                     optiontext = 'N-grams from parsed data'
-                    searcher = dep_searcher if datatype == 'parse' else pipeline
+                    searcher = pipeline
 
         return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
 

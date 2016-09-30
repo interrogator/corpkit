@@ -700,7 +700,7 @@ class Corpus(object):
             kwargs['multiprocess'] = par
             res = interrogator(self, search,
                                 subcorpora=subcorpora, *args, **kwargs)
-        
+
         from corpkit.interrogation import Interrodict
         if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
             return res
@@ -714,22 +714,16 @@ class Corpus(object):
             res.results.index.name = ixnames
 
         # sort by total
-
         ind = list(res.results.index)
         if isinstance(res.results, pd.DataFrame):
             if not res.results.empty:   
                 res.results = res.results[list(res.results.sum().sort_values(ascending=False).index)]
-
-            # sort index
-            #if all(i.isdigit() for i in ind):
-            #    res.results.index = [int(i) for i in ind]
-            #    res.results = res.results.sort_index()
+                res.results = res.results.astype(int)
 
             if all(i == 'none' or str(i).isdigit() for i in ind):
                 longest = max([len(str(i)) if str(i).isdigit() else 1 for i in ind])
                 res.results.index = [str(i).zfill(longest) for i in ind]
-                res.results = res.results.sort_index()
-        
+                res.results = res.results.sort_index().astype(int)        
         return res
 
     def parse(self,
