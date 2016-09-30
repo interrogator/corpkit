@@ -25,14 +25,29 @@ To parse a text file, folder of text files, or folder of folder of text files, y
 
 .. code-block:: bash
 
-
    > set my_corpus as corpus
    > parse corpus
+
+Tokenising, POS tagging and lemmatising
+-----------------------------------------
+
+If you don't want/need full parses, or if you aren't working with English, you might want to use the ``tokenise`` method.
+
+.. code-block:: bash
+
+   > set abstracts as corpus
+   > tokenise corpus
+
+POS tagging and lemmatisation are switched on by default, but you could also disable them:
+
+.. code-block:: bash
+
+   > tokenise corpus with postag as false and lemmatise as false
 
 Working with metadata
 -------------------------
 
-Parsing can be made way cooler when your data has some metadata in it. The metadata will be transferred over to the parsed version of the corpus, and then you can search or filter by metadata features, use metadata values as symbolic subcorpora, or display metadata alongside concordances.
+Parsing/tokenising can be made way cooler when your data has some metadata in it. The metadata will be transferred over to the parsed version of the corpus, and then you can search or filter by metadata features, use metadata values as symbolic subcorpora, or display metadata alongside concordances.
 
 Metadata should take the form of an XML tag at the end of a line, which could be a sentence or a paragraph:
 
@@ -43,13 +58,11 @@ Metadata should take the form of an XML tag at the end of a line, which could be
    all takeing your meds and try to stay out of the heat. <metadata username="Emz45" 
    totalposts="5063" currentposts="4051" date="2011-07-13" postnum="0" threadlength="1">
 
-
 Then, parse with metadata:
 
 .. code-block:: bash
 
    > parse corpus with metadata
-
 
 The parser output will look something like:
 
@@ -76,7 +89,6 @@ The parser output will look something like:
    1   9   blasted   blast     VBN O   10  amod       0       2
    1   10  heat      heat      NN  O   5   nmod:with  6,7,8,9 2*
    1   11  .         .         .   O   2   punct      0       _
-
 
 
 The next page will show you how to search the corpus you've built, and to work with metadata if you've added it.

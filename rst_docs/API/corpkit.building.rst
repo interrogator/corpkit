@@ -70,25 +70,19 @@ Once we have a corpus of text files, we need to turn it into a `Corpus` object.
    >>> unparsed
    <corpkit.corpus.Corpus instance: transcripts; 13 subcorpora>
 
-This object can now be interrogated using the :func:`~corpkit.corpus.Corpus.interrogate` method:
+
+
+Pre-processing the data
+----------------------------------
+
+A `Corpus` object can only be interrogated if tokenisation or parsing has been performed. For this, :class:`corpkit.corpus.Corpus` objects have :func:`~corpkit.corpus.Corpus.tokenise` and :func:`~corpkit.corpus.Corpus.parse` methods. Tokenising is faster, simpler, and will work for more languages. As shown below, you can also elect to POS tag and lemmatise the data:
 
 .. code-block:: python
 
-   >>> th_words = unparsed.interrogate({W: r'th[a-z-]+'})
-   ### show 5x5 (Pandas syntax)
-   >>> th_words.results.iloc[:5,:5]
+   > corpus = unparsed.tokenise(postags=True, lemmatisation=True)
+   # switch either to false to disable---but lemmatisation requires pos
 
-   S   that  the  then  think  thing
-   01   144  139    63     53     43
-   02   122  114    74     35     45
-   03   132   74    56     57     25
-   04   138   67    71     35     44
-   05   173   76    67     35     49
-
-Parsing a corpus
------------------
-
-Instead of interrogating the plaintext corpus, what you'll probably want to do, is parse it, and interrogate the parser output. For this, :class:`corpkit.corpus.Corpus` objects have a :func:`~corpkit.corpus.Corpus.parse` method. This relies on Stanford CoreNLP's parser, and therefore, you must have the parser and Java installed. ``corpkit`` will look around in your PATH for the parser, but you can also pass in its location manually with (e.g.) ``corenlppath='users/you/corenlp'``. If it can't be found, you'll be asked if you want to download and install it automatically.
+Parsing relies on Stanford CoreNLP's parser, and therefore, you must have the parser and Java installed. ``corpkit`` will look around in your PATH for the parser, but you can also pass in its location manually with (e.g.) ``corenlppath='users/you/corenlp'``. If it can't be found, you'll be asked if you want to download and install it automatically. Parsing has sensible defaults, and can be run with:
 
 .. code-block:: python
 
@@ -98,7 +92,7 @@ Instead of interrogating the plaintext corpus, what you'll probably want to do, 
 
     Remember that parsing is a computationally intensive task, and can take a long time!
 
-``corpkit`` can also work with speaker IDs. If lines in your file contain capitalised alphanumeric names, followed by a colon (as per the example below), these IDs can be stripped out and turned into metadata features in the XML.
+``corpkit`` can also work with speaker IDs. If lines in your file contain capitalised alphanumeric names, followed by a colon (as per the example below), these IDs can be stripped out and turned into metadata features in the parsed dataset.
 
 .. code-block:: none
 
@@ -111,14 +105,13 @@ To use this option, use the ``speaker_segmentation`` keyword argument:
 
    >>> corpus = unparsed.parse(speaker_segmentation=True)
 
-Parsing creates a corpus that is structurally identical to the original, but with annotations as XML files in place of the original ``.txt`` files. There are also methods for multiprocessing, memory allocation and so on:
+Tokenising or parsing creates a corpus that is structurally identical to the original, but with annotations in `CONLL-U` formatted files in place of the original ``.txt`` files. When parsing, there are also methods for multiprocessing, memory allocation and so on:
 
 +--------------------------+------------+---------------------------------------+
 | `parse()` argument       | Type       | Purpose                               |
 +==========================+============+=======================================+
 | `corenlppath`            | `str`      | Path to CoreNLP                       |
 +--------------------------+------------+---------------------------------------+
-| `nltk_data_path`         | `str`      | Path to `punkt` tokeniser             |
 +--------------------------+------------+---------------------------------------+
 | `operations`             | `str`      | `List of annotations`_                |
 +--------------------------+------------+---------------------------------------+
@@ -132,31 +125,25 @@ Parsing creates a corpus that is structurally identical to the original, but wit
 +--------------------------+------------+---------------------------------------+
 | `outname`                | `str`      | Custom name for parsed corpus         |
 +--------------------------+------------+---------------------------------------+
-| `output_format`          | `str`      | Save as `xml`, `conll`, `json`        |
-+--------------------------+------------+---------------------------------------+
 
-If you like, you can run parsing operations from the command line as well:
+You can run parsing operations from the command line:
 
 .. code-block:: bash
 
-   $ parse mycorpus --multiprocess 4 --outname MyData --output-format conll
-
-.. note::
-
-   *corpkit* will soon shift from using `XML` to `conll-u` data by default. This means smaller file sizes and faster processing. Another benefit is that *corpkit*` will be useful on many corpora that are stored as CSV or TSV files. Support for this mode is experimental, but if you want to try it out, use `output_format = 'conll'`, and interrogate as normal. *corpkit* will detect and process `conll` data automatically if it's there.
+   $ parse mycorpus --multiprocess 4 --outname MyData
 
 Manipulating a parsed corpus
 -----------------------------
 
-Once you have a parsed corpus, you're ready to analyse it. :class:`corpkit.corpus.Corpus` objects can be navigated in a number of ways. *CoreNLP XML* is used to navigte the internal structure of XML files within the corpus.
+Once you have a parsed corpus, you're ready to analyse it. :class:`corpkit.corpus.Corpus` objects can be navigated in a number of ways. *CoreNLP XML* is used to navigte the internal structure of `CONLL-U` files within the corpus.
 
 .. code-block:: python
 
-   >>> corpus[:3]                                # access first three subcorpora
-   >>> corpus.subcorpora.chapter1                # access subcorpus called chapter1
-   >>> f = corpus[5][20]                         # access 21st file in 6th subcorpus
-   >>> f.document.sentences[0].parse_string      # get parse tree for first sentence
-   >>> f.document.sentences.tokens[0].word       # get first word
+   >>> corpus[:3]                             # access first three subcorpora
+   >>> corpus.subcorpora.chapter1             # access subcorpus called chapter1
+   >>> f = corpus[5][20]                      # access 21st file in 6th subcorpus
+   >>> f.document.sentences[0].parse_string   # get parse tree for first sentence
+   >>> f.document.sentences.tokens[0].word    # get first word
 
 
 Counting key features

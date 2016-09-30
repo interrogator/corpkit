@@ -1366,6 +1366,32 @@ def interpreter(debug=False,
         #print('\nedited:\n\n', objs.edited.results, '\n')
         return objs.edited
 
+    def tokenise_corpus(tokens):
+        """
+        Tokenise an unparsed corpus
+
+        :Example:
+
+           `parse corpus with speaker_segmentation and metadata and multiprocess as 2`
+
+        """
+        typ, to_parse = objs._get(tokens[0])
+        if typ != 'corpus':
+            print('Command not understood. Use "set <corpusname>" and "parse corpus"')
+        if not to_parse:
+            print('Corpus not set. use "set <corpusname>" on an unparsed corpus.')
+            return
+
+        if to_parse.datatype != 'plaintext':
+            print('Corpus is not plain text.')
+            return
+
+        kwargs = process_kwargs(tokens)
+        parsed = to_parse.tokenise(**kwargs)
+        if parsed:
+            setattr(objs, 'corpus', parsed)
+        return
+
     def parse_corpus(tokens):
         """
         Parse an unparsed corpus
@@ -1920,6 +1946,8 @@ def interpreter(debug=False,
                    'sort': sort_something,
                    'toggle': toggle_this,
                    'edit': edit_something,
+                   'tokenise': tokenise_corpus,
+                   'tokenize': tokenise_corpus,
                    'ls': ls_dir,
                    'cd': ch_dir,
                    'plot': plot_result,
