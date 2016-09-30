@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 """
-
+Tokenise, POS tag and lemmatise a corpus, returning CONLL-U data
 """
 
 def nested_list_to_pandas(toks):
@@ -20,12 +20,11 @@ def nested_list_to_pandas(toks):
     ser.name = 'w'
     return ser
 
-def pos_tag_series(ser, lang='en'):
+def pos_tag_series(ser, tagger):
     """
-    Create a POS tag Series from token series
+    Create a POS tag Series from token Series
     """
     import nltk
-    # nltk.download('averaged_perceptron_tagger')
     import pandas as pd
     tags = [i[-1] for i in nltk.pos_tag(ser.values)]
     tagser = pd.Series(tags, index=ser.index)
@@ -77,6 +76,19 @@ def write_df_to_conll(df, fo, metadata=False):
             outstring = outstring.encode('utf-8', errors='ignore')
         fo.write(outstring)
 
+
+def new_fname(oldpath, inpath):
+    """
+    Determine output filename
+    """
+    import os
+    newf, ext = os.path.splitext(f)
+    newf = newf + '.conll'
+    if '-stripped' in newf:
+        return newf.replace('-stripped', '-tokenised')
+    else:
+        return newf.replace(inpath, inpath + '-tokenised')
+
 def plaintext_to_conll(inpath, postag=False, lemmatise=False,
                        lang='en', metadata=False, outpath=False,
                        nltk_data_path=False, speaker_segmentation=False):
@@ -94,8 +106,15 @@ def plaintext_to_conll(inpath, postag=False, lemmatise=False,
     
     import nltk
     import shutil
-    from corpkit.process import saferead
     import pandas as pd
+    from corpkit.process import saferead
+    
+    fps = get_filepaths(inpath, 'txt')
+
+    # IN THE SECTIONS BELOW, WE COULD ADD MULTILINGUAL
+    # ANNOTATORS, PROVIDED THEY BEHAVE AS THE NLTK ONES DO
+    tokenisers = {'en': nltk.word_tokenize}
+    tokeniser = tokenisers.get(lang, nltk.word_tokenize)
 
     if lemmatise:
         from nltk.stem.wordnet import WordNetLemmatizer
@@ -103,19 +122,10 @@ def plaintext_to_conll(inpath, postag=False, lemmatise=False,
         lemmatisers = {'en': lmtzr}
         lemmatiser = lemmatisers.get(lang, lmtzr)
 
-    fps = get_filepaths(inpath, 'txt')
-
-    tokenisers = {'en': nltk.word_tokenize}
-    tokeniser = tokenisers.get(lang, nltk.word_tokenize)
-
-    def new_fname(oldpath, inpath):
-        import os
-        newf, ext = os.path.splitext(f)
-        newf = newf + '.conll'
-        if '-stripped' in newf:
-            return newf.replace('-stripped', '-tokenised')
-        else:
-            return newf.replace(inpath, inpath + '-tokenised')
+    if postag:
+        # nltk.download('averaged_perceptron_tagger')
+        postaggers = {'en': nltk.pos_tag}
+        tagger = postaggers.get(lang, nltk.pos_tag)
 
     for f in fps:
         for_df = []
@@ -126,7 +136,7 @@ def plaintext_to_conll(inpath, postag=False, lemmatise=False,
         ser = nested_list_to_pandas(toks)
         for_df.append(ser)
         if postag or lemmatise:
-            postags = pos_tag_series(ser, lang=lang)
+            postags = pos_tag_series(ser, tagger)
         if lemmatise:
             lemma = lemmatise_series(ser, postags, lemmatiser)
             for_df.append(lemma)
