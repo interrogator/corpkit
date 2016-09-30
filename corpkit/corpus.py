@@ -61,25 +61,20 @@ class Corpus(object):
 
         self.singlefile = False
         if os.path.isfile(self.path):
-            if self.path.endswith('.xml'):
-                self.datatype = 'parse'
             self.singlefile = True
         else:
             if not isdir(self.path):
                 if isdir(join('data', path)):
                     self.path = abspath(join('data', path))
         
-        if self.path.endswith('-parsed'):
+        if self.path.endswith('-parsed') or self.path.endswith('-tokenised'):
 
             for r, d, f in os.walk(self.path):
                 if not f:
                     continue
                 if isinstance(f, str) and f.startswith('.'):
                     continue
-                if f[0].endswith('xml'):
-                    self.datatype = 'parse'
-                    break
-                elif f[0].endswith('conll'):
+                if f[0].endswith('conll'):
                     self.datatype = 'conll'
                     break
 
@@ -664,6 +659,9 @@ class Corpus(object):
         import pandas as pd
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
+
+        if corpus.datatype != 'conll':
+            raise ValueError('You need to parse or tokenise the corpus before searching.')
         
         # handle symbolic structures
         subcorpora = False
@@ -826,7 +824,7 @@ class Corpus(object):
         else:
             return Corpus(corp)
 
-    def tokenise(self, *args, **kwargs):
+    def tokenise(self, postag=True, lemmatise=True, *args, **kwargs):
         """
         Tokenise a plaintext corpus, saving to disk
 
@@ -851,13 +849,14 @@ class Corpus(object):
         kwargs.pop('parse', None)
         kwargs.pop('tokenise', None)
 
-        return Corpus(
-            make_corpus(
-                self.path,
-                parse=False,
-                tokenise=True,
-                *args,
-                **kwargs))
+        c = make_corpus(self.path,
+                        parse=False,
+                        tokenise=True,
+                        postag=postag,
+                        lemmatise=lemmatise,
+                        *args,
+                        **kwargs)
+        return Corpus(c)
 
     def concordance(self, *args, **kwargs):
         """
@@ -868,10 +867,10 @@ class Corpus(object):
 
         >>> wv = ['want', 'need', 'feel', 'desire']
         >>> corpus.concordance({L: wv, F: 'root'})
-           0   01  1-01.txt.xml                But , so I  feel     like i do that for w
-           1   01  1-01.txt.xml                         I  felt     a little like oh , i
-           2   01  1-01.txt.xml   he 's a difficult man I  feel     like his work ethic
-           3   01  1-01.txt.xml                      So I  felt     like i recognized li
+           0   01  1-01.txt.conll                But , so I  feel     like i do that for w
+           1   01  1-01.txt.conll                         I  felt     a little like oh , i
+           2   01  1-01.txt.conll   he 's a difficult man I  feel     like his work ethic
+           3   01  1-01.txt.conll                      So I  felt     like i recognized li
            ...                                                                       ...
 
         Arguments are the same as :func:`~corpkit.corpus.Corpus.interrogate`, 

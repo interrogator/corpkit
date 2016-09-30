@@ -99,9 +99,11 @@ def interrogator(corpus,
         search, exclude = to_corpkit(search)
 
     def signal_handler(signal, _):
+        """
+        Allow pausing and restarting whn not in GUI
+        """
         if root:
-            return
-        """pause on ctrl+c, rather than just stop loop"""   
+            return  
         import signal
         import sys
         from time import localtime, strftime
@@ -113,7 +115,9 @@ def interrogator(corpus,
         signal.signal(signal.SIGINT, signal_handler)
 
     def fix_show(show):
-        """lowercase anything in show and turn into list"""
+        """
+        Lowercase anything in show and turn into list
+        """
         if isinstance(show, list):
             show = [i.lower() for i in show]
         elif isinstance(show, STRINGTYPE):
@@ -136,8 +140,10 @@ def interrogator(corpus,
         return show
 
     def is_multiquery(corpus, search, query, just_speakers, outname):
-        """determine if multiprocessing is needed
-        do some retyping if need be as well"""
+        """
+        Determine if multiprocessing is needed/possibe, and 
+        do some retyping if need be as well
+        """
         is_mul = False
         from collections import OrderedDict
         from corpkit.dictionaries.process_types import Wordlist
@@ -444,7 +450,7 @@ def interrogator(corpus,
         """
         Use tgrep for constituency grammar search
         """
-        # fix this soon, repeated code
+        # todo: rewrite, allowing for metadata and removing bad code
 
         f = kwargs.get('filename')
         from corpkit.process import show_tree_as_per_option, tgrep
@@ -504,7 +510,9 @@ def interrogator(corpus,
         return tagdict.get(firstletter.upper(), 'n')
 
     def format_tregex(results, whole=False, speaker_data=False):
-        """format tregex by show list"""
+        """
+        Format tregex by show list
+        """
         import re
 
         if countmode:
@@ -576,63 +584,10 @@ def interrogator(corpus,
         
         return done
 
-    def tok_by_list(pattern, list_of_toks, concordancing=False, **kwargs):
-        """search for regex in plaintext corpora"""
-        import re
-        if isinstance(pattern, STRINGTYPE):
-            pattern = [pattern]
-        if not case_sensitive:
-            pattern = [p.lower() for p in pattern]
-        if not concordancing:
-            if case_sensitive:
-                matches = [m for m in list_of_toks if m in pattern]
-            else:
-                matches = [m for m in list_of_toks if m.lower() in pattern]
-        else:
-            matches = []
-            for index, token in enumerate(list_of_toks):
-                if token in pattern:
-                    if not split_contractions:
-                        match = [' '.join(t for t in unsplitter(list_of_toks[:index]))[-140:]]
-                    else:
-                        match = [' '.join(t for t in list_of_toks[:index])[-140:]]
-                    match.append(token)
-                    if not split_contractions:
-                        match.append(' '.join(t for t in unsplitter(list_of_toks[index + 1:]))[:140])
-                    else:
-                        match.append(' '.join(t for t in list_of_toks[index + 1:])[:140])
-
-                    matches.append(match)
-        if countmode:
-            return len(matches)
-        else:
-            return matches
-
-    def tok_ngrams(pattern, list_of_toks, concordancing=False, split_contractions=True):
-        import re
-        result = []
-        list_of_toks = [x for x in list_of_toks if re.search(regex_nonword_filter, x)]
-
-        if not split_contractions:
-            list_of_toks = unsplitter(list_of_toks)
-            
-        for i in range(len(list_of_toks)):
-            try:
-                the_gram = [list_of_toks[i+x] for x in range(gramsize)]
-                if any(re.search(pattern, x) for x in the_gram):
-                    result.append(' '.join(the_gram))
-            except IndexError:
-                pass
-
-        if countmode:
-            return len(result)
-
-        else:
-            result = [i for i in result if result.count(i) > 1]
-            return result
-
     def compiler(pattern):
-        """compile regex or fail gracefully"""
+        """
+        Compile regex or fail gracefully
+        """
         if hasattr(pattern, 'pattern'):
             return pattern
         import re
@@ -656,40 +611,16 @@ def interrogator(corpus,
             else:
                 raise ValueError('%s: Query %s' % (thetime, error_message))
 
-    def tok_by_reg(pattern, list_of_toks, concordancing = False, **kwargs):
-        """search for regex in plaintext corpora"""
-        import re
-        pattern = list(pattern.values())[0]
-        comped = compiler(pattern)
-        if comped == 'Bad query':
-            return 'Bad query'
-        if not concordancing:
-            matches = [m for m in list_of_toks if re.search(comped, m)]
-        else:
-            matches = []
-            for index, token in enumerate(list_of_toks):
-                if re.search(comped, token):
-                    if not split_contractions:
-                        match = [' '.join(t for t in unsplitter(list_of_toks[:index]))[-140:]]
-                    else:
-                        match = [' '.join(t for t in list_of_toks[:index])[-140:]]
-                    match.append(re.search(comped, token).group(0))
-                    if not split_contractions:
-                        match.append(' '.join(t for t in unsplitter(list_of_toks[index + 1:]))[:140])
-                    else:
-                        match.append(' '.join(t for t in list_of_toks[index + 1:])[:140])
-                    matches.append(match)
-        if countmode:
-            return len(matches)
-        else:
-            return matches
-
     def determine_search_func(show):
         """Figure out what search function we're using"""
 
         simple_tregex_mode = False
         statsmode = False
         tree_to_text = False
+
+        if datatype == 'conll':
+            from corpkit.conll import pipeline
+            searcher = pipeline
 
         simp_crit = all(not i for i in [just_speakers,
                                         kwargs.get('tgrep'),
@@ -705,69 +636,33 @@ def interrogator(corpus,
             else:
                 searcher = tgrep_searcher
             optiontext = 'Searching parse trees'
-        else:
-            if datatype == 'plaintext':
-                if any(i.endswith('n') for i in search.keys()):
-                    optiontext = 'n-grams via plaintext'
-                    raise NotImplementedError('Use a tokenised or parsed corpus for n-gramming.')
-                    #searcher = plaintext_ngram
-                elif any(i.endswith('w') for i in search.keys()):
-                    if kwargs.get('regex', True):
-                        searcher = plaintext_regex_search
-                    else:
-                        searcher = plaintext_simple_search
-                    optiontext = 'Searching plaintext'
+
+        elif datatype == 'conll':
+        
+            if any(i.endswith('n') for i in search.keys()):
+                search['w'] = search.pop('n')
+                if not show_ngram:
+                    show = ['n']
+            if any(i.endswith('t') for i in search.keys()):
+                if have_java and not kwargs.get('tgrep'):
+                    searcher = slow_tregex
                 else:
-                    raise ValueError("Plaintext search must be 'w' or 'n'.")
-
-            elif datatype == 'tokens':
-                if any(i.endswith('n') for i in show):
-                    searcher = tok_ngrams
-                    optiontext = 'n-grams via tokens'
-                elif any(i.endswith('w') for i in search.keys()):
-                    if kwargs.get('regex', True):
-                        searcher = tok_by_reg
-                    else:
-                        searcher = tok_by_list
-                    if isinstance(search.get('w'), (list, Wordlist)):
-                        searcher = tok_by_list
-                    optiontext = 'Searching tokens'
-            only_parse = ['r', 'd', 'g', 'dl', 'gl', 'df', 'gf',
-                          'dp', 'gp', 'f', 'd2', 'd2f', 'd2p', 'd2l']
-            
-            if datatype != 'parse' and datatype != 'conll' and \
-                any(i in only_parse for i in list(search.keys())):
-                form = ', '.join(i for i in list(search.keys()) if i in only_parse)
-                raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
-
-            elif datatype == 'parse' or datatype == 'conll':
-                from corpkit.conll import pipeline
-
-                if any(i.endswith('n') for i in search.keys()):
-                    search['w'] = search.pop('n')
-                    if not show_ngram:
-                        show = ['n']
-                if any(i.endswith('t') for i in search.keys()):
-                    if have_java and not kwargs.get('tgrep'):
-                        searcher = slow_tregex
-                    else:
-                        searcher = tgrep_searcher
-                    optiontext = 'Searching parse trees'
-                elif any(i.endswith('v') for i in search.keys()):
-                    searcher = get_stats_conll
-                    statsmode = True
-                    optiontext = 'General statistics'
-                elif any(i.endswith('r') for i in search.keys()):
-                    searcher = pipeline
-                    optiontext = 'Distance from root'
-                else:
-                    searcher = pipeline
-                    optiontext = 'Dependency querying'
-                
-                # ngram mode for parsed data
-                if show_ngram:
-                    optiontext = 'N-grams from parsed data'
-                    searcher = pipeline
+                    searcher = tgrep_searcher
+                optiontext = 'Searching parse trees'
+            elif any(i.endswith('v') for i in search.keys()):
+                searcher = get_stats_conll
+                statsmode = True
+                optiontext = 'General statistics'
+            elif any(i.endswith('r') for i in search.keys()):
+                searcher = pipeline
+                optiontext = 'Distance from root'
+            else:
+                searcher = pipeline
+                optiontext = 'Querying CONLL data'
+            # ngram mode for parsed data
+            if show_ngram:
+                optiontext = 'N-grams from CONLL data'
+                searcher = pipeline
 
         return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
 
@@ -835,33 +730,6 @@ def interrogator(corpus,
             search['t'] = anyq
         return search['t'], newshow
 
-    def plaintext_regex_search(pattern, plaintext_data, concordancing=False, **kwargs):
-        """search for regex in plaintext corpora
-
-        it searches over lines, so the user needs to be careful.
-        """
-        import re
-        pattern = list(pattern.values())[0]
-        pattern = getattr(pattern, 'pattern', pattern)
-
-        if concordancing:
-            pattern = r'(.{,140})\b(' + pattern + r')\b(.{,140})'
-        
-        compiled_pattern = compiler(pattern)
-        if compiled_pattern == 'Bad query':
-            return 'Bad query'
-        matches = re.findall(compiled_pattern, plaintext_data)
-        if concordancing:
-            matches = [[m[0], m[1], m[-1]] for m in matches]
-        if not concordancing:
-            for index, i in enumerate(matches):
-                if isinstance(i, tuple):
-                    matches[index] = i[0]
-        if countmode:
-            return len(matches)
-        else:
-            return matches
-
     def correct_spelling(a_string):
         """correct spelling within a string"""
         if not spelling:
@@ -881,28 +749,6 @@ def interrogator(corpus,
             bits[index] = converted
         r = '/'.join(bits)
         return r
-
-    def plaintext_simple_search(pattern, plaintext_data, concordancing=False, **kwargs):
-        """search for tokens in plaintext corpora"""
-        import re
-        result = []
-        if isinstance(pattern, STRINGTYPE):
-            pattern = [pattern]
-        for p in pattern:
-            if concordancing:
-                pat = r'(.{0,140})\b(' + re.escape(p) + r')\b(.{0,140})'
-            pat = compiler(pat)
-            if pat == 'Bad query':
-                return 'Bad query'
-            matches = re.findall(pat, plaintext_data)
-            if concordancing:
-                matches = [list(m) for m in matches]
-                for i in matches:
-                    result.append(i)
-            else:   
-                for m in range(len(matches)):
-                    result.append(p)
-        return result
 
     def make_search_iterable(corpus):
         """determine how to structure the corpus for interrogation"""
@@ -1390,7 +1236,7 @@ def interrogator(corpus,
             tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
             animator(p, current_iter, tstr, **par_args)
 
-        # dependencies, plaintext, tokens, slow_tregex and tree_to_text
+        # conll querying
         if not simple_tregex_mode:
             for f in files:
                 slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
@@ -1459,45 +1305,6 @@ def interrogator(corpus,
                         
                     if res == 'Bad query':
                         return 'Bad query'
-
-                if datatype == 'tokens':
-                    import pickle
-                    with codecs.open(f.path, "rb") as fo:
-                        data = pickle.load(fo)
-
-                elif datatype == 'plaintext' or tree_to_text:
-                    if tree_to_text:
-                        data = '\n'.join(result)
-                        if not split_contractions:
-                            data = unsplitter(data)
-                    else:
-                        with codecs.open(f.path, 'rb', encoding='utf-8') as data:
-                            data = data.read()
-
-                if datatype == 'tokens' or datatype == 'plaintext':
-
-                    query = list(search.values())[0]
-
-                    if not only_conc:
-                        res = searcher(search,
-                                       data,
-                                       split_contractions=split_contractions, 
-                                       concordancing=False
-                                      )
-                        if res == 'Bad query':
-                            if root:
-                                return 'Bad query'
-                    if not no_conc:
-                        conc_res = searcher(search,
-                                            data,
-                                            split_contractions=split_contractions, 
-                                            concordancing=True
-                                           )
-                        if conc_res == 'Bad query':
-                            if root:
-                                return 'Bad query'
-                        for line in conc_res:
-                            line.insert(0, '')
 
                 if countmode:
                     count_results[subcorpus_name] += [res]

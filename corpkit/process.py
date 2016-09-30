@@ -390,9 +390,7 @@ def determine_datatype(path):
     except IndexError:
         mc = '.txt'
     
-    lookup = {'.xml': 'parse',
-              '.txt': 'plaintext',
-              '.p':   'tokens',
+    lookup = {'.txt': 'plaintext',
               '.conll': 'conll'}
 
     return lookup.get(mc, 'plaintext'), singlefile

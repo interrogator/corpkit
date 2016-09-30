@@ -11,7 +11,8 @@ from corpkit.constants import PYTHON_VERSION, STRINGTYPE
 class LanguageModel(object):
     def __init__(self, order, alpha, sentences):
         """
-        :param sentences: a Counter of unsplit sents"""
+        :param sentences: a Counter of unsplit sents
+        """
         self.order = order
         self.alpha = alpha
         if order > 1:

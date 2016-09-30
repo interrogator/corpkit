@@ -3,29 +3,6 @@
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
-def structure_corpus(path_to_files, new_corpus_name='structured_corpus'):
-    """
-    Structure a corpus in some kind of sequence
-    """
-    import corpkit
-    import os
-    import shutil
-    base = os.path.basename(path_to_files)
-    new_corpus_name = 'structured_' + base
-    if not os.path.isdir(path_to_files):
-        raise ValueError('Directory not found: %s' % path_to_files)
-    if not os.path.exists(new_corpus_name):
-        os.makedirs(new_corpus_name)
-    files = os.listdir(path_to_files)
-    for f in files:
-        filepath = os.path.join(path_to_files, f)
-        subcorpus_name = 'what goes here?'
-        subcorpus_path = os.path.join(new_corpus_name, subcorpus_name)
-        if not os.path.exists(subcorpus_path):
-            os.makedirs(subcorpus_path)
-        shutil.copy(filepath, subcorpus_path)
-    print('Done!')
-
 def download_large_file(proj_path, url, actually_download=True, root=False, **kwargs):
     """
     Download something to proj_path
@@ -862,8 +839,136 @@ def folderise(folder):
             os.makedirs(newpath)
         shutil.move(f, os.path.join(newpath))
 
-def plaintext_to_conll(plain_path, postag=False, lemmatise=False):
+
+
+
+
+
+
+
+
+
+def nested_list_to_pandas(toks):
+    """
+    Turn sent/word tokens into Series
+    """
+    import pandas as pd
+    index = []
+    words = []
+    for si, sent in enumerate(toks, start=1):
+        for wi, w in enumerate(sent, start=1):
+            index.append((si, wi))
+            words.append(w)
+    ix = pd.MultiIndex.from_tuples(index)
+    ser = pd.Series(words, index=ix)
+    ser.name = 'w'
+    return ser
+
+def pos_tag_series(ser, lang='en'):
+    """
+    Create a POS tag Series from token series
+    """
+    import nltk
+    # nltk.download('averaged_perceptron_tagger')
+    import pandas as pd
+    tags = [i[-1] for i in nltk.pos_tag(ser.values)]
+    tagser = pd.Series(tags, index=ser.index)
+    tagser.name = 'p'
+    return tagser
+
+def lemmatise_series(words, postags, lemmatiser):
+    """
+    Create a lemma Series from token and postag Series
+    """
+    import nltk
+    import pandas as pd
+    tups = zip(words.values, postags.values)
+    lemmata = []
+    tag_convert = {'j': 'a'}
+    
+    for word, tag in tups:
+        tag = tag_convert.get(tag[0].lower(), tag[0].lower())
+        if tag in ['n', 'a', 'v', 'r']:
+            lem = lemmatiser.lemmatize(word, tag)
+        else:
+            lem = word
+        lemmata.append(lem)
+
+    lems = pd.Series(lemmata, index=words.index)
+    lems.name = 'l'
+    return lems
+
+def write_df_to_conll(df, fo, metadata=False):
+    """
+    Turn a DF into CONLL-U text, and write to file
+    """
+    import os
+    from corpkit.constants import OPENER, PYTHON_VERSION
+    outstring = ''
+    sent_ixs = set(df.index.labels[0])
+    for si in sent_ixs:
+        si = si + 1
+        outstring += '# sent_id %d\n' % si
+        sent = df.loc[si]
+        csv = sent.to_csv(None, sep='\t', header=False)
+        outstring += csv + '\n'
+    try:
+        os.makedirs(os.path.dirname(fo))
+    except OSError:
+        pass
+    with OPENER(fo, 'w') as fo:
+        if PYTHON_VERSION == 2:
+            outstring = outstring.encode('utf-8', errors='ignore')
+        fo.write(outstring)
+
+def plaintext_to_conll(inpath, postag=False, lemmatise=False,
+                       lang='en', metadata=False, outpath=False,
+                       nltk_data_path=False, speaker_segmentation=False):
     """
     Take a plaintext corpus and sent/word tokenise.
     """
-    return
+    
+    import nltk
+    import shutil
+    from corpkit.process import saferead
+    import pandas as pd
+
+    if lemmatise:
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lmtzr = WordNetLemmatizer()
+        lemmatisers = {'en': lmtzr}
+        lemmatiser = lemmatisers.get(lang, lmtzr)
+
+    fps = get_filepaths(inpath, 'txt')
+
+    tokenisers = {'en': nltk.word_tokenize}
+    tokeniser = tokenisers.get(lang, nltk.word_tokenize)
+
+    def new_fname(oldpath, inpath):
+        import os
+        newf, ext = os.path.splitext(f)
+        newf = newf + '.conll'
+        if '-stripped' in newf:
+            return newf.replace('-stripped', '-tokenised')
+        else:
+            return newf.replace(inpath, inpath + '-tokenised')
+
+    for f in fps:
+        for_df = []
+        data, enc = saferead(f)
+        if metadata:
+            raise NotImplementedError()
+        toks = [tokeniser(sent) for sent in nltk.sent_tokenize(data)]
+        ser = nested_list_to_pandas(toks)
+        for_df.append(ser)
+        if postag or lemmatise:
+            postags = pos_tag_series(ser, lang=lang)
+            for_df.append(postags)
+        if lemmatise:
+            lemma = lemmatise_series(ser, postags, lemmatiser)
+            for_df.append(lemma)
+        df = pd.concat(for_df, axis=1)
+        fo = new_fname(f, inpath)
+        write_df_to_conll(df, fo, metadata=metadata)
+
+    return inpath.replace('-stripped', '-tokenised')

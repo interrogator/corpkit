@@ -5,6 +5,8 @@ def make_corpus(unparsed_corpus_path,
                 project_path=None,
                 parse=True,
                 tokenise=False,
+                postag=False,
+                lemmatise=False,
                 corenlppath=False,
                 nltk_data_path=False,
                 operations=False,
@@ -16,6 +18,7 @@ def make_corpus(unparsed_corpus_path,
                 metadata=False,
                 restart=False,
                 coref=True,
+                lang='en',
                 **kwargs):
     """
     Create a parsed version of unparsed_corpus using CoreNLP or NLTK's tokeniser
@@ -77,22 +80,22 @@ def make_corpus(unparsed_corpus_path,
         copier = shutil.copytree
 
     # raise error if no tokeniser
-    if tokenise:
-        if outname:
-            newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
-        else:
-            newpath = unparsed_corpus_path + '-tokenised'
-        if isdir(newpath):
-            shutil.rmtree(newpath)
-        import nltk
-        if nltk_data_path:
-            if nltk_data_path not in nltk.data.path:
-                nltk.data.path.append(nltk_data_path)
-        try:
-            from nltk import word_tokenize as tokenise
-        except:
-            print('\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n')
-            raise
+    #if tokenise:
+    #    if outname:
+    #        newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
+    #    else:
+    #        newpath = unparsed_corpus_path + '-tokenised'
+    #    if isdir(newpath):
+    #        shutil.rmtree(newpath)
+    #    import nltk
+    #    if nltk_data_path:
+    #        if nltk_data_path not in nltk.data.path:
+    #            nltk.data.path.append(nltk_data_path)
+    #    try:
+    #        from nltk import word_tokenize as tokenise
+    #    except:
+    #        print('\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n')
+    #        raise
 
     if sys.platform == "darwin":
         if not check_jdk():
@@ -147,9 +150,8 @@ def make_corpus(unparsed_corpus_path,
         for i in range(0, len(l), n):
             yield l[i:i+n]
 
-    if parse:
+    if parse or tokenise:
         
-
         # this loop shortens files containing more than 500 lines, for corenlp memory sake
         # maybe user needs a warning or something in case s/he is doing coref
         for rootx, dirs, fs in os.walk(unparsed_corpus_path):
@@ -198,8 +200,10 @@ def make_corpus(unparsed_corpus_path,
                 raise OSError('Path exists: %s' % newpath)
             if speaker_segmentation:
                 print('Processing speaker IDs ...')
-            make_no_id_corpus(unparsed_corpus_path, unparsed_corpus_path + '-stripped',
-                              metadata_mode=metadata, speaker_segmentation=speaker_segmentation)
+            make_no_id_corpus(unparsed_corpus_path,
+                              unparsed_corpus_path + '-stripped',
+                              metadata_mode=metadata,
+                              speaker_segmentation=speaker_segmentation)
             to_parse = unparsed_corpus_path + '-stripped'
         else:
             to_parse = unparsed_corpus_path
@@ -208,8 +212,12 @@ def make_corpus(unparsed_corpus_path,
             print('Making list of files ... ')
 
         # now we enter a while loop while not all files are parsed
+        #todo: these file lists are not necessary when not parsing
 
         while REPEAT_PARSE_ATTEMPTS:
+
+            if not parse:
+                break
 
             if not fileparse:
                 pp = os.path.dirname(unparsed_corpus_path)
@@ -316,12 +324,12 @@ def make_corpus(unparsed_corpus_path,
                 print('Repeating parsing due to missing files. '\
                       '%d iterations remaining.' % REPEAT_PARSE_ATTEMPTS)
 
-        if not newparsed:
+        if parse and not newparsed:
             return 
-        if all(not x for x in newparsed):
+        if parse and all(not x for x in newparsed):
             return
 
-        if fileparse:
+        if parse and fileparse:
             # cleanup mistakes :)
             if isfile(splitext(unparsed_corpus_path)[0]):
                 os.remove(splitext(unparsed_corpus_path)[0])
@@ -329,44 +337,50 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.conll'
         
-        move_parsed_files(project_path, to_parse, newparsed,
+            move_parsed_files(project_path, to_parse, newparsed,
                           ext=kwargs.get('output_format', 'conll'), restart=restart)
-        outpath = newparsed
-        if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
-            add_ids_to_xml(newparsed, originalname=to_parse)
-        if kwargs.get('output_format') == 'conll':
-            #from corpkit.build import add_deps_to_corpus_path
-            from corpkit.conll import convert_json_to_conll
-            coref = False
-            if operations is False:
-                coref = True
-            elif 'coref' in operations or 'dcoref' in operations:
-               coref = True
+            outpath = newparsed
+            if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
+                add_ids_to_xml(newparsed, originalname=to_parse)
+            if kwargs.get('output_format') == 'conll':
+                #from corpkit.build import add_deps_to_corpus_path
+                from corpkit.conll import convert_json_to_conll
+                coref = False
+                if operations is False:
+                    coref = True
+                elif 'coref' in operations or 'dcoref' in operations:
+                   coref = True
 
-            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
-                                  coref=coref, metadata=metadata)
-            #add_deps_to_corpus_path(newparsed)
+                convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
+                                      coref=coref, metadata=metadata)
+                #add_deps_to_corpus_path(newparsed)
 
-        try:
-            os.remove(filelist)
-        except:
-            pass
+            try:
+                os.remove(filelist)
+            except:
+                pass
 
-    else:
-        filelist, fs = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
-                                        corpuspath=unparsed_corpus_path, restart=restart)
+    #if tokenise and not parse:
+    #    filelist, fs = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
+    #                                    corpuspath=unparsed_corpus_path, restart=restart)
 
-    if tokenise:
-        newtok = parse_corpus(proj_path=project_path, 
-                              corpuspath=unparsed_corpus_path,
-                              filelist=filelist,
-                              nltk_data_path=nltk_data_path,
-                              operations=operations,
-                              only_tokenise=True,
-                              outname=outname
-                             )
+    if not parse and tokenise:
+        #todo: outname
+        newpath = to_parse.replace('-stripped', '-tokenised')
+        from corpkit.build import plaintext_to_conll
+        newtok = plaintext_to_conll(to_parse,
+                                    postag=postag,
+                                    lemmatise=lemmatise,
+                                    lang=lang,
+                                    metadata=metadata,
+                                    nltk_data_path=nltk_data_path,
+                                    speaker_segmentation=speaker_segmentation,
+                                    outpath=newpath)
+
         if newtok is False:
-            return   
+            return
+        else:
+            return newtok
         outpath = newtok
 
     rename_all_files(outpath)

@@ -5,7 +5,7 @@ There are fast and slow tests. Slow tests include those that test the parser.
 These should be run before anything goes into master. Fast tests are just corpus
 interrogations. These are done on commit.
 
-The tests don't systematically cover everything in the module yet.
+The tests don't cover everything in the module yet.
 
 To run all tests:
 
@@ -111,12 +111,6 @@ def test_interro3():
 #    d = {'and interrogating': {'first': 0, 'second': 2},
 #         'concordancing and': {'first': 0, 'second': 2}}
 #    assert_equals(data.results.to_dict(), d)
-
-def test_interro5():
-    """Testing interrogation 5"""
-    corp = Corpus('data/test-stripped')
-    data = corp.interrogate({'w': r'\bl[a-z]+?\s'})
-    assert_equals(data.results.sum().sum(), 4)
   
 def test_interro_multiindex_tregex_justspeakers():
     """Testing interrogation 6"""
