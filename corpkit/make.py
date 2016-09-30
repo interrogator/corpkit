@@ -360,10 +360,6 @@ def make_corpus(unparsed_corpus_path,
             except:
                 pass
 
-    #if tokenise and not parse:
-    #    filelist, fs = get_corpus_filepaths(projpath=os.path.dirname(unparsed_corpus_path), 
-    #                                    corpuspath=unparsed_corpus_path, restart=restart)
-
     if not parse and tokenise:
         #todo: outname
         newpath = to_parse.replace('-stripped', '-tokenised')
@@ -377,6 +373,12 @@ def make_corpus(unparsed_corpus_path,
                                     speaker_segmentation=speaker_segmentation,
                                     outpath=newpath)
 
+        if outname:
+            if not os.path.isdir(outname):
+                outname = os.path.join('data', os.path.basename(outdir))
+            import shutil
+            shutil.copytree(newtok, outname)
+            newtok = outname
         if newtok is False:
             return
         else:

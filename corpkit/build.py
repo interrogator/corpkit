@@ -909,7 +909,7 @@ def write_df_to_conll(df, fo, metadata=False):
     for si in sent_ixs:
         si = si + 1
         outstring += '# sent_id %d\n' % si
-        sent = df.loc[si]
+        sent = df.loc[si:si]
         csv = sent.to_csv(None, sep='\t', header=False)
         outstring += csv + '\n'
     try:
@@ -963,10 +963,13 @@ def plaintext_to_conll(inpath, postag=False, lemmatise=False,
         for_df.append(ser)
         if postag or lemmatise:
             postags = pos_tag_series(ser, lang=lang)
-            for_df.append(postags)
         if lemmatise:
             lemma = lemmatise_series(ser, postags, lemmatiser)
             for_df.append(lemma)
+            for_df.append(postags)
+        else:
+            if postag:
+                for_df.append(postags)
         df = pd.concat(for_df, axis=1)
         fo = new_fname(f, inpath)
         write_df_to_conll(df, fo, metadata=metadata)
