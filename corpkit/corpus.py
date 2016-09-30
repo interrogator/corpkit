@@ -660,7 +660,7 @@ class Corpus(object):
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
 
-        if corpus.datatype != 'conll':
+        if self.datatype != 'conll':
             raise ValueError('You need to parse or tokenise the corpus before searching.')
         
         # handle symbolic structures
