@@ -14,9 +14,9 @@ def interrogator(corpus,
     exclude=False,
     excludemode='any',
     searchmode='all',
-    dep_type='collapsed-ccprocessed-dependencies',
     case_sensitive=False,
     save=False,
+    subcorpora=False,
     just_speakers=False,
     just_metadata=False,
     skip_metadata=False,
@@ -24,7 +24,6 @@ def interrogator(corpus,
     lemmatag=False,
     files_as_subcorpora=False,
     only_unique=False,
-    random=False,
     only_format_match=True,
     multiprocess=False,
     spelling=False,
@@ -36,24 +35,18 @@ def interrogator(corpus,
     window=4,
     no_closed=False,
     no_punct=True,
-    whitelist=False,
-    subcorpora=False,
     **kwargs):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
-
-    # in case old kwarg is used
+    
     conc = kwargs.get('do_concordancing', conc)
-    by_metadata = kwargs.pop('by_metadata', False)
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
     show_conc_metadata = kwargs.pop('show_conc_metadata', False)
     fsi_index = kwargs.pop('fsi_index', True)
-
-    if subcorpora:
-        by_metadata = subcorpora
+    dep_type = kwargs.pop('dep_type', 'collapsed-ccprocessed-dependencies')
 
     nosubmode = subcorpora is None
 
@@ -62,7 +55,7 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    # so you can do corpus.search('features')
+    # so you can do corpus.interrogate('features')
     if search == 'features':
         search = 'v'
         query = 'any'
@@ -178,9 +171,6 @@ def interrogator(corpus,
         if isinstance(search, dict):
             if all(isinstance(i, dict) for i in list(search.values())):
                 is_mul = 'namedqueriesmultiple'
-        # cannot recursive multiquery
-        #if outname:
-        #    is_mul = False
         return is_mul, corpus, search, query, just_speakers
 
     def slow_tregex(sents, **kwargs):
@@ -188,7 +178,7 @@ def interrogator(corpus,
         Do the metadata specific version of tregex queries
         """
         speakr = kwargs.get('speaker', '')
-        subcorpora = kwargs.get('by_metadata')
+        subcorpora = kwargs.get('subcorpora')
         just_metadata = kwargs.get('just_metadata')
         skip_metadata = kwargs.get('skip_metadata')
         search = kwargs.get('search')['t']
@@ -196,8 +186,6 @@ def interrogator(corpus,
 
         from corpkit.process import tregex_engine
         from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
-
-        # if symbolic, get all possible categories in file and return dict
 
         if corpus.datatype == 'parse':
             speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
@@ -236,7 +224,6 @@ def interrogator(corpus,
             if subcorpora:
                 return {}, {}
 
-        
         if not no_conc:
             ops += ['-w']
             whole_res = tregex_engine(query=q, 
@@ -294,12 +281,9 @@ def interrogator(corpus,
         from corpkit.process import tregex_engine
         from corpkit.conll import parse_conll, pipeline, process_df_for_speakers, cut_df_by_meta
 
-        speakr = kwargs.get('speaker', '')
-        subcorpora = kwargs.get('by_metadata')
+        subcorpora = kwargs.get('subcorpora')
         just_metadata = kwargs.get('just_metadata')
         skip_metadata = kwargs.get('skip_metadata')
-
-        translated_option = kwargs.get('translated_option')
 
         sub_res = {}
 
@@ -316,10 +300,21 @@ def interrogator(corpus,
         else:
             all_cats = ['none']
 
+        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                     'Clauses': r'/^S/ < __',
+                     'Interrogative': r'ROOT << (/\?/ !< __)',
+                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
+
         for cat in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, cat, feature=subcorpora)
             sub_res[cat] = Counter()
-            sub_res[cat]['Sentences'] = len(list(new_df.index.levels[0]))
+            for name in tregex_qs.keys():
+                sub_res[cat][name] = 0
+            sub_res[cat]['Sentences'] = len(set(new_df.index.labels[0]))
             sub_res[cat]['Passives'] = len(new_df[new_df['f'] == 'nsubjpass'])
             sub_res[cat]['Tokens'] = len(new_df)
             # the below has returned a float before. i assume actually a nan?
@@ -337,17 +332,6 @@ def interrogator(corpus,
         if not to_open.strip('\n'):
             if subcorpora:
                 return {}, {}
-
-        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
-                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                     #'Open class': r'/^(NN|JJ|VB|RB)/ < __',
-                     #'Closed class': r'__ !< __ !> /^(NN|JJ|VB|RB)/ > /[A-Z]/',
-                     'Clauses': r'/^S/ < __',
-                     'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
 
         for name, q in sorted(tregex_qs.items()):
             options = ['-o', '-t', '-n'] if name == 'Processes' else ['-o', '-n']
@@ -710,7 +694,7 @@ def interrogator(corpus,
         simp_crit = all(not i for i in [just_speakers,
                                         kwargs.get('tgrep'),
                                         files_as_subcorpora,
-                                        by_metadata,
+                                        subcorpora,
                                         just_metadata,
                                         skip_metadata])
 
@@ -757,7 +741,6 @@ def interrogator(corpus,
                 raise ValueError('Need parsed corpus to search with "%s" option(s).' % form)
 
             elif datatype == 'parse' or datatype == 'conll':
-                from corpkit.depsearch import dep_searcher
                 from corpkit.conll import pipeline
 
                 if any(i.endswith('n') for i in search.keys()):
@@ -1084,10 +1067,6 @@ def interrogator(corpus,
 
                 all_conc_lines.append(Series(lin, index=conc_col_names))
 
-        if random:
-            from random import shuffle
-            shuffle(all_conc_lines)
-
         conc_df = pd.concat(all_conc_lines, axis=1).T
 
         if all(x == '' for x in list(conc_df['s'].values)) or \
@@ -1116,42 +1095,6 @@ def interrogator(corpus,
         except AttributeError:
             pass
         return conc_df
-
-
-    def turn_file_into_sents_corefs(f, show, just_speakers, coref=False):
-        try:
-            from corenlp_xml import Document
-        except ImportError:
-            from corenlp_xml.document import Document
-        with codecs.open(f.path, 'rb') as fo:
-            data = fo.read()
-
-        corenlp_xml = Document(data)
-        #corenlp_xml = f.document
-        from corpkit.process import parse_just_speakers
-        just_speakers = parse_just_speakers(just_speakers, corpus)
-        if just_speakers:
-            import re
-            if just_speakers is True:
-                just_speakers = re.compile(r'.*')
-            if isinstance(just_speakers, re._pattern_type):
-                sents = [s for s in corenlp_xml.sentences if \
-                         re.search(just_speakers, get_speakername(s))]
-            else:
-                sents = [s for s in corenlp_xml.sentences if get_speakername(s) in just_speakers]
-        else:
-            sents = corenlp_xml.sentences
-
-        # get coreferences
-        if coref or any(x.startswith('h') for x in show):
-            if just_speakers:
-                corefs = [i for i in corenlp_xml.coreferences if any(x == i.sentence for x in sents)]
-            else:
-                corefs = corenlp_xml.coreferences
-        else:
-            corefs = []
-        corenlp_xml = None
-        return sents, corefs
 
     def lowercase_result(res):       
         if not preserve_case:
@@ -1455,9 +1398,7 @@ def interrogator(corpus,
                     from corpkit.process import parse_just_speakers
                     just_speakers = parse_just_speakers(just_speakers, corpus)
 
-                    if datatype == 'parse':
-                        sents, corefs = turn_file_into_sents_corefs(f, show, just_speakers, coref=coref)
-                    elif datatype == 'conll':
+                    if datatype == 'conll':
                         sents, corefs = f.path, coref
                     
                     res, conc_res = searcher(sents, search=search, show=show,
@@ -1472,7 +1413,6 @@ def interrogator(corpus,
                                              gramsize=gramsize,
                                              no_punct=no_punct,
                                              no_closed=no_closed,
-                                             whitelist=whitelist,
                                              just_speakers=just_speakers,
                                              split_contractions=split_contractions,
                                              window=window,
@@ -1481,7 +1421,7 @@ def interrogator(corpus,
                                              countmode=countmode,
                                              maxconc=(maxconc, numconc),
                                              is_a_word=is_a_word,
-                                             by_metadata=by_metadata,
+                                             by_metadata=subcorpora,
                                              show_conc_metadata=show_conc_metadata,
                                              just_metadata=just_metadata,
                                              skip_metadata=skip_metadata,
@@ -1497,7 +1437,7 @@ def interrogator(corpus,
                     # deal with symbolic structures---that is, rather than adding
                     # results by subcorpora, add them by metadata value
                     # todo: sorting?
-                    if by_metadata:
+                    if subcorpora:
                         for (k, v), concl in zip(res.items(), conc_res.values()):                            
                             v = lowercase_result(v)
                             results[k] += Counter(v)

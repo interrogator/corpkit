@@ -44,7 +44,8 @@ class Interrogation(object):
             return "<%s instance: %d total>" % (classname(self), self.totals)
 
     def edit(self, *args, **kwargs):
-        """Manipulate results of interrogations.
+        """
+        Manipulate results of interrogations.
 
         There are a few overall kinds of edit, most of which can be combined 
         into a single function call. It's useful to keep in mind that many are 
@@ -593,10 +594,10 @@ class Concordance(pd.core.frame.DataFrame):
         :Example:
 
         >>> lines[:4].shuffle()
-            3  01  1-01.txt.xml   through the grand canyon  area       and then phoenix and i sp
-            1  01  1-01.txt.xml  e 're in tucson , then up  north      to flagstaff , then we we
-            0  01  1-01.txt.xml                  we 're in  tucson     , then up north to flagst
-            2  01  1-01.txt.xml  tucson , then up north to  flagstaff  , then we went through th
+            3  01  1-01.txt.conll   through the grand canyon  area       and then phoenix and i sp
+            1  01  1-01.txt.conll  e 're in tucson , then up  north      to flagstaff , then we we
+            0  01  1-01.txt.conll                  we 're in  tucson     , then up north to flagst
+            2  01  1-01.txt.conll  tucson , then up north to  flagstaff  , then we went through th
 
         """
         import random
@@ -610,9 +611,11 @@ class Concordance(pd.core.frame.DataFrame):
             return shuffled
 
     def edit(self, *args, **kwargs):
-        """Delete or keep rows by subcorpus or by middle column text.
+        """
+        Delete or keep rows by subcorpus or by middle column text.
 
-        >>> skipped = conc.edit(skip_entries=r'to_?match')"""
+        >>> skipped = conc.edit(skip_entries=r'to_?match')
+        """
 
         from corpkit.editor import editor
         return editor(self, *args, **kwargs)
@@ -642,6 +645,8 @@ class Interrodict(OrderedDict):
     Methods for saving, editing, etc. are similar to 
     :class:`corpkit.corpus.Interrogation`. Additional methods are available for 
     collapsing into single (multi-indexed) DataFrames.
+
+    This class is now deprecated, in favour of a multiindexed DataFrame.
     """
     
     def __init__(self, data):
@@ -747,8 +752,8 @@ class Interrodict(OrderedDict):
                     pars = myparname + [k]
                     # the below is only for python3
                     #pars = [*myparname, k]
-                    trav(v, parents=parents, level=level, results=results, myparname=pars)
-                    
+                    trav(v, parents=parents, level=level,
+                         results=results, myparname=pars)
             else:
                 if parents.get(level):
                     parents[level] |= set(dct.results.index)
@@ -781,7 +786,7 @@ class Interrodict(OrderedDict):
             nms = {} 
         ix = pd.MultiIndex.from_tuples(index, **nms)
         df = pd.DataFrame(data, index=ix)
-        df = df.fillna(0)
+        df = df.fillna(0).astype(int)
         df = df[df.sum().sort_values(ascending=False).index]
         totals = df.sum(axis=1)
         return Interrogation(results=df, totals=totals, query=query)
@@ -1007,7 +1012,6 @@ class Interrodict(OrderedDict):
             return idi.flip(truncate=truncate, transpose=False, repeat=False)
         else:
             return idi
-
 
     def get_totals(self):
         """

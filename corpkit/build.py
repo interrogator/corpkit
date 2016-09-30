@@ -861,3 +861,9 @@ def folderise(folder):
         if not os.path.exists(newpath):
             os.makedirs(newpath)
         shutil.move(f, os.path.join(newpath))
+
+def plaintext_to_conll(plain_path, postag=False, lemmatise=False):
+    """
+    Take a plaintext corpus and sent/word tokenise.
+    """
+    return
