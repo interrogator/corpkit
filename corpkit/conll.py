@@ -1017,9 +1017,10 @@ def load_raw_data(f):
     return stripped_txtdata, id_txtdata
 
 def get_speaker_from_offsets(stripped, plain, sent_offsets,
-                             metadata_mode=False, speaker_segmentation=False):
+                             metadata_mode=False,
+                             speaker_segmentation=False):
     """
-    Take offsets and get a speaker ID from them
+    Take offsets and get a speaker ID or metadata from them
     """
     if not stripped and not plain:
         return {}
@@ -1065,7 +1066,7 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets,
             speakerid = split_line[0]
         else:
             speakerid = 'UNIDENTIFIED'
-        meta_dict['speaker'] = speaderid
+        meta_dict['speaker'] = speakerid
 
     return meta_dict
 
