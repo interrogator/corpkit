@@ -80,7 +80,6 @@ If you don't want to keep specifying the subcorpus structure every time you sear
    # return to normal
    > set subcorpora as default
 
-
 You can also define metadata filters, which skip sentences matching a metadata feature, or which keep only sentences matching a metadata feature:
 
 .. code-block:: bash

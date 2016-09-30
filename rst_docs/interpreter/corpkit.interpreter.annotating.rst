@@ -62,7 +62,7 @@ Now, the subcorpora will be the different processes (*verbal*, *mental* and *non
 Removing annotations
 -----------------------
 
-To remove a ``tag`` or a ``field`` across the dataset, the commands are very simple. Note that again, you
+To remove a ``tag`` or a ``field`` across the dataset, the commands are very simple. Note that again, you need to ``toggle annotation`` to actually alter any files.
 
 .. code-block:: shell
 
