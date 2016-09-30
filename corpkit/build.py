@@ -970,5 +970,10 @@ def plaintext_to_conll(inpath, postag=False, lemmatise=False,
         df = pd.concat(for_df, axis=1)
         fo = new_fname(f, inpath)
         write_df_to_conll(df, fo, metadata=metadata)
+        nsent = len(set(df.index.labels[0]))
+        print('%s created (%d sentences)' % (fo, nsent))
 
-    return inpath.replace('-stripped', '-tokenised')
+    if '-stripped' in inpath:
+        return inpath.replace('-stripped', '-tokenised')
+    else:
+        return inpath + '-tokenised'
