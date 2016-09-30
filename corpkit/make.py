@@ -363,7 +363,7 @@ def make_corpus(unparsed_corpus_path,
     if not parse and tokenise:
         #todo: outname
         newpath = to_parse.replace('-stripped', '-tokenised')
-        from corpkit.build import plaintext_to_conll
+        from corpkit.tokenise import plaintext_to_conll
         newtok = plaintext_to_conll(to_parse,
                                     postag=postag,
                                     lemmatise=lemmatise,
