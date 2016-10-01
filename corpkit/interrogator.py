@@ -55,10 +55,15 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    # so you can do corpus.interrogate('features')
+    # so you can do corpus.interrogate('features/postags/wordclasses')
     if search == 'features':
         search = 'v'
         query = 'any'
+    if search in ['postags', 'wordclasses']:
+        query = 'any'
+        show = 'p' if search == 'postags' else 'x'
+        search = 't'
+        preserve_case = True
 
     if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')
@@ -200,6 +205,8 @@ def interrogator(corpus,
             from corpkit.conll import parse_conll, cut_df_by_meta
             df = parse_conll(sents)
             df = cut_df_by_meta(df, just_metadata, skip_metadata)
+            if df is None or df.empty:
+                return {}, {}
             speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
             
         if speak_tree:
@@ -942,14 +949,24 @@ def interrogator(corpus,
             pass
         return conc_df
 
-    def lowercase_result(res):       
+    def lowercase_result(res):
+        """      
+        Take any result and do spelling/lowercasing if need be
+        """
+        if not res or statsmode:
+            return res
         if not preserve_case:
-            if not statsmode:
-                if res:
-                    res = [i.lower() for i in res]
+            if isinstance(res[0], tuple):
+                newr = []
+                for tup in res:
+                    tup = list(tup)
+                    tup[-1] = tup[-1].lower()
+                    newr.append(tuple(tup))
+                res = newr
+            else:
+                res = [i.lower() for i in res]
         if spelling:
-            if not statsmode:
-                res = [correct_spelling(r) for r in res]
+            res = [correct_spelling(r) for r in res]
         return res
 
     def postprocess_concline(line, fsi_index=False):
