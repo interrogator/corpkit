@@ -738,6 +738,9 @@ class Corpus(object):
             res = interrogator(self, search,
                                 subcorpora=subcorpora, *args, **kwargs)
 
+        if kwargs.get('conc', False) == 'only':
+            return res
+
         from corpkit.interrogation import Interrodict
         if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
             return res
@@ -753,7 +756,7 @@ class Corpus(object):
         # sort by total
         ind = list(res.results.index)
         if isinstance(res.results, pd.DataFrame):
-            if not res.results.empty:   
+            if not res.results.empty:
                 res.results = res.results[list(res.results.sum().sort_values(ascending=False).index)]
                 res.results = res.results.astype(int)
 

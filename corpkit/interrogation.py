@@ -544,7 +544,7 @@ class Concordance(pd.core.frame.DataFrame):
     def __init__(self, data):
 
         super(Concordance, self).__init__(data)
-        self.results = data
+        self.concordance = data
 
     def format(self, kind='string', n=100, window=35,
                print_it=True, columns='all', **kwargs):
