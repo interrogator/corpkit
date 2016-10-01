@@ -1053,3 +1053,13 @@ def get_index_name(corpus, subcorpora, just_speakers):
         return lst[0]
     else:
         return lst
+
+def make_savename_for_features(corpname=False, obj='features', subcorpora=False):
+    subc = subcorpora if subcorpora else ''
+    if subc in ['default', 'folders', 'folder']:
+        subc = ''
+    if corpname:
+        obj = corpname + '-' + obj
+    if subcorpora:
+        obj = obj + '-' + subcorpora
+    return obj
