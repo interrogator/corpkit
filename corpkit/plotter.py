@@ -99,6 +99,8 @@ def plotter(df,
 
     kwargs['rot'] = rot
 
+    xtickspan = kwargs.pop('xtickspan', False)
+
     import matplotlib as mpl
     from matplotlib import rc
 
@@ -114,6 +116,8 @@ def plotter(df,
         import matplotlib.pyplot as plt, mpld3
     else:
         import matplotlib.pyplot as plt
+
+    import matplotlib.ticker as ticker
     
     import pandas
     from pandas import DataFrame, Series
@@ -203,7 +207,7 @@ def plotter(df,
             dataframe.columns = the_labs
         else:
             vals = list(dataframe[list(dataframe.columns)[0]].values)
-            dataframe = pandas.DataFrame(vals, index = the_labs)
+            dataframe = pandas.DataFrame(vals, index=the_labs)
             dataframe.columns = ['Total']
         return dataframe
 
@@ -371,7 +375,7 @@ def plotter(df,
                 try:
                     a = float(x)
                     b = int(a)
-                except ValueError or OverflowError:
+                except (ValueError, OverflowError):
                     return False
                 else:
                     return a == b
@@ -694,17 +698,17 @@ def plotter(df,
             kwargs['alpha'] = 0.1
     
     # convert dates --- works only in my current case!
-    if plotting_a_totals_column or not was_series:
-        try:
-            can_it_be_int = int(list(dataframe.index)[0])
-            can_be_int = True
-        except:
-            can_be_int = False
-        if can_be_int:
-            if 1500 < int(list(dataframe.index)[0]):
-                if 2050 > int(list(dataframe.index)[0]):
-                    n = pandas.PeriodIndex([d for d in list(dataframe.index)], freq='A')
-                    dataframe = dataframe.set_index(n)
+    #if plotting_a_totals_column or not was_series:
+    #    try:
+    #        can_it_be_int = int(list(dataframe.index)[0])
+    #        can_be_int = True
+    #    except:
+    #        can_be_int = False
+    #    if can_be_int:
+    #        if 1500 < int(list(dataframe.index)[0]):
+    #            if 2050 > int(list(dataframe.index)[0]):
+    #                n = pandas.PeriodIndex([d for d in list(dataframe.index)], freq='A')
+    #                dataframe = dataframe.set_index(n)
 
     if kwargs.get('filled'):
         if areamode or kind.startswith('bar'):
@@ -840,15 +844,16 @@ def plotter(df,
         
         if sbplt:
             if 'layout' not in kwargs:
-                axes = [l for index, l in enumerate(ax)]
+                axes = [l for l in ax]
             else:
                 axes = []
-                cols = [l for index, l in enumerate(ax)]
+                cols = [l for l in ax]
                 for col in cols:
                     for bit in col:
                         axes.append(bit)
-
             for index, a in enumerate(axes):
+                if xtickspan is not False:
+                    a.xaxis.set_major_locator(ticker.MultipleLocator(xtickspan))
                 labels = [item.get_text() for item in a.get_xticklabels()]
                 rotation = rotate_degrees(the_rotation, labels)                
                 try:
