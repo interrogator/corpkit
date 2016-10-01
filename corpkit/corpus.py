@@ -297,22 +297,26 @@ class Corpus(object):
         from os.path import isfile, isdir, join
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.dictionaries import mergetags
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import make_savename_for_features
 
-        subc = self.symbolic if self.symbolic else ''
-        if subc in ['default', 'folders', 'folder']:
-            subc = ''
+        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
+
+        name = make_savename_for_features(obj='features',
+                                          corpname=self.name,
+                                          subcorpora=self.symbolic)
 
         savedir = 'saved_interrogations'
-        if isfile(join(savedir, self.name + '-features-%s.p' % subc)):
+        if isfile(join(savedir, name + '.p')):
             try:
-                return load(self.name + '-features-%s' % subc).results
+                return load(name).results
             except AttributeError:
-                return load(self.name + '-features-%s' % subc)
+                return load(name)
         else:
-            feat = interrogator(self, 'features', subcorpora=subc).results
+            feat = interrogator(self, 'features', subcorpora=subc, **kwa)
+            feat = feat.results
             if isdir(savedir):
-                feat.save(self.name + '-features-%s' % subc)
+                feat.save(name)
             return feat
 
     @lazyprop
@@ -329,30 +333,42 @@ class Corpus(object):
             02  25844  7933         6920         3323 ...
             03  18376  5683         4877         3137 ...
             04  20066  6354         5366         4336 ...
-
         """
+
         import os
         from os.path import isfile, isdir, join
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.dictionaries import mergetags
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import make_savename_for_features
+
+        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
+
+        wcname = make_savename_for_features(obj='wordclasses',
+                                            corpname=self.name,
+                                            subcorpora=self.symbolic)
+
+        psname = make_savename_for_features(obj='postags',
+                                            corpname=self.name,
+                                            subcorpora=self.symbolic)
 
         savedir = 'saved_interrogations'
-        if isfile(join(savedir, self.name + '-wordclasses.p')):
+        if isfile(join(savedir, wcname + '.p')):
             try:
-                return load(self.name + '-wordclasses').results
+                return load(wcname).results
             except AttributeError:
-                return load(self.name + '-wordclasses')
-        elif isfile(join(savedir, self.name + '-postags.p')):
+                return load(wcname)
+        elif isfile(join(savedir, psname)):
             try:
-                posdata = load(self.name + '-postags').results
+                posdata = load(psname).results
             except AttributeError:
-                posdata = load(self.name + '-postags')
+                posdata = load(psname)
             return posdata.edit(
                 merge_entries=mergetags,
                 sort_by='total').results
         else:
-            feat = interrogator(self, 't', 'any', show='x', subcorpora=self.symbolic).results
+            feat = interrogator(self, 't', 'any', show='x',
+                subcorpora=self.symbolic, *kwa).results
             if isdir(savedir):
                 feat.save(self.name + '-wordclasses')
             return feat
@@ -377,21 +393,29 @@ class Corpus(object):
         from os.path import isfile, isdir, join
         from corpkit.interrogator import interrogator
         from corpkit.other import load
-        from corpkit.dictionaries import mergetags
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import make_savename_for_features
+
+        psname = make_savename_for_features(obj='postags',
+                                    corpname=self.name,
+                                    subcorpora=self.symbolic)
+
+        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
 
         savedir = 'saved_interrogations'
-        if isfile(join(savedir, self.name + '-postags.p')):
+        if isfile(join(savedir, psname + '.p')):
             try:
-                return load(self.name + '-postags').results
+                return load(sname).results
             except AttributeError:
-                return load(self.name + '-postags')
+                return load(sname)
         else:
             feat = interrogator(self, 't', 'any',
                                 show='p',
                                 preserve_case=True,
-                                subcorpora=self.symbolic).results
+                                subcorpora=self.symbolic,
+                                **kwa).results
             if isdir(savedir):
-                feat.save(self.name + '-postags')
+                feat.save(sname)
                 wordclss = feat.edit(
                     merge_entries=mergetags,
                     sort_by='total').results
@@ -413,18 +437,28 @@ class Corpus(object):
         from os.path import join, isfile, isdir
         from corpkit.interrogator import interrogator
         from corpkit.other import load
+        from corpkit.process import make_savename_for_features
+
         show = kwargs.get('show', ['w'])
         savedir = 'saved_interrogations'
         if isinstance(show, STRINGTYPE):
             show = [show]
-        if isfile(join(savedir, self.name + '-lexicon.p')):
+
+        name = make_savename_for_features(obj='lexicon',
+                                    corpname=self.name,
+                                    subcorpora=self.symbolic)
+
+        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
+
+        if isfile(join(savedir, name + '.p')):
             try:
-                return load(self.name + '-lexicon')
+                return load(name)
             except AttributeError:
                 pass
-        dat = self.interrogate('w', show=show, subcorpora=self.symbolic, **kwargs).results
+        dat = self.interrogate('w', show=show,
+                               subcorpora=self.symbolic, **kwa).results
         if isdir(savedir):
-            dat.save(self.name + '-lexicon')
+            dat.save(name)
         return dat
 
     def configurations(self, search, **kwargs):
@@ -457,7 +491,12 @@ class Corpus(object):
 
         :returns: :class:`corpkit.interrogation.Interrodict`
         """
-        kwargs['subcorpora'] = self.symbolic
+        if 'subcorpora' not in kwargs:
+            kwargs['subcorpora'] = self.symbolic
+        if 'just_metadata' not in kwargs:
+            kwargs['just_metadata'] = self.just
+        if 'skip_metadata' not in kwargs:
+        kwargs['skip_metadata'] = self.skip
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
