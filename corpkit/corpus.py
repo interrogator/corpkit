@@ -496,7 +496,7 @@ class Corpus(object):
         if 'just_metadata' not in kwargs:
             kwargs['just_metadata'] = self.just
         if 'skip_metadata' not in kwargs:
-        kwargs['skip_metadata'] = self.skip
+            kwargs['skip_metadata'] = self.skip
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
