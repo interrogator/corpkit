@@ -3,8 +3,9 @@ python:
 - '2.7'
 - '3.5'
 install: 
-- pip install -r requirements.txt
-script: nosetests corpkit/nosetests.py -a '!slow'
+- pip install --install-option="--no-cython-compile" cython; pip install -r requirements.txt
+script:
+- nosetests corpkit/nosetests.py -a '!slow'
 deploy:
   provider: pypi
   user: mcddjx
