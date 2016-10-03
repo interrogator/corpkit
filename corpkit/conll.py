@@ -497,6 +497,9 @@ def fast_simple_conc(dfss, idxs, show,
     Fast, simple concordancer, heavily conditional
     to save time.
     """
+    if dfss.empty:
+        return [], []
+        
     import pandas as pd
     conc_res = []
     # best case, the user doesn't want any gov-dep stuff
