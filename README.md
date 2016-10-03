@@ -225,10 +225,9 @@ Using straight Python is the most powerful way to use *corpkit*, because you can
 ### instantiate corpus
 >>> corp = Corpus('chapters-parsed')
 
-### search for anything participant with a governor that is 
-### a process, excluding closed class words
-### and showing lemma forms alongside dependency function
-### also, generate a concordance
+### search for anything participant with a governor that
+### is a process, excluding closed class words, and 
+### showing lemma forms. also, generate a concordance.
 
 >>> sch = {GF: roles.process, F: roles.actor}
 >>> part = corp.interrogate(search=sch,

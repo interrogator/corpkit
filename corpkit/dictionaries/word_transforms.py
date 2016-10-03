@@ -1,8 +1,12 @@
-# WordNet handles most lemmatisation, but it struggles with a few things.
+"""
+corpkit: manual word cludging
+"""
 
-# During lemmatisation, words will be corrected via this list.
-
-# insert the word and what you want it to be turned into.
+# WordNet/CoreNLP lemmatiser are used for lemmatisation, but they can both 
+# struggle with a few things. During lemmatisation, words will be corrected via 
+# this list. So, if you are asking for lemmas and getting a result you don't like,
+# you can insert the word and its correction below and it will be transformed
+# automatically.
 
 wordlist = {u"felt": u"feel",
             u"'s": u"be",
@@ -42,7 +46,7 @@ wordlist = {u"felt": u"feel",
             u'shall': u'shall',
             u'mighta': u'may'}
 
-# lemmatisation for treebank tags
+# Turn POS tags into word classes
 
 taglemma = {u"cc": u"Coordinating conjunction",
            u"cd": u"Cardinal number",
@@ -124,39 +128,39 @@ taglemma = {u"cc": u"Coordinating conjunction",
 # the below produced with:
 #
 # from corpkit import *
-# from dictionaries import *
+# from corpkit.dictionaries import *
 # out = {}
 # for wordclass in tagtoclass.values():
 #     criteria = [tag for tag, clas in tagtoclass.items() if clas == wordclass]
-#     reg = as_regex(criteria, boundaries = 'l')
+#     reg = as_regex(criteria, boundaries='l')
 #     out[wordclass] = reg
-# out
 
-mergetags = {u'Adjective': r'(?i)^(jj|jjr|jjs)$',
-             u'Adverb': r'(?i)^(rb|rbr|rbs)$',
-             u'Bracket': r'(?i)^(\-lrb\-|\-lsb\-|\-rrb\-|\-rsb\-)$',
-             u'Cardinal number': r'(?i)^(cd)$',
-             u'Coordinating conjunction': r'(?i)^(cc)$',
-             u'Determiner': r'(?i)^(dt)$',
-             u'Ex. there': r'(?i)^(ex)$',
-             u'Foreign word': r'(?i)^(fw)$',
-             u'Interjection': r'(?i)^(uh)$',
-             u'List item marker': r'(?i)^(ls)$',
-             u'Modal': r'(?i)^(md)$',
-             u'Noun': r'(?i)^(nn|nnp|nnps|nns)$',
-             U'Other': r'(?i)^(x)$',
-             u'Particle': r'(?i)^(rp)$',
-             u'Possessive ending': r'(?i)^(pos)$',
-             u'Predeterminer': r'(?i)^(pdt)$',
-             u'Preposition': r'(?i)^(in)$',
-             u'Pronoun': r'(?i)^(prp|prp\$)$',
-             u'Symbol': r'(?i)^(\$|sym)$',
-             u'To': r'(?i)^(to)$',
-             u'Verb': r'(?i)^(vb|vbd|vbg|vbn|vbp|vbz)$',
-             u'Wh- pronoun': r'(?i)^(wp|wp\$)$',
-             u'Wh-adverb': r'(?i)^(wrb)$',
-             u'Wh-determiner': r'(?i)^(wdt)$'}
+mergetags = {u'Adjective': r'(?i)^(?:jj|jjr|jjs)$',
+             u'Adverb': r'(?i)^(?:rb|rbr|rbs)$',
+             u'Bracket': r'(?i)^(?:\-lrb\-|\-lsb\-|\-rrb\-|\-rsb\-)$',
+             u'Cardinal number': r'(?i)^(?:cd)$',
+             u'Coordinating conjunction': r'(?i)^(?:cc)$',
+             u'Determiner': r'(?i)^(?:dt)$',
+             u'Ex. there': r'(?i)^(?:ex)$',
+             u'Foreign word': r'(?i)^(?:fw)$',
+             u'Interjection': r'(?i)^(?:uh)$',
+             u'List item marker': r'(?i)^(?:ls)$',
+             u'Modal': r'(?i)^(?:md)$',
+             u'Noun': r'(?i)^(?:nn|nnp|nnps|nns)$',
+             U'Other': r'(?i)^(?:x)$',
+             u'Particle': r'(?i)^(?:rp)$',
+             u'Possessive ending': r'(?i)^(?:pos)$',
+             u'Predeterminer': r'(?i)^(?:pdt)$',
+             u'Preposition': r'(?i)^(?:in)$',
+             u'Pronoun': r'(?i)^(?:prp|prp\$)$',
+             u'Symbol': r'(?i)^(?:\$|sym)$',
+             u'To': r'(?i)^(?:to)$',
+             u'Verb': r'(?i)^(?:vb|vbd|vbg|vbn|vbp|vbz)$',
+             u'Wh- pronoun': r'(?i)^(?:wp|wp\$)$',
+             u'Wh-adverb': r'(?i)^(?:wrb)$',
+             u'Wh-determiner': r'(?i)^(?:wdt)$'}
 
+# A simple spelling converter
 usa_convert = {u"accessorise": u"accessorize",
         u"accessorised": u"accessorized",
         u"accessorises": u"accessorizes",

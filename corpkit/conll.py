@@ -412,7 +412,7 @@ def make_concx(series, matches, metadata, df,
 
     return conc_lines
 
-def func(ser, df=False, obj=False, att=False, adj=False, tomove=False):
+def make_series(ser, df=False, obj=False, att=False, adj=False, tomove=False):
     """
     To apply to a DataFrame to add complex criteria, like 'gf'
     """
@@ -448,12 +448,12 @@ def func(ser, df=False, obj=False, att=False, adj=False, tomove=False):
             sent = df[att].loc[ser.name[0]]
             return sent[sent['c'] == cohead + '*']
 
+    # potential naming conflict with sent index ...
     elif obj == 's': # get whole phrase"
         cohead = ser['c']
         sent = df[att].loc[ser.name[0]]
         return sent[sent['c'] == cohead.rstrip('*')].values
     
-
 def joiner(ser):
     return ser.str.cat(sep='/') 
 
@@ -484,7 +484,6 @@ def make_new_for_dep(dfmain, dfdep, name):
     index = pd.MultiIndex.from_tuples(index, names=['s', 'i'])
     newdf = pd.DataFrame(new, index=index)
     newdf[name] = newd
-    newdf.fillna('none')
     return newdf
 
 def fast_simple_conc(dfss, idxs, show,
@@ -493,18 +492,20 @@ def fast_simple_conc(dfss, idxs, show,
                      fname=False,
                      category=False,
                      only_format_match=True,
-                     no_conc=False):
+                     conc=False):
     """
-    Fast, simple concordancer
-
-    todo: add gov dep gets in here...
+    Fast, simple concordancer, heavily conditional
+    to save time.
     """
-
-    # setup
     import pandas as pd
     conc_res = []
+    # best case, the user doesn't want any gov-dep stuff
     simple = all(i.startswith('m') for i in show)
+    # worst case, the user wants something from dep
+    dmode = any(x.startswith('d') for x in show)
+    # make a quick copy if need be because we modify the df
     df = dfss.copy() if not simple else dfss
+    # add text to df columns so that it resembles 'show' values
     lst = ['s', 'i', 'w', 'l', 'f', 'p']
     df.columns = ['m' + i if len(i) == 1 and i in lst \
                   else i for i in list(df.columns)]
@@ -512,35 +513,36 @@ def fast_simple_conc(dfss, idxs, show,
     # this is the data needed for concordancing
     df_for_lr = df['mw'] if only_format_match else df
     
-    # this is data for matches
-    if idxs:
-        matches = df.loc[idxs]
-    else:
-        matches = df
-
-    # now, we need to add any non-simple columns to the df
-    # how can this handle only_format_match to be fast?
-    formatted = []
-    dmode = any(x.startswith('d') for x in show)
-
+    # add index as column if need be
+    if any(i.endswith('s') for i in show):
+        df['ms'] = df.index.labels[0]
+    if any(i.endswith('i') for i in show):
+        df['mi'] = df.index.labels[1]
+    
+    # if the showing can't come straight out of the df, 
+    # we can add columns with the necessary information
     if not simple:
+        formatted = []
         for i in show:
-            adj, tomove, adjname = False, False, ''
-            # it's already there:
-            #todo: is it viable to add d here and postprocess later?
+            # nothing to do if it's an m feature
             if i.startswith('m'):
                 continue
-            # figure out if adjacent
-            # todo: make into func
+            # defaults for adjacent work
+            adj, tomove, adjname = False, False, ''
             adj, i = determine_adjacent(i)
             adjname = ''.join(adj) if hasattr(adj, '__iter__') else ''
+            
+            # get number of places to shift left or right
             if adj:
                 if adj[0] == '+':
                     tomove = -int(adj[1])
                 elif adj[0] == '-':
                     tomove = int(adj[1])
-            # cut df down to just needed bits
+
+            # cut df down to just needed bits for the sake of speed
+            # i.e. if we want gov func, get only gov and func cols
             ob, att = i[0], i[-1]
+            # for corefs, we also need the coref data
             if ob in ['c', 'h', 's']:
                 dfx = df[['c', att]]
             else:
@@ -551,100 +553,70 @@ def fast_simple_conc(dfss, idxs, show,
                     dfx = df[['m' + att]]
                 else:
                     dfx = df[[ob, att]]
-            # make a new column
-            #todo: 
-            #newm = [(s, i+tomove) for s, i in newm]
-
-            #to_proc = matches.copy() if only_format_match else dfx.copy()
-            # is either a nice neat series
-            # or a df with variable number of results
-
-            if only_format_match:
-                if ob == 'm':
-                    ser = df['m' + att]
-                else:
-                    ser = matches.apply(func, df=dfx, obj=ob, att=att, axis=1)
+            # now we get or generate the new column
+            if ob == 'm':
+                ser = df['m' + att]
             else:
-                if ob == 'm':
-                    ser = df['m' + att]
-                else:
-                    ser = df.apply(func, df=dfx, obj=ob, att=att, axis=1)
+                ser = df.apply(make_series, df=dfx, obj=ob, att=att, axis=1)
+            # adjmode simply shifts series and index
             if adj:
-                #todo: this shift adds the next sent first words to end
-                # of the previous sentence
+                #todo: this shifts next sent into previous sent!
                 ser = ser.shift(tomove)
                 ser = ser.fillna('none')
-                #ser = pd.Series(new_values, index=ser.index)
 
+            # dependent mode produces multiple matches
+            # so, we have to make a new dataframe with duplicate indexes
             # todo: what about when there are two dep options?
             if ob in ['d']:
                 if only_format_match:
                     df = make_new_for_dep(matches, ser, i)
                 else:
                     df = make_new_for_dep(df, ser, i)
+            # if not making a new df, just create the col name and add it
+            # to our list of series
             else:
-
                 ser.name = adjname + i
                 formatted.append(ser)
-                continue
                 
-    if not dmode:
-        for l in formatted:
-            if only_format_match:
-                matches[l.name] = l
-            else:
-                df[l.name] = l
-    else:
-        matches = df.loc[idxs]
-        matches = matches.fillna('none')
-        idxs = list(matches.index)
-
-    if only_format_match and len(show) == 1:
-        bit = show[0]
-        matches = df[bit].loc[idxs]
-        #df = df[bit]
-
-    elif only_format_match and len(show) > 1:
-        # not sure why this worked
+        # now we add the columns to the dataframe 
         if not dmode:
-            matches = matches.loc[idxs]
-        # if we want to show index, we have to do this
-        if any(i.endswith('i') for i in show):
-            matchesx = matches.reset_index()
-        else:
-            matchesx = matches
-        # get requested cols and make slash sep
-        llist = [matchesx[i] for i in show[1:]]
-        matches = matchesx[show[0]].str.cat(others=llist, sep='/')
-        #df = df['mw']
-        
-    elif not only_format_match and len(show) == 1:
-        bit = show[0]
-        #df = df[bit]
-        df_for_lr = df[bit]
-        matches = df[bit].loc[idxs]
+            for l in formatted:
+                df[l.name] = l
 
-    elif not only_format_match and len(show) > 1:
-        
-        # fix index
-        if any(i.endswith('i') for i in show):
-            dfx = df.reset_index()
+        df = df.fillna('none')
+    
+    # generate a series of matches with slash sep if multiple show vals
+    if len(show) > 1:
+        # make everything into a single series
+        if conc and not only_format_match:
+            llist = [df[i] for i in show[1:]]
+            df = df[show[0]].str.cat(others=llist, sep='/')
+            # get just the matches from it
+            matches = df[idxs]
         else:
-            dfx = df
-        llist = [dfx[i] for i in show[1:]]
-        from pandas import Series
-        df_for_lr = Series(dfx[show[0]].str.cat(others=llist, \
-                           sep='/'), index=df.index)
-        matches = df_for_lr.loc[idxs]
+            justm = df.loc[idxs]
+            llist = [justm[i] for i in show[1:]]
+            matches = justm[show[0]].str.cat(others=llist, sep='/')
+            if conc:
+                df = df_for_lr
+    else:
+        if conc and not only_format_match:
+            df = df[show[0]]
+            matches = df[idxs]
+        else:
+            matches = df[show[0]][idxs]
+            if conc:
+                df = df_for_lr
 
-    if no_conc:
-        return list(matches)
+    if not conc:
+        # todo: is matches.values faster?
+        return list(matches), []
 
     # do concordancing as fast as possible
     for mid, (s, i) in zip(matches, idxs):
         meta = metadata[s]
         ix = '%d,%d' % (s, i)
-        sent = df_for_lr.loc[s]
+        sent = df.loc[s]
         start = ' '.join(sent.loc[:i-1].values)
         end = ' '.join(sent.loc[i+1:].values)
         sname = meta.get('speaker', 'none')
@@ -659,10 +631,6 @@ def fast_simple_conc(dfss, idxs, show,
                 elif add_meta is True:
                     lin.append(v)
         conc_res.append(lin)
-
-    # do we need dropping? if not doing copy ...
-    #df = df[[m for m in list(df.columns) if m.startswith('m')]]
-    #df.columns = oldcols
 
     return list(matches), conc_res
 
@@ -681,8 +649,7 @@ def show_this(df, matches, show, metadata, conc=False,
         return list(df.loc[matches][show[0][-1]]), {}
     
     # todo: make work for ngram, collocate and coref
-    elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show) and conc:
-        #smatches = list(df.loc[matches][show[0][-1]])
+    elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show):
         return fast_simple_conc(df,
                                 matches,
                                 show,
@@ -690,7 +657,10 @@ def show_this(df, matches, show, metadata, conc=False,
                                 show_conc_metadata,
                                 kwargs.get('filename', ''),
                                 category,
-                                only_format_match)
+                                only_format_match,
+                                conc=conc)
+
+    # everything below here will eventually be removed
 
     if ngram_mode:
         show = [x.lstrip('n') for x in show]

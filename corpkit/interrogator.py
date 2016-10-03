@@ -980,9 +980,9 @@ def interrogator(corpus,
         #else:
         #    line[subc] = f.name
         if not preserve_case:
-            line[star:en] = [x.lower() for x in line[star:en]]
+            line[star:en] = [str(x).lower() for x in line[star:en]]
         if spelling:
-            line[star:en] = [correct_spelling(b) for b in line[star:en]]
+            line[star:en] = [correct_spelling(str(b)) for b in line[star:en]]
         return line
 
     def make_progress_bar():
@@ -1210,8 +1210,7 @@ def interrogator(corpus,
                                    options=op,
                                    corpus=subcorpus_path,
                                    root=root,
-                                   preserve_case=preserve_case
-                                  )
+                                   preserve_case=preserve_case)
 
             # format search results with slashes etc
             if not countmode and not tree_to_text:
@@ -1252,102 +1251,101 @@ def interrogator(corpus,
             current_iter += 1
             tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
             animator(p, current_iter, tstr, **par_args)
+            continue
 
-        # conll querying
-        if not simple_tregex_mode:
-            for f in files:
-                slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
-                if datatype in ['parse', 'conll'] and not tree_to_text:
-                    from corpkit.process import parse_just_speakers
-                    just_speakers = parse_just_speakers(just_speakers, corpus)
+        # conll querying goes by file, not subcorpus
+        for f in files:
+            from corpkit.process import parse_just_speakers
+            slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
+            just_speakers = parse_just_speakers(just_speakers, corpus)
+            sents, corefs = f.path, coref
+            res, conc_res = searcher(sents, search=search, show=show,
+                                     dep_type=dep_type,
+                                     exclude=exclude,
+                                     excludemode=excludemode,
+                                     searchmode=searchmode,
+                                     case_sensitive=case_sensitive,
+                                     conc=conc,
+                                     only_format_match=only_format_match,
+                                     speaker=slow_treg_speaker_guess,
+                                     gramsize=gramsize,
+                                     no_punct=no_punct,
+                                     no_closed=no_closed,
+                                     just_speakers=just_speakers,
+                                     split_contractions=split_contractions,
+                                     window=window,
+                                     filename=f.path,
+                                     coref=corefs,
+                                     countmode=countmode,
+                                     maxconc=(maxconc, numconc),
+                                     is_a_word=is_a_word,
+                                     by_metadata=subcorpora,
+                                     show_conc_metadata=show_conc_metadata,
+                                     just_metadata=just_metadata,
+                                     skip_metadata=skip_metadata,
+                                     fsi_index=fsi_index,
+                                     category=subcorpus_name,
+                                     translated_option=translated_option,
+                                     **kwargs
+                                    )
 
-                    if datatype == 'conll':
-                        sents, corefs = f.path, coref
-                    
-                    res, conc_res = searcher(sents, search=search, show=show,
-                                             dep_type=dep_type,
-                                             exclude=exclude,
-                                             excludemode=excludemode,
-                                             searchmode=searchmode,
-                                             case_sensitive=case_sensitive,
-                                             conc=conc,
-                                             only_format_match=only_format_match,
-                                             speaker=slow_treg_speaker_guess,
-                                             gramsize=gramsize,
-                                             no_punct=no_punct,
-                                             no_closed=no_closed,
-                                             just_speakers=just_speakers,
-                                             split_contractions=split_contractions,
-                                             window=window,
-                                             filename=f.path,
-                                             coref=corefs,
-                                             countmode=countmode,
-                                             maxconc=(maxconc, numconc),
-                                             is_a_word=is_a_word,
-                                             by_metadata=subcorpora,
-                                             show_conc_metadata=show_conc_metadata,
-                                             just_metadata=just_metadata,
-                                             skip_metadata=skip_metadata,
-                                             fsi_index=fsi_index,
-                                             category=subcorpus_name,
-                                             translated_option=translated_option,
-                                             **kwargs
-                                            )
-
-                    if res is None and conc_res is None:
-                        cont
-
-                    # deal with symbolic structures---that is, rather than adding
-                    # results by subcorpora, add them by metadata value
-                    # todo: sorting?
-                    if subcorpora:
-                        for (k, v), concl in zip(res.items(), conc_res.values()):                            
-                            v = lowercase_result(v)
-                            results[k] += Counter(v)
-                            for line in concl:
-                                if maxconc is False or numconc < maxconc:
-                                    line = postprocess_concline(line,
-                                        fsi_index=fsi_index)
-                                    conc_results[k].append(line)
-                                    numconc += 1
-                        
-                        current_iter += 1
-                        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                        animator(p, current_iter, tstr, **par_args)
-                        continue
-
-                    # garbage collection needed?
-                    sents = None
-                    corefs = None
-                        
-                    if res == 'Bad query':
-                        return 'Bad query'
-
-                if countmode:
-                    count_results[subcorpus_name] += [res]
-
-                else:
-                    # add filename and do lowercasing for conc
-                    if not no_conc:
-                        for line in conc_res:
-                            line = postprocess_concline(line,
-                                fsi_index=fsi_index)
-                            if maxconc is False or numconc < maxconc:
-                                conc_results[subcorpus_name].append(line)
-                                numconc += 1
-
-                    # do lowercasing and spelling
-                    if not only_conc:
-                        res = lowercase_result(res)
-                        #if not statsmode:
-                        results[subcorpus_name] += Counter(res)
-                        #else:
-                        #results[subcorpus_name] += res
-
-                # update progress bar
+            if res is None and conc_res is None:
                 current_iter += 1
                 tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
                 animator(p, current_iter, tstr, **par_args)
+                continue
+
+            # deal with symbolic structures---that is, rather than adding
+            # results by subcorpora, add them by metadata value
+            # todo: sorting?
+            if subcorpora:
+                for (k, v), concl in zip(res.items(), conc_res.values()):                            
+                    v = lowercase_result(v)
+                    results[k] += Counter(v)
+                    for line in concl:
+                        if maxconc is False or numconc < maxconc:
+                            line = postprocess_concline(line,
+                                fsi_index=fsi_index)
+                            conc_results[k].append(line)
+                            numconc += 1
+                
+                current_iter += 1
+                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+                animator(p, current_iter, tstr, **par_args)
+                continue
+
+            # garbage collection needed?
+            sents = None
+            corefs = None
+                
+            if res == 'Bad query':
+                return 'Bad query'
+
+            if countmode:
+                count_results[subcorpus_name] += [res]
+
+            else:
+                # add filename and do lowercasing for conc
+                if not no_conc:
+                    for line in conc_res:
+                        line = postprocess_concline(line,
+                            fsi_index=fsi_index)
+                        if maxconc is False or numconc < maxconc:
+                            conc_results[subcorpus_name].append(line)
+                            numconc += 1
+
+                # do lowercasing and spelling
+                if not only_conc:
+                    res = lowercase_result(res)
+                    #if not statsmode:
+                    results[subcorpus_name] += Counter(res)
+                    #else:
+                    #results[subcorpus_name] += res
+
+            # update progress bar
+            current_iter += 1
+            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+            animator(p, current_iter, tstr, **par_args)
 
     # Get concordances into DataFrame, return if just conc
     if not no_conc:
