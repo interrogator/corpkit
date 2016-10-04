@@ -15,6 +15,10 @@ class Corpus(object):
 
     Methods for concordancing, interrogating, getting general stats, getting
     behaviour of particular word, etc.
+
+    Unparsed, tokenised and parsed corpora use the same class, though some
+    methods are available only to one or the other. Only unparsed corpora 
+    can be parsed, and only parsed/tokenised corpora can be interrogated.
     """
 
     def __init__(self, path, **kwargs):
@@ -194,9 +198,9 @@ class Corpus(object):
         """
         Generate TF-IDF vector representation of corpus
         using interrogate method. All args and kwargs go to 
-        :func:`~corpkit.corpus.Corpus.interrogate`
+        :func:`~corpkit.corpus.Corpus.interrogate`.
 
-        :returns: the vectoriser and matrix
+        :returns: Tuple: the vectoriser and matrix
         """
 
         from sklearn.feature_extraction.text import TfidfVectorizer
@@ -219,7 +223,9 @@ class Corpus(object):
 
 
     def __str__(self):
-        """String representation of corpus"""
+        """
+        String representation of corpus
+        """
         showing = 'subcorpora'
         if getattr(self, 'subcorpora', False):
             sclen = len(self.subcorpora)
@@ -816,7 +822,7 @@ class Corpus(object):
         :param outname: Specify a name for the parsed corpus
         :type outname: `str`
 
-        :param metadata: Use if you have xml tags at the end of lines, contaning metadata
+        :param metadata: Use if you have XML tags at the end of lines contaning metadata
         :type metadata: `bool`
 
         :Example:
@@ -977,7 +983,12 @@ class Corpus(object):
             savename = self.name
         save(self, savename, savedir=kwargs.pop('savedir', 'data'), **kwargs)
 
-    def make_language_model(self, name, **kwargs):
+    def make_language_model(self,
+                           name,
+                           search={'w': 'any'},
+                           exclude=False,
+                           show=['w', '+1mw'],
+                           **kwargs):
         """
         Make a language model for the corpus
 
@@ -1004,23 +1015,57 @@ class Corpus(object):
         if kwargs.get('subcorpora', False):
             subcorpora = kwargs.pop('subcorpora')
         kwargs.pop('subcorpora', False)
+
+        jst = kwargs.pop('just_metadata') if 'just_metadata' in kwargs else self.just
+        skp = kwargs.pop('skip_metadata') if 'skip_metadata' in kwargs else self.skip
         
         pth = os.path.join('models', namep)
         if os.path.isfile(pth):
             print('Returning saved model: %s' % pth)
-            return MultiModel(load(name, loaddir='models'))
+            return load(name, loaddir='models')
 
         # set some defaults if not passed in as kwargs
-        search = kwargs.pop('search', {'i': r'^1$'})
-        langmod = not any(i.startswith('n') for i in search.keys())
+        #langmod = not any(i.startswith('n') for i in search.keys())
 
         res = self.interrogate(search,
-                               language_model=langmod,
+                               exclude,
+                               show,
                                subcorpora=subcorpora,
+                               just_metadata=jst,
+                               skip_metadata=skp,
                                **kwargs)
 
         return res.language_model(name, search=search, **kwargs)
 
+    def annotate(self, conclines, annotation, dry_run=True):
+        """
+        Annotate a corpus
+
+        :param conclines: a Concordance or DataFrame containing matches to annotate
+        :type annotation: Concordance/DataFrame
+
+        :param annotation: a tag or field and value
+        :type annotation: ``str``/``dict``
+        
+        :param dry_run: Show the annotations to be made, but don't do them
+        :type dry_run: ``bool``
+
+        :returns: ``None``
+        """
+        from corpkit.annotate import annotator
+        annotator(conclines, annotation, dry_run=dry_run)
+
+    def unannotate(annotation, dry_run=True):
+        """
+        Delete annotation from a corpus
+
+        :param annotation: a tag or field and value
+        :type annotation: ``str``/``dict``
+
+        :returns: ``None``
+        """
+        from corpkit.annotate import annotator
+        annotator(self, annotation, dry_run=dry_run, deletemode=True)
 
 class Subcorpus(Corpus):
     """
@@ -1068,7 +1113,7 @@ class File(Corpus):
 
     Methods for interrogating, concordancing and configurations are the same as
     :class:`corpkit.corpus.Corpus`, plus methods for accessing the file contents 
-    directly as a `str`, or as a *CoreNLP XML* `Document`.
+    directly as a `str`, or as a Pandas DataFrame.
     """
 
     def __init__(self, path, dirname=False, datatype=False, **kwa):
@@ -1080,12 +1125,8 @@ class File(Corpus):
             self.path = path
         kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
         kwargs.update(kwa)
-        Corpus.__init__(self, path, **kwargs)
-        if self.path.endswith('.p'):
-            self.datatype = 'tokens'
-        elif self.path.endswith('.xml'):
-            self.datatype = 'parse'
-        elif self.path.endswith('.conll'):
+        Corpus.__init__(self, self.path, **kwargs)
+        if self.path.endswith('.conll'):
             self.datatype = 'conll'
         else:
             self.datatype = 'plaintext'
@@ -1118,19 +1159,16 @@ class File(Corpus):
         """
         Return a version of the file that can be manipulated
 
-        * For XML, this is a corenlp_xml Document.
         * For conll, this is a DataFrame
         * For tokens, this is a list of tokens
         * For plaintext, this is a string
         """
-        if self.datatype == 'parse':
-            from corenlp_xml.document import Document
-            return Document(self.read())
-        elif self.datatype == 'conll':
+        if self.datatype == 'conll':
             from corpkit.conll import parse_conll
             return parse_conll(self.path)
         else:
-            return self.read()
+            from corpkit.process import saferead
+            return saferead(self)[0]
     
     @lazyprop
     def trees(self):
@@ -1142,8 +1180,6 @@ class File(Corpus):
             from collections import OrderedDict
             return OrderedDict({k: Tree.fromstring(v['parse']) \
                                 for k, v in sorted(self.document._metadata.items())})
-        elif self.datatype == 'parse':
-            raise NotImplementedError('Not done yet, sorry.')
         else:
             raise AttributeError('Data must be parsed to get trees.')
 
@@ -1153,12 +1189,7 @@ class File(Corpus):
         Show the sentences in a File as plaintext
         """
         text = []
-        if self.datatype == 'parse':
-            doc = self.document
-            for i, sent in enumerate(doc.sentences):
-                text.append('%d: ' % i + ' '.join(i.word for i in sent.tokens))
-            
-        elif self.datatype == 'conll':
+        if self.datatype == 'conll':
             doc = self.document
             for sent in list(doc.index.levels[0]):
                 text.append('%d: ' % sent + ' '.join(list(doc.loc[sent]['w'])))
