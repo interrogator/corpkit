@@ -419,8 +419,6 @@ def make_series(ser, df=False, obj=False, att=False, adj=False, tomove=False):
     # todo:
     # collocation?
     # ngram
-    # adjacent
-    # dep
     from pandas import Series
     if obj == 'g':
         idxs = [(ser.name[0], ser[obj])]
@@ -1051,15 +1049,18 @@ def convert_json_to_conll(path,
     take json corenlp output and convert to conll, with
     dependents, speaker ids and so on added.
 
-    Path is for the parsed corpus
+    Path is for the parsed corpus, or a list of files within a parsed corpus
     Might need to fix if outname used?
     """
 
     import json
     import re
     from corpkit.build import get_filepaths
-
-    files = get_filepaths(path, ext='conll')
+    
+    if isinstance(path, list):
+        files = path
+    else:
+        files = get_filepaths(path, ext='conll')
     
     for f in files:
 
@@ -1072,14 +1073,14 @@ def convert_json_to_conll(path,
         # if the file has already been converted, don't worry about it
         # untested?
         with open(f, 'r') as fo:
-            try:
-                data = json.load(fo)
+            #try:
+            data = json.load(fo)
             # todo: differentiate between json errors
             # rsc corpus had one json file with an error
             # outputted by corenlp, and the conversion
             # failed silently here
-            except ValueError:
-                continue
+            #except ValueError:
+            #    continue
 
         ref = 1
         for idx, sent in enumerate(data['sentences'], start=1):

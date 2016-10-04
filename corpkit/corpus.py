@@ -1080,7 +1080,7 @@ class File(Corpus):
             self.path = path
         kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
         kwargs.update(kwa)
-        Corpus.__init__(self, self.path, **kwargs)
+        Corpus.__init__(self, path, **kwargs)
         if self.path.endswith('.p'):
             self.datatype = 'tokens'
         elif self.path.endswith('.xml'):

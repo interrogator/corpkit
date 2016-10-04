@@ -1659,6 +1659,9 @@ def interpreter(debug=False,
         return set(cols)
 
     def parse_anno_with(tokens):
+        """
+        Decide what the text is for an annotation
+        """
         if tokens[0] == 'tag':
             return tokens[-1]
         elif tokens[0] == 'field':
@@ -1706,6 +1709,7 @@ def interpreter(debug=False,
 
         cols = get_matching_indices(tokens)
         from corpkit.interrogation import Concordance
+        from corpkit.annotate import annotator
         df = objs.concordance.ix[[int(i) for i in list(cols)]]
 
         if 'with' in tokens:
@@ -1714,7 +1718,7 @@ def interpreter(debug=False,
         else:
             with_related = []
         annotation = parse_anno_with(with_related)
-        from corpkit.annotate import annotator
+        
         annotator(df, annotation, dry_run=not objs._annotation_unlocked)
         if not objs._annotation_unlocked:
             print("\nWhen you're ready to actually add annotations to the files, " \
