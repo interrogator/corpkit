@@ -926,12 +926,11 @@ def interrogator(corpus,
            all(x == 'none' for x in list(conc_df['s'].values)):
             conc_df.drop('s', axis=1, inplace=True)
         
-        if show_collocates:
-            if not language_model:
-                counted = Counter(conc_df['m'])
-                indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
-                conc_df = conc_df.ix[indices]
-                conc_df = conc_df.reset_index(drop=True)
+        if show_collocates and not language_model:
+            counted = Counter(conc_df['m'])
+            indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
+            conc_df = conc_df.ix[indices]
+            conc_df = conc_df.reset_index(drop=True)
 
         locs['corpus'] = corpus.name
 
@@ -1258,8 +1257,8 @@ def interrogator(corpus,
             from corpkit.process import parse_just_speakers
             slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
             just_speakers = parse_just_speakers(just_speakers, corpus)
-            sents, corefs = f.path, coref
-            res, conc_res = searcher(sents, search=search, show=show,
+            filepath, corefs = f.path, coref
+            res, conc_res = searcher(filepath, search=search, show=show,
                                      dep_type=dep_type,
                                      exclude=exclude,
                                      excludemode=excludemode,

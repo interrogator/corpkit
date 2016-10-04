@@ -369,14 +369,16 @@ class Interrogation(object):
         from corpkit.plotter import multiplotter
         return multiplotter(self, leftdict=leftdict, rightdict=rightdict, **kwargs)
 
-    def language_model(self, *args, **kwargs):
+    def language_model(self, name, *args, **kwargs):
         """
         Make a language model from an Interrogation. This is usually done 
         directly on a :class:`corpkit.corpus.Corpus` object with the 
         :func:`~corpkit.corpus.Corpus.make_language_model` method.
         """
         from corpkit.model import _make_model_from_interro
-        return _make_model_from_interro(self, *args, **kwargs)
+        multi = self.multiindex()
+        order = len(self.query['show'])
+        return _make_model_from_interro(multi, name, order=order, *args, **kwargs)
 
     def save(self, savename, savedir='saved_interrogations', **kwargs):
         """
@@ -535,6 +537,43 @@ class Interrogation(object):
             topwords(self, datatype=datatype, n=n,
                      sort=sort, precision=precision)
 
+
+
+    def perplexity(self):
+        """
+        Pythonification of the formal definition of perplexity.
+
+        input:  a sequence of chances (any iterable will do)
+        output: perplexity value.
+
+        from https://github.com/zeffii/NLP_class_notes
+        """
+
+        def _perplex(chances):
+            import math
+            chances = [i for i in chances if i] 
+            N = len(chances)
+            product = 1
+            for chance in chances:
+                product *= chance
+            return math.pow(product, -1/N)
+
+        return self.results.apply(_perplex, axis=1)
+
+    def entropy(self):
+        """
+        entropy(pos.edit(merge_entries=mergetags, sort_by='total').results.T
+        """
+        from scipy.stats import entropy
+        import pandas as pd
+        escores = entropy(self.rel().results.T)
+        ser = pd.Series(escores, index=self.results.index)
+        ser.name = 'Entropy'
+        return ser
+
+    def shannon(self):
+        from corpkit.stats import shannon
+        return shannon(self)
 
 class Concordance(pd.core.frame.DataFrame):
     """

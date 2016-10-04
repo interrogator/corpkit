@@ -143,7 +143,9 @@ def editor(interrogation,
         print_info=False
 
     def combiney(df, df2, operation='%', threshold='medium', prinf=True):
-        """mash df and df2 together in appropriate way"""
+        """
+        Mash df and df2 together in appropriate way
+        """
         totals = False
         # delete under threshold
         if just_totals:

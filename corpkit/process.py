@@ -860,6 +860,7 @@ def sanitise_dict(d):
 def saferead(path):
     """
     Read a file with detect encoding
+    
     :returns: text and its encoding
     """
     import chardet
