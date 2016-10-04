@@ -9,14 +9,14 @@ from nltk import ngrams, sent_tokenize, word_tokenize
 from corpkit.constants import PYTHON_VERSION, STRINGTYPE
 
 class LanguageModel(object):
-    def __init__(self, order, alpha, sentences):
+    def __init__(self, order, alpha, data):
         """
-        :param sentences: a Counter of unsplit sents
+        :param data: a pandas series with multiindex
         """
         self.order = order
         self.alpha = alpha
         if order > 1:
-            self.backoff = LanguageModel(order - 1, alpha, sentences)
+            self.backoff = LanguageModel(order - 1, alpha, data)
             self.lexicon = None
         else:
             self.backoff = None
@@ -24,37 +24,39 @@ class LanguageModel(object):
         from collections import Counter
         self.counts = Counter()
         lexicon = set()
-        for ngram, count in sentences.items():
-            # the issue is that this stays stable when it's supposed
-            # to change as per 'order'. to fix it, sent
-            gram = tuple(ngram.split('-spl-it-'))
-            wordNGrams = ngrams(gram, order)
-            for wordNGram in wordNGrams:
-                self.counts[wordNGram] += count
-                # add to lexicon
-                if order == 1:
-                    lexicon.add(gram)
-                    self.n += 1
+        # below, we make a counter object from the series
+        # it should be fine for simpler show values, but
+        # has some theoretical issues when the model is of
+        # mixed type, such as L, GL, GF, because the backoff
+        # involves getting just the first ORDER words ...
+        for index, count in data.iteritems():
+            #gramm = index.split('/')
+            # order == 1 still gives us a tuple for now!
+            cut_index = index[:order]
+            self.counts[cut_index] += count
+            if order == 1:
+                lexicon.add(cut_index)
+                self.n += 1
         self.v = len(lexicon)
 
     def _logprob(self, ngram):
         return math.log(self._prob(ngram))
     
     def _prob(self, ngram):
-        if self.backoff != None:
+        if self.backoff is not None:
             freq = self.counts[ngram]
-            backoffFreq = self.backoff.counts[ngram[1:]]
+            backoff_freq = self.backoff.counts[ngram[1:]]
             if freq == 0:
                 return self.alpha * self.backoff._prob(ngram[1:])
             else:
-                return freq / backoffFreq
+                return freq / backoff_freq
         else:
             # laplace smoothing to handle unknown unigrams
             return (self.counts[ngram] + 1) / (self.n + self.v)
 
 class MultiModel(dict):
     
-    def __init__(self, data, name='', order=3, **kwargs):
+    def __init__(self, data, order, name='', **kwargs):
         import os
         from corpkit.other import load
         if isinstance(data, STRINGTYPE):
@@ -90,14 +92,14 @@ class MultiModel(dict):
             os.path.isfile(data)):
             counts = self._turn_file_obj_into_counts(data)
         # get text
-        elif isinstance(data, STRINGTYPE) and not \
-            os.path.exists(data):
-            dat = []
-            sents = sent_tokenize(data)
-            for sent in sents:
-                dat.append('-spl-it-'.join(word_tokenize(sent)))
-            counted_sents = Counter(dat)
-            counts = LanguageModel(self.order, kwargs.get('alpha', 0.4), counted_sents).counts
+        #elif isinstance(data, STRINGTYPE) and not \
+        #    os.path.exists(data):
+        #    dat = []
+        #    #sents = sent_tokenize(data)
+        #    #for sent in sents:
+        #    #    dat.append('-spl-it-'.join(word_tokenize(sent)))
+        #    counted_sents = Counter(dat)
+        #    counts = LanguageModel(self.order, kwargs.get('alpha', 0.4), counted_sents).counts
         tempscores = {}
         for name, model in self.items():
             tempscores[name] = self._score_counts_against_model(counts, model)
@@ -120,18 +122,11 @@ class MultiModel(dict):
     def _turn_file_obj_into_counts(self, data, *args, **kwargs):
         if data.datatype != 'parse':
             data = data.parse(**kwargs)
-        search = self.kwargs.pop('search', {'i': r'^1$'})
-        exclude = self.kwargs.pop('exclude', False)
-        show = self.kwargs.pop('show', ['w'])
         kwgs = self.kwargs
         # add kwargs
-        res = data.interrogate(search, 
-                               exclude=exclude, 
-                               show=show, 
-                               language_model=True, 
-                               #printstatus=False,
-                               **kwgs)
-        model = _make_model_from_interro(res, self.name, nosave=True,singlemod=True, *args, **kwargs)
+        res = data.interrogate(**kwgs)
+        model = _make_model_from_interro(res, self.name, order=self.order, 
+                                         nosave=True, singlemod=True, *args, **kwargs)
         return model.counts
 
     def score_subcorpora(self):
@@ -144,10 +139,9 @@ class MultiModel(dict):
         df = pd.concat(data, axis=1)
         return df[sorted(df.columns)]
 
-def _make_model_from_interro(self, name, **kwargs):
+def _make_model_from_interro(self, name, order, **kwargs):
     import os
     from pandas import DataFrame, Series
-    from collections import Counter
     from corpkit.other import load
     nosave = kwargs.get('nosave')
     singlemod = kwargs.get('singlemod')
@@ -176,12 +170,11 @@ def _make_model_from_interro(self, name, **kwargs):
         pass
     for subname, subc in list(to_iter_over):
         # get name for file
-        dat = Counter(subc.to_dict())
-        model = _train(dat, subname, name, **kwargs)
+        model = _train(subc, subname, name, order=order, **kwargs)
         scores[subname] = model
     if singlemod:
         return scores.values()[0]
-    mm = MultiModel(scores, name=name, order=kwargs.pop('order', 3), **kwargs)
+    mm = MultiModel(scores, order=order, name=name, **kwargs)
     if not os.path.isfile(os.path.join('models', name)):
         from corpkit.other import save
         save(scores, name, savedir='models')
@@ -191,8 +184,7 @@ def _make_model_from_interro(self, name, **kwargs):
     #scores[subc.name] = score_text_with_model(trained)
     #return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-def _train(data, name, corpusname, **kwargs):
-    order = kwargs.get('gramsize', 3)
+def _train(data, name, corpusname, order=3, **kwargs):
     alpha = kwargs.get('alpha', 0.4)
     print('Making model: %s ... ' % name.replace('.p', ''))
     lm = LanguageModel(order, alpha, data)
