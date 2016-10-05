@@ -193,7 +193,7 @@ class Objects(object):
                           'figure', 'totals', 'wordlists', 'wordlist', 'matching',
                           'showing', 'excluding', 'not', 'as', 'with', 'and', 'by',
                           'm', 'l', 'r', 'conc', 'keeping', 'skipping', 'entries', 'subcorpora',
-                          'merging', 'k'
+                          'merging', 'k', 'sampled',
                           '_in_a_project', '_previous_type', '_old_concs',
                           '_conc_colours', '_conc_kwargs', '_do_conc',
                           '_interactive', '_decimal', '_protected']
@@ -206,6 +206,7 @@ class Objects(object):
         self.concordance = None
         self.query = None
         self.features = None
+        self.sampled = None
         self.postags = None
         self.wordclasses = None
         self.stored = {}
@@ -436,7 +437,8 @@ def interpreter(debug=False,
         """
 
         helpable = ['calculate', 'plot', 'search', 'fetch', 'store', 'save', 'edit',
-                    'export', 'sort', 'loead', 'mark', 'del']
+                    'export', 'sort', 'load', 'mark', 'del', 'annotate', 'unannotate',
+                    'sample', 'call']
 
         if isinstance(command, list) and len(command) == 1 and command[0] in helpable:
             helper(command)
@@ -915,7 +917,10 @@ def interpreter(debug=False,
            > search corpus for trees matching "/NN.?/ >># NP" 
            > search corpus for words matching "^[abcde]" with preserve_case and case_sensitive
         """
-        if not objs.corpus:
+
+        corpp = objs._get(tokens[0])[1]
+
+        if not corpp:
             print('Corpus not set. use "set <corpusname>".')
             return
 
@@ -925,7 +930,7 @@ def interpreter(debug=False,
         if debug:
             print(kwargs)
 
-        objs.result = objs.corpus.interrogate(**kwargs)
+        objs.result = corpp.interrogate(**kwargs)
         objs.totals = objs.result.totals
         # this should be done for pos and wordclasses too
         if kwargs['search'] == {'v': 'any'}:
@@ -950,10 +955,10 @@ def interpreter(debug=False,
             for k, v in objs.stored.items():
                 print(k, v)
         elif tokens[0].startswith('filter'):
-            print('Skip:', getattr(objs.corpus, 'skip', 'none'))
-            print('Just:', getattr(objs.corpus, 'just', 'none'))
+            print('Skip:', getattr(corpp, 'skip', 'none'))
+            print('Just:', getattr(corpp, 'just', 'none'))
         elif tokens[0].startswith('subcorp'):
-            print('Symbolic structure:', getattr(objs.corpus, 'symbolic', 'none'))
+            print('Symbolic structure:', getattr(corpp, 'symbolic', 'none'))
         elif tokens[0].startswith('wordlists'):
             if '.' in tokens[0] or ':' in tokens[0]:
                 if ':' in tokens[0]:
@@ -981,7 +986,7 @@ def interpreter(debug=False,
             else:
                 print('Nothing here yet.')
         elif tokens[0] in ['features', 'wordclasses', 'postags']:
-            print(getattr(objs.corpus, tokens[0]))
+            print(getattr(corpp, tokens[0]))
 
         elif objs._get(tokens[0]):
             single_command_print(tokens)
@@ -1900,7 +1905,23 @@ def interpreter(debug=False,
             objs.named[name] = (originally_was, thing)
             print('%s named "%s".' % (tokens[0], name))
 
-
+    def sample_something(tokens):
+        """
+        Make a sample from a corpus
+        
+        :Example: sample 2 subcorpora of corpus
+        """
+        originally_was, thing = objs._get(tokens[-1])
+        if '.' in tokens[0]:
+            n = float(tokens[0])
+        else:
+            n = int(tokens[0])
+        level = tokens[1].lower()[0]
+        samp = thing.sample(n, level)
+        objs.sampled = samp
+        #todo: proper printing
+        print('Sample created.')
+        #single_command_print('sample')
 
     def run_previous(tokens):
         import shlex
@@ -1948,6 +1969,7 @@ def interpreter(debug=False,
                    'del': del_conc,
                    'just': keep_conc,
                    'sort': sort_something,
+                   'sample': sample_something,
                    'toggle': toggle_this,
                    'edit': edit_something,
                    'tokenise': tokenise_corpus,
