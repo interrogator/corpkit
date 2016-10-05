@@ -812,12 +812,13 @@ class Corpus(object):
         :type level: ``str``
         :returns: a Corpus object
         """
-
         import random
 
         if isinstance(n, int):
             if level == 's':
-                return Corpus(Datalist(random.sample(list(self.subcorpora), n)),
+                rs = random.sample(list(self.subcorpora), n)
+                rs = sorted(rs, key=lambda x: x.name)
+                return Corpus(Datalist(rs),
                               print_info=False, datatype='conll')
             else:
                 fps = list(self.all_files)

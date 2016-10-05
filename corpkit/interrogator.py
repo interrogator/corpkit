@@ -51,8 +51,8 @@ def interrogator(corpus,
 
     nosubmode = subcorpora is None
     #todo: temporary
-    if getattr(corpus, '_dlist', False):
-        subcorpora = 'file'
+    #if getattr(corpus, '_dlist', False):
+    #    subcorpora = 'file'
 
     # store kwargs and locs
     locs = locals().copy()
@@ -1200,6 +1200,7 @@ def interrogator(corpus,
         conc_col_names = get_conc_colnames(corpus,
                                            fsi_index=fsi_index,
                                            simple_tregex_mode=simple_tregex_mode)
+ 
 
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):

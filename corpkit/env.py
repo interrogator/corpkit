@@ -215,6 +215,8 @@ class Objects(object):
         self.wordlists = wl
         self.wordlist = None
         self.named = {}
+        self.just = {}
+        self.skip = {}
 
         # system toggles and references to older data
         self._in_a_project = None
@@ -537,21 +539,21 @@ def interpreter(debug=False,
         if tokens and tokens[0] in ['skip', 'just']:
             attr = tokens[0]
             if tokens[-1] in ['none', 'None', 'off', 'default']:
-                setattr(objs.corpus, attr, False)
+                setattr(objs, attr, False)
                 print("Reset %s filter" % attr)
                 return
             metfeat = tokens[1]
             crit = tokens[-1]
             if crit.startswith('tag'):
-                setattr(objs.corpus, attr, {'tags': parse_pattern(crit)})
+                setattr(objs, attr, {'tags': parse_pattern(crit)})
             else:
-                if isinstance(getattr(objs.corpus, attr, False), dict):
-                    d = getattr(objs.corpus, attr)
+                if isinstance(getattr(objs, attr, False), dict):
+                    d = getattr(objs, attr)
                     d[metfeat] = parse_pattern(crit)
-                    setattr(objs.corpus, attr, d)
+                    setattr(objs, attr, d)
                 else:
-                    setattr(objs.corpus, attr, {metfeat: parse_pattern(crit)})
-            print("Current %s filter: %s" % (attr, getattr(objs.corpus, attr)))
+                    setattr(objs, attr, {metfeat: parse_pattern(crit)})
+            print("Current %s filter: %s" % (attr, getattr(objs, attr)))
             return
 
         if not objs._in_a_project:
@@ -927,6 +929,9 @@ def interpreter(debug=False,
         kwargs = parse_search_args(tokens)
         kwargs['quiet'] = quiet
         
+        kwargs['just_metadata'] = objs.just if objs.just else False
+        kwargs['skip_metadata'] = objs.skip if objs.skip else False
+
         if debug:
             print(kwargs)
 
@@ -1911,6 +1916,7 @@ def interpreter(debug=False,
         
         :Example: sample 2 subcorpora of corpus
         """
+        trans = {'s': 'subcorpora', 'f': 'files'}
         originally_was, thing = objs._get(tokens[-1])
         if '.' in tokens[0]:
             n = float(tokens[0])
@@ -1920,7 +1926,12 @@ def interpreter(debug=False,
         samp = thing.sample(n, level)
         objs.sampled = samp
         #todo: proper printing
-        print('Sample created.')
+        names = [i.name for i in getattr(objs.sampled, trans[level])]
+        form = ', '.join(names[:3])
+        if len(names) > 3:
+            form += ' ...'
+        print('Sample created: %d %s from %s --- %s' % (n, trans[level],
+                                                        thing.name, form))
         #single_command_print('sample')
 
     def run_previous(tokens):
