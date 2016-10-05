@@ -39,7 +39,8 @@ class Corpus(object):
                     'symbolic': self.symbolic}
 
         self.data = None
-        level = kwargs.pop('level', 'c')
+        self._dlist = None
+        self.level = kwargs.pop('level', 'c')
         self.datatype = kwargs.pop('datatype', None)
         self.print_info = kwargs.pop('print_info', True)
         self.symbolic = kwargs.get('subcorpora', False)
@@ -51,6 +52,8 @@ class Corpus(object):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
             self.name = basename(self.path)
             self.data = path
+            if self.level == 'd':
+                self._dlist = path
         elif isinstance(path, STRINGTYPE):
             self.path = abspath(path)
             self.name = basename(path)
@@ -62,77 +65,77 @@ class Corpus(object):
         # and singlefile status of the path is. it's messy because it shortcuts
         # full checking where possible some of the shortcutting could maybe be
         # moved into the determine_datatype() funct.
-
-        self.singlefile = False
-        if os.path.isfile(self.path):
-            self.singlefile = True
+        if self.level == 'd':
+            self.singlefile = len(self._dlist) > 1
         else:
-            if not isdir(self.path):
-                if isdir(join('data', path)):
-                    self.path = abspath(join('data', path))
-        
-        if self.path.endswith('-parsed') or self.path.endswith('-tokenised'):
+            self.singlefile = False
+            if os.path.isfile(self.path):
+                self.singlefile = True
+            else:
+                if not isdir(self.path):
+                    if isdir(join('data', path)):
+                        self.path = abspath(join('data', path))
+            
+            if self.path.endswith('-parsed') or self.path.endswith('-tokenised'):
 
-            for r, d, f in os.walk(self.path):
-                if not f:
-                    continue
-                if isinstance(f, str) and f.startswith('.'):
-                    continue
-                if f[0].endswith('conll'):
-                    self.datatype = 'conll'
-                    break
+                for r, d, f in os.walk(self.path):
+                    if not f:
+                        continue
+                    if isinstance(f, str) and f.startswith('.'):
+                        continue
+                    if f[0].endswith('conll'):
+                        self.datatype = 'conll'
+                        break
 
-            if len([d for d in os.listdir(self.path)
-                    if isdir(join(self.path, d))]) > 0:
-                self.singlefile = False
-            if len([d for d in os.listdir(self.path)
-                    if isdir(join(self.path, d))]) == 0:
-                level = 's'
-        else:
-            if level == 'c':
-                if not self.datatype:
-                    self.datatype, self.singlefile = determine_datatype(
-                        self.path)
-            if isdir(self.path):
+                if len([d for d in os.listdir(self.path)
+                        if isdir(join(self.path, d))]) > 0:
+                    self.singlefile = False
                 if len([d for d in os.listdir(self.path)
                         if isdir(join(self.path, d))]) == 0:
-                    level = 's'
+                    self.level = 's'
+            else:
+                if self.level == 'c':
+                    if not self.datatype:
+                        self.datatype, self.singlefile = determine_datatype(
+                            self.path)
+                if isdir(self.path):
+                    if len([d for d in os.listdir(self.path)
+                            if isdir(join(self.path, d))]) == 0:
+                        self.level = 's'
 
-        # if initialised on a file, process as file
-        if self.singlefile and level == 'c':
-            level = 'f'
+            # if initialised on a file, process as file
+            if self.singlefile and self.level == 'c':
+                self.level = 'f'
 
-        self.level = level
+            # load each interrogation as an attribute
+            if kwargs.get('load_saved', False):
+                from corpkit.other import load
+                from corpkit.process import makesafe
+                if os.path.isdir('saved_interrogations'):
+                    saved_files = glob.glob(r'saved_interrogations/*')
+                    for filepath in saved_files:
+                        filename = os.path.basename(filepath)
+                        if not filename.startswith(self.name):
+                            continue
+                        not_filename = filename.replace(self.name + '-', '')
+                        not_filename = os.path.splitext(not_filename)[0]
+                        if not_filename in ['features', 'wordclasses', 'postags']:
+                            continue
+                        variable_safe = makesafe(not_filename)
+                        try:
+                            setattr(self, variable_safe, load(filename))
+                            if self.print_info:
+                                print(
+                                    '\tLoaded %s as %s attribute.' %
+                                    (filename, variable_safe))
+                        except AttributeError:
+                            if self.print_info:
+                                print(
+                                    '\tFailed to load %s as %s attribute. Name conflict?' %
+                                    (filename, variable_safe))
 
-        # load each interrogation as an attribute
-        if kwargs.get('load_saved', False):
-            from corpkit.other import load
-            from corpkit.process import makesafe
-            if os.path.isdir('saved_interrogations'):
-                saved_files = glob.glob(r'saved_interrogations/*')
-                for filepath in saved_files:
-                    filename = os.path.basename(filepath)
-                    if not filename.startswith(self.name):
-                        continue
-                    not_filename = filename.replace(self.name + '-', '')
-                    not_filename = os.path.splitext(not_filename)[0]
-                    if not_filename in ['features', 'wordclasses', 'postags']:
-                        continue
-                    variable_safe = makesafe(not_filename)
-                    try:
-                        setattr(self, variable_safe, load(filename))
-                        if self.print_info:
-                            print(
-                                '\tLoaded %s as %s attribute.' %
-                                (filename, variable_safe))
-                    except AttributeError:
-                        if self.print_info:
-                            print(
-                                '\tFailed to load %s as %s attribute. Name conflict?' %
-                                (filename, variable_safe))
-
-        if self.print_info:
-            print('Corpus: %s' % self.path)
+            if self.print_info:
+                print('Corpus: %s' % self.path)
 
     @lazyprop
     def subcorpora(self):
@@ -141,6 +144,8 @@ class Corpus(object):
         import os
         import operator
         from os.path import join, isdir
+        if self.level == 'd':
+            return
         if self.data.__class__ == Datalist or isinstance(self.data, (Datalist, list)):
             return self.data
         if self.level == 'c':
@@ -178,6 +183,8 @@ class Corpus(object):
             fls = [File(f, self.path, self.datatype, **self.kwa) for f in fls]
             fls = sorted(fls, key=operator.attrgetter('name'))
             return Datalist(fls, **self.kwa)
+        elif self.level == 'd':
+            return self._dlist
 
     @lazyprop
     def all_filepaths(self):
@@ -193,6 +200,21 @@ class Corpus(object):
             for f in sc.files:
                 fs.append(f.path)
         return fs
+
+    @lazyprop
+    def all_files(self):
+        """
+        Lazy-load a list of all filepaths in a corpus
+        """
+        if self.level == 'f':
+            return Datalist([self])
+        if self.files:
+            return self.files
+        fs = []
+        for sc in self.subcorpora:
+            for f in sc.files:
+                fs.append(f)
+        return Datalist(fs)
 
     def tfidf(self, search={'w': 'any'}, show=['w'], **kwargs):
         """
@@ -274,7 +296,13 @@ class Corpus(object):
                 return Datalist([self[ii] for ii in range(
                     *key.indices(len(self.files)))], **self.kwa)                
         elif isinstance(key, int):
-            return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
+            try:
+                return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
+            except:
+                try:
+                    return self.subcorpora.__getitem__(self.subcorpora[key])
+                except AttributeError:
+                    return
         else:
             try:
                 return self.subcorpora.__getattribute__(key)
@@ -757,7 +785,8 @@ class Corpus(object):
             from corpkit.process import get_index_name
             js = kwargs.get('just_speakers', False)
             ixnames = get_index_name(self, subcorpora, js)
-            res.results.index.name = ixnames
+            if ixnames:
+                res.results.index.name = ixnames
 
         # sort by total
         ind = list(res.results.index)
@@ -771,6 +800,41 @@ class Corpus(object):
                 res.results.index = [str(i).zfill(longest) for i in ind]
                 res.results = res.results.sort_index().astype(int)        
         return res
+
+    def sample(self, n, level='f'):
+        """
+        Get a sample of the corpus
+
+        :param n: amount of data in the the sample. If an ``int``, get n files.
+                  if a ``float``, get float * 100 as a percentage of the corpus
+        :type n: ``int``/``float``
+        :param level: sample subcorpora (``s``) or files (``f``)
+        :type level: ``str``
+        :returns: a Corpus object
+        """
+
+        import random
+
+        if isinstance(n, int):
+            if level == 's':
+                return Corpus(Datalist(random.sample(list(self.subcorpora), n)),
+                              print_info=False, datatype='conll')
+            else:
+                fps = list(self.all_files)
+                dl = Datalist(random.sample(fps, n))
+                return Corpus(dl, level='d',
+                              print_info=False, datatype='conll')
+        elif isinstance(n, float):
+            if level == 's':
+                fps = list(self.subcorpora)
+                n = len(fps) / n
+                return Corpus(Datalist(random.sample(fps, n)),
+                              print_info=False, datatype='conll')
+            else:
+                fps = list(self.all_files)
+                n = len(fps) / n
+                return Corpus(Datalist(random.sample(fps, n)), level='d',
+                              print_info=False, datatype='conll')
 
     def parse(self,
               corenlppath=False,
