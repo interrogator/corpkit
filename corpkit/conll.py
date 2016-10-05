@@ -495,6 +495,12 @@ def turn_pos_to_wc(ser, showval):
     news.name = ser.name[:-1] + 'x'
     return news
 
+#def just_g(idxs, df=False, idxs=[]):
+#    ser.name[0]
+#    df.apply()
+#    fidx = [(s, df.loc[s, i]['g']) for s, i in idxs]
+#    return df[attr][fidx]
+
 def fast_simple_conc(dfss, idxs, show,
                      metadata=False,
                      add_meta=False, 
@@ -529,9 +535,9 @@ def fast_simple_conc(dfss, idxs, show,
     
     # add index as column if need be
     if any(i.endswith('s') for i in show):
-        df['ms'] = df.index.labels[0]
+        df['ms'] = df.index.labels[0].apply(str)
     if any(i.endswith('i') for i in show):
-        df['mi'] = df.index.labels[1]
+        df['mi'] = df.index.labels[1].apply(str)
     
     # if the showing can't come straight out of the df, 
     # we can add columns with the necessary information
@@ -679,6 +685,12 @@ def show_this(df, matches, show, metadata, conc=False,
     if kwargs.get('countmode'):
         return len(matches), {}
     if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
+        if show == ['ms']:
+            from pandas import Series
+            df['s'] = [str(x) for x in df.index.labels[0]]
+        if show == ['mi']:
+            from pandas import Series
+            df['i'] = [str(x) for x in df.index.labels[1]]
         return list(df.loc[matches][show[0][-1]]), {}
     
     # todo: make work for ngram, collocate and coref
