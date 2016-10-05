@@ -84,6 +84,42 @@ def _multiplot(self, leftdict={}, rightdict={}, **kwargs):
     from corpkit.plotter import multiplotter
     return multiplotter(self, leftdict=leftdict, rightdict=rightdict, **kwargs)
 
+def _perplexity(self):
+    """
+    Pythonification of the formal definition of perplexity.
+
+    input:  a sequence of chances (any iterable will do)
+    output: perplexity value.
+
+    from https://github.com/zeffii/NLP_class_notes
+    """
+    def _perplex(chances):
+        import math
+        chances = [i for i in chances if i] 
+        N = len(chances)
+        product = 1
+        for chance in chances:
+            product *= chance
+        return math.pow(product, -1/N)
+
+    return self.apply(_perplex, axis=1)
+
+def _entropy(self):
+    """
+    entropy(pos.edit(merge_entries=mergetags, sort_by='total').results.T
+    """
+    from scipy.stats import entropy
+    import pandas as pd
+    escores = entropy(self.edit('/', SELF).results.T)
+    ser = pd.Series(escores, index=self.index)
+    ser.name = 'Entropy'
+    return ser
+
+def _shannon(self):
+    from corpkit.stats import shannon
+    return shannon(self)
+
+
 def _shuffle(self, inplace=False):
     import random
     index = list(self.index)
@@ -108,6 +144,10 @@ def _tabview(self, **kwargs):
     tabview.view(self, **kwargs)
 
 # monkey patching things
+
+DataFrame.entropy = _entropy
+DataFrame.perplexity = _perplexity
+DataFrame.shannon = _shannon
 
 DataFrame.edit = _edit
 Series.edit = _edit
