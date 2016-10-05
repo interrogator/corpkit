@@ -484,6 +484,17 @@ def make_new_for_dep(dfmain, dfdep, name):
     newdf[name] = newd
     return newdf
 
+def turn_pos_to_wc(ser, showval):
+    if not showval:
+        return ser
+    import pandas as pd
+    from corpkit.dictionaries.word_transforms import taglemma   
+    vals = [taglemma.get(piece.lower(), piece.lower())
+                  for piece in ser.values]
+    news = pd.Series(vals, index=ser.index)
+    news.name = ser.name[:-1] + 'x'
+    return news
+
 def fast_simple_conc(dfss, idxs, show,
                      metadata=False,
                      add_meta=False, 
@@ -513,6 +524,8 @@ def fast_simple_conc(dfss, idxs, show,
 
     # this is the data needed for concordancing
     df_for_lr = df['mw'] if only_format_match else df
+
+    just_matches = df.loc[idxs]
     
     # add index as column if need be
     if any(i.endswith('s') for i in show):
@@ -524,7 +537,7 @@ def fast_simple_conc(dfss, idxs, show,
     # we can add columns with the necessary information
     if not simple:
         formatted = []
-        for i in show:
+        for ind, i in enumerate(show):
             # nothing to do if it's an m feature
             if i.startswith('m'):
                 continue
@@ -543,6 +556,10 @@ def fast_simple_conc(dfss, idxs, show,
             # cut df down to just needed bits for the sake of speed
             # i.e. if we want gov func, get only gov and func cols
             ob, att = i[0], i[-1]
+            xmode = att == 'x'
+            if xmode:
+                att = 'p'
+                show[ind] = show[ind][:-1] + 'p'
             # for corefs, we also need the coref data
             if ob in ['c', 'h', 's']:
                 dfx = df[['c', att]]
@@ -554,11 +571,21 @@ def fast_simple_conc(dfss, idxs, show,
                     dfx = df[['m' + att]]
                 else:
                     dfx = df[[ob, att]]
+            # decide if we need to format everything
+            if not conc or only_format_match:
+                to_proc = just_matches
+            else:
+                to_proc = df
             # now we get or generate the new column
             if ob == 'm':
-                ser = df['m' + att]
+                ser = to_proc['m' + att]
             else:
-                ser = df.apply(make_series, df=dfx, obj=ob, att=att, axis=1)
+                ser = to_proc.apply(make_series, df=dfx, obj=ob, att=att, axis=1)
+            if xmode:
+                from corpkit.dictionaries.word_transforms import taglemma                
+                ser.values = [taglemma.get(piece.lower(), piece.lower())
+                              for piece in ser.values]
+
             # adjmode simply shifts series and index
             if adj:
                 #todo: this shifts next sent into previous sent!
@@ -572,7 +599,7 @@ def fast_simple_conc(dfss, idxs, show,
                 if only_format_match:
                     df = make_new_for_dep(matches, ser, i)
                 else:
-                    df = make_new_for_dep(df, ser, i)
+                    df = make_new_for_dep(to_proc, ser, i)
             # if not making a new df, just create the col name and add it
             # to our list of series
             else:
@@ -585,27 +612,32 @@ def fast_simple_conc(dfss, idxs, show,
                 df[l.name] = l
 
         df = df.fillna('none')
+
+    # x is wordclass. so, we just get pos and translate it
+    nshow = [(i.replace('x', 'p'), i.endswith('x')) for i in show]
+
     
     # generate a series of matches with slash sep if multiple show vals
-    if len(show) > 1:
-        # make everything into a single series
+    if len(nshow) > 1:
+
         if conc and not only_format_match:
-            llist = [df[i] for i in show[1:]]
-            df = df[show[0]].str.cat(others=llist, sep='/')
-            # get just the matches from it
+            first = turn_pos_to_wc(df[nshow[0][0]], nshow[0][1])
+            llist = [turn_pos_to_wc(df[sho], xmode) for sho, xmode in nshow[1:]]
+            df = first.str.cat(others=llist, sep='/')
             matches = df[idxs]
         else:
             justm = df.loc[idxs]
-            llist = [justm[i] for i in show[1:]]
-            matches = justm[show[0]].str.cat(others=llist, sep='/')
+            first = turn_pos_to_wc(justm[nshow[0][0]], nshow[0][1])
+            llist = [turn_pos_to_wc(justm[sho], xmode) for sho, xmode in nshow[1:]]
+            matches = first.str.cat(others=llist, sep='/')
             if conc:
                 df = df_for_lr
     else:
         if conc and not only_format_match:
-            df = df[show[0]]
+            df = turn_pos_to_wc(df[nshow[0][0]], nshow[0][1])
             matches = df[idxs]
         else:
-            matches = df[show[0]][idxs]
+            matches = turn_pos_to_wc(df[nshow[0][0]][idxs], nshow[0][1])
             if conc:
                 df = df_for_lr
 
@@ -641,7 +673,7 @@ def show_this(df, matches, show, metadata, conc=False,
     only_format_match = kwargs.pop('only_format_match', True)
     ngram_mode = kwargs.get('ngram_mode', True)
 
-    matches = sorted(matches)
+    matches = sorted(list(matches))
 
     # attempt to leave really fast
     if kwargs.get('countmode'):
@@ -770,20 +802,15 @@ def fix_show_bit(show_bit):
     return ''.join(show_bit)
 
 def remove_by_mode(matches, mode, criteria):
-    """if mode is all, remove any entry that occurs < len(criteria)"""
-    out = []
+    """
+    If mode is all, remove any entry that occurs < len(criteria)
+    """
+    if mode == 'any':
+        return set(matches)
     if mode == 'all':
         from collections import Counter
         counted = Counter(matches)
-        for w in matches:
-            if counted[w] == len(criteria):
-                if w not in out:
-                    out.append(w)
-    elif mode == 'any':
-        for w in matches:
-            if w not in out:
-                out.append(w)        
-    return out
+        return set(k for k, v in counted.items() if v >= len(criteria))
 
 def determine_adjacent(original):
     if original[0] in ['+', '-']:
@@ -956,14 +983,11 @@ def pipeline(f,
         all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         
         # do removals
-        for i in all_exclude:
-            try:
-                all_matches.remove(i)
-            except ValueError:
-                pass
+        all_matches = all_matches.difference(all_exclude)
 
     # get rid of NA results
-    all_matches = [i for i in all_matches if i in list(df.index)]
+    # this thing is slow!
+    #all_matches = [i for i in all_matches if i in list(df.index)]
     #all_matches = list(df.loc[all_matches].index)
 
     out, conc_out = show_this(df, all_matches, show, metadata, conc, 

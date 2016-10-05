@@ -203,7 +203,7 @@ def pmultiquery(corpus,
         else:
             add_es = 'es'
         if multiple in ['multiplecorpora', 'datalist']:
-            corplist = "\n              ".join([i.name for i in corpus[:20]])
+            corplist = "\n              ".join([i.name for i in list(corpus)[:20]])
             if len(corpus) > 20:
                 corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
             print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s):\n              %s" \

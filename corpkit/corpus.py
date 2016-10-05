@@ -506,7 +506,7 @@ class Corpus(object):
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
 
-    def interrogate(self, search, *args, **kwargs):
+    def interrogate(self, search='w', *args, **kwargs):
         """
         Interrogate a corpus of texts for a lexicogrammatical phenomenon.
 
@@ -1094,10 +1094,12 @@ class Subcorpus(Corpus):
 
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
-            return Datalist([self[ii]
-                             for ii in range(*key.indices(len(self.files)))], self.kwargs)
+            key = list(key.indices(len(self.files)))
+            return Datalist(list(self.files)[slice(*key)])
+            #bits = [self[i] for i in range(*key.indices(len(self.files)))]
+            #return [self[ii] for ii in range(*key.indices(len(self.files)))])
         elif isinstance(key, int):
-            return self.files.__getitem__(makesafe(self.files[key]))
+            return list(self.files)[key]
         else:
             try:
                 return self.files.__getattribute__(key)
@@ -1242,8 +1244,7 @@ class Datalist(object):
 
         if isinstance(key, slice):
             # Get the start, stop, and step from the slice
-            return Datalist([self[ii]
-                             for ii in range(*key.indices(len(self)))])
+            return Datalist([self[ii] for ii in range(*key.indices(len(self)))])
         elif isinstance(key, int):
             return self.__getitem__(makesafe(self.data[key]))
         else:
@@ -1309,7 +1310,6 @@ class Datalist(object):
 
         from corpkit.configurations import configurations
         return configurations(self, search, **kwargs)
-
 
 class Corpora(Datalist):
     """

@@ -8,7 +8,7 @@ from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def interrogator(corpus, 
-    search, 
+    search='w', 
     query='any',
     show='w',
     exclude=False,
@@ -35,6 +35,7 @@ def interrogator(corpus,
     window=4,
     no_closed=False,
     no_punct=True,
+    discard=False,
     **kwargs):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
@@ -1336,8 +1337,16 @@ def interrogator(corpus,
                 # do lowercasing and spelling
                 if not only_conc:
                     res = lowercase_result(res)
-                    #if not statsmode:
-                    results[subcorpus_name] += Counter(res)
+                    # discard removes low results, helping with 
+                    # curse of dimensionality
+                    countres = Counter(res)
+                    if isinstance(discard, float):
+                        countres.most_common()
+                        nkeep = len(counter) - len(counter) * discard
+                        countres = {k: v for i, (k, v) in enumerate(countres.most_common()) if i <= nkeep}
+                    elif isinstance(discard, int):
+                        countres = {k: v for k, v in countres.most_common() if v >= discard}
+                    results[subcorpus_name] += countres
                     #else:
                     #results[subcorpus_name] += res
 
