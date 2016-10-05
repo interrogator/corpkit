@@ -765,7 +765,7 @@ def interrogator(corpus,
         """determine how to structure the corpus for interrogation"""
         # skip file definitions if they are not needed
         if getattr(corpus, '_dlist', False):
-            print('heeere')
+
             return {(i.name, i.path): [i] for i in list(corpus.files)}
             #return {('Sample', 'Sample'): list(corpus.files)}
 
@@ -1177,7 +1177,6 @@ def interrogator(corpus,
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
-    print(to_iterate_over)
 
     try:
         from ipywidgets import IntProgress
