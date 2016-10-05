@@ -50,6 +50,9 @@ def interrogator(corpus,
     dep_type = kwargs.pop('dep_type', 'collapsed-ccprocessed-dependencies')
 
     nosubmode = subcorpora is None
+    #todo: temporary
+    if getattr(corpus, '_dlist', False):
+        subcorpora = 'file'
 
     # store kwargs and locs
     locs = locals().copy()
@@ -760,10 +763,14 @@ def interrogator(corpus,
 
     def make_search_iterable(corpus):
         """determine how to structure the corpus for interrogation"""
-        
         # skip file definitions if they are not needed
+        if getattr(corpus, '_dlist', False):
+            print('heeere')
+            return {(i.name, i.path): [i] for i in list(corpus.files)}
+            #return {('Sample', 'Sample'): list(corpus.files)}
+
         if simple_tregex_mode:
-            if corpus.level in ['s', 'f']:
+            if corpus.level in ['s', 'f', 'd']:
                 return {(corpus.name, corpus.path): False}
             else:
                 return {(os.path.basename(i), os.path.join(corpus.path, i)): False
@@ -773,7 +780,7 @@ def interrogator(corpus,
         if isinstance(corpus, Datalist):
             to_iterate_over = {}
             # it could be files or subcorpus objects
-            if corpus[0].level == 's':
+            if corpus[0].level in ['s', 'd']:
                 if files_as_subcorpora:
                     for subc in corpus:
                         for f in subc.files:
@@ -1170,6 +1177,7 @@ def interrogator(corpus,
 
     # make iterable object for corpus interrogation
     to_iterate_over = make_search_iterable(corpus)
+    print(to_iterate_over)
 
     try:
         from ipywidgets import IntProgress
