@@ -77,8 +77,9 @@ def shannon(self):
                 self_information = np.log2(1.0/probability)
             data.append(self_information)
         return pd.Series(data, index=ser.index)
-       
-    appl = self.results.apply(to_apply, axis=1)
+    
+    res = getattr(self, 'results', self)
+    appl = res.apply(to_apply, axis=1)
     ents = appl.sum(axis=1) / appl.shape[1]
     ents.name = 'Entropy'
     return Interrogation(results=appl, totals=ents)
