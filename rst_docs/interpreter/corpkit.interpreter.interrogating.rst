@@ -88,3 +88,24 @@ You can also define metadata filters, which skip sentences matching a metadata f
    > set skip year as '^201'
    # if you want only this decade:
    > set keep year as '^201'
+
+Sampling a corpus
+------------------
+
+Sometimes, your corpus is too big to search quickly. If this is the case, you can use the ``sample`` command to search a randomised portion of its data:
+
+.. code-block:: bash
+
+   > sample 3 subcorpora of corpus
+   > sample 100 files of corpus
+
+If you pass in a float, it will try to get a proportional amount of data: ``sample 0.33 subcorpora of corpus`` will return a third of the subcorpora in the corpus.
+
+A sampled corpus becomes an object called ``sampled``. You can then refer to it when searching:
+
+.. code-block:: bash
+
+   > search sampled for words matching '^[abcde]'
+
+The metadata filters will be observed when searching this corpus as well.
+

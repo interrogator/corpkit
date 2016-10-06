@@ -540,7 +540,7 @@ def interpreter(debug=False,
             attr = tokens[0]
             if tokens[-1] in ['none', 'None', 'off', 'default']:
                 setattr(objs, attr, False)
-                print("Reset %s filter" % attr)
+                print("Reset %s filter." % attr)
                 return
             metfeat = tokens[1]
             crit = tokens[-1]
