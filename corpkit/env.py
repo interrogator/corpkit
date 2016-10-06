@@ -217,6 +217,7 @@ class Objects(object):
         self.named = {}
         self.just = {}
         self.skip = {}
+        self.symbolic = False
 
         # system toggles and references to older data
         self._in_a_project = None
@@ -532,8 +533,9 @@ def interpreter(debug=False,
             if tokens[-1] in ['false', 'none', 'normal', 'off',
                               'folder', 'folders', 'False', 'None']:
                 tokens[-1] = False
-            objs.corpus = Corpus(objs.corpus, subcorpora=tokens[-1], print_info=False)
-            print('Set subcorpora of %s to "%s".' % (objs.corpus.name, tokens[-1]))
+            objs.symbolic = tokens[-1]
+            #objs.corpus = Corpus(objs.corpus, subcorpora=tokens[-1], print_info=False)
+            print('Set subcorpora to "%s".' % (tokens[-1]))
             return
 
         if tokens and tokens[0] in ['skip', 'just']:
@@ -578,16 +580,15 @@ def interpreter(debug=False,
 
         path = tokens[0]
         loadsaved = len(tokens) > 1 and tokens[1].startswith('load')
+
+        kwargs = process_kwargs(tokens, fixjust=True)
+        if debug:
+            print('KWARGS', kwargs)
+
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
             from corpkit.corpus import Corpus
-            if 'subcorpora' in tokens:
-                if tokens[-1] == 'subcorpora':
-                    subcorpora = tokens[-3]
-                else:
-                    subcorpora = tokens[-1]
-            else:
-                subcorpora = False
-            objs.corpus = Corpus(path, load_saved=loadsaved, subcorpora=subcorpora)
+
+            objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
             for i in ['features', 'wordclasses', 'postags']:
                 try:
                     dat = load(objs.corpus.name + '-%s' % i)
@@ -599,15 +600,10 @@ def interpreter(debug=False,
                 except ValueError:
                     print('Warning: could not load saved interrogations. Different Pythons?')
                     pass
-
         else:
-
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]
-            set_something([corpname])
-
-                #print('Corpus not found: %s' % tokens[0])
-                #return
+            set_something([corpname] + tokens[1:])
 
     def parse_search_related(search_related):
         """
@@ -797,11 +793,10 @@ def interpreter(debug=False,
 
         return search_or_show
 
-    def process_kwargs(tokens):
+    def process_kwargs(tokens, fixjust=False):
         """
         Turn the last part of a command into a dict of kwargs
         """
-
         if 'with' in tokens:
             start = tokens.index('with')
             with_related = tokens[start+1:]
@@ -810,9 +805,21 @@ def interpreter(debug=False,
         withs = {}
         skips = []
         for i, token in enumerate(with_related):
-
             if i in skips or token == 'and':
                 continue
+            # this is used when making corpora with filters
+            if fixjust:
+                if token == 'skip':
+                    pat = parse_pattern(with_related[i+3])
+                    withs['skip'] = {with_related[i+1]: pat}
+                elif token == 'just':
+                    pat = parse_pattern(with_related[i+3])
+                    withs['just'] = {with_related[i+1]: pat}
+                skips.append(i+1)
+                skips.append(i+2)
+                skips.append(i+3)
+                if token in ['skip', 'just']:
+                    continue
             if token == 'not':
                 withs[with_related[i+1].lower()] = False
                 skips.append(i+1)
@@ -929,8 +936,12 @@ def interpreter(debug=False,
         kwargs = parse_search_args(tokens)
         kwargs['quiet'] = quiet
         
-        kwargs['just_metadata'] = objs.just if objs.just else False
-        kwargs['skip_metadata'] = objs.skip if objs.skip else False
+        if 'just_metadata' not in kwargs:
+            kwargs['just_metadata'] = objs.just if objs.just else False
+        if 'skip_metadata' not in kwargs:
+            kwargs['skip_metadata'] = objs.skip if objs.skip else False
+        if 'subcorpora' not in kwargs:
+            kwargs['subcorpora'] = objs.symbolic if objs.symbolic else False
 
         if debug:
             print(kwargs)
@@ -960,10 +971,10 @@ def interpreter(debug=False,
             for k, v in objs.stored.items():
                 print(k, v)
         elif tokens[0].startswith('filter'):
-            print('Skip:', getattr(corpp, 'skip', 'none'))
-            print('Just:', getattr(corpp, 'just', 'none'))
+            print('Skip:', getattr(objs, 'skip', 'none'))
+            print('Just:', getattr(objs, 'just', 'none'))
         elif tokens[0].startswith('subcorp'):
-            print('Symbolic structure:', getattr(corpp, 'symbolic', 'none'))
+            print('Symbolic structure:', getattr(objs, 'symbolic', 'none'))
         elif tokens[0].startswith('wordlists'):
             if '.' in tokens[0] or ':' in tokens[0]:
                 if ':' in tokens[0]:

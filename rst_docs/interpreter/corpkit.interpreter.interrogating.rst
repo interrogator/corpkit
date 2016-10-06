@@ -52,6 +52,7 @@ Here is a syntax example that might help you see how the command gets parsed. No
    ... excludemode as 'all'                             # keyword arg
 
 
+
 Working with metadata
 ----------------------
 
@@ -67,7 +68,7 @@ If you have metadata in your corpus, you can use the metadata value as the subco
 
    > search corpus for words matching 'ing$' with subcorpora as speaker
 
-If you don't want to keep specifying the subcorpus structure every time you search the corpus, you can set the default subcorpus value with for the session with ``set``:
+If you don't want to keep specifying the subcorpus structure every time you search a corpus, you have a couple of choices. First, you can set the default subcorpus value with for the session with ``set subcorpora``. This applies the filter globally, to whatever corpus you search:
 
 .. code-block:: bash
 
@@ -75,24 +76,29 @@ If you don't want to keep specifying the subcorpus structure every time you sear
    > set subcorpora as speaker
    # ignore folders, use files as subcorpora
    > set subcorpora as files
-   # or, set the subcorpus value when you set the corpus
-   > set mydata-parsed as corpus with year as subcorpora
-   # return to normal
-   > set subcorpora as default
 
 You can also define metadata filters, which skip sentences matching a metadata feature, or which keep only sentences matching a metadata feature:
 
 .. code-block:: bash
 
-   # if you have year metadata, skip this decade
+   # if you have a `year` metadata field, skip this decade
    > set skip year as '^201'
    # if you want only this decade:
    > set keep year as '^201'
 
+If you want to set subcorpora and filters for a corpus, rather than globally, you can do this by passing in the values when you select the corpus:
+
+.. code-block:: bash
+
+   > set mydata-parsed as corpus with year as subcorpora and \
+   ... just year as '^201' and skip speaker as 'chomsky'
+   # forget filters for this corpus:
+   > set mydata-parsed
+
 Sampling a corpus
 ------------------
 
-Sometimes, your corpus is too big to search quickly. If this is the case, you can use the ``sample`` command to search a randomised portion of its data:
+Sometimes, your corpus is too big to search quickly. If this is the case, you can use the ``sample`` command to create a randomise sample of the corpus data:
 
 .. code-block:: bash
 
@@ -107,5 +113,4 @@ A sampled corpus becomes an object called ``sampled``. You can then refer to it 
 
    > search sampled for words matching '^[abcde]'
 
-The metadata filters will be observed when searching this corpus as well.
-
+Global metadata filters and subcorpus declarations will be observed when searching this corpus as well.
