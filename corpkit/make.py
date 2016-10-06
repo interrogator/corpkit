@@ -139,6 +139,7 @@ def make_corpus(unparsed_corpus_path,
         if do_folderise is None and not hasattr(main, '__file__'):
             check_do_folderise = INPUTFUNC("Your corpus has multiple files, but no subcorpora. "\
                                  "Would you like each file to be treated as a subcorpus? (y/n) ")
+            check_do_folderise = check_do_folderise.lower().startswith('y')
         if check_do_folderise or do_folderise:
             folderise(unparsed_corpus_path)
             
