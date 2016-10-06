@@ -336,55 +336,54 @@ def make_corpus(unparsed_corpus_path,
             if isfile(unparsed_corpus_path.replace('.txt', '-filelist.txt')):
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.conll'
-        
-            move_parsed_files(project_path, to_parse, newparsed,
-                          ext=kwargs.get('output_format', 'conll'), restart=restart)
-            outpath = newparsed
-            if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
-                add_ids_to_xml(newparsed, originalname=to_parse)
-            if kwargs.get('output_format') == 'conll':
-                #from corpkit.build import add_deps_to_corpus_path
-                from corpkit.conll import convert_json_to_conll
-                coref = False
-                if operations is False:
-                    coref = True
-                elif 'coref' in operations or 'dcoref' in operations:
-                   coref = True
 
-                convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
-                                      coref=coref, metadata=metadata)
-                #add_deps_to_corpus_path(newparsed)
+        move_parsed_files(project_path, to_parse, newparsed,
+                      ext=kwargs.get('output_format', 'conll'), restart=restart)
 
-            try:
-                os.remove(filelist)
-            except:
-                pass
+        if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
+            add_ids_to_xml(newparsed, originalname=to_parse)
+        if kwargs.get('output_format') == 'conll':
+            #from corpkit.build import add_deps_to_corpus_path
+            from corpkit.conll import convert_json_to_conll
+            coref = False
+            if operations is False:
+                coref = True
+            elif 'coref' in operations or 'dcoref' in operations:
+               coref = True
+
+            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
+                                  coref=coref, metadata=metadata)
+
+        try:
+            os.remove(filelist)
+        except:
+            pass
 
     if not parse and tokenise:
         #todo: outname
-        newpath = to_parse.replace('-stripped', '-tokenised')
+        newparsed = to_parse.replace('-stripped', '-tokenised')
         from corpkit.tokenise import plaintext_to_conll
-        newtok = plaintext_to_conll(to_parse,
+        newparsed = plaintext_to_conll(to_parse,
                                     postag=postag,
                                     lemmatise=lemmatise,
                                     lang=lang,
                                     metadata=metadata,
                                     nltk_data_path=nltk_data_path,
                                     speaker_segmentation=speaker_segmentation,
-                                    outpath=newpath)
+                                    outpath=newparsed)
 
         if outname:
             if not os.path.isdir(outname):
                 outname = os.path.join('data', os.path.basename(outdir))
             import shutil
-            shutil.copytree(newtok, outname)
-            newtok = outname
-        if newtok is False:
+            shutil.copytree(newparsed, outname)
+            newparsed = outname
+        if newparsed is False:
             return
         else:
-            return newtok
-        outpath = newtok
+            return newparsed
 
-    rename_all_files(outpath)
+    rename_all_files(newparsed)
+
     print('Done!\n')
-    return outpath
+    return newparsed

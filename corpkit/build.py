@@ -463,8 +463,10 @@ def move_parsed_files(proj_path, old_corpus_path, new_corpus_path,
                 os.makedirs(os.path.join(new_corpus_path, d))
             except OSError:
                 pass
+
     # make list of parsed filenames that haven't been moved already
     parsed_fs = [f for f in os.listdir(new_corpus_path) if f.endswith('.%s' % ext)]
+
     # make a dictionary of the right paths
     pathdict = {}
     for rootd, dirnames, filenames in os.walk(old_corpus_path):
@@ -474,7 +476,6 @@ def move_parsed_files(proj_path, old_corpus_path, new_corpus_path,
     for f in parsed_fs:
         noxml = f.replace('.%s' % ext, '')
         right_dir = pathdict[noxml].replace(old_corpus_path, new_corpus_path)
-        print(f, right_dir)
         # get rid of the temp adding of dirname to fname
         #short_name = f.replace('-%s.txt.xml' % os.path.basename(right_dir), '.txt.xml')
         frm = os.path.join(new_corpus_path, f)
@@ -783,7 +784,9 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     return list(sorted(set(names)))
 
 def rename_all_files(dirs_to_do):
-    """get rid of the inserted dirname in filenames after parsing"""
+    """
+    Get rid of the inserted dirname in filenames after parsing
+    """
     import os
     if isinstance(dirs_to_do, STRINGTYPE):
         dirs_to_do = [dirs_to_do]
