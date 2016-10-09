@@ -213,7 +213,7 @@ Generally speaking, it has the comforts of home, such as history, search, backsl
 
 ## API
 
-Using straight Python is the most powerful way to use *corpkit*, because you can manipulate results with Pandas syntax, construct loops, make recursive queries, and so on. Here are some simple examples of the API syntax:
+Straight Python is the most powerful way to use *corpkit*, because you can manipulate results with Pandas syntax, construct loops, make recursive queries, and so on. Here are some simple examples of the API syntax:
 
 ### Instantiate and search a parsed corpus
 
@@ -228,7 +228,6 @@ Using straight Python is the most powerful way to use *corpkit*, because you can
 ### search for anything participant with a governor that
 ### is a process, excluding closed class words, and 
 ### showing lemma forms. also, generate a concordance.
-
 >>> sch = {GF: roles.process, F: roles.actor}
 >>> part = corp.interrogate(search=sch,
 ...                         exclude={W: wordlists.closedclass},
@@ -267,7 +266,7 @@ Below, we make normalised frequencies and plot:
 <img style="float:left" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/actors.png" />
 <br>
 
-There are also some [more detailed API examples over here](https://www.github.com/interrogator/corpkit/API-README.md). This document is fairly thorough, but now deprecated, because the official docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
+There are also some [more detailed API examples over here](https://github.com/interrogator/corpkit/blob/master/API-README.md). This document is fairly thorough, but now deprecated, because the official docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
 
 ## Graphical interface
 
