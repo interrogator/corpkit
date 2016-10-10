@@ -423,6 +423,8 @@ def concline_generator(matches, idxs, df, metadata,
     # potential speedup: turn idxs into dict
     from collections import defaultdict
     mdict = defaultdict(list)
+    # if remaking idxs here, don't need to do it earlier
+    idxs = list(matches.index)
     for mid, (s, i) in zip(matches, idxs):
     #for s, i in matches:
         mdict[s].append((i, mid))
@@ -590,6 +592,9 @@ def fast_simple_conc(dfss, idxs, show,
             matches = turn_pos_to_wc(df[nshow[0][0]][idxs], nshow[0][1])
             if conc:
                 df = df_for_lr
+    
+    # get rid of (e.g.) nan caused by no_punct=True
+    matches = matches.dropna(axis=0, how='all')
 
     if not conc:
         # todo: is matches.values faster?
