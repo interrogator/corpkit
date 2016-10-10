@@ -699,9 +699,6 @@ class Corpus(object):
                       than Tregex, and is slower, but can work without Java.
         :type tgrep: `bool`
 
-        :param by_metadata: Use a metadata attribute instead of subcorpus as structure
-        :type by_metadata: `str`/`list`/regex
-
         :param just_speakers: Limit search to paricular speakers. If 'each',
                               generate :class:`corpkit.interrogation.Interrodict`
                               for each speaker. If a `list` of speaker names, 
@@ -723,6 +720,13 @@ class Corpus(object):
         :param skip_metadata: A field and regex/list to filter sentences by.
                               Those matching will be skipped.
         :type skip_metadata: `dict`
+
+        :param discard: When returning many (i.e. millions) of results, memory can be
+                        a problem. Setting a discard value will ignore results occurring
+                        infrequently in a subcorpus. An ``int`` will remove any result
+                        occurring ``n`` times or fewer. A float will remove this proportion
+                        of results (i.e. 0.1 will remove 10 per cent)
+        :type discard: ``int``/``float``
 
         :returns: A :class:`corpkit.interrogation.Interrogation` object, with 
                   `.query`, `.results`, `.totals` attributes. If multiprocessing is 
