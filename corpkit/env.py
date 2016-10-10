@@ -277,8 +277,17 @@ def interpreter(debug=False,
     objs = Objects()
 
     # basic way to check that we're currently in a project, because i'm lazy
-    proj_dirs = ['data', 'saved_interrogations', 'exported']
-    objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
+    def check_in_project():
+        import os
+        proj_dirs = ['data', 'saved_interrogations', 'exported']
+        if all(x in os.listdir('.') for x in proj_dirs):
+            return True
+
+        cpkt_dirs = ['API-README.md', 'corpkit', 'data', 'rst_docs']
+        if all(x in os.listdir('.') for x in cpkt_dirs):
+            return True
+
+        return False
 
     def generate_outprint():
         """
@@ -558,7 +567,7 @@ def interpreter(debug=False,
             print("Current %s filter: %s" % (attr, getattr(objs, attr)))
             return
 
-        if not objs._in_a_project:
+        if not check_in_project():
             print("Must be in project to set corpus.")
             return
         
@@ -1157,7 +1166,6 @@ def interpreter(debug=False,
         Exporting conc lines needs to preserve colouring
         """
         colourdict = objs._conc_colours[len(objs._old_concs)-1]
-        print(colourdict)
         fores = []
         backs = []
         stys = [] 
@@ -1196,7 +1204,7 @@ def interpreter(debug=False,
         if tokens[0].startswith('conc'):
             obj = add_colour_to_conc_df(obj.copy())
 
-        if tokens[0] == 'result':
+        if tokens[0] in ['result', 'edited']:
             obj = getattr(obj, 'results', obj)
         if len(tokens) == 1:
             print(obj.to_string())
@@ -2038,7 +2046,7 @@ def interpreter(debug=False,
         """
         folder = os.path.basename(os.getcwd())
         proj_dirs = ['data', 'saved_interrogations', 'exported']
-        objs._in_a_project = all(x in os.listdir('.') for x in proj_dirs)
+        objs._in_a_project = check_in_project()
         end = '*' if not objs._in_a_project else ''
         name = getattr(objs.corpus, 'name', 'no-corpus')
         txt = 'corpkit@%s%s:%s> ' % (folder, end, name)
@@ -2061,9 +2069,10 @@ def interpreter(debug=False,
             tokens = tokens[s_ix+1:]
         return nested
 
-    print(allig)
+    if not fromscript and not python_c_mode:
+        print(allig)
 
-    if not objs._in_a_project:
+    if not check_in_project():
         print("\nWARNING: You aren't in a project yet. "\
               "Use 'new project named <name>' to make one and enter it.\n"\
               "Alternatively, you can `cd` into an existing project now.\n")

@@ -244,3 +244,59 @@ def check_just_filt():
     res = corpus.interrogate()
     assert_equals(len(res.results.columns), 22)
 
+def test_interpreter():
+    """
+    Test for errors in interpreter functionality
+    """
+    import os
+    from corpkit.env import interpreter
+    try:
+        os.makedirs('exported')
+    except:
+        pass
+    try:
+        os.makedirs('saved_interrogations')
+    except:
+        pass
+    # this will make some data in exported/
+    out = interpreter(fromscript='corpkit/interpreter_tests.cki')
+    assert_equals(out, None)
+    
+def check_interpreter_res_csv():
+    """
+    Interpreter check made exported/res.csv---check it
+    """
+    import pandas as pd
+    df = pd.read_csv('exported/res.csv', sep='\t', index_col=0)
+    assert_equals(df.mean()['a'], 1.5)
+
+def check_interpreter_conc_csv():
+    """
+    Interpreter check made exported/conc.csv---check it
+    """
+    import pandas as pd
+    import shutil
+    df = pd.read_csv('exported/conc.csv', sep='\t', index_col=0)
+    shutil.rmtree('exported')
+    assert_equals(df.shape, (77, 7))
+
+def check_interpreter_saved_interro():
+    """
+    Interpreter made a pickled result. Check it
+    """
+    import pandas as pd
+    import shutil    
+    from corpkit import load
+    dat = load('test-speak-parsed-anylemma')
+    shutil.rmtree('saved_interrogations')
+    assert hasattr(dat, 'results')
+    assert hasattr(dat, 'totals')
+    assert hasattr(dat, 'query')
+    assert('concordancing' in dat.results)
+    rel = dat.results.T / dat.totals
+    assert_equals(rel.ix[0].sum().round(2), 0.19)
+
+# test to write:
+# annotation
+# unannotation
+# language model
