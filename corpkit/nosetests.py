@@ -2,8 +2,8 @@
 This file contains tests for the corpkit API, to be run by Nose.
 
 There are fast and slow tests. Slow tests include those that test the parser.
-These should be run before anything goes into master. Fast tests are just corpus
-interrogations. These are done on commit.
+These should be run before anything goes into master. Fast tests corpus
+interrogations, edits, concordances and so on. These are done on commit.
 
 The tests don't cover everything in the module yet.
 
@@ -26,6 +26,7 @@ from corpus import Corpus
 unparsed_path = 'data/test'
 parsed_path = 'data/test-plain-parsed'
 speak_path = 'data/test-speak-parsed'
+tok_path = 'data/test-tokenised'
 
 def test_import():
     import corpkit
@@ -53,6 +54,21 @@ def test_parse():
             fnames.append(f.name)
     shutil.move(parsed.path, parsed_path)
     assert_equals(fnames, ['intro.txt.conll', 'body.txt.conll'])
+
+def test_tokenise():
+    """Test the tokeniser, lemmatiser and POS tagger"""
+    unparsed = Corpus(unparsed_path)
+    try:
+        shutil.rmtree(tok_path)
+    except:
+        pass
+    tok = unparsed.tokenise(speaker_segmentation=True, lemmatise=True, postag=True)
+
+    df = tok[0][0].document
+    assert_equals(tok.name, 'test-tokenised')
+    assert_equals(len(tok.subcorpora), 2)
+    #assert_equals(list(df.columns), ['w', 'l', 'p'])
+    assert_equals(list(df.index.names), ['s', 'i'])
 
 def test_speak_parse():
     """Test CoreNLP parsing with speaker segmentation"""
@@ -140,4 +156,91 @@ def test_edit():
     #assert_equals(data.results.iloc[0,0], 11.627906976744185)
 
 test_edit.slow = 1
+
+def test_tok1_interro():
+    """
+    Check that indexes can be shown
+    """
+    corpus = Corpus(tok_path)
+    res = corpus.interrogate(show=['s', 'i', 'l'])
+    sortd = res.results[sorted(res.results.columns)]
+    three = ['0/0/corpus', '0/0/this', '0/1/linguistics']
+    assert_equals(list(sortd.columns)[:3], three)
+    assert_equals(sortd.sum().sum(), 77)
+
+def test_tok2_interro():
+    """
+    Check a tokenised corpus interrogation
+    """
+    corpus = Corpus(tok_path)
+    res = corpus.interrogate(show=['w', 'l', 'p'], conc=True)
+    assert_equals(res.results['is/be/vbz']['second'], 1)
+    assert_equals(res.results['is/be/vbz']['first'], 2)
+    assert_equals(str(res.results.ix[0].dtype), 'int64')
+    flo = res.edit('%', 'self').results.iat[0,0].round(2)
+    assert_equals(flo, 5.71)
+    assert_equals(res.concordance.m.iloc[-1], 'work/work/nn')
+    attributes = ['query', 'results', 'totals', 'visualise', 'edit', 'concordance']
+    allat = all(getattr(res, i) is not None for i in attributes)
+    assert_equals(allat, True)
+
+def document_check():
+    """
+    Check that the document lazy attribute works
+    """
+    corpus = Corpus(speak_path)
+    df = corpus[0][0].document
+    fir = ['This', 'this', 'DT', 'O', 3, 'det', '0', '1']
+    assert_equals(list(df.ix[1,1], fir))
+    kys = list(df._metadata[5].keys())
+    lst = ['year', 'test', 'parse', 'speaker', 'num']
+    assert_equals(kys, lst)
+    assert_equals(corpus.files, None)
+    assert_equals(corpus.datatype, 'conll')
+
+def test_conc_edit():
+    """
+    Make sure we can edit concordance lines
+    """
+    corpus = Corpus(speak_path)
+    res = corpus.interrogate(show=['l','gl'], conc=True)
+    assert_equals(len(res.concordance), 77)
+    noling = len(res.concordance.edit(skip_entries='ling'))
+    assert_equals(noling, 69)
+
+def test_symbolic_subcorpora():
+    """
+    Check that we can make speaker into subcorpora
+    """
+    corpus = Corpus(speak_path, subcorpora='speaker')
+    res = corpus.interrogate({'l': r'^[abcde]'})
+    spks = ['ANONYMOUS', 'NEWCOMER', 'TESTER', 'UNIDENTIFIED']
+    assert_equals(list(res.results.index), spks)
+
+def test_symbolic_multiindex():
+    """
+    Check that we can make a named multiindex
+    """
+    subval = ['speaker', 'test']
+    corpus = Corpus(speak_path, subcorpora=subval)
+    res = corpus.interrogate({'l': r'^[abcde]'})
+    test_poss = {'none', 'off', 'on'}
+    assert_equals(set(res.results.index.levels[1]), test_poss)
+    assert_equals(list(res.results.index.names), subval)
+
+def check_skip_filt():
+    """
+    Check that we can make a skip filter
+    """
+    corpus = Corpus(speak_path, skip={'speaker': 'UNIDENTIFIED'})
+    res = corpus.interrogate()
+    assert_equals(len(res.results.columns), 47)
+
+def check_just_filt():
+    """
+    Check that we can make a just filter
+    """
+    corpus = Corpus(speak_path, just={'speaker': 'UNIDENTIFIED'})
+    res = corpus.interrogate()
+    assert_equals(len(res.results.columns), 22)
 
