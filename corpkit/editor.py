@@ -285,15 +285,17 @@ def editor(interrogation,
                 df = df.loc[:,~df.columns.str.contains(skip_entries)]
         if just_entries:
             if isinstance(just_entries, (list, Wordlist)):
-                df = df[list(just_entries)]
+                je = [i for i in list(just_entries) if i in list(df.columns)]
+                df = df[je]
             else:
                 df = df.loc[:,df.columns.str.contains(just_entries)]
         if merge_entries:
             for newname, crit in merge_entries.items():
                 if isinstance(crit, (list, Wordlist)):
                     crit = [i for i in list(crit) if i in list(df.columns)]
-                    summed = df[list(crit)].sum(axis=1)
-                    df = df.drop(list(crit), axis=1, errors='ignore')
+                    cr = [i for i in list(crit) if i in list(df.columns)]
+                    summed = df[cr].sum(axis=1)
+                    df = df.drop(list(cr), axis=1, errors='ignore')
                 else:
                     summed = df.loc[:,df.columns.str.contains(crit)].sum(axis=1)
                     df = df.loc[:,~df.columns.str.contains(crit)]
@@ -307,7 +309,8 @@ def editor(interrogation,
                 df = df[~df.index.str.contains(skip_subcorpora)]
         if just_subcorpora:
             if isinstance(just_subcorpora, (list, Wordlist)):
-                df = df.loc[list(just_subcorpora)]
+                js = [i for i in list(just_subcorpora) if i in list(df.index)]
+                df = df.loc[js]
             else:
                 df = df[df.index.str.contains(just_subcorpora)]
         if merge_subcorpora:
