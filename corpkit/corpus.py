@@ -1117,6 +1117,9 @@ class Corpus(object):
 
         :returns: ``None``
         """
+        from corpkit.interrogation import Interrogation
+        if isinstance(conclines, Interrogation):
+            conclines = getattr(conclines, 'concordance', conclines)
         from corpkit.annotate import annotator
         annotator(conclines, annotation, dry_run=dry_run)
 
