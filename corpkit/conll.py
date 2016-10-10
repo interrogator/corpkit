@@ -327,116 +327,35 @@ def format_toks(to_process, show, df):
                 data.append('/'.join(tup))
         return pd.Series(data, index=pd.MultiIndex.from_tuples(index))
 
-def make_concx(series, matches, metadata, df, 
-               conc, fsi_index=False, category=False, show_conc_metadata=False,
-               only_format_match=True, **kwargs):
-    """
-    Make concordance lines
 
-    Speed this up?
-    """
-    import pandas as pd
-
-    conc_lines = []
-    fname = kwargs.get('filename', '')
-    ngram_mode = kwargs.get('ngram_mode')
-    add_meta = show_conc_metadata
-    
-    if not conc:
-        return conc_lines
-    
-    #maxc, cconc = kwargs.get('maxconc', (False, False))
-    #if maxc and maxc < cconc:
-    #    return []
-
-    if ngram_mode:
-        for s, i in set(matches):
-            mid_toks = []
-            for n in range(kwargs.get('gramsize') + 1):
-                mid_toks.append((s, i+n))
-            sent = df.loc[s]
-            first, last = mid_toks[0][1], mid_toks[-1][1]
-            if only_format_match:
-                start = ' '.join(list(sent.loc[:first]['w']))
-                end = ' '.join(list(sent.loc[last+1:]['w']))
-            else:
-                start = ' '.join(list(series.loc[s,:first]))
-                end = ' '.join(list(series.loc[s,last+1:]))
-            middle = ' '.join(series[s][first:last])
-
-            sname = metadata[s].get('speaker', 'none')
-            lin = [fname, sname, start, middle, end]
-            for k, v in sorted(metadata[s].items()):
-                if k in ['speaker', 'parse', 'sent_id']:
-                    continue
-                if isinstance(add_meta, list):
-                    if k in add_meta:
-                        lin.append(v)
-                elif add_meta:
-                    lin.append(v)
-            conc_lines.append(lin)
-        return conc_lines
-
-    for s, i in sorted(set(matches)):
-        #thecount = matches.count((s, i))
-        sent = df.loc[s]
-        if only_format_match:
-            start = ' '.join(list(sent.loc[:i-1]['w']))
-            end = ' '.join(list(sent.loc[i+1:]['w']))
-        else:
-            start = ' '.join(list(series.loc[s,:i-1]))
-            end = ' '.join(list(series.loc[s,i+1:]))
-        middles = series[s, i]
-        #print(start, end)
-        sname = metadata[s].get('speaker', 'none')
-
-        if not isinstance(middles, pd.core.series.Series):
-            middles = [middles]
-        
-        for middle in middles:
-            ix = '%d,%d' % (s, i)    
-            lin = [ix, category, fname, sname, start, middle, end]
-
-            for k, v in sorted(metadata[s].items()):
-
-                if k in ['speaker', 'parse', 'sent_id']:
-                    continue
-
-                if isinstance(add_meta, list):
-                    if k in add_meta:
-                        lin.append(v)
-                elif add_meta is True:
-                    lin.append(v)
-
-            conc_lines.append(lin)
-
-    return conc_lines
-
-def make_series(ser, df=False, obj=False, att=False, adj=False, tomove=False):
+def make_series(ser, df=False, obj=False,
+                att=False, adj=False):
     """
     To apply to a DataFrame to add complex criteria, like 'gf'
     """
     # todo:
-    # collocation?
+    # collocation
     # ngram
-    from pandas import Series
     if obj == 'g':
-        idxs = [(ser.name[0], ser[obj])]
-        if idxs[0][1] == 0:
-            return Series(['root'])
+        if ser[obj] == 0:
+            return 'root'
         else:
-            ss = Series(list(df[att].loc[idxs]))
-            return ss
+            try:
+                return df[att][ser.name[0], ser[obj]]
+            # this keyerror can happen if governor is punctuation, for example
+            except KeyError:
+                return
 
     elif obj == 'd':
         idxs = [(ser.name[0], int(i)) for i in ser[obj].split(',')]
-        ss = Series(list(df[att].loc[idxs]))
+        ss = df[att].loc[idxs]
         return ss
 
+    # todo: fix everything below here
     elif obj == 'r': # get the representative
         cohead = ser['c'].rstrip('*')
         refs = df[df['c'] == cohead + '*']
-        return Series(refs[att].ix[0])
+        return refs[att].ix[0]
 
     elif obj == 'h': # get head
         cohead = ser['c']
@@ -495,11 +414,44 @@ def turn_pos_to_wc(ser, showval):
     news.name = ser.name[:-1] + 'x'
     return news
 
-#def just_g(idxs, df=False, idxs=[]):
-#    ser.name[0]
-#    df.apply()
-#    fidx = [(s, df.loc[s, i]['g']) for s, i in idxs]
-#    return df[attr][fidx]
+def concline_generator(matches, idxs, df, metadata,
+                       add_meta, category, fname):
+    """
+    Get all conclines
+    """
+    conc_res = []
+    # potential speedup: turn idxs into dict
+    from collections import defaultdict
+    mdict = defaultdict(list)
+    for mid, (s, i) in zip(matches, idxs):
+    #for s, i in matches:
+        mdict[s].append((i, mid))
+    # shorten df to just relevant sents to save lookup time
+    df = df.loc[list(mdict.keys())]
+    # don't look up the same sentence multiple times
+    for s, tup in sorted(mdict.items()):
+        sent = df.loc[s]
+        meta = metadata[s]
+        sname = meta.get('speaker', 'none')
+        for i, mid in tup:
+            ix = '%d,%d' % (s, i)
+            start = ' '.join(sent.loc[:i-1].values)
+            end = ' '.join(sent.loc[i+1:].values)
+            lin = [ix, category, fname, sname, start, mid, end]
+            if add_meta:
+                for k, v in sorted(meta.items()):
+                    if k in ['speaker', 'parse', 'sent_id']:
+                        continue
+                    if isinstance(add_meta, list):
+                        if k in add_meta:
+                            lin.append(v)
+                    elif add_meta is True:
+                        lin.append(v)
+            conc_res.append(lin)
+    return conc_res
+
+def p_series_to_x_series(val):
+    return taglemma.get(val.lower(), val.lower())
 
 def fast_simple_conc(dfss, idxs, show,
                      metadata=False,
@@ -516,7 +468,7 @@ def fast_simple_conc(dfss, idxs, show,
         return [], []
         
     import pandas as pd
-    conc_res = []
+
     # best case, the user doesn't want any gov-dep stuff
     simple = all(i.startswith('m') for i in show)
     # worst case, the user wants something from dep
@@ -533,16 +485,11 @@ def fast_simple_conc(dfss, idxs, show,
 
     just_matches = df.loc[idxs]
     
-    # add index as column if need be
-    if any(i.endswith('s') for i in show):
-        df['ms'] = df.index.labels[0].apply(str)
-    if any(i.endswith('i') for i in show):
-        df['mi'] = df.index.labels[1].apply(str)
-    
     # if the showing can't come straight out of the df, 
     # we can add columns with the necessary information
     if not simple:
         formatted = []
+        import numpy as np
         for ind, i in enumerate(show):
             # nothing to do if it's an m feature
             if i.startswith('m'):
@@ -588,9 +535,7 @@ def fast_simple_conc(dfss, idxs, show,
             else:
                 ser = to_proc.apply(make_series, df=dfx, obj=ob, att=att, axis=1)
             if xmode:
-                from corpkit.dictionaries.word_transforms import taglemma                
-                ser.values = [taglemma.get(piece.lower(), piece.lower())
-                              for piece in ser.values]
+                ser = ser.apply(p_series_to_x_series)
 
             # adjmode simply shifts series and index
             if adj:
@@ -622,7 +567,6 @@ def fast_simple_conc(dfss, idxs, show,
     # x is wordclass. so, we just get pos and translate it
     nshow = [(i.replace('x', 'p'), i.endswith('x')) for i in show]
 
-    
     # generate a series of matches with slash sep if multiple show vals
     if len(nshow) > 1:
 
@@ -650,26 +594,10 @@ def fast_simple_conc(dfss, idxs, show,
     if not conc:
         # todo: is matches.values faster?
         return list(matches), []
-
-    # do concordancing as fast as possible
-    for mid, (s, i) in zip(matches, idxs):
-        meta = metadata[s]
-        ix = '%d,%d' % (s, i)
-        sent = df.loc[s]
-        start = ' '.join(sent.loc[:i-1].values)
-        end = ' '.join(sent.loc[i+1:].values)
-        sname = meta.get('speaker', 'none')
-        lin = [ix, category, fname, sname, start, mid, end]
-        if add_meta:
-            for k, v in sorted(meta.items()):
-                if k in ['speaker', 'parse', 'sent_id']:
-                    continue
-                if isinstance(add_meta, list):
-                    if k in add_meta:
-                        lin.append(v)
-                elif add_meta is True:
-                    lin.append(v)
-        conc_res.append(lin)
+    else:
+        conc_res = concline_generator(matches, idxs, df,
+                                      metadata, add_meta,
+                                      category, fname)
 
     return list(matches), conc_res
 
@@ -681,18 +609,19 @@ def show_this(df, matches, show, metadata, conc=False,
 
     matches = sorted(list(matches))
 
+    # add index as column if need be
+    if any(i.endswith('s') for i in show):
+        df['ms'] = [str(i) for i in df.index.labels[0]]
+    if any(i.endswith('i') for i in show):
+        df['mi'] = [str(i) for i in df.index.labels[1]]
+    
     # attempt to leave really fast
     if kwargs.get('countmode'):
         return len(matches), {}
-    if show in [['mw'], ['mp'], ['ml'], ['mi']] and not conc:
-        if show == ['ms']:
-            from pandas import Series
-            df['s'] = [str(x) for x in df.index.labels[0]]
-        if show == ['mi']:
-            from pandas import Series
-            df['i'] = [str(x) for x in df.index.labels[1]]
-        return list(df.loc[matches][show[0][-1]]), {}
-    
+    if len(show) == 1 and not conc:
+        if show[0] in ['ms', 'mi', 'mw', 'ml', 'mp', 'mf']:
+            return list(df.loc[matches][show[0][-1]]), {}
+
     # todo: make work for ngram, collocate and coref
     elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show):
         return fast_simple_conc(df,
@@ -704,100 +633,6 @@ def show_this(df, matches, show, metadata, conc=False,
                                 category,
                                 only_format_match,
                                 conc=conc)
-
-    # everything below here will eventually be removed
-
-    if ngram_mode:
-        show = [x.lstrip('n') for x in show]
-
-    # maintaining different show code for conc and non conc for speed
-    if not conc:
-
-        def dummy(x, **kwargs):
-            return [x]
-
-        def get_gov(line, df=False, attr=False):
-            return getattr(df.ix[line.name[0], df.ix[line.name]['g']], attr, 'root')
-
-        objmapping = {'d': get_dependents_of_id,
-                      'g': get_governors_of_id,
-                      'm': dummy,
-                      'h': get_head,
-                      'r': get_representative}        
-
-        out = []
-        from collections import defaultdict
-        conc_out = defaultdict(list)
-
-        for val in show:
-            # todo: make into function
-            adj, val = determine_adjacent(val)
-            if adj:
-                if adj[0] == '+':
-                    tomove = int(adj[1])
-                elif adj[0] == '-':
-                    tomove = -int(adj[1])
-            obj, attr = val[0], val[-1]
-            func = objmapping.get(obj, dummy)
-            
-            # process everything, if we have to 
-            cut_short = False
-            if conc and not only_format_match:
-                cut_short = True
-                newm = list(df.index)
-            else:
-                newm = matches
-
-            if adj:
-                newm = [(s, i+tomove) for s, i in newm]
-
-            mx = [func(idx, df=df) for idx in newm]    
-            mx = [item for sublist in mx for item in sublist]
-            
-            # a pandas object with the token pieces, ready to join together
-            # but it contains all tokens if cut_short mode
-            gotten_tok_bits = df.loc[mx][attr.replace('x', 'p')].dropna()
-
-            # if gotten_tok_bits contains every token, we can
-            # get just the matches from it
-            if cut_short or ngram_mode:
-                gotten = df.loc[matches]
-            else:
-                gotten = gotten_tok_bits
-
-            # addactual matches
-            out.append(list(gotten))
-
-        formatted = ['/'.join(x) for x in zip(*out)]
-        return formatted, {}
-
-
-    # do we need to format every token?
-    process_all = conc and not only_format_match
-    if ngram_mode:
-        process_all = True
-
-    # tokens that need formatting
-    # i.e. just matches, or the whole thing
-    if not process_all:
-        to_process = df.loc[matches]
-    else:
-        to_process = df
-
-    # make a series of formatted data
-    series = format_toks(to_process, show, df)
-
-    matches = list(series.index)
- 
-    # generate conc
-    conc_lines = make_concx(series, matches, metadata, df,
-                             conc, only_format_match=only_format_match,
-                             category=category,
-                             show_conc_metadata=show_conc_metadata, **kwargs)
-    the_ser = list(series)
-    if ngram_mode:
-        the_ser = list([i[3] for i in conc_lines])
-    return the_ser, conc_lines
 
 def fix_show_bit(show_bit):
     """take a single search/show_bit type, return match"""
