@@ -153,8 +153,9 @@ def make_corpus(unparsed_corpus_path,
 
     if parse or tokenise:
         
-        # this loop shortens files containing more than 500 lines, for corenlp memory sake
-        # maybe user needs a warning or something in case s/he is doing coref
+        # this loop shortens files containing more than 500 lines,
+        # for corenlp memory's sake. maybe user needs a warning or
+        # something in case s/he is doing coref?
         for rootx, dirs, fs in os.walk(unparsed_corpus_path):
             for f in fs:
                 if f.startswith('.'):
@@ -338,22 +339,23 @@ def make_corpus(unparsed_corpus_path,
                 os.remove(unparsed_corpus_path.replace('.txt', '-filelist.txt'))
             return unparsed_corpus_path + '.conll'
 
-        move_parsed_files(project_path, to_parse, newparsed,
-                      ext=kwargs.get('output_format', 'conll'), restart=restart)
+        if parse:
+            move_parsed_files(project_path, to_parse, newparsed,
+                          ext=kwargs.get('output_format', 'conll'), restart=restart)
 
-        if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
-            add_ids_to_xml(newparsed, originalname=to_parse)
-        if kwargs.get('output_format') == 'conll':
-            #from corpkit.build import add_deps_to_corpus_path
-            from corpkit.conll import convert_json_to_conll
-            coref = False
-            if operations is False:
-                coref = True
-            elif 'coref' in operations or 'dcoref' in operations:
-               coref = True
+            if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
+                add_ids_to_xml(newparsed, originalname=to_parse)
+            if kwargs.get('output_format') == 'conll':
+                #from corpkit.build import add_deps_to_corpus_path
+                from corpkit.conll import convert_json_to_conll
+                coref = False
+                if operations is False:
+                    coref = True
+                elif 'coref' in operations or 'dcoref' in operations:
+                   coref = True
 
-            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
-                                  coref=coref, metadata=metadata)
+                convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
+                                      coref=coref, metadata=metadata)
 
         try:
             os.remove(filelist)
