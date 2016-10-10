@@ -1261,6 +1261,9 @@ def interrogator(corpus,
             animator(p, current_iter, tstr, **par_args)
             continue
 
+        # todo: move this
+        kwargs.pop('by_metadata', None)
+        
         # conll querying goes by file, not subcorpus
         for f in files:
             from corpkit.process import parse_just_speakers
