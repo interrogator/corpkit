@@ -74,6 +74,11 @@ The most common objects you'll be using are:
 +---------------+-----------------------------------------------+
 | `previous`    | Object created before last                    |
 +---------------+-----------------------------------------------+
+| `sampled`     | A sampled corpus                              |
++---------------+-----------------------------------------------+
+| `wordlists`   | A list of wordlists for searching, editing    |
++---------------+-----------------------------------------------+
+
 
 When you start the interperter, these are all empty. You'll need to use commands to put data in their namespace. You can also create your own object names using the ``call`` command. 
 
@@ -125,7 +130,7 @@ You do things to the objects via commands. Each command has its own syntax, desi
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `history`       | See previously entered commands                              | `history`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| `ipython`       | Entering IPython with objects available                      | `ipython`                                                                                  |
+| `ipython`       | Enter IPython with objects available                         | `ipython`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
