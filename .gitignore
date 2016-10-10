@@ -74,3 +74,6 @@ _build/
 *.bak
 data/test-filelist.txt
 data/test-stripped-filelist.txt
+saved_interrogations/
+exported/
+data/test-tokenised/
