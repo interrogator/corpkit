@@ -112,7 +112,7 @@ def concprinter(dataframe, kind='string', n=100,
     """
     import corpkit
 
-    df = dataframe.copy()
+    df = dataframe.copy().fillna('')
 
     if n > len(df):
         n = len(df)
