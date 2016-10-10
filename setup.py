@@ -5,7 +5,10 @@ import os
 from os.path import isfile, isdir, join, dirname
 
 class CustomInstallCommand(install):
-    """Customized setuptools install command."""
+    """
+    Customized setuptools install command, which installs
+    some NLTK data automatically
+    """
     def run(self):
         from setuptools.command.install import install
         install.run(self)
@@ -18,20 +21,23 @@ class CustomInstallCommand(install):
             pass
         # Now we can import nltk
         import nltk
+        # install these three resources and add them to path
+        install_d = {'tokenizers': 'punkt',
+                     'corpora': 'wordnet',
+                     'taggers': 'averaged_perceptron_tagger'}
+        
         path_to_nltk_f = nltk.__file__
         nltkpath = dirname(path_to_nltk_f)
-        punktpath = join(nltkpath, 'tokenizers')
-        wordnetpath = join(nltkpath, 'corpora')
-        if not isfile(join(punktpath, 'punkt.zip')) \
-            and not isdir(join(punktpath, 'punkt')):
-            nltk.download('punkt', download_dir=nltkpath)
-        if not isfile(join(wordnetpath, 'wordnet.zip')) \
-            and not isdir(join(wordnetpath, 'wordnet')):
-            nltk.download('wordnet', download_dir=nltkpath)
+        for path, name in install_d.items():
+            pat = join(nltkpath, path)
+            if not isfile(join(punktpath, '%s.zip' % name)) \
+                and not isdir(join(punktpath, name)):
+                nltk.download(name, download_dir=nltkpath)
+
         nltk.data.path.append(nltkpath)
 
 setup(name='corpkit',
-      version='2.3.2',
+      version='2.3.3',
       description='A toolkit for working with linguistic corpora',
       url='http://github.com/interrogator/corpkit',
       author='Daniel McDonald',
@@ -50,7 +56,7 @@ setup(name='corpkit',
                         "nltk>=3.0.0",
                         "joblib",
                         "pandas>=0.18.1",
-                        "mpld3>=0.2", 
+                        #"mpld3>=0.2", 
                         "requests",
                         "chardet",
                         "blessings>=1.6",
