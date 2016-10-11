@@ -791,7 +791,7 @@ class Interrodict(OrderedDict):
             if hasattr(dct, 'items'):
                 parents[level] = list(dct.keys())
                 level += 1
-                for k, v in dct.items():
+                for k, v in list(dct.items()):
                     pars = myparname + [k]
                     # the below is only for python3
                     #pars = [*myparname, k]
@@ -810,13 +810,6 @@ class Interrodict(OrderedDict):
                     for c in list(dct.results.columns):
                         colset.add(c)
                     level += 1
-                #else:
-                #    for x in dct.results.columns:
-                #        ns = pd.Series()
-                #        #ns.name = 'noname'
-                #        #print(ns.name)
-                #        results.append(ns)
-
             return results
 
         data = trav(self)

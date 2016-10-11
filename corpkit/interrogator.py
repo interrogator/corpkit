@@ -1300,6 +1300,7 @@ def interrogator(corpus,
                                      **kwargs
                                     )
 
+
             if res is None and conc_res is None:
                 current_iter += 1
                 tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)

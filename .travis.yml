@@ -5,12 +5,10 @@ python:
 install: 
 - pip install --install-option="--no-cython-compile" cython
 - pip install -r requirements.txt
-- mkdir nltk_data
-- python -m nltk.downloader punkt -d nltk_data
-- python -m nltk.downloader wordnet -d nltk_data
-- python -m nltk.downloader averaged_perceptron_tagger -d nltk_data
 - nltkd=$(python -c 'from __future__ import print_function; import nltk; print(nltk.data.path[0])')
-- sudo mv nltk_data "$nltkd"
+- python -m nltk.downloader punkt -d "$nltkd"
+- python -m nltk.downloader wordnet -d "$nltkd"
+- python -m nltk.downloader averaged_perceptron_tagger -d "$nltkd"
 script:
 - nosetests corpkit/nosetests.py -a '!slow'
 deploy:

@@ -783,7 +783,6 @@ class Corpus(object):
         if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
             return res
         elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
-            #try:
             return res.multiindex()
         else:
             from corpkit.process import get_index_name

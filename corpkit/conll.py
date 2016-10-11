@@ -687,6 +687,7 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     import re
     good_sents = []
     new_metadata = {}
+    from corpkit.constants import STRINGTYPE
     # could make the below more elegant ...
     for sentid, data in sorted(metadata.items()):
         meta_value = data.get(feature, 'none')
@@ -700,7 +701,7 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
                 if any(i in criteria for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
-        elif isinstance(criteria, (re._pattern_type, str)):
+        elif isinstance(criteria, (re._pattern_type, STRINGTYPE)):
             if not reverse:
                 if any(re.search(criteria, i) for i in lst_met_vl):
                     good_sents.append(sentid)
@@ -757,23 +758,17 @@ def pipeline(f,
         df = parse_conll(f)
     else:
         df = from_df
-
-    # if working by metadata feature,
     feature = kwargs.pop('by_metadata', False)
-
     df = cut_df_by_meta(df, just_metadata, skip_metadata)
-
     if feature:
-
         if df is None:
             print('Problem reading data from %s.' % f)
             return {}, {}
 
         resultdict = {}
         concresultdict = {}
-
         # get all the possible values in the df for the feature of interest
-        all_cats = set([i.get(feature, 'none') for i in df._metadata.values()])
+        all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
             r, c = pipeline(False, search, show,
@@ -814,7 +809,6 @@ def pipeline(f,
         crit = wordlists.closedclass.as_regex(boundaries='l', case_sensitive=False)
         df = df[~df['w'].str.contains(crit)]
 
-    
     for k, v in search.items():
 
         adj, k = determine_adjacent(k)

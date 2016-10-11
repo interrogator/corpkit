@@ -174,6 +174,7 @@ def pmultiquery(corpus,
             if not j2:
                 j2 = {}
             jmd.update(j2)
+    
             d['just_metadata'] = jmd
             d['outname'] = bit
             d['by_metadata'] = False
