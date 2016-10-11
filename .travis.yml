@@ -3,7 +3,7 @@ python:
 - '2.7'
 - '3.5'
 install: 
-- pip install --install-option="--no-cython-compile" cython; pip install -r requirements.txt
+- pip install --install-option="--no-cython-compile" cython; pip install -r requirements.txt; sudo mv nltk_data /usr/share/nltk_data
 script:
 - nosetests corpkit/nosetests.py -a '!slow'
 deploy:

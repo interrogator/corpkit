@@ -58,8 +58,10 @@ setup(name='corpkit',
                         "pandas>=0.18.1",
                         #"mpld3>=0.2", 
                         "requests",
+                        "tabview>=1.4.0",
                         "chardet",
                         "blessings>=1.6",
+
                         "traitlets>=4.1.0"],
       dependency_links=['git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview',
                         'git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable'])
