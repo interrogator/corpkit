@@ -241,6 +241,10 @@ class Interrogation(object):
         from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
+    def sort(self, way, **kwargs):
+        from corpkit.editor import editor
+        return editor(self, sort_by=way, **kwargs)
+
     def visualise(self,
                   title='',
                   x_label=None,

@@ -347,7 +347,7 @@ class Corpus(object):
             except AttributeError:
                 return load(name)
         else:
-            feat = interrogator(self, 'features', subcorpora=subc, **kwa)
+            feat = interrogator(self, 'features', subcorpora=self.symbolic, **kwa)
             feat = feat.results
             if isdir(savedir):
                 feat.save(name)
