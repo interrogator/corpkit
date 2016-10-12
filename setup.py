@@ -30,8 +30,8 @@ class CustomInstallCommand(install):
         nltkpath = dirname(path_to_nltk_f)
         for path, name in install_d.items():
             pat = join(nltkpath, path)
-            if not isfile(join(punktpath, '%s.zip' % name)) \
-                and not isdir(join(punktpath, name)):
+            if not isfile(join(pat, '%s.zip' % name)) \
+                and not isdir(join(pat, name)):
                 nltk.download(name, download_dir=nltkpath)
 
         nltk.data.path.append(nltkpath)
