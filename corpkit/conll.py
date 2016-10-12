@@ -726,6 +726,83 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
                 df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
     return df
 
+
+def get_stats(df, metadata, feature, root=False, **kwargs):
+    """
+    Get general statistics for a DataFrame
+    """
+
+    #todo: this should be moved to conll.pys
+    import re
+    from corpkit.dictionaries.process_types import processes
+    from collections import Counter, defaultdict
+    from corpkit.process import tregex_engine
+    from corpkit.conll import parse_conll, pipeline, process_df_for_speakers, cut_df_by_meta
+
+    def ispunct(s):
+        import string
+        return all(c in string.punctuation for c in s)
+
+    tree = [x['parse'] for x in metadata.values()]
+    
+    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                 'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                 'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                 'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                 'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                 'Clauses': r'/^S/ < __',
+                 'Interrogative': r'ROOT << (/\?/ !< __)',
+                 'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
+
+    result = Counter()
+
+    for name in tregex_qs.keys():
+        result[name] = 0
+
+    result['Sentences'] = len(set(df.index.labels[0]))
+    result['Passives'] = len(df[df['f'] == 'nsubjpass'])
+    result['Tokens'] = len(df)
+    # the below has returned a float before. i assume actually a nan?
+    result['Words'] = len([w for w in list(df['w']) if w and not ispunct(str(w))])
+    result['Characters'] = sum([len(str(w)) for w in list(df['w']) if w])
+    result['Open class'] = sum([1 for x in list(df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
+    result['Punctuation'] = result['Tokens'] - result['Words']
+    result['Closed class'] = result['Words'] - result['Open class']
+
+    to_open = '\n'.join(tree)
+
+    if not to_open.strip('\n'):
+        return {}, {}
+
+    for name, q in sorted(tregex_qs.items()):
+        options = ['-o', '-t'] if name == 'Processes' else ['-o']
+        # c option removed, could cause memory problems
+        #ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
+        res = tregex_engine(query=q, 
+                            options=options,
+                            corpus=to_open,  
+                            root=root)
+
+        #res = format_tregex(res)
+        if not res:
+            continue
+
+        concs = [False for i in res]
+        for (_, met, r), line in zip(res, concs):
+            result[name] = len(res)
+        if name != 'Processes':
+            continue
+        non_mat = 0
+        for ptype in ['mental', 'relational', 'verbal']:
+            reg = getattr(processes, ptype).words.as_regex(boundaries='l')
+            count = len([i for i in res if re.search(reg, i[-1])])
+            nname = ptype.title() + ' processes'
+            result[nname] = count
+
+        if root:
+            root.update()
+    return result, {}
+
 def pipeline(f,
              search,
              show,
@@ -739,6 +816,7 @@ def pipeline(f,
              skip_metadata=False,
              category=False,
              show_conc_metadata=False,
+             statsmode=False,
              **kwargs):
     """a basic pipeline for conll querying---some options still to do"""
 
@@ -760,6 +838,7 @@ def pipeline(f,
         df = from_df
     feature = kwargs.pop('by_metadata', False)
     df = cut_df_by_meta(df, just_metadata, skip_metadata)
+
     if feature:
         if df is None:
             print('Problem reading data from %s.' % f)
@@ -771,7 +850,8 @@ def pipeline(f,
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
-            r, c = pipeline(False, search, show,
+            if not statsmode:
+                r, c = pipeline(False, search, show,
                             exclude=exclude,
                             searchmode=searchmode,
                             excludemode=excludemode,
@@ -782,6 +862,8 @@ def pipeline(f,
                             category=category,
                             show_conc_metadata=show_conc_metadata,
                             **kwargs)
+            else:
+                r, c = get_stats(new_df, new_df._metadata, feature, root=kwargs.pop('root', False), **kwargs)
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict
@@ -808,7 +890,7 @@ def pipeline(f,
         from corpkit.dictionaries import wordlists
         crit = wordlists.closedclass.as_regex(boundaries='l', case_sensitive=False)
         df = df[~df['w'].str.contains(crit)]
-
+    
     for k, v in search.items():
 
         adj, k = determine_adjacent(k)

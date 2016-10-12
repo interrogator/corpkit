@@ -335,6 +335,8 @@ class Corpus(object):
         from corpkit.process import make_savename_for_features
 
         kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
+        if self.symbolic:
+            kwa['subcorpora'] = self.symbolic
 
         name = make_savename_for_features(obj='features',
                                           corpname=self.name,
@@ -347,7 +349,10 @@ class Corpus(object):
             except AttributeError:
                 return load(name)
         else:
-            feat = interrogator(self, 'features', subcorpora=self.symbolic, **kwa)
+            feat = interrogator(self, 'features', **kwa)
+            from corpkit.interrogation import Interrodict
+            if isinstance(feat, Interrodict):
+                feat = feat.multiindex()
             feat = feat.results
             if isdir(savedir):
                 feat.save(name)
@@ -818,7 +823,7 @@ class Corpus(object):
         import random
 
         if isinstance(n, int):
-            if level == 's':
+            if level.lower().startswith('s'):
                 rs = random.sample(list(self.subcorpora), n)
                 rs = sorted(rs, key=lambda x: x.name)
                 return Corpus(Datalist(rs),
@@ -829,7 +834,7 @@ class Corpus(object):
                 return Corpus(dl, level='d',
                               print_info=False, datatype='conll')
         elif isinstance(n, float):
-            if level == 's':
+            if level.lower().startswith('s'):
                 fps = list(self.subcorpora)
                 n = len(fps) / n
                 return Corpus(Datalist(random.sample(fps, n)),

@@ -191,6 +191,10 @@ def interrogator(corpus,
     def slow_tregex(sents, **kwargs):
         """
         Do the metadata specific version of tregex queries
+
+        This has some duplicate code from conll.py, which would ideally be resolved.
+        When there are subcorpora involved, this seems faster than the conll.py
+        recursive method, because it does not need to search multiple times with tregex
         """
         speakr = kwargs.get('speaker', '')
         subcorpora = kwargs.get('subcorpora')
@@ -202,16 +206,12 @@ def interrogator(corpus,
         from corpkit.process import tregex_engine
         from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
 
-        if corpus.datatype == 'parse':
-            speak_tree = [(get_speakername(sent), sent.parse_string.strip()) for sent in sents \
-                          if sent.parse_string is not None]
-        else:
-            from corpkit.conll import parse_conll, cut_df_by_meta
-            df = parse_conll(sents)
-            df = cut_df_by_meta(df, just_metadata, skip_metadata)
-            if df is None or df.empty:
-                return {}, {}
-            speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
+        from corpkit.conll import parse_conll, cut_df_by_meta
+        df = parse_conll(sents)
+        df = cut_df_by_meta(df, just_metadata, skip_metadata)
+        if df is None or df.empty:
+            return {}, {}
+        speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
             
         if speak_tree:
             speak, tree = list(zip(*speak_tree))
@@ -292,6 +292,8 @@ def interrogator(corpus,
         """
         Do the metadata specific version of tregex queries
         """
+
+        #todo: this should be moved to conll.pys
         import re
         from corpkit.dictionaries.process_types import processes
         from collections import Counter, defaultdict
@@ -661,7 +663,9 @@ def interrogator(corpus,
                     searcher = tgrep_searcher
                 optiontext = 'Searching parse trees'
             elif any(i.endswith('v') for i in search.keys()):
-                searcher = get_stats_conll
+                # either of these searchers now seems to work
+                searcher = pipeline
+                #seacher = get_stats_conll
                 statsmode = True
                 optiontext = 'General statistics'
             elif any(i.endswith('r') for i in search.keys()):
@@ -1297,6 +1301,7 @@ def interrogator(corpus,
                                      fsi_index=fsi_index,
                                      category=subcorpus_name,
                                      translated_option=translated_option,
+                                     statsmode=statsmode,
                                      **kwargs
                                     )
 
