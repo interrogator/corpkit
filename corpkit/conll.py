@@ -890,6 +890,9 @@ def pipeline(f,
         from corpkit.dictionaries import wordlists
         crit = wordlists.closedclass.as_regex(boundaries='l', case_sensitive=False)
         df = df[~df['w'].str.contains(crit)]
+
+    if statsmode:
+        return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
     
     for k, v in search.items():
 
