@@ -454,7 +454,7 @@ class Corpus(object):
                                 subcorpora=self.symbolic,
                                 **kwa).results
             if isdir(savedir):
-                feat.save(sname)
+                feat.save(psname)
                 wordclss = feat.edit(
                     merge_entries=mergetags,
                     sort_by='total').results
