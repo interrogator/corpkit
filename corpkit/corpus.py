@@ -406,7 +406,7 @@ class Corpus(object):
                 merge_entries=mergetags,
                 sort_by='total').results
         else:
-            feat = interrogator(self, 't', 'any', show='x',
+            feat = interrogator(self, show='x',
                 subcorpora=self.symbolic, *kwa).results
             if isdir(savedir):
                 feat.save(self.name + '-wordclasses')
@@ -444,11 +444,11 @@ class Corpus(object):
         savedir = 'saved_interrogations'
         if isfile(join(savedir, psname + '.p')):
             try:
-                return load(sname).results
+                return load(psname).results
             except AttributeError:
-                return load(sname)
+                return load(psname)
         else:
-            feat = interrogator(self, 't', 'any',
+            feat = interrogator(self,
                                 show='p',
                                 preserve_case=True,
                                 subcorpora=self.symbolic,
