@@ -510,11 +510,13 @@ def editor(interrogation,
         return df
 
     def resort(df, sort_by = False, keep_stats = False):
-        """sort results, potentially using scipy's linregress"""
+        """
+        Sort results, potentially using scipy's linregress
+        """
         
         # translate options and make sure they are parseable
         stat_field = ['slope', 'intercept', 'r', 'p', 'stderr']
-        easy_sorts = ['total', 'infreq', 'name', 'most', 'least']
+        easy_sorts = ['total', 'infreq', 'name', 'most', 'least', 'reverse']
         stat_sorts = ['increase', 'decrease', 'static', 'turbulent']
         options = stat_field + easy_sorts + stat_sorts
         sort_by_convert = {'most': 'total', True: 'total', 'least': 'infreq'}
@@ -541,6 +543,8 @@ def editor(interrogation,
                 df = df.drop(list(stats.index))
             if sort_by == 'name':
                 df = df.sort_index()
+            elif sort_by == 'reverse':
+                df = df[::-1]
             else:
                 df = df.sort_values(ascending=sort_by != 'total')
             if stats_done:
@@ -555,6 +559,8 @@ def editor(interrogation,
                 df = df.T
             df = df[list(df.sum().sort_values(ascending=sort_by != 'total').index)]
         
+        elif sort_by == 'reverse':
+            df = df.T[::-1].T
         # sort by slope etc., or search by subcorpus name
         if sort_by in stat_field or sort_by not in options:
             asc = kwargs.get('reverse', False)

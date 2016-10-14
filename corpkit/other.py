@@ -1,5 +1,9 @@
 from __future__ import print_function
 
+"""
+In here are functions used internally by corpkit, but also
+might be called by the user from time to time
+"""
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
 def quickview(results, n=25):
@@ -497,7 +501,6 @@ def texify(series, n=20, colname='Keyness', toptail=False, sort=False):
         tex = tex[:n+4] + [newline] + tex[n+4:]
         tex = '\n'.join(tex)
         return tex
-
 
 def as_regex(lst, boundaries='w', case_sensitive=False, inverse=False, compile=False):
     """Turns a wordlist into an uncompiled regular expression

@@ -475,8 +475,11 @@ class Interrogation(object):
             out.append(line)
         pydoc.pipepager('\n'.join(out), cmd='less -X -R -S')
 
-    def rel(self):
-        return self.edit('%', 'self')
+    def rel(self, denominator='self', **kwargs):
+        return self.edit('%', denominator, **kwargs)
+
+    def keyness(self, measure='ll', denominator='self', **kwargs):
+        return self.edit('k', denominator, **kwargs)
 
     def multiindex(self, indexnames=None):
         """Create a `pandas.MultiIndex` object from slash-separated results.

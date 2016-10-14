@@ -1,6 +1,6 @@
 """
 In here are functions used internally by corpkit,  
-not intended to be called by users. 
+not intended to be called by users.
 """
 
 from __future__ import print_function
@@ -14,8 +14,7 @@ def tregex_engine(corpus=False,
                   just_content_words=False,
                   root=False,
                   preserve_case=False,
-                  **kwargs
-                 ):
+                  **kwargs):
     """
     Run a Java Tregex query
     
@@ -1066,3 +1065,51 @@ def make_savename_for_features(corpname=False, obj='features', subcorpora=False)
     if subc:
         obj = obj + '-' + subc
     return obj
+
+def auto_usecols(search, exclude, show, usecols):
+    """
+    Figure out if we can speed up conll parsing based on search,
+    exclude and show. the return value is passed to pandas.read_csv
+    so that only relevant columns are parsed.
+
+    If usecols isn't None, the user has specified needed cols.
+
+    todo: coref
+    """
+    if usecols:
+        return usecols
+    from corpkit.constants import CONLL_COLUMNS
+
+    # get all objs from search, exclude and show
+    needed = []
+    for i in search.keys():
+        if 'g' in i:
+            needed.append('d')
+        elif 'd' in i:
+            needed.append('g')
+        needed.append(i)
+    if isinstance(exclude, dict):
+        for i in exclude.keys():
+            needed.append(i)
+    if isinstance(show, list):
+        for i in show:
+            needed.append(i)
+    else:
+        needed.append(show)
+    # get the obj and attr from these
+    stcols = []
+    for i in needed:
+        stcols.append(i[-1])
+        try:
+            stcols.append(i[-2])
+        except:
+            pass
+    # word class is pos
+    stcols = ['p' if i == 'x' else i for i in stcols]
+    # we always get word right now, but could remove '2' in the future
+    # also, sent index violates conll-u, so that might change
+    out = [0, 1, 2]
+    for n, c in enumerate(CONLL_COLUMNS):
+        if c in stcols and c not in out:
+            out.append(n)
+    return out
