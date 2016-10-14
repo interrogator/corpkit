@@ -4,7 +4,8 @@ corpkit: process CONLL formatted data
 
 def parse_conll(f,
                 first_time=False,
-                just_meta=False):
+                just_meta=False,
+                usecols=None):
     """
     Take a file and return pandas dataframe with multiindex and metadata
     """
@@ -62,7 +63,7 @@ def parse_conll(f,
     # open with sent and token as multiindex
     try:
         df = pd.read_csv(StringIO(data), sep='\t', header=None,
-                         names=head, index_col=['s', 'i'])
+                         names=head, index_col=['s', 'i'], usecols=usecols)
     except ValueError:
         return
     df._metadata = metadata
@@ -196,7 +197,6 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     """
     Search the dataframe for a single criterion
     """
-    
     import re
     out = []
 
@@ -205,7 +205,11 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
         df = df.loc[df['c'].endswith('*')]
 
     # cut down to just tokens with matching attr
-    matches = df[df[attrib].fillna('').str.contains(pattern)]
+    # but, if the pattern is 'any', don't bother
+    if hasattr(pattern, 'pattern') and pattern.pattern == r'.*':
+        matches = df
+    else:
+        matches = df[df[attrib].fillna('').str.contains(pattern)]
 
     # functions for getting the needed object
     revmapping = {'g': get_dependents_of_id,
@@ -346,10 +350,13 @@ def make_series(ser, df=False, obj=False,
             except KeyError:
                 return
 
+    # if dependent, we need to return a df-like thing instead
     elif obj == 'd':
+        #import pandas as pd
         idxs = [(ser.name[0], int(i)) for i in ser[obj].split(',')]
-        ss = df[att].loc[idxs]
-        return ss
+        dat = df[att].ix[idxs]
+
+        return dat
 
     # todo: fix everything below here
     elif obj == 'r': # get the representative
@@ -377,6 +384,9 @@ def joiner(ser):
 def make_new_for_dep(dfmain, dfdep, name):
     """
     If showind dependent, we have to make a whole new dataframe
+
+    :param dfmain: dataframe with everything in it
+    :param dfdep: dataframe with just dependent
     """
     import pandas as pd
     import numpy as np
@@ -415,7 +425,7 @@ def turn_pos_to_wc(ser, showval):
     return news
 
 def concline_generator(matches, idxs, df, metadata,
-                       add_meta, category, fname):
+                       add_meta, category, fname, preserve_case=False):
     """
     Get all conclines
     """
@@ -433,9 +443,13 @@ def concline_generator(matches, idxs, df, metadata,
     # don't look up the same sentence multiple times
     for s, tup in sorted(mdict.items()):
         sent = df.loc[s]
+        if not preserve_case:
+            sent = sent.str.lower()
         meta = metadata[s]
         sname = meta.get('speaker', 'none')
         for i, mid in tup:
+            if not preserve_case:
+                mid = mid.lower()
             ix = '%d,%d' % (s, i)
             start = ' '.join(sent.loc[:i-1].values)
             end = ' '.join(sent.loc[i+1:].values)
@@ -461,7 +475,8 @@ def fast_simple_conc(dfss, idxs, show,
                      fname=False,
                      category=False,
                      only_format_match=True,
-                     conc=False):
+                     conc=False,
+                     preserve_case=False):
     """
     Fast, simple concordancer, heavily conditional
     to save time.
@@ -548,23 +563,14 @@ def fast_simple_conc(dfss, idxs, show,
             # dependent mode produces multiple matches
             # so, we have to make a new dataframe with duplicate indexes
             # todo: what about when there are two dep options?
-            if ob in ['d']:
-                if only_format_match:
-                    df = make_new_for_dep(matches, ser, i)
-                else:
-                    df = make_new_for_dep(to_proc, ser, i)
-            # if not making a new df, just create the col name and add it
-            # to our list of series
+            ser.name = adjname + i
+            if ob != 'd':
+                df[ser.name] = ser
             else:
-                ser.name = adjname + i
-                formatted.append(ser)
-                
-        # now we add the columns to the dataframe 
-        if not dmode:
-            for l in formatted:
-                df[l.name] = l
+                df = make_new_for_dep(df, ser, i)
 
         df = df.fillna('none')
+
 
     # x is wordclass. so, we just get pos and translate it
     nshow = [(i.replace('x', 'p'), i.endswith('x')) for i in show]
@@ -595,6 +601,8 @@ def fast_simple_conc(dfss, idxs, show,
     
     # get rid of (e.g.) nan caused by no_punct=True
     matches = matches.dropna(axis=0, how='all')
+    if not preserve_case:
+        matches = matches.str.lower()
 
     if not conc:
         # todo: is matches.values faster?
@@ -602,7 +610,8 @@ def fast_simple_conc(dfss, idxs, show,
     else:
         conc_res = concline_generator(matches, idxs, df,
                                       metadata, add_meta,
-                                      category, fname)
+                                      category, fname,
+                                      preserve_case=preserve_case)
 
     return list(matches), conc_res
 
@@ -611,6 +620,7 @@ def show_this(df, matches, show, metadata, conc=False,
 
     only_format_match = kwargs.pop('only_format_match', True)
     ngram_mode = kwargs.get('ngram_mode', True)
+    preserve_case = kwargs.get('preserve_case', False)
 
     matches = sorted(list(matches))
 
@@ -625,10 +635,13 @@ def show_this(df, matches, show, metadata, conc=False,
         return len(matches), {}
     if len(show) == 1 and not conc:
         if show[0] in ['ms', 'mi', 'mw', 'ml', 'mp', 'mf']:
-            return list(df.loc[matches][show[0][-1]]), {}
+            get_fast = df.loc[matches][show[0][-1]]
+            if not preserve_case:
+                get_fast = get_fast.str.lower()
+            return list(get_fast), {}
 
     # todo: make work for ngram, collocate and coref
-    elif all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show):
+    if all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show):
         return fast_simple_conc(df,
                                 matches,
                                 show,
@@ -637,7 +650,8 @@ def show_this(df, matches, show, metadata, conc=False,
                                 kwargs.get('filename', ''),
                                 category,
                                 only_format_match,
-                                conc=conc)
+                                conc=conc,
+                                preserve_case=preserve_case)
 
 def fix_show_bit(show_bit):
     """take a single search/show_bit type, return match"""
@@ -725,6 +739,79 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
             for k, v in skip_metadata.items():
                 df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
     return df
+
+
+def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs):
+    """
+    Do the metadata specific version of tregex queries
+
+    not implemented yet
+    """
+
+    from corpkit.process import tregex_engine
+    from corpkit.interrogator import format_tregex
+
+    speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in metadata.values()]
+        
+    if speak_tree:
+        speak, tree = list(zip(*speak_tree))
+    else:
+        speak, tree = [], []
+    
+    if all(not x for x in speak):
+        speak = False
+
+    to_open = '\n'.join(tree)
+
+    concs = []
+
+    if not to_open.strip('\n'):
+        if subcorpora:
+            return {}, {}
+
+    ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
+    res = tregex_engine(query=search, 
+                        options=ops, 
+                        corpus=to_open,
+                        root=root,
+                        preserve_case=True,
+                        speaker_data=speak)
+
+    res = format_tregex(res, speaker_data=speak)
+
+    if not res:
+        if subcorpora:
+            return {}, {}
+
+    if conc:
+        ops += ['-w']
+        whole_res = tregex_engine(query=q, 
+                                  options=ops, 
+                                  corpus=to_open,
+                                  root=root,
+                                  preserve_case=True,
+                                  speaker_data=speak)
+
+        # format match too depending on option
+        if not only_format_match:
+            whole_res = format_tregex(whole_res, whole=True, speaker_data=speak)
+
+        # make conc lines from conc results
+        concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
+    else:
+        concs = [False for i in res]
+
+
+    if countmode:
+        if isinstance(res, int):
+            return res, False
+        else:
+            return len(res), False
+    else:
+        return res, concs
+
+
+
 
 
 def get_stats(df, metadata, feature, root=False, **kwargs):
@@ -833,7 +920,7 @@ def pipeline(f,
     all_exclude = []
 
     if from_df is False or from_df is None:
-        df = parse_conll(f)
+        df = parse_conll(f, usecols=kwargs.get('usecols'))
     else:
         df = from_df
     feature = kwargs.pop('by_metadata', False)
@@ -894,32 +981,26 @@ def pipeline(f,
     if statsmode:
         return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
     
-    for k, v in search.items():
-
-        adj, k = determine_adjacent(k)
-        
-        res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
-        for r in res:
-            all_matches.append(r)
-
-    all_matches = remove_by_mode(all_matches, searchmode, search)
-    
+    # do no searching if 'any' is requested
+    if len(search) == 1 and list(search.keys())[0] == 'w' \
+                        and hasattr(list(search.values())[0], 'pattern') \
+                        and list(search.values())[0].pattern == r'.*':
+        all_matches = list(df.index)
+    else:
+        for k, v in search.items():
+            adj, k = determine_adjacent(k)
+            res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
+            for r in res:
+                all_matches.append(r)
+        all_matches = remove_by_mode(all_matches, searchmode, search)
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
             res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
             for r in res:
                 all_exclude.append(r)
-
         all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
-        
-        # do removals
         all_matches = all_matches.difference(all_exclude)
-
-    # get rid of NA results
-    # this thing is slow!
-    #all_matches = [i for i in all_matches if i in list(df.index)]
-    #all_matches = list(df.loc[all_matches].index)
 
     out, conc_out = show_this(df, all_matches, show, metadata, conc, 
                               coref=coref, category=category, 

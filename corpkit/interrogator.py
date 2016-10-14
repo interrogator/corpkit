@@ -101,6 +101,41 @@ def interrogator(corpus,
     
     have_java = check_jdk()
 
+    def auto_usecols(search, exclude, show, usecols):
+        """
+        Figure out if we can speed up conll parsing based on search,
+        exclude and show
+
+        todo: coref
+        """
+        if usecols:
+            return usecols
+        needed = []
+        for i in search.keys():
+            needed.append(i)
+        if isinstance(exclude, dict):
+            for i in exclude.keys():
+                needed.append(i)
+        if isinstance(show, list):
+            for i in show:
+                needed.append(i)
+        else:
+            needed.append(show)
+        stcols = []
+        for i in needed:
+            stcols.append(i[-1])
+            try:
+                stcols.append(i[-2])
+            except:
+                pass
+        from corpkit.constants import CONLL_COLUMNS
+        out = [0, 1]
+        for n, c in enumerate(CONLL_COLUMNS):
+            if c in stcols and c not in out:
+                out.append(n)
+        return out
+        #return colnames
+
     # convert cql-style queries---pop for the sake of multiprocessing
     cql = kwargs.pop('cql', None)
     if cql:
@@ -963,19 +998,12 @@ def interrogator(corpus,
     def lowercase_result(res):
         """      
         Take any result and do spelling/lowercasing if need be
+
+        todo: remove lowercase and change name
         """
         if not res or statsmode:
             return res
-        if not preserve_case:
-            if isinstance(res[0], tuple):
-                newr = []
-                for tup in res:
-                    tup = list(tup)
-                    tup[-1] = tup[-1].lower()
-                    newr.append(tuple(tup))
-                res = newr
-            else:
-                res = [i.lower() for i in res]
+        # this is likely broken, but spelling in interrogate is deprecated anyway
         if spelling:
             res = [correct_spelling(r) for r in res]
         return res
@@ -1194,6 +1222,8 @@ def interrogator(corpus,
     except AttributeError:
         in_notebook = False
 
+    usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None))
+
     # print welcome message
     welcome_message = welcome_printer(return_it=in_notebook)
 
@@ -1302,9 +1332,9 @@ def interrogator(corpus,
                                      category=subcorpus_name,
                                      translated_option=translated_option,
                                      statsmode=statsmode,
-                                     **kwargs
-                                    )
-
+                                     preserve_case=preserve_case,
+                                     usecols=usecols,
+                                     **kwargs)
 
             if res is None and conc_res is None:
                 current_iter += 1
