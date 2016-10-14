@@ -2,8 +2,6 @@
 corpkit: Interrogate a parsed corpus
 """
 
-#!/usr/bin/python
-
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
