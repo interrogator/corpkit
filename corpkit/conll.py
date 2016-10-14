@@ -800,7 +800,6 @@ def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs)
     else:
         concs = [False for i in res]
 
-
     if countmode:
         if isinstance(res, int):
             return res, False

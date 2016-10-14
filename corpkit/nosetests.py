@@ -249,6 +249,10 @@ def test_interpreter():
     Test for errors in interpreter functionality
     """
     import os
+    try:
+        os.remove('saved_interrogations/test-speak-parsed-anylemma.p')
+    except:
+        pass
     from corpkit.env import interpreter
     try:
         os.makedirs('exported')

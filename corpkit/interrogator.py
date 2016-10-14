@@ -110,6 +110,10 @@ def interrogator(corpus,
             return usecols
         needed = []
         for i in search.keys():
+            if 'g' in i:
+                needed.append('d')
+            elif 'd' in i:
+                needed.append('g')
             needed.append(i)
         if isinstance(exclude, dict):
             for i in exclude.keys():
@@ -127,7 +131,7 @@ def interrogator(corpus,
             except:
                 pass
         from corpkit.constants import CONLL_COLUMNS
-        out = [0, 1]
+        out = [0, 1, 2]
         for n, c in enumerate(CONLL_COLUMNS):
             if c in stcols and c not in out:
                 out.append(n)
