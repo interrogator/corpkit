@@ -83,7 +83,7 @@ def interrogator(corpus,
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
                                  get_speakername, animator, filtermaker, fix_search,
-                                 pat_format)
+                                 pat_format, auto_usecols)
     from corpkit.other import as_regex
     from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
@@ -98,45 +98,6 @@ def interrogator(corpus,
     from traitlets import TraitError
     
     have_java = check_jdk()
-
-    def auto_usecols(search, exclude, show, usecols):
-        """
-        Figure out if we can speed up conll parsing based on search,
-        exclude and show
-
-        todo: coref
-        """
-        if usecols:
-            return usecols
-        needed = []
-        for i in search.keys():
-            if 'g' in i:
-                needed.append('d')
-            elif 'd' in i:
-                needed.append('g')
-            needed.append(i)
-        if isinstance(exclude, dict):
-            for i in exclude.keys():
-                needed.append(i)
-        if isinstance(show, list):
-            for i in show:
-                needed.append(i)
-        else:
-            needed.append(show)
-        stcols = []
-        for i in needed:
-            stcols.append(i[-1])
-            try:
-                stcols.append(i[-2])
-            except:
-                pass
-        from corpkit.constants import CONLL_COLUMNS
-        out = [0, 1, 2]
-        for n, c in enumerate(CONLL_COLUMNS):
-            if c in stcols and c not in out:
-                out.append(n)
-        return out
-        #return colnames
 
     # convert cql-style queries---pop for the sake of multiprocessing
     cql = kwargs.pop('cql', None)
