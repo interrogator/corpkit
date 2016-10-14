@@ -143,6 +143,14 @@ def _tabview(self, **kwargs):
     import tabview
     tabview.view(self, **kwargs)
 
+def _rel(self, denominator='self', **kwargs):
+    from corpkit.editor import editor
+    return editor(self, '%', denominator, **kwargs)
+
+def _keyness(self, measure='ll', denominator='self', **kwargs):
+    from corpkit.editor import editor
+    return editor(self, 'k', denominator, **kwargs)
+
 # monkey patching things
 
 DataFrame.entropy = _entropy
@@ -151,6 +159,12 @@ DataFrame.shannon = _shannon
 
 DataFrame.edit = _edit
 Series.edit = _edit
+
+DataFrame.rel = _rel
+Series.rel = _rel
+
+DataFrame.keyness = _keyness
+Series.keyness = _keyness
 
 DataFrame.visualise = _plot
 Series.visualise = _plot
