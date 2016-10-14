@@ -740,7 +740,6 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
                 df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
     return df
 
-
 def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs):
     """
     Do the metadata specific version of tregex queries
@@ -809,10 +808,6 @@ def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs)
             return len(res), False
     else:
         return res, concs
-
-
-
-
 
 def get_stats(df, metadata, feature, root=False, **kwargs):
     """
