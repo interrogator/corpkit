@@ -1,3 +1,3 @@
-This small corpus is used in corpkit's tests. Not a lot of data is required.
-Here, we're testing the speaker_segmentation option.
-Right you are. The next file, however, won't have speaker IDs.
+This small corpus is used in corpkit's tests. Not a lot of data is required. 
+Here, we're testing the speaker_segmentation option. 
+Right you are. The next file, however, won't have speaker IDs. 

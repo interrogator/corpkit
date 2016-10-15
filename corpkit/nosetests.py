@@ -47,7 +47,7 @@ def test_parse():
         shutil.rmtree(parsed_path)
     except:
         pass
-    parsed = unparsed.parse()
+    parsed = unparsed.parse(metadata=True)
     fnames = []
     for subc in parsed.subcorpora:
         for f in subc.files:
@@ -62,7 +62,7 @@ def test_tokenise():
         shutil.rmtree(tok_path)
     except:
         pass
-    tok = unparsed.tokenise(speaker_segmentation=True, lemmatise=True, postag=True)
+    tok = unparsed.tokenise(speaker_segmentation=True, lemmatise=True, postag=True, metadata=True)
 
     df = tok[0][0].document
     assert_equals(tok.name, 'test-tokenised')
@@ -78,7 +78,7 @@ def test_speak_parse():
         shutil.rmtree(speak_path)
     except:
         pass
-    parsed = unparsed.parse(speaker_segmentation=True)
+    parsed = unparsed.parse(speaker_segmentation=True, metadata=True)
     fnames = []
     for subc in parsed.subcorpora:
         for f in subc.files:
