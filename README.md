@@ -276,7 +276,7 @@ There are also some [more detailed API examples over here](https://github.com/in
 <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/symlog-part2.png" width="310"> <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/process-types-for-part-types.png" width="390">
 <br>Participants and processes in online forum talk<br>
 <br><br>
-<img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/risk-and-power-2.png" width="350"> <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/mood-role-risk.png" width="350">
+<img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/risk-and-power-2.png" width="330"> <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/mood-role-risk.png" width="370">
 <br>Riskers and mood role of risk words in print news journalism<br>
 </i></p>
 
