@@ -1,7 +1,7 @@
 # sent_id 1
 # parse=(ROOT (S (NP (DT This) (JJ small) (NN corpus)) (VP (VBZ is) (VP (VBN used) (PP (IN in) (NP (NP (NN corpkit) (POS 's)) (NNS tests))))) (. .)))
-# speaker=TESTER
 # year=2004
+# speaker=TESTER
 # test=on
 1	1	This	this	DT	O	3	det	0	1
 1	2	small	small	JJ	O	3	amod	0	1
@@ -16,8 +16,8 @@
 
 # sent_id 2
 # parse=(ROOT (S (NP (NP (RB Not) (DT a) (NN lot)) (PP (IN of) (NP (NNS data)))) (VP (VBZ is) (VP (VBN required))) (. .)))
-# speaker=TESTER
 # year=2004
+# speaker=TESTER
 # test=on
 2	1	Not	not	RB	O	3	neg	0	_
 2	2	a	a	DT	O	3	det	0	_
@@ -30,8 +30,8 @@
 
 # sent_id 3
 # parse=(ROOT (S (ADVP (RB Here)) (, ,) (NP (PRP we)) (VP (VBP 're) (VP (VBG testing) (NP (DT the) (NN speaker_segmentation) (NN option)))) (. .)))
-# speaker=ANONYMOUS
 # year=2005
+# speaker=ANONYMOUS
 # test=on
 3	1	Here	here	RB	O	5	advmod	0	_
 3	2	,	,	,	O	5	punct	0	_
@@ -45,8 +45,8 @@
 
 # sent_id 4
 # parse=(ROOT (S (ADVP (RB Right)) (NP (PRP you)) (VP (VBP are)) (. .)))
-# speaker=TESTER
 # year=2004
+# speaker=TESTER
 # test=on
 4	1	Right	right	RB	O	3	advmod	0	_
 4	2	you	you	PRP	O	3	nsubj	0	7
@@ -55,8 +55,8 @@
 
 # sent_id 5
 # parse=(ROOT (S (NP (DT The) (JJ next) (NN file)) (, ,) (ADVP (RB however)) (, ,) (VP (MD wo) (RB n't) (VP (VB have) (NP (NN speaker) (NNS IDs)))) (. .)))
-# speaker=TESTER
 # year=2004
+# speaker=TESTER
 # test=on
 5	1	The	the	DT	O	3	det	0	8
 5	2	next	next	JJ	O	3	amod	0	8

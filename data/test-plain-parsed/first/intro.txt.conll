@@ -1,7 +1,7 @@
 # sent_id 1
 # parse=(ROOT (FRAG (NP (NN TESTER)) (: :) (S (NP (DT This) (JJ small) (NN corpus)) (VP (VBZ is) (VP (VBN used) (PP (IN in) (NP (NP (NN corpkit) (POS 's)) (NNS tests)))))) (. .)))
-# speaker=none
 # year=2004
+# speaker=none
 # test=on
 1	1	TESTER	tester	NN	O	0	ROOT	2,7,12	_
 1	2	:	:	:	O	1	punct	0	_
@@ -18,8 +18,8 @@
 
 # sent_id 2
 # parse=(ROOT (S (NP (NP (RB Not) (DT a) (NN lot)) (PP (IN of) (NP (NNS data)))) (VP (VBZ is) (VP (VBN required))) (. .)))
-# speaker=none
 # year=2004
+# speaker=none
 # test=on
 2	1	Not	not	RB	O	3	neg	0	_
 2	2	a	a	DT	O	3	det	0	_
@@ -32,8 +32,8 @@
 
 # sent_id 3
 # parse=(ROOT (NP (NP (NNP ANONYMOUS)) (: :) (S (ADVP (RB Here)) (, ,) (NP (PRP we)) (VP (VBP 're) (VP (VBG testing) (NP (DT the) (NN speaker_segmentation) (NN option))))) (. .)))
-# speaker=none
 # year=2005
+# speaker=none
 # test=on
 3	1	ANONYMOUS	ANONYMOUS	NNP	O	0	ROOT	2,7,11	5*
 3	2	:	:	:	O	1	punct	0	5
@@ -49,8 +49,8 @@
 
 # sent_id 4
 # parse=(ROOT (NP (NP (NN TESTER)) (: :) (NP (NP (NNP Right)) (SBAR (S (NP (PRP you)) (VP (VBP are))))) (. .)))
-# speaker=none
 # year=2004
+# speaker=none
 # test=on
 4	1	TESTER	tester	NN	O	0	ROOT	2,3,6	8*
 4	2	:	:	:	O	1	punct	0	8
@@ -61,8 +61,8 @@
 
 # sent_id 5
 # parse=(ROOT (S (NP (DT The) (JJ next) (NN file)) (, ,) (ADVP (RB however)) (, ,) (VP (MD wo) (RB n't) (VP (VB have) (NP (NN speaker) (NNS IDs)))) (. .)))
-# speaker=none
 # year=2004
+# speaker=none
 # test=on
 5	1	The	the	DT	O	3	det	0	11
 5	2	next	next	JJ	O	3	amod	0	11

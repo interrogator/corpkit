@@ -268,6 +268,20 @@ Below, we make normalised frequencies and plot:
 
 There are also some [more detailed API examples over here](https://github.com/interrogator/corpkit/blob/master/API-README.md). This document is fairly thorough, but now deprecated, because the official docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
 
+## Example figures
+
+![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/inc-proc.png)
+*Increasingly frequent processes in English scientific writing*
+
+![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/symlog-part2.png)
+*Keyness of grammatical participants in an online forum by membership stage*
+
+![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/best-derived.png)
+*Shfiting register of scientific English*
+
+![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/inc-risk-obj.png)
+*Increasingly common risks in print news journalism*
+
 ## Graphical interface
 
 Screenshots coming soon! For now, just head [here](http://interrogator.github.io/corpkit/).

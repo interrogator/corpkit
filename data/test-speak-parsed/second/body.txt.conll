@@ -22,8 +22,8 @@
 
 # sent_id 2
 # parse=(ROOT (S (PP (IN In) (NP (DT both) (NNS cases))) (, ,) (NP (NNP Python)) (VP (MD can) (VP (VB act) (PP (IN as) (NP (DT a) (JJ fantastic) (NN conduit))))) (. .)))
-# speaker=UNIDENTIFIED
 # year=2002
+# speaker=UNIDENTIFIED
 # test=off
 2	1	In	in	IN	O	3	case	0	_
 2	2	both	both	DT	O	3	det	0	8
@@ -40,8 +40,8 @@
 
 # sent_id 3
 # parse=(ROOT (S (S (VP (ADVP (RB Just)) (VBG checking) (NP (PRP I)))) (VP (VBP 'm) (VP (VP (VBG getting) (S (VP (VBN noticed) (PP (IN during) (NP (NP (NN parsing)) (, ,) (NP (NN concordancing))))))) (CC and) (VP (VBG interrogating)))) (. .)))
-# speaker=NEWCOMER
 # year=2005
+# speaker=NEWCOMER
 # test=on
 3	1	Just	just	RB	O	2	advmod	0	_
 3	2	checking	check	VBG	O	5	csubj	1,3	_
@@ -59,8 +59,8 @@
 
 # sent_id 4
 # parse=(ROOT (S (NP (DT This) (NN corpus) (NNS linguistics)) (VP (VBZ is) (NP (JJ hard) (NN work))) (. !)))
-# speaker=NEWCOMER
 # year=2005
+# speaker=NEWCOMER
 # test=on
 4	1	This	this	DT	O	3	det	0	2
 4	2	corpus	corpus	NN	O	3	compound	0	2
