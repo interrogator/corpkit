@@ -263,24 +263,19 @@ Below, we make normalised frequencies and plot:
 >>> plt.show()
 ```
 
-<img style="float:left" src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/actors.png" />
-<br>
+<img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/actors.png" width="450">
 
 There are also some [more detailed API examples over here](https://github.com/interrogator/corpkit/blob/master/API-README.md). This document is fairly thorough, but now deprecated, because the official docs are now over at [ReadTheDocs](http://corpkit.readthedocs.io/en/latest/).
 
 ## Example figures
 
-![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/inc-proc.png)
-*Increasingly frequent processes in English scientific writing*
+<p align="center"> <i>
+<img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/inc-proc.png" width="350"> <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/best-derived.png" width="350">
+<br>Shifting register of scientific English<br>
 
-![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/symlog-part2.png)
-*Keyness of grammatical participants in an online forum by membership stage*
-
-![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/best-derived.png)
-*Shfiting register of scientific English*
-
-![](https://raw.githubusercontent.com/interrogator/corpkit/master/images/inc-risk-obj.png)
-*Increasingly common risks in print news journalism*
+<img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/symlog-part2.png" width="350"> <img src="https://raw.githubusercontent.com/interrogator/corpkit/master/images/process-types-for-part-types.png" width="350">
+<br>Participants and processes in online forum talk<br>
+</i></p>
 
 ## Graphical interface
 
