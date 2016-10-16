@@ -74,7 +74,7 @@ def write_df_to_conll(df, newf, plain=False, stripped=False,
                                              metadata_mode=metadata,
                                              speaker_segmentation=speaker_segmentation)
             
-            for k, v in metad.items():
+            for k, v in sorted(metad.items()):
                 outstring += '# %s=%s\n' % (k, v)
 
         sent = df.loc[si:si]

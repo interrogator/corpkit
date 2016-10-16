@@ -1242,7 +1242,7 @@ def convert_json_to_conll(path,
                                              speaker_segmentation=speaker_segmentation)
                             
             output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
-            for k, v in metad.items():
+            for k, v in sorted(metad.items()):
                 output += '# %s=%s\n' % (k, v)
             for token in sent['tokens']:
                 index = str(token['index'])

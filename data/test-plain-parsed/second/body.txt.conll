@@ -22,9 +22,9 @@
 
 # sent_id 2
 # parse=(ROOT (S (PP (IN In) (NP (DT both) (NNS cases))) (, ,) (NP (NNP Python)) (VP (MD can) (VP (VB act) (PP (IN as) (NP (DT a) (JJ fantastic) (NN conduit))))) (. .)))
-# year=2002
-# test=off
 # speaker=none
+# test=off
+# year=2002
 2	1	In	in	IN	O	3	case	0	_
 2	2	both	both	DT	O	3	det	0	8
 2	3	cases	case	NNS	O	7	nmod:in	1,2	8*
@@ -40,9 +40,9 @@
 
 # sent_id 3
 # parse=(ROOT (X (NP (NN NEWCOMER)) (: :) (FRAG (S (ADVP (RB Just)) (VP (VBG checking) (SBAR (S (NP (PRP I)) (VP (VBP 'm) (VP (VP (VBG getting) (S (VP (VBN noticed) (PP (IN during) (NP (NP (NN parsing)) (, ,) (NP (NN concordancing))))))) (CC and) (VP (VBG interrogating))))))))) (. .)))
-# year=2005
-# test=on
 # speaker=none
+# test=on
+# year=2005
 3	1	NEWCOMER	newcomer	NN	O	0	ROOT	2,4,15	_
 3	2	:	:	:	O	1	punct	0	_
 3	3	Just	just	RB	O	4	advmod	0	_
@@ -61,9 +61,9 @@
 
 # sent_id 4
 # parse=(ROOT (S (NP (DT This) (NN corpus) (NNS linguistics)) (VP (VBZ is) (NP (JJ hard) (NN work))) (. !)))
-# year=2005
-# test=on
 # speaker=none
+# test=on
+# year=2005
 4	1	This	this	DT	O	3	det	0	2
 4	2	corpus	corpus	NN	O	3	compound	0	2
 4	3	linguistics	linguistics	NNS	O	4	nsubj	1,2	2
