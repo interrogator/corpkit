@@ -740,16 +740,30 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
                 df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
     return df
 
-def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs):
+def slow_tregex(metadata=False,
+                search=False,
+                searchmode=False,
+                exclude=False,
+                excludemode=False,
+                translated_option=False,
+                subcorpora=False,
+                conc=False,
+                root=False,
+                preserve_case=False,
+                countmode=False,
+                show=False,
+                lem_instance=False,
+                lemtag=False,
+                **kwargs):
     """
     Do the metadata specific version of tregex queries
-
-    not implemented yet
     """
 
-    from corpkit.process import tregex_engine
-    from corpkit.interrogator import format_tregex
-
+    from corpkit.process import tregex_engine, format_tregex, make_conc_lines_from_whole_mid
+    
+    if isinstance(search, dict):
+        search = list(search.values())[0]
+    
     speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in metadata.values()]
         
     if speak_tree:
@@ -773,32 +787,42 @@ def slow_tregex(metadata, search, translated_option, subcorpora, conc, **kwargs)
                         options=ops, 
                         corpus=to_open,
                         root=root,
-                        preserve_case=True,
-                        speaker_data=speak)
+                        preserve_case=preserve_case,
+                        speaker_data=False)
 
-    res = format_tregex(res, speaker_data=speak)
+    res = format_tregex(res, show, exclude=exclude, excludemode=excludemode,
+                        translated_option=translated_option,
+                        lem_instance=lem_instance, countmode=countmode, speaker_data=False,
+                        lemtag=lemtag)
 
     if not res:
         if subcorpora:
-            return {}, {}
+            return [], []
 
     if conc:
         ops += ['-w']
-        whole_res = tregex_engine(query=q, 
+        whole_res = tregex_engine(query=search, 
                                   options=ops, 
                                   corpus=to_open,
                                   root=root,
-                                  preserve_case=True,
+                                  preserve_case=preserve_case,
                                   speaker_data=speak)
 
         # format match too depending on option
         if not only_format_match:
-            whole_res = format_tregex(whole_res, whole=True, speaker_data=speak)
+            whole_res = format_tregex(whole_res, show, exclude=exclude, excludemode=excludemode,
+                                      translated_option=translated_option,
+                                       lem_instance=lem_instance, countmode=countmode,
+                                       speaker_data=speak, whole=True,
+                                       lemtag=lemtag)
 
         # make conc lines from conc results
         concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
     else:
         concs = [False for i in res]
+
+    if len(res) > 0 and isinstance(res[0], tuple):
+        res = [i[-1] for i in res]
 
     if countmode:
         if isinstance(res, int):
@@ -898,17 +922,12 @@ def pipeline(f,
              category=False,
              show_conc_metadata=False,
              statsmode=False,
+             search_trees=False,
+             lem_instance=False,
              **kwargs):
-    """a basic pipeline for conll querying---some options still to do"""
-
-    # make file into df, get metadata
-    # restrict for speakers
-    # remove punct/closed words
-    # get indexes of matches for every search
-    # remove if not enough matches or exclude is defined
-    # show: (bottleneck)
-    #
-    # issues: get dependents, coref
+    """
+    A basic pipeline for conll querying---some options still to do
+    """
 
     all_matches = []
     all_exclude = []
@@ -931,7 +950,7 @@ def pipeline(f,
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
-            if not statsmode:
+            if not statsmode and not search_trees:
                 r, c = pipeline(False, search, show,
                             exclude=exclude,
                             searchmode=searchmode,
@@ -943,8 +962,27 @@ def pipeline(f,
                             category=category,
                             show_conc_metadata=show_conc_metadata,
                             **kwargs)
-            else:
+            elif statsmode:
                 r, c = get_stats(new_df, new_df._metadata, feature, root=kwargs.pop('root', False), **kwargs)
+            elif search_trees == 'tregex':
+                r, c = slow_tregex(search=search,
+                                   searchmode=searchmode,
+                                   exclude=exclude,
+                                   excludemode=excludemode,
+                                   conc=conc,
+                                   from_df=new_df,
+                                   by_metadata=False,
+                                   metadata=new_df._metadata,
+                                   subcorpora=feature,
+                                   root=kwargs.pop('root', False),
+                                   show=show,
+                                   lem_instance=lem_instance,
+                                   **kwargs)
+            elif search_trees == 'tgrep':
+                raise NotImplementedError()
+                pass
+                #r, c = slow_tregex(new_df, new_df._metadata, feature, root=kwargs.pop('root', False), **kwargs)
+
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict
@@ -974,6 +1012,20 @@ def pipeline(f,
 
     if statsmode:
         return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
+    elif search_trees == 'tregex':
+        return slow_tregex(new_df,
+                           search=search,
+                           searchmode=searchmode,
+                           exclude=exclude,
+                           excludemode=excludemode,
+                           conc=conc,
+                           from_df=new_df,
+                           by_metadata=False,
+                           metadata=new_df._metadata,
+                           root=kwargs.pop('root', False),
+                           **kwargs)
+    elif search_trees == 'tgrep':
+        raise NotImplementedError()
     
     # do no searching if 'any' is requested
     if len(search) == 1 and list(search.keys())[0] == 'w' \

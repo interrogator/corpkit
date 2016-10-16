@@ -83,9 +83,9 @@ def interrogator(corpus,
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
                                  get_speakername, animator, filtermaker, fix_search,
-                                 pat_format, auto_usecols)
+                                 pat_format, auto_usecols, format_tregex,
+                                 make_conc_lines_from_whole_mid)
     from corpkit.other import as_regex
-    from corpkit.dictionaries.word_transforms import wordlist, taglemma
     from corpkit.dictionaries.process_types import Wordlist
     from corpkit.build import check_jdk
 
@@ -234,7 +234,9 @@ def interrogator(corpus,
                             preserve_case=True,
                             speaker_data=speak)
 
-        res = format_tregex(res, speaker_data=speak)
+        res = format_tregex(res, show, exclude=exclude, excludemode=excludemode,
+                            translated_option=translated_option, lemtag=lemtag,
+                            lem_instance=lem_instance, countmode=countmode, speaker_data=speak)
         if not res:
             if subcorpora:
                 return {}, {}
@@ -250,7 +252,10 @@ def interrogator(corpus,
 
             # format match too depending on option
             if not only_format_match:
-                whole_res = format_tregex(whole_res, whole=True, speaker_data=speak)
+                whole_res = format_tregex(whole_res, show, exclude=exclude, excludemode=excludemode,
+                                          translated_option=translated_option, lemtag=lemtag,
+                                          lem_instance=lem_instance, countmode=countmode,
+                                          speaker_data=speak, whole=True)
 
             # make conc lines from conc results
             concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
@@ -360,7 +365,8 @@ def interrogator(corpus,
                                 root=root,
                                 speaker_data=speak)
 
-            res = format_tregex(res, speaker_data=speak)
+            res = format_tregex(res, show, exclude=exclude, excludemode=excludemode,
+                            lem_instance=lem_instance, countmode=countmode, speaker_data=speak)
             if not res:
                 continue
             concs = [False for i in res]
@@ -390,46 +396,6 @@ def interrogator(corpus,
 
         return sub_res, fake_conc
 
-    def make_conc_lines_from_whole_mid(wholes,
-                                       middle_column_result,
-                                       filename=False):
-        """
-        Create concordance line output from tregex output
-        """
-        import re
-        import os
-        if not wholes and not middle_column_result:
-            return []
-
-        conc_lines = []
-        # remove duplicates from results
-        unique_wholes = []
-        unique_middle_column_result = []
-        duplicates = []
-
-        word_index = show.index('w') if 'w' in show else 0
-
-        for (f, sk, whole), mid in list(zip(wholes, middle_column_result)):
-            mid = mid[-1]
-            joined = '-join-'.join([f, sk, whole, mid])
-            if joined not in duplicates:
-                duplicates.append(joined)
-                unique_wholes.append([f, sk, whole])
-                unique_middle_column_result.append(mid)
-
-        # split into start, middle and end, dealing with multiple occurrences
-        # this fails when multiple show values are given, because they are slash separated...
-        for (f, sk, whole), mid in list(zip(unique_wholes, unique_middle_column_result)):
-            mid = mid.split('/')[word_index]
-            reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', \
-                             re.IGNORECASE | re.UNICODE)
-            offsets = [(m.start(), m.end()) for m in re.finditer(reg, whole)]
-            for offstart, offend in offsets:
-                start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), \
-                                     whole[offend:].strip()
-                conc_lines.append([os.path.basename(f), sk, start, middle, end])
-        return conc_lines
-
     def uniquify(conc_lines):
         """get unique concordance lines"""
         from collections import OrderedDict
@@ -441,21 +407,6 @@ def interrogator(corpus,
                 unique_lines.append(conc_lines[index])
             checking.append(joined)
         return unique_lines
-
-    def lemmatiser(list_of_words, tag):
-        """
-        Take a list of unicode words and a tag and return a lemmatised list
-        """
-        output = []
-        for word in list_of_words:
-            if 'u' in translated_option:
-                word = taglemma.get(word.lower(), 'Other')
-            else:
-                word = wordlist.get(word, lmtzr.lemmatize(word, tag))
-            if not preserve_case:
-                word = word.lower()
-            output.append(word)
-        return output
 
     def tgrep_searcher(sents, search, show, conc, **kwargs):
         """
@@ -494,107 +445,6 @@ def interrogator(corpus,
             conc_output = make_conc_lines_from_whole_mid(conc_out, out)
         return out, conc_output
 
-    def gettag(query, lemmatag=False):
-        """
-        Find tag for WordNet lemmatisation
-        """
-        if lemmatag:
-            return lemmatag
-
-        tagdict = {'N': 'n',
-                   'J': 'a',
-                   'V': 'v',
-                   'A': 'r',
-                   'None': False,
-                   '': False,
-                   'Off': False}
-
-        # in case someone compiles the tregex query
-        try:
-            query = query.pattern
-        except AttributeError:
-            query = query
-        
-
-        qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
-        firstletter = next((c for c in qr if c.isalpha()), 'n')
-        return tagdict.get(firstletter.upper(), 'n')
-
-    def format_tregex(results, whole=False, speaker_data=False):
-        """
-        Format tregex by show list
-        """
-        import re
-
-        if countmode:
-            return results
-
-        if not results:
-            return
-
-        done = []
-
-        fnames, snames, results = zip(*results)
-
-        # this needs to be standardised!
-        new_show = [x.lstrip('m') for x in show]
-        new_show = ['w' if not x else x for x in new_show]
-
-        if 'l' in new_show or 'x' in new_show:
-            lemmata = lemmatiser(results, gettag(search.get('t'), lemmatag))
-        else:
-            lemmata = [None for i in results]
-        for word, lemma in list(zip(results, lemmata)):
-            bits = []
-            if exclude and exclude.get('w'):
-                if len(list(exclude.keys())) == 1 or excludemode == 'any':
-                    if re.search(exclude.get('w'), word):
-                        continue
-                if len(list(exclude.keys())) == 1 or excludemode == 'any':
-                    if re.search(exclude.get('l'), lemma):
-                        continue
-                if len(list(exclude.keys())) == 1 or excludemode == 'any':
-                    if re.search(exclude.get('p'), word):
-                        continue
-                if len(list(exclude.keys())) == 1 or excludemode == 'any':
-                    if re.search(exclude.get('x'), lemma):
-                        continue
-            if exclude and excludemode == 'all':
-                num_to_cause_exclude = len(list(exclude.keys()))
-                current_num = 0
-                if exclude.get('w'):
-                    if re.search(exclude.get('w'), word):
-                        current_num += 1
-                if exclude.get('l'):
-                    if re.search(exclude.get('l'), lemma):
-                        current_num += 1
-                if exclude.get('p'):
-                    if re.search(exclude.get('p'), word):
-                        current_num += 1
-                if exclude.get('x'):
-                    if re.search(exclude.get('x'), lemma):
-                        current_num += 1   
-                if current_num == num_to_cause_exclude:
-                    continue                 
-
-            for i in new_show:
-                if i == 't':
-                    bits.append(word)
-                if i == 'l':
-                    bits.append(lemma)
-                elif i == 'w':
-                    bits.append(word)
-                elif i == 'p':
-                    bits.append(word)
-                elif i == 'x':
-                    bits.append(lemma)
-            joined = '/'.join(bits)
-            done.append(joined)
-
-        done = list(zip(fnames, snames, done))
-        
-        return done
-
     def compiler(pattern):
         """
         Compile regex or fail gracefully
@@ -628,6 +478,7 @@ def interrogator(corpus,
         simple_tregex_mode = False
         statsmode = False
         tree_to_text = False
+        search_trees = False
 
         if datatype == 'conll':
             from corpkit.conll import pipeline
@@ -656,9 +507,10 @@ def interrogator(corpus,
                     show = ['n']
             if any(i.endswith('t') for i in search.keys()):
                 if have_java and not kwargs.get('tgrep'):
-                    searcher = slow_tregex
+                    search_trees = 'tregex'
                 else:
-                    searcher = tgrep_searcher
+                    search_trees = 'tgrep'
+                searcher = pipeline
                 optiontext = 'Searching parse trees'
             elif any(i.endswith('v') for i in search.keys()):
                 # either of these searchers now seems to work
@@ -677,7 +529,7 @@ def interrogator(corpus,
                 optiontext = 'N-grams from CONLL data'
                 searcher = pipeline
 
-        return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text
+        return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees
 
     def get_tregex_values(show):
         """If using Tregex, set appropriate values
@@ -971,8 +823,10 @@ def interrogator(corpus,
             res = [correct_spelling(r) for r in res]
         return res
 
-    def postprocess_concline(line, fsi_index=False):
+    def postprocess_concline(line, fsi_index=False, conc=False):
         # todo: are these right?
+        if not conc:
+            return line
         subc, star, en = 0, 2, 5
         if fsi_index:
             subc, star, en = 2, 4, 7
@@ -1068,9 +922,10 @@ def interrogator(corpus,
     show_collocates = any(x.startswith('b') for x in show)
 
     # instantiate lemmatiser if need be
+    lem_instance = False
     if any(i.endswith('l') for i in show) and isinstance(search, dict) and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
-        lmtzr = WordNetLemmatizer()
+        lem_instance = WordNetLemmatizer()
 
     # do multiprocessing if need be
     im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, 
@@ -1143,7 +998,7 @@ def interrogator(corpus,
     startnum = kwargs.get('startnum', 0)
 
     # Determine the search function to be used #
-    searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text = determine_search_func(show)
+    searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
     
     # no conc for statsmode
     if statsmode:
@@ -1185,6 +1040,11 @@ def interrogator(corpus,
     except AttributeError:
         in_notebook = False
 
+    lemtag = False
+    if search.get('t'):
+        from corpkit.process import gettag
+        lemtag = gettag(search.get('t'), lemmatag)
+
     usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None))
 
     # print welcome message
@@ -1219,7 +1079,9 @@ def interrogator(corpus,
 
             # format search results with slashes etc
             if not countmode and not tree_to_text:
-                result = format_tregex(result)
+                result = format_tregex(result, show, translated_option=translated_option,
+                            exclude=exclude, excludemode=excludemode, lemtag=lemtag,
+                            lem_instance=lem_instance, countmode=countmode, speaker_data=False)
 
             # if concordancing, do the query again with 'whole' sent and fname
             if not no_conc:
@@ -1234,7 +1096,9 @@ def interrogator(corpus,
 
                 # format match too depending on option
                 if not only_format_match:
-                    whole_result = format_tregex(whole_result, whole=True)
+                    wholeresult = format_tregex(whole_result, show, translated_option=translated_option,
+                                exclude=exclude, excludemode=excludemode, lemtag=lemtag,
+                            lem_instance=lem_instance, countmode=countmode, speaker_data=False, whole=True)
 
                 # make conc lines from conc results
                 conc_result = make_conc_lines_from_whole_mid(whole_result, result)
@@ -1297,6 +1161,9 @@ def interrogator(corpus,
                                      statsmode=statsmode,
                                      preserve_case=preserve_case,
                                      usecols=usecols,
+                                     search_trees=search_trees,
+                                     lem_instance=lem_instance,
+                                     lemtag=lemtag,
                                      **kwargs)
 
             if res is None and conc_res is None:
@@ -1315,7 +1182,7 @@ def interrogator(corpus,
                     for line in concl:
                         if maxconc is False or numconc < maxconc:
                             line = postprocess_concline(line,
-                                fsi_index=fsi_index)
+                                fsi_index=fsi_index, conc=conc)
                             conc_results[k].append(line)
                             numconc += 1
                 
@@ -1339,7 +1206,7 @@ def interrogator(corpus,
                 if not no_conc:
                     for line in conc_res:
                         line = postprocess_concline(line,
-                            fsi_index=fsi_index)
+                            fsi_index=fsi_index, conc=conc)
                         if maxconc is False or numconc < maxconc:
                             conc_results[subcorpus_name].append(line)
                             numconc += 1

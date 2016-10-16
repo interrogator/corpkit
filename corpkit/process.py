@@ -1113,3 +1113,161 @@ def auto_usecols(search, exclude, show, usecols):
         if c in stcols and c not in out:
             out.append(n)
     return out
+
+def format_tregex(results, show=False, lemtag=False, exclude=False,
+                  excludemode=False, translated_option=False,
+                  lem_instance=False, whole=False,
+                  speaker_data=False, countmode=False):
+    """
+    Format tregex by show list
+    """
+    import re
+
+    if countmode:
+        return results
+
+    if not results:
+        return
+
+    done = []
+
+    fnames, snames, results = zip(*results)
+
+    # this needs to be standardised!
+    new_show = [x.lstrip('m') for x in show]
+    new_show = ['w' if not x else x for x in new_show]
+
+    if 'l' in new_show or 'x' in new_show:
+        from corpkit.process import lemmatiser
+        lemmata = lemmatiser(results, tag=lemtag,
+                             lem_instance=lem_instance,
+                             translated_option=translated_option)
+    else:
+        lemmata = [None for i in results]
+    for word, lemma in list(zip(results, lemmata)):
+        bits = []
+        if exclude and exclude.get('w'):
+            if len(list(exclude.keys())) == 1 or excludemode == 'any':
+                if re.search(exclude.get('w'), word):
+                    continue
+            if len(list(exclude.keys())) == 1 or excludemode == 'any':
+                if re.search(exclude.get('l'), lemma):
+                    continue
+            if len(list(exclude.keys())) == 1 or excludemode == 'any':
+                if re.search(exclude.get('p'), word):
+                    continue
+            if len(list(exclude.keys())) == 1 or excludemode == 'any':
+                if re.search(exclude.get('x'), lemma):
+                    continue
+        if exclude and excludemode == 'all':
+            num_to_cause_exclude = len(list(exclude.keys()))
+            current_num = 0
+            if exclude.get('w'):
+                if re.search(exclude.get('w'), word):
+                    current_num += 1
+            if exclude.get('l'):
+                if re.search(exclude.get('l'), lemma):
+                    current_num += 1
+            if exclude.get('p'):
+                if re.search(exclude.get('p'), word):
+                    current_num += 1
+            if exclude.get('x'):
+                if re.search(exclude.get('x'), lemma):
+                    current_num += 1   
+            if current_num == num_to_cause_exclude:
+                continue                 
+
+        for i in new_show:
+            if i == 't':
+                bits.append(word)
+            if i == 'l':
+                bits.append(lemma)
+            elif i == 'w':
+                bits.append(word)
+            elif i == 'p':
+                bits.append(word)
+            elif i == 'x':
+                bits.append(lemma)
+        joined = '/'.join(bits)
+        done.append(joined)
+
+    done = list(zip(fnames, snames, done))
+    
+    return done
+
+def make_conc_lines_from_whole_mid(wholes,
+                                   middle_column_result,
+                                   filename=False):
+    """
+    Create concordance line output from tregex output
+    """
+    import re
+    import os
+    if not wholes and not middle_column_result:
+        return []
+
+    conc_lines = []
+    # remove duplicates from results
+    unique_wholes = []
+    unique_middle_column_result = []
+    duplicates = []
+
+    word_index = show.index('w') if 'w' in show else 0
+
+    for (f, sk, whole), mid in list(zip(wholes, middle_column_result)):
+        mid = mid[-1]
+        joined = '-join-'.join([f, sk, whole, mid])
+        if joined not in duplicates:
+            duplicates.append(joined)
+            unique_wholes.append([f, sk, whole])
+            unique_middle_column_result.append(mid)
+
+    # split into start, middle and end, dealing with multiple occurrences
+    # this fails when multiple show values are given, because they are slash separated...
+    for (f, sk, whole), mid in list(zip(unique_wholes, unique_middle_column_result)):
+        mid = mid.split('/')[word_index]
+        reg = re.compile(r'([^a-zA-Z0-9-]|^)(' + re.escape(mid) + r')([^a-zA-Z0-9-]|$)', \
+                         re.IGNORECASE | re.UNICODE)
+        offsets = [(m.start(), m.end()) for m in re.finditer(reg, whole)]
+        for offstart, offend in offsets:
+            start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), \
+                                 whole[offend:].strip()
+            conc_lines.append([os.path.basename(f), sk, start, middle, end])
+    return conc_lines
+
+def gettag(query, lemmatag=False):
+    """
+    Find tag for WordNet lemmatisation
+    """
+    if lemmatag:
+        return lemmatag
+
+    tagdict = {'n': 'n',
+               'j': 'a',
+               'v': 'v',
+               'a': 'r'}
+
+    # in case someone compiles the tregex query
+    query = getattr(query, 'pattern', query)
+    qr = query.replace(r'\w', '').replace(r'\s', '').replace(r'\b', '')
+    firstletter = next((c for c in qr if c.isalpha()), 'n')
+    return tagdict.get(firstletter.lower(), 'n')
+
+def lemmatiser(list_of_words, tag, translated_option,
+               lem_instance=False, preserve_case=False):
+    """
+    Take a list of unicode words and a tag and return a lemmatised list
+    """
+    from corpkit.dictionaries.word_transforms import wordlist, taglemma
+    if not lem_instance:
+        from nltk.stem.wordnet import WordNetLemmatizer
+        lem_instance = WordNetLemmatizer()
+    output = []
+    for word in list_of_words:
+        if 'u' in translated_option:
+            word = taglemma.get(word.lower(), 'Other')
+        else:
+            word = wordlist.get(word, lem_instance.lemmatize(word, tag))
+        output.append(word)
+    return output
+
