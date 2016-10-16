@@ -777,11 +777,7 @@ def show_tree_as_per_option(show, tree, datatype, sent=False, df=False, sent_id=
     if 'l' in show:
         # long way, better lemmatisation
         if 'whole' in show:
-            if datatype == 'parse':
-                tree_vals['l'] = [sent.get_token_by_id(index + 1).lemma for index \
-                              in range(len(tree.leaves()))]
-            else:
-                tree_vals['l'] = list(df.loc[sent_id]['l'])
+            tree_vals['l'] = list(df.loc[sent_id]['l'])
         else:
             lemmata = []
             for word_tag_tup in tree.pos():
@@ -794,9 +790,9 @@ def show_tree_as_per_option(show, tree, datatype, sent=False, df=False, sent_id=
             tree_vals['l'] = lemmata
     if 'p' in show:
         tree_vals['p'] = [y for x, y in tree.pos()]
-    if 'pl' in show:
+    if 'x' in show:
         from corpkit.dictionaries import taglemma
-        tree_vals['pl'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
+        tree_vals['x'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
 
     output = []
     zipped = zip(*[tree_vals[i] for i in show if i != 'whole'])
@@ -1197,6 +1193,8 @@ def format_tregex(results, show=False, lemtag=False, exclude=False,
 
 def make_conc_lines_from_whole_mid(wholes,
                                    middle_column_result,
+                                   show=False,
+                                   category=False,
                                    filename=False):
     """
     Create concordance line output from tregex output
@@ -1213,6 +1211,8 @@ def make_conc_lines_from_whole_mid(wholes,
     duplicates = []
 
     word_index = show.index('w') if 'w' in show else 0
+
+    metcat = category if category else ''
 
     for (f, sk, whole), mid in list(zip(wholes, middle_column_result)):
         mid = mid[-1]
@@ -1232,7 +1232,8 @@ def make_conc_lines_from_whole_mid(wholes,
         for offstart, offend in offsets:
             start, middle, end = whole[0:offstart].strip(), whole[offstart:offend].strip(), \
                                  whole[offend:].strip()
-            conc_lines.append([os.path.basename(f), sk, start, middle, end])
+            # lin = [ix, category, fname, sname, start, mid, end]
+            conc_lines.append(['_,_', metcat, os.path.basename(f), sk, start, middle, end])
     return conc_lines
 
 def gettag(query, lemmatag=False):

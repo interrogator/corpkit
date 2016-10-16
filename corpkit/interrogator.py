@@ -186,215 +186,9 @@ def interrogator(corpus,
                 is_mul = 'namedqueriesmultiple'
         return is_mul, corpus, search, query, just_speakers
 
-    def slow_tregex(sents, **kwargs):
-        """
-        Do the metadata specific version of tregex queries
-
-        This has some duplicate code from conll.py, which would ideally be resolved.
-        When there are subcorpora involved, this seems faster than the conll.py
-        recursive method, because it does not need to search multiple times with tregex
-        """
-        speakr = kwargs.get('speaker', '')
-        subcorpora = kwargs.get('subcorpora')
-        just_metadata = kwargs.get('just_metadata')
-        skip_metadata = kwargs.get('skip_metadata')
-        search = kwargs.get('search')['t']
-        translated_option = kwargs.get('translated_option')
-
-        from corpkit.process import tregex_engine
-        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers
-
-        from corpkit.conll import parse_conll, cut_df_by_meta
-        df = parse_conll(sents)
-        df = cut_df_by_meta(df, just_metadata, skip_metadata)
-        if df is None or df.empty:
-            return {}, {}
-        speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
-            
-        if speak_tree:
-            speak, tree = list(zip(*speak_tree))
-        else:
-            speak, tree = [], []
-        
-        if all(not x for x in speak):
-            speak = False
-
-        to_open = '\n'.join(tree)
-        concs = []
-
-        if not to_open.strip('\n'):
-            if subcorpora:
-                return {}, {}
-
-        ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
-        res = tregex_engine(query=search, 
-                            options=ops, 
-                            corpus=to_open,
-                            root=root,
-                            preserve_case=True,
-                            speaker_data=speak)
-
-        res = format_tregex(res, show, exclude=exclude, excludemode=excludemode,
-                            translated_option=translated_option, lemtag=lemtag,
-                            lem_instance=lem_instance, countmode=countmode, speaker_data=speak)
-        if not res:
-            if subcorpora:
-                return {}, {}
-
-        if not no_conc:
-            ops += ['-w']
-            whole_res = tregex_engine(query=q, 
-                                      options=ops, 
-                                      corpus=to_open,
-                                      root=root,
-                                      preserve_case=True,
-                                      speaker_data=speak)
-
-            # format match too depending on option
-            if not only_format_match:
-                whole_res = format_tregex(whole_res, show, exclude=exclude, excludemode=excludemode,
-                                          translated_option=translated_option, lemtag=lemtag,
-                                          lem_instance=lem_instance, countmode=countmode,
-                                          speaker_data=speak, whole=True)
-
-            # make conc lines from conc results
-            concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
-        else:
-            concs = [False for i in res]
-
-        if root:
-            root.update()
-
-        if subcorpora:
-            from collections import defaultdict
-            outres = defaultdict(list)
-            outconc = defaultdict(list)
-            for (_, met, r), line in zip(res, concs):
-                outres[met].append(r)
-                outconc[met].append(line)
-            if countmode:
-                outres = {k: len(v) for k, v in outres.items()}
-                outconc = {}
-            if no_conc:
-                outconc = {k: [] for k, v in outres.items()}
-            return outres, outconc
-
-        if countmode:
-            if isinstance(res, int):
-                return res, False
-            else:
-                return len(res), False
-        else:
-            return res, concs
-
     def ispunct(s):
         import string
         return all(c in string.punctuation for c in s)
-
-    def get_stats_conll(fname, **kwargs):
-        """
-        Do the metadata specific version of tregex queries
-        """
-
-        #todo: this should be moved to conll.pys
-        import re
-        from corpkit.dictionaries.process_types import processes
-        from collections import Counter, defaultdict
-        from corpkit.process import tregex_engine
-        from corpkit.conll import parse_conll, pipeline, process_df_for_speakers, cut_df_by_meta
-
-        subcorpora = kwargs.get('subcorpora')
-        just_metadata = kwargs.get('just_metadata')
-        skip_metadata = kwargs.get('skip_metadata')
-
-        sub_res = {}
-
-        df = parse_conll(fname)
-        df = cut_df_by_meta(df, just_metadata, skip_metadata)
-        speak_tree = [(x.get(subcorpora, 'none'), x['parse']) for x in df._metadata.values()]
-        
-        if speak_tree:
-            speak, tree = list(zip(*speak_tree))
-        else:
-            speak, tree = [], []
-        if subcorpora:
-            all_cats = set(speak)
-        else:
-            all_cats = ['none']
-
-        tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                     'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                     'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
-                     'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                     'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                     'Clauses': r'/^S/ < __',
-                     'Interrogative': r'ROOT << (/\?/ !< __)',
-                     'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
-
-        for cat in all_cats:
-            new_df = process_df_for_speakers(df, df._metadata, cat, feature=subcorpora)
-            sub_res[cat] = Counter()
-            for name in tregex_qs.keys():
-                sub_res[cat][name] = 0
-            sub_res[cat]['Sentences'] = len(set(new_df.index.labels[0]))
-            sub_res[cat]['Passives'] = len(new_df[new_df['f'] == 'nsubjpass'])
-            sub_res[cat]['Tokens'] = len(new_df)
-            # the below has returned a float before. i assume actually a nan?
-            sub_res[cat]['Words'] = len([w for w in list(new_df['w']) if w and not ispunct(str(w))])
-            sub_res[cat]['Characters'] = sum([len(str(w)) for w in list(new_df['w']) if w])
-            sub_res[cat]['Open class'] = sum([1 for x in list(new_df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
-            sub_res[cat]['Punctuation'] = sub_res[cat]['Tokens'] - sub_res[cat]['Words']
-            sub_res[cat]['Closed class'] = sub_res[cat]['Words'] - sub_res[cat]['Open class']
-
-        if all(not x for x in speak):
-            speak = False
-
-        to_open = '\n'.join(tree)
-
-        if not to_open.strip('\n'):
-            if subcorpora:
-                return {}, {}
-
-        for name, q in sorted(tregex_qs.items()):
-            options = ['-o', '-t', '-n'] if name == 'Processes' else ['-o', '-n']
-            # c option removed, could cause memory problems
-            #ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
-            res = tregex_engine(query=q, 
-                                options=options,
-                                corpus=to_open,  
-                                root=root,
-                                speaker_data=speak)
-
-            res = format_tregex(res, show, exclude=exclude, excludemode=excludemode,
-                            lem_instance=lem_instance, countmode=countmode, speaker_data=speak)
-            if not res:
-                continue
-            concs = [False for i in res]
-            for (_, met, r), line in zip(res, concs):
-                sub_res[met][name] = len(res)
-            if name != 'Processes':
-                continue
-            non_mat = 0
-            for ptype in ['mental', 'relational', 'verbal']:
-                reg = getattr(processes, ptype).words.as_regex(boundaries='l')
-                count = len([i for i in res if re.search(reg, i[-1])])
-                nname = ptype.title() + ' processes'
-                sub_res[met][nname] = count
-
-        if not res:
-            if subcorpora:
-                return {}, {}
-        
-        if root:
-            root.update()
-
-        fake_conc = {k: [] for k in sub_res.keys()}
-
-        if list(sub_res.keys()) == ['none']:
-            sub_res = sub_res['none']
-            fake_conc = fake_conc['none']
-
-        return sub_res, fake_conc
 
     def uniquify(conc_lines):
         """get unique concordance lines"""
@@ -442,7 +236,7 @@ def interrogator(corpus,
                         conc_out.append(lin)
 
         if conc:
-            conc_output = make_conc_lines_from_whole_mid(conc_out, out)
+            conc_output = make_conc_lines_from_whole_mid(conc_out, out, show=show)
         return out, conc_output
 
     def compiler(pattern):
@@ -1056,7 +850,7 @@ def interrogator(corpus,
     if conc:
         conc_col_names = get_conc_colnames(corpus,
                                            fsi_index=fsi_index,
-                                           simple_tregex_mode=simple_tregex_mode)
+                                           simple_tregex_mode=False)
  
 
     # Iterate over data, doing interrogations
@@ -1101,7 +895,7 @@ def interrogator(corpus,
                             lem_instance=lem_instance, countmode=countmode, speaker_data=False, whole=True)
 
                 # make conc lines from conc results
-                conc_result = make_conc_lines_from_whole_mid(whole_result, result)
+                conc_result = make_conc_lines_from_whole_mid(whole_result, result, show=show)
                 for lin in conc_result:
                     if maxconc is False or numconc < maxconc:
                         conc_results[subcorpus_name].append(lin)

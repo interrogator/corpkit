@@ -428,6 +428,9 @@ def concline_generator(matches, idxs, df, metadata,
                        add_meta, category, fname, preserve_case=False):
     """
     Get all conclines
+
+    :param matches: a list of formatted matches
+    :param idxs: their (sent, word) idx
     """
     conc_res = []
     # potential speedup: turn idxs into dict
@@ -740,6 +743,64 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
                 df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
     return df
 
+
+def tgrep_searcher(f=False,
+            metadata=False,
+            df=False,
+            search=False,
+            searchmode=False,
+            exclude=False,
+            excludemode=False,
+            translated_option=False,
+            subcorpora=False,
+            conc=False,
+            root=False,
+            preserve_case=False,
+            countmode=False,
+            show=False,
+            lem_instance=False,
+            lemtag=False,
+            category=False,
+            fname=False,
+            add_meta=False,
+            **kwargs):
+
+    """
+    Use tgrep for constituency grammar search
+    """
+
+    from corpkit.process import show_tree_as_per_option, tgrep
+    matches = []
+    idxs = []
+    conc_out = []
+    # in case search was a dict
+    srch = search.get('t') if isinstance(search, dict) else search
+    for i, sent in metadata.items():
+        results = tgrep(sent['parse'], srch)
+        sname = sent.get('speaker')
+        for res in results:
+            matches.append(show_tree_as_per_option(show, res, 'conll', sent, df=df, sent_id=i))
+            idxs.append(i, '0')
+            if conc:
+                lin = ['%d,_' % i, category, fname, sname, 
+                        show_tree_as_per_option(show + ['whole'], res, sent)]
+                if add_meta:
+                    for k, v in sorted(metadata.items()):
+                        if k in ['speaker', 'parse', 'sent_id']:
+                            continue
+                        if isinstance(add_meta, list):
+                            if k in add_meta:
+                                lin.append(v)
+                        elif add_meta is True:
+                            lin.append(v)
+
+                conc_out.append(lin)
+
+    #conc_res = concline_generator(matches, idxs, df, metadata,
+    #                   add_meta, category, fname, preserve_case=preserve_case)
+
+    return out, conc_out
+
 def slow_tregex(metadata=False,
                 search=False,
                 searchmode=False,
@@ -754,6 +815,10 @@ def slow_tregex(metadata=False,
                 show=False,
                 lem_instance=False,
                 lemtag=False,
+                df=False,
+                fname=False,
+                category=False,
+                only_format_match=False,
                 **kwargs):
     """
     Do the metadata specific version of tregex queries
@@ -817,7 +882,7 @@ def slow_tregex(metadata=False,
                                        lemtag=lemtag)
 
         # make conc lines from conc results
-        concs = make_conc_lines_from_whole_mid(whole_res, res, filename=dummy_args.get('filename'))
+        concs = make_conc_lines_from_whole_mid(whole_res, res, filename=fname, show=show)
     else:
         concs = [False for i in res]
 
@@ -832,7 +897,7 @@ def slow_tregex(metadata=False,
     else:
         return res, concs
 
-def get_stats(df, metadata, feature, root=False, **kwargs):
+def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs):
     """
     Get general statistics for a DataFrame
     """
@@ -864,13 +929,13 @@ def get_stats(df, metadata, feature, root=False, **kwargs):
     for name in tregex_qs.keys():
         result[name] = 0
 
-    result['Sentences'] = len(set(df.index.labels[0]))
-    result['Passives'] = len(df[df['f'] == 'nsubjpass'])
-    result['Tokens'] = len(df)
+    result['Sentences'] = len(set(from_df.index.labels[0]))
+    result['Passives'] = len(from_df[from_df['f'] == 'nsubjpass'])
+    result['Tokens'] = len(from_df)
     # the below has returned a float before. i assume actually a nan?
-    result['Words'] = len([w for w in list(df['w']) if w and not ispunct(str(w))])
-    result['Characters'] = sum([len(str(w)) for w in list(df['w']) if w])
-    result['Open class'] = sum([1 for x in list(df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
+    result['Words'] = len([w for w in list(from_df['w']) if w and not ispunct(str(w))])
+    result['Characters'] = sum([len(str(w)) for w in list(from_df['w']) if w])
+    result['Open class'] = sum([1 for x in list(from_df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
     result['Punctuation'] = result['Tokens'] - result['Words']
     result['Closed class'] = result['Words'] - result['Open class']
 
@@ -908,9 +973,9 @@ def get_stats(df, metadata, feature, root=False, **kwargs):
             root.update()
     return result, {}
 
-def pipeline(f,
-             search,
-             show,
+def pipeline(f=False,
+             search=False,
+             show=False,
              exclude=False,
              searchmode='all',
              excludemode='any',
@@ -934,25 +999,38 @@ def pipeline(f,
 
     if from_df is False or from_df is None:
         df = parse_conll(f, usecols=kwargs.get('usecols'))
+        metadata = df._metadata
     else:
         df = from_df
+        metadata = kwargs.pop('metadata')
     feature = kwargs.pop('by_metadata', False)
     df = cut_df_by_meta(df, just_metadata, skip_metadata)
+
+    searcher = pipeline
+    if statsmode:
+        searcher = get_stats
+    if search_trees == 'tregex':
+        searcher = slow_tregex
+    elif search_trees == 'tgrep':
+        searcher = tgrep_searcher
 
     if feature:
         if df is None:
             print('Problem reading data from %s.' % f)
             return {}, {}
 
+        # determine searcher
         resultdict = {}
         concresultdict = {}
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
             new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
-            if not statsmode and not search_trees:
-                r, c = pipeline(False, search, show,
+            r, c = searcher(f=False,
+                            fname=f,
+                            search=search,
                             exclude=exclude,
+                            show=show,
                             searchmode=searchmode,
                             excludemode=excludemode,
                             conc=conc,
@@ -961,28 +1039,13 @@ def pipeline(f,
                             by_metadata=False,
                             category=category,
                             show_conc_metadata=show_conc_metadata,
+                            lem_instance=lem_instance,
+                            root=kwargs.pop('root', False),
+                            subcorpora=feature,
+                            metadata=new_df._metadata,
+                            add_meta=show_conc_metadata,
                             **kwargs)
-            elif statsmode:
-                r, c = get_stats(new_df, new_df._metadata, feature, root=kwargs.pop('root', False), **kwargs)
-            elif search_trees == 'tregex':
-                r, c = slow_tregex(search=search,
-                                   searchmode=searchmode,
-                                   exclude=exclude,
-                                   excludemode=excludemode,
-                                   conc=conc,
-                                   from_df=new_df,
-                                   by_metadata=False,
-                                   metadata=new_df._metadata,
-                                   subcorpora=feature,
-                                   root=kwargs.pop('root', False),
-                                   show=show,
-                                   lem_instance=lem_instance,
-                                   **kwargs)
-            elif search_trees == 'tgrep':
-                raise NotImplementedError()
-                pass
-                #r, c = slow_tregex(new_df, new_df._metadata, feature, root=kwargs.pop('root', False), **kwargs)
-
+            
             resultdict[category] = r
             concresultdict[category] = c
         return resultdict, concresultdict
@@ -1012,21 +1075,20 @@ def pipeline(f,
 
     if statsmode:
         return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
-    elif search_trees == 'tregex':
-        return slow_tregex(new_df,
-                           search=search,
-                           searchmode=searchmode,
-                           exclude=exclude,
-                           excludemode=excludemode,
-                           conc=conc,
-                           from_df=new_df,
-                           by_metadata=False,
-                           metadata=new_df._metadata,
-                           root=kwargs.pop('root', False),
-                           **kwargs)
-    elif search_trees == 'tgrep':
-        raise NotImplementedError()
-    
+    elif search_trees:
+        return searcher(df=df,
+                        search=search,
+                        searchmode=searchmode,
+                        exclude=exclude,
+                        excludemode=excludemode,
+                        conc=conc,
+                        by_metadata=False,
+                        metadata=metadata,
+                        root=kwargs.pop('root', False),
+                        fname=f,
+                        show=show,
+                        **kwargs)
+
     # do no searching if 'any' is requested
     if len(search) == 1 and list(search.keys())[0] == 'w' \
                         and hasattr(list(search.values())[0], 'pattern') \
