@@ -202,43 +202,6 @@ def interrogator(corpus,
             checking.append(joined)
         return unique_lines
 
-    def tgrep_searcher(sents, search, show, conc, **kwargs):
-        """
-        Use tgrep for constituency grammar search
-        """
-        # todo: rewrite, allowing for metadata and removing bad code
-
-        f = kwargs.get('filename')
-        from corpkit.process import show_tree_as_per_option, tgrep
-        out = []
-        conc_output = []
-        conc_out = []
-        if datatype == 'parse':
-            for sent in sents:
-                sk = get_speakername(sent)
-                results = tgrep(sent.parse_string, search['t'])
-                for res in results:
-                    out.append(show_tree_as_per_option(show, res, corpus.datatype, sent))
-                    if conc:
-                        lin = [f, sk, show_tree_as_per_option(show + ['whole'], res, sent)]
-                        conc_out.append(lin)
-        
-        elif datatype == 'conll':
-            from corpkit.conll import parse_conll
-            df = parse_conll(sents)
-            for i, sent in df._metadata.items():
-                sk = sent['speaker']
-                results = tgrep(sent['parse'], search['t'])
-                for res in results:
-                    out.append(show_tree_as_per_option(show, res, corpus.datatype, sent, df=df, sent_id=i))
-                    if conc:
-                        lin = [f, sk, show_tree_as_per_option(show + ['whole'], res, sent)]
-                        conc_out.append(lin)
-
-        if conc:
-            conc_output = make_conc_lines_from_whole_mid(conc_out, out, show=show)
-        return out, conc_output
-
     def compiler(pattern):
         """
         Compile regex or fail gracefully
@@ -290,7 +253,8 @@ def interrogator(corpus,
                 simple_tregex_mode = True
                 searcher = None
             else:
-                searcher = tgrep_searcher
+                search_trees = 'tgrep'
+                searcher = pipeline
             optiontext = 'Searching parse trees'
 
         elif datatype == 'conll':
