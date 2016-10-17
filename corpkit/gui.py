@@ -1870,10 +1870,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #lab.set('Concordancing: %s' % corpus_name)
             
             if corpus_name in list(corpus_names_and_speakers.keys()):
-                togglespeaker()
-                speakcheck.config(state=NORMAL)
+                toggle_by_metadata()
+                #speakcheck.config(state=NORMAL)
             else:
-                speakcheck.config(state=DISABLED)
+                pass
+                #speakcheck.config(state=DISABLED)
             interrobut.config(state=NORMAL)
             interrobut_conc.config(state=NORMAL)
             recalc_but.config(state=NORMAL)
@@ -1898,6 +1899,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             else:
                 ck4.config(state=DISABLED)
 
+            toggle_by_metadata()
 
             featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
             shortname = current_corpus.get() + '-' + 'features'
@@ -1983,6 +1985,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #bkbx.grid(row=12, column=0, columnspan=2, sticky=E)
         #all_text_widgets.append(bkbx)
 
+        def populate_metavals(evt):
+            from corpkit.build import get_speaker_names_from_parsed_corpus
+            wx = evt.widget
+            speaker_listbox.configure(state=NORMAL)
+            speaker_listbox.delete(0, END)
+            speaker_listbox.insert(END, 'ALL')
+            indices = wx.curselection()
+            for index in indices:
+                value = wx.get(index)
+                vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
+                for v in vals:
+                    speaker_listbox.insert(END, v)
+
         # lemma tags
         lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
         lemtag = StringVar(root)
@@ -1993,12 +2008,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         lmt.grid(row=13, column=1, sticky=E)
         #lemtag.trace("w", d_callback)
 
-        def togglespeaker(*args):
+        def toggle_by_metadata(*args):
             """this adds names to the speaker listboxes when it's switched on
             it gets the info from settings.ini, via corpus_names_and_speakers"""
             import os
             if os.path.isdir(corpus_fullpath.get()):
-                ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
+                from corpkit.build import get_all_metadata_fields
+                ns = get_all_metadata_fields(corpus_fullpath.get())
+                #ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
             else:
                 return
 
@@ -2006,43 +2023,68 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             lbs = []
             delfrom = []
             if int(only_sel_speakers.get()) == 1:
-                lbs.append(speaker_listbox)
+                lbs.append(by_met_listbox)
             else:
-                delfrom.append(speaker_listbox)
+                delfrom.append(by_met_listbox)
             # add names
             for lb in lbs:
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
-                lb.insert(END, 'ALL')
-                for id in ns:
-                    lb.insert(END, id)
+                lb.insert(END, 'Folders')
+                lb.insert(END, 'Files')
+                for idz in ns:
+                    lb.insert(END, idz)
+                lb.insert(END, 'None')
             # or delete names
             for lb in delfrom:
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
                 lb.configure(state=DISABLED)
 
-        # speaker names
-        # button
+        # by metadata
         only_sel_speakers = IntVar()
-        speakcheck = Checkbutton(interro_opt, text='Speakers:', variable=only_sel_speakers, command=togglespeaker)
-        speakcheck.grid(column=0, row=14, sticky=W, pady=(15, 0))
+        only_sel_speakers.set(1)
+        #speakcheck = Checkbutton(interro_opt, text='By metadata:', variable=only_sel_speakers, command=togglespeaker)
+        #speakcheck.grid(column=0, row=14, sticky=W, pady=(0, 0))
+
+        by_metadata = StringVar()
+        #by_met_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
+        #                          relief=SUNKEN, bg='#F4F4F4',
+        #                          yscrollcommand=spk_sbar.set, exportselection=False)       
+        by_meta_scrl = Frame(interro_opt)
+        by_meta_scrl.grid(row=14, column=0, sticky='w', pady=(0, 0))
+        # scrollbar for the listbox
+        by_met_bar = Scrollbar(by_meta_scrl)
+        by_met_bar.pack(side=RIGHT, fill=Y)
+        # listbox itself
+        slist_height = 2 if small_screen else 4
+        by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=14, height=slist_height,
+                                  relief=SUNKEN, bg='#F4F4F4',
+                                  yscrollcommand=by_met_bar.set, exportselection=False)
+        by_met_listbox.pack()
+        #by_met_listbox.configure(state=DISABLED)
+        by_met_bar.config(command=by_met_listbox.yview)
+
+        xx = by_met_listbox.bind('<<ListboxSelect>>', populate_metavals)
+        #by_met_listbox.trace('w', populate_metavals)
         # add data on press
-        only_sel_speakers.trace("w", togglespeaker)
+        #by_metadata.trace("w", toggle_by_metadata)
+
         # frame to hold speaker names listbox
         spk_scrl = Frame(interro_opt)
-        spk_scrl.grid(row=14, column=0, rowspan = 2, columnspan=2, sticky=E, pady=10)
+        spk_scrl.grid(row=14, column=0, rowspan = 2, columnspan=2, sticky=E, pady=(0,0))
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
         slist_height = 2 if small_screen else 4
-        speaker_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
+        speaker_listbox = Listbox(spk_scrl, selectmode=SINGLE, width=32, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=spk_sbar.set, exportselection=False)
         speaker_listbox.pack()
         speaker_listbox.configure(state=DISABLED)
         spk_sbar.config(command=speaker_listbox.yview)
+
 
         # dep type
         dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
@@ -5577,6 +5619,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         first = False
                 if first:
                     corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
+                    print('FIRST', first)
                     current_corpus.set(first)
                 else:
                     corpus_fullpath.set('')
@@ -5609,10 +5652,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             note.progvar.set(0)
             
             if corpus_name in list(corpus_names_and_speakers.keys()):
-                togglespeaker()
-                speakcheck.config(state=NORMAL)
+                toggle_by_metadata()
+                #speakcheck.config(state=NORMAL)
             else:
-                speakcheck.config(state=DISABLED)
+                pass
+                #speakcheck.config(state=DISABLED)
 
             load_custom_list_json()
 

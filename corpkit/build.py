@@ -753,16 +753,12 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     import os
     import re
 
-    path = corpus.path
+    path = corpus.path if hasattr(corpus, 'path') else corpus
     
     list_of_files = []
     names = []
 
-    if corpus.datatype == 'parse':
-        # parsing html with regular expression! :)
-        speakid = re.compile(r'<speakername>[\s\n]*?([^\s\n]+)[\s\n]*?<.speakername>', re.MULTILINE)
-    else:
-        speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
+    speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
     
     # if passed a dir, do it for every file
     if os.path.isdir(path):

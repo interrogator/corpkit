@@ -553,10 +553,6 @@ def interrogator(corpus,
 
         locs['corpus'] = corpus.name
 
-        # there is an error in xml conc that duplicates results
-        # i'm not maintaining it anymore, but i'll fix it with this
-        if datatype == 'parse':
-            conc_df = conc_df.drop_duplicates().reset_index()
         if maxconc:
             conc_df = Concordance(conc_df[:maxconc])
         else:
@@ -587,11 +583,6 @@ def interrogator(corpus,
         subc, star, en = 0, 2, 5
         if fsi_index:
             subc, star, en = 2, 4, 7
-        #if searcher != slow_tregex and searcher != tgrep_searcher \
-        #    and datatype != 'conll':
-        #    line.insert(subc, f.name)
-        #else:
-        #    line[subc] = f.name
         if not preserve_case:
             line[star:en] = [str(x).lower() for x in line[star:en]]
         if spelling:
@@ -732,7 +723,7 @@ def interrogator(corpus,
         raise ValueError('save must be str, not bool.')
 
 
-    datatype = getattr(corpus, 'datatype', 'parse')
+    datatype = getattr(corpus, 'datatype', 'conll')
     singlefile = getattr(corpus, 'singlefile', False)
     level = getattr(corpus, 'level', 'c')
         
@@ -1054,10 +1045,10 @@ def interrogator(corpus,
         df = DataFrame(df)
         tot = Series(total_total, index=['Total'])
 
-    # if we're doing files as subcorpora,  we can remove the .txt.xml etc
+    # if we're doing files as subcorpora,  we can remove the extension etc
     if isinstance(df, DataFrame) and files_as_subcorpora:
         cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
-        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.(xml|conll)', ''),
+        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.conll', ''),
                  (r'-%s(-stripped)?(-parsed)?' % cname, '')]
         from corpkit.editor import editor
         df = editor(df, replace_subcorpus_names=edits).results
@@ -1067,7 +1058,7 @@ def interrogator(corpus,
     if conc_df is not None and conc_df is not False:
         # removed 'f' from here for now
         for col in ['c']:
-            for pat in ['.txt', '.xml', '.conll']:
+            for pat in ['.txt', '.conll']:
                 conc_df[col] = conc_df[col].str.replace(pat, '')
             conc_df[col] = conc_df[col].str.replace(r'-[0-9][0-9][0-9]$', '')
 
