@@ -745,25 +745,26 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
 
 
 def tgrep_searcher(f=False,
-            metadata=False,
-            df=False,
-            search=False,
-            searchmode=False,
-            exclude=False,
-            excludemode=False,
-            translated_option=False,
-            subcorpora=False,
-            conc=False,
-            root=False,
-            preserve_case=False,
-            countmode=False,
-            show=False,
-            lem_instance=False,
-            lemtag=False,
-            category=False,
-            fname=False,
-            add_meta=False,
-            **kwargs):
+                   metadata=False,
+                   from_df=False,
+                   search=False,
+                   searchmode=False,
+                   exclude=False,
+                   excludemode=False,
+                   translated_option=False,
+                   subcorpora=False,
+                   conc=False,
+                   root=False,
+                   preserve_case=False,
+                   countmode=False,
+                   show=False,
+                   lem_instance=False,
+                   lemtag=False,
+                   category=False,
+                   fname=False,
+                   show_conc_metadata=False,
+                   only_format_match=True,
+                   **kwargs):
 
     """
     Use tgrep for constituency grammar search
@@ -771,35 +772,35 @@ def tgrep_searcher(f=False,
 
     from corpkit.process import show_tree_as_per_option, tgrep
     matches = []
-    idxs = []
     conc_out = []
     # in case search was a dict
     srch = search.get('t') if isinstance(search, dict) else search
+    metcat = category if category else ''
     for i, sent in metadata.items():
         results = tgrep(sent['parse'], srch)
         sname = sent.get('speaker')
+        metcat = category
         for res in results:
-            matches.append(show_tree_as_per_option(show, res, 'conll', sent, df=df, sent_id=i))
-            idxs.append(i, '0')
+            tok_id, start, middle, end = show_tree_as_per_option(show, res, sent,
+                                                  df=from_df, sent_id=i, conc=conc,
+                                                  only_format_match=only_format_match)
+            #middle, idx = show_tree_as_per_option(show, res, 'conll', sent, df=df, sent_id=i)
+            matches.append(middle)
             if conc:
-                lin = ['%d,_' % i, category, fname, sname, 
-                        show_tree_as_per_option(show + ['whole'], res, sent)]
-                if add_meta:
-                    for k, v in sorted(metadata.items()):
+                form_ix = '%d,%d' % (i, tok_id)
+                lin = [form_ix, metcat, fname, sname, start, middle, end]
+                if show_conc_metadata:
+                    for k, v in sorted(sent.items()):
                         if k in ['speaker', 'parse', 'sent_id']:
                             continue
-                        if isinstance(add_meta, list):
-                            if k in add_meta:
+                        if isinstance(show_conc_metadata, list):
+                            if k in show_conc_metadata:
                                 lin.append(v)
-                        elif add_meta is True:
+                        elif show_conc_metadata is True:
                             lin.append(v)
-
                 conc_out.append(lin)
 
-    #conc_res = concline_generator(matches, idxs, df, metadata,
-    #                   add_meta, category, fname, preserve_case=preserve_case)
-
-    return out, conc_out
+    return matches, conc_out
 
 def slow_tregex(metadata=False,
                 search=False,
@@ -815,7 +816,7 @@ def slow_tregex(metadata=False,
                 show=False,
                 lem_instance=False,
                 lemtag=False,
-                df=False,
+                from_df=False,
                 fname=False,
                 category=False,
                 only_format_match=False,
@@ -994,6 +995,10 @@ def pipeline(f=False,
     A basic pipeline for conll querying---some options still to do
     """
 
+    if isinstance(show, str):
+        show = [show]
+    show = [fix_show_bit(i) for i in show]
+
     all_matches = []
     all_exclude = []
 
@@ -1043,7 +1048,6 @@ def pipeline(f=False,
                             root=kwargs.pop('root', False),
                             subcorpora=feature,
                             metadata=new_df._metadata,
-                            add_meta=show_conc_metadata,
                             **kwargs)
             
             resultdict[category] = r
@@ -1055,10 +1059,6 @@ def pipeline(f=False,
         return [], []
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
-
-    if isinstance(show, str):
-        show = [show]
-    show = [fix_show_bit(i) for i in show]
 
     df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
@@ -1076,7 +1076,7 @@ def pipeline(f=False,
     if statsmode:
         return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
     elif search_trees:
-        return searcher(df=df,
+        return searcher(from_df=df,
                         search=search,
                         searchmode=searchmode,
                         exclude=exclude,

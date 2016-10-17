@@ -573,7 +573,6 @@ def interrogator(corpus,
                     diff = len(conc_col_names) - len(lin)
                     lin.extend(['none'] * diff)
 
-
                 all_conc_lines.append(Series(lin, index=conc_col_names))
 
         conc_df = pd.concat(all_conc_lines, axis=1).T
@@ -851,6 +850,7 @@ def interrogator(corpus,
         conc_col_names = get_conc_colnames(corpus,
                                            fsi_index=fsi_index,
                                            simple_tregex_mode=False)
+
  
 
     # Iterate over data, doing interrogations

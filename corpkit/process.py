@@ -762,43 +762,103 @@ def classname(cls):
     """Create the class name str for __repr__"""
     return '.'.join([cls.__class__.__module__, cls.__class__.__name__])
 
-def show_tree_as_per_option(show, tree, datatype, sent=False, df=False, sent_id=False):
-    """
-    Turn a ParentedTree into shown output
-    """
-    tree_vals = {}
-    if 'whole' in show:
-        tree = tree.root()
-    if 't' in show:
-        return [str(tree).replace('/', '-slash')]
-        # show as bracketted
-    if 'w' in show:
-        tree_vals['w'] = [i.replace('/', '-slash-') for i in tree.leaves()]
-    if 'l' in show:
-        # long way, better lemmatisation
-        if 'whole' in show:
-            tree_vals['l'] = list(df.loc[sent_id]['l'])
-        else:
-            lemmata = []
-            for word_tag_tup in tree.pos():
-                index = tree.root().pos().index(word_tag_tup)
-                if datatype == 'parse':
-                    lemmata.append(sent.get_token_by_id(index + 1).lemma)
-                else:
-                    lemmata.append(df.loc[sent_id, index]['l'])
 
-            tree_vals['l'] = lemmata
-    if 'p' in show:
-        tree_vals['p'] = [y for x, y in tree.pos()]
-    if 'x' in show:
+def format_middle(tree, show, df=False, sent_id=False, ixs=False):
+    tree_vals = {}
+    if 't' in show or 'mt' in show:
+        tre = str(tree).replace('/', '-slash')
+        # todo?
+
+    if 'mw' in show:
+        tree_vals['mw'] = [i.replace('/', '-slash-') for i in tree.leaves()]
+    if 'ml' in show:
+        print(df)
+        tree_vals['ml'] = [df.loc[sent_id, i]['l'] for i in ixs]
+    if 'mp' in show:
+        tree_vals['mp'] = [y for x, y in tree.pos()]
+    if 'mx' in show:
         from corpkit.dictionaries import taglemma
-        tree_vals['x'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
+        tree_vals['mx'] = [taglemma.get(y.lower(), y) for x, y in tree.pos()]
 
     output = []
-    zipped = zip(*[tree_vals[i] for i in show if i != 'whole'])
+    zipped = zip(*[tree_vals[i] for i in show])
+
     for tup in zipped:
         output.append('/'.join(tup))
+    # now we have [a/a, nicer/nice, day/day]
     return ' '.join(output)
+
+def format_conc(tups, show, df=False, sent_id=False, root=False, ixs=False):
+    """
+    Prepare start or end of tgrepped conc lines
+    """
+    tree_vals = {}
+    if 't' in show or 'mt' in show:
+        tre = str(root).replace('/', '-slash')
+        # todo?
+    if 'mw' in show:
+        tree_vals['mw'] = [w.replace('/', '-slash-') for w, p, i in tups]
+    if 'ml' in show:
+        tree_vals['ml'] = [df.loc[sent_id, i]['l'] for i in ixs]
+    if 'mp' in show:
+        tree_vals['mp'] = [p.replace('/', '-slash-') for w, p, i in tups]
+    if 'mx' in show:
+        from corpkit.dictionaries import taglemma
+        tree_vals['mx'] = [taglemma.get(p.lower(), p) for w, p, i in tups]
+    if 'ms' in show:
+        tree_vals['ms'] = [str(sent_id) for i in tups]
+    if 'mi' in show:
+        tree_vals['mi'] = [str(i) for w, p, i in tups]
+
+    output = []
+    zipped = zip(*[tree_vals[i] for i in show])
+
+    for tup in zipped:
+        output.append('/'.join(tup))
+    # now we have [a/a, nicer/nice, day/day]
+    return ' '.join(output)
+
+def show_tree_as_per_option(show, tree, sent=False, df=False,
+                            sent_id=False, conc=False,
+                            only_format_match=True):
+    """
+    Turn a ParentedTree into shown output
+
+    :returns: tok_id, metcat, start, middle, end
+    """
+    # make a list of all indices
+    start = False
+    end = False
+    metcat = False
+    
+    # here, we need to get the indexes of the first and last
+    # token in the match, when the tree is flattened.
+    # i wonder if there is an easier way!
+    all_leaf_positions = tree.root().treepositions(order='leaves')
+    match_position = tree.treeposition()
+    ixs = [e for e, i in enumerate(all_leaf_positions, start=1) \
+           if i[:len(match_position)] == match_position]
+
+    # get the data from the left and right
+    if conc:
+        start = [(w, p, i) for i, (w, p) in enumerate(tree.root().pos(), start=1)
+                 if i < ixs[0]]
+        end = [(w, p, i) for i, (w, p) in enumerate(tree.root().pos(), start=1)
+                 if i > ixs[-1]]
+
+    middle = format_middle(tree, show, df=df, sent_id=sent_id, ixs=ixs)
+
+    if conc:
+        if not only_format_match:
+            start_ixes = list(range(1, len(start)+1))
+            end_ixes = list(range(ixs[-1]+1, len(end)+1))
+            start = format_conc(start, show, df=df, sent_id=sent_id, root=tree.root(), ixs=start_ixes)
+            end = format_conc(end, show, df=df, sent_id=sent_id, root=tree.root(), ixs=end_ixes)
+        else:
+            start = ' '.join([w for w, p, i in start])
+            end = ' '.join([w for w, p, i in end])
+
+    return ixs[0], start, middle, end
 
 def tgrep(parse_string, search):
     """
