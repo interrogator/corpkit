@@ -693,6 +693,7 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
                             feature='speakers', reverse=False):
     """
     keep just the correct speakers
+    reverse=just, not reverse=skip
     """
     if not criteria:
         df._metadata = metadata
@@ -737,10 +738,10 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
     if df is not None:
         if just_metadata:
             for k, v in just_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k)
+                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
         if skip_metadata:
             for k, v in skip_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
+                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=False)
     return df
 
 
@@ -902,8 +903,6 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
     """
     Get general statistics for a DataFrame
     """
-
-    #todo: this should be moved to conll.pys
     import re
     from corpkit.dictionaries.process_types import processes
     from collections import Counter, defaultdict
@@ -1030,7 +1029,7 @@ def pipeline(f=False,
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
-            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature)
+            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature, reverse=True)
             r, c = searcher(f=False,
                             fname=f,
                             search=search,
@@ -1060,7 +1059,7 @@ def pipeline(f=False,
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
 
-    df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
+    #df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
     if kwargs.get('no_punct', True):

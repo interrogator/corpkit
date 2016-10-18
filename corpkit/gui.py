@@ -1180,37 +1180,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 nex.configure(state=DISABLED)
                 prev.configure(state=NORMAL)
 
-        def save_as_dictionary():
-            """save a word frequency dict of current interrogation for 
-               use as reference corpus"""
-            import os
-            import pandas
-            import pickle
-            
-            dpath = os.path.join(project_fullpath.get(), 'dictionaries')
-            dataname = name_of_interro_spreadsheet.get()
-            fname = urlify(dataname)
-            if fname.startswith('interrogation') or fname.startswith('edited'):
-                fname = simpledialog.askstring('Dictionary name', 'Choose a name for your dictionary:')
-            if fname == '' or fname is False:
-                return
-            else:
-                fname = fname
-            if not fname.endswith('.p'):
-                fname += '.p'
-            fpn = os.path.join(dpath, fname)
-            data = all_interrogations[dataname]
-            if data.results is not None:
-                as_series = data.results.sum()
-                with open(fpn, 'w') as fo: 
-                    pickle.dump(as_series, fo)
-                timestring('Dictionary created: %s' % (os.path.join('dictionaries', fname)))
-                refresh()
-            else:
-                timestring('No results branch found, sorry.')
-                return
-
-        def exchange_interro_branch(namedtupname, newdata, branch = 'results'):
+        def exchange_interro_branch(namedtupname, newdata, branch='results'):
             """replaces a namedtuple results/totals with newdata
                --- such a hack, should upgrade to recordtype"""
             namedtup = all_interrogations[namedtupname]
@@ -1228,7 +1198,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     the_branch.set_value(index, datum)
             all_interrogations[namedtupname] = namedtup
 
-        def update_interrogation(table_id, id, is_total = False):
+        def update_interrogation(table_id, id, is_total=False):
             """takes any changes made to spreadsheet and saves to the interrogation
             id: 0 = interrogator
                 1 = old editor window
@@ -1246,9 +1216,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if id == 2:
                 name_of_interrogation = name_of_n_ed_spread.get()
             if not is_total:
-                exchange_interro_branch(name_of_interrogation, newdata, branch = 'results')
+                exchange_interro_branch(name_of_interrogation, newdata, branch='results')
             else:
-                exchange_interro_branch(name_of_interrogation, newdata, branch = 'totals')
+                exchange_interro_branch(name_of_interrogation, newdata, branch='totals')
 
         def update_all_interrogations(pane='interrogate'):
             import pandas
@@ -1259,12 +1229,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 update_interrogation(interro_results, id=0)
                 update_interrogation(interro_totals, id=0, is_total=True)
             if pane == 'edit':
-                update_interrogation(o_editor_results, id = 1)
-                update_interrogation(o_editor_totals, id = 1, is_total=True)
+                update_interrogation(o_editor_results, id=1)
+                update_interrogation(o_editor_totals, id=1, is_total=True)
                 # update new editor sheet if it's there
                 if name_of_n_ed_spread.get() != '':
-                    update_interrogation(n_editor_results, id = 2)
-                    update_interrogation(n_editor_totals, id = 2, is_total=True)
+                    update_interrogation(n_editor_results, id=2)
+                    update_interrogation(n_editor_totals, id=2, is_total=True)
             timestring('Updated interrogations with manual data.')
             if pane == 'interrogate':
                 the_data = all_interrogations[name_of_interro_spreadsheet.get()]
@@ -1327,8 +1297,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         do_concordancing = IntVar()
         do_concordancing.set(1)
 
-        noregex = IntVar()
-        noregex.set(0)
+        show_conc_metadata = IntVar()
+        show_conc_metadata.set(1)
+
+        #noregex = IntVar()
+        #noregex.set(0)
 
         parser_memory = StringVar()
         parser_memory.set(str(2000))
@@ -1422,16 +1395,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #set_corenlp_path
 
             tmp = Checkbutton(pref_pop, text='Treat files as subcorpora', variable=files_as_subcorpora, onvalue=1, offvalue=0)
-            tmp.grid(row=9, column=0, pady=(0,0), sticky=W)
-
-            tmp = Checkbutton(pref_pop, text='Disable regex for plaintext', variable=noregex, onvalue=1, offvalue=0)
-            tmp.grid(row=9, column=1, pady=(0,0), sticky=W)
-
-            tmp = Checkbutton(pref_pop, text='Do concordancing', variable=do_concordancing, onvalue=1, offvalue=0)
             tmp.grid(row=10, column=0, pady=(0,0), sticky=W)
 
-            tmp = Checkbutton(pref_pop, text='Format concordance context', variable=only_format_match, onvalue=1, offvalue=0)
+            #tmp = Checkbutton(pref_pop, text='Disable regex for plaintext', variable=noregex, onvalue=1, offvalue=0)
+            #tmp.grid(row=9, column=1, pady=(0,0), sticky=W)
+
+            tmp = Checkbutton(pref_pop, text='Do concordancing', variable=do_concordancing, onvalue=1, offvalue=0)
             tmp.grid(row=10, column=1, pady=(0,0), sticky=W)
+
+            tmp = Checkbutton(pref_pop, text='Format concordance context', variable=only_format_match, onvalue=1, offvalue=0)
+            tmp.grid(row=11, column=0, pady=(0,0), sticky=W)
+
+            tmp = Checkbutton(pref_pop, text='Show concordance metadata', variable=show_conc_metadata, onvalue=1, offvalue=0)
+            tmp.grid(row=11, column=1, pady=(0,0), sticky=W)
 
             stopbut = Button(pref_pop, text='Done', command=quit_coding)
             stopbut.grid(row=12, column=0, columnspan=2, pady=15)        
@@ -1468,9 +1444,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 del itemcoldict[i]
             
             # spelling conversion?
-            conv = (spl.var).get()
-            if conv == 'Convert spelling' or conv == 'Off':
-                conv = False
+            #conv = (spl.var).get()
+            #if conv == 'Convert spelling' or conv == 'Off':
+            #    conv = False
             
             # lemmatag: do i need to add as button if trees?
             lemmatag = False
@@ -1553,28 +1529,63 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if not do_concordancing.get():
                 doing_concondancing = False
 
-            if noregex.get() == 1:
-                regex = False
-            else:
-                regex = True
+            #if noregex.get() == 1:
+            #    regex = False
+            #else:
+            #    regex = True
+
+            subcc = False
+            just_subc = False
+
+            met_field_ids = [by_met_listbox.get(i) for i in by_met_listbox.curselection()]
+            met_val_ids = [speaker_listbox.get(i) for i in speaker_listbox.curselection()]
+            if len(met_field_ids) == 1:
+                met_field_ids = met_field_ids[0]
+            if len(met_val_ids) == 1:
+                met_val_ids = met_val_ids[0]
+            if met_field_ids and not met_val_ids:
+                if isinstance(met_field_ids, list):
+                    subcc = met_field_ids
+                else:
+                    if met_field_ids == 'folders':
+                        subcc = False
+                    elif met_field_ids == 'files':
+                        files_as_subcorpora.set(1)
+                    elif met_field_ids == 'none':
+                        # todo: no sub mode?
+                        subcc = False
+                    else:
+                        subcc = met_field_ids
+
+            elif not met_field_ids:
+                subcc = False
+            elif met_field_ids and met_val_ids:
+                subcc = met_field_ids
+                if 'ALL' in met_val_ids:
+                    pass
+                else:
+                    just_subc = {met_field_ids: met_val_ids}
 
             # default interrogator args: root and note pass the gui itself for updating
             # progress bar and so on.
             interrogator_args = {'search': queryd,
                                  'show': to_show,
                                  'case_sensitive': bool(case_sensitive.get()),
-                                 'spelling': conv,
+                                 #'spelling': conv,
                                  'root': root,
                                  'note': note,
                                  'df1_always_df': True,
                                  'conc': doing_concondancing,
                                  'only_format_match': not bool(only_format_match.get()),
-                                 'dep_type': depdict.get(kind_of_dep.get(), 'CC-processed'),
+                                 #'dep_type': depdict.get(kind_of_dep.get(), 'CC-processed'),
                                  'nltk_data_path': nltk_data_path,
-                                 'regex': regex,
+                                 #'regex': regex,
                                  'coref': coref.get(),
                                  'cql': cqlmode.get(),
-                                 'files_as_subcorpora': bool(files_as_subcorpora.get())}
+                                 'files_as_subcorpora': bool(files_as_subcorpora.get()),
+                                 'subcorpora': subcc,
+                                 'just_metadata': just_subc,
+                                 'show_conc_metadata': bool(show_conc_metadata.get())}
 
             excludes = {}
             for k, v in list(ex_additional_criteria.items()):
@@ -1598,15 +1609,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 interrogator_args['excludemode'] = excludemode.get()
             except:
                 pass
-
-            # speaker ids
-            if only_sel_speakers.get():
-                ids = [int(i) for i in speaker_listbox.curselection()]
-                jspeak = [speaker_listbox.get(i) for i in ids]
-                # in the gui, we can't do 'each' queries (right now)
-                if 'ALL' in jspeak:
-                    jspeak = 'each'
-                interrogator_args['just_speakers'] = jspeak
             
             # translate lemmatag
             tagdict = {'Noun':      'n',
@@ -1634,8 +1636,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 if (ngmsize.var).get() != 'Size':
                     interrogator_args['gramsize'] = int((ngmsize.var).get())
 
-                global split_contract
-                interrogator_args['split_contractions'] = split_contract.get()
+                #global split_contract
+                #interrogator_args['split_contractions'] = split_contract.get()
 
             if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or \
                 selected_corpus_has_no_subcorpora.get() == 1:
@@ -1652,6 +1654,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         return 
 
             if selected_option == 'v':
+                #todo: use name func
                 featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
                 if not os.path.isfile(featfile):
                     interrodata.save('features', savedir=savedinterro_fullpath.get())
@@ -1831,7 +1834,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 parsebut.config(state=DISABLED)
                 tokbut.config(state=DISABLED)
             if not corpus_name.endswith('-parsed'):
-                pick_dep_type.config(state=DISABLED)
+                #pick_dep_type.config(state=DISABLED)
                 coref_but.config(state=DISABLED)
                 #parsebut.config(state=NORMAL)
                 #speakcheck_build.config(state=NORMAL)
@@ -1840,7 +1843,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 #sensplitbut.config(state=NORMAL)
             else:
                 if datatype_picked.get() not in ['Trees', 'N-grams']:
-                    pick_dep_type.config(state=NORMAL)
+                    #pick_dep_type.config(state=NORMAL)
                     coref_but.config(state=NORMAL)
                     #q.config(state=NORMAL)
                 #else:
@@ -1870,7 +1873,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #lab.set('Concordancing: %s' % corpus_name)
             
             if corpus_name in list(corpus_names_and_speakers.keys()):
-                toggle_by_metadata()
+                refresh_by_metadata()
                 #speakcheck.config(state=NORMAL)
             else:
                 pass
@@ -1899,7 +1902,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             else:
                 ck4.config(state=DISABLED)
 
-            toggle_by_metadata()
+            refresh_by_metadata()
 
             featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
             shortname = current_corpus.get() + '-' + 'features'
@@ -1994,7 +1997,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             indices = wx.curselection()
             for index in indices:
                 value = wx.get(index)
-                vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
+                if value == 'files':
+                    from corpkit.corpus import Corpus
+                    corp = Corpus(current_corpus.get())
+                    vals = [i.name for i in corp.all_files]
+                elif value == 'folders':
+                    from corpkit.corpus import Corpus
+                    corp = Corpus(current_corpus.get())
+                    vals = [i.name for i in corp.subcorpora]
+                elif value == 'None':
+                    vals = []
+                else:
+                    vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
                 for v in vals:
                     speaker_listbox.insert(END, v)
 
@@ -2008,21 +2022,25 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         lmt.grid(row=13, column=1, sticky=E)
         #lemtag.trace("w", d_callback)
 
-        def toggle_by_metadata(*args):
-            """this adds names to the speaker listboxes when it's switched on
-            it gets the info from settings.ini, via corpus_names_and_speakers"""
+        def refresh_by_metadata(*args):
+            """
+            """
+            #todo: store these in settings or dotfile
             import os
             if os.path.isdir(corpus_fullpath.get()):
                 from corpkit.build import get_all_metadata_fields
-                ns = get_all_metadata_fields(corpus_fullpath.get())
+                ns = get_all_metadata_fields(corpus_fullpath.get(), include_speakers=True)
                 #ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
             else:
                 return
 
+            speaker_listbox.delete(0, 'end')
+
             # figure out which list we need to add to, and which we should del from
             lbs = []
             delfrom = []
-            if int(only_sel_speakers.get()) == 1:
+            # todo: this should be, if new corpus, delfrom...
+            if True:
                 lbs.append(by_met_listbox)
             else:
                 delfrom.append(by_met_listbox)
@@ -2030,27 +2048,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             for lb in lbs:
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
-                lb.insert(END, 'Folders')
-                lb.insert(END, 'Files')
-                for idz in ns:
+                lb.insert(END, 'folders')
+                lb.insert(END, 'files')
+                for idz in sorted(ns):
                     lb.insert(END, idz)
-                lb.insert(END, 'None')
+                lb.insert(END, 'none')
             # or delete names
             for lb in delfrom:
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
                 lb.configure(state=DISABLED)
 
-        # by metadata
-        only_sel_speakers = IntVar()
-        only_sel_speakers.set(1)
-        #speakcheck = Checkbutton(interro_opt, text='By metadata:', variable=only_sel_speakers, command=togglespeaker)
-        #speakcheck.grid(column=0, row=14, sticky=W, pady=(0, 0))
-
-        by_metadata = StringVar()
-        #by_met_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
-        #                          relief=SUNKEN, bg='#F4F4F4',
-        #                          yscrollcommand=spk_sbar.set, exportselection=False)       
+        # by metadata   
         by_meta_scrl = Frame(interro_opt)
         by_meta_scrl.grid(row=14, column=0, sticky='w', pady=(0, 0))
         # scrollbar for the listbox
@@ -2058,42 +2067,35 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         by_met_bar.pack(side=RIGHT, fill=Y)
         # listbox itself
         slist_height = 2 if small_screen else 4
-        by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=14, height=slist_height,
+        by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=10, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=by_met_bar.set, exportselection=False)
         by_met_listbox.pack()
-        #by_met_listbox.configure(state=DISABLED)
         by_met_bar.config(command=by_met_listbox.yview)
-
         xx = by_met_listbox.bind('<<ListboxSelect>>', populate_metavals)
-        #by_met_listbox.trace('w', populate_metavals)
-        # add data on press
-        #by_metadata.trace("w", toggle_by_metadata)
 
-        # frame to hold speaker names listbox
+        # frame to hold metadata values listbox
         spk_scrl = Frame(interro_opt)
         spk_scrl.grid(row=14, column=0, rowspan = 2, columnspan=2, sticky=E, pady=(0,0))
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
-        slist_height = 2 if small_screen else 4
-        speaker_listbox = Listbox(spk_scrl, selectmode=SINGLE, width=32, height=slist_height,
+        speaker_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=spk_sbar.set, exportselection=False)
         speaker_listbox.pack()
         speaker_listbox.configure(state=DISABLED)
         spk_sbar.config(command=speaker_listbox.yview)
 
-
         # dep type
-        dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
-        kind_of_dep = StringVar(root)
-        kind_of_dep.set('CC-processed')
-        Label(interro_opt, text='Dependency type:').grid(row=16, column=0, sticky=W)
-        pick_dep_type = OptionMenu(interro_opt, kind_of_dep, *dep_types)
-        pick_dep_type.config(state=DISABLED)
-        pick_dep_type.grid(row=16, column=0, sticky=W, padx=(125,0))
+        #dep_types = tuple(('Basic', 'Collapsed', 'CC-processed'))
+        #kind_of_dep = StringVar(root)
+        #kind_of_dep.set('CC-processed')
+        #Label(interro_opt, text='Dependency type:').grid(row=16, column=0, sticky=W)
+        #pick_dep_type = OptionMenu(interro_opt, kind_of_dep, *dep_types)
+        #pick_dep_type.config(state=DISABLED)
+        #pick_dep_type.grid(row=16, column=0, sticky=W, padx=(125,0))
         #kind_of_dep.trace("w", d_callback)
 
         coref = IntVar(root)
@@ -2318,16 +2320,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         ngmsize.configure(width=12)
         ngmsize.grid(row=7, column=0, sticky=W, padx=(60, 0))
         ngmsize.config(state=DISABLED)
-        global split_contract
-        split_contract = IntVar(root)
-        split_contract.set(False)
-        split_contract_but = Checkbutton(interro_opt, text='Split contractions', variable=split_contract, onvalue=True, offvalue=False)
-        split_contract_but.grid(row=7, column=1, sticky=E) 
+        #global split_contract
+        #split_contract = IntVar(root)
+        #split_contract.set(False)
+        #split_contract_but = Checkbutton(interro_opt, text='Split contractions', variable=split_contract, onvalue=True, offvalue=False)
+        #split_contract_but.grid(row=7, column=1, sticky=E) 
 
-        Label(interro_opt, text='Spelling:').grid(row=6, column=1, sticky=E, padx=(0, 75))
-        spl = MyOptionMenu(interro_opt, 'Off','UK','US')
-        spl.configure(width=7)
-        spl.grid(row=6, column=1, sticky=E, padx=(2, 0))
+        #Label(interro_opt, text='Spelling:').grid(row=6, column=1, sticky=E, padx=(0, 75))
+        #spl = MyOptionMenu(interro_opt, 'Off','UK','US')
+        #spl.configure(width=7)
+        #spl.grid(row=6, column=1, sticky=E, padx=(2, 0))
 
         def desel_and_turn_off(but):
             pass
@@ -2349,13 +2351,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 for but in non_ngram:
                     desel_and_turn_off(but)
                 ngmsize.config(state=NORMAL)
-                split_contract_but.config(state=NORMAL)
+                #split_contract_but.config(state=NORMAL)
             if all(not ngmshow.get() for ngmshow in ngmshows):
                 if return_count.get() != 'c':
                     for but in non_ngram:
                         turnon(but)
                     ngmsize.config(state=DISABLED)
-                    split_contract_but.config(state=DISABLED)
+                    #split_contract_but.config(state=DISABLED)
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
@@ -2408,10 +2410,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 if chosen == 'N-grams' or any(ngmshow.get() for ngmshow in ngmshows):
                     #lbut.config(state=DISABLED)
                     ngmsize.config(state=NORMAL)
-                    split_contract_but.config(state=NORMAL)
+                    #split_contract_but.config(state=NORMAL)
                 else:
                     ngmsize.config(state=DISABLED)
-                    split_contract_but.config(state=DISABLED)
+                    #split_contract_but.config(state=DISABLED)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
             clean_query = qa.get(1.0, END).strip('\n').strip()
@@ -2686,10 +2688,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         def change_interro_spread(*args):
             if name_of_interro_spreadsheet.get():
-                savdict.config(state=NORMAL)
+                #savdict.config(state=NORMAL)
                 updbut.config(state=NORMAL)
             else:
-                savdict.config(state=DISABLED)
+                #savdict.config(state=DISABLED)
                 updbut.config(state=DISABLED)
 
         name_of_interro_spreadsheet = StringVar()
@@ -2731,9 +2733,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             nex.configure(state=DISABLED)
             prev.configure(state=DISABLED)
 
-        savdict = Button(four_interro_under, text='Save as dictionary', command=save_as_dictionary)
-        savdict.config(state=DISABLED)
-        savdict.pack(side='right', expand=True)
+        #savdict = Button(four_interro_under, text='Save as dictionary', command=save_as_dictionary)
+        #savdict.config(state=DISABLED)
+        #savdict.pack(side='right', expand=True)
 
         updbut = Button(four_interro_under, text='Update interrogation', command=lambda: update_all_interrogations(pane='interrogate'))
         updbut.pack(side='right', expand=True)
@@ -4062,10 +4064,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             pd.set_option('display.max_colwidth', 200)
             import corpkit
             from corpkit.interrogation import Concordance
-            if data.__class__ == Concordance:
+            if isinstance(data, Concordance):
                 current_conc[0] = data
-
-            elif type(data) == pd.core.frame.DataFrame:
+            elif isinstance(data, pd.core.frame.DataFrame):
                 data = Concordance(data)
                 current_conc[0] = data
             else:
@@ -4082,16 +4083,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             subc = show_subcorpora.get()
 
             if not fnames:
-                data = data.drop('f', axis=1, errors = 'ignore')
+                data = data.drop('f', axis=1, errors='ignore')
             if not them:
-                data = data.drop('t', axis=1, errors = 'ignore')
+                data = data.drop('t', axis=1, errors='ignore')
             if not spk:
-                data = data.drop('s', axis=1, errors = 'ignore')
+                data = data.drop('s', axis=1, errors='ignore')
             if not subc:
-                data = data.drop('c', axis=1, errors = 'ignore')
+                data = data.drop('c', axis=1, errors='ignore')
 
             if them:
-                data = data.drop('t', axis=1, errors = 'ignore')
+                data = data.drop('t', axis=1, errors='ignore')
                 themelist = get_list_of_themes(data)
                 if any(t != '' for t in themelist):
                     data.insert(0, 't', themelist)
@@ -4101,15 +4102,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             # copes when people search for 'root' or something.
 
             def resize_by_window_size(df, window):
+                import os
+                df['f'] = df['f'].apply(os.path.basename) 
                 df['l'] = df['l'].str.slice(start=-window, stop=None)
                 df['l'] = df['l'].str.rjust(window)
-                df['r'] = df['r'].str.slice(start = 0, stop = window)
+                df['r'] = df['r'].str.slice(start=0, stop=window)
                 df['r'] = df['r'].str.ljust(window)
                 df['m'] = df['m'].str.ljust(df['m'].str.len().max())
                 return df
 
             moddata = resize_by_window_size(data, window)
-            lines = moddata.to_string(header = False, index = show_index.get()).splitlines()
+            lines = moddata.to_string(header=False, index=show_index.get()).splitlines()
             #lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
             conclistbox.delete(0, END)
             for line in lines:
@@ -4188,10 +4191,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 the_kwargs = {'message': 'Choose a name and place for your exported data.'}
             else:
                 the_kwargs = {}
-            savepath = filedialog.asksaveasfilename(title = 'Save file',
-                                           initialdir = exported_fullpath.get(),
-                                           defaultextension = '.csv',
-                                           initialfile = 'data.csv',
+            savepath = filedialog.asksaveasfilename(title='Save file',
+                                           initialdir=exported_fullpath.get(),
+                                           defaultextension='.csv',
+                                           initialfile='data.csv',
                                            **the_kwargs)
             if savepath == '':
                 return
@@ -5541,7 +5544,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             fsize.set(conmap(Config, "Concordance")['font size'])
             # window setting causes conc_sort to run, causing problems.
             #win.set(conmap(Config, "Concordance")['window'])
-            kind_of_dep.set(conmap(Config, 'Interrogate')['dependency type'])
+            #kind_of_dep.set(conmap(Config, 'Interrogate')['dependency type'])
             #conc_kind_of_dep.set(conmap(Config, "Concordance")['dependency type'])
             cods = conmap(Config, "Concordance")['coding scheme']
             if cods is None:
@@ -5619,7 +5622,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         first = False
                 if first:
                     corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
-                    print('FIRST', first)
                     current_corpus.set(first)
                 else:
                     corpus_fullpath.set('')
@@ -5651,11 +5653,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             timestring('Project "%s" opened.' % os.path.basename(fp))
             note.progvar.set(0)
             
-            if corpus_name in list(corpus_names_and_speakers.keys()):
-                toggle_by_metadata()
+            #if corpus_name in list(corpus_names_and_speakers.keys()):
+            refresh_by_metadata()
                 #speakcheck.config(state=NORMAL)
-            else:
-                pass
+            #else:
+            #    pass
                 #speakcheck.config(state=DISABLED)
 
             load_custom_list_json()
@@ -6278,9 +6280,23 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 trees = []
 
                 def flatten_treestring(tree):
+
+                    replaces = {'$ ':   '$',
+                                '`` ':  '``',
+                                ' ,':   ',',
+                                ' .':   '.',
+                                "'' ":  "''",
+                                " n't": "n't",
+                                " 're": "'re",
+                                " 'm":  "'m",
+                                " 's":  "'s",
+                                " 'd":  "'d",
+                                " 'll": "'ll",
+                                '  ':   ' '}
                     import re
                     tree = re.sub(r'\(.*? ', '', tree).replace(')', '')
-                    tree = tree.replace('$ ', '$').replace('`` ', '``').replace(' ,', ',').replace(' .', '.').replace("'' ", "''").replace(" n't", "n't").replace(" 're","'re").replace(" 'm","'m").replace(" 's","'s").replace(" 'd","'d").replace(" 'll","'ll").replace('  ', ' ')
+                    for k, v in replaces.items():
+                        tree = tree.replace(k, v)
                     return tree
 
                 for l in lines:
@@ -6445,7 +6461,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #tryer(Config, conc_when_int, "Other", 'concordance when interrogating')
             tryer(Config, only_format_match, "Other", 'only format middle concordance column')
             tryer(Config, do_concordancing, "Other", 'do concordancing')
-            tryer(Config, noregex, "Other", 'disable regular expressions for plaintext search')
+            #tryer(Config, noregex, "Other", 'disable regular expressions for plaintext search')
             tryer(Config, truncate_conc_after, "Other", 'truncate concordance lines')
             tryer(Config, truncate_spreadsheet_after, "Other", 'truncate spreadsheets')
             tryer(Config, p_val, "Other", 'p value')
@@ -6482,7 +6498,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             relcorpuspath = corpus_fullpath.get().replace(project_fullpath.get(), '').lstrip('/')
             Config.set('Interrogate','Corpus path', relcorpuspath)
             Config.set('Interrogate','Speakers', convert_speakdict_to_string(corpus_names_and_speakers))
-            Config.set('Interrogate','dependency type', kind_of_dep.get())
+            #Config.set('Interrogate','dependency type', kind_of_dep.get())
             Config.set('Interrogate','Treat files as subcorpora', str(files_as_subcorpora.get()))
 
             Config.add_section('Edit')

@@ -709,7 +709,7 @@ def add_deps_to_corpus_path(path):
         df['d'] = all_deps
         df.to_csv(f, sep='\t', header=False)
 
-def get_all_metadata_fields(corpus):
+def get_all_metadata_fields(corpus, include_speakers=False):
     from corpkit.constants import OPENER, PYTHON_VERSION
 
     fs = []
@@ -718,7 +718,11 @@ def get_all_metadata_fields(corpus):
         for filename in filenames:
             fs.append(os.path.join(root, filename))
 
-    fields = []
+    badfields = ['parse', 'sent_id']
+    if not include_speakers:
+        badfields.append('speaker')
+
+    fields = set()
     for f in fs:
         if PYTHON_VERSION == 2:
             from corpkit.process import saferead
@@ -732,9 +736,9 @@ def get_all_metadata_fields(corpus):
         lines = [l[2:].split('=', 1)[0] for l in lines if l.startswith('# ') \
                  if not l.startswith('# sent_id')]
         for l in lines:
-            if l not in fields and l not in ['parse', 'sent_id', 'speaker']:
-                fields.append(l)
-    return fields
+            if l not in fields and l not in badfields:
+                fields.add(l)
+    return list(fields)
 
 
 def get_names(filepath, speakid):
