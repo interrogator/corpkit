@@ -893,7 +893,7 @@ def canpickle(obj):
         try:
             pickle.dump(obj, fo)
             return True
-        except (unpick_error, TypeError, unpick_error_2) as err:
+        except (unpick_error, TypeError, unpick_error_2, AttributeError) as err:
             return False
 
 def sanitise_dict(d):
@@ -1149,6 +1149,9 @@ def auto_usecols(search, exclude, show, usecols):
             needed.append(i)
     if isinstance(show, list):
         for i in show:
+            if i.endswith('a'):
+                needed.append('g')
+            i = i.replace('a', 'f').replace('x', 'p')
             needed.append(i)
     else:
         needed.append(show)
@@ -1161,7 +1164,7 @@ def auto_usecols(search, exclude, show, usecols):
         except:
             pass
     # word class is pos
-    stcols = ['p' if i == 'x' else i for i in stcols]
+    #stcols = ['p' if i == 'x' else i for i in stcols]
     # we always get word right now, but could remove '2' in the future
     # also, sent index violates conll-u, so that might change
     out = [0, 1, 2]

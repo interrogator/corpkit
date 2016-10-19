@@ -539,7 +539,11 @@ def interrogator(corpus,
 
                 all_conc_lines.append(Series(lin, index=conc_col_names))
 
-        conc_df = pd.concat(all_conc_lines, axis=1).T
+        try:
+            conc_df = pd.concat(all_conc_lines, axis=1).T
+        except ValueError:
+            # no results
+            return
 
         if all(x == '' for x in list(conc_df['s'].values)) or \
            all(x == 'none' for x in list(conc_df['s'].values)):
@@ -985,8 +989,9 @@ def interrogator(corpus,
     if not no_conc:
         # fail on this line with typeerror if no results?
         conc_df = make_conc_obj_from_conclines(conc_results, fsi_index=fsi_index)
-
-        if only_conc:
+        if only_conc and conc_df is None:
+            return
+        elif only_conc:
             locs = sanitise_dict(locs)
             try:
                 conc_df.query = locs

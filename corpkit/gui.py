@@ -608,28 +608,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 'Get tokens by regex':                              'h',
                 'Get tokens matching list':                         'e'}
 
-        # kinds of search for kinds of data
-        option_dict = {'Trees': ['Get words', 
-                                 'Get tag and word of match', 
-                                 'Count matches', 
-                                 'Get part-of-speech tag',
-                                 #'Get stats',
-                                 'Get ngrams from trees'],
-                       'Tokens': ['Get tokens by regex', 
-                                 'Get tokens matching list',
-                                 'Get ngrams from tokens'], 
-                       'Dependencies':
-                                ['Get role of match',
-                                 'Get lemmata matching regex',
-                                 'Get tokens matching regex',
-                                 'Get tokens by role',
-                                 'Get "role:dependent", matching governor',
-                                 'Get "role:governor", matching dependent',
-                                 'Get distance from root for regex match'],
-                       'Plaintext': 
-                                ['Regular expression search', 
-                                 'Simple search string search']}
-
         # translate sort_by for editor
         sort_trans = {'None':           False,
                       'Total':          'total',
@@ -639,7 +617,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                       'Decrease':       'decrease',
                       'Static':         'static',
                       'Turbulent':      'turbulent',
-                      'P value':        'p'}
+                      'P value':        'p',
+                      'Reverse':        'reverse'}
 
         # translate special queries for interrogator()
         spec_quer_translate = {'Participants': 'w',
@@ -647,23 +626,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                                'Processes':    'w',
                                'Subjects':     'w',
                                'Entities':     'w'}
-
-        #convert_name_to_query = {'Trees': 't',
-        #                        'Word': 'w',
-        #                        'POS': 'p',
-        #                        'Lemmata': 'l',
-        #                        'Governor lemmata': 'gl',
-        #                        'Governor functions': 'gf',
-        #                        'Governor POS': 'gp',
-        #                        'Dependent lemmata': 'gl',
-        #                        'Dependent functions': 'gf',
-        #                        'Dependent POS': 'gp',
-        #                        'Functions': 'f',
-        #                        'Governors': 'g',
-        #                        'Dependents': 'd',
-        #                        'N-grams': 'n',
-        #                        'Stats': 's',
-        #                        'Index': 'i'}
 
         # todo: newer method
         from corpkit.constants import transshow, transobjs, LETTERS
@@ -1450,32 +1412,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             
             # lemmatag: do i need to add as button if trees?
             lemmatag = False
-
-            # just in case
-            query = False
-
-            # special queries via dropdown
-            if special_queries.get() != 'Off' and special_queries.get() != 'Stats':
-                query = qd[special_queries.get()]
-                datatype_picked.set('Trees')
-
-            else:
-
-                if special_queries.get() != 'Stats':
-                    query = qa.get(1.0, END)
-                    query = query.replace('\n', '')
-                    if not datatype_picked.get() == 'CQL':
-                        # allow list queries
-                        if query.startswith('[') and query.endswith(']') and ',' in query:
-                            query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                        #elif transdict[searchtype()] in ['e', 's']:
-                            #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
-                        else:
-                            # convert special stuff
-                            query = remake_special(query, customs=custom_special_dict, 
-                                                   case_sensitive=case_sensitive.get())
-                            if query is False:
-                                return
+            query = qa.get(1.0, END).replace('\n', '')
+            if not datatype_picked.get() == 'CQL':
+                # allow list queries
+                if query.startswith('[') and query.endswith(']') and ',' in query:
+                    query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                #elif transdict[searchtype()] in ['e', 's']:
+                    #query = query.lstrip('[').rstrip(']').replace("'", '').replace('"', '').replace(' ', '').split(',')
+                else:
+                    # convert special stuff
+                    query = remake_special(query, customs=custom_special_dict, 
+                                           case_sensitive=case_sensitive.get())
+                    if query is False:
+                        return
 
             # make name for interrogation
             the_name = namer(nametext.get(), type_of_data='interrogation')
@@ -1585,7 +1534,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                                  'files_as_subcorpora': bool(files_as_subcorpora.get()),
                                  'subcorpora': subcc,
                                  'just_metadata': just_subc,
-                                 'show_conc_metadata': bool(show_conc_metadata.get())}
+                                 'show_conc_metadata': bool(show_conc_metadata.get()),
+                                 'use_interrodict': True}
+            if debug:
+                print(interrogator_args)
 
             excludes = {}
             for k, v in list(ex_additional_criteria.items()):
@@ -1619,16 +1571,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                        '':          False,
                        'Off':       False}
 
-            interrogator_args['lemmatag'] = tagdict[lemtag.get()]
+            #interrogator_args['lemmatag'] = tagdict[lemtag.get()]
 
             if corpus_fullpath.get() == '':
                 timestring('You need to select a corpus.')
                 return
 
             # stats preset is actually a search type
-            if special_queries.get() == 'Stats':
-                selected_option = 'v'
-                interrogator_args['query'] = 'any'
+            #if special_queries.get() == 'Stats':
+            #    selected_option = 'v'
+            #    interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
             if selected_option.startswith('n') or any(x.startswith('n') for x in to_show):
@@ -1639,11 +1591,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 #global split_contract
                 #interrogator_args['split_contractions'] = split_contract.get()
 
-            if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or \
-                selected_corpus_has_no_subcorpora.get() == 1:
-                corp_to_search = corpus_fullpath.get()
-            else:
-                corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
+            #if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or \
+            #    selected_corpus_has_no_subcorpora.get() == 1:
+            corp_to_search = corpus_fullpath.get()
+            #else:
+            #    corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
 
             # do interrogation, return if empty
             interrodata = interrogator(corp_to_search, **interrogator_args)
@@ -1804,16 +1756,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             
             if len(subdrs) == 0:
                 charttype.set('bar')
-            #pick_subcorpora['menu'].delete(0, 'end')
-            #if len(subdrs) > 0:
-            #    pick_subcorpora.config(state=NORMAL)
-            #    pick_subcorpora['menu'].add_command(label='All', command=_setit(subc_pick, 'All'))
-            #    for choice in subdrs:
-            #        pick_subcorpora['menu'].add_command(label=choice, command=_setit(subc_pick, choice))
-            #else:
-            #    pick_subcorpora.config(state=NORMAL)
-            #    pick_subcorpora['menu'].add_command(label='None', command=_setit(subc_pick, 'None'))
-            #    pick_subcorpora.config(state=DISABLED)
 
             pick_a_datatype['menu'].delete(0, 'end')
 
@@ -1852,6 +1794,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
                 for i in sorted(convert_name_to_query.keys()):
+                    # for now --- simplifying gui!
+                    if i.lower() == 'distance from root' or i.lower().startswith('head'):
+                        continue
                     pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
                 #parsebut.config(state=DISABLED)
                 #speakcheck_build.config(state=DISABLED)
@@ -1862,8 +1807,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     datatype_picked.set('Word')
                     
             else:
-                for i in ['Word', 'N-grams']:
-                    pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
+                #for i in ['Word', 'N-grams']:
+                #    pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
                 #tokbut.config(state=DISABLED)
                 datatype_picked.set('Word')
             
@@ -1904,19 +1849,27 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             refresh_by_metadata()
 
+            #from corpkit.process import make_savename_for_features
+            #featfile = make_savename_for_features(obj='features',
+            #                              corpname=current_corpus.get(),
+            #                              subcorpora=False)
+
+            #import os
+            #shortname = os.path.splitext(featfile)[0]
+
             featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
             shortname = current_corpus.get() + '-' + 'features'
             if os.path.isfile(featfile) and shortname not in all_interrogations.keys():
                 from corpkit.other import load
                 all_interrogations[shortname] = load(featfile)
 
-        Label(interro_opt, text='Corpus:').grid(row=0, column=0, sticky=W)
+        Label(interro_opt, text='Corpus/subcorpora:').grid(row=0, column=0, sticky=W)
         current_corpus = StringVar()
         current_corpus.set('Corpus')
         available_corpora = OptionMenu(interro_opt, current_corpus, *tuple(('Select corpus')))
-        available_corpora.config(width=21, state=DISABLED, justify=CENTER)
+        available_corpora.config(width=30, state=DISABLED, justify=CENTER)
         current_corpus.trace("w", corpus_callback)
-        available_corpora.grid(row=0, column=0, columnspan=2, padx=(0, 33))
+        available_corpora.grid(row=0, column=0, columnspan=2, padx=(135,0))
 
         # todo: implement this
         #subc_pick = StringVar()
@@ -1965,20 +1918,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         exclude_str = StringVar()
         exclude_str.set('')
-        Label(interro_opt, text='Exclude:').grid(row=6, column=0, sticky=W, pady=(0, 10))
+        Label(interro_opt, text='Exclude:').grid(row=7, column=0, sticky=W, pady=(0, 10))
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *['None'] + sorted(convert_name_to_query.keys()))
         exclude.config(width=14)
-        exclude.grid(row=6, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
+        exclude.grid(row=7, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
         qr = Entry(interro_opt, textvariable=exclude_str, width=18, state=DISABLED)
-        qr.grid(row=6, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
+        qr.grid(row=7, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text='+', \
                         command=lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state=DISABLED)
-        ex_plusbut.grid(row=6, column=1, sticky=E, pady=(0, 10))
+        ex_plusbut.grid(row=7, column=1, sticky=E, pady=(0, 10))
 
         #blklst = StringVar()
         #Label(interro_opt, text='Blacklist:').grid(row=12, column=0, sticky=W)
@@ -1993,8 +1946,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             wx = evt.widget
             speaker_listbox.configure(state=NORMAL)
             speaker_listbox.delete(0, END)
-            speaker_listbox.insert(END, 'ALL')
             indices = wx.curselection()
+            if wx.get(indices[0]) != 'none':
+                speaker_listbox.insert(END, 'ALL')
             for index in indices:
                 value = wx.get(index)
                 if value == 'files':
@@ -2005,7 +1959,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     from corpkit.corpus import Corpus
                     corp = Corpus(current_corpus.get())
                     vals = [i.name for i in corp.subcorpora]
-                elif value == 'None':
+                elif value == 'none':
                     vals = []
                 else:
                     vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
@@ -2013,13 +1967,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     speaker_listbox.insert(END, v)
 
         # lemma tags
-        lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
-        lemtag = StringVar(root)
-        lemtag.set('')
-        Label(interro_opt, text='Result word class:').grid(row=13, column=0, columnspan=2, sticky=E, padx=(0, 120))
-        lmt = OptionMenu(interro_opt, lemtag, *lemtags)
-        lmt.config(state=NORMAL, width=10)
-        lmt.grid(row=13, column=1, sticky=E)
+        #lemtags = tuple(('Off', 'Noun', 'Verb', 'Adjective', 'Adverb'))
+        #lemtag = StringVar(root)
+        #lemtag.set('')
+        #Label(interro_opt, text='Result word class:').grid(row=13, column=0, columnspan=2, sticky=E, padx=(0, 120))
+        #lmt = OptionMenu(interro_opt, lemtag, *lemtags)
+        #lmt.config(state=NORMAL, width=10)
+        #lmt.grid(row=13, column=1, sticky=E)
         #lemtag.trace("w", d_callback)
 
         def refresh_by_metadata(*args):
@@ -2061,13 +2015,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         # by metadata   
         by_meta_scrl = Frame(interro_opt)
-        by_meta_scrl.grid(row=1, column=0, sticky='w', pady=(0, 0))
+        by_meta_scrl.grid(row=1, column=0, rowspan=2, sticky='w', padx=(5,0), pady=(5, 5))
         # scrollbar for the listbox
         by_met_bar = Scrollbar(by_meta_scrl)
         by_met_bar.pack(side=RIGHT, fill=Y)
         # listbox itself
         slist_height = 2 if small_screen else 4
-        by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=10, height=slist_height,
+        by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=12, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=by_met_bar.set, exportselection=False)
         by_met_listbox.pack()
@@ -2076,12 +2030,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         # frame to hold metadata values listbox
         spk_scrl = Frame(interro_opt)
-        spk_scrl.grid(row=1, column=0, rowspan=2, columnspan=2, sticky=E, pady=(0,0))
+        spk_scrl.grid(row=1, column=0, rowspan=2, columnspan=2, sticky=E, pady=(5,5))
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
         # listbox itself
-        speaker_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=32, height=slist_height,
+        speaker_listbox = Listbox(spk_scrl, selectmode=EXTENDED, width=29, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=spk_sbar.set, exportselection=False)
         speaker_listbox.pack()
@@ -2101,19 +2055,19 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         coref = IntVar(root)
         coref.set(False)
         coref_but = Checkbutton(interro_opt, text='Count coreferents', variable=coref, onvalue=True, offvalue=False)
-        coref_but.grid(row=16, column=1, sticky=E) 
+        coref_but.grid(row=5, column=1, sticky=E) 
         coref_but.config(state=DISABLED)
 
         # query
         entrytext=StringVar()
 
-        Label(interro_opt, text='Query:').grid(row=3, column=0, sticky='NW', pady=(5,0))
+        Label(interro_opt, text='Query:').grid(row=4, column=0, sticky='NW', pady=(5,0))
         entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
         qa_height = 2 if small_screen else 4
         qa = Text(interro_opt, width=40, height=qa_height, borderwidth=0.5, 
                   font=("Courier New", 14), undo=True, relief=SUNKEN, wrap=WORD, highlightthickness=0)
         qa.insert(END, entrytext.get())
-        qa.grid(row=3, column=0, columnspan=2, sticky=E, pady=(5,0), padx=(0, 4))
+        qa.grid(row=4, column=0, columnspan=2, sticky=E, pady=(5,5), padx=(0, 4))
         all_text_widgets.append(qa)
 
         additional_criteria = {}
@@ -2270,7 +2224,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         command=lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
                         state=NORMAL)
-        plusbut.grid(row=2, column=0, columnspan=2, padx=(0,200))
+        plusbut.grid(row=4, column=0, columnspan=1, padx=(25,0), pady=(10,0), sticky='w')
 
         def entry_callback(*args):
             """when entry is changed, add it to the textbox"""
@@ -2312,13 +2266,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #tfbut = Checkbutton(interro_opt, text="Filter titles", variable=tit_fil, onvalue=True, offvalue=False)
         #tfbut.grid(row=9, column=0, sticky=W)
         case_sensitive = IntVar()
-        Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue=True, offvalue=False).grid(row=13, column=0, sticky=W)
+        tmp = Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue=True, offvalue=False)
+        tmp.grid(row=5, column=0, sticky=W, padx=(160,0))
 
         global ngmsize
-        Label(interro_opt, text='Ngrams:').grid(row=7, column=0, sticky=W) 
+        Label(interro_opt, text='N-grams:').grid(row=5, column=0, sticky=W) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
         ngmsize.configure(width=12)
-        ngmsize.grid(row=7, column=0, sticky=W, padx=(60, 0))
+        ngmsize.grid(row=5, column=0, sticky=W, padx=(65, 0))
         ngmsize.config(state=DISABLED)
         #global split_contract
         #split_contract = IntVar(root)
@@ -2430,18 +2385,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     pass
 
         datatype_picked = StringVar(root)
-        Label(interro_opt, text='Search: ').grid(row=2, column=0, sticky=W, pady=10)
+        Label(interro_opt, text='Search: ').grid(row=3, column=0, sticky=W, pady=10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *sorted(convert_name_to_query.keys()))
         pick_a_datatype.configure(width=30, justify=CENTER)
         datatype_picked.set('Word')
-        pick_a_datatype.grid(row=2, column=0, columnspan=2, sticky=W, padx=(136,0))
+        pick_a_datatype.grid(row=3, column=0, columnspan=2, sticky=W, padx=(136,0))
         datatype_picked.trace("w", callback)
         
         # trees, words, functions, governors, dependents, pos, lemma, count
         interro_return_frm = Frame(interro_opt)
 
         Label(interro_return_frm, text='   Return', font=("Courier New", 13, "bold")).grid(row=0, column=0, sticky=E)
-        interro_return_frm.grid(row=5, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
+        interro_return_frm.grid(row=6, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
 
         Label(interro_return_frm, text='    Token', font=("Courier New", 13)).grid(row=0, column=1, sticky=E)
         Label(interro_return_frm, text='    Lemma', font=("Courier New", 13)).grid(row=0, column=2, sticky=E)
@@ -2526,7 +2481,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         return_distance = StringVar()
         return_distance.set('')
-        ck6 = Checkbutton(interro_return_frm, anchor=E, variable=return_distance, onvalue='r', offvalue = '')
+        ck6 = Checkbutton(interro_return_frm, anchor=E, variable=return_distance, onvalue='a', offvalue = '')
         ck6.grid(row=6, column=3, sticky=E)
 
         return_count = StringVar()
@@ -2637,30 +2592,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         return_ngm_func.trace("w", ngram_callback)
 
         def q_callback(*args):
+            qa.configure(state=NORMAL)
+            qr.configure(state=NORMAL)
 
-            if special_queries.get() == 'Off':
-                #q.configure(state=NORMAL)
-                qa.configure(state=NORMAL)
-                qr.configure(state=NORMAL)
-            else:
-                entrytext.set(qd[special_queries.get()])
-                #q.configure(state=DISABLED)
-                qa.configure(state=DISABLED)
-                qr.configure(state=DISABLED)
-                if special_queries.get() == 'Stats':
-                    datatype_picked.set('Stats')
-                else:
-                    datatype_picked.set('Trees')
-                #almost everything should be disabled ..
-
-        queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
-        special_queries = StringVar(root)
-        special_queries.set('Off')
-        Label(interro_opt, text='Preset:').grid(row=7, column=0, sticky=W)
-        pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
-        pick_a_query.config(width=11, state=DISABLED)
-        pick_a_query.grid(row=7, column=0, padx=(60, 0), columnspan=2, sticky=W)
-        special_queries.trace("w", q_callback)
+        #queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
+        #special_queries = StringVar(root)
+        #special_queries.set('Off')
+        #Label(interro_opt, text='Preset:').grid(row=7, column=0, sticky=W)
+        #pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
+        #pick_a_query.config(width=11, state=DISABLED)
+        #pick_a_query.grid(row=7, column=0, padx=(60, 0), columnspan=2, sticky=W)
+        #special_queries.trace("w", q_callback)
 
         # Interrogation name
         nametext=StringVar()
@@ -3090,7 +3032,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         Label(editor_buttons, text='Sort results by', font=("Helvetica", 13, "bold")).grid(row=4, column=0, sticky=W, pady=(15,0))
         sort_val = StringVar(root)
         sort_val.set('None')
-        sorts = OptionMenu(editor_buttons, sort_val, 'None', 'Total', 'Inverse total', 'Name','Increase', 'Decrease', 'Static', 'Turbulent', 'P value')
+        poss = ['None', 'Total', 'Inverse total', 'Name','Increase',
+                'Decrease', 'Static', 'Turbulent', 'P value', 'Reverse']
+        sorts = OptionMenu(editor_buttons, sort_val, *poss)
         sorts.config(width=11)
         sorts.grid(row=4, column=1, sticky=E, pady=(15,0))
 
@@ -4081,6 +4025,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             them = show_themes.get()
             spk = show_speaker.get()
             subc = show_subcorpora.get()
+            ix = show_index.get()
 
             if not fnames:
                 data = data.drop('f', axis=1, errors='ignore')
@@ -4090,7 +4035,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 data = data.drop('s', axis=1, errors='ignore')
             if not subc:
                 data = data.drop('c', axis=1, errors='ignore')
-
+            if not ix:
+                data = data.drop('i', axis=1, errors='ignore')
             if them:
                 data = data.drop('t', axis=1, errors='ignore')
                 themelist = get_list_of_themes(data)
@@ -4103,7 +4049,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             def resize_by_window_size(df, window):
                 import os
-                df['f'] = df['f'].apply(os.path.basename) 
+                if 'f' in list(df.columns):
+                    df['f'] = df['f'].apply(os.path.basename) 
                 df['l'] = df['l'].str.slice(start=-window, stop=None)
                 df['l'] = df['l'].str.rjust(window)
                 df['r'] = df['r'].str.slice(start=0, stop=window)
@@ -4112,7 +4059,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 return df
 
             moddata = resize_by_window_size(data, window)
-            lines = moddata.to_string(header=False, index=show_index.get()).splitlines()
+            lines = moddata.to_string(header=False, index=show_df_index.get()).splitlines()
             #lines = [re.sub('\s*\.\.\.\s*$', '', s) for s in lines]
             conclistbox.delete(0, END)
             for line in lines:
@@ -4450,27 +4397,34 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         parser_opts = StringVar()
         speakseg = IntVar()
+        parse_with_metadata = IntVar()
+        tokenise_pos = IntVar()
+        tokenise_lem = IntVar()
+        clicked_done = IntVar()
+        clicked_done.set(0)
 
-        def parser_options():
+        def parser_options(kind):
             """
             A popup with corenlp options, to display before parsing.
-            this is a good candidate for 'preferences'"""
+            this is a good candidate for 'preferences'
+            """
             from tkinter import Toplevel
             global poptions
             poptions = Toplevel()
             poptions.title('Parser options')
             from collections import OrderedDict
-
             popt = OrderedDict()
-            for k, v in [('Tokenise', 'tokenize'),
+            if kind == 'parse':
+                tups = [('Tokenise', 'tokenize'),
                          ('Clean XML', 'cleanxml'),
                          ('Sentence splitting', 'ssplit'),
                          ('POS tagging', 'pos'),
                          ('Lemmatisation', 'lemma'),
                          ('Named entity recognition', 'ner'),
                          ('Parse', 'parse'),
-                         ('Referent tracking', 'dcoref')]:
-                popt[k] = v
+                         ('Referent tracking', 'dcoref')]
+                for k, v in tups:
+                    popt[k] = v
 
             butvar = {}
             butbut = {}
@@ -4495,17 +4449,27 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 butbut[index] = but
                 butvar[index] = tmp
             
+            if kind == 'tokenise':
+                Checkbutton(poptions, text='POS tag', variable=tokenise_pos, onvalue=True, offvalue=False).grid(sticky=W)
+                Checkbutton(poptions, text='Lemmatise', variable=tokenise_lem, onvalue=True, offvalue=False).grid(sticky=W)
             Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue=True, offvalue=False).grid(sticky=W)
+            Checkbutton(poptions, text='XML metadata', variable=parse_with_metadata, onvalue=True, offvalue=False).grid(sticky=W)
 
             def optionspicked(*args):
                 vals = [i.get() for i in list(butvar.values()) if i.get() is not False and i.get() != 0 and i.get() != '0']
                 vals = sorted(vals, key=lambda x:orders[x])
                 the_opts = ','.join(vals)
+                clicked_done.set(1)
                 poptions.destroy()
                 parser_opts.set(the_opts)
 
+            def qut():
+                poptions.destroy()
+
+            stopbut = Button(poptions, text='Cancel', command=qut)
+            stopbut.grid(row=15, sticky='w', padx=5)
             stopbut = Button(poptions, text='Done', command=optionspicked)
-            stopbut.grid()
+            stopbut.grid(row=15, sticky='e', padx=5)
 
         ##############    ##############     ##############     ##############     ############## 
         # WORDLISTS  #    # WORDLISTS  #     # WORDLISTS  #     # WORDLISTS  #     # WORDLISTS  # 
@@ -4809,7 +4773,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #Button(conc_left_buts, text='Sort', command=lambda: conc_sort()).grid(row=0, column=4)
 
         def toggle_filenames(*args):
-            if type(current_conc[0]) == str:
+            if isinstance(current_conc[0], str):
                 return
             data = current_conc[0]
             add_conc_lines_to_window(data)
@@ -4913,17 +4877,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         Button(fourbuts, text='Load', command=load_saved_conc).grid(row=0, column=3)
 
         showbuts = Frame(conc_right_button_frame)
-        showbuts.grid(row=0, column=0, columnspan=6, sticky='W')
+        showbuts.grid(row=0, column=0, columnspan=6, sticky='w')
 
         show_filenames = IntVar()
         fnbut = Checkbutton(showbuts, text='Filenames', variable=show_filenames, command=toggle_filenames)
-        fnbut.grid(row=0, column=3)
-        fnbut.select()
+        fnbut.grid(row=0, column=4)
+        #fnbut.select()
         show_filenames.trace('w', toggle_filenames)
 
         show_subcorpora = IntVar()
         sbcrp = Checkbutton(showbuts, text='Subcorpora', variable=show_subcorpora, command=toggle_filenames)
-        sbcrp.grid(row=0, column=2)
+        sbcrp.grid(row=0, column=3)
         sbcrp.select()
         show_subcorpora.trace('w', toggle_filenames)
 
@@ -4935,17 +4899,23 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         show_speaker = IntVar()
         showspkbut = Checkbutton(showbuts, text='Speakers', variable=show_speaker, command=toggle_filenames)
-        showspkbut.grid(row=0, column=4)
+        showspkbut.grid(row=0, column=5)
         #showspkbut.select()
         show_speaker.trace('w', toggle_filenames)
 
         show_index = IntVar()
-        indbut = Checkbutton(showbuts, text='Index', variable=show_index, command=toggle_filenames)
+        show_s_w_ix = Checkbutton(showbuts, text='Index', variable=show_index, command=toggle_filenames)
+        #show_s_w_ix.select()
+        show_s_w_ix.grid(row=0, column=2)
+        show_index.trace('w', toggle_filenames)
+
+        show_df_index = IntVar()
+        indbut = Checkbutton(showbuts, text='#', variable=show_df_index, command=toggle_filenames)
         indbut.grid(row=0, column=0)
         indbut.select()
         # disabling because turning index off can cause problems when sorting, etc
         indbut.config(state=DISABLED)
-        show_index.trace('w', toggle_filenames)
+        show_df_index.trace('w', toggle_filenames)
         
         interrobut_conc = Button(showbuts, text='Re-run')
         interrobut_conc.config(command=lambda: runner(interrobut_conc, do_interrogation, conc = True), state=DISABLED)
@@ -5428,7 +5398,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             current_corpus.set('')
             corpora_fullpath.set('')
             project_fullpath.set(rd)
-            special_queries.set('Off')
+            #special_queries.set('Off')
 
             # spreadsheets
             update_spreadsheet(interro_results, df_to_show=None, height=340)
@@ -5573,6 +5543,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                                            **the_kwargs)
             else:
                 fp = path
+
             if not fp or fp == '':
                 return
             reset_everything()
@@ -5870,20 +5841,24 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         def create_tokenised_text():
             from corpkit.corpus import Corpus
             note.progvar.set(0)
+            parser_options('tokenise')
+            root.wait_window(poptions)
+            if not clicked_done.get():
+                return
             #tokbut.config(state=DISABLED)
             #tokbut = Button(tab0, textvariable=tokenise_button_text, command=ignore, width=33)
             #tokbut.grid(row=6, column=0, sticky=W)
             unparsed_corpus_path = corpus_fullpath.get()
-            if speakseg.get():
-                timestring('Speaker segmentation has no effect when tokenising corpus.')
-                #unparsed_corpus_path = unparsed_corpus_path + '-stripped'
-            filelist, _ = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
+            #filelist, _ = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
             corp = Corpus(unparsed_corpus_path)
-            parsed = corp.tokenise(root=root, 
-                                  stdout=sys.stdout, 
-                                  note=note, 
-                                  only_tokenise=True,
-                                  nltk_data_path=nltk_data_path)
+            parsed = corp.tokenise(postag=tokenise_pos,
+                                   lemmatise=tokenise_lem,
+                                   root=root, 
+                                   stdout=sys.stdout, 
+                                   note=note,
+                                   nltk_data_path=nltk_data_path,
+                                   speaker_segmentation=speakseg.get(),
+                                   metadata=parse_with_metadata.get())
             #corpus_fullpath.set(outdir)
             outdir = parsed.path
             current_corpus.set(parsed.name)
@@ -5904,8 +5879,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             from corpkit.corpus import Corpus
             from corpkit.process import get_corenlp_path
 
-            parser_options()
+            parser_options('parse')
             root.wait_window(poptions)
+            if not clicked_done.get():
+                return
 
             unparsed_corpus_path = corpus_fullpath.get()
             unparsed = Corpus(unparsed_corpus_path)
@@ -5943,8 +5920,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                                     root=root, 
                                     stdout=sys.stdout, 
                                     note=note,
-                                    memory_mb=parser_memory.get()
-                                   )
+                                    memory_mb=parser_memory.get(),
+                                    metadata=parse_with_metadata.get())
             if not parsed:
                 print('Error during parsing.')
 
@@ -7066,19 +7043,25 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 if __name__ == "__main__":
     # the traceback is mostly for debugging pyinstaller errors
     import sys
-    import pip
-    import importlib
     import traceback
     import os
 
     lc = sys.argv[-1] if os.path.isdir(sys.argv[-1]) else False
+    
+
+    #if lc and sys.argv[-1] == '.':
+    #    lc = os.path.basename(os.getcwd())
+    #    os.chdir('..')
+
     debugmode = 'debug' in list(sys.argv)
 
     def install(name, loc):
         """if we don't have a module, download it"""
         try:
+            import importlib
             importlib.import_module(name)
         except ImportError:
+            import pip
             pip.main(['install', loc])
 
     tkintertablecode = ('tkintertable', 'git+https://github.com/interrogator/tkintertable.git')

@@ -337,9 +337,20 @@ def make_series(ser, df=False, obj=False,
     """
     To apply to a DataFrame to add complex criteria, like 'gf'
     """
-    # todo:
-    # collocation
-    # ngram
+    # distance mode
+    if att == 'a':
+        count = 0
+        if obj == 'g':
+            if ser[obj] == 0:
+                return '-1'
+            ser = df.loc[ser.name[0], ser['g']]
+        while count < 20:
+            if ser['mf'].lower() == 'root':
+                return str(count)
+            ser = df.loc[ser.name[0], ser['g']]
+            count += 1
+        return '20+'
+
     if obj == 'g':
         if ser[obj] == 0:
             return 'root'
@@ -355,7 +366,6 @@ def make_series(ser, df=False, obj=False,
         #import pandas as pd
         idxs = [(ser.name[0], int(i)) for i in ser[obj].split(',')]
         dat = df[att].ix[idxs]
-
         return dat
 
     # todo: fix everything below here
@@ -490,7 +500,7 @@ def fast_simple_conc(dfss, idxs, show,
     import pandas as pd
 
     # best case, the user doesn't want any gov-dep stuff
-    simple = all(i.startswith('m') for i in show)
+    simple = all(i.startswith('m') and not i.endswith('a') for i in show)
     # worst case, the user wants something from dep
     dmode = any(x.startswith('d') for x in show)
     # make a quick copy if need be because we modify the df
@@ -512,7 +522,7 @@ def fast_simple_conc(dfss, idxs, show,
         import numpy as np
         for ind, i in enumerate(show):
             # nothing to do if it's an m feature
-            if i.startswith('m'):
+            if i.startswith('m') and not i.endswith('a'):
                 continue
             # defaults for adjacent work
             adj, tomove, adjname = False, False, ''
@@ -540,8 +550,10 @@ def fast_simple_conc(dfss, idxs, show,
                 lst = ['s', 'i', 'w', 'l', 'f', 'p']
                 if att in lst and ob != 'm':
                     att = 'm' + att
-                if ob == 'm':
+                if ob == 'm' and att != 'a':
                     dfx = df[['m' + att]]
+                elif att == 'a':
+                    dfx = df[['mf', 'g']]
                 else:
                     dfx = df[[ob, att]]
             # decide if we need to format everything
@@ -550,7 +562,7 @@ def fast_simple_conc(dfss, idxs, show,
             else:
                 to_proc = df
             # now we get or generate the new column
-            if ob == 'm':
+            if ob == 'm' and att != 'a':
                 ser = to_proc['m' + att]
             else:
                 ser = to_proc.apply(make_series, df=dfx, obj=ob, att=att, axis=1)
@@ -659,7 +671,7 @@ def show_this(df, matches, show, metadata, conc=False,
 def fix_show_bit(show_bit):
     """take a single search/show_bit type, return match"""
     #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
-    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r', 's']
+    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r', 's', 'a']
     starts = ['d', 'g', 'm', 'n', 'b', 'h', '+', '-']
     show_bit = show_bit.lstrip('n')
     show_bit = show_bit.lstrip('b')
