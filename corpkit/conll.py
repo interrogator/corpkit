@@ -690,10 +690,10 @@ def determine_adjacent(original):
     return adj, original
 
 def process_df_for_speakers(df, metadata, criteria, coref=False,
-                            feature='speakers', reverse=False):
+                            feature='speakers', method='just'):
     """
     keep just the correct speakers
-    reverse=just, not reverse=skip
+    reverse=skip, not reverse=just
     """
     if not criteria:
         df._metadata = metadata
@@ -710,21 +710,21 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     for sentid, data in sorted(metadata.items()):
         meta_value = data.get(feature, 'none')
         lst_met_vl = meta_value.split(';')
-        if isinstance(criteria, list):
-            if not reverse:
-                if not any(i in criteria for i in lst_met_vl):
-                    good_sents.append(sentid)
-                    new_metadata[sentid] = data
-            else:
+        if isinstance(criteria, (list, set, tuple)):
+            if method == 'just':
                 if any(i in criteria for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
+            elif method == 'skip':
+                if not any(i in criteria for i in lst_met_vl):
+                    good_sents.append(sentid)
+                    new_metadata[sentid] = data
         elif isinstance(criteria, (re._pattern_type, STRINGTYPE)):
-            if not reverse:
+            if method == 'just':
                 if any(re.search(criteria, i) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
-            else:
+            elif method == 'skip':
                 if not any(re.search(criteria, i) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
@@ -738,10 +738,10 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
     if df is not None:
         if just_metadata:
             for k, v in just_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=True)
+                df = process_df_for_speakers(df, df._metadata, v, feature=k)
         if skip_metadata:
             for k, v in skip_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k, reverse=False)
+                df = process_df_for_speakers(df, df._metadata, v, feature=k, method='skip')
     return df
 
 
@@ -907,7 +907,6 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
     from corpkit.dictionaries.process_types import processes
     from collections import Counter, defaultdict
     from corpkit.process import tregex_engine
-    from corpkit.conll import parse_conll, pipeline, process_df_for_speakers, cut_df_by_meta
 
     def ispunct(s):
         import string
@@ -1029,7 +1028,7 @@ def pipeline(f=False,
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
-            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature, reverse=True)
+            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature, method='just')
             r, c = searcher(f=False,
                             fname=f,
                             search=search,

@@ -1804,16 +1804,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             
             if len(subdrs) == 0:
                 charttype.set('bar')
-            pick_subcorpora['menu'].delete(0, 'end')
-            if len(subdrs) > 0:
-                pick_subcorpora.config(state=NORMAL)
-                pick_subcorpora['menu'].add_command(label='All', command=_setit(subc_pick, 'All'))
-                for choice in subdrs:
-                    pick_subcorpora['menu'].add_command(label=choice, command=_setit(subc_pick, choice))
-            else:
-                pick_subcorpora.config(state=NORMAL)
-                pick_subcorpora['menu'].add_command(label='None', command=_setit(subc_pick, 'None'))
-                pick_subcorpora.config(state=DISABLED)
+            #pick_subcorpora['menu'].delete(0, 'end')
+            #if len(subdrs) > 0:
+            #    pick_subcorpora.config(state=NORMAL)
+            #    pick_subcorpora['menu'].add_command(label='All', command=_setit(subc_pick, 'All'))
+            #    for choice in subdrs:
+            #        pick_subcorpora['menu'].add_command(label=choice, command=_setit(subc_pick, choice))
+            #else:
+            #    pick_subcorpora.config(state=NORMAL)
+            #    pick_subcorpora['menu'].add_command(label='None', command=_setit(subc_pick, 'None'))
+            #    pick_subcorpora.config(state=DISABLED)
 
             pick_a_datatype['menu'].delete(0, 'end')
 
@@ -1919,15 +1919,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         available_corpora.grid(row=0, column=0, columnspan=2, padx=(0, 33))
 
         # todo: implement this
-        subc_pick = StringVar()
-        subc_pick.set('Subcorpus')
-        if os.path.isdir(corpus_fullpath.get()):
-            current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
-        else:
-            current_subcorpora = []
-        pick_subcorpora = OptionMenu(interro_opt, subc_pick, *tuple(['All'] + current_subcorpora))
-        pick_subcorpora.configure(width=12)
-        pick_subcorpora.grid(row=0, column=1, sticky=E)
+        #subc_pick = StringVar()
+        #subc_pick.set('Subcorpus')
+        #if os.path.isdir(corpus_fullpath.get()):
+        #    current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+        #else:
+        #    current_subcorpora = []
+        #pick_subcorpora = OptionMenu(interro_opt, subc_pick, *tuple(['All'] + current_subcorpora))
+        #pick_subcorpora.configure(width=12)
+        #pick_subcorpora.grid(row=0, column=1, sticky=E)
 
         # for build tab
         #Label(interro_opt, text='Corpus:').grid(row=0, column=0, sticky=W)
@@ -1965,20 +1965,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         exclude_str = StringVar()
         exclude_str.set('')
-        Label(interro_opt, text='Exclude:').grid(row=5, column=0, sticky=W, pady=(0, 10))
+        Label(interro_opt, text='Exclude:').grid(row=6, column=0, sticky=W, pady=(0, 10))
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *['None'] + sorted(convert_name_to_query.keys()))
         exclude.config(width=14)
-        exclude.grid(row=5, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
+        exclude.grid(row=6, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
         qr = Entry(interro_opt, textvariable=exclude_str, width=18, state=DISABLED)
-        qr.grid(row=5, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
+        qr.grid(row=6, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text='+', \
                         command=lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state=DISABLED)
-        ex_plusbut.grid(row=5, column=1, sticky=E, pady=(0, 10))
+        ex_plusbut.grid(row=6, column=1, sticky=E, pady=(0, 10))
 
         #blklst = StringVar()
         #Label(interro_opt, text='Blacklist:').grid(row=12, column=0, sticky=W)
@@ -2061,7 +2061,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         # by metadata   
         by_meta_scrl = Frame(interro_opt)
-        by_meta_scrl.grid(row=14, column=0, sticky='w', pady=(0, 0))
+        by_meta_scrl.grid(row=1, column=0, sticky='w', pady=(0, 0))
         # scrollbar for the listbox
         by_met_bar = Scrollbar(by_meta_scrl)
         by_met_bar.pack(side=RIGHT, fill=Y)
@@ -2076,7 +2076,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         # frame to hold metadata values listbox
         spk_scrl = Frame(interro_opt)
-        spk_scrl.grid(row=14, column=0, rowspan = 2, columnspan=2, sticky=E, pady=(0,0))
+        spk_scrl.grid(row=1, column=0, rowspan=2, columnspan=2, sticky=E, pady=(0,0))
         # scrollbar for the listbox
         spk_sbar = Scrollbar(spk_scrl)
         spk_sbar.pack(side=RIGHT, fill=Y)
@@ -2270,7 +2270,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         command=lambda: add_criteria(objs, permref, anyall, \
                                             additional_criteria, datatype_picked, entrytext), \
                         state=NORMAL)
-        plusbut.grid(row=1, column=0, columnspan=2, padx=(0,200))
+        plusbut.grid(row=2, column=0, columnspan=2, padx=(0,200))
 
         def entry_callback(*args):
             """when entry is changed, add it to the textbox"""
@@ -2430,18 +2430,18 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     pass
 
         datatype_picked = StringVar(root)
-        Label(interro_opt, text='Search: ').grid(row=1, column=0, sticky=W, pady=10)
+        Label(interro_opt, text='Search: ').grid(row=2, column=0, sticky=W, pady=10)
         pick_a_datatype = OptionMenu(interro_opt, datatype_picked, *sorted(convert_name_to_query.keys()))
         pick_a_datatype.configure(width=30, justify=CENTER)
         datatype_picked.set('Word')
-        pick_a_datatype.grid(row=1, column=0, columnspan=2, sticky=W, padx=(136,0))
+        pick_a_datatype.grid(row=2, column=0, columnspan=2, sticky=W, padx=(136,0))
         datatype_picked.trace("w", callback)
         
         # trees, words, functions, governors, dependents, pos, lemma, count
         interro_return_frm = Frame(interro_opt)
 
         Label(interro_return_frm, text='   Return', font=("Courier New", 13, "bold")).grid(row=0, column=0, sticky=E)
-        interro_return_frm.grid(row=4, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
+        interro_return_frm.grid(row=5, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
 
         Label(interro_return_frm, text='    Token', font=("Courier New", 13)).grid(row=0, column=1, sticky=E)
         Label(interro_return_frm, text='    Lemma', font=("Courier New", 13)).grid(row=0, column=2, sticky=E)
@@ -2656,10 +2656,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         queries = tuple(('Off', 'Any', 'Participants', 'Processes', 'Subjects', 'Stats'))
         special_queries = StringVar(root)
         special_queries.set('Off')
-        Label(interro_opt, text='Preset:').grid(row=6, column=0, sticky=W)
+        Label(interro_opt, text='Preset:').grid(row=7, column=0, sticky=W)
         pick_a_query = OptionMenu(interro_opt, special_queries, *queries)
         pick_a_query.config(width=11, state=DISABLED)
-        pick_a_query.grid(row=6, column=0, padx=(60, 0), columnspan=2, sticky=W)
+        pick_a_query.grid(row=7, column=0, padx=(60, 0), columnspan=2, sticky=W)
         special_queries.trace("w", q_callback)
 
         # Interrogation name
@@ -5456,7 +5456,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             # images
             #every_image_listbox.delete(0, END)
             every_interrogation['menu'].delete(0, 'end')
-            pick_subcorpora['menu'].delete(0, 'end')
+            #pick_subcorpora['menu'].delete(0, 'end')
             # speaker listboxes
             speaker_listbox.delete(0, 'end')
             #speaker_listbox_conc.delete(0, 'end')
@@ -5639,17 +5639,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 subdrs = []       
 
             #lab.set('Concordancing: %s' % corpus_name)
-            pick_subcorpora['menu'].delete(0, 'end')
+            #pick_subcorpora['menu'].delete(0, 'end')
 
-            if len(subdrs) > 0:
-                pick_subcorpora['menu'].add_command(label='all', command=_setit(subc_pick, 'all'))
-                pick_subcorpora.config(state=NORMAL)
-                for choice in subdrs:
-                    pick_subcorpora['menu'].add_command(label=choice, command=_setit(subc_pick, choice))
-            else:
-                pick_subcorpora.config(state=NORMAL)
-                pick_subcorpora['menu'].add_command(label='None', command=_setit(subc_pick, 'None'))
-                pick_subcorpora.config(state=DISABLED)
+            #if len(subdrs) > 0:
+            #    pick_subcorpora['menu'].add_command(label='all', command=_setit(subc_pick, 'all'))
+            #    pick_subcorpora.config(state=NORMAL)
+            #    for choice in subdrs:
+            #        pick_subcorpora['menu'].add_command(label=choice, command=_setit(subc_pick, choice))
+            #else:
+            #    pick_subcorpora.config(state=NORMAL)
+            #    pick_subcorpora['menu'].add_command(label='None', command=_setit(subc_pick, 'None'))
+            #    pick_subcorpora.config(state=DISABLED)
             timestring('Project "%s" opened.' % os.path.basename(fp))
             note.progvar.set(0)
             
