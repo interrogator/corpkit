@@ -615,16 +615,12 @@ class Corpus(object):
                           instead, output a lemma form with the `show` argument**
         :type lemmatise: `bool`
 
-        :param lemmatag: Explicitly pass a POS to lemmatiser (generally when data
-                         is unparsed, or when tag cannot be recovered from Tregex query)
+        :param lemmatag: When using a Tregex/Tgrep query, the tool will
+                         attempt to determine the word class of results from the query.
+                         Passing in a `str` here will tell the lemmatiser the expected
+                         POS of results to lemmatise. It only has an affect if trees
+                         are being searched and lemmata are being shown.
         :type lemmatag: `'n'`/`'v'`/`'a'`/`'r'`/`False`
-
-        :param spelling: Convert all to U.S. or U.K. English
-        :type spelling: `False`/`'US'`/`'UK'`
-
-        :param dep_type: The kind of Stanford CoreNLP dependency parses you want
-                         to use: `'basic-dependencies'`, `'collapsed-dependencies'`,
-                         or `'collapsed-ccprocessed-dependencies'`.
 
         :param save: Save result as pickle to `saved_interrogations/<save>` on 
                      completion
@@ -647,39 +643,27 @@ class Corpus(object):
                                  store as `.concordance` attribute
         :type conc: `bool`/`'only'`
 
-        :param coref: Allow counting of pronominal referents
+        :param coref: Also get coreferents for search matches
         :type coref: `bool`
 
-        :param representative: Allow copula coreference matching
-        :type representative: `bool`
-
-        :param representative: Allow non-copula coreference matching
-        :type representative: `bool`        
-
         :param tgrep: Use `TGrep` for tree querying. TGrep is less expressive 
-                      than Tregex, and is slower, but can work without Java.
+                      than Tregex, and is slower, but can work without Java. This
+                      option may be turned on internally if Java is not found.
         :type tgrep: `bool`
-
-        :param just_speakers: Limit search to paricular speakers. If 'each',
-                              generate :class:`corpkit.interrogation.Interrodict`
-                              for each speaker. If a `list` of speaker names, 
-                              generate :class:`corpkit.interrogation.Interrodict`
-                              for each named speaker. If compiled regular expression,
-                              generate :class:`corpkit.interrogation.Interrogation`
-                              with each speaker matching the regex conflated.
-        :type just_speakers: `str`/`each`/`list`/`regex`
 
         :param subcorpora: Use a metadata value as subcorpora. 
                            Passing a list will create a multiindex.
                            `'file'` and `'folder'`/`'default'` are also possible values.
         :type subcorpora: `str`/`list`
 
-        :param just_metadata: A field and regex/list to filter sentences by.
-                              Only those matching will be kept
+        :param just_metadata: One or more metadata fields and criteria to filter sentences by.
+                              Only those matching will be kept. Criteria can be a list of words
+                              or a regular expression. Passing ``{'speaker': 'ENVER'}``
+                              will search only sentences annotated with ``speaker=ENVER``.
         :type just_metadata: `dict`
 
         :param skip_metadata: A field and regex/list to filter sentences by.
-                              Those matching will be skipped.
+                              The inverse of ``just_metadata``.
         :type skip_metadata: `dict`
 
         :param discard: When returning many (i.e. millions) of results, memory can be
@@ -746,11 +730,8 @@ class Corpus(object):
         elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
             return res.multiindex()
         else:
-            from corpkit.process import get_index_name
-            js = kwargs.get('just_speakers', False)
-            ixnames = get_index_name(self, subcorpora, js)
-            if ixnames:
-                res.results.index.name = ixnames
+            if subcorpora:
+                res.results.index.name = subcorpora
 
         # sort by total
         ind = list(res.results.index)
@@ -803,7 +784,7 @@ class Corpus(object):
 
     def delete_metadata(self):
         """
-        Delete metadata for corpus
+        Delete metadata for corpus. May be needed if corpus is changed
         """
         import os
         os.remove(os.path.join('data'), '.%s.json' % self.name)
@@ -1100,6 +1081,11 @@ class Corpus(object):
             conclines = getattr(conclines, 'concordance', conclines)
         from corpkit.annotate import annotator
         annotator(conclines, annotation, dry_run=dry_run)
+        # regenerate metadata afterward---could be a bit slow?
+        if not dry_run:
+            self.delete_metadata()
+            from corpkit.process import make_dotfile
+            make_dotfile(corpus)
 
     def unannotate(annotation, dry_run=True):
         """

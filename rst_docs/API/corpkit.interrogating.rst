@@ -67,7 +67,6 @@ Corpus interrogations will output a :class:`corpkit.interrogation.Interrogation`
     'excludemode': 'any',
     'files_as_subcorpora': True,
     'gramsize': 2,
-    'just_speakers': False,
     ...}
 
    >>> propnoun.concordance # (sample)
@@ -383,16 +382,29 @@ You can also select from the three dependency grammars used by CoreNLP: one of `
 
    >>> corpus.interrogate(query, dep_type='collapsed-ccprocessed-dependencies')
 
-Working with speaker segmentation
+Working with metadata
 ----------------------------------
 
-If you've used speaker segmentation when building your corpus, you can tell the :func:`~corpkit.corpus.Corpus.interrogate` method to restrict searches to a particular speaker.
+If you've used speaker segmentation and/or metadata addition when building your corpus, you can tell the :func:`~corpkit.corpus.Corpus.interrogate` method to use these values as subcorpora, or restrict searches to particular values. The code below will limit searches to sentences spoken by Jason and Martin, or exclude them from the search:
 
 .. code-block:: python
 
-   >>> corpus.interrogate(query, just_speakers=['JASON'])
+   >>> corpus.interrogate(query, just_metadata={'speaker': ['JASON', 'MARTIN']})
+   >>> corpus.interrogate(query, skip_metadata={'speaker': ['JASON', 'MARTIN']})
 
-If you have only one speaker, other sentences will not be searched. If you have multiple speakers, or if you pass in ``just_speakers='each'``, the search will return a :class:`corpkit.interrogation.Interrodict`. This class is a `dict`-like container of multiple interrogations. In this case, the speaker names will be the keys, and the individual interrogations will be the values. These objects can be edited, collapsed and visualised too.
+If you wanted to compare Jason and Martin's contributions in the corpus as a whole, you could treat them as subcorpora:
+
+.. code-block:: python
+
+   >>> corpus.interrogate(query, subcorpora='speaker',
+   ...                    just_metadata={'speaker': ['JASON', 'MARTIN']})
+
+The method above, however, will make an interrogation with two subcorpora, `'JASON'` AND ``MARTIN``. You can pass a list in as the ``subcorpora`` keyword argument to generate a multiindex:
+
+.. code-block:: python
+
+   >>> corpus.interrogate(query, subcorpora=['folder', 'speaker'],
+                          just_metadata={'speaker': ['JASON', 'MARTIN']})
 
 Working with coreferences
 --------------------------
@@ -427,10 +439,6 @@ This matches both `Clinton` and `he`, and thus gives us:
 
    ['support', 'authorize']
 
-.. note::
-
-   You can toggle `representative=True` and `non_representative=True` arguments if you want to distinguish between copula and non-copula coreference.
-
 
 Multiprocessing
 ---------------------
@@ -453,7 +461,6 @@ N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` o
 .. code-block:: python
 
    >>> corpus.interrogate({W: 'father'}, show='NL', gramsize=3, split_contractions=False)
-
 
 Collocation
 ------------

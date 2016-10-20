@@ -1092,24 +1092,6 @@ def make_name_to_query_dict(existing={}):
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
 
-def get_index_name(corpus, subcorpora, just_speakers):
-    """
-    Name df index---just_speakers will be deprecated soon
-    """
-    lst = []
-    if subcorpora:
-        return subcorpora
-    elif just_speakers == 'each' or just_speakers == ['each']:
-        lst.append('speaker')
-    if corpus.level == 'c':
-        lst.append('folder')
-    elif corpus.level == 's':
-        lst.append('file')
-    if len(lst) == 1:
-        return lst[0]
-    else:
-        return lst
-
 def make_savename_for_features(corpname=False, obj='features', subcorpora=False):
     subc = subcorpora if subcorpora else ''
     if isinstance(subcorpora, list):

@@ -77,3 +77,8 @@ data/test-stripped-filelist.txt
 saved_interrogations/
 exported/
 data/test-tokenised/
+corpkit/configparse.py
+corpkit/settings.ini
+data/.test-parsed.json
+data/.test-speak-parsed.json
+data/.test-tokenised.json
