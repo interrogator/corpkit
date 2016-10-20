@@ -327,36 +327,58 @@ class Corpus(object):
             04       20066    6354   5366                3587              2767     1775
 
         """
-        import os
-        from os.path import isfile, isdir, join
-        from corpkit.interrogator import interrogator
-        from corpkit.other import load
         from corpkit.dictionaries.word_transforms import mergetags
-        from corpkit.process import make_savename_for_features
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
 
-        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
-        if self.symbolic:
-            kwa['subcorpora'] = self.symbolic
+        kwa = {'just_metadata': self.just,
+               'skip_metadata': self.skip,
+               'subcorpora': self.symbolic}
 
-        name = make_savename_for_features(obj='features',
-                                          corpname=self.name,
-                                          subcorpora=self.symbolic)
+        md = get_corpus_metadata(self.path, generate=True)
+        name = make_df_json_name('features', self.symbolic)
 
-        savedir = 'saved_interrogations'
-        if isfile(join(savedir, name + '.p')):
-            try:
-                return load(name).results
-            except AttributeError:
-                return load(name)
+        if name in md:
+            import pandas as pd
+            return pd.DataFrame(md[name])
         else:
-            feat = interrogator(self, 'features', **kwa)
+            feat = self.interrogate('features', **kwa)
             from corpkit.interrogation import Interrodict
             if isinstance(feat, Interrodict):
                 feat = feat.multiindex()
             feat = feat.results
-            if isdir(savedir):
-                feat.save(name)
+            add_df_to_dotfile(self.path, feat, typ='features', subcorpora=self.symbolic) 
             return feat
+
+    def _get_postags_and_wordclasses(self):
+        """
+        Called by corpus.postags and corpus.wordclasses internally
+        """
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
+
+        kwa = {'just_metadata': self.just,
+               'skip_metadata': self.skip,
+               'subcorpora': self.symbolic}
+
+        md = get_corpus_metadata(self.path, generate=True)
+
+        pname = make_df_json_name('postags', self.symbolic)
+        wname = make_df_json_name('wordclasses', self.symbolic)
+        
+        if pname in md and wname in md:
+            import pandas as pd
+            return pd.DataFrame(md[pname]), pd.DataFrame(md[wname])
+        else:
+            postags = self.interrogate('postags', **kwa)
+            from corpkit.interrogation import Interrodict
+            if isinstance(postags, Interrodict):
+                postags = postags.multiindex()
+            wordclasses = postags.edit(merge_entries=mergetags,
+                                       sort_by='total').results.astype(int)
+            postags = postags.results
+            add_df_to_dotfile(self.path, postags, typ='postags', subcorpora=self.symbolic)
+            add_df_to_dotfile(self.path, wordclasses, typ='wordclasses', subcorpora=self.symbolic)
+            return postags, wordclasses
 
     @lazyprop
     def wordclasses(self):
@@ -373,44 +395,8 @@ class Corpus(object):
             03  18376  5683         4877         3137 ...
             04  20066  6354         5366         4336 ...
         """
-
-        import os
-        from os.path import isfile, isdir, join
-        from corpkit.interrogator import interrogator
-        from corpkit.other import load
-        from corpkit.dictionaries.word_transforms import mergetags
-        from corpkit.process import make_savename_for_features
-
-        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
-
-        wcname = make_savename_for_features(obj='wordclasses',
-                                            corpname=self.name,
-                                            subcorpora=self.symbolic)
-
-        psname = make_savename_for_features(obj='postags',
-                                            corpname=self.name,
-                                            subcorpora=self.symbolic)
-
-        savedir = 'saved_interrogations'
-        if isfile(join(savedir, wcname + '.p')):
-            try:
-                return load(wcname).results
-            except AttributeError:
-                return load(wcname)
-        elif isfile(join(savedir, psname)):
-            try:
-                posdata = load(psname).results
-            except AttributeError:
-                posdata = load(psname)
-            return posdata.edit(
-                merge_entries=mergetags,
-                sort_by='total').results
-        else:
-            feat = interrogator(self, show='x',
-                subcorpora=self.symbolic, *kwa).results
-            if isdir(savedir):
-                feat.save(self.name + '-wordclasses')
-            return feat
+        postags, wordclasses = self._get_postags_and_wordclasses()
+        return wordclasses
 
     @lazyprop
     def postags(self):
@@ -428,38 +414,8 @@ class Corpus(object):
             04   20066   6354   5366   3587   2767  ...
 
         """
-        import os
-        from os.path import isfile, isdir, join
-        from corpkit.interrogator import interrogator
-        from corpkit.other import load
-        from corpkit.dictionaries.word_transforms import mergetags
-        from corpkit.process import make_savename_for_features
-
-        psname = make_savename_for_features(obj='postags',
-                                    corpname=self.name,
-                                    subcorpora=self.symbolic)
-
-        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
-
-        savedir = 'saved_interrogations'
-        if isfile(join(savedir, psname + '.p')):
-            try:
-                return load(psname).results
-            except AttributeError:
-                return load(psname)
-        else:
-            feat = interrogator(self,
-                                show='p',
-                                preserve_case=True,
-                                subcorpora=self.symbolic,
-                                **kwa).results
-            if isdir(savedir):
-                feat.save(psname)
-                wordclss = feat.edit(
-                    merge_entries=mergetags,
-                    sort_by='total').results
-                wordclss.save(self.name + '-wordclasses')
-            return feat
+        postags, wordclasses = self._get_postags_and_wordclasses()
+        return postags
 
     @lazyprop
     def lexicon(self, **kwargs):
@@ -845,6 +801,25 @@ class Corpus(object):
                 return Corpus(Datalist(random.sample(fps, n)), level='d',
                               print_info=False, datatype='conll')
 
+    def delete_metadata(self):
+        """
+        Delete metadata for corpus
+        """
+        import os
+        os.remove(os.path.join('data'), '.%s.json' % self.name)
+
+    @lazyprop
+    def metadata(self):
+        """
+        Get metadata for a corpus
+        """
+        import json
+        import os
+        from corpkit.constants import OPENER
+        name = os.path.join('data', '.%s.json' % self.name)
+        with OPENER(name, 'r', encoding='utf-8') as fo:
+            return json.load(fo)
+
     def parse(self,
               corenlppath=False,
               operations=False,
@@ -935,8 +910,7 @@ class Corpus(object):
                            metadata=metadata,
                            coref=coref,
                            *args,
-                           **kwargs
-                          )
+                           **kwargs)
         if not corp:
             return
 

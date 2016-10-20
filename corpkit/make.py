@@ -57,7 +57,7 @@ def make_corpus(unparsed_corpus_path,
     import shutil
     import codecs
     from corpkit.build import folderise, can_folderise
-    from corpkit.process import saferead
+    from corpkit.process import saferead, make_dotfile
 
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
@@ -384,9 +384,11 @@ def make_corpus(unparsed_corpus_path,
         if newparsed is False:
             return
         else:
+            make_dotfile(newparsed)
             return newparsed
 
     rename_all_files(newparsed)
 
     print('Done!\n')
+    make_dotfile(newparsed)
     return newparsed

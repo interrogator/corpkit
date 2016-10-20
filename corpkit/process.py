@@ -1122,7 +1122,7 @@ def make_savename_for_features(corpname=False, obj='features', subcorpora=False)
         obj = obj + '-' + subc
     return obj
 
-def auto_usecols(search, exclude, show, usecols):
+def auto_usecols(search, exclude, show, usecols, coref=False):
     """
     Figure out if we can speed up conll parsing based on search,
     exclude and show. the return value is passed to pandas.read_csv
@@ -1138,11 +1138,22 @@ def auto_usecols(search, exclude, show, usecols):
 
     # get all objs from search, exclude and show
     needed = []
+
     for i in search.keys():
-        if 'g' in i:
+        if 'g' in i or i == 'g':
             needed.append('d')
-        elif 'd' in i:
+        elif 'd' in i or i == 'd':
             needed.append('g')
+        elif 'h' in i or i == 'h':
+            needed.append('c')
+        elif 'r' in i or i == 'r':
+            needed.append('c')
+        # features mode:
+        elif i == 'v':
+            needed.append('f')
+            needed.append('w')
+            needed.append('p')
+            continue
         needed.append(i)
     if isinstance(exclude, dict):
         for i in exclude.keys():
@@ -1151,10 +1162,15 @@ def auto_usecols(search, exclude, show, usecols):
         for i in show:
             if i.endswith('a'):
                 needed.append('g')
+            if i.startswith('r') or i.startswith('h'):
+                needed.append('c')
             i = i.replace('a', 'f').replace('x', 'p')
             needed.append(i)
     else:
         needed.append(show)
+
+    if coref:
+        needed.append('c')
     # get the obj and attr from these
     stcols = []
     for i in needed:
@@ -1335,3 +1351,68 @@ def lemmatiser(list_of_words, tag, translated_option,
         output.append(word)
     return output
 
+def make_dotfile(path, return_json=False, data_dict=False):
+    """
+    Generate a dotfile in the data directory containing corpus information
+    Right now, this information is the metadata fields and their values
+    """
+    path = getattr(path, 'path', path)
+    import os
+    import json
+    from corpkit.build import get_all_metadata_fields, get_speaker_names_from_parsed_corpus
+    from corpkit.constants import OPENER
+    if data_dict:
+        json_data = data_dict
+    else:
+        json_data = {'fields': {}}
+        fields = get_all_metadata_fields(path, include_speakers=True)
+        for field in fields:
+            vals = get_speaker_names_from_parsed_corpus(path, field)
+            json_data['fields'][field] = vals
+    dotname = '.%s.json' % os.path.basename(path)
+    with OPENER(os.path.join('data', dotname), 'w', encoding='utf-8') as fo:
+        fo.write(json.dumps(json_data))
+    if return_json:
+        return json_data
+    
+def get_corpus_metadata(path, generate=False):
+    """
+    Return a dict containing corpus metadata, or None if not done yet
+    """
+    import os
+    import json
+    from corpkit.constants import OPENER
+    path = getattr(path, 'path', path)
+    dotname = '.%s.json' % os.path.basename(path)
+    dotpath = os.path.join('data', dotname)
+    if not os.path.isfile(dotpath):
+        if generate:
+            return make_dotfile(path, return_json=True)
+        else:
+            return
+    else:
+        with OPENER(dotpath, 'r') as fo:
+            data = fo.read()
+            if data:
+                return json.loads(data)
+            else:
+                return make_dotfile(path, return_json=True)
+
+def make_df_json_name(typ, subcorpora=False):
+    if subcorpora:
+        if isinstance(subcorpora, list):
+            subcorpora = '-'.join(subcorpora)
+        return '%s-%s' % (typ, subcorpora)
+    else:
+        return typ
+
+def add_df_to_dotfile(path, df, typ='features', subcorpora=False):
+    """
+    Add some Pandas data to corpus metadata
+    """
+    path = getattr(path, 'path', path)
+    name = make_df_json_name(typ, subcorpora)
+    md = get_corpus_metadata(path, generate=True)
+    if name not in md:
+        md[name] = df.astype(object).to_dict()
+        make_dotfile(path, data_dict=md)
